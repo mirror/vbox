@@ -49,7 +49,9 @@ UIVMActivityMonitorPaneContainer::UIVMActivityMonitorPaneContainer(QWidget *pPar
     : UIPaneContainer(pParent, enmEmbedTo, false /* detach not allowed */)
     , m_pColorLabel{0, 0}
     , m_pColorChangeButton{0, 0}
+    , m_pResetButton(0)
 {
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
     prepare();
 }
 
@@ -57,13 +59,19 @@ void UIVMActivityMonitorPaneContainer::prepare()
 {
     QWidget *pContainerWidget = new QWidget(this);
     QVBoxLayout *pContainerLayout = new QVBoxLayout(pContainerWidget);
+    AssertReturnVoid(pContainerWidget);
+    AssertReturnVoid(pContainerLayout);
     insertTab(Tab_Preferences, pContainerWidget, "");
+    pContainerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
     for (int i = 0; i < 2; ++i)
     {
         QHBoxLayout *pColorLayout = new QHBoxLayout;
+        AssertReturnVoid(pColorLayout);
         m_pColorLabel[i] = new QLabel(this);
         m_pColorChangeButton[i] = new QPushButton(this);
+        AssertReturnVoid(m_pColorLabel[i]);
+        AssertReturnVoid(m_pColorChangeButton[i]);
         pColorLayout->addWidget(m_pColorLabel[i]);
         pColorLayout->addWidget(m_pColorChangeButton[i]);
         pColorLayout->addStretch();
@@ -71,6 +79,13 @@ void UIVMActivityMonitorPaneContainer::prepare()
         connect(m_pColorChangeButton[i], &QPushButton::pressed,
                 this, &UIVMActivityMonitorPaneContainer::sltColorChangeButtonPressed);
     }
+    m_pResetButton = new QPushButton(this);
+    AssertReturnVoid(m_pResetButton);
+    m_pResetButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    connect(m_pResetButton, &QPushButton::pressed,
+            this, &UIVMActivityMonitorPaneContainer::sltResetToDefaults);
+
+    pContainerLayout->addWidget(m_pResetButton);
 
     pContainerLayout->addStretch();
 
@@ -87,6 +102,9 @@ void UIVMActivityMonitorPaneContainer::sltRetranslateUI()
         m_pColorLabel[0]->setText(QApplication::translate("UIVMActivityMonitorPaneContainer", "Data Series 1 Color"));
     if (m_pColorLabel[1])
         m_pColorLabel[1]->setText(QApplication::translate("UIVMActivityMonitorPaneContainer", "Data Series 2 Color"));
+    if (m_pResetButton)
+        m_pResetButton->setText(QApplication::translate("UIVMActivityMonitorPaneContainer", "Reset to Defaults"));
+
 }
 
 void UIVMActivityMonitorPaneContainer::colorPushButtons(QPushButton *pButton, const QColor &color)
@@ -104,9 +122,20 @@ void UIVMActivityMonitorPaneContainer::setDataSeriesColor(int iIndex, const QCol
 {
     if (iIndex == 0 || iIndex == 1)
     {
-        m_color[iIndex] = color;
-        colorPushButtons(m_pColorChangeButton[iIndex], color);
+        if (m_color[iIndex] != color)
+        {
+            m_color[iIndex] = color;
+            colorPushButtons(m_pColorChangeButton[iIndex], color);
+            emit sigColorChanged(iIndex, color);
+        }
     }
+}
+
+QColor UIVMActivityMonitorPaneContainer::dataSeriesColor(int iIndex) const
+{
+    if (iIndex >= 0 && iIndex < 2)
+        return m_color[iIndex];
+    return QColor();
 }
 
 void UIVMActivityMonitorPaneContainer::sltColorChangeButtonPressed()
@@ -128,4 +157,11 @@ void UIVMActivityMonitorPaneContainer::sltColorChangeButtonPressed()
     m_color[iIndex] = newColor;
     colorPushButtons(m_pColorChangeButton[iIndex], newColor);
     emit sigColorChanged(iIndex, newColor);
+}
+
+void UIVMActivityMonitorPaneContainer::sltResetToDefaults()
+{
+    /* Reset data series colors: */
+    setDataSeriesColor(0, QApplication::palette().color(QPalette::LinkVisited));
+    setDataSeriesColor(1, QApplication::palette().color(QPalette::Link));
 }

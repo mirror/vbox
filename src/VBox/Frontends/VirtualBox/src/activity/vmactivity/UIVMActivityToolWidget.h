@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_activity_overview_UIVMActivityToolWidget_h
-#define FEQT_INCLUDED_SRC_activity_overview_UIVMActivityToolWidget_h
+#ifndef FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityToolWidget_h
+#define FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityToolWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -113,8 +113,8 @@ private:
     QAction *m_pExportToFileAction;
     UIVMActivityMonitorPaneContainer *m_pPaneContainer;
     QTabWidget *m_pTabWidget;
-    QColor m_dataSeriesColor[2];
+    //QColor m_dataSeriesColor[2];
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_activity_overview_UIVMActivityToolWidget_h */
+#endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityToolWidget_h */

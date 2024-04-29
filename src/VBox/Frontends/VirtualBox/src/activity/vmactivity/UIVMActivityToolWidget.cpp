@@ -63,8 +63,8 @@ UIVMActivityToolWidget::UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPoo
     , m_pPaneContainer(0)
     , m_pTabWidget(0)
 {
-    loadSettings();
     prepare();
+    loadSettings();
     prepareActions();
     prepareToolBar();
     sltCurrentTabChanged(0);
@@ -72,28 +72,34 @@ UIVMActivityToolWidget::UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPoo
 
 void UIVMActivityToolWidget::loadSettings()
 {
-    QStringList colorList = gEDataManager->VMActivityMonitorDataSeriesColors();
-    if (colorList.size() == 2)
+    if (m_pPaneContainer)
     {
-        for (int i = 0; i < 2; ++i)
+        QStringList colorList = gEDataManager->VMActivityMonitorDataSeriesColors();
+        if (colorList.size() == 2)
         {
-            QColor color(colorList[i]);
-            if (color.isValid())
-                m_dataSeriesColor[i] = color;
+            for (int i = 0; i < 2; ++i)
+            {
+                QColor color(colorList[i]);
+                if (color.isValid())
+                    m_pPaneContainer->setDataSeriesColor(i, color);
+            }
         }
+        if (!m_pPaneContainer->dataSeriesColor(0).isValid())
+            m_pPaneContainer->setDataSeriesColor(0, QApplication::palette().color(QPalette::LinkVisited));
+        if (!m_pPaneContainer->dataSeriesColor(1).isValid())
+            m_pPaneContainer->setDataSeriesColor(1, QApplication::palette().color(QPalette::Link));
     }
-    if (!m_dataSeriesColor[0].isValid())
-        m_dataSeriesColor[0] = QApplication::palette().color(QPalette::LinkVisited);
-    if (!m_dataSeriesColor[1].isValid())
-        m_dataSeriesColor[1] = QApplication::palette().color(QPalette::Link);
 }
 
 void UIVMActivityToolWidget::saveSettings()
 {
-    QStringList colorList;
-    colorList << m_dataSeriesColor[0].name(QColor::HexArgb);
-    colorList << m_dataSeriesColor[1].name(QColor::HexArgb);
-    gEDataManager->setVMActivityMonitorDataSeriesColors(colorList);
+    if (m_pPaneContainer)
+    {
+        QStringList colorList;
+        colorList << m_pPaneContainer->dataSeriesColor(0).name(QColor::HexArgb);
+        colorList << m_pPaneContainer->dataSeriesColor(1).name(QColor::HexArgb);
+        gEDataManager->setVMActivityMonitorDataSeriesColors(colorList);
+    }
 }
 
 QMenu *UIVMActivityToolWidget::menu() const
@@ -123,8 +129,6 @@ void UIVMActivityToolWidget::prepare()
 
 
     m_pPaneContainer = new UIVMActivityMonitorPaneContainer(this, m_enmEmbedding);
-    for (int i = 0; i < 2; ++i)
-        m_pPaneContainer->setDataSeriesColor(i, m_dataSeriesColor[i]);
     m_pPaneContainer->hide();
     pMainLayout->addWidget(m_pPaneContainer);
     connect(m_pTabWidget, &QTabWidget::currentChanged,
@@ -237,8 +241,11 @@ void UIVMActivityToolWidget::addTabs(const QList<UIVirtualMachineItem*> &machine
         {
             CMachine comMachine = pMachine->toLocal()->machine();
             UIVMActivityMonitorLocal *pActivityMonitor = new UIVMActivityMonitorLocal(m_enmEmbedding, this, comMachine);
-            pActivityMonitor->setDataSeriesColor(0, m_dataSeriesColor[0]);
-            pActivityMonitor->setDataSeriesColor(1, m_dataSeriesColor[1]);
+            if (m_pPaneContainer)
+            {
+                pActivityMonitor->setDataSeriesColor(0, m_pPaneContainer->dataSeriesColor(0));
+                pActivityMonitor->setDataSeriesColor(1, m_pPaneContainer->dataSeriesColor(1));
+            }
             m_pTabWidget->addTab(pActivityMonitor, comMachine.GetName());
             continue;
         }
@@ -248,9 +255,12 @@ void UIVMActivityToolWidget::addTabs(const QList<UIVirtualMachineItem*> &machine
             if (!comMachine.isOk())
                 continue;
             UIVMActivityMonitorCloud *pActivityMonitor = new UIVMActivityMonitorCloud(m_enmEmbedding, this, comMachine);
-            pActivityMonitor->setDataSeriesColor(0, m_dataSeriesColor[0]);
-            pActivityMonitor->setDataSeriesColor(1, m_dataSeriesColor[1]);
-            m_pTabWidget->addTab(pActivityMonitor, comMachine.GetName());
+            if (m_pPaneContainer)
+            {
+                pActivityMonitor->setDataSeriesColor(0, m_pPaneContainer->dataSeriesColor(0));
+                pActivityMonitor->setDataSeriesColor(1, m_pPaneContainer->dataSeriesColor(1));
+            }
+             m_pTabWidget->addTab(pActivityMonitor, comMachine.GetName());
             continue;
         }
     }
@@ -293,8 +303,6 @@ void UIVMActivityToolWidget::sltDataSeriesColorChanged(int iIndex, const QColor 
         if (!pMonitor)
             continue;
         pMonitor->setDataSeriesColor(iIndex, color);
-        if (iIndex >= 0 && iIndex < 2)
-            m_dataSeriesColor[iIndex] = color;
     }
     saveSettings();
 }

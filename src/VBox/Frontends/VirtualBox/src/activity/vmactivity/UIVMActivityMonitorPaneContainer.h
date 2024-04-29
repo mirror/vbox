@@ -52,11 +52,13 @@ public:
 
     UIVMActivityMonitorPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo = EmbedTo_Stack);
     void setDataSeriesColor(int iIndex, const QColor &color);
+    QColor dataSeriesColor(int iIndex) const;
 
 private slots:
 
     void sltRetranslateUI();
     void sltColorChangeButtonPressed();
+    void sltResetToDefaults();
 
 private:
     enum Tab
@@ -68,10 +70,9 @@ private:
     void colorPushButtons(QPushButton *pButton, const QColor &color);
     QString m_strTabText;
 
-
     QLabel *m_pColorLabel[2];
     QPushButton *m_pColorChangeButton[2];
-
+    QPushButton *m_pResetButton;
 
     QColor m_color[2];
 
