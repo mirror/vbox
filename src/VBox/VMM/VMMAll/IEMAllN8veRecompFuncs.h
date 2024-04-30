@@ -7469,7 +7469,7 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
 
         /* IEMNATIVE_CALL_ARG2_GREG = idxVarValue */
         off = iemNativeEmitLoadArgGregFromImmOrStackVar(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, idxVarValue, 0 /*offAddend*/,
-                                                        IEMNATIVE_CALL_VOLATILE_GREG_MASK & ~IEMNATIVE_CALL_ARG1_GREG);
+                                                        IEMNATIVE_CALL_VOLATILE_GREG_MASK & ~RT_BIT_32(IEMNATIVE_CALL_ARG1_GREG));
     }
 
     /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
