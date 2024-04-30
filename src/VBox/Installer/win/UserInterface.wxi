@@ -575,7 +575,8 @@
                  of Windows that use other default background colors, and on the machines of users that
                  change their Windows color scheme.
                  Also see: http://osdir.com/ml/windows.devel.wix.user/2005-02/msg00300.html -->
-            <Control Id="StartVBoxCheckBox" Type="CheckBox" X="135" Y="115" Width="200" Height="17" Property="VBOX_START" CheckBoxValue="1" Default="no" HideCondition="(InstallMode=&quot;Repair&quot;) OR (InstallMode=&quot;Remove&quot;) OR&#xA;                      (InstallMode=&quot;Change&quot;)">
+            <Control Id="StartVBoxCheckBox" Type="CheckBox" X="135" Y="115" Width="200" Height="17" Property="VBOX_START" CheckBoxValue="1" Default="no" 
+                     HideCondition="(InstallMode=&quot;Repair&quot;) OR (InstallMode=&quot;Remove&quot;) OR (InstallMode=&quot;Change&quot;)">
                 <Text Value="!(loc.ExitDlg_StartVBox)" />
 
             </Control>
@@ -1233,10 +1234,10 @@
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
             <!-- Check for the Python core package and other dependencies first.
                  The install helper code will set the public properties VBOX_PYTHON_INSTALLED / VBOX_PYTHON_DEPS_INSTALLED. -->
-            <Custom Action="ca_IsPythonInstalled" After="CostFinalize" Condition="1" />
-            <Custom Action="ca_ArePythonAPIDepsInstalled" After="CostFinalize" Condition="1" />
+            <Custom Action="ca_IsPythonInstalled" After="CostFinalize" />
+            <Custom Action="ca_ArePythonAPIDepsInstalled" After="CostFinalize" />
 <?endif?>
-            <FindRelatedProducts Suppress="no" Condition="1" />
+            <FindRelatedProducts Suppress="no" />
 
             <Show Dialog="VBoxFatalErrorDlg" OnExit="error" />
             <Show Dialog="VBoxUserExitDlg" OnExit="cancel" />
@@ -1244,7 +1245,7 @@
             <Show Dialog="VBoxWelcomeDlg" After="MigrateFeatureStates" Condition="NOT Installed" />
             <Show Dialog="VBoxResumeDlg" After="VBoxWelcomeDlg" Condition="Installed AND (RESUME OR Preselected)" />
             <Show Dialog="VBoxMaintenanceWelcomeDlg" After="VBoxResumeDlg" Condition="Installed AND (NOT RESUME) AND (NOT Preselected)" />
-            <Show Dialog="VBoxExitDlg" OnExit="success" Condition="1" />
+            <Show Dialog="VBoxExitDlg" OnExit="success" />
             <Show Dialog="VBoxProgressDlg" After="VBoxMaintenanceWelcomeDlg" />
 
         </InstallUISequence>
