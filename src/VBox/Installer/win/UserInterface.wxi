@@ -575,7 +575,7 @@
                  of Windows that use other default background colors, and on the machines of users that
                  change their Windows color scheme.
                  Also see: http://osdir.com/ml/windows.devel.wix.user/2005-02/msg00300.html -->
-            <Control Id="StartVBoxCheckBox" Type="CheckBox" X="135" Y="115" Width="200" Height="17" Property="VBOX_START" CheckBoxValue="1" Default="no" 
+            <Control Id="StartVBoxCheckBox" Type="CheckBox" X="135" Y="115" Width="200" Height="17" Property="VBOX_START" CheckBoxValue="1" Default="no"
                      HideCondition="(InstallMode=&quot;Repair&quot;) OR (InstallMode=&quot;Remove&quot;) OR (InstallMode=&quot;Change&quot;)">
                 <Text Value="!(loc.ExitDlg_StartVBox)" />
 
