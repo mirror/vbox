@@ -56,6 +56,7 @@ class QGridLayout;
 class QTimer;
 class QVBoxLayout;
 class QLabel;
+class UIActionPool;
 class UIChart;
 class UISession;
 class UIRuntimeInfoWidget;
@@ -154,7 +155,7 @@ class  SHARED_LIBRARY_STUFF UIVMActivityMonitor : public QWidget
 
 public:
 
-    UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, int iMaximumQueueSize);
+    UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, UIActionPool *pActionPool, int iMaximumQueueSize);
     virtual QUuid machineId() const = 0;
     virtual QString machineName() const = 0;
     void setDataSeriesColor(int iIndex, const QColor &color);
@@ -239,6 +240,7 @@ private:
     /** Holds the instance of layout we create. */
     QVBoxLayout *m_pMainLayout;
     EmbedTo m_enmEmbedding;
+    UIActionPool *m_pActionPool;
 };
 
 class  SHARED_LIBRARY_STUFF UIVMActivityMonitorLocal : public UIVMActivityMonitor
@@ -250,7 +252,7 @@ public:
 
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference. */
-    UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine);
+    UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine, UIActionPool *pActionPool);
     ~UIVMActivityMonitorLocal();
     virtual QUuid machineId() const RT_OVERRIDE;
     virtual QString machineName() const RT_OVERRIDE;
@@ -318,7 +320,7 @@ class  SHARED_LIBRARY_STUFF UIVMActivityMonitorCloud : public UIVMActivityMonito
 
 public:
 
-    UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine);
+    UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine, UIActionPool *pActionPool);
     virtual QUuid machineId() const RT_OVERRIDE;
     virtual QString machineName() const RT_OVERRIDE;
     /** According to OCI docs returned time stamp is in RFC3339 format. */

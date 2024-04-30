@@ -319,7 +319,7 @@ void UIVMActivityMonitorContainer::addLocalMachine(const CMachine &comMachine)
     AssertReturnVoid(m_pTabWidget);
     if (!comMachine.isOk())
         return;
-    UIVMActivityMonitorLocal *pActivityMonitor = new UIVMActivityMonitorLocal(m_enmEmbedding, this, comMachine);
+    UIVMActivityMonitorLocal *pActivityMonitor = new UIVMActivityMonitorLocal(m_enmEmbedding, this, comMachine, m_pActionPool);
     if (m_pPaneContainer)
     {
         pActivityMonitor->setDataSeriesColor(0, m_pPaneContainer->dataSeriesColor(0));
@@ -333,7 +333,7 @@ void UIVMActivityMonitorContainer::addCloudMachine(const CCloudMachine &comMachi
     AssertReturnVoid(m_pTabWidget);
     if (!comMachine.isOk())
         return;
-    UIVMActivityMonitorCloud *pActivityMonitor = new UIVMActivityMonitorCloud(m_enmEmbedding, this, comMachine);
+    UIVMActivityMonitorCloud *pActivityMonitor = new UIVMActivityMonitorCloud(m_enmEmbedding, this, comMachine, m_pActionPool);
     if (m_pPaneContainer)
     {
         pActivityMonitor->setDataSeriesColor(0, m_pPaneContainer->dataSeriesColor(0));

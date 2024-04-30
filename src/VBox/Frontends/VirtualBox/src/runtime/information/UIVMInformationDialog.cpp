@@ -33,6 +33,7 @@
 /* GUI includes: */
 #include "QITabWidget.h"
 #include "QIDialogButtonBox.h"
+#include "UIActionPool.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
@@ -45,7 +46,7 @@
 #include "UIMachine.h"
 #include "UIMachineView.h"
 #include "UIMessageCenter.h"
-#include "UIVMActivityMonitor.h"
+#include "UIVMActivityMonitorContainer.h"
 #include "UISession.h"
 #include "UIShortcutPool.h"
 #include "UITranslationEventListener.h"
@@ -53,11 +54,12 @@
 #include "UIVMInformationDialog.h"
 #include "VBoxUtils.h"
 
-UIVMInformationDialog::UIVMInformationDialog()
+UIVMInformationDialog::UIVMInformationDialog(UIActionPool *pActionPool)
     : QMainWindowWithRestorableGeometry(0)
     , m_pTabWidget(0)
     , m_fCloseEmitted(false)
     , m_iGeometrySaveTimerId(-1)
+    , m_pActionPool(pActionPool)
 {
     prepare();
 }
@@ -223,14 +225,15 @@ void UIVMInformationDialog::prepareTabWidget()
             m_pTabWidget->addTab(m_tabs.value(Tabs_RuntimeInformation), QString());
         }
 
-        /* Create Performance Monitor tab: */
-        UIVMActivityMonitorLocal *pVMActivityMonitorWidget =
-            new UIVMActivityMonitorLocal(EmbedTo_Dialog, this, gpMachine->uisession()->machine());
-        if (pVMActivityMonitorWidget)
+        /* Create Activity Monitor tab: */
+        UIVMActivityMonitorContainer *pVMActivityMonitorContainer = new UIVMActivityMonitorContainer(this, m_pActionPool, EmbedTo_Dialog);
+
+        // UIVMActivityMonitorLocal *pVMActivityMonitorWidget =
+        //     new UIVMActivityMonitorLocal(EmbedTo_Dialog, this, gpMachine->uisession()->machine());
+        if (pVMActivityMonitorContainer)
         {
-            connect(gpMachine, &UIMachine::sigAdditionsStateChange,
-                    pVMActivityMonitorWidget, &UIVMActivityMonitorLocal::sltGuestAdditionsStateChange);
-            m_tabs.insert(Tabs_ActivityMonitor, pVMActivityMonitorWidget);
+            pVMActivityMonitorContainer->addLocalMachine(gpMachine->uisession()->machine());
+            m_tabs.insert(Tabs_ActivityMonitor, pVMActivityMonitorContainer);
             m_pTabWidget->addTab(m_tabs.value(Tabs_ActivityMonitor), QString());
         }
 

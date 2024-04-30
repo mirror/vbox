@@ -1653,7 +1653,7 @@ void UIMachineLogic::sltShowInformationDialog()
     /* Create instance if not yet created: */
     if (!m_pVMInformationDialog)
     {
-        m_pVMInformationDialog = new UIVMInformationDialog;
+        m_pVMInformationDialog = new UIVMInformationDialog(actionPool());
         connect(m_pVMInformationDialog, &UIVMInformationDialog::sigClose,
                 this, &UIMachineLogic::sltCloseInformationDialog);
     }
