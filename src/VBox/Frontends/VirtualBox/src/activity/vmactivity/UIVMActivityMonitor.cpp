@@ -86,7 +86,7 @@ signals:
 
 public:
 
-    UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize);
+    UIChart(QWidget *pParent, UIMetric *pMetric, UIActionPool *pActionPool, int iMaximumQueueSize);
     void setFontSize(int iFontSize);
     int  fontSize() const;
     const QStringList &textList() const;
@@ -190,13 +190,14 @@ private:
     int m_iRightMarginCharWidth;
     int m_iMaximumQueueSize;
     QLabel *m_pMouseOverLabel;
+    UIActionPool *m_pActionPool;
 };
 
 /*********************************************************************************************************************************
 *   UIChart implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
+UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, UIActionPool *pActionPool, int iMaximumQueueSize)
     : QWidget(pParent)
     , m_pMetric(pMetric)
     , m_size(QSize(50, 50))
@@ -213,6 +214,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     , m_iRightMarginCharWidth(10)
     , m_iMaximumQueueSize(iMaximumQueueSize)
     , m_pMouseOverLabel(0)
+    , m_pActionPool(pActionPool)
 {
     QPalette tempPal = palette();
     tempPal.setColor(QPalette::Window, tempPal.color(QPalette::Window).lighter(g_iBackgroundTint));
@@ -830,6 +832,8 @@ void UIChart::sltCreateContextMenu(const QPoint &point)
         menu.addAction(QApplication::translate("UIVMInformationDialog", "Export"));
     pExportAction->setIcon(UIIconPool::iconSet(":/performance_monitor_export_16px.png"));
     connect(pExportAction, &QAction::triggered, this, &UIChart::sigExportMetricsToFile);
+    if (uiCommon().uiType() == UIType_RuntimeUI)
+        menu.addAction(m_pActionPool->action(UIActionIndex_M_Activity_T_Preferences));
     menu.addSeparator();
     QAction *pResetAction = menu.addAction(m_strResetActionLabel);
     connect(pResetAction, &QAction::triggered, this, &UIChart::sltResetMetric);
@@ -1077,9 +1081,9 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
     , m_pTimer(0)
     , m_iTimeStep(0)
     , m_iMaximumQueueSize(iMaximumQueueSize)
+    , m_pActionPool(pActionPool)
     , m_pMainLayout(0)
     , m_enmEmbedding(enmEmbedding)
-    , m_pActionPool(pActionPool)
 {
     uiCommon().setHelpKeyword(this, "vm-session-information");
     setContextMenuPolicy(Qt::CustomContextMenu);
@@ -1187,6 +1191,8 @@ void UIVMActivityMonitor::sltCreateContextMenu(const QPoint &point)
         menu.addAction(QApplication::translate("UIVMInformationDialog", "Export"));
     pExportAction->setIcon(UIIconPool::iconSet(":/performance_monitor_export_16px.png"));
     connect(pExportAction, &QAction::triggered, this, &UIVMActivityMonitor::sltExportMetricsToFile);
+    if (uiCommon().uiType() == UIType_RuntimeUI)
+        menu.addAction(m_pActionPool->action(UIActionIndex_M_Activity_T_Preferences));
     menu.exec(mapToGlobal(point));
 }
 
@@ -1504,7 +1510,7 @@ void UIVMActivityMonitorLocal::prepareWidgets()
         pChartLayout->addWidget(pLabel);
         m_infoLabels.insert(enmType, pLabel);
 
-        UIChart *pChart = new UIChart(this, &(m_metrics[enmType]), m_iMaximumQueueSize);
+        UIChart *pChart = new UIChart(this, &(m_metrics[enmType]), m_pActionPool, m_iMaximumQueueSize);
         connect(pChart, &UIChart::sigExportMetricsToFile,
                 this, &UIVMActivityMonitor::sltExportMetricsToFile);
         m_charts.insert(enmType, pChart);
@@ -2299,7 +2305,7 @@ void UIVMActivityMonitorCloud::prepareWidgets()
         pChartLayout->addWidget(pLabel);
         m_infoLabels.insert(enmType, pLabel);
 
-        UIChart *pChart = new UIChart(this, &(m_metrics[enmType]), m_iMaximumQueueSize);
+        UIChart *pChart = new UIChart(this, &(m_metrics[enmType]), m_pActionPool, m_iMaximumQueueSize);
         connect(pChart, &UIChart::sigExportMetricsToFile,
                 this, &UIVMActivityMonitor::sltExportMetricsToFile);
         m_charts.insert(enmType, pChart);
