@@ -40,16 +40,16 @@
             Condition="(VersionNT >= 600) AND $cp_NetLwfDriver=3 AND (NOT Installed)" />
 
     <Custom Action="ca_RollbackUninstallNetLwfArgs" Before="ca_RollbackUninstallNetLwf"
-            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')"  />
+            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE=&quot;ALL&quot;)"  />
 
     <Custom Action="ca_RollbackUninstallNetLwf" Before="ca_UninstallNetLwf"
-            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')" />
+            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE=&quot;ALL&quot;)" />
 
     <Custom Action="ca_UninstallNetLwfArgs" Before="ca_UninstallNetLwf"
-            Condition="((UPGRADINGPRODUCTCODE) OR (REMOVE='ALL'))" />
+            Condition="((UPGRADINGPRODUCTCODE) OR (REMOVE=&quot;ALL&quot;))" />
 
     <Custom Action="ca_UninstallNetLwf" After="InstallInitialize"
-            Condition="((UPGRADINGPRODUCTCODE) OR (REMOVE='ALL'))" />
+            Condition="((UPGRADINGPRODUCTCODE) OR (REMOVE=&quot;ALL&quot;))" />
 
 <?endif?> <!-- VBOX_WITH_NETFLT -->
 

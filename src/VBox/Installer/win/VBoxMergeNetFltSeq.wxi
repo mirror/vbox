@@ -40,16 +40,16 @@
             Condition="$cp_NetFltDriver=3 AND (NOT Installed)" />
 
     <Custom Action="ca_RollbackUninstallNetFltArgs" Before="ca_RollbackUninstallNetFlt"
-            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')" />
+            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE=&quot;ALL&quot;)" />
 
     <Custom Action="ca_RollbackUninstallNetFlt" Before="ca_UninstallNetFlt"
-            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')" />
+            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE=&quot;ALL&quot;)" />
 
     <Custom Action="ca_UninstallNetFltArgs" Before="ca_UninstallNetFlt"
-            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')" />
+            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE=&quot;ALL&quot;)" />
 
     <Custom Action="ca_UninstallNetFlt" After="InstallInitialize"
-            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE='ALL')" />
+            Condition="(UPGRADINGPRODUCTCODE) OR (REMOVE=&quot;ALL&quot;)" />
 
 <?endif?> <!-- VBOX_WITH_NETFLT -->
 

@@ -40,13 +40,13 @@
          install helper DLL does. It's very surprising behavior and needs
          digging through a lot of code to understand the where and why. -->
     <Custom Action="ca_RemoveHostOnlyInterfaces" After="InstallInitialize"
-            Condition="NOT (UPGRADINGPRODUCTCODE) AND (Installed) AND (REMOVE='ALL')" />
+            Condition="NOT (UPGRADINGPRODUCTCODE) AND (Installed) AND (REMOVE=&quot;ALL&quot;)" />
 
     <!-- Stop the host-only interfaces on update only. Driver still has to be
          uninstalled, and the creation of interfaces in the new installer will
          do the actual upgrading, preserving the interfaces. -->
     <Custom Action="ca_StopHostOnlyInterfaces" After="InstallInitialize"
-            Condition="(UPGRADINGPRODUCTCODE) AND (REMOVE='ALL')" />
+            Condition="(UPGRADINGPRODUCTCODE) AND (REMOVE=&quot;ALL&quot;)" />
 
     <!-- Uninstall the driver only on package upgrade, as for uninstall it is
          included in ca_RemoveHostOnlyInterfaces.
@@ -54,10 +54,10 @@
          install helper DLL does. It's very surprising behavior and needs
          digging through a lot of code to understand the where and why. -->
     <Custom Action="ca_UninstallNetAdpArgs" Before="ca_UninstallNetAdp"
-            Condition="(UPGRADINGPRODUCTCODE) AND (REMOVE='ALL')" />
+            Condition="(UPGRADINGPRODUCTCODE) AND (REMOVE=&quot;ALL&quot;)" />
 
     <Custom Action="ca_UninstallNetAdp" After="ca_StopHostOnlyInterfaces"
-            Condition="(UPGRADINGPRODUCTCODE) AND (REMOVE='ALL')" />
+            Condition="(UPGRADINGPRODUCTCODE) AND (REMOVE=&quot;ALL&quot;)" />
 
 <?endif?>
 
