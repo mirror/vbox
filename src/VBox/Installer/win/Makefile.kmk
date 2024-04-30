@@ -571,6 +571,7 @@ define def_vbox_build_msi
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-lib $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixlib \
+		-ext $(VBOX_TOOLS_WIN_WIXEXT_DIR)/WixToolset.DifxApp.wixext.dll \
 		-ext $(VBOX_TOOLS_WIN_WIXEXT_DIR)/WixToolset.Util.wixext.dll \
 		-pdbtype none \
 		-out $$@
@@ -588,6 +589,7 @@ define def_vbox_build_msi
 		'  files-VirtualBox_$(lang)/Language_$(lang).wxl ^' \
 		'  files-VirtualBox_$(lang)/License_$(lang).wxl ^' \
 		'  -lib VirtualBox_en_US.wixlib ^' \
+		'  -ext $(VBOX_TOOLS_WIN_WIXEXT_DIR)/WixToolset.DifxApp.wixext.dll ^' \
 		'  -ext $(VBOX_TOOLS_WIN_WIXEXT_DIR)/WixToolset.Util.wixext.dll ^' \
 		'  -pdbtype none ^' \
 		'  -out $$(@F) ^' \
@@ -1043,6 +1045,7 @@ define def_vbox_create_mst
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-lib $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_en_US.wixlib \
 		-ext $(VBOX_TOOLS_WIN_WIXEXT_DIR)/WixToolset.Util.wixext.dll \
+		-ext $(VBOX_TOOLS_WIN_WIXEXT_DIR)/WixToolset.DifxApp.wixext.dll \
 		-pdbtype none \
 		-out $$(@D)/$(PACKAGE_NAME_LANG)_$(lang).msi
 	$(REDIRECT) -C $$(@D) -- $$(VBOX_PATH_MSITRAN) -g $$< $(PACKAGE_NAME_LANG)_$(lang).msi $(lang).mst
