@@ -256,13 +256,7 @@ public:
     ~UIVMActivityMonitorLocal();
     virtual QUuid machineId() const RT_OVERRIDE;
     virtual QString machineName() const RT_OVERRIDE;
-
-public slots:
-
-    /** @name These functions are connected to API events and implement necessary updates.
-     * @{ */
-        void sltGuestAdditionsStateChange();
-    /** @} */
+    void guestAdditionsStateChange();
 
 protected slots:
 

@@ -100,6 +100,7 @@ public:
     void removeTabs(const QVector<QUuid> &machineIdsToRemove);
     void addLocalMachine(const CMachine &comMachine);
     void addCloudMachine(const CCloudMachine &comMachine);
+    void guestAdditionsStateChange(const QUuid &machineId);
 
 private slots:
 

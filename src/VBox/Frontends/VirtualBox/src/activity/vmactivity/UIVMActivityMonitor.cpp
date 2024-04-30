@@ -1434,7 +1434,7 @@ QString UIVMActivityMonitorLocal::defaultMachineFolder() const
         return QString();
 }
 
-void UIVMActivityMonitorLocal::sltGuestAdditionsStateChange()
+void UIVMActivityMonitorLocal::guestAdditionsStateChange()
 {
     bool fGuestAdditionsAvailable = guestAdditionsAvailable("6.1");
     if (m_fGuestAdditionsAvailable == fGuestAdditionsAvailable)
