@@ -25,20 +25,29 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitorPaneContainer_h
-#define FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitorPaneContainer_h
+#ifndef FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitorContainer_h
+#define FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitorContainer_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
+
+/* Qt includes: */
+#include <QUuid>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
 #include "UIPaneContainer.h"
 
+class CCloudMachine;
+class CMachine;
 class QColor;
 class QLabel;
 class QPushButton;
+class QTabWidget;
+class UIActionPool;
 
+/** A pane container class for activity monitor widget. It hosts several controls
+   for activity monitor settings. */
 class SHARED_LIBRARY_STUFF UIVMActivityMonitorPaneContainer : public UIPaneContainer
 {
 
@@ -50,7 +59,7 @@ signals:
 
 public:
 
-    UIVMActivityMonitorPaneContainer(QWidget *pParent, EmbedTo enmEmbedTo = EmbedTo_Stack);
+    UIVMActivityMonitorPaneContainer(QWidget *pParent);
     void setDataSeriesColor(int iIndex, const QColor &color);
     QColor dataSeriesColor(int iIndex) const;
 
@@ -78,7 +87,39 @@ private:
 
 };
 
+/** A QWidget extension to host a tab widget and UIVMActivityMonitorPaneContainer. The tab widget
+ hosts possibly multiple pages of UIVMActivityMonitor. */
+class SHARED_LIBRARY_STUFF UIVMActivityMonitorContainer : public QWidget
+{
 
+    Q_OBJECT;
 
+public:
 
-#endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitorPaneContainer_h */
+    UIVMActivityMonitorContainer(QWidget *pParent, UIActionPool *pActionPool, EmbedTo enmEmbedding);
+    void removeTabs(const QVector<QUuid> &machineIdsToRemove);
+    void addLocalMachine(const CMachine &comMachine);
+    void addCloudMachine(const CCloudMachine &comMachine);
+
+private slots:
+
+    void sltCurrentTabChanged(int iIndex);
+    void sltDataSeriesColorChanged(int iIndex, const QColor &color);
+    void sltExportToFile();
+    void sltTogglePreferencesPane(bool fChecked);
+
+private:
+
+    void prepare();
+    void loadSettings();
+    void saveSettings();
+    void setExportActionEnabled(bool fEnabled);
+
+    UIVMActivityMonitorPaneContainer *m_pPaneContainer;
+    QTabWidget *m_pTabWidget;
+    QAction *m_pExportToFileAction;
+    UIActionPool *m_pActionPool;
+    EmbedTo m_enmEmbedding;
+};
+
+#endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitorContainer_h */

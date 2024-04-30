@@ -29,28 +29,23 @@
 #include <QApplication>
 #include <QVBoxLayout>
 #include <QStyle>
-#include <QTabWidget>
 
 /* GUI includes: */
 #include "QIToolBar.h"
 #include "UIActionPoolManager.h"
-#include "UIExtraDataManager.h"
-#include "UIGlobalSession.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVMActivityToolWidget.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualMachineItem.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
-#include "UIVMActivityMonitorPaneContainer.h"
+#include "UIVMActivityMonitorContainer.h"
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
 #endif /* VBOX_WS_MAC */
 
 /* COM includes: */
-#include "assert.h"
 #include "CMachine.h"
-
 
 UIVMActivityToolWidget::UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                  bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
@@ -59,48 +54,13 @@ UIVMActivityToolWidget::UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPoo
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
     , m_pToolBar(0)
-    , m_pExportToFileAction(0)
-    , m_pPaneContainer(0)
-    , m_pTabWidget(0)
+    , m_pMonitorContainer(0)
 {
     prepare();
-    loadSettings();
     prepareActions();
     prepareToolBar();
-    sltCurrentTabChanged(0);
 }
 
-void UIVMActivityToolWidget::loadSettings()
-{
-    if (m_pPaneContainer)
-    {
-        QStringList colorList = gEDataManager->VMActivityMonitorDataSeriesColors();
-        if (colorList.size() == 2)
-        {
-            for (int i = 0; i < 2; ++i)
-            {
-                QColor color(colorList[i]);
-                if (color.isValid())
-                    m_pPaneContainer->setDataSeriesColor(i, color);
-            }
-        }
-        if (!m_pPaneContainer->dataSeriesColor(0).isValid())
-            m_pPaneContainer->setDataSeriesColor(0, QApplication::palette().color(QPalette::LinkVisited));
-        if (!m_pPaneContainer->dataSeriesColor(1).isValid())
-            m_pPaneContainer->setDataSeriesColor(1, QApplication::palette().color(QPalette::Link));
-    }
-}
-
-void UIVMActivityToolWidget::saveSettings()
-{
-    if (m_pPaneContainer)
-    {
-        QStringList colorList;
-        colorList << m_pPaneContainer->dataSeriesColor(0).name(QColor::HexArgb);
-        colorList << m_pPaneContainer->dataSeriesColor(1).name(QColor::HexArgb);
-        gEDataManager->setVMActivityMonitorDataSeriesColors(colorList);
-    }
-}
 
 QMenu *UIVMActivityToolWidget::menu() const
 {
@@ -120,21 +80,9 @@ void UIVMActivityToolWidget::setIsCurrentTool(bool fIsCurrentTool)
 void UIVMActivityToolWidget::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-
-    m_pTabWidget = new QTabWidget(this);
-    m_pTabWidget->setTabPosition(QTabWidget::East);
-    m_pTabWidget->setTabBarAutoHide(true);
-
-    pMainLayout->addWidget(m_pTabWidget);
-
-
-    m_pPaneContainer = new UIVMActivityMonitorPaneContainer(this, m_enmEmbedding);
-    m_pPaneContainer->hide();
-    pMainLayout->addWidget(m_pPaneContainer);
-    connect(m_pTabWidget, &QTabWidget::currentChanged,
-            this, &UIVMActivityToolWidget::sltCurrentTabChanged);
-    connect(m_pPaneContainer, &UIVMActivityMonitorPaneContainer::sigColorChanged,
-            this, &UIVMActivityToolWidget::sltDataSeriesColorChanged);
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
+    m_pMonitorContainer = new UIVMActivityMonitorContainer(this, m_pActionPool, m_enmEmbedding);
+    pMainLayout->addWidget(m_pMonitorContainer);
 }
 
 void UIVMActivityToolWidget::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
@@ -166,7 +114,7 @@ void UIVMActivityToolWidget::setMachines(const QList<UIVirtualMachineItem*> &mac
     }
     m_machineIds = machineIds;
 
-    removeTabs(unselectedMachines);
+    m_pMonitorContainer->removeTabs(unselectedMachines);
     addTabs(newSelections);
 }
 
@@ -176,14 +124,6 @@ void UIVMActivityToolWidget::prepareActions()
         m_pActionPool->action(UIActionIndex_M_Activity_S_ToVMActivityOverview);
     if (pToResourcesAction)
         connect(pToResourcesAction, &QAction::triggered, this, &UIVMActivityToolWidget::sigSwitchToActivityOverviewPane);
-
-    m_pExportToFileAction =
-        m_pActionPool->action(UIActionIndex_M_Activity_S_Export);
-    if (m_pExportToFileAction)
-        connect(m_pExportToFileAction, &QAction::triggered, this, &UIVMActivityToolWidget::sltExportToFile);
-    if (m_pActionPool->action(UIActionIndex_M_Activity_T_Preferences))
-        connect(m_pActionPool->action(UIActionIndex_M_Activity_T_Preferences), &QAction::toggled,
-                this, &UIVMActivityToolWidget::sltTogglePreferencesPane);
 }
 
 void UIVMActivityToolWidget::prepareToolBar()
@@ -211,28 +151,9 @@ void UIVMActivityToolWidget::prepareToolBar()
     }
 }
 
-void UIVMActivityToolWidget::removeTabs(const QVector<QUuid> &machineIdsToRemove)
-{
-    AssertReturnVoid(m_pTabWidget);
-    QVector<UIVMActivityMonitor*> removeList;
-
-    for (int i = m_pTabWidget->count() - 1; i >= 0; --i)
-    {
-        UIVMActivityMonitor *pMonitor = qobject_cast<UIVMActivityMonitor*>(m_pTabWidget->widget(i));
-        if (!pMonitor)
-            continue;
-        if (machineIdsToRemove.contains(pMonitor->machineId()))
-        {
-            removeList << pMonitor;
-            m_pTabWidget->removeTab(i);
-        }
-    }
-    qDeleteAll(removeList.begin(), removeList.end());
-}
-
 void UIVMActivityToolWidget::addTabs(const QList<UIVirtualMachineItem*> &machines)
 {
-    AssertReturnVoid(m_pTabWidget);
+    AssertReturnVoid(m_pMonitorContainer);
     foreach (UIVirtualMachineItem* pMachine, machines)
     {
         if (!pMachine)
@@ -240,13 +161,9 @@ void UIVMActivityToolWidget::addTabs(const QList<UIVirtualMachineItem*> &machine
         if (pMachine->toLocal())
         {
             CMachine comMachine = pMachine->toLocal()->machine();
-            UIVMActivityMonitorLocal *pActivityMonitor = new UIVMActivityMonitorLocal(m_enmEmbedding, this, comMachine);
-            if (m_pPaneContainer)
-            {
-                pActivityMonitor->setDataSeriesColor(0, m_pPaneContainer->dataSeriesColor(0));
-                pActivityMonitor->setDataSeriesColor(1, m_pPaneContainer->dataSeriesColor(1));
-            }
-            m_pTabWidget->addTab(pActivityMonitor, comMachine.GetName());
+            if (!comMachine.isOk())
+                continue;
+            m_pMonitorContainer->addLocalMachine(comMachine);
             continue;
         }
         if (pMachine->toCloud())
@@ -254,61 +171,8 @@ void UIVMActivityToolWidget::addTabs(const QList<UIVirtualMachineItem*> &machine
             CCloudMachine comMachine = pMachine->toCloud()->machine();
             if (!comMachine.isOk())
                 continue;
-            UIVMActivityMonitorCloud *pActivityMonitor = new UIVMActivityMonitorCloud(m_enmEmbedding, this, comMachine);
-            if (m_pPaneContainer)
-            {
-                pActivityMonitor->setDataSeriesColor(0, m_pPaneContainer->dataSeriesColor(0));
-                pActivityMonitor->setDataSeriesColor(1, m_pPaneContainer->dataSeriesColor(1));
-            }
-             m_pTabWidget->addTab(pActivityMonitor, comMachine.GetName());
+            m_pMonitorContainer->addCloudMachine(comMachine);
             continue;
         }
     }
-}
-
-void UIVMActivityToolWidget::sltExportToFile()
-{
-    AssertReturnVoid(m_pTabWidget);
-    UIVMActivityMonitor *pActivityMonitor = qobject_cast<UIVMActivityMonitor*>(m_pTabWidget->currentWidget());
-    if (pActivityMonitor)
-        pActivityMonitor->sltExportMetricsToFile();
-}
-
-void UIVMActivityToolWidget::sltCurrentTabChanged(int iIndex)
-{
-    AssertReturnVoid(m_pTabWidget);
-    Q_UNUSED(iIndex);
-    UIVMActivityMonitor *pActivityMonitor = qobject_cast<UIVMActivityMonitor*>(m_pTabWidget->currentWidget());
-    if (pActivityMonitor)
-    {
-        CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(pActivityMonitor->machineId().toString());
-        if (!comMachine.isNull())
-        {
-            setExportActionEnabled(comMachine.GetState() == KMachineState_Running);
-        }
-    }
-}
-
-void UIVMActivityToolWidget::sltTogglePreferencesPane(bool fChecked)
-{
-    AssertReturnVoid(m_pPaneContainer);
-    m_pPaneContainer->setVisible(fChecked);
-}
-
-void UIVMActivityToolWidget::sltDataSeriesColorChanged(int iIndex, const QColor &color)
-{
-    for (int i = m_pTabWidget->count() - 1; i >= 0; --i)
-    {
-        UIVMActivityMonitor *pMonitor = qobject_cast<UIVMActivityMonitor*>(m_pTabWidget->widget(i));
-        if (!pMonitor)
-            continue;
-        pMonitor->setDataSeriesColor(iIndex, color);
-    }
-    saveSettings();
-}
-
-void UIVMActivityToolWidget::setExportActionEnabled(bool fEnabled)
-{
-    if (m_pExportToFileAction)
-        m_pExportToFileAction->setEnabled(fEnabled);
 }

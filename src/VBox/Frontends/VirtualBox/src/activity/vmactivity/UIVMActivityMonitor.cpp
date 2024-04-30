@@ -239,7 +239,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     m_pMouseOverLabel = new QLabel(this);
     m_pMouseOverLabel->hide();
     m_pMouseOverLabel->setFrameStyle(QFrame::Box);
-    m_pMouseOverLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
     m_pMouseOverLabel->setAutoFillBackground(true);
     m_pMouseOverLabel->setMargin(0.1 * QStyle::PM_HeaderMargin);
     sltRetranslateUI();
@@ -423,6 +423,7 @@ void UIChart::updateToolTip()
             m_pMouseOverLabel->setVisible(false);
         else
         {
+
             QString strToolTip = toolTipText();
             QPoint pos = mapFromGlobal(QCursor::pos());
 
@@ -431,6 +432,7 @@ void UIChart::updateToolTip()
                 m_pMouseOverLabel->setText(strToolTip);
                 m_pMouseOverLabel->move(QPoint(pos.x(), pos.y() - m_pMouseOverLabel->height()));
                 m_pMouseOverLabel->setVisible(true);
+                m_pMouseOverLabel->adjustSize();
             }
             else
                 m_pMouseOverLabel->setVisible(false);

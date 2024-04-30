@@ -40,13 +40,10 @@
 #include "QIManagerDialog.h"
 
 /* Forward declarations: */
-class CMachine;
 class QIToolBar;
-class QTabWidget;
 class UIActionPool;
 class UIVirtualMachineItem;
-class UIVMActivityMonitorPaneContainer;
-
+class UIVMActivityMonitorContainer;
 
 /** QTabWidget extension host machine activity widget(s) in the Manager UI. */
 class UIVMActivityToolWidget : public QWidget
@@ -72,17 +69,8 @@ public:
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
-private slots:
-
-    void sltExportToFile();
-    void sltCurrentTabChanged(int iIndex);
-    void sltTogglePreferencesPane(bool fChecked);
-    void sltDataSeriesColorChanged(int iIndex, const QColor &color);
-
 private:
 
-    void loadSettings();
-    void saveSettings();
     void setMachines(const QList<UIVirtualMachineItem*> &machines);
     /** @name Prepare/cleanup cascade.
       * @{ */
@@ -92,8 +80,6 @@ private:
         void updateColumnsMenu();
     /** @} */
 
-    /** Remove tabs conaining machine monitors with ids @machineIdsToRemove. */
-    void removeTabs(const QVector<QUuid> &machineIdsToRemove);
     /** Add new tabs for each QUuid in @machineIdsToAdd. Does not check for duplicates. */
     void addTabs(const QList<UIVirtualMachineItem*> &machines);
     void setExportActionEnabled(bool fEnabled);
@@ -106,14 +92,10 @@ private:
     /** @} */
 
     QIToolBar *m_pToolBar;
-
     /** Indicates if this widget's host tool is current tool. */
     bool    m_fIsCurrentTool;
     QVector<QUuid> m_machineIds;
-    QAction *m_pExportToFileAction;
-    UIVMActivityMonitorPaneContainer *m_pPaneContainer;
-    QTabWidget *m_pTabWidget;
-    //QColor m_dataSeriesColor[2];
+    UIVMActivityMonitorContainer *m_pMonitorContainer;
 };
 
 
