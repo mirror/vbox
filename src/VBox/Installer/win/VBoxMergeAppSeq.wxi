@@ -26,10 +26,10 @@
 <Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
 <?if $(env.VBOX_WITH_CRT_PACKING) = "no" ?>
-    <Custom Action="ca_IsMSCRTInstalled" After="AppSearch"/>
+    <Custom Action="ca_IsMSCRTInstalled" Before="LaunchConditions"/>
 <?endif?>
     <!-- Required for lauch conditions. See @bugref{10616} -->
-    <Custom Action="ca_CheckTargetDirPre" After="AppSearch" />
+    <Custom Action="ca_CheckTargetDirPre" Before="LaunchConditions" />
     <!-- Check if the installation directory still fits our security requirements after we finalized installation.
          See @bugref{10616} -->
     <Custom Action="ca_CheckTargetDirPost" After="InstallFinalize" Condition="NOT REMOVE"/>
