@@ -7633,6 +7633,35 @@ iemNativeEmitTestIfGpr16EqualsImmAndJmpToNewLabel(PIEMRECOMPILERSTATE pReNative,
 }
 
 
+
+/*********************************************************************************************************************************
+*   Indirect Jumps.                                                                                                              *
+*********************************************************************************************************************************/
+
+/**
+ * Emits an indirect jump a 64-bit address in a GPR.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJmpViaGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    uint8_t * const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+    if (iGprSrc >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    pCodeBuf[off++] = 0xff;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 4, iGprSrc & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t * const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pCodeBuf[off++] = Armv8A64MkInstrBr(iGprSrc);
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
 /*********************************************************************************************************************************
 *   Calls.                                                                                                                       *
 *********************************************************************************************************************************/

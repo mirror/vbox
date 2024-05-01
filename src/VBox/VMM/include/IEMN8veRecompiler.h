@@ -472,6 +472,10 @@ typedef enum
     kIemNativeLabelType_Return,
     kIemNativeLabelType_ReturnBreak,
     kIemNativeLabelType_ReturnBreakFF,
+    kIemNativeLabelType_ReturnBreakViaLookup,
+    kIemNativeLabelType_ReturnBreakViaLookupWithIrq,
+    kIemNativeLabelType_ReturnBreakViaLookupWithTlb,
+    kIemNativeLabelType_ReturnBreakViaLookupWithTlbAndIrq,
     kIemNativeLabelType_ReturnWithFlags,
     kIemNativeLabelType_NonZeroRetOrPassUp,
     /** The last fixup for branches that can span almost the whole TB length. */
@@ -1413,6 +1417,8 @@ typedef struct IEMRECOMPILERSTATE
      */
     uint32_t                    fSimdRaiseXcptChecksEmitted;
 #endif
+    /** The call number of the last CheckIrq, UINT32_MAX if not seen. */
+    uint32_t                    idxLastCheckIrqCallNo;
 
     /** Core state requiring care with branches. */
     IEMNATIVECORESTATE          Core;

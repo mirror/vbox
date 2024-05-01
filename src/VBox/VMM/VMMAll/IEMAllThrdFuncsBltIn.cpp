@@ -223,18 +223,6 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckHwInstrBps)
 }
 
 
-DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRange)
-{
-    Assert(idxRange < RT_MIN(pTb->cRanges, RT_ELEMENTS(pTb->aRanges)));
-    uint8_t const idxPage = pTb->aRanges[idxRange].idxPhysPage;
-    Assert(idxPage <= RT_ELEMENTS(pTb->aGCPhysPages));
-    if (idxPage == 0)
-        return pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
-    Assert(!(pTb->aGCPhysPages[idxPage - 1] & GUEST_PAGE_OFFSET_MASK));
-    return pTb->aGCPhysPages[idxPage - 1];
-}
-
-
 /**
  * Macro that implements the 16/32-bit CS.LIM check, as this is done by a
  * number of functions.

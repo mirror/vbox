@@ -1329,6 +1329,20 @@ typedef IEMTB const *PCIEMTB;
 #define IEMTB_GET_TB_LOOKUP_TAB_ENTRY(a_pTb, a_idx) \
     ((PIEMTB *)&(a_pTb)->pabOpcodes[-(int)((a_pTb)->cTbLookupEntries - (a_idx)) * sizeof(PIEMTB)])
 
+/**
+ * Gets the physical address for a TB opcode range.
+ */
+DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRange)
+{
+    Assert(idxRange < RT_MIN(pTb->cRanges, RT_ELEMENTS(pTb->aRanges)));
+    uint8_t const idxPage = pTb->aRanges[idxRange].idxPhysPage;
+    Assert(idxPage <= RT_ELEMENTS(pTb->aGCPhysPages));
+    if (idxPage == 0)
+        return pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+    Assert(!(pTb->aGCPhysPages[idxPage - 1] & GUEST_PAGE_OFFSET_MASK));
+    return pTb->aGCPhysPages[idxPage - 1];
+}
+
 
 /**
  * A chunk of memory in the TB allocator.
@@ -2049,7 +2063,8 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeMaybeAvxXcptCheckOmitted;
 //#endif
 
-    /** Native recompiler: The TB finished executing completely without jumping to a an exit label. */
+    /** Native recompiler: The TB finished executing completely without jumping to a an exit label.
+     * Not availabe in release builds. */
     STAMCOUNTER             StatNativeTbFinished;
     /** Native recompiler: The TB finished executing jumping to the ReturnBreak label. */
     STAMCOUNTER             StatNativeTbExitReturnBreak;
@@ -2061,6 +2076,18 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeTbExitReturnOtherStatus;
     /** Native recompiler: The TB finished executing via throw / long jump. */
     STAMCOUNTER             StatNativeTbExitLongJump;
+    /** Native recompiler: The TB finished executing jumping to the ReturnBreak
+     *  label, but directly jumped to the next TB, scenario \#1 w/o IRQ checks. */
+    STAMCOUNTER             StatNativeTbExitDirectLinking1NoIrq;
+    /** Native recompiler: The TB finished executing jumping to the ReturnBreak
+     *  label, but directly jumped to the next TB, scenario \#1 with IRQ checks. */
+    STAMCOUNTER             StatNativeTbExitDirectLinking1Irq;
+    /** Native recompiler: The TB finished executing jumping to the ReturnBreak
+     *  label, but directly jumped to the next TB, scenario \#1 w/o IRQ checks. */
+    STAMCOUNTER             StatNativeTbExitDirectLinking2NoIrq;
+    /** Native recompiler: The TB finished executing jumping to the ReturnBreak
+     *  label, but directly jumped to the next TB, scenario \#2 with IRQ checks. */
+    STAMCOUNTER             StatNativeTbExitDirectLinking2Irq;
 
     /** Native recompiler: The TB finished executing jumping to the RaiseDe label. */
     STAMCOUNTER             StatNativeTbExitRaiseDe;
@@ -2083,7 +2110,25 @@ typedef struct IEMCPU
     /** Native recompiler: The TB finished executing jumping to the ObsoleteTb label. */
     STAMCOUNTER             StatNativeTbExitObsoleteTb;
 
-    uint64_t                au64Padding[1];
+    /** Native recompiler: Failure situations with direct linking scenario \#1.
+     * Counter with StatNativeTbExitReturnBreak. Not in release builds.
+     * @{  */
+    STAMCOUNTER             StatNativeTbExitDirectLinking1NoTb;
+    STAMCOUNTER             StatNativeTbExitDirectLinking1MismatchGCPhysPc;
+    STAMCOUNTER             StatNativeTbExitDirectLinking1MismatchFlags;
+    STAMCOUNTER             StatNativeTbExitDirectLinking1PendingIrq;
+    /** @} */
+
+    /** Native recompiler: Failure situations with direct linking scenario \#2.
+     * Counter with StatNativeTbExitReturnBreak. Not in release builds.
+     * @{  */
+    STAMCOUNTER             StatNativeTbExitDirectLinking2NoTb;
+    STAMCOUNTER             StatNativeTbExitDirectLinking2MismatchGCPhysPc;
+    STAMCOUNTER             StatNativeTbExitDirectLinking2MismatchFlags;
+    STAMCOUNTER             StatNativeTbExitDirectLinking2PendingIrq;
+    /** @} */
+
+    uint64_t                au64Padding[5];
     /** @} */
 
     /** Data TLB.

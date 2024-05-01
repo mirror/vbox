@@ -680,6 +680,48 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Number of times the TB finished raising a #XF exception",
                         RAISE_PREFIX "RaiseXf", idCpu);
 
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking1Irq, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #1 with IRQ check succeeded",
+                        "/IEM/CPU%u/re/NativeTbExit/DirectLinking1Irq", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking1NoIrq, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #1 w/o IRQ check succeeded",
+                        "/IEM/CPU%u/re/NativeTbExit/DirectLinking1NoIrq", idCpu);
+#  ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking1NoTb, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #1 failed: No TB in lookup table",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/DirectLinking1NoTb", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking1MismatchGCPhysPc, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #1 failed: GCPhysPc mismatch",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/DirectLinking1MismatchGCPhysPc", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking1MismatchFlags, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #1 failed: TB flags mismatch",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/DirectLinking1MismatchFlags", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking1PendingIrq, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #1 failed: IRQ or FF pending",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/DirectLinking1PendingIrq", idCpu);
+#  endif
+
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking2Irq, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #2 with IRQ check succeeded",
+                        "/IEM/CPU%u/re/NativeTbExit/DirectLinking2Irq", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking2NoIrq, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #2 w/o IRQ check succeeded",
+                        "/IEM/CPU%u/re/NativeTbExit/DirectLinking2NoIrq", idCpu);
+#  ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking2NoTb, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #2 failed: No TB in lookup table",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/DirectLinking2NoTb", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking2MismatchGCPhysPc, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #2 failed: GCPhysPc mismatch",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/DirectLinking2MismatchGCPhysPc", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking2MismatchFlags, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #2 failed: TB flags mismatch",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/DirectLinking2MismatchFlags", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking2PendingIrq, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Direct linking #2 failed: IRQ or FF pending",
+                        "/IEM/CPU%u/re/NativeTbExit/ReturnBreak/DirectLinking2PendingIrq", idCpu);
+#  endif
+
         RTStrPrintf(szPat, sizeof(szPat), "/IEM/CPU%u/re/NativeTbExit/*", idCpu); /* only immediate children, no sub folders */
         STAMR3RegisterSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, szPat,
                           "Number of times native TB execution finished before the end (not counting thrown memory++ exceptions)",

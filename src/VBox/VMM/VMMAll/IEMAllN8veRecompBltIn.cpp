@@ -283,6 +283,16 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
     iemNativeRegFreeTmp(pReNative, idxEflReg);
     iemNativeRegFreeTmp(pReNative, idxPcReg);
 
+    /*
+     * Note down that we've been here, so we can skip FFs + IRQ checks when
+     * doing direct linking.
+     */
+#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
+    pReNative->idxLastCheckIrqCallNo = pReNative->idxCurCall;
+#else
+    pReNative->idxLastCheckIrqCallNo = pCallEntry - pReNative->pTbOrg->Thrd.paCalls;
+#endif
+
     return off;
 }
 
@@ -1035,18 +1045,6 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
     return off;
 }
 
-
-/** Duplicated in IEMAllThrdFuncsBltIn.cpp. */
-DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRange)
-{
-    Assert(idxRange < RT_MIN(pTb->cRanges, RT_ELEMENTS(pTb->aRanges)));
-    uint8_t const idxPage = pTb->aRanges[idxRange].idxPhysPage;
-    Assert(idxPage <= RT_ELEMENTS(pTb->aGCPhysPages));
-    if (idxPage == 0)
-        return pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
-    Assert(!(pTb->aGCPhysPages[idxPage - 1] & GUEST_PAGE_OFFSET_MASK));
-    return pTb->aGCPhysPages[idxPage - 1];
-}
 
 
 /**

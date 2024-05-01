@@ -51,6 +51,7 @@
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/tm.h>
 #include "IEMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/log.h>
@@ -126,6 +127,147 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecStatusCodeFiddling,(PVMCPUCC pVCpu,
 {
     pVCpu->iem.s.cInstructions += idxInstr;
     return VBOXSTRICTRC_VAL(iemExecStatusCodeFiddling(pVCpu, rc == VINF_IEM_REEXEC_BREAK ? VINF_SUCCESS : rc));
+}
+
+
+/**
+ * Helping iemNativeHlpReturnBreakViaLookup and iemNativeHlpReturnBreakViaLookupWithTlb.
+ */
+DECL_FORCE_INLINE(bool) iemNativeHlpReturnBreakViaLookupIsIrqOrForceFlagPending(PVMCPU pVCpu)
+{
+    uint64_t fCpu = pVCpu->fLocalForcedActions;
+    fCpu &= VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
+                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                  | VMCPU_FF_TLB_FLUSH
+                                  | VMCPU_FF_UNHALT );
+    /** @todo this isn't even close to the NMI/IRQ conditions in EM. */
+    if (RT_LIKELY(   (   !fCpu
+                      || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                          && (   !pVCpu->cpum.GstCtx.rflags.Bits.u1IF
+                              || CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx) )) )
+                  && !VM_FF_IS_ANY_SET(pVCpu->CTX_SUFF(pVM), VM_FF_ALL_MASK) ))
+        return false;
+    return true;
+}
+
+
+/**
+ * Used by TB code when encountering a non-zero status or rcPassUp after a call.
+ */
+template <bool const a_fWithIrqCheck>
+static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMCPUCC pVCpu, uint8_t idxTbLookup,
+                                                                            uint32_t fFlags, RTGCPHYS GCPhysPc))
+{
+    PIEMTB const    pTb     = pVCpu->iem.s.pCurTbR3;
+    Assert(idxTbLookup < pTb->cTbLookupEntries);
+    PIEMTB * const  ppNewTb = IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pTb, idxTbLookup);
+#if 1
+    PIEMTB const    pNewTb  = *ppNewTb;
+    if (pNewTb)
+    {
+# ifdef VBOX_STRICT
+        uint64_t const uFlatPcAssert = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
+        AssertMsg(   (uFlatPcAssert & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK) == pVCpu->iem.s.uInstrBufPc
+                  && (GCPhysPc      & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK) == pVCpu->iem.s.GCPhysInstrBuf
+                  && (GCPhysPc      & GUEST_PAGE_OFFSET_MASK)            == (uFlatPcAssert & GUEST_PAGE_OFFSET_MASK),
+                  ("GCPhysPc=%RGp uFlatPcAssert=%#RX64 uInstrBufPc=%#RX64 GCPhysInstrBuf=%RGp\n",
+                   GCPhysPc, uFlatPcAssert, pVCpu->iem.s.uInstrBufPc, pVCpu->iem.s.GCPhysInstrBuf));
+# endif
+        if (pNewTb->GCPhysPc == GCPhysPc)
+        {
+# ifdef VBOX_STRICT
+            uint32_t fAssertFlags = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | IEMTB_F_TYPE_NATIVE;
+            if (pVCpu->cpum.GstCtx.rflags.uBoth & CPUMCTX_INHIBIT_SHADOW)
+                fAssertFlags |= IEMTB_F_INHIBIT_SHADOW;
+            if (pVCpu->cpum.GstCtx.rflags.uBoth & CPUMCTX_INHIBIT_NMI)
+                fAssertFlags |= IEMTB_F_INHIBIT_NMI;
+            if (!IEM_F_MODE_X86_IS_FLAT(fFlags))
+            {
+                int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip;
+                if (offFromLim < X86_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK))
+                    fAssertFlags |= IEMTB_F_CS_LIM_CHECKS;
+            }
+            Assert(!(fFlags & ~(IEMTB_F_IEM_F_MASK | IEMTB_F_TYPE_MASK)));
+            AssertMsg(fFlags == fAssertFlags, ("fFlags=%#RX32 fAssertFlags=%#RX32 cs:rip=%04x:%#010RX64\n",
+                                               fFlags, fAssertFlags, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+#endif
+
+            /*
+             * Check them + type.
+             */
+            if ((pNewTb->fFlags & (IEMTB_F_IEM_F_MASK | IEMTB_F_TYPE_MASK)) == fFlags)
+            {
+                /*
+                 * Check for interrupts and stuff.
+                 */
+                if (!a_fWithIrqCheck || !iemNativeHlpReturnBreakViaLookupIsIrqOrForceFlagPending(pVCpu) )
+                {
+                    /* Do polling. */
+                    uint64_t const cTbExecNative = pVCpu->iem.s.cTbExecNative;
+                    if (   RT_LIKELY(cTbExecNative & 511)
+                        || !TMTimerPollBoolWith32BitMilliTS(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->iem.s.msRecompilerPollNow) )
+                    {
+                        pVCpu->iem.s.cTbExecNative = cTbExecNative + 1;
+                        if (a_fWithIrqCheck)
+                            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking1Irq);
+                        else
+                            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking1NoIrq);
+
+                        pNewTb->cUsed                 += 1;
+                        pNewTb->msLastUsed             = pVCpu->iem.s.msRecompilerPollNow;
+                        pVCpu->iem.s.pCurTbR3          = pNewTb;
+                        pVCpu->iem.s.ppTbLookupEntryR3 = IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pNewTb, 0);
+                        Log10(("iemNativeHlpReturnBreakViaLookupWithPc: match at %04x:%08RX64 (%RGp): pTb=%p[%#x]-> %p\n",
+                               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPhysPc, pTb, idxTbLookup, pNewTb));
+                        return (uintptr_t)pNewTb->Native.paInstructions;
+                    }
+                }
+                Log10(("iemNativeHlpReturnBreakViaLookupWithPc: IRQ or FF pending\n"));
+                STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking1PendingIrq);
+            }
+            else
+            {
+                Log10(("iemNativeHlpReturnBreakViaLookupWithPc: fFlags mismatch at %04x:%08RX64: %#x vs %#x (pTb=%p[%#x]-> %p)\n",
+                       pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fFlags, pNewTb->fFlags, pTb, idxTbLookup, pNewTb));
+                STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking1MismatchFlags);
+            }
+        }
+        else
+        {
+            Log10(("iemNativeHlpReturnBreakViaLookupWithPc: GCPhysPc mismatch at %04x:%08RX64: %RGp vs %RGp (pTb=%p[%#x]-> %p)\n",
+                   pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPhysPc, pNewTb->GCPhysPc, pTb, idxTbLookup, pNewTb));
+            STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking1MismatchGCPhysPc);
+        }
+    }
+    else
+        STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking1NoTb);
+#else
+    NOREF(GCPhysPc);
+#endif
+
+    pVCpu->iem.s.ppTbLookupEntryR3 = ppNewTb;
+    return 0;
+}
+
+
+/**
+ * Used by TB code when encountering a non-zero status or rcPassUp after a call.
+ */
+template <bool const a_fWithIrqCheck>
+static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookupWithTlb,(PVMCPUCC pVCpu, uint8_t idxTbLookup,
+                                                                                   uint32_t fFlags))
+{
+    PIEMTB const    pTb     = pVCpu->iem.s.pCurTbR3;
+    Assert(idxTbLookup < pTb->cTbLookupEntries);
+    PIEMTB * const  ppNewTb = IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pTb, idxTbLookup);
+#if 0 /** @todo Do TLB lookup */
+#else
+    NOREF(fFlags);
+    STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking2NoTb); /* just for some stats, even if misleading */
+#endif
+
+    pVCpu->iem.s.ppTbLookupEntryR3 = ppNewTb;
+    return 0;
 }
 
 
@@ -1826,7 +1968,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 18);
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 22);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -1845,6 +1987,12 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[15]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[16]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[17]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[18]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[19]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[20]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[21]        = UINT32_MAX;
+
+    pReNative->idxLastCheckIrqCallNo       = UINT32_MAX;
 
     /* Full host register reinit: */
     for (unsigned i = 0; i < RT_ELEMENTS(pReNative->Core.aHstRegs); i++)
@@ -6226,6 +6374,55 @@ iemNativeEmitNativeTbExitStats(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 #endif /* VBOX_WITH_STATISTICS */
 
 /**
+ * Worker for iemNativeEmitReturnBreakViaLookup.
+ */
+static uint32_t iemNativeEmitViaLookupDoOne(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxLabelReturnBreak,
+                                            IEMNATIVELABELTYPE enmLabel, uintptr_t pfnHelper)
+{
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, enmLabel);
+    if (idxLabel != UINT32_MAX)
+    {
+        iemNativeLabelDefine(pReNative, idxLabel, off);
+
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+        off = iemNativeEmitCallImm(pReNative, off, pfnHelper);
+
+        /* Jump to ReturnBreak if the return register is NULL. */
+        off = iemNativeEmitTestIfGprIsZeroAndJmpToLabel(pReNative, off, IEMNATIVE_CALL_RET_GREG,
+                                                        true /*f64Bit*/, idxLabelReturnBreak);
+
+        /* Okay, continue executing the next TB. */
+        off = iemNativeEmitJmpViaGpr(pReNative, off, IEMNATIVE_CALL_RET_GREG);
+    }
+    return off;
+}
+
+/**
+ * Emits the code at the ReturnBreakViaLookup, ReturnBreakViaLookupWithIrq,
+ * ReturnBreakViaLookupWithTlb and ReturnBreakViaLookupWithTlbAndIrq labels
+ * (returns VINF_IEM_REEXEC_FINISH_WITH_FLAGS or jumps to the next TB).
+ */
+static uint32_t iemNativeEmitReturnBreakViaLookup(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+{
+    uint32_t const idxLabelReturnBreak = iemNativeLabelCreate(pReNative, kIemNativeLabelType_ReturnBreak);
+
+    /*
+     * The lookup table index is in IEMNATIVE_CALL_ARG1_GREG for all.
+     * The GCPhysPc is in IEMNATIVE_CALL_ARG2_GREG for ReturnBreakViaLookupWithPc.
+     */
+    off = iemNativeEmitViaLookupDoOne(pReNative, off, idxLabelReturnBreak, kIemNativeLabelType_ReturnBreakViaLookup,
+                                      (uintptr_t)iemNativeHlpReturnBreakViaLookup<false /*a_fWithIrqCheck*/>);
+    off = iemNativeEmitViaLookupDoOne(pReNative, off, idxLabelReturnBreak, kIemNativeLabelType_ReturnBreakViaLookupWithIrq,
+                                      (uintptr_t)iemNativeHlpReturnBreakViaLookup<true /*a_fWithIrqCheck*/>);
+    off = iemNativeEmitViaLookupDoOne(pReNative, off, idxLabelReturnBreak, kIemNativeLabelType_ReturnBreakViaLookupWithTlb,
+                                      (uintptr_t)iemNativeHlpReturnBreakViaLookupWithTlb<false /*a_fWithIrqCheck*/>);
+    off = iemNativeEmitViaLookupDoOne(pReNative, off, idxLabelReturnBreak, kIemNativeLabelType_ReturnBreakViaLookupWithTlbAndIrq,
+                                      (uintptr_t)iemNativeHlpReturnBreakViaLookupWithTlb<true /*a_fWithIrqCheck*/>);
+    return off;
+}
+
+
+/**
  * Emits the code at the ReturnWithFlags label (returns VINF_IEM_REEXEC_FINISH_WITH_FLAGS).
  */
 static uint32_t iemNativeEmitReturnWithFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
@@ -8650,23 +8847,27 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                             bool        fNumbered  = pDbgInfo->aEntries[iDbgEntry].Label.uData != 0;
                             switch ((IEMNATIVELABELTYPE)pDbgInfo->aEntries[iDbgEntry].Label.enmLabel)
                             {
-                                case kIemNativeLabelType_Return:                pszName = "Return"; break;
-                                case kIemNativeLabelType_ReturnBreak:           pszName = "ReturnBreak"; break;
-                                case kIemNativeLabelType_ReturnBreakFF:         pszName = "ReturnBreakFF"; break;
-                                case kIemNativeLabelType_ReturnWithFlags:       pszName = "ReturnWithFlags"; break;
-                                case kIemNativeLabelType_NonZeroRetOrPassUp:    pszName = "NonZeroRetOrPassUp"; break;
-                                case kIemNativeLabelType_RaiseDe:               pszName = "RaiseDe"; break;
-                                case kIemNativeLabelType_RaiseUd:               pszName = "RaiseUd"; break;
-                                case kIemNativeLabelType_RaiseSseRelated:       pszName = "RaiseSseRelated"; break;
-                                case kIemNativeLabelType_RaiseAvxRelated:       pszName = "RaiseAvxRelated"; break;
-                                case kIemNativeLabelType_RaiseSseAvxFpRelated:  pszName = "RaiseSseAvxFpRelated"; break;
-                                case kIemNativeLabelType_RaiseNm:               pszName = "RaiseNm"; break;
-                                case kIemNativeLabelType_RaiseGp0:              pszName = "RaiseGp0"; break;
-                                case kIemNativeLabelType_RaiseMf:               pszName = "RaiseMf"; break;
-                                case kIemNativeLabelType_RaiseXf:               pszName = "RaiseXf"; break;
-                                case kIemNativeLabelType_ObsoleteTb:            pszName = "ObsoleteTb"; break;
-                                case kIemNativeLabelType_NeedCsLimChecking:     pszName = "NeedCsLimChecking"; break;
-                                case kIemNativeLabelType_CheckBranchMiss:       pszName = "CheckBranchMiss"; break;
+                                case kIemNativeLabelType_Return:                        pszName = "Return"; break;
+                                case kIemNativeLabelType_ReturnBreak:                   pszName = "ReturnBreak"; break;
+                                case kIemNativeLabelType_ReturnBreakFF:                 pszName = "ReturnBreakFF"; break;
+                                case kIemNativeLabelType_ReturnWithFlags:               pszName = "ReturnWithFlags"; break;
+                                case kIemNativeLabelType_ReturnBreakViaLookup:          pszName = "ReturnBreakViaLookup"; break;
+                                case kIemNativeLabelType_ReturnBreakViaLookupWithIrq:   pszName = "ReturnBreakViaLookupWithIrq"; break;
+                                case kIemNativeLabelType_ReturnBreakViaLookupWithTlb:   pszName = "ReturnBreakViaLookupWithTlb"; break;
+                                case kIemNativeLabelType_ReturnBreakViaLookupWithTlbAndIrq: pszName = "ReturnBreakViaLookupWithTlbAndIrq"; break;
+                                case kIemNativeLabelType_NonZeroRetOrPassUp:            pszName = "NonZeroRetOrPassUp"; break;
+                                case kIemNativeLabelType_RaiseDe:                       pszName = "RaiseDe"; break;
+                                case kIemNativeLabelType_RaiseUd:                       pszName = "RaiseUd"; break;
+                                case kIemNativeLabelType_RaiseSseRelated:               pszName = "RaiseSseRelated"; break;
+                                case kIemNativeLabelType_RaiseAvxRelated:               pszName = "RaiseAvxRelated"; break;
+                                case kIemNativeLabelType_RaiseSseAvxFpRelated:          pszName = "RaiseSseAvxFpRelated"; break;
+                                case kIemNativeLabelType_RaiseNm:                       pszName = "RaiseNm"; break;
+                                case kIemNativeLabelType_RaiseGp0:                      pszName = "RaiseGp0"; break;
+                                case kIemNativeLabelType_RaiseMf:                       pszName = "RaiseMf"; break;
+                                case kIemNativeLabelType_RaiseXf:                       pszName = "RaiseXf"; break;
+                                case kIemNativeLabelType_ObsoleteTb:                    pszName = "ObsoleteTb"; break;
+                                case kIemNativeLabelType_NeedCsLimChecking:             pszName = "NeedCsLimChecking"; break;
+                                case kIemNativeLabelType_CheckBranchMiss:               pszName = "CheckBranchMiss"; break;
                                 case kIemNativeLabelType_If:
                                     pszName = "If";
                                     fNumbered = true;
@@ -9279,10 +9480,18 @@ l_profile_again:
         /*
          * Generate special jump labels.
          */
+        if (pReNative->bmLabelTypes & (  RT_BIT_64(kIemNativeLabelType_ReturnBreakViaLookup)
+                                       | RT_BIT_64(kIemNativeLabelType_ReturnBreakViaLookupWithIrq)
+                                       | RT_BIT_64(kIemNativeLabelType_ReturnBreakViaLookupWithTlb)
+                                       | RT_BIT_64(kIemNativeLabelType_ReturnBreakViaLookupWithTlbAndIrq) ))
+            off = iemNativeEmitReturnBreakViaLookup(pReNative, off); /* Must come before ReturnBreak! */
+
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnBreak))
             off = iemNativeEmitReturnBreak(pReNative, off, idxReturnLabel);
+
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnBreakFF))
             off = iemNativeEmitReturnBreakFF(pReNative, off, idxReturnLabel);
+
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnWithFlags))
             off = iemNativeEmitReturnWithFlags(pReNative, off, idxReturnLabel);
 
