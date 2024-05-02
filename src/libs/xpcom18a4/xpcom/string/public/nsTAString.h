@@ -506,6 +506,8 @@ class nsTAString_CharT
       explicit
       nsTAString_CharT(PRUint32 flags)
         : mVTable(obsolete_string_type::sCanonicalVTable)
+        , mData(NULL)
+        , mLength(0)
         , mFlags(flags)
         {}
 
