@@ -221,10 +221,10 @@ NS_IMPL_THREADSAFE_ISUPPORTS3(nsSupportsArray, nsISupportsArray, nsICollection, 
 NS_IMETHODIMP
 nsSupportsArray::Read(nsIObjectInputStream *aStream)
 {
-  nsresult rv;
-
   PRUint32 newArraySize;
-  rv = aStream->Read32(&newArraySize);
+  nsresult rv = aStream->Read32(&newArraySize);
+  if (NS_FAILED(rv))
+    return rv;
 
   if (newArraySize <= kAutoArraySize) {
     if (mArray != mAutoArray) {
@@ -664,9 +664,11 @@ CopyElement(nsISupports* aElement, void *aData)
 NS_IMETHODIMP
 nsSupportsArray::Clone(nsISupportsArray* *result)
 {
-  nsresult rv;
   nsISupportsArray* newArray;
-  rv = NS_NewISupportsArray(&newArray);
+  nsresult rv = NS_NewISupportsArray(&newArray);
+  if (NS_FAILED(rv))
+    return rv;
+
   PRBool ok = EnumerateForwards(CopyElement, newArray);
   if (!ok) return NS_ERROR_OUT_OF_MEMORY;
   *result = newArray;

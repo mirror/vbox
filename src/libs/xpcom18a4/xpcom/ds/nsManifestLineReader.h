@@ -44,7 +44,12 @@
 class nsManifestLineReader
 {
 public:
-    nsManifestLineReader() : mBase(nsnull) {} 
+    nsManifestLineReader()
+        : mCur(nsnull)
+        , mLength(0)
+        , mNext(nsnull)
+        , mBase(nsnull)
+        , mLimit(nsnull) {} 
     ~nsManifestLineReader() {}
 
     void Init(char* base, PRUint32 flen) 

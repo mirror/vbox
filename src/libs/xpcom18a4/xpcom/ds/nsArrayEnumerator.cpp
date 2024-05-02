@@ -108,7 +108,7 @@ public:
     NS_DECL_NSISIMPLEENUMERATOR
 
     // nsSimpleArrayEnumerator methods
-    nsCOMArrayEnumerator() : mIndex(0) {
+    nsCOMArrayEnumerator() : mIndex(0), mArraySize(0) {
     }
 
     // specialized operator to make sure we make room for mValues

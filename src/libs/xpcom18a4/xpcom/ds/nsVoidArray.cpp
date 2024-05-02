@@ -268,7 +268,7 @@ PRBool nsVoidArray::GrowArrayBy(PRInt32 aGrowBy)
     if (GetArraySize() >= kMaxGrowArrayBy)
     {
       newCapacity = GetArraySize() + PR_MAX(kMaxGrowArrayBy,aGrowBy);
-      newSize = SIZEOF_IMPL(newCapacity);
+      //newSize = SIZEOF_IMPL(newCapacity); Not used below
     }
     else
     {
