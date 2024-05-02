@@ -924,7 +924,7 @@ int netIfNetworkInterfaceHelperServer(SVCHlpClient *aClient,
         default:
             AssertMsgFailedBreakStmt(
                 ("Invalid message code %d (%08lX)\n", aMsgCode, aMsgCode),
-                VERR_GENERAL_FAILURE);
+                rc = VERR_GENERAL_FAILURE);
     }
 
     LogFlowFunc(("vrc=%Rrc\n", vrc));
