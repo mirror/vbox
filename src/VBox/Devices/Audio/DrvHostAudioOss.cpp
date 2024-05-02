@@ -716,7 +716,7 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetWritable(PPDMIHOSTAUDIO pI
         AssertMsgReturn(BufInfo.fragments >= 0, ("fragments: %d\n", BufInfo.fragments), 0);
         AssertMsgReturn(BufInfo.fragsize >= 0, ("fragsize: %d\n", BufInfo.fragsize), 0);
         cbRet = (uint32_t)(BufInfo.fragments * BufInfo.fragsize);
-        AssertMsgStmt(cbRet <= cbBuf, ("fragsize*fragments: %d, cbBuf=%#x\n", cbRet, cbBuf), 0);
+        AssertMsgReturn(cbRet <= cbBuf, ("fragsize*fragments: %d, cbBuf=%#x\n", cbRet, cbBuf), 0);
     }
 
     Log4Func(("returns %#x (%u) [cbBuf=%#x]\n", cbRet, cbRet, cbBuf));
@@ -768,7 +768,7 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
         AssertMsgReturn(BufInfo.fragments >= 0, ("fragments: %d\n", BufInfo.fragments), 0);
         AssertMsgReturn(BufInfo.fragsize >= 0, ("fragsize: %d\n", BufInfo.fragsize), 0);
         cbToWrite = (uint32_t)(BufInfo.fragments * BufInfo.fragsize);
-        AssertMsgStmt(cbToWrite <= cbStreamBuf, ("fragsize*fragments: %d, cbStreamBuf=%#x\n", cbToWrite, cbStreamBuf), 0);
+        AssertMsgReturn(cbToWrite <= cbStreamBuf, ("fragsize*fragments: %d, cbStreamBuf=%#x\n", cbToWrite, cbStreamBuf), 0);
     }
 
     cbToWrite = RT_MIN(cbToWrite, cbBuf);
@@ -842,7 +842,7 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetReadable(PPDMIHOSTAUDIO pI
         AssertMsgReturn(BufInfo.fragments >= 0, ("fragments: %d\n", BufInfo.fragments), 0);
         AssertMsgReturn(BufInfo.fragsize >= 0, ("fragsize: %d\n", BufInfo.fragsize), 0);
         cbRet = (uint32_t)(BufInfo.fragments * BufInfo.fragsize);
-        AssertMsgStmt(cbRet <= cbBuf, ("fragsize*fragments: %d, cbBuf=%#x\n", cbRet, cbBuf), 0);
+        AssertMsgReturn(cbRet <= cbBuf, ("fragsize*fragments: %d, cbBuf=%#x\n", cbRet, cbBuf), 0);
     }
 
     /*
