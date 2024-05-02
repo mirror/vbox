@@ -73,10 +73,13 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     , m_pSourceComboBox(0)
     , m_pSettingsWidget1(0)
     , m_pLocalContainerLayout(0)
+    , m_pFileLabel(0)
     , m_pFileSelector(0)
     , m_pCloudContainerLayout(0)
+    , m_pProfileLabel(0)
     , m_pProfileComboBox(0)
     , m_pProfileToolButton(0)
+    , m_pProfileInstanceLabel(0)
     , m_pProfileInstanceList(0)
     , m_pSettingsWidget2(0)
     , m_pApplianceWidget(0)
@@ -96,45 +99,71 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
         m_pToolBox = new UIToolBox(this);
         if (m_pToolBox)
         {
-            /* Prepare source widget: */
-            QWidget *pWidgetSource = new QWidget(m_pToolBox);
-            if (pWidgetSource)
+            /* Prepare source wrapper widget: */
+            QWidget *pWidgetSourceWrapper = new QWidget(m_pToolBox);
+            if (pWidgetSourceWrapper)
             {
-                /* Prepare source layout: */
-                m_pSourceLayout = new QGridLayout(pWidgetSource);
-                if (m_pSourceLayout)
+                /* Prepare source wrapper layout: */
+                QVBoxLayout *pLayoutSourceWrapper = new QVBoxLayout(pWidgetSourceWrapper);
+                if (pLayoutSourceWrapper)
                 {
-                    m_pSourceLayout->setContentsMargins(0, 0, 0, 0);
+                    pLayoutSourceWrapper->setContentsMargins(0, 0, 0, 0);
 
-                    /* Prepare source combo: */
-                    m_pSourceComboBox = new QIComboBox(pWidgetSource);
-                    if (m_pSourceComboBox)
-                        m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 0);
+                    /* Prepare source layout: */
+                    m_pSourceLayout = new QGridLayout;
+                    if (m_pSourceLayout)
+                    {
+                        m_pSourceLayout->setContentsMargins(0, 0, 0, 0);
+                        m_pSourceLayout->setColumnStretch(0, 0);
+                        m_pSourceLayout->setColumnStretch(1, 1);
+
+                        /* Prepare source label: */
+                        m_pSourceLabel = new QLabel(pWidgetSourceWrapper);
+                        if (m_pSourceLabel)
+                            m_pSourceLayout->addWidget(m_pSourceLabel, 0, 0, Qt::AlignRight);
+                        /* Prepare source combo: */
+                        m_pSourceComboBox = new QIComboBox(pWidgetSourceWrapper);
+                        if (m_pSourceComboBox)
+                        {
+                            m_pSourceLabel->setBuddy(m_pSourceComboBox);
+                            m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 1);
+                        }
+
+                        /* Add into layout: */
+                        pLayoutSourceWrapper->addLayout(m_pSourceLayout);
+                    }
 
                     /* Prepare settings widget 1: */
-                    m_pSettingsWidget1 = new QStackedWidget(pWidgetSource);
+                    m_pSettingsWidget1 = new QStackedWidget(pWidgetSourceWrapper);
                     if (m_pSettingsWidget1)
                     {
                         /* Prepare local container: */
                         QWidget *pContainerLocal = new QWidget(m_pSettingsWidget1);
                         if (pContainerLocal)
                         {
-                            /* Prepare local widget layout: */
+                            /* Prepare local container layout: */
                             m_pLocalContainerLayout = new QGridLayout(pContainerLocal);
                             if (m_pLocalContainerLayout)
                             {
                                 m_pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
+                                m_pLocalContainerLayout->setColumnStretch(0, 0);
+                                m_pLocalContainerLayout->setColumnStretch(1, 1);
                                 m_pLocalContainerLayout->setRowStretch(1, 1);
 
+                                /* Prepare file label: */
+                                m_pFileLabel = new QLabel(pContainerLocal);
+                                if (m_pFileLabel)
+                                    m_pLocalContainerLayout->addWidget(m_pFileLabel, 0, 0, Qt::AlignRight);
                                 /* Prepare file-path selector: */
                                 m_pFileSelector = new UIEmptyFilePathSelector(pContainerLocal);
                                 if (m_pFileSelector)
                                 {
+                                    m_pFileLabel->setBuddy(m_pFileSelector);
                                     m_pFileSelector->setHomeDir(uiCommon().documentsPath());
                                     m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
                                     m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                                     m_pFileSelector->setEditable(true);
-                                    m_pLocalContainerLayout->addWidget(m_pFileSelector, 0, 0);
+                                    m_pLocalContainerLayout->addWidget(m_pFileSelector, 0, 1);
                                 }
                             }
 
@@ -151,8 +180,15 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                             if (m_pCloudContainerLayout)
                             {
                                 m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
-                                m_pCloudContainerLayout->setRowStretch(1, 1);
+                                m_pCloudContainerLayout->setColumnStretch(0, 0);
+                                m_pCloudContainerLayout->setColumnStretch(1, 1);
+                                m_pCloudContainerLayout->setRowStretch(1, 0);
+                                m_pCloudContainerLayout->setRowStretch(2, 1);
 
+                                /* Prepare profile label: */
+                                m_pProfileLabel = new QLabel(pContainerCloud);
+                                if (m_pProfileLabel)
+                                    m_pCloudContainerLayout->addWidget(m_pProfileLabel, 0, 0, Qt::AlignRight);
                                 /* Prepare profile layout: */
                                 QHBoxLayout *pLayoutProfile = new QHBoxLayout;
                                 if (pLayoutProfile)
@@ -163,8 +199,10 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                                     /* Prepare profile combo-box: */
                                     m_pProfileComboBox = new QIComboBox(pContainerCloud);
                                     if (m_pProfileComboBox)
+                                    {
+                                        m_pProfileLabel->setBuddy(m_pProfileComboBox);
                                         pLayoutProfile->addWidget(m_pProfileComboBox);
-
+                                    }
                                     /* Prepare profile tool-button: */
                                     m_pProfileToolButton = new QIToolButton(pContainerCloud);
                                     if (m_pProfileToolButton)
@@ -175,13 +213,18 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                                     }
 
                                     /* Add into layout: */
-                                    m_pCloudContainerLayout->addLayout(pLayoutProfile, 0, 0);
+                                    m_pCloudContainerLayout->addLayout(pLayoutProfile, 0, 1);
                                 }
 
+                                /* Prepare profile instance label: */
+                                m_pProfileInstanceLabel = new QLabel(pContainerCloud);
+                                if (m_pProfileInstanceLabel)
+                                    m_pCloudContainerLayout->addWidget(m_pProfileInstanceLabel, 1, 0, Qt::AlignRight);
                                 /* Create profile instances table: */
                                 m_pProfileInstanceList = new QListWidget(pContainerCloud);
                                 if (m_pProfileInstanceList)
                                 {
+                                    m_pProfileInstanceLabel->setBuddy(m_pProfileInstanceLabel);
                                     const QFontMetrics fm(m_pProfileInstanceList->font());
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
                                     const int iFontWidth = fm.horizontalAdvance('x');
@@ -194,7 +237,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                                     m_pProfileInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
 //                                    m_pProfileInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
                                     m_pProfileInstanceList->setAlternatingRowColors(true);
-                                    m_pCloudContainerLayout->addWidget(m_pProfileInstanceList, 1, 0);
+                                    m_pCloudContainerLayout->addWidget(m_pProfileInstanceList, 1, 1, 2, 1);
                                 }
                             }
 
@@ -203,12 +246,12 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                         }
 
                         /* Add into layout: */
-                        m_pSourceLayout->addWidget(m_pSettingsWidget1, 1, 0);
+                        pLayoutSourceWrapper->addWidget(m_pSettingsWidget1);
                     }
                 }
 
                 /* Add into tool-box: */
-                m_pToolBox->insertPage(0, pWidgetSource, QString());
+                m_pToolBox->insertPage(0, pWidgetSourceWrapper, QString());
             }
 
             /* Prepare settings widget 2: */
@@ -368,9 +411,12 @@ void UIWizardImportAppPageExpert::sltRetranslateUI()
         m_pToolBox->setPageTitle(1, UIWizardImportApp::tr("Settings"));
     }
 
-    /* Translate hardcoded values of Source combo-box: */
+    /* Translate source label: */
+    if (m_pSourceLabel)
+        m_pSourceLabel->setText(UIWizardImportApp::tr("&Source:"));
     if (m_pSourceComboBox)
     {
+        /* Translate hardcoded values of Source combo-box: */
         m_pSourceComboBox->setItemText(0, UIWizardImportApp::tr("Local File System"));
         m_pSourceComboBox->setItemData(0, UIWizardImportApp::tr("Import from local file system."), Qt::ToolTipRole);
 
@@ -385,6 +431,8 @@ void UIWizardImportAppPageExpert::sltRetranslateUI()
     }
 
     /* Translate file selector: */
+    if (m_pFileLabel)
+        m_pFileLabel->setText(UIWizardImportApp::tr("&File:"));
     if (m_pFileSelector)
     {
         m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
@@ -393,8 +441,12 @@ void UIWizardImportAppPageExpert::sltRetranslateUI()
     }
 
     /* Translate profile stuff: */
+    if (m_pProfileLabel)
+        m_pProfileLabel->setText(UIWizardImportApp::tr("&Profile:"));
     if (m_pProfileToolButton)
         m_pProfileToolButton->setToolTip(UIWizardImportApp::tr("Open Cloud Profile Manager..."));
+    if (m_pProfileInstanceLabel)
+        m_pProfileInstanceLabel->setText(UIWizardImportApp::tr("&Machines:"));
 
     /* Translate path selector label: */
     if (m_pLabelImportFilePath)
@@ -417,6 +469,28 @@ void UIWizardImportAppPageExpert::sltRetranslateUI()
     /* Translate file selector's tooltip: */
     if (m_pFileSelector)
         m_pFileSelector->setToolTip(UIWizardImportApp::tr("Holds the path of the file selected for import."));
+
+    /* Adjust label widths: */
+    QList<QWidget*> labels;
+    if (m_pSourceLabel)
+        labels << m_pSourceLabel;
+    if (m_pFileLabel)
+        labels << m_pFileLabel;
+    if (m_pProfileLabel)
+        labels << m_pProfileLabel;
+    if (m_pProfileInstanceLabel)
+        labels << m_pProfileInstanceLabel;
+    int iMaxWidth = 0;
+    foreach (QWidget *pLabel, labels)
+        iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
+    if (m_pSourceLayout)
+        m_pSourceLayout->setColumnMinimumWidth(0, iMaxWidth);
+    if (   m_pLocalContainerLayout
+        && m_pCloudContainerLayout)
+    {
+        m_pLocalContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
+        m_pCloudContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
+    }
 
     /* Translate separate stuff: */
     retranslateMACImportPolicyCombo(m_pComboMACImportPolicy);

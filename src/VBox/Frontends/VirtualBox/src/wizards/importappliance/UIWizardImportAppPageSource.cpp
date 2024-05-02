@@ -515,7 +515,6 @@ UIWizardImportAppPageSource::UIWizardImportAppPageSource(bool fImportFromOCIByDe
                     m_pFileLabel = new QLabel(pContainerLocal);
                     if (m_pFileLabel)
                         m_pLocalContainerLayout->addWidget(m_pFileLabel, 0, 0, Qt::AlignRight);
-
                     /* Prepare file-path selector: */
                     m_pFileSelector = new UIEmptyFilePathSelector(pContainerLocal);
                     if (m_pFileSelector)
@@ -551,7 +550,6 @@ UIWizardImportAppPageSource::UIWizardImportAppPageSource(bool fImportFromOCIByDe
                     m_pProfileLabel = new QLabel(pContainerCloud);
                     if (m_pProfileLabel)
                         m_pCloudContainerLayout->addWidget(m_pProfileLabel, 0, 0, Qt::AlignRight);
-
                     /* Prepare sub-layout: */
                     QHBoxLayout *pSubLayout = new QHBoxLayout;
                     if (pSubLayout)
@@ -566,7 +564,6 @@ UIWizardImportAppPageSource::UIWizardImportAppPageSource(bool fImportFromOCIByDe
                             m_pProfileLabel->setBuddy(m_pProfileComboBox);
                             pSubLayout->addWidget(m_pProfileComboBox);
                         }
-
                         /* Prepare profile tool-button: */
                         m_pProfileToolButton = new QIToolButton(pContainerCloud);
                         if (m_pProfileToolButton)
@@ -584,7 +581,6 @@ UIWizardImportAppPageSource::UIWizardImportAppPageSource(bool fImportFromOCIByDe
                     m_pProfileInstanceLabel = new QLabel(pContainerCloud);
                     if (m_pProfileInstanceLabel)
                         m_pCloudContainerLayout->addWidget(m_pProfileInstanceLabel, 1, 0, Qt::AlignRight);
-
                     /* Prepare profile instances table: */
                     m_pProfileInstanceList = new QListWidget(pContainerCloud);
                     if (m_pProfileInstanceList)
@@ -718,10 +714,10 @@ void UIWizardImportAppPageSource::sltRetranslateUI()
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
-    if (m_pFileLabel)
-        labels << m_pFileLabel;
     if (m_pSourceLabel)
         labels << m_pSourceLabel;
+    if (m_pFileLabel)
+        labels << m_pFileLabel;
     if (m_pProfileLabel)
         labels << m_pProfileLabel;
     if (m_pProfileInstanceLabel)
@@ -731,7 +727,8 @@ void UIWizardImportAppPageSource::sltRetranslateUI()
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
     if (m_pSourceLayout)
         m_pSourceLayout->setColumnMinimumWidth(0, iMaxWidth);
-    if (m_pLocalContainerLayout)
+    if (   m_pLocalContainerLayout
+        && m_pCloudContainerLayout)
     {
         m_pLocalContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
         m_pCloudContainerLayout->setColumnMinimumWidth(0, iMaxWidth);

@@ -129,15 +129,21 @@ private:
 
     /** Holds the local container layout instance. */
     QGridLayout             *m_pLocalContainerLayout;
+    /** Holds the file label instance. */
+    QLabel                  *m_pFileLabel;
     /** Holds the file selector instance. */
     UIEmptyFilePathSelector *m_pFileSelector;
 
     /** Holds the cloud container layout instance. */
     QGridLayout  *m_pCloudContainerLayout;
+    /** Holds the profile label instance. */
+    QLabel       *m_pProfileLabel;
     /** Holds the profile combo-box instance. */
     QIComboBox   *m_pProfileComboBox;
     /** Holds the profile management tool-button instance. */
     QIToolButton *m_pProfileToolButton;
+    /** Holds the profile instance label instance. */
+    QLabel       *m_pProfileInstanceLabel;
     /** Holds the profile instance list instance. */
     QListWidget  *m_pProfileInstanceList;
 
