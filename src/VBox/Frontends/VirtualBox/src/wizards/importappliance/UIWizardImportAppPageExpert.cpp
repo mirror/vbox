@@ -448,9 +448,12 @@ void UIWizardImportAppPageExpert::sltRetranslateUI()
     if (m_pProfileInstanceLabel)
         m_pProfileInstanceLabel->setText(UIWizardImportApp::tr("&Machines:"));
 
-    /* Translate path selector label: */
+    /* Translate path selector stuff: */
     if (m_pLabelImportFilePath)
         m_pLabelImportFilePath->setText(UIWizardImportApp::tr("&Machine Base Folder:"));
+    if (m_pEditorImportFilePath)
+        m_pEditorImportFilePath->setToolTip(UIWizardImportApp::tr("Holds the path to the base virtual machine folder. "
+                                                                  "This folder is used when creating new virtual machine."));
 
     /* Translate MAC import policy label: */
     if (m_pLabelMACImportPolicy)

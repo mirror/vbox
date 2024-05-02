@@ -466,9 +466,12 @@ void UIWizardImportAppPageSettings::sltRetranslateUI()
                                                                "on the items and disable others using the check boxes below."));
     }
 
-    /* Translate path selector label: */
+    /* Translate path selector stuff: */
     if (m_pLabelImportFilePath)
         m_pLabelImportFilePath->setText(UIWizardImportApp::tr("&Machine Base Folder:"));
+    if (m_pEditorImportFilePath)
+        m_pEditorImportFilePath->setToolTip(UIWizardImportApp::tr("Holds the path to the base virtual machine folder. "
+                                                                  "This folder is used when creating new virtual machine."));
 
     /* Translate MAC import policy label: */
     if (m_pLabelMACImportPolicy)
