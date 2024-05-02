@@ -1480,7 +1480,10 @@ EnumerateTargetMapAndPlaceMsg(const nsID    &aKey,
   {
     // place a message clone to a target's event queue
     PCIPCMSG pMsg = (PCIPCMSG)userArg;
-    PlaceOnPendingQ(aKey, aData, IPC_MsgClone(pMsg));
+    PIPCMSG pClone = IPC_MsgClone(pMsg);
+    Assert(pClone);
+    if (pClone)
+       PlaceOnPendingQ(aKey, aData, pClone);
   }
 
   return PL_DHASH_NEXT;
