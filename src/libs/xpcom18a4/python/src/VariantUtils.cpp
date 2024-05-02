@@ -900,6 +900,7 @@ nsresult PyObject_AsVariant( PyObject *ob, nsIVariant **aRet)
 		case (PRUint16)-1:
 			PyXPCOM_LogWarning("Objects of type '%s' can not be converted to an nsIVariant", PyXPCOM_ObTypeName(ob));
 			nr = NS_ERROR_UNEXPECTED;
+			break;
 		default:
 			NS_ABORT_IF_FALSE(0, "BestVariantTypeForPyObject() returned a variant type not handled here!");
 			PyXPCOM_LogWarning("Objects of type '%s' can not be converted to an nsIVariant", PyXPCOM_ObTypeName(ob));
