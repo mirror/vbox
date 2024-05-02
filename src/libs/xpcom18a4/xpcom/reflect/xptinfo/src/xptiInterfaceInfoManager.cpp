@@ -355,44 +355,41 @@ xptiInterfaceInfoManager::ReadXPTFile(nsILocalFile* aFile,
     char *whole = nsnull;
     XPTState *state = nsnull;
     XPTCursor cursor;
-    PRInt32 flen;
-    PRInt64 fileSize;
-    
-    PRBool saveFollowLinks;
-    aFile->GetFollowLinks(&saveFollowLinks);
-    aFile->SetFollowLinks(PR_TRUE);
 
-    if(NS_FAILED(aFile->GetFileSize(&fileSize)) || !(flen = nsInt64(fileSize)))
-    {
-        aFile->SetFollowLinks(saveFollowLinks);
-        return nsnull;
-    }
-
-    whole = new char[flen];
-    if (!whole)
-    {
-        aFile->SetFollowLinks(saveFollowLinks);
-        return nsnull;
-    }
-
-    // all exits from on here should be via 'goto out' 
-    int vrc = VINF_SUCCESS;
-    size_t cbRead = 0;
-    RTFILE hFile = NIL_RTFILE;
     nsCAutoString pathName;
     if (NS_FAILED(aFile->GetNativePath(pathName)))
-        goto out;
+        return nsnull;
 
-    vrc = RTFileOpen(&hFile, pathName.get(),
-                     RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+
+    // all exits from on here should be via 'goto out' 
+    RTFILE hFile = NIL_RTFILE;
+
+    int vrc = RTFileOpen(&hFile, pathName.get(),
+                         RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(vrc))
+        return nsnull;
+
+    uint64_t cbFile = 0;
+    vrc = RTFileQuerySize(hFile, &cbFile);
+    if (RT_FAILURE(vrc) || cbFile >= 128 * _1M)
+    {
+        RTFileClose(hFile);
+        return nsnull;
+    }
+
+    whole = new char[cbFile];
+    if (!whole)
+    {
+        RTFileClose(hFile);
+        return nsnull;
+    }
+
+    size_t cbRead = 0;
+    vrc = RTFileRead(hFile, whole, cbFile, &cbRead);
+    if(RT_FAILURE(vrc) || cbRead < cbFile)
         goto out;
 
-    vrc = RTFileRead(hFile, whole, flen, &cbRead);
-    if(RT_FAILURE(vrc) || cbRead < flen)
-        goto out;
-
-    if(!(state = XPT_NewXDRState(XPT_DECODE, whole, flen)))
+    if(!(state = XPT_NewXDRState(XPT_DECODE, whole, cbFile)))
     {
         goto out;
     }
@@ -408,14 +405,13 @@ xptiInterfaceInfoManager::ReadXPTFile(nsILocalFile* aFile,
         goto out;
     }
 
- out:
-    if(hFile != NIL_RTFILE)
-        RTFileClose(hFile);
+out:
+    RTFileClose(hFile);
+
     if(state)
         XPT_DestroyXDRState(state);
-    if(whole)
-        delete [] whole;
-    aFile->SetFollowLinks(saveFollowLinks);
+
+    delete [] whole;
     return header;
 }
 

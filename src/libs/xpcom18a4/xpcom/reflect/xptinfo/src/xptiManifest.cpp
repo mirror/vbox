@@ -306,8 +306,6 @@ static char*
 ReadManifestIntoMemory(xptiInterfaceInfoManager* aMgr,
                        PRUint32* pLength)
 {
-    PRInt32 flen;
-    PRInt64 fileSize;
     char* whole = nsnull;
     PRBool success = PR_FALSE;
 
@@ -315,41 +313,46 @@ ReadManifestIntoMemory(xptiInterfaceInfoManager* aMgr,
     if(!aMgr->GetCloneOfManifestLocation(getter_AddRefs(aFile)) || !aFile)
         return nsnull;
 
+    nsCAutoString pathName;
+    if (NS_FAILED(aFile->GetNativePath(pathName)))
+        return nsnull;
+
 #ifdef DEBUG
     {
         static PRBool shown = PR_FALSE;
 
-        nsCAutoString path;
-        if(!shown && NS_SUCCEEDED(aFile->GetNativePath(path)) && !path.IsEmpty())
+        if(!shown && !pathName.IsEmpty())
         {
-            fprintf(stderr, "Type Manifest File: %s\n", path.get());
+            fprintf(stderr, "Type Manifest File: %s\n", pathName.get());
             shown = PR_TRUE;
         }
     }
 #endif
 
-    if(NS_FAILED(aFile->GetFileSize(&fileSize)) || !(flen = nsInt64(fileSize)))
-        return nsnull;
-
-    whole = new char[flen];
-    if (!whole)
-        return nsnull;
-
-    // All exits from on here should be via 'goto out'
-    int vrc = VINF_SUCCESS;
-    size_t cbRead = 0;
     RTFILE hFile = NIL_RTFILE;
-    nsCAutoString pathName;
-    if (NS_FAILED(aFile->GetNativePath(pathName)))
-        goto out;
-
-    vrc = RTFileOpen(&hFile, pathName.get(),
-                     RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    int vrc = RTFileOpen(&hFile, pathName.get(),
+                         RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(vrc))
-        goto out;
+        return nsnull;
 
-    vrc = RTFileRead(hFile, whole, flen, &cbRead);
-    if(RT_FAILURE(vrc) || cbRead < flen)
+    uint64_t cbFile = 0;
+    vrc = RTFileQuerySize(hFile, &cbFile);
+    if (RT_FAILURE(vrc) || cbFile >= 128 * _1M)
+    {
+        RTFileClose(hFile);
+        return nsnull;
+    }
+
+    whole = new char[cbFile];
+    if (!whole)
+    {
+        RTFileClose(hFile);
+        return nsnull;
+    }
+
+    size_t cbRead = 0;
+    vrc = RTFileRead(hFile, whole, cbFile, &cbRead);
+    if(RT_FAILURE(vrc) || cbRead < cbFile)
         goto out;
 
     success = PR_TRUE;
@@ -364,7 +367,7 @@ ReadManifestIntoMemory(xptiInterfaceInfoManager* aMgr,
         return nsnull;
     }
 
-    *pLength = flen;
+    *pLength = (uint32_t)cbFile;
     return whole;
 }
 
@@ -704,8 +707,7 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
     succeeded = PR_TRUE;
 
  out:
-    if(whole)
-        delete [] whole;
+    delete [] whole;
 
     if(!succeeded)
     {

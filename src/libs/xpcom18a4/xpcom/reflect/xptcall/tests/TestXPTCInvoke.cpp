@@ -1065,7 +1065,7 @@ public:
 
 /***************************/
 
-FooImpl::FooImpl() : Name("FooImpl")
+FooImpl::FooImpl() : Name("FooImpl"), SomeData1(0), SomeData2(0)
 {
 }
 
@@ -1085,7 +1085,7 @@ NS_IMETHODIMP FooImpl::FooMethod2(PRInt32 i)
 
 /***************************/
 
-BarImpl::BarImpl() : Name("BarImpl")
+BarImpl::BarImpl() : Name("BarImpl"), SomeData1(0), SomeData2(0)
 {
 }
 

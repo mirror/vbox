@@ -106,8 +106,8 @@ xptiZipLoader::ReadXPTFileFromInputStream(nsIInputStream *stream,
  out:
     if(state)
         XPT_DestroyXDRState(state);
-    if(whole)
-        delete [] whole;
+
+    delete [] whole;
     return header;
 }
 
