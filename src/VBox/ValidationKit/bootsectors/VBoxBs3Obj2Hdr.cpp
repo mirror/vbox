@@ -356,13 +356,21 @@ int main(int argc, char **argv)
             size_t cbFile;
             void  *pvFile;
             if (!readfile(pszArg, &pvFile, &cbFile))
+            {
+                if (pOutput)
+                    fclose(pOutput);
                 return RTEXITCODE_FAILURE;
+            }
 
             RTEXITCODE rcExit = ProcessObjectFile(pOutput, (uint8_t const *)pvFile, cbFile, pszArg);
 
             free(pvFile);
             if (rcExit != RTEXITCODE_SUCCESS)
+            {
+                if (pOutput)
+                    fclose(pOutput);
                 return rcExit;
+            }
         }
     }
 
