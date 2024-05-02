@@ -694,8 +694,12 @@ nsComponentManagerImpl::nsComponentManagerImpl()
 #ifdef ENABLE_STATIC_COMPONENT_LOADER
     mStaticComponentLoader(0),
 #endif
+    mComponentsOffset(0),
+    mGREComponentsOffset(0),
     mShuttingDown(NS_SHUTDOWN_NEVERHAPPENED),
     mLoaderData(nsnull),
+    mNLoaderData(0),
+    mMaxNLoaderData(0),
     mRegistryDirty(PR_FALSE)
 {
     mFactories.ops = nsnull;
@@ -1047,35 +1051,42 @@ nsComponentManagerImpl::ReadPersistentRegistry()
     if (RT_FAILURE(vrc))
         return NS_ERROR_FAILURE;
 
-    uint64_t fileSize;
-    vrc = RTFileQuerySize(hFile, &fileSize);
+    uint64_t cbFile;
+    vrc = RTFileQuerySize(hFile, &cbFile);
     if (RT_FAILURE(vrc))
     {
         RTFileClose(hFile);
         return NS_ERROR_FAILURE;
     }
 
-    PRInt32 flen = nsInt64((PRInt64)fileSize);
-    if (flen == 0)
+    if (cbFile == 0)
     {
         RTFileClose(hFile);
         NS_WARNING("Persistent Registry Empty!");
         return NS_OK; // ERROR CONDITION
     }
 
-    char* registry = new char[flen+1];
+    /* Some arbitrary upper limit we should never reach. */
+    if (cbFile > 128 * _1M)
+    {
+        RTFileClose(hFile);
+        NS_WARNING("Persistent Registry too large!");
+        return NS_ERROR_FAILURE;
+    }
+
+    char* registry = new char[cbFile+1];
     if (!registry)
         goto out;
 
-    vrc = RTFileRead(hFile, registry, flen, &cbRead);
-    if (RT_FAILURE(vrc) || cbRead < flen)
+    vrc = RTFileRead(hFile, registry, cbFile, &cbRead);
+    if (RT_FAILURE(vrc) || cbRead < cbFile)
     {
         rv = NS_ERROR_FAILURE;
         goto out;
     }
-    registry[flen] = '\0';
+    registry[cbFile] = '\0';
 
-    reader.Init(registry, flen);
+    reader.Init(registry, (PRUint32)cbFile);
 
     if (ReadSectionHeader(reader, "HEADER"))
         goto out;
@@ -2608,9 +2619,9 @@ nsComponentManagerImpl::RegisterFactory(const nsCID &aClass,
         return NS_ERROR_OUT_OF_MEMORY;
 
     entry = new (mem) nsFactoryEntry(aClass, aFactory, entry);
-
-    if (!entry)
-        return NS_ERROR_OUT_OF_MEMORY;
+    /* The following will never be true as we pass an already allocated memory buffer into new. */
+    //if (!entry)
+    //    return NS_ERROR_OUT_OF_MEMORY;
 
     factoryTableEntry->mFactoryEntry = entry;
 
@@ -2766,8 +2777,9 @@ nsComponentManagerImpl::RegisterComponentCommon(const nsCID &aClass,
         entry = new (mem) nsFactoryEntry(aClass,
                                          aRegistryName, aRegistryNameLen,
                                          typeIndex);
-        if (!entry)
-            return NS_ERROR_OUT_OF_MEMORY;
+        /* The following will never be true as we pass an already allocated memory buffer into new. */
+        //if (!entry)
+        //    return NS_ERROR_OUT_OF_MEMORY;
 
         nsFactoryTableEntry* factoryTableEntry =
             NS_STATIC_CAST(nsFactoryTableEntry*,

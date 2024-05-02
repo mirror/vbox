@@ -207,13 +207,13 @@ nsNativeComponentLoader::RegisterComponentsInDir(PRInt32 when,
                         || leafName.Length() < sizeof(".dSYM")
                         || RTStrICmp(leafName.get() + (leafName.Length() - sizeof(".dSYM") + 1), ".dSYM"))
 #endif
-                        rv = RegisterComponentsInDir(when, dirEntry);
+                        RegisterComponentsInDir(when, dirEntry);
                 }
                 else
                 {
                     PRBool registered;
                     // This is a file. Try to register it.
-                    rv = AutoRegisterComponent(when, dirEntry, &registered);
+                    AutoRegisterComponent(when, dirEntry, &registered);
                 }
             }
         }
@@ -835,12 +835,9 @@ nsNativeComponentLoader::CreateDll(nsIFile *aSpec,
         spec = aSpec;
     }
 
+    dll = new nsDll(spec, this);
     if (!dll)
-    {
-        dll = new nsDll(spec, this);
-        if (!dll)
-            return NS_ERROR_OUT_OF_MEMORY;
-    }
+        return NS_ERROR_OUT_OF_MEMORY;
 
     *aDll = dll;
     mDllStore.Put(&key, dll);
