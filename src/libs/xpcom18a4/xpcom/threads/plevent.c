@@ -631,9 +631,8 @@ PL_WaitForEvent(PLEventQueue* self)
     PR_EnterMonitor(mon);
 
     while ((event = PL_GetEvent(self)) == NULL) {
-        PRStatus err;
         Log(("$$$ waiting for event"));
-        err = PR_Wait(mon, RT_INDEFINITE_WAIT);
+        PR_Wait(mon, RT_INDEFINITE_WAIT);
     }
 
     PR_ExitMonitor(mon);
@@ -829,13 +828,13 @@ static void _md_CreateEventQueue( PLEventQueue *eventQueue )
 } /* end _md_CreateEventQueue() */
 #endif /* defined(XP_UNIX) && !defined(XP_MACOSX) */
 
+#if defined(XP_MACOSX)
 static void _md_EventReceiverProc(void *info)
 {
   PLEventQueue *queue = (PLEventQueue*)info;
   PL_ProcessPendingEvents(queue);
 }
 
-#if defined(XP_MACOSX)
 static void _md_CreateEventQueue( PLEventQueue *eventQueue )
 {
     CFRunLoopSourceContext sourceContext = { 0 };
