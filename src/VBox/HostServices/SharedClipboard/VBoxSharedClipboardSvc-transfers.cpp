@@ -1885,7 +1885,7 @@ int ShClSvcTransferMsgClientHandler(PSHCLCLIENT pClient,
 
         case VBOX_SHCL_GUEST_FN_OBJ_OPEN:
         {
-            ASSERT_GUEST_STMT_BREAK(cParms == VBOX_SHCL_CPARMS_OBJ_OPEN, VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_STMT_BREAK(cParms == VBOX_SHCL_CPARMS_OBJ_OPEN, rc = VERR_WRONG_PARAMETER_COUNT);
 
             SHCLOBJOPENCREATEPARMS openCreateParms;
             RT_ZERO(openCreateParms);

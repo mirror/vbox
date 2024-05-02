@@ -3111,7 +3111,7 @@ int ShClTransferCtxUnregisterById(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID 
 
     LogFlowFunc(("idTransfer=%RU32\n", idTransfer));
 
-    if (ASMBitTestAndClear(&pTransferCtx->bmTransferIds, idTransfer), ("idTransfer=%#x\n", idTransfer))
+    if (ASMBitTestAndClear(&pTransferCtx->bmTransferIds, idTransfer))
     {
         PSHCLTRANSFER pTransfer = shClTransferCtxGetTransferByIdInternal(pTransferCtx, idTransfer);
         if (pTransfer)

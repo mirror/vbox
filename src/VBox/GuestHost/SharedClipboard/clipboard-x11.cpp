@@ -2197,7 +2197,7 @@ int ShClX11TransferConvertFromX11(const char *pvData, size_t cbData, char **ppsz
             *pcbList += strlen(pszString);
         }
 
-        *pcbList++; /* Include terminator. */
+        *pcbList += 1; /* Include terminator. */
     }
 
     return rc;

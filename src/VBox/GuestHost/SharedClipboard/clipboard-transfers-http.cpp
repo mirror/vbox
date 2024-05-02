@@ -783,8 +783,8 @@ int ShClTransferHttpServerStart(PSHCLHTTPSERVER pSrv, unsigned cMaxAttempts, uin
     if (RT_SUCCESS(rc))
     {
         uint16_t uPort;
-        unsigned i = 0;
-        for (i; i < cMaxAttempts; i++)
+        unsigned i;
+        for (i = 0; i < cMaxAttempts; i++)
         {
             /* Try some random ports >= 49152 (i.e. "dynamic ports", see RFC 6335)
              * -- required, as VBoxClient runs as a user process on the guest. */
