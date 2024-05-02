@@ -92,6 +92,8 @@ int main(int argc, char** argv)
     RTTHREAD hThread = NIL_RTTHREAD;
     vrc = RTThreadCreate(&hThread, run, NULL, 0 /*cbStack*/,
                          RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "AutoLockTest");
+    if (RT_FAILURE(vrc))
+        return RTEXITCODE_FAILURE;
 
     // ...and now do the same thing ourselves
     run(NIL_RTTHREAD, nsnull);

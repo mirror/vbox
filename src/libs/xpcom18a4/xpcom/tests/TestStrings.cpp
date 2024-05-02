@@ -71,9 +71,7 @@ static PRBool test1()
 
     nsAutoString buf(aStr);
 
-    PRInt32 n = buf.FindChar(',');
-
-    n = buf.Length();
+    PRInt32 n = buf.Length();
 
     buf.Cut(0, n + 1);
     n = buf.FindChar(',');
