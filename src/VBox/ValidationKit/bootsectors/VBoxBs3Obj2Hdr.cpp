@@ -240,14 +240,14 @@ static bool readfile(const char *pszFile, void **ppvFile, size_t *pcbFile)
 }
 
 
-int main(int argc, char **argv)
+static RTEXITCODE makeParfaitHappy(int argc, char **argv, FILE **ppOutput, const char **ppszOutput)
 {
     /*
      * Parse arguments.
      */
     bool        fDashDash = false;
-    const char *pszOutput = NULL;
-    FILE       *pOutput   = NULL;
+    *ppszOutput = NULL;
+    *ppOutput   = NULL;
     for (int i = 1; i < argc; i++)
     {
         const char *pszArg = argv[i];
@@ -305,11 +305,20 @@ int main(int argc, char **argv)
                         break;
 
                     case 'o':
-                        if (pOutput && pOutput != stdout)
-                            fclose(pOutput); /** @todo check status. */
-                        pOutput   = NULL;
-                        pszOutput = pszValue;
+                    {
+                        FILE * const pOldOutput = *ppOutput;
+                        *ppOutput = NULL;
+                        if (pOldOutput && pOldOutput != stdout)
+                        {
+                            if (fclose(pOldOutput))
+                            {
+                                fprintf(stderr, "error: Write/close error on '%s'\n", *ppszOutput);
+                                return RTEXITCODE_FAILURE;
+                            }
+                        }
+                        *ppszOutput = pszValue;
                         continue;
+                    }
 
                     case 'q':
                         g_cVerbose = 0;
@@ -337,16 +346,16 @@ int main(int argc, char **argv)
         else
         {
             /* Make sure we've got an output file. */
-            if (!pOutput)
+            if (!*ppOutput)
             {
-                if (!pszOutput || strcmp(pszOutput, "-") == 0)
-                    pOutput = stdout;
+                if (!*ppszOutput || strcmp(*ppszOutput, "-") == 0)
+                    *ppOutput = stdout;
                 else
                 {
-                    pOutput = fopen(pszOutput, "w");
-                    if (!pOutput)
+                    *ppOutput = fopen(*ppszOutput, "w");
+                    if (!*ppOutput)
                     {
-                        fprintf(stderr, "error: Failed to open '%s' for writing!\n", pszOutput);
+                        fprintf(stderr, "error: Failed to open '%s' for writing!\n", *ppszOutput);
                         return RTEXITCODE_FAILURE;
                     }
                 }
@@ -356,26 +365,32 @@ int main(int argc, char **argv)
             size_t cbFile;
             void  *pvFile;
             if (!readfile(pszArg, &pvFile, &cbFile))
-            {
-                if (pOutput)
-                    fclose(pOutput);
                 return RTEXITCODE_FAILURE;
-            }
 
-            RTEXITCODE rcExit = ProcessObjectFile(pOutput, (uint8_t const *)pvFile, cbFile, pszArg);
+            RTEXITCODE rcExit = ProcessObjectFile(*ppOutput, (uint8_t const *)pvFile, cbFile, pszArg);
 
             free(pvFile);
             if (rcExit != RTEXITCODE_SUCCESS)
-            {
-                if (pOutput)
-                    fclose(pOutput);
                 return rcExit;
-            }
         }
     }
 
+    return RTEXITCODE_SUCCESS;
+}
+
+
+int main(int argc, char **argv)
+{
     /*
-     * Flush+close output exit.
+     * Use helper function to do the actual main work so we can perform
+     * cleanup to make pedantic static analysers happy.
+     */
+    const char *pszOutput = NULL;
+    FILE       *pOutput = NULL;
+    RTEXITCODE  rcExit = makeParfaitHappy(argc, argv, &pOutput, &pszOutput);
+
+    /*
+     * Flush+close output before we exit.
      */
     if (pOutput)
     {
@@ -383,10 +398,9 @@ int main(int argc, char **argv)
             || fclose(pOutput))
         {
             fprintf(stderr, "error: Write error on '%s'\n", pszOutput ? pszOutput : "-");
-            return RTEXITCODE_FAILURE;
+            rcExit = RTEXITCODE_FAILURE;
         }
     }
-
-    return RTEXITCODE_SUCCESS;
+    return rcExit;
 }
 
