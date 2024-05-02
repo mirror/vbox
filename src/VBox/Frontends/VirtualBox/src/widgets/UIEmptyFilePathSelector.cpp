@@ -179,6 +179,7 @@ void UIEmptyFilePathSelector::setChooseButtonToolTip(const QString &strToolTip)
 {
     m_fButtonToolTipSet = !strToolTip.isEmpty();
     mSelectButton->setToolTip(strToolTip);
+    mSelectButton->setText(strToolTip);
 }
 
 QString UIEmptyFilePathSelector::chooseButtonToolTip() const
@@ -219,7 +220,10 @@ QString UIEmptyFilePathSelector::homeDir() const
 void UIEmptyFilePathSelector::sltRetranslateUI()
 {
     if (!m_fButtonToolTipSet)
+    {
         mSelectButton->setToolTip(tr("Choose..."));
+        mSelectButton->setText(tr("Choose..."));
+    }
 }
 
 void UIEmptyFilePathSelector::choose()
