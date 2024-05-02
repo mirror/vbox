@@ -91,12 +91,10 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
     if (!mService)
         return NS_ERROR_FAILURE;
 
-    nsresult rv;
-
     nsCOMPtr<nsIProperties> dirService;
-    rv = nsDirectoryService::Create(nsnull,
-                                    NS_GET_IID(nsIProperties),
-                                    getter_AddRefs(dirService));  // needs to be around for life of product
+    nsDirectoryService::Create(nsnull,
+                               NS_GET_IID(nsIProperties),
+                               getter_AddRefs(dirService));  // needs to be around for life of product
 
     if (dirService)
     {
@@ -120,7 +118,7 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
 
 #if defined(XP_MACOSX)
 # ifdef MOZ_DEFAULT_VBOX_XPCOM_HOME
-    rv = localFile->InitWithNativePath(nsDependentCString(MOZ_DEFAULT_VBOX_XPCOM_HOME));
+    nsresult rv = localFile->InitWithNativePath(nsDependentCString(MOZ_DEFAULT_VBOX_XPCOM_HOME));
     if (NS_SUCCEEDED(rv))
         *aFile = localFile;
 # else
@@ -140,7 +138,7 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
                 char buffer[PATH_MAX];
                 if (CFURLGetFileSystemRepresentation(parentURL, PR_TRUE, (UInt8 *)buffer, sizeof(buffer)))
                 {
-                    rv = localFile->InitWithNativePath(nsDependentCString(buffer));
+                    nsresult rv = localFile->InitWithNativePath(nsDependentCString(buffer));
                     if (NS_SUCCEEDED(rv))
                         *aFile = localFile;
                 }
@@ -621,10 +619,6 @@ nsDirectoryService::GetFile(const char *prop, PRBool *persistent, nsIFile **_ret
     else if (inAtom == nsDirectoryService::sOS_TemporaryDirectory)
     {
         rv = GetSpecialSystemDirectory(OS_TemporaryDirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sOS_CurrentProcessDirectory)
-    {
-        rv = GetSpecialSystemDirectory(OS_CurrentProcessDirectory, getter_AddRefs(localFile));
     }
     else if (inAtom == nsDirectoryService::sOS_CurrentWorkingDirectory)
     {

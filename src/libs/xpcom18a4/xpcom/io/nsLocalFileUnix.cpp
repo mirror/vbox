@@ -868,7 +868,10 @@ nsLocalFile::Remove(PRBool recursive)
         return rv;
 
     if (!recursive && isSymLink)
-        return NSRESULT_FOR_IPRT(RTErrConvertFromErrno(unlink(mPath.get())));
+    {
+        int vrc = RTErrConvertFromErrno(unlink(mPath.get()));
+        return NSRESULT_FOR_IPRT(vrc);
+    }
     
     isDir = S_ISDIR(mCachedStat.st_mode);
     InvalidateCache();
@@ -945,7 +948,8 @@ nsLocalFile::SetLastModifiedTime(PRInt64 aLastModTime)
         result = utime(mPath.get(), nsnull);
     }
     InvalidateCache();
-    return NSRESULT_FOR_IPRT(RTErrConvertFromErrno(result));
+    int vrc = RTErrConvertFromErrno(result);
+    return NSRESULT_FOR_IPRT(vrc);
 }
 
 NS_IMETHODIMP
@@ -1152,11 +1156,10 @@ nsLocalFile::GetParent(nsIFile **aParent)
         return  NS_OK;
  
     // <brendan, after jband> I promise to play nice
-    char *buffer   = mPath.BeginWriting(),
-         *slashp   = buffer;
+    char *buffer   = mPath.BeginWriting();
 
     // find the last significant slash in buffer
-    slashp = strrchr(buffer, '/');
+    char *slashp = strrchr(buffer, '/');
     NS_ASSERTION(slashp, "non-canonical mPath?");
     if (!slashp)
         return NS_ERROR_FILE_INVALID_PATH;

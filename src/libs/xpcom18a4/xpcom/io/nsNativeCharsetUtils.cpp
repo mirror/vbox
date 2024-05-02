@@ -705,7 +705,8 @@ nsNativeCharsetConverter::UnicodeToNative(const PRUnichar **input,
     if (gWCharIsUnicode) {
         int incr;
 
-        while (*inputLeft && *outputLeft >= MB_CUR_MAX) {
+        /* MB_CUR_MAX better be positive. */
+        while (*inputLeft && *outputLeft >= (PRUint32)MB_CUR_MAX) {
 #ifdef HAVE_WCRTOMB
             incr = (int) wcrtomb(*output, (wchar_t) **input, &ps);
 #else
