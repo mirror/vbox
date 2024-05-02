@@ -86,7 +86,11 @@ class nsAutoRefCnt {
         , mState(0)
 #endif
     {}
-    nsAutoRefCnt(nsrefcnt aValue) : mValue(aValue) {}
+    nsAutoRefCnt(nsrefcnt aValue) : mValue(aValue)
+#ifdef VBOX
+        , mState(0)
+#endif
+    {}
 
     // only support prefix increment/decrement
     nsrefcnt operator++() { return ++mValue; }

@@ -391,7 +391,7 @@ nsProxyEventObject* nsProxyEventObject::LockedFind(REFNSIID aIID)
 }
 
 nsProxyEventObject::nsProxyEventObject()
-: mNext(nsnull)
+: mRoot(nsnull), mNext(nsnull)
 {
      NS_WARNING("This constructor should never be called");
 }
