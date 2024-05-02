@@ -213,8 +213,7 @@ XPT_NewXDRState(XPTMode mode, char *data, PRUint32 len)
  err_free_state:
     XPT_DELETE(arena, state);
  err_free_arena:
-    if (arena)
-        XPT_DestroyArena(arena);
+    XPT_DestroyArena(arena);
     return NULL;
 }
 

@@ -129,9 +129,8 @@ static gboolean
 add_interface_maybe(IDL_tree_func_data *tfd, gpointer user_data)
 {
     TreeState *state = user_data;
-    IDL_tree up;
     if (IDL_NODE_TYPE(tfd->tree) == IDLN_IDENT) {
-        IDL_tree_type node_type = IDL_NODE_TYPE((up = IDL_NODE_UP(tfd->tree)));
+        IDL_tree_type node_type = IDL_NODE_TYPE(IDL_NODE_UP(tfd->tree));
         if (node_type == IDLN_INTERFACE || node_type == IDLN_FORWARD_DCL) {
 
             /* We only want to add a new entry if there is no entry by this 
@@ -167,11 +166,6 @@ add_interface_maybe(IDL_tree_func_data *tfd, gpointer user_data)
                         iface, iid[0] ? iid : "<unresolved>");
 #endif
             }
-        } else {
-#ifdef DEBUG_shaver_ifaces
-            fprintf(stderr, "ident %s isn't an interface (%s)\n",
-                    IDL_IDENT(tfd->tree).str, IDL_NODE_TYPE_NAME(up));
-#endif
         }
     }
 
@@ -277,7 +271,6 @@ compare_IDEs(const void *ap, const void *bp)
 {
     const XPTInterfaceDirectoryEntry *a = ap, *b = bp;
     const nsID *aid = &a->iid, *bid = &b->iid;
-    const char *ans, *bns;
 
     int i;
 #define COMPARE(field) if (aid->field > bid->field) return 1; \
@@ -288,10 +281,6 @@ compare_IDEs(const void *ap, const void *bp)
     for (i = 0; i < 8; i++) {
         COMPARE(m3[i]);
     }
-
-    /* defend against NULL name_space by using empty string. */
-    ans = a->name_space ? a->name_space : "";
-    bns = b->name_space ? b->name_space : "";
 
     if (a->name_space && b->name_space) {
         if ((i = strcmp(a->name_space, b->name_space)))
@@ -847,8 +836,8 @@ handle_iid_is:
                 }
                 break;
               }
-              case IDLN_NATIVE: {
-                  char *ident;
+              case IDLN_NATIVE:
+              {
 
                   /* jband - adding goto for iid_is when type is native */
                   if (IDL_NODE_TYPE(state->tree) == IDLN_PARAM_DCL &&
@@ -856,7 +845,6 @@ handle_iid_is:
                                               "iid_is"))
                       goto handle_iid_is;
 
-                  ident = IDL_IDENT(type).str;
                   if (IDL_tree_property_get(type, "nsid")) {
                       td->prefix.flags = TD_PNSIID;
                       if (IDL_tree_property_get(type, "ref"))

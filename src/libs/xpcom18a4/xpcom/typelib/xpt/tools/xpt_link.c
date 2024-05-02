@@ -239,6 +239,11 @@ main(int argc, char **argv)
             }
             
             state = XPT_NewXDRState(XPT_DECODE, whole, flen);
+            if (!state)
+            {
+                fprintf(stdout, "XPT_NewXDRState failed for %s\n", name);
+                return 1;
+            }
             if (!XPT_MakeCursor(state, XPT_HEADER, 0, cursor)) {
                 fprintf(stdout, "XPT_MakeCursor failed for %s\n", name);
                 return 1;

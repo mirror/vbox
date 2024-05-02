@@ -252,11 +252,10 @@ interface(TreeState *state)
     }
     fputs(" {\n"
           " public: \n\n", state->file);
-    if (iid) {
-        fputs("  NS_DEFINE_STATIC_IID_ACCESSOR(", state->file);
-        write_classname_iid_define(state->file, className);
-        fputs(")\n\n", state->file);
-    }
+
+    fputs("  NS_DEFINE_STATIC_IID_ACCESSOR(", state->file);
+    write_classname_iid_define(state->file, className);
+    fputs(")\n\n", state->file);
 
     orig = state->tree; /* It would be nice to remove this state-twiddling. */
 
@@ -1136,8 +1135,7 @@ codefrag(TreeState *state)
 {
     const char *desc = IDL_CODEFRAG(state->tree).desc;
     GSList *lines = IDL_CODEFRAG(state->tree).lines;
-    guint fragment_length;
-    
+
     if (strcmp(desc, "C++") && /* libIDL bug? */ strcmp(desc, "C++\r")) {
         XPIDL_WARNING((state->tree, IDL_WARNING1,
                        "ignoring '%%{%s' escape. "
@@ -1154,17 +1152,6 @@ codefrag(TreeState *state)
      * _line seems to refer to the line immediately after the closing %}, so
      * we backtrack to get the proper line for the beginning of the block.
      */
-    /*
-     * Looks like getting this right means maintaining an accurate line
-     * count of everything generated, so we can set the file back to the
-     * correct line in the generated file afterwards.  Skipping for now...
-     */
-
-    fragment_length = g_slist_length(lines);
-/*      fprintf(state->file, "#line %d \"%s\"\n", */
-/*              state->tree->_line - fragment_length - 1, */
-/*              state->tree->_file); */
-
     g_slist_foreach(lines, write_codefrag_line, (gpointer)state);
 
     return TRUE;
