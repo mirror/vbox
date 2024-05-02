@@ -927,7 +927,7 @@ static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator
             pTbAllocator->cNativeTbs -= 1;
             iemExecMemAllocatorFree(pVCpu, pTb->Native.paInstructions,
                                     pTb->Native.cInstructions * sizeof(pTb->Native.paInstructions[0]));
-            pVCpu, pTb->Native.paInstructions = NULL; /* required by iemExecMemAllocatorPrune */
+            pTb->Native.paInstructions = NULL; /* required by iemExecMemAllocatorPrune */
             break;
 #endif
         default:
