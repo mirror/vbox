@@ -291,6 +291,7 @@ private:
     void resetNetworkInfoLabel();
     void resetDiskIOInfoLabel();
     virtual void prepareWidgets() RT_OVERRIDE;
+    void configureCOMPerformanceCollector();
 
     bool m_fGuestAdditionsAvailable;
     CMachine m_comMachine;
@@ -298,6 +299,7 @@ private:
     CGuest m_comGuest;
 
     CPerformanceCollector m_performanceCollector;
+    bool                  m_fCOMPerformanceCollectorConfigured;
     CMachineDebugger      m_comMachineDebugger;
     /** VM Exit info label strings. */
     QString m_strVMExitInfoLabelTitle;

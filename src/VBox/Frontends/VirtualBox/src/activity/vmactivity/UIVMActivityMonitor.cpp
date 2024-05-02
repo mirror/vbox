@@ -1263,6 +1263,7 @@ UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget
                                                    const CMachine &machine, UIActionPool *pActionPool)
     :UIVMActivityMonitor(enmEmbedding, pParent, pActionPool, 120 /* iMaximumQueueSize */)
     , m_fGuestAdditionsAvailable(false)
+    , m_fCOMPerformanceCollectorConfigured(false)
 {
     prepareMetrics();
     prepareWidgets();
@@ -1526,17 +1527,23 @@ void UIVMActivityMonitorLocal::prepareWidgets()
     m_pContainerLayout->addWidget(bottomSpacerWidget, iRow, 0, 1, 2);
 }
 
-void UIVMActivityMonitorLocal::prepareMetrics()
+void UIVMActivityMonitorLocal::configureCOMPerformanceCollector()
 {
-    m_performanceCollector = gpGlobalSession->virtualBox().GetPerformanceCollector();
-    if (m_performanceCollector.isNull())
+    /* Only once: */
+    if (m_fCOMPerformanceCollectorConfigured)
         return;
 
     m_nameList << "Guest/RAM/Usage*";
     m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
+
+    m_performanceCollector = gpGlobalSession->virtualBox().GetPerformanceCollector();
+    if (m_performanceCollector.isNull())
+        return;
+
     m_performanceCollector.SetupMetrics(m_nameList, m_objectList, g_iPeriod, g_iMetricSetupCount);
     {
         QVector<CPerformanceMetric> metrics = m_performanceCollector.GetMetrics(m_nameList, m_objectList);
+        printf("object list size %lld\n", metrics.size());
         for (int i = 0; i < metrics.size(); ++i)
         {
             QString strName(metrics[i].GetMetricName());
@@ -1544,21 +1551,30 @@ void UIVMActivityMonitorLocal::prepareMetrics()
             {
                 if (strName.contains("RAM", Qt::CaseInsensitive) && strName.contains("Free", Qt::CaseInsensitive))
                 {
-                    UIMetric ramMetric(metrics[i].GetUnit(), m_iMaximumQueueSize);
-                    ramMetric.setDataSeriesName(0, "Free");
-                    ramMetric.setDataSeriesName(1, "Used");
-                    ramMetric.setRequiresGuestAdditions(true);
-                    m_metrics.insert(Metric_Type_RAM, ramMetric);
+                    if (m_metrics.contains(Metric_Type_RAM))
+                        m_metrics[Metric_Type_RAM].setUnit(metrics[i].GetUnit());
                 }
             }
         }
     }
+    m_fCOMPerformanceCollectorConfigured = true;
+}
 
+void UIVMActivityMonitorLocal::prepareMetrics()
+{
     /* CPU Metric: */
     UIMetric cpuMetric("%", m_iMaximumQueueSize);
     cpuMetric.setDataSeriesName(0, "Guest Load");
     cpuMetric.setDataSeriesName(1, "VMM Load");
     m_metrics.insert(Metric_Type_CPU, cpuMetric);
+
+    /* RAM Metric: */
+    UIMetric ramMetric(""/*metrics[i].GetUnit()*/, m_iMaximumQueueSize);
+    ramMetric.setDataSeriesName(0, "Free");
+    ramMetric.setDataSeriesName(1, "Used");
+    ramMetric.setRequiresGuestAdditions(true);
+    m_metrics.insert(Metric_Type_RAM, ramMetric);
+
 
     /* Network metric: */
     UIMetric networkMetric("B", m_iMaximumQueueSize);
@@ -1609,6 +1625,9 @@ bool UIVMActivityMonitorLocal::guestAdditionsAvailable(const char *pszMinimumVer
 
 void UIVMActivityMonitorLocal::enableDisableGuestAdditionDependedWidgets(bool fEnable)
 {
+    /* Configure performace monitor: */
+    if (fEnable)
+        configureCOMPerformanceCollector();
     for (QMap<Metric_Type, UIMetric>::const_iterator iterator =  m_metrics.begin();
          iterator != m_metrics.end(); ++iterator)
     {
