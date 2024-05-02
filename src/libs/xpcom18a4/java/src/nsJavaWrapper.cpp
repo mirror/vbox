@@ -1783,7 +1783,7 @@ JAVAPROXY_NATIVE(callXPCOMMethod) (JNIEnv *env, jclass that, jobject aJavaProxy,
   }
 
   if (params) {
-    delete params;
+    delete[] params;
   }
 
   // If the XPCOM method invocation failed, we don't immediately throw an
