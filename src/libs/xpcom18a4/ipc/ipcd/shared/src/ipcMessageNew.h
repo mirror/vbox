@@ -295,7 +295,7 @@ DECLINLINE(const nsID *) IPCMsgGetTarget(PCIPCMSG pThis)
  */
 DECLINLINE(void *) IPCMsgGetPayload(PCIPCMSG pThis)
 {
-    AssertReturn(pThis->pMsgHdr, NULL);
+    AssertRelease(pThis->pMsgHdr);
 
     return pThis->pMsgHdr + 1;
 }
