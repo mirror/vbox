@@ -59,27 +59,8 @@
 #endif
 #include <VBox/log.h>
 
-#if 0
-/*
- * AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
- * to a file on the host. Be sure to adjust AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA_PATH
- * to your needs before using this!
- */
-# define AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
-# ifdef RT_OS_WINDOWS
-#  define AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
-# else
-#  define AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
-# endif
-/* Warning: Enabling this will generate *huge* logs! */
-//# define AUDIOMIXBUF_DEBUG_MACROS
-#endif
-
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>
-#ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
-# include <iprt/file.h>
-#endif
 #include <iprt/mem.h>
 #include <iprt/string.h> /* For RT_BZERO. */
 
