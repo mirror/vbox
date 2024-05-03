@@ -50,6 +50,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
+#include <iprt/ldr.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/once.h>
@@ -65,8 +66,6 @@
 *********************************************************************************************************************************/
 /** An experiment... */
 //#define USE_LOW_LATENCY_API 1
-/** Some older SDKs we build with don't know about this. */
-#define OSX_kIOServiceInteractionAllowed 0x00000001
 
 
 /*********************************************************************************************************************************
@@ -74,6 +73,17 @@
 *********************************************************************************************************************************/
 /** Forward declaration of the Darwin interface structure. */
 typedef struct USBPROXYIFOSX *PUSBPROXYIFOSX;
+
+
+/** @name IOKitLib declarations and definitions for IOServiceAuthorize() which is not available in all SDKs.
+ * @{  */
+/** IOServiceAuthorize in IOKit. */
+typedef kern_return_t (* PFNIOSERVICEAUTHORIZE)(io_service_t, uint32_t options);
+
+#ifndef kIOServiceInteractionAllowed
+# define kIOServiceInteractionAllowed 0x00000001
+#endif
+/** @} */
 
 
 /**
@@ -280,6 +290,8 @@ static CFStringRef g_pRunLoopMode = NULL;
 /** The IO Master Port.
  * Not worth cleaning up.  */
 static mach_port_t  g_MasterPort = MACH_PORT_NULL;
+/** Pointer to the IOServiceAuthorize() method. */
+static PFNIOSERVICEAUTHORIZE g_pfnIOServiceAuthorize = NULL;
 
 
 /**
@@ -293,7 +305,17 @@ static DECLCALLBACK(int32_t) usbProxyDarwinInitOnce(void *pvUser1)
 {
     RT_NOREF(pvUser1);
 
-    int rc;
+    RTLDRMOD hMod = NIL_RTLDRMOD;
+    int rc = RTLdrLoadEx("/System/Library/Frameworks/IOKit.framework/Versions/Current/IOKit", &hMod, RTLDRLOAD_FLAGS_NO_SUFFIX | RTLDRLOAD_FLAGS_NO_UNLOAD,
+                         NULL);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hMod, "IOServiceAuthorize", (void **)&g_pfnIOServiceAuthorize);
+        if (RT_FAILURE(rc))
+            LogRel(("USB: Failed to resolve IOServiceAuthorize(), capturing USB devices might not work (%Rrc)\n", rc));
+        RTLdrClose(hMod);
+    }
+
     RT_GCC_NO_WARN_DEPRECATED_BEGIN
     kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &g_MasterPort);  /* Deprecated since 12.0. */
     RT_GCC_NO_WARN_DEPRECATED_END
@@ -1221,9 +1243,13 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
     /*
      * Ask for authorization (which only works with the com.apple.vm.device-access entitlement).
      */
-    irc = IOServiceAuthorize(USBDevice, OSX_kIOServiceInteractionAllowed);
-    if (irc != kIOReturnSuccess)
-        LogRel(("Failed to get device authorization, capturing the device might now work: irc=%#x\n", irc));
+    if (g_pfnIOServiceAuthorize)
+    {
+        irc = g_pfnIOServiceAuthorize(USBDevice, kIOServiceInteractionAllowed);
+        if (irc != kIOReturnSuccess)
+            LogRel(("USB: Failed to get authorization for device '%s', capturing the device might now work: irc=%#x\n",
+                    pszAddress, irc));
+    }
 
     /*
      * Create a plugin interface for the device and query its IOUSBDeviceInterface.
