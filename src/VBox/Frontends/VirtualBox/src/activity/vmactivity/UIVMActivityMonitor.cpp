@@ -1490,7 +1490,10 @@ void UIVMActivityMonitorLocal::prepareWidgets()
 
     QVector<Metric_Type> chartOrder;
     chartOrder << Metric_Type_CPU << Metric_Type_RAM <<
-        Metric_Type_Network_InOut << Metric_Type_Disk_InOut << Metric_Type_VM_Exits;
+        Metric_Type_Network_InOut << Metric_Type_Disk_InOut;
+#ifdef DEBUG
+    chartOrder << Metric_Type_VM_Exits;
+#endif
     int iRow = 0;
     foreach (Metric_Type enmType, chartOrder)
     {
@@ -1543,7 +1546,6 @@ void UIVMActivityMonitorLocal::configureCOMPerformanceCollector()
     m_performanceCollector.SetupMetrics(m_nameList, m_objectList, g_iPeriod, g_iMetricSetupCount);
     {
         QVector<CPerformanceMetric> metrics = m_performanceCollector.GetMetrics(m_nameList, m_objectList);
-        printf("object list size %lld\n", metrics.size());
         for (int i = 0; i < metrics.size(); ++i)
         {
             QString strName(metrics[i].GetMetricName());

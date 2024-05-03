@@ -246,7 +246,7 @@ void UIVMInformationDialog::prepareTabWidget()
             m_tabs.insert(Tabs_ActivityMonitor, pVMActivityMonitorContainer);
             m_pTabWidget->addTab(m_tabs.value(Tabs_ActivityMonitor), QString());
         }
-
+#ifdef DEBUG
         /* Create Guest Process Control tab: */
         UIGuestProcessControlWidget *pGuestProcessControlWidget =
             new UIGuestProcessControlWidget(EmbedTo_Dialog, gpMachine->uisession()->guest(),
@@ -256,7 +256,7 @@ void UIVMInformationDialog::prepareTabWidget()
             m_tabs.insert(3, pGuestProcessControlWidget);
             m_pTabWidget->addTab(m_tabs.value(3), QString());
         }
-
+#endif
         m_pTabWidget->setCurrentIndex(Tabs_ActivityMonitor);
 
         /* Assign tab-widget page change handler: */
