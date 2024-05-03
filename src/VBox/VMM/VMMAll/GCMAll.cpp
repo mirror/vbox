@@ -38,31 +38,6 @@
 #include <iprt/string.h>
 
 
-/**
- * Checks whether GCM is enabled for this VM.
- *
- * @retval  true if GCM is on.
- * @retval  false if no GCM fixer is enabled.
- *
- * @param   pVM       The cross context VM structure.
- */
-VMMDECL(bool) GCMIsEnabled(PVM pVM)
-{
-    return pVM->gcm.s.fFixerSet != GCMFIXER_NONE;
-}
-
-
-/**
- * Gets the GCM fixers configured for this VM.
- *
- * @returns The GCM provider Id.
- * @param   pVM     The cross context VM structure.
- */
-VMMDECL(int32_t) GCMGetFixers(PVM pVM)
-{
-    return pVM->gcm.s.fFixerSet;
-}
-
 
 /**
  * Whether \#DE exceptions in the guest should be intercepted by GCM and
@@ -73,12 +48,8 @@ VMMDECL(int32_t) GCMGetFixers(PVM pVM)
  */
 VMM_INT_DECL(bool) GCMShouldTrapXcptDE(PVMCPUCC pVCpu)
 {
-    LogFlowFunc(("entered\n"));
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (!GCMIsEnabled(pVM))
-        return false;
-
     LogFunc(("GCM checking if #DE needs trapping\n"));
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     /* See if the enabled fixers need to intercept #DE. */
     if (  pVM->gcm.s.fFixerSet
@@ -114,7 +85,7 @@ VMM_INT_DECL(bool) GCMShouldTrapXcptDE(PVMCPUCC pVCpu)
 VMM_INT_DECL(VBOXSTRICTRC) GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pDis, uint8_t *pcbInstr)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    Assert(GCMIsEnabled(pVM));
+    Assert(pVM->gcm.s.fFixerSet & (GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_WIN9X));
     Assert(pDis || pcbInstr);
     RT_NOREF(pDis);
     RT_NOREF(pcbInstr);
