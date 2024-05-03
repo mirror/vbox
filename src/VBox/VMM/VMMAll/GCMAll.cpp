@@ -49,7 +49,7 @@
  */
 VMMDECL(bool) GCMIsEnabled(PVM pVM)
 {
-    return pVM->gcm.s.enmFixerIds != GCMFIXER_NONE;
+    return pVM->gcm.s.fFixerSet != GCMFIXER_NONE;
 }
 
 
@@ -61,7 +61,7 @@ VMMDECL(bool) GCMIsEnabled(PVM pVM)
  */
 VMMDECL(int32_t) GCMGetFixers(PVM pVM)
 {
-    return pVM->gcm.s.enmFixerIds;
+    return pVM->gcm.s.fFixerSet;
 }
 
 
@@ -82,8 +82,8 @@ VMM_INT_DECL(bool) GCMShouldTrapXcptDE(PVMCPUCC pVCpu)
     LogFunc(("GCM checking if #DE needs trapping\n"));
 
     /* See if the enabled fixers need to intercept #DE. */
-    if (  pVM->gcm.s.enmFixerIds
-        & (GCMFIXER_DBZ_DOS |  GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_WIN9X))
+    if (  pVM->gcm.s.fFixerSet
+        & (GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_WIN9X))
     {
         LogRel(("GCM: #DE should be trapped\n"));
         return true;
@@ -123,7 +123,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pD
     LogRel(("GCM: Intercepted #DE at CS:RIP=%04x:%RX64 (%RX64 linear) RDX:RAX=%RX64:%RX64 RCX=%RX64 RBX=%RX64\n",
             pCtx->cs.Sel, pCtx->rip, pCtx->cs.u64Base + pCtx->rip, pCtx->rdx, pCtx->rax, pCtx->rcx, pCtx->rbx));
 
-    if (pVM->gcm.s.enmFixerIds & GCMFIXER_DBZ_OS2)
+    if (pVM->gcm.s.fFixerSet & GCMFIXER_DBZ_OS2)
     {
         if (pCtx->rcx == 0 && pCtx->rdx == 1 && pCtx->rax == 0x86a0)
         {
@@ -151,7 +151,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pD
         }
     }
 
-    if (pVM->gcm.s.enmFixerIds & GCMFIXER_DBZ_DOS)
+    if (pVM->gcm.s.fFixerSet & GCMFIXER_DBZ_DOS)
     {
         /* NB: For 16-bit DOS software, we must generally only compare 16-bit registers.
          * The contents of the high words may be unpredictable depending on the environment.
@@ -212,7 +212,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pD
         }
     }
 
-    if (pVM->gcm.s.enmFixerIds & GCMFIXER_DBZ_WIN9X)
+    if (pVM->gcm.s.fFixerSet & GCMFIXER_DBZ_WIN9X)
     {
         if (pCtx->rcx == 0 && pCtx->rdx == 0 && pCtx->rax == 0x100000)
         {

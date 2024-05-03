@@ -1093,9 +1093,6 @@ VMMR3_INT_DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     DBGFR3Relocate(pVM, offDelta);
     PDMR3Relocate(pVM, offDelta);
     GIMR3Relocate(pVM, offDelta);
-#if !defined(VBOX_VMM_TARGET_ARMV8)
-    GCMR3Relocate(pVM, offDelta);
-#endif
 }
 
 

@@ -45,14 +45,31 @@ RT_C_DECLS_BEGIN
 #define GCM_SAVED_STATE_VERSION         1
 
 /**
+ * GCM Fixer Identifiers.
+ * @remarks Part of saved state!
+ */
+typedef enum GCMFIXERID
+{
+    /** None. */
+    GCMFIXER_NONE       = 0,
+    /** DOS division by zero, the worst. Includes Windows 3.x. */
+    GCMFIXER_DBZ_DOS    = RT_BIT(0),
+    /** OS/2 (any version) division by zero. */
+    GCMFIXER_DBZ_OS2    = RT_BIT(1),
+    /** Windows 9x division by zero. */
+    GCMFIXER_DBZ_WIN9X  = RT_BIT(2),
+    /** 32-bit hack. */
+    GCMFIXER_32BIT_HACK = 0x7fffffff
+} GCMFIXERID;
+AssertCompileSize(GCMFIXERID, sizeof(uint32_t));
+
+/**
  * GCM VM Instance data.
  */
 typedef struct GCM
 {
     /** The provider that is active for this VM. */
-    int32_t                         enmFixerIds;
-    /** The interface implementation version. */
-    uint32_t                        u32Version;
+    uint32_t                        fFixerSet;
 
 } GCM;
 /** Pointer to GCM VM instance data. */

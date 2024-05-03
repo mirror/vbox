@@ -39,12 +39,7 @@
 # pragma once
 #endif
 
-#include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/param.h>
-
-#include <VBox/vmm/cpum.h>
-#include <VBox/vmm/pdmifs.h>
 
 RT_C_DECLS_BEGIN
 
@@ -53,32 +48,11 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/**
- * GCM Fixer Identifiers.
- * @remarks Part of saved state!
- */
-typedef enum GCMFIXERID
-{
-    /** None. */
-    GCMFIXER_NONE       = 0,
-    /** DOS division by zero, the worst. Includes Windows 3.x. */
-    GCMFIXER_DBZ_DOS    = RT_BIT(0),
-    /** OS/2 (any version) division by zero. */
-    GCMFIXER_DBZ_OS2    = RT_BIT(1),
-    /** Windows 9x division by zero. */
-    GCMFIXER_DBZ_WIN9X  = RT_BIT(2),
-    /** 32-bit hack. */
-    GCMFIXER_32BIT_HACK = 0x7fffffff
-} GCMFIXERID;
-AssertCompileSize(GCMFIXERID, sizeof(uint32_t));
-
-
 #ifdef IN_RING3
 /** @defgroup grp_gcm_r3  The GCM Host Context Ring-3 API
  * @{
  */
 VMMR3_INT_DECL(int)         GCMR3Init(PVM pVM);
-VMMR3_INT_DECL(void)        GCMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(int)         GCMR3Term(PVM pVM);
 VMMR3_INT_DECL(void)        GCMR3Reset(PVM pVM);
 /** @} */

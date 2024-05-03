@@ -107,61 +107,81 @@ VMMR3_INT_DECL(int) GCMR3Init(PVM pVM)
         return rc;
 
     /*
-     * Read configuration.
+     * Read & validate configuration.
      */
-    PCFGMNODE pCfgNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "GCM/");
+    static struct { const char *pszName; uint32_t cchName; uint32_t fFlag; } const s_aFixerIds[] =
+    {
+        { RT_STR_TUPLE("DivByZeroDOS"),       GCMFIXER_DBZ_DOS },
+        { RT_STR_TUPLE("DivByZeroOS2"),       GCMFIXER_DBZ_OS2 },
+        { RT_STR_TUPLE("DivByZeroWin9x"),     GCMFIXER_DBZ_WIN9X },
+    };
 
-    /*
-     * Validate the GCM settings.
-     */
-    rc = CFGMR3ValidateConfig(pCfgNode, "/GCM/",    /* pszNode */
-                              "FixerSet",           /* pszValidValues */
+    /* Assemble valid value names for CFMGR3ValidateConfig. */
+    char   szValidValues[1024];
+    size_t offValidValues = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aFixerIds); i++)
+    {
+        AssertReturn(offValidValues + s_aFixerIds[i].cchName + 2 <= sizeof(szValidValues), VERR_INTERNAL_ERROR_2);
+        if (offValidValues)
+            szValidValues[offValidValues++] = '|';
+        memcpy(&szValidValues[offValidValues], s_aFixerIds[i].pszName, s_aFixerIds[i].cchName);
+        offValidValues += s_aFixerIds[i].cchName;
+    }
+    szValidValues[offValidValues] = '\0';
+
+    /* Validate the configuration. */
+    PCFGMNODE pCfgNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "GCM/");
+    rc = CFGMR3ValidateConfig(pCfgNode,
+                              "/GCM/",              /* pszNode (for error msgs) */
+                              szValidValues,
                               "",                   /* pszValidNodes */
                               "GCM",                /* pszWho */
                               0);                   /* uInstance */
     if (RT_FAILURE(rc))
         return rc;
 
-#if 1
-    /** @cfgm{/GCM/FixerSet, uint32_t, 0}
-     * The set (bit mask) of enabled fixers. See GCMFIXERID.
-     */
-    uint32_t    u32FixerIds;
-    rc = CFGMR3QueryU32Def(pCfgNode, "FixerSet", &u32FixerIds, 0);
-    AssertRCReturn(rc, rc);
-
-    /* Check for unknown bits. */
-    uint32_t    u32BadBits = u32FixerIds & ~(GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_WIN9X);
-
-    if (u32BadBits)
+    /* Read the configuration. */
+    pVM->gcm.s.fFixerSet = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aFixerIds); i++)
     {
-        rc = VMR3SetError(pVM->pUVM, VERR_CFGM_CONFIG_UNKNOWN_VALUE, RT_SRC_POS, "Unsupported GCM fixer bits (%#x) set.", u32BadBits);
+        bool fEnabled = false;
+        rc = CFGMR3QueryBoolDef(pCfgNode, s_aFixerIds[i].pszName, &fEnabled, false);
+        if (RT_FAILURE(rc))
+            return VMR3SetError(pVM->pUVM, rc, RT_SRC_POS, "Error reading /GCM/%s as boolean: %Rrc", s_aFixerIds[i].pszName, rc);
+        if (fEnabled)
+            pVM->gcm.s.fFixerSet = s_aFixerIds[i].fFlag;
     }
-    else
-    {
-        pVM->gcm.s.enmFixerIds = u32FixerIds;
-    }
-#else
+
+#if 0 /* development override */
     pVM->gcm.s.enmFixerIds = GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_WIN9X;
 #endif
-    LogRel(("GCM: Initialized (fixer bits: %#x)\n", u32FixerIds));
 
-    return rc;
-}
+    /*
+     * Log what's enabled.
+     */
+    offValidValues = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aFixerIds); i++)
+        if (pVM->gcm.s.fFixerSet & s_aFixerIds[i].fFlag)
+        {
+            AssertReturn(offValidValues + s_aFixerIds[i].cchName + 4 <= sizeof(szValidValues), VERR_INTERNAL_ERROR_2);
+            if (!offValidValues)
+            {
+                szValidValues[offValidValues++] = ' ';
+                szValidValues[offValidValues++] = '(';
+            }
+            else
+            {
+                szValidValues[offValidValues++] = ',';
+                szValidValues[offValidValues++] = ' ';
+            }
+            memcpy(&szValidValues[offValidValues], s_aFixerIds[i].pszName, s_aFixerIds[i].cchName);
+            offValidValues += s_aFixerIds[i].cchName;
+        }
+    if (offValidValues)
+        szValidValues[offValidValues++] = ')';
+    szValidValues[offValidValues] = '\0';
+    LogRel(("GCM: Initialized - Fixer bits: %#x%s\n", pVM->gcm.s.fFixerSet, szValidValues));
 
-
-/**
- * Finalize the GCM initialization.
- *
- * This is called after initializing HM and most other VMM components.
- *
- * @returns VBox status code.
- * @param   pVM                 The cross context VM structure.
- * @thread  EMT(0)
- */
-VMMR3_INT_DECL(int) GCMR3InitCompleted(PVM pVM)
-{
-    RT_NOREF(pVM);
     return VINF_SUCCESS;
 }
 
@@ -174,14 +194,10 @@ static DECLCALLBACK(int) gcmR3Save(PVM pVM, PSSMHANDLE pSSM)
     AssertReturn(pVM,  VERR_INVALID_PARAMETER);
     AssertReturn(pSSM, VERR_SSM_INVALID_STATE);
 
-    int rc = VINF_SUCCESS;
-
     /*
-     * Save per-VM data.
+     * At present there is only configuration to save.
      */
-    SSMR3PutU32(pSSM, pVM->gcm.s.enmFixerIds);
-
-    return rc;
+    return SSMR3PutU32(pSSM, pVM->gcm.s.fFixerSet);
 }
 
 
@@ -195,19 +211,17 @@ static DECLCALLBACK(int) gcmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     if (uVersion != GCM_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    int rc;
-
     /*
-     * Load per-VM data.
+     * Load configuration and check it aginst the current (live migration,
+     * general paranoia).
      */
-    uint32_t uFixerIds;
-
-    rc = SSMR3GetU32(pSSM, &uFixerIds);
+    uint32_t fFixerSet = 0;
+    int rc = SSMR3GetU32(pSSM, &fFixerSet);
     AssertRCReturn(rc, rc);
 
-    if ((GCMFIXERID)uFixerIds != pVM->gcm.s.enmFixerIds)
+    if (fFixerSet != pVM->gcm.s.fFixerSet)
         return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Saved GCM fixer set %#X differs from the configured one (%#X)."),
-                                uFixerIds, pVM->gcm.s.enmFixerIds);
+                                fFixerSet, pVM->gcm.s.fFixerSet);
 
     return VINF_SUCCESS;
 }
@@ -226,21 +240,6 @@ VMMR3_INT_DECL(int) GCMR3Term(PVM pVM)
 {
     RT_NOREF(pVM);
     return VINF_SUCCESS;
-}
-
-
-/**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate itself inside the GC.
- *
- * @param   pVM         The cross context VM structure.
- * @param   offDelta    Relocation delta relative to old location.
- */
-VMMR3_INT_DECL(void) GCMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
-{
-    RT_NOREF(pVM);
-    RT_NOREF(offDelta);
 }
 
 
