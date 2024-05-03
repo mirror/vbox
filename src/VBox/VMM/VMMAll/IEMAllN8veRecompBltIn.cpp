@@ -30,7 +30,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_IEM_RE_NATIVE
-//#define IEM_WITH_OPAQUE_DECODER_STATE - need offCurInstrStart access for iemNativeHlpMemCodeNewPageTlbMiss and friends.
+#define IEM_WITH_OPAQUE_DECODER_STATE
 #define VMCPU_INCL_CPUM_GST_CTX
 #define VMM_INCLUDED_SRC_include_IEMMc_h /* block IEMMc.h inclusion. */
 #include <VBox/vmm/iem.h>

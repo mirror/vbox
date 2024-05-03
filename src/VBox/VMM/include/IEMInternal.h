@@ -1595,11 +1595,11 @@ typedef struct IEMCPU
      * This takes the CS segment limit into account.
      * @note Set to zero when the code TLB is flushed to trigger TLB reload. */
     uint16_t                cbInstrBufTotal;                                                                /* 0x28 */
-# ifndef IEM_WITH_OPAQUE_DECODER_STATE
     /** Offset into pbInstrBuf of the first byte of the current instruction.
      * Can be negative to efficiently handle cross page instructions. */
     int16_t                 offCurInstrStart;                                                               /* 0x2a */
 
+# ifndef IEM_WITH_OPAQUE_DECODER_STATE
     /** The prefix mask (IEM_OP_PRF_XXX). */
     uint32_t                fPrefixes;                                                                      /* 0x2c */
     /** The extra REX ModR/M register field bit (REX.R << 3). */
@@ -1623,7 +1623,7 @@ typedef struct IEMCPU
     uint8_t                 bUnused;                                                                        /* 0x35 */
 #  endif
 # else  /* IEM_WITH_OPAQUE_DECODER_STATE */
-    uint8_t                 abOpaqueDecoderPart1[0x36 - 0x2a];
+    uint8_t                 abOpaqueDecoderPart1[0x36 - 0x2c];
 # endif /* IEM_WITH_OPAQUE_DECODER_STATE */
 
 #else  /* !IEM_WITH_CODE_TLB */

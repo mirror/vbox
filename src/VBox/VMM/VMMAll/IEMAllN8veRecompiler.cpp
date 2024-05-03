@@ -176,7 +176,7 @@ static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMC
         if (pNewTb->GCPhysPc == GCPhysPc)
         {
 # ifdef VBOX_STRICT
-            uint32_t fAssertFlags = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | IEMTB_F_TYPE_NATIVE;
+            uint32_t fAssertFlags = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK & IEMTB_F_KEY_MASK) | IEMTB_F_TYPE_NATIVE;
             if (pVCpu->cpum.GstCtx.rflags.uBoth & CPUMCTX_INHIBIT_SHADOW)
                 fAssertFlags |= IEMTB_F_INHIBIT_SHADOW;
             if (pVCpu->cpum.GstCtx.rflags.uBoth & CPUMCTX_INHIBIT_NMI)
@@ -187,7 +187,7 @@ static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMC
                 if (offFromLim < X86_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK))
                     fAssertFlags |= IEMTB_F_CS_LIM_CHECKS;
             }
-            Assert(!(fFlags & ~(IEMTB_F_IEM_F_MASK | IEMTB_F_TYPE_MASK)));
+            Assert(!(fFlags & ~(IEMTB_F_KEY_MASK | IEMTB_F_TYPE_MASK)));
             AssertMsg(fFlags == fAssertFlags, ("fFlags=%#RX32 fAssertFlags=%#RX32 cs:rip=%04x:%#010RX64\n",
                                                fFlags, fAssertFlags, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
 #endif
@@ -195,11 +195,13 @@ static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMC
             /*
              * Check them + type.
              */
-            if ((pNewTb->fFlags & (IEMTB_F_IEM_F_MASK | IEMTB_F_TYPE_MASK)) == fFlags)
+            if ((pNewTb->fFlags & (IEMTB_F_KEY_MASK | IEMTB_F_TYPE_MASK)) == fFlags)
             {
                 /*
                  * Check for interrupts and stuff.
                  */
+                /** @todo We duplicate code here that's also in iemNativeHlpReturnBreakViaLookupWithTlb.
+                 * The main problem are the statistics and to some degree the logging. :/ */
                 if (!a_fWithIrqCheck || !iemNativeHlpReturnBreakViaLookupIsIrqOrForceFlagPending(pVCpu) )
                 {
                     /* Do polling. */
@@ -207,6 +209,9 @@ static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMC
                     if (   RT_LIKELY(cTbExecNative & 511)
                         || !TMTimerPollBoolWith32BitMilliTS(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->iem.s.msRecompilerPollNow) )
                     {
+                        /*
+                         * Success. Update statistics and switch to the next TB.
+                         */
                         pVCpu->iem.s.cTbExecNative = cTbExecNative + 1;
                         if (a_fWithIrqCheck)
                             STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking1Irq);
@@ -254,13 +259,124 @@ static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMC
  * Used by TB code when encountering a non-zero status or rcPassUp after a call.
  */
 template <bool const a_fWithIrqCheck>
-static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookupWithTlb,(PVMCPUCC pVCpu, uint8_t idxTbLookup,
-                                                                                   uint32_t fFlags))
+static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookupWithTlb,(PVMCPUCC pVCpu, uint8_t idxTbLookup))
 {
     PIEMTB const    pTb     = pVCpu->iem.s.pCurTbR3;
     Assert(idxTbLookup < pTb->cTbLookupEntries);
     PIEMTB * const  ppNewTb = IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pTb, idxTbLookup);
-#if 0 /** @todo Do TLB lookup */
+#if 1
+    PIEMTB const    pNewTb  = *ppNewTb;
+    if (pNewTb)
+    {
+        /*
+         * Calculate the flags for the next TB and check if they match.
+         */
+        uint32_t fFlags = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK & IEMTB_F_KEY_MASK) | IEMTB_F_TYPE_NATIVE;
+        if (!(pVCpu->cpum.GstCtx.rflags.uBoth & (CPUMCTX_INHIBIT_SHADOW | CPUMCTX_INHIBIT_NMI)))
+        { /* likely */ }
+        else
+        {
+            if (pVCpu->cpum.GstCtx.rflags.uBoth & CPUMCTX_INHIBIT_SHADOW)
+                fFlags |= IEMTB_F_INHIBIT_SHADOW;
+            if (pVCpu->cpum.GstCtx.rflags.uBoth & CPUMCTX_INHIBIT_NMI)
+                fFlags |= IEMTB_F_INHIBIT_NMI;
+        }
+        if (!IEM_F_MODE_X86_IS_FLAT(fFlags))
+        {
+            int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip;
+            if (offFromLim >= X86_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK))
+            { /* likely */ }
+            else
+                fFlags |= IEMTB_F_CS_LIM_CHECKS;
+        }
+        Assert(!(fFlags & ~(IEMTB_F_KEY_MASK | IEMTB_F_TYPE_MASK)));
+
+        if ((pNewTb->fFlags & (IEMTB_F_KEY_MASK | IEMTB_F_TYPE_MASK)) == fFlags)
+        {
+            /*
+             * Do the TLB lookup for flat RIP and compare the result with the next TB.
+             *
+             * Note! This replicates iemGetPcWithPhysAndCode and iemGetPcWithPhysAndCodeMissed.
+             */
+            /* Calc the effective PC. */
+            uint64_t uPc = pVCpu->cpum.GstCtx.rip;
+            Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_IS_64BIT_CODE(pVCpu));
+            uPc += pVCpu->cpum.GstCtx.cs.u64Base;
+
+            /* Advance within the current buffer (PAGE) when possible. */
+            RTGCPHYS GCPhysPc;
+            uint64_t off;
+            if (   pVCpu->iem.s.pbInstrBuf
+                && (off = uPc - pVCpu->iem.s.uInstrBufPc) < pVCpu->iem.s.cbInstrBufTotal) /*ugly*/
+            {
+                pVCpu->iem.s.offInstrNextByte = (uint32_t)off;
+                pVCpu->iem.s.offCurInstrStart = (uint16_t)off;
+                if ((uint16_t)off + 15 <= pVCpu->iem.s.cbInstrBufTotal)
+                    pVCpu->iem.s.cbInstrBuf = (uint16_t)off + 15;
+                else
+                    pVCpu->iem.s.cbInstrBuf = pVCpu->iem.s.cbInstrBufTotal;
+                GCPhysPc = pVCpu->iem.s.GCPhysInstrBuf + off;
+            }
+            else
+            {
+                pVCpu->iem.s.pbInstrBuf       = NULL;
+                pVCpu->iem.s.offCurInstrStart = 0;
+                pVCpu->iem.s.offInstrNextByte = 0;
+                iemOpcodeFetchBytesJmp(pVCpu, 0, NULL);
+                GCPhysPc = pVCpu->iem.s.pbInstrBuf ? pVCpu->iem.s.GCPhysInstrBuf + pVCpu->iem.s.offCurInstrStart : NIL_RTGCPHYS;
+            }
+
+            if (pNewTb->GCPhysPc == GCPhysPc)
+            {
+                /*
+                 * Check for interrupts and stuff.
+                 */
+                /** @todo We duplicate code here that's also in iemNativeHlpReturnBreakViaLookupWithPc.
+                 * The main problem are the statistics and to some degree the logging. :/ */
+                if (!a_fWithIrqCheck || !iemNativeHlpReturnBreakViaLookupIsIrqOrForceFlagPending(pVCpu) )
+                {
+                    /* Do polling. */
+                    uint64_t const cTbExecNative = pVCpu->iem.s.cTbExecNative;
+                    if (   RT_LIKELY(cTbExecNative & 511)
+                        || !TMTimerPollBoolWith32BitMilliTS(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->iem.s.msRecompilerPollNow) )
+                    {
+                        /*
+                         * Success. Update statistics and switch to the next TB.
+                         */
+                        pVCpu->iem.s.cTbExecNative = cTbExecNative + 1;
+                        if (a_fWithIrqCheck)
+                            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking2Irq);
+                        else
+                            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking2NoIrq);
+
+                        pNewTb->cUsed                 += 1;
+                        pNewTb->msLastUsed             = pVCpu->iem.s.msRecompilerPollNow;
+                        pVCpu->iem.s.pCurTbR3          = pNewTb;
+                        pVCpu->iem.s.ppTbLookupEntryR3 = IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pNewTb, 0);
+                        Log10(("iemNativeHlpReturnBreakViaLookupWithTlb: match at %04x:%08RX64 (%RGp): pTb=%p[%#x]-> %p\n",
+                               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPhysPc, pTb, idxTbLookup, pNewTb));
+                        return (uintptr_t)pNewTb->Native.paInstructions;
+                    }
+                }
+                Log10(("iemNativeHlpReturnBreakViaLookupWithTlb: IRQ or FF pending\n"));
+                STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking2PendingIrq);
+            }
+            else
+            {
+                Log10(("iemNativeHlpReturnBreakViaLookupWithTlb: GCPhysPc mismatch at %04x:%08RX64: %RGp vs %RGp (pTb=%p[%#x]-> %p)\n",
+                       pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPhysPc, pNewTb->GCPhysPc, pTb, idxTbLookup, pNewTb));
+                STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking2MismatchGCPhysPc);
+            }
+        }
+        else
+        {
+            Log10(("iemNativeHlpReturnBreakViaLookupWithTlb: fFlags mismatch at %04x:%08RX64: %#x vs %#x (pTb=%p[%#x]-> %p)\n",
+                   pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fFlags, pNewTb->fFlags, pTb, idxTbLookup, pNewTb));
+            STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking2MismatchFlags);
+        }
+    }
+    else
+        STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking2NoTb);
 #else
     NOREF(fFlags);
     STAM_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking2NoTb); /* just for some stats, even if misleading */
