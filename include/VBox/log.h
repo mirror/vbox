@@ -288,6 +288,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_EM,
     /** FTM group. */
     LOG_GROUP_FTM,
+    /** GCM group. */
+    LOG_GROUP_GCM,
     /** GIM group. */
     LOG_GROUP_GIM,
     /** GMM group. */
@@ -981,6 +983,7 @@ typedef enum VBOXLOGGROUP
     "DRV_VUSB", \
     "EM", \
     "FTM", \
+    "GCM", \
     "GIM", \
     "GMM", \
     "GUEST_CONTROL", \

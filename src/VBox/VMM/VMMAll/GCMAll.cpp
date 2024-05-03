@@ -28,9 +28,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_GIM
+#define LOG_GROUP LOG_GROUP_GCM
 #include <VBox/vmm/gcm.h>
-#include <VBox/vmm/em.h>    /* For EMInterpretDisasCurrent */
 #include "GCMInternal.h"
 #include <VBox/vmm/vmcc.h>
 

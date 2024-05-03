@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2022-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2022-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -26,8 +26,8 @@
 
 /** @page pg_gcm        GCM - The Guest Compatibility Manager
  *
- * The Guest Compatibility Manager provides run-time compatibility fixes
- * for certain known guest bugs.
+ * The Guest Compatibility Manager provides run-time compatibility fixes for
+ * certain known guest bugs.
  *
  * @see grp_gcm
  *
@@ -44,33 +44,33 @@
  * applied or not; restricting the number of applicable fixes minimizes the
  * chance that a fix could be misapplied.
  *
- * The fixers are invisible to a guest. A common problem is division by zero
- * caused by a software timing loop which cannot deal with fast CPUs (where
- * "fast" very much depends on the era when the software was written). A fixer
- * intercepts division by zero, recognizes known register contents and code
- * sequence, modifies one or more registers to avoid a divide error, and
- * restarts the instruction.
+ * The fixers are invisible to a guest. It is not expected that the set of
+ * active fixers would be changed during the lifetime of the VM.
  *
- * It is not expected that the set of active fixers would be changed during
- * the lifetime of the VM.
+ *
+ * @subsection sec_gcm_fixer_div_by_zero  Division By Zero
+ *
+ * A common problem is division by zero caused by a software timing loop which
+ * cannot deal with fast CPUs (where "fast" very much depends on the era when
+ * the software was written). A fixer intercepts division by zero, recognizes
+ * known register contents and code sequence, modifies one or more registers to
+ * avoid a divide error, and restarts the instruction.
+ *
  */
 
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_GIM
+#define LOG_GROUP LOG_GROUP_GCM
 #include <VBox/vmm/gcm.h>
-#include <VBox/vmm/hm.h>
 #include <VBox/vmm/ssm.h>
-#include <VBox/vmm/pdmdev.h>
 #include "GCMInternal.h"
 #include <VBox/vmm/vm.h>
 
 #include <VBox/log.h>
+#include <VBox/err.h>
 
-#include <iprt/err.h>
-#include <iprt/semaphore.h>
 #include <iprt/string.h>
 
 
