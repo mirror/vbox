@@ -1247,7 +1247,7 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
     {
         irc = g_pfnIOServiceAuthorize(USBDevice, kIOServiceInteractionAllowed);
         if (irc != kIOReturnSuccess)
-            LogRel(("USB: Failed to get authorization for device '%s', capturing the device might now work: irc=%#x\n",
+            LogRel(("USB: Failed to get authorization for device '%s', capturing the device might not work: irc=%#x\n",
                     pszAddress, irc));
     }
 
