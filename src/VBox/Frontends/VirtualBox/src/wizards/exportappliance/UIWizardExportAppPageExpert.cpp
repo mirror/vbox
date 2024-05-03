@@ -33,7 +33,6 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
-#include <QListWidget>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QStackedWidget>
@@ -42,6 +41,7 @@
 
 /* GUI includes: */
 #include "QIComboBox.h"
+#include "QIListWidget.h"
 #include "QIToolButton.h"
 #include "UICommon.h"
 #include "UIApplianceExportEditorWidget.h"
@@ -107,7 +107,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
         if (m_pToolBox)
         {
             /* Create VM selector: */
-            m_pVMSelector = new QListWidget(m_pToolBox);
+            m_pVMSelector = new QIListWidget(m_pToolBox);
             if (m_pVMSelector)
             {
                 m_pVMSelector->setAlternatingRowColors(true);
@@ -406,7 +406,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
-    connect(m_pVMSelector, &QListWidget::itemSelectionChanged,
+    connect(m_pVMSelector, &QIListWidget::itemSelectionChanged,
             this, &UIWizardExportAppPageExpert::sltHandleVMItemSelectionChanged);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardExportAppPageExpert::sltHandleFileSelectorChange);
@@ -442,6 +442,9 @@ void UIWizardExportAppPageExpert::sltRetranslateUI()
     m_pToolBox->setPageTitle(0, UIWizardExportApp::tr("Virtual &machines"));
     m_pToolBox->setPageTitle(1, UIWizardExportApp::tr("Format &settings"));
     m_pToolBox->setPageTitle(2, UIWizardExportApp::tr("&Appliance settings"));
+
+    /* Translate Machine list: */
+    m_pVMSelector->setWhatsThis(UIWizardExportApp::tr("Contains a list of Virtual Machines"));
 
     /* Translate File selector: */
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));

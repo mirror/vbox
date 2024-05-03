@@ -49,7 +49,7 @@ class QCheckBox;
 class QGridLayout;
 class QGroupBox;
 class QLabel;
-class QListWidget;
+class QIListWidget;
 class QStackedWidget;
 class QIComboBox;
 class QIToolButton;
@@ -145,7 +145,7 @@ private:
 
 
     /** Holds the VM selector instance. */
-    QListWidget *m_pVMSelector;
+    QIListWidget *m_pVMSelector;
 
 
     /** Holds the format layout. */

@@ -38,7 +38,7 @@
 #include "UINativeWizardPage.h"
 
 /* Forward declarations: */
-class QListWidget;
+class QIListWidget;
 class QIRichTextLabel;
 class UIWizardExportApp;
 
@@ -46,15 +46,15 @@ class UIWizardExportApp;
 namespace UIWizardExportAppVMs
 {
     /** Populates @a pVMSelector with items on the basis of passed @a selectedVMNames. */
-    void populateVMItems(QListWidget *pVMSelector, const QStringList &selectedVMNames);
+    void populateVMItems(QIListWidget *pVMSelector, const QStringList &selectedVMNames);
 
     /** Refresh a list of saved machines selected in @a pVMSelector. */
-    void refreshSavedMachines(QStringList &savedMachines, QListWidget *pVMSelector);
+    void refreshSavedMachines(QStringList &savedMachines, QIListWidget *pVMSelector);
 
     /** Returns a list of machine names selected in @a pVMSelector. */
-    QStringList machineNames(QListWidget *pVMSelector);
+    QStringList machineNames(QIListWidget *pVMSelector);
     /** Returns a list of machine IDs selected in @a pVMSelector. */
-    QList<QUuid> machineIDs(QListWidget *pVMSelector);
+    QList<QUuid> machineIDs(QIListWidget *pVMSelector);
 }
 
 /** UINativeWizardPage extension for VMs page of the Export Appliance wizard,
@@ -102,7 +102,7 @@ private:
     QIRichTextLabel *m_pLabelMain;
 
     /** Holds the VM selector instance. */
-    QListWidget *m_pVMSelector;
+    QIListWidget *m_pVMSelector;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageVMs_h */
