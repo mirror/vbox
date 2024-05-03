@@ -1217,6 +1217,13 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
     }
 
     /*
+     * Ask for authorization (which only works with the com.apple.vm.device-access entitlement).
+     */
+    irc = IOServiceAuthorize(USBDevice, kIOServiceInteractionAllowed);
+    if (irc != kIOReturnSuccess)
+        LogRel(("Failed to get device authorization, capturing the device might now work: irc=%#x\n", irc));
+
+    /*
      * Create a plugin interface for the device and query its IOUSBDeviceInterface.
      */
     SInt32 Score = 0;
