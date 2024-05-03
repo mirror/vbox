@@ -86,6 +86,9 @@ private:
 
     /** Returns corresponding QITreeViewItem. */
     QITreeViewItem *item() const { return qobject_cast<QITreeViewItem*>(object()); }
+
+    /** Returns item bounding rectangle including all the children. */
+    QRect boundingRect() const;
 };
 
 
@@ -198,7 +201,7 @@ QRect QIAccessibilityInterfaceForQITreeViewItem::rect() const
     AssertPtrReturn(item()->parentTree()->viewport(), QRect());
 
     /* Get the local rect: */
-    const QRect  itemRectInViewport = item()->rect();
+    const QRect  itemRectInViewport = boundingRect();
     const QSize  itemSize           = itemRectInViewport.size();
     const QPoint itemPosInViewport  = itemRectInViewport.topLeft();
     const QPoint itemPosInScreen    = item()->parentTree()->viewport()->mapToGlobal(itemPosInViewport);
@@ -234,6 +237,24 @@ QAccessible::State QIAccessibilityInterfaceForQITreeViewItem::state() const
 {
     /* Empty state by default: */
     return QAccessible::State();
+}
+
+QRect QIAccessibilityInterfaceForQITreeViewItem::boundingRect() const
+{
+    /* Calculate cumulative region: */
+    QRegion region;
+    /* Append item rectangle itself: */
+    region += item()->rect();
+    /* Do the same for all the children: */
+    for (int i = 0; i < childCount(); ++i)
+    {
+        QIAccessibilityInterfaceForQITreeViewItem *pChild =
+            dynamic_cast<QIAccessibilityInterfaceForQITreeViewItem*>(child(i));
+        AssertPtrReturn(pChild, QRect());
+        region += pChild->boundingRect();
+    }
+    /* Return cumulative bounding rectangle: */
+    return region.boundingRect();
 }
 
 
