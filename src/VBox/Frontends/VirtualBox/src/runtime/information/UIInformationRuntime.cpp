@@ -32,7 +32,6 @@
 #include <QHeaderView>
 #include <QMenu>
 #include <QVBoxLayout>
-#include <QTableWidget>
 #include <QTimer>
 
 /* GUI includes: */
@@ -43,6 +42,7 @@
 #include "UIGuestOSType.h"
 #include "UIMachine.h"
 #include "UITranslationEventListener.h"
+#include "QITableWidget.h"
 
 /* COM includes: */
 #include "CDisplay.h"
@@ -71,7 +71,7 @@ enum InfoRow
 *   UIRuntimeInfoWidget definition.                                                                                     *
 *********************************************************************************************************************************/
 /** A QTablWidget extention to show some runtime attributes */
-class UIRuntimeInfoWidget : public QTableWidget
+class UIRuntimeInfoWidget : public QITableWidget
 {
 
     Q_OBJECT;
@@ -146,7 +146,7 @@ private:
 *********************************************************************************************************************************/
 
 UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent)
-    : QTableWidget(pParent)
+    : QITableWidget(pParent)
     , m_iMinimumWidth(0)
     , m_pTimer(0)
 {
