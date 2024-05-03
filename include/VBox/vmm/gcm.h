@@ -58,8 +58,8 @@ VMMR3_INT_DECL(void)        GCMR3Reset(PVM pVM);
 /** @} */
 #endif /* IN_RING3 */
 
-VMM_INT_DECL(bool)          GCMShouldTrapXcptDE(PVMCPUCC pVCpu);
-VMM_INT_DECL(VBOXSTRICTRC)  GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pDis, uint8_t *pcbInstr);
+VMM_INT_DECL(bool)          GCMIsInterceptingXcptDE(PVMCPUCC pVCpu);
+VMM_INT_DECL(int)           GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx);
 /** @} */
 
 RT_C_DECLS_END

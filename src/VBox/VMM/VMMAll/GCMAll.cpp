@@ -46,49 +46,32 @@
  * @returns true if needed, false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMM_INT_DECL(bool) GCMShouldTrapXcptDE(PVMCPUCC pVCpu)
+VMM_INT_DECL(bool) GCMIsInterceptingXcptDE(PVMCPUCC pVCpu)
 {
-    LogFunc(("GCM checking if #DE needs trapping\n"));
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
     /* See if the enabled fixers need to intercept #DE. */
-    if (  pVM->gcm.s.fFixerSet
-        & (GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_WIN9X))
-    {
-        LogRel(("GCM: #DE should be trapped\n"));
-        return true;
-    }
-
-    return false;
+    PVM const  pVM  = pVCpu->CTX_SUFF(pVM);
+    bool const fRet = (pVM->gcm.s.fFixerSet & (GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_WIN9X)) != 0;
+    LogFlow(("GCMIsInterceptingXcptDE: returns %d\n", fRet));
+    return fRet;
 }
 
 
 /**
  * Exception handler for \#DE when registered by GCM.
  *
- * @returns Strict VBox status code.
+ * @returns VBox status code.
  * @retval  VINF_SUCCESS retry division and continue.
  * @retval  VERR_NOT_FOUND deliver exception to guest.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
- * @param   pDis        Pointer to the disassembled instruction state at RIP.
- *                      If NULL is passed, it implies the disassembly of the
- *                      the instruction at RIP is the
- *                      responsibility of GCM.
- * @param   pcbInstr    Where to store the instruction length of
- *                      the divide instruction. Optional, can be
- *                      NULL.
  *
  * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(VBOXSTRICTRC) GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pDis, uint8_t *pcbInstr)
+VMM_INT_DECL(int) GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     Assert(pVM->gcm.s.fFixerSet & (GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_WIN9X));
-    Assert(pDis || pcbInstr);
-    RT_NOREF(pDis);
-    RT_NOREF(pcbInstr);
 
     LogRel(("GCM: Intercepted #DE at CS:RIP=%04x:%RX64 (%RX64 linear) RDX:RAX=%RX64:%RX64 RCX=%RX64 RBX=%RX64\n",
             pCtx->cs.Sel, pCtx->rip, pCtx->cs.u64Base + pCtx->rip, pCtx->rdx, pCtx->rax, pCtx->rcx, pCtx->rbx));
@@ -213,3 +196,4 @@ VMM_INT_DECL(VBOXSTRICTRC) GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pD
     /* If we got this far, deliver exception to guest. */
     return VERR_NOT_FOUND;
 }
+

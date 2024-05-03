@@ -153,7 +153,7 @@ VMMR3_INT_DECL(int) GCMR3Init(PVM pVM)
     }
 
 #if 0 /* development override */
-    pVM->gcm.s.enmFixerIds = GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_WIN9X;
+    pVM->gcm.s.fFixerSet = GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_WIN9X;
 #endif
 
     /*

@@ -753,8 +753,8 @@ static int hmR3InitFinalizeR3(PVM pVM)
     {
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         pVCpu->hm.s.fActive = false;
-        pVCpu->hm.s.fGIMTrapXcptUD = GIMShouldTrapXcptUD(pVCpu);    /* Is safe to call now since GIMR3Init() has completed. */
-        pVCpu->hm.s.fGCMTrapXcptDE = GCMShouldTrapXcptDE(pVCpu);    /* Is safe to call now since GCMR3Init() has completed. */
+        pVCpu->hm.s.fGIMTrapXcptUD = GIMShouldTrapXcptUD(pVCpu);     /* Is safe to call now since GIMR3Init() has completed. */
+        pVCpu->hm.s.fGCMTrapXcptDE = GCMIsInterceptingXcptDE(pVCpu); /* Is safe to call now since GCMR3Init() has completed. */
     }
 
 #if defined(RT_ARCH_AMD64) ||defined(RT_ARCH_X86)

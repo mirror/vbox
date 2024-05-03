@@ -7550,15 +7550,10 @@ static VBOXSTRICTRC vmxHCExitXcptDE(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     VBOXSTRICTRC rcStrict = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
     if (VCPU_2_VMXSTATE(pVCpu).fGCMTrapXcptDE)
     {
-        uint8_t cbInstr = 0;
-        VBOXSTRICTRC rc2 = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx, NULL /* pDis */, &cbInstr);
-        if (rc2 == VINF_SUCCESS)
-            rcStrict = VINF_SUCCESS;    /* Restart instruction with modified guest register context. */
-        else if (rc2 == VERR_NOT_FOUND)
-            rcStrict = VERR_NOT_FOUND;  /* Deliver the exception. */
-        else
-            Assert(RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)));
+        rcStrict = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx);
+        Assert(rcStrict == VINF_SUCCESS /* restart instr */ || rcStrict == VERR_NOT_FOUND /* deliver exception */);
     }
+    /** @todo r=bird: This cannot be right! It'll suppress \#DE   */
     else
         rcStrict = VINF_SUCCESS;        /* Do nothing. */
 
@@ -7570,6 +7565,9 @@ static VBOXSTRICTRC vmxHCExitXcptDE(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
 
+    /** @todo r=bird: This assertion is wrong. rcStrict can never be
+     *        VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE here, it can only be
+     *        VINF_SUCCESS. */
     Assert(rcStrict == VINF_SUCCESS || rcStrict == VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
