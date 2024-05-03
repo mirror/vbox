@@ -7547,29 +7547,19 @@ static VBOXSTRICTRC vmxHCExitXcptDE(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     int rc = vmxHCImportGuestState<HMVMX_CPUMCTX_EXTRN_ALL>(pVCpu, pVmxTransient->pVmcsInfo, __FUNCTION__);
     AssertRCReturn(rc, rc);
 
-    VBOXSTRICTRC rcStrict = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
     if (VCPU_2_VMXSTATE(pVCpu).fGCMTrapXcptDE)
     {
-        rcStrict = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx);
-        Assert(rcStrict == VINF_SUCCESS /* restart instr */ || rcStrict == VERR_NOT_FOUND /* deliver exception */);
+        rc = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx);
+        Assert(rc == VINF_SUCCESS /* restart instr */ || rc == VERR_NOT_FOUND /* deliver exception */);
     }
-    /** @todo r=bird: This cannot be right! It'll suppress \#DE   */
     else
-        rcStrict = VINF_SUCCESS;        /* Do nothing. */
+        rc = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
 
     /* If the GCM #DE exception handler didn't succeed or wasn't needed, raise #DE. */
-    if (RT_FAILURE(rcStrict))
-    {
+    if (RT_FAILURE(rc))
         vmxHCSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
-                               pVmxTransient->cbExitInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
-        rcStrict = VINF_SUCCESS;
-    }
-
-    /** @todo r=bird: This assertion is wrong. rcStrict can never be
-     *        VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE here, it can only be
-     *        VINF_SUCCESS. */
-    Assert(rcStrict == VINF_SUCCESS || rcStrict == VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE);
-    return VBOXSTRICTRC_VAL(rcStrict);
+                             pVmxTransient->cbExitInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
+    return VINF_SUCCESS;
 }
 
 

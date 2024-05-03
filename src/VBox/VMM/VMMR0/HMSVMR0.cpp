@@ -8364,13 +8364,10 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDE(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 
     /* If the GCM #DE exception handler didn't succeed or wasn't needed, raise #DE. */
     if (RT_FAILURE(rc))
-    {
         hmR0SvmSetPendingXcptDE(pVCpu);
-        rc = VINF_SUCCESS;
-    }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
