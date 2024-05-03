@@ -65,6 +65,8 @@
 *********************************************************************************************************************************/
 /** An experiment... */
 //#define USE_LOW_LATENCY_API 1
+/** Some older SDKs we build with don't know about this. */
+#define OSX_kIOServiceInteractionAllowed 0x00000001
 
 
 /*********************************************************************************************************************************
@@ -1215,6 +1217,13 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
         IOObjectRelease(USBDevices);
         return VERR_VUSB_DEVICE_NAME_NOT_FOUND;
     }
+
+    /*
+     * Ask for authorization (which only works with the com.apple.vm.device-access entitlement).
+     */
+    irc = IOServiceAuthorize(USBDevice, OSX_kIOServiceInteractionAllowed);
+    if (irc != kIOReturnSuccess)
+        LogRel(("Failed to get device authorization, capturing the device might now work: irc=%#x\n", irc));
 
     /*
      * Create a plugin interface for the device and query its IOUSBDeviceInterface.
