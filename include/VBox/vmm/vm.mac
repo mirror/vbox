@@ -182,7 +182,7 @@ struc VM
     .cfgm                   resb 8
     .iem                    resb 16
     .R0Stats                resb 64
-    .gcm                    resb 32
+    .gcm                    resb 8
 
     times ((($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB + 16383) & ~16383) - ($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB)) resb 1
     .apCpusR3               RTR3PTR_RES VMM_MAX_CPU_COUNT
