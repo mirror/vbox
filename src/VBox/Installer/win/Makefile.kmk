@@ -568,6 +568,7 @@ define def_vbox_build_msi
 		$$(VBOX_WIN_INST_REPACK_DIR)/2-link-$$(PACKAGE_NAME_LANG).cmd ))
 	kmk_time $$(REDIRECT_EXT) -E WIX_TEMP='$$(subst /,\,$$(@D))' $(VBOX_WIN_INST_ENV) \
 		-- $(VBOX_TOOLS_WIN_WIX_BIN) build \
+		-intermediatefolder $$(@D)/wix-temp/ \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-lib $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixlib \
@@ -599,6 +600,7 @@ define def_vbox_build_msi
 		$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) && !defined(VBOX_WITH_MSM_INSTALL),'@echo Created: common.cab',)
 
  endif
+	$(RM) -Rf -- $$(@D)/wix-temp/
 endef
 
 $(foreach lang, en_US, $(eval $(def_vbox_build_msi)))
@@ -626,12 +628,15 @@ define def_vbox_build_msm
 	$(QUIET)$(RM) -f $$(wildcard $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_BASE)-r*_$(lang).msi)
 	kmk_time $$(REDIRECT_EXT) -E WIX_TEMP='$$(subst /,\,$$(@D))' $(VBOX_WIN_INST_ENV) \
 		-- $(VBOX_TOOLS_WIN_WIX_BIN) build \
+		-intermediatefolder $$(@D)/wix-temp/ \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-lib $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixlib \
 		-pdbtype none \
 		-out $$@
-	$(RM) -f $(VBOX_WIN_INST_OUT_DIR)/NLS/$(lang).mst
+	$(RM) -Rf -- \
+		$(VBOX_WIN_INST_OUT_DIR)/NLS/$(lang).mst \
+		$$(@D)/wix-temp/
 	$(call VBOX_SIGN_MSM_FN,$$@,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing)
  # Create repack script for this step.
 	$(APPEND) -tn "$$(VBOX_WIN_INST_REPACK_DIR)/1-build-VBoxMerge$(module)_$(lang).cmd" \
@@ -786,6 +791,7 @@ define def_vbox_build_wixlib
 		-E 'VBOX_VCC_TOOL_STEM=$(VBOX_VCC_TOOL_STEM)' \
 		-- \
 		$(VBOX_TOOLS_WIN_WIX_BIN) build $(filter-out $(VBOX_VERSION_STAMP),$$<) \
+			-intermediatefolder $$(@D)/wix-temp/ \
 			$(VBOX_TOOLS_WIN_WIX_EXT) \
 			-outputtype library \
 			-out $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixlib
@@ -795,7 +801,7 @@ define def_vbox_build_wixlib
 	$(CP) $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixlib $(VBOX_WIN_INST_REPACK_DIR)/
 
  endif
-
+	$(RM) -Rf -- $$(@D)/wix-temp/
 
  $(eval OTHER_CLEAN += $(VBOX_REPACK_FILES_VirtualBox_$(lang)))
 endef
@@ -898,16 +904,17 @@ define def_vbox_build_msm_wixlib
 		-E 'VBOX_VCC_TOOL_STEM=$(VBOX_VCC_TOOL_STEM)' \
 		-- \
 		$(VBOX_TOOLS_WIN_WIX_BIN) build $(filter-out $(VBOX_VERSION_STAMP),$$<) \
+			-intermediatefolder $$(@D)/wix-temp/ \
 			$(VBOX_TOOLS_WIN_WIX_EXT) \
 			-outputtype library \
 			-out $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixlib
+	$(RM) -Rf -- $$(@D)/wix-temp/
  ifeq ($(lang),en_US)
   # Copy over the .wixlib into the repack directory, so that it can be used later when
   # doing the repacking via the shell scripts.
 	$(CP) $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixlib $(VBOX_WIN_INST_REPACK_DIR)/
 	$(MKDIR) -p -- "$(VBOX_WIN_INST_REPACK_DIR)/files-VBoxMerge$(module)_$(lang)/"
  endif
-
  $(eval OTHER_CLEAN += $(VBOX_REPACK_FILES_VBoxMerge$(module)_$(lang)))
 endef
 
@@ -1041,6 +1048,7 @@ define def_vbox_create_mst
 	$(call MSG_L1,Creating language diff for $(lang))
 	kmk_time $$(REDIRECT_EXT) -E WIX_TEMP='$$(subst /,\,$$(@D))' $(VBOX_WIN_INST_ENV) \
 		-- $(VBOX_TOOLS_WIN_WIX_BIN) build \
+		-intermediatefolder $$(@D)/wix-temp/ \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-lib $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_en_US.wixlib \
@@ -1050,8 +1058,8 @@ define def_vbox_create_mst
 		-out $$(@D)/$(PACKAGE_NAME_LANG)_$(lang).msi
 	$(REDIRECT) -C $$(@D) -- $$(VBOX_PATH_MSITRAN) -g $$< $(PACKAGE_NAME_LANG)_$(lang).msi $(lang).mst
 	$(CP) -f -- "$(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(lang).mst" "$(VBOX_WIN_INST_REPACK_DIR)/$(lang).mst"
-	$(RM) -f -- $$(@D)/$(PACKAGE_NAME_LANG)_$(lang).msi \
-		$$(@D)/$(PACKAGE_NAME_LANG)_$(lang).wixpdb \
+	$(RM) -Rf -- $$(@D)/$(PACKAGE_NAME_LANG)_$(lang).msi \
+		$$(@D)/wix-temp/ \
 		$$(@D)/common.cab
 
 endef
