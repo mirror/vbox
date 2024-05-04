@@ -60,6 +60,48 @@ VMMR3_INT_DECL(void)        GCMR3Reset(PVM pVM);
 
 VMM_INT_DECL(bool)          GCMIsInterceptingXcptDE(PVMCPUCC pVCpu);
 VMM_INT_DECL(int)           GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx);
+
+VMM_INT_DECL(bool)          GCMIsInterceptingXcptGP(PVMCPUCC pVCpu);
+VMM_INT_DECL(int)           GCMXcptGP(PVMCPUCC pVCpu, PCPUMCTX pCtx);
+
+VMM_INT_DECL(VBOXSTRICTRC)  GCMInterceptedIOPortRead(PVMCPUCC pVCpu, PCPUMCTX pCtx, uint16_t u16Port, uint8_t cbReg);
+VMM_INT_DECL(bool)          GCMIsInterceptingIOPortReadSlow(PVMCPUCC pVCpu, uint16_t u16Port, uint8_t cbReg);
+
+/**
+ * Checks if the given IN instruction is intercepted.
+ */
+DECLINLINE(bool) GCMIsInterceptingIOPortRead(PVMCPUCC pVCpu, uint16_t u16Port, uint8_t cbReg)
+{
+    return u16Port == 0x5658 /* vmware hypervisor port */
+        && cbReg == 4
+        && GCMIsInterceptingIOPortReadSlow(pVCpu, u16Port, cbReg);
+}
+
+#if 0 /* If we need to deal with high speed vmware hypervisor calls */
+VMM_INT_DECL(bool)          GCMIsInterceptingIOPortReadStringSlow(PVMCPUCC pVCpu, uint16_t u16Port, uint8_t cbReg);
+VMM_INT_DECL(bool)          GCMIsInterceptingIOPortWriteStringSlow(PVMCPUCC pVCpu, uint16_t u16Port, uint8_t cbReg);
+
+/**
+ * Checks if the given INS instruction is intercepted.
+ */
+DECLINLINE(bool) GCMIsInterceptingIOPortReadString(PVMCPUCC pVCpu, uint16_t u16Port, uint8_t cbReg)
+{
+    return u16Port == 0x5659 /* new vmware hypervisor port */
+        && cbReg == 1
+        && GCMIsInterceptingIOPortReadStringSlow(pVCpu, u16Port, cbReg);
+}
+
+/**
+ * Checks if the given OUTS instruction is intercepted.
+ */
+DECLINLINE(bool) GCMIsInterceptingIOPortWriteString(PVMCPUCC pVCpu, uint16_t u16Port, uint8_t cbReg)
+{
+    return u16Port == 0x5659 /* new vmware hypervisor port */
+        && cbReg == 1
+        && GCMIsInterceptingIOPortWriteStringSlow(pVCpu, u16Port, cbReg);
+}
+#endif
+
 /** @} */
 
 RT_C_DECLS_END

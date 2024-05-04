@@ -1077,6 +1077,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             InsertConfigInteger(pGcmNode, "DivByZeroOS2", 1);
         if (fW9xGuest)
             InsertConfigInteger(pGcmNode, "DivByZeroWin9x", 1);
+        /* MesaVmsvgaDrv (formerly LovelyMesaDrvWorkaround) is set futher down. */
 
         /*
          * MM values.
@@ -1406,8 +1407,9 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
                 break;
 #ifdef VBOX_WITH_VMSVGA
             case GraphicsControllerType_VMSVGA:
-                InsertConfigInteger(pHM, "LovelyMesaDrvWorkaround", 1); /* hits someone else logging backdoor. */
-                InsertConfigInteger(pNEM, "LovelyMesaDrvWorkaround", 1); /* hits someone else logging backdoor. */
+                InsertConfigInteger(pHM, "LovelyMesaDrvWorkaround", 1);  /* hits someone else's logging backdoor. */
+                InsertConfigInteger(pNEM, "LovelyMesaDrvWorkaround", 1); /* hits someone else's logging backdoor. */
+                InsertConfigInteger(pGcmNode, "MesaVmsvgaDrv", 1);       /* hits someone else's logging backdoor. */
                 RT_FALL_THROUGH();
             case GraphicsControllerType_VBoxSVGA:
 #endif

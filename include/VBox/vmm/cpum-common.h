@@ -123,6 +123,28 @@ RT_C_DECLS_BEGIN
         } \
     } while (0)
 
+/** @def CPUM_IMPORT_EXTRN_WITH_CTX_RET
+ * Macro for making sure the state specified by @a fExtrnImport is present,
+ * calling CPUMImportGuestStateOnDemand() to get it if necessary.
+ *
+ * Will return if CPUMImportGuestStateOnDemand() fails.
+ *
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling EMT.
+ * @param   a_pCtx          Pointer to the CPU context (CPUMCTX).
+ * @param   a_fExtrnImport  Mask of CPUMCTX_EXTRN_XXX bits to get.
+ * @thread  EMT(a_pVCpu)
+ */
+#define CPUM_IMPORT_EXTRN_WITH_CTX_RET(a_pVCpu, a_pCtx, a_fExtrnImport) \
+    do { \
+        if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
+        { /* already present, consider this likely */ } \
+        else \
+        { \
+            int rcCpumImport = CPUMImportGuestStateOnDemand(a_pVCpu, a_fExtrnImport); \
+            AssertRCReturn(rcCpumImport, rcCpumImport); \
+        } \
+    } while (0)
+
 VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPUCC pVCpu, uint64_t fExtrnImport);
 /** @} */
 

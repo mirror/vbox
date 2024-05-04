@@ -7633,7 +7633,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     static uint32_t const s_aIOSize[8]  = { 0, 1, 2, 0, 4, 0, 0, 0 };                   /* Size of the I/O accesses in bytes. */
     static uint32_t const s_aIOOpAnd[8] = { 0, 0xff, 0xffff, 0, 0xffffffff, 0, 0, 0 };  /* AND masks for saving
                                                                                            the result (in AL/AX/EAX). */
-    PVMCC      pVM   = pVCpu->CTX_SUFF(pVM);
+    PVMCC    pVM   = pVCpu->CTX_SUFF(pVM);
     PCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
 
@@ -7751,17 +7751,33 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
             }
             else
             {
-                uint32_t u32Val = 0;
-                rcStrict = IOMIOPortRead(pVM, pVCpu, IoExitInfo.n.u16Port, &u32Val, cbValue);
-                if (IOM_SUCCESS(rcStrict))
+                rcStrict = VERR_GCM_NOT_HANDLED;
+                if (GCMIsInterceptingIOPortRead(pVCpu, IoExitInfo.n.u16Port, cbValue))
                 {
-                    /* Save result of I/O IN instr. in AL/AX/EAX. */
-                    /** @todo r=bird: 32-bit op size should clear high bits of rax! */
-                    pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
+                    rcStrict = GCMInterceptedIOPortRead(pVCpu, pCtx, IoExitInfo.n.u16Port, cbValue);
+                    if (rcStrict == VINF_GCM_HANDLED_ADVANCE_RIP || rcStrict == VINF_GCM_HANDLED)
+                    {
+                        fUpdateRipAlready = rcStrict != VINF_GCM_HANDLED_ADVANCE_RIP;
+                        rcStrict = VINF_SUCCESS;
+                    }
+                    else
+                        Assert(rcStrict == VERR_GCM_NOT_HANDLED);
                 }
-                else if (    rcStrict == VINF_IOM_R3_IOPORT_READ
-                         && !pCtx->eflags.Bits.u1TF)
-                    rcStrict = EMRZSetPendingIoPortRead(pVCpu, IoExitInfo.n.u16Port, cbInstr, cbValue);
+
+                if (RT_LIKELY(rcStrict == VERR_GCM_NOT_HANDLED))
+                {
+                    uint32_t u32Val = 0;
+                    rcStrict = IOMIOPortRead(pVM, pVCpu, IoExitInfo.n.u16Port, &u32Val, cbValue);
+                    if (IOM_SUCCESS(rcStrict))
+                    {
+                        /* Save result of I/O IN instr. in AL/AX/EAX. */
+                        /** @todo r=bird: 32-bit op size should clear high bits of rax! */
+                        pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
+                    }
+                    else if (    rcStrict == VINF_IOM_R3_IOPORT_READ
+                             && !pCtx->eflags.Bits.u1TF)
+                        rcStrict = EMRZSetPendingIoPortRead(pVCpu, IoExitInfo.n.u16Port, cbInstr, cbValue);
+                }
 
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
             }

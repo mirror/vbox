@@ -42,6 +42,7 @@
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/gim.h>
+#include <VBox/vmm/gcm.h>
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 # include <VBox/vmm/em.h>
 # include <VBox/vmm/hm_svm.h>
@@ -7293,6 +7294,27 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
  */
 IEM_CIMPL_DEF_3(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAndEffAddrMode)
 {
+    /*
+     * GCM intercept.
+     *
+     * This must be placed before the IOPL check as the mesa driver intercept
+     * would otherwise trigger a #GP(0).
+     */
+    if (!IEM_IS_IN_GUEST(pVCpu) && GCMIsInterceptingIOPortRead(pVCpu, u16Port, cbReg))
+    {
+        VBOXSTRICTRC rcStrict = GCMInterceptedIOPortRead(pVCpu, &pVCpu->cpum.GstCtx, u16Port, cbReg);
+        if (rcStrict == VINF_GCM_HANDLED_ADVANCE_RIP || rcStrict == VINF_GCM_HANDLED)
+        {
+            Log(("iemCImpl_in: u16Port=%#x cbReg=%d was handled by GCMIOPortRead (%d)\n", u16Port, cbReg, VBOXSTRICTRC_VAL(rcStrict)));
+            if (rcStrict == VINF_GCM_HANDLED_ADVANCE_RIP)
+                rcStrict = iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+            else
+                rcStrict = VINF_SUCCESS;
+            return rcStrict;
+        }
+        Assert(rcStrict == VERR_GCM_NOT_HANDLED);
+    }
+
     /*
      * CPL check
      */

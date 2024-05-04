@@ -130,6 +130,7 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/nem.h>
+#include <VBox/vmm/gcm.h>
 #include <VBox/vmm/gim.h>
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 # include <VBox/vmm/em.h>
@@ -4196,6 +4197,15 @@ iemRaiseXcptOrIntJmp(PVMCPUCC    pVCpu,
 /** \#DE - 00.  */
 VBOXSTRICTRC iemRaiseDivideError(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
+    if (GCMIsInterceptingXcptDE(pVCpu))
+    {
+        int rc = GCMXcptDE(pVCpu, &pVCpu->cpum.GstCtx);
+        if (rc == VINF_SUCCESS)
+        {
+            Log(("iemRaiseDivideError: Restarting instruction because of GCMXcptDE\n"));
+            return VINF_IEM_RAISED_XCPT; /* must return non-zero status here to cause a instruction restart */
+        }
+    }
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_DE, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
 }
 

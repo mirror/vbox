@@ -114,6 +114,7 @@ VMMR3_INT_DECL(int) GCMR3Init(PVM pVM)
         { RT_STR_TUPLE("DivByZeroDOS"),       GCMFIXER_DBZ_DOS },
         { RT_STR_TUPLE("DivByZeroOS2"),       GCMFIXER_DBZ_OS2 },
         { RT_STR_TUPLE("DivByZeroWin9x"),     GCMFIXER_DBZ_WIN9X },
+        { RT_STR_TUPLE("MesaVmsvgaDrv"),      GCMFIXER_MESA_VMSVGA_DRV },
     };
 
     /* Assemble valid value names for CFMGR3ValidateConfig. */

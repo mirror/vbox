@@ -9002,18 +9002,38 @@ HMVMX_EXIT_DECL vmxHCExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             }
             else
             {
-                uint32_t u32Result = 0;
-                rcStrict = IOMIOPortRead(pVM, pVCpu, uIOPort, &u32Result, cbValue);
-                if (IOM_SUCCESS(rcStrict))
+                rcStrict = VERR_GCM_NOT_HANDLED;
+                if (GCMIsInterceptingIOPortRead(pVCpu, uIOPort, cbValue))
                 {
-                    /* Save result of I/O IN instr. in AL/AX/EAX. */
-                    pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Result & uAndVal);
+                    rcStrict = GCMInterceptedIOPortRead(pVCpu, pCtx, uIOPort, cbValue);
+                    if (rcStrict == VINF_GCM_HANDLED_ADVANCE_RIP || rcStrict == VINF_GCM_HANDLED)
+                    {
+                        /* ASSUMES we don't need to update fCtxChanged when regular GPRs change here. */
+                        fUpdateRipAlready = rcStrict == VINF_GCM_HANDLED;
+                        if (rcStrict == VINF_GCM_HANDLED)
+                            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP);
+                        rcStrict = VINF_SUCCESS;
+                    }
+                    else
+                        Assert(rcStrict == VERR_GCM_NOT_HANDLED);
                 }
+
+                if (rcStrict == VERR_GCM_NOT_HANDLED)
+                {
+                    uint32_t u32Result = 0;
+                    rcStrict = IOMIOPortRead(pVM, pVCpu, uIOPort, &u32Result, cbValue);
+                    if (IOM_SUCCESS(rcStrict))
+                    {
+                        /* Save result of I/O IN instr. in AL/AX/EAX. */
+                        /** @todo r=bird: 32-bit op size should clear high bits of rax! */
+                        pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Result & uAndVal);
+                    }
 #ifndef IN_NEM_DARWIN
-                if (    rcStrict == VINF_IOM_R3_IOPORT_READ
-                    && !pCtx->eflags.Bits.u1TF)
-                    rcStrict = EMRZSetPendingIoPortRead(pVCpu, uIOPort, cbInstr, cbValue);
+                    if (    rcStrict == VINF_IOM_R3_IOPORT_READ
+                        && !pCtx->eflags.Bits.u1TF)
+                        rcStrict = EMRZSetPendingIoPortRead(pVCpu, uIOPort, cbInstr, cbValue);
 #endif
+                }
                 STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitIORead);
             }
         }

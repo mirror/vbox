@@ -3271,6 +3271,17 @@
 #define VERR_PLATFORM_ARCH_NOT_SUPPORTED            (-7400)
 /** @} */
 
+/** @name Guest Compatibility Manage Status Codes.
+ * @{
+ */
+/** The intercepted situation was completely handled, continue execution. */
+#define VINF_GCM_HANDLED                            (7600)
+/** The intercepted instruction handled, advance RIP and continue execution. */
+#define VINF_GCM_HANDLED_ADVANCE_RIP                (7601)
+/** The intercepted operation was not handled, take default action. */
+#define VERR_GCM_NOT_HANDLED                        (-7602)
+/** @} */
+
 /* SED-END */
 
 /** @} */
