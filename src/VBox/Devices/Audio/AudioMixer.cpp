@@ -311,8 +311,12 @@ int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PCPDMAUDIOVOLUME pVol)
      */
     LogFlowFunc(("[%s] fMuted=%RTbool auChannels=%.*Rhxs => fMuted=%RTbool auChannels=%.*Rhxs\n", pMixer->pszName,
                  pMixer->VolMaster.fMuted, sizeof(pMixer->VolMaster.auChannels), pMixer->VolMaster.auChannels,
-                 pVol->fMuted, sizeof(pVol->auChannels), pVol->auChannels ));
+                 pVol->fMuted, sizeof(pVol->auChannels), pVol->auChannels));
     memcpy(&pMixer->VolMaster, pVol, sizeof(PDMAUDIOVOLUME));
+
+    LogRelMax(256, ("Audio Mixer: %s master volume of '%s' -- channel volumes: %.*Rhxs\n",
+                    pMixer->VolMaster.fMuted ? "MUTING" : "Setting",
+                    pMixer->pszName, sizeof(pMixer->VolMaster.auChannels), pMixer->VolMaster.auChannels));
 
     /*
      * Propagate new master volume to all sinks.
@@ -1108,6 +1112,11 @@ static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, PCPDMAUDIOVOLUME pVolMa
                  pSink->Volume.fMuted, sizeof(pSink->Volume.auChannels), pSink->Volume.auChannels,
                  pSink->VolumeCombined.fMuted, sizeof(pSink->VolumeCombined.auChannels), pSink->VolumeCombined.auChannels ));
 
+    LogRelMax(256, ("Audio Mixer: %s sink '%s/%s' -- channel volumes: %.*Rhxs\n",
+                    pSink->VolumeCombined.fMuted ? "MUTING" : "Setting",
+                    pSink->pParent->pszName, pSink->pszName,
+                    sizeof(pSink->VolumeCombined.auChannels), pSink->VolumeCombined.auChannels));
+
     AudioMixBufSetVolume(&pSink->MixBuf, &pSink->VolumeCombined);
     return VINF_SUCCESS;
 }
@@ -1130,9 +1139,6 @@ int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PCPDMAUDIOVOLUME pVol)
     AssertRCReturn(rc, rc);
 
     memcpy(&pSink->Volume, pVol, sizeof(PDMAUDIOVOLUME));
-
-    LogRel2(("Audio Mixer: Setting volume of sink '%s' to fMuted=%RTbool auChannels=%.*Rhxs\n",
-              pSink->pszName, pVol->fMuted, sizeof(pVol->auChannels), pVol->auChannels));
 
     Assert(pSink->pParent);
     if (pSink->pParent)
