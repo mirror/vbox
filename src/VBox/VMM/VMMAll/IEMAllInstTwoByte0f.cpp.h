@@ -757,7 +757,7 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU128
  *      pxxs       xmm1, xmm2/mem32
  *
  * Proper alignment of the 128-bit operand is enforced.
- * Exceptions type 2. SSE cpuid checks.
+ * Exceptions type 3. SSE cpuid checks.
  *
  * @sa iemOpCommonSse41_FullFull_To_Full, iemOpCommonSse2_FullFull_To_Full
  */
@@ -885,7 +885,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU12
  *      pxxs       xmm1, xmm2/mem64
  *
  * Proper alignment of the 128-bit operand is enforced.
- * Exceptions type 2. SSE2 cpuid checks.
+ * Exceptions type 3. SSE2 cpuid checks.
  *
  * @sa iemOpCommonSse41_FullFull_To_Full, iemOpCommonSse2_FullFull_To_Full
  */
@@ -5479,15 +5479,64 @@ FNIEMOP_DEF(iemOp_mulsd_Vsd_Wsd)
 /** Opcode      0x0f 0x5a - cvtps2pd Vpd, Wps */
 FNIEMOP_DEF(iemOp_cvtps2pd_Vpd_Wps)
 {
-    IEMOP_MNEMONIC2(RM, CVTPS2PD, cvtps2pd, Vpd, Wps, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvtps2pd_u128);
+    IEMOP_MNEMONIC2(RM, CVTPS2PD, cvtps2pd, Vpd_WO, Wps, DISOPTYPE_HARMLESS, 0);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * XMM, XMM[63:0].
+         */
+        IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+
+        IEM_MC_LOCAL(X86XMMREG,             SseRes);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,    pSseRes,        SseRes,     0);
+        IEM_MC_ARG(uint64_t const *,        pu64Src,                    1);  /* The input is actually two 32-bit float values, */
+        IEM_MC_REF_XREG_U64_CONST(pu64Src, IEM_GET_MODRM_RM(pVCpu, bRm));    /* but we've got no matching type or MC. */
+        IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_cvtps2pd_u128, pSseRes, pu64Src);
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), SseRes);
+
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * XMM, [mem64].
+         */
+        IEM_MC_BEGIN(IEM_MC_F_MIN_386, 0);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+
+        IEM_MC_LOCAL(uint8_t,               bUnmapInfo);
+        IEM_MC_ARG(uint64_t const *,        pu64Src,                    1); /* (see comment above wrt type) */
+        IEM_MC_MEM_MAP_U64_RO(pu64Src, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_LOCAL(X86XMMREG,             SseRes);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,    pSseRes,        SseRes,     0);
+        IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_cvtps2pd_u128, pSseRes, pu64Src);
+        IEM_MC_MEM_COMMIT_AND_UNMAP_RO(bUnmapInfo);
+
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), SseRes);
+
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
 }
 
 
 /** Opcode 0x66 0x0f 0x5a - cvtpd2ps Vps, Wpd */
 FNIEMOP_DEF(iemOp_cvtpd2ps_Vps_Wpd)
 {
-    IEMOP_MNEMONIC2(RM, CVTPD2PS, cvtpd2ps, Vps, Wpd, DISOPTYPE_HARMLESS, 0);
+    IEMOP_MNEMONIC2(RM, CVTPD2PS, cvtpd2ps, Vps_WO, Wpd, DISOPTYPE_HARMLESS, 0);
+    /** @todo inefficient as we don't need to fetch the destination (write-only). */
     return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvtpd2ps_u128);
 }
 
@@ -5511,7 +5560,8 @@ FNIEMOP_DEF(iemOp_cvtsd2ss_Vss_Wsd)
 /** Opcode      0x0f 0x5b - cvtdq2ps Vps, Wdq */
 FNIEMOP_DEF(iemOp_cvtdq2ps_Vps_Wdq)
 {
-    IEMOP_MNEMONIC2(RM, CVTDQ2PS, cvtdq2ps, Vps, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
+    IEMOP_MNEMONIC2(RM, CVTDQ2PS, cvtdq2ps, Vps_WO, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
+    /** @todo inefficient as we don't need to fetch the destination (write-only). */
     return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvtdq2ps_u128);
 }
 
@@ -5519,7 +5569,8 @@ FNIEMOP_DEF(iemOp_cvtdq2ps_Vps_Wdq)
 /** Opcode 0x66 0x0f 0x5b - cvtps2dq Vdq, Wps */
 FNIEMOP_DEF(iemOp_cvtps2dq_Vdq_Wps)
 {
-    IEMOP_MNEMONIC2(RM, CVTPS2DQ, cvtps2dq, Vdq, Wps, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
+    IEMOP_MNEMONIC2(RM, CVTPS2DQ, cvtps2dq, Vdq_WO, Wps, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
+    /** @todo inefficient as we don't need to fetch the destination (write-only). */
     return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvtps2dq_u128);
 }
 
@@ -5527,7 +5578,8 @@ FNIEMOP_DEF(iemOp_cvtps2dq_Vdq_Wps)
 /** Opcode 0xf3 0x0f 0x5b - cvttps2dq Vdq, Wps */
 FNIEMOP_DEF(iemOp_cvttps2dq_Vdq_Wps)
 {
-    IEMOP_MNEMONIC2(RM, CVTTPS2DQ, cvttps2dq, Vdq, Wps, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
+    IEMOP_MNEMONIC2(RM, CVTTPS2DQ, cvttps2dq, Vdq_WO, Wps, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
+    /** @todo inefficient as we don't need to fetch the destination (write-only). */
     return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_cvttps2dq_u128);
 }
 

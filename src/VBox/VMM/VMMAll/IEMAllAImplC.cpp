@@ -16845,23 +16845,24 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtpd2ps_u128,(uint32_t uMxCsrIn, PX86XMMRE
  * CVTPS2PD
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
-static uint32_t iemAImpl_cvtps2pd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1)
+static uint32_t iemAImpl_cvtps2pd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, uint32_t u32SrcIn)
 {
-    RTFLOAT32U r32Src1;
-    fMxcsr |= iemSsePrepareValueR32(&r32Src1, fMxcsr, pr32Val1);
+    RTFLOAT32U r32SrcConverted;
+    RTFLOAT32U r32SrcIn;
+    r32SrcIn.u = u32SrcIn;
+    fMxcsr |= iemSsePrepareValueR32(&r32SrcConverted, fMxcsr, &r32SrcIn);
 
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
-    float64_t r64Result = f32_to_f64(iemFpSoftF32FromIprt(&r32Src1), &SoftState);
+    float64_t r64Result = f32_to_f64(iemFpSoftF32FromIprt(&r32SrcConverted), &SoftState);
     return iemSseSoftStateAndR64ToMxcsrAndIprtResult(&SoftState, r64Result, pr64Res, fMxcsr);
 }
 
 
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtps2pd_u128,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtps2pd_u128,(uint32_t fMxCsrIn, PX86XMMREG pResult, uint64_t const *pu64Src))
 {
-    RT_NOREF(puSrc1);
-
-    return   iemAImpl_cvtps2pd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc2->ar32[0])
-           | iemAImpl_cvtps2pd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc2->ar32[1]);
+    uint64_t const u64Src = *pu64Src;
+    return   iemAImpl_cvtps2pd_u128_worker(&pResult->ar64[0], fMxCsrIn, RT_LO_U32(u64Src))
+           | iemAImpl_cvtps2pd_u128_worker(&pResult->ar64[1], fMxCsrIn, RT_HI_U32(u64Src));
 }
 #endif
 

@@ -5556,6 +5556,13 @@ static void FpuUnaryTwoR80Test(void)
  */
 TYPEDEF_SUBTEST_TYPE(SSE_BINARY_R32_T, SSE_BINARY_TEST_T, PFNIEMAIMPLFPSSEF2U128);
 
+/** Ugly hack to keep it working after changing function arguments! */
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtps2pd_u128x,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    RT_NOREF(puSrc1);
+    return iemAImpl_cvtps2pd_u128(uMxCsrIn, pResult, &puSrc2->au64[0]);
+}
+
 static SSE_BINARY_R32_T g_aSseBinaryR32[] =
 {
     ENTRY_BIN(addps_u128),
@@ -5568,7 +5575,7 @@ static SSE_BINARY_R32_T g_aSseBinaryR32[] =
     ENTRY_BIN(hsubps_u128),
     ENTRY_BIN(sqrtps_u128),
     ENTRY_BIN(addsubps_u128),
-    ENTRY_BIN(cvtps2pd_u128),
+    ENTRY_BIN(cvtps2pd_u128x), /* conversion hack */
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR

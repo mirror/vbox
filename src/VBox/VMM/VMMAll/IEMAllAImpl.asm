@@ -5463,10 +5463,10 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        movdqu   xmm0, [A2]
-        movdqu   xmm1, [A3]
-        %1       xmm0, xmm1
-        movdqu   [A1], xmm0
+        movdqu  xmm0, [A2]
+        movdqu  xmm1, [A3]
+        %1      xmm0, xmm1
+        movdqu  [A1], xmm0
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_SSE_EPILOGUE
@@ -5478,10 +5478,10 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 16
         IEMIMPL_AVX_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        vmovdqu   xmm0, [A2]
-        vmovdqu   xmm1, [A3]
-        v %+ %1   xmm0, xmm1
-        vmovdqu  [A1], xmm0
+        vmovdqu xmm0, [A2]
+        vmovdqu xmm1, [A3]
+        v %+ %1 xmm0, xmm1
+        vmovdqu [A1], xmm0
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_EPILOGUE
@@ -5493,14 +5493,14 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 16
         IEMIMPL_AVX_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        vmovdqu    ymm0, [A2]
-        vmovdqu    ymm1, [A3]
+        vmovdqu ymm0, [A2]
+        vmovdqu ymm1, [A3]
  %if %2 == 0
-        v %+ %1    xmm0, ymm1
+        v %+ %1 xmm0, ymm1
  %else
-        v %+ %1    ymm0, xmm1
+        v %+ %1 ymm0, xmm1
  %endif
-        vmovdqu    [A1], ymm0
+        vmovdqu [A1], ymm0
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_EPILOGUE
@@ -5509,7 +5509,21 @@ ENDPROC iemAImpl_v %+ %1 %+ _u256
 %endmacro
 
 IEMIMPL_CVT_F2 cvtpd2ps, 0
-IEMIMPL_CVT_F2 cvtps2pd, 1
+;IEMIMPL_CVT_F2 cvtps2pd, 1 - inefficient.
+
+BEGINPROC_FASTCALL iemAImpl_cvtps2pd_u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        cvtps2pd xmm0, [A2]
+        movdqu   [A1], xmm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_cvtps2pd_u128
+
 
 
 ;;
