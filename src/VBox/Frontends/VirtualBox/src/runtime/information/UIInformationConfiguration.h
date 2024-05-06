@@ -38,8 +38,7 @@
 #include "UITextTable.h"
 
 /* Forward declarations: */
-class QTableWidget;
-class QTableWidgetItem;
+class QITableWidget;
 class QTextDocument;
 class QVBoxLayout;
 
@@ -72,7 +71,7 @@ private:
     QString tableData() const;
 
     QVBoxLayout *m_pMainLayout;
-    QTableWidget *m_pTableWidget;
+    QITableWidget *m_pTableWidget;
     QAction *m_pCopyWholeTableAction;
 
     const int m_iColumCount;

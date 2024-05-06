@@ -33,11 +33,11 @@
 #include <QClipboard>
 #include <QHeaderView>
 #include <QMenu>
-#include <QTableWidget>
 #include <QTextDocument>
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QITableWidget.h"
 #include "UIDetailsGenerator.h"
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
@@ -186,7 +186,7 @@ void UIInformationConfiguration::prepareObjects()
         return;
     m_pMainLayout->setSpacing(0);
 
-    m_pTableWidget = new QTableWidget;
+    m_pTableWidget = new QITableWidget;
     if (m_pTableWidget)
     {
         /* Configure the table by hiding the headers etc.: */
@@ -199,7 +199,7 @@ void UIInformationConfiguration::prepareObjects()
         m_pTableWidget->setFocusPolicy(Qt::NoFocus);
         m_pTableWidget->setSelectionMode(QAbstractItemView::NoSelection);
         m_pTableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(m_pTableWidget, &QTableWidget::customContextMenuRequested,
+        connect(m_pTableWidget, &QITableWidget::customContextMenuRequested,
             this, &UIInformationConfiguration::sltHandleTableContextMenuRequest);
         m_pMainLayout->addWidget(m_pTableWidget);
     }
@@ -226,8 +226,12 @@ void UIInformationConfiguration::insertTitleRow(const QString &strTitle, const Q
     icon.actualSize(iconSize);
     m_pTableWidget->setRowHeight(iRow,
                                  qMax(fontMetrics.height() + m_iRowTopMargin + m_iRowBottomMargin, iconSize.height()));
-    m_pTableWidget->setItem(iRow, 0, new QTableWidgetItem(icon, ""));
-    QTableWidgetItem *pTitleItem = new QTableWidgetItem(strTitle);
+    QITableWidgetItem *pItem = new QITableWidgetItem("");
+    AssertReturnVoid(pItem);
+    pItem->setIcon(icon);
+    m_pTableWidget->setItem(iRow, 0, pItem);
+    QITableWidgetItem *pTitleItem = new QITableWidgetItem(strTitle);
+    AssertReturnVoid(pTitleItem);
     QFont font = pTitleItem->font();
     font.setBold(true);
     pTitleItem->setFont(font);
@@ -245,8 +249,8 @@ void UIInformationConfiguration::insertInfoRow(const QString strText1, const QSt
 #else
     iMaxColumn1Length = qMax(iMaxColumn1Length, fontMetrics.width(strText1));
 #endif
-    m_pTableWidget->setItem(iRow, 1, new QTableWidgetItem(strText1));
-    m_pTableWidget->setItem(iRow, 2, new QTableWidgetItem(strText2));
+    m_pTableWidget->setItem(iRow, 1, new QITableWidgetItem(strText1));
+    m_pTableWidget->setItem(iRow, 2, new QITableWidgetItem(strText2));
 }
 
 void UIInformationConfiguration::resetTable()
@@ -274,9 +278,13 @@ QString UIInformationConfiguration::tableData() const
     for (int i = 0; i < m_pTableWidget->rowCount(); ++i)
     {
         /* Skip the first column as it contains only icon and no text: */
-        QTableWidgetItem *pItem = m_pTableWidget->item(i, 1);
+        QITableWidgetItem *pItem = static_cast<QITableWidgetItem*>(m_pTableWidget->item(i, 1));
+        if (!pItem)
+            continue;
         QString strColumn1 = pItem ? pItem->text() : QString();
-        pItem = m_pTableWidget->item(i, 2);
+        pItem = static_cast<QITableWidgetItem*>(m_pTableWidget->item(i, 2));
+        if (!pItem)
+            continue;
         QString strColumn2 = pItem ? pItem->text() : QString();
         if (strColumn2.isEmpty())
             data << strColumn1;
