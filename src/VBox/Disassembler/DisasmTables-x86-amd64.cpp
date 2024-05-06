@@ -511,6 +511,7 @@ const DISOPCODE g_aTwoByteMapX86[256] =
     OP("xorps %Vps,%Wps",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_XORPS,   OP_PARM_Vps,        OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("addps %Vps,%Wps",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_ADDPS,   OP_PARM_Vps,        OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("mulps %Vps,%Wps",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MULPS,   OP_PARM_Vps,        OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    /** @todo wrong cvtps2pd memory source size, its not oword by dword. */
     OP("cvtps2pd %Vpd,%Wps", IDX_ParseModRM,     IDX_UseModRM,   0,          OP_CVTPS2PD,OP_PARM_Vpd,        OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("cvtdq2ps %Vps,%Wdq", IDX_ParseModRM,     IDX_UseModRM,   0,          OP_CVTDQ2PS,OP_PARM_Vps,        OP_PARM_Wdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("subps %Vps,%Wps",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_SUBPS,   OP_PARM_Vps,        OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
