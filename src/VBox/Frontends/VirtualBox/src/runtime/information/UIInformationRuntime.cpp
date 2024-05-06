@@ -103,7 +103,7 @@ private:
       * row to the end of the table. Assumes only one line of the @p enmLine exists. */
     void updateInfoRow(InfoRow enmLine, const QString &strColumn0, const QString &strColumn1);
     QString screenResolution(int iScreenId);
-    /** Creates to QTableWidgetItems of the @enmInfoRow using the @p strLabel and @p strInfo and inserts it
+    /** Creates to QITableWidgetItems of the @enmInfoRow using the @p strLabel and @p strInfo and inserts it
      * to the row @p iRow. If @p iRow is -1 then the items inserted to the end of the table. */
     void insertInfoRow(InfoRow enmInfoRow, const QString& strLabel, const QString &strInfo, int iRow = -1);
     void computeMinimumWidth();
@@ -237,8 +237,17 @@ void UIRuntimeInfoWidget::insertInfoRow(InfoRow enmInfoRow, const QString& strLa
     if (iRow != -1 && iRow <= iNewRow)
         iNewRow = iRow;
     insertRow(iNewRow);
-    setItem(iNewRow, 1, new QTableWidgetItem(strLabel, enmInfoRow));
-    setItem(iNewRow, 2, new QTableWidgetItem(strInfo, enmInfoRow));
+
+    QITableWidgetItem *pItem1 = new QITableWidgetItem(strLabel);
+    AssertPtrReturnVoid(pItem1);
+    pItem1->setData(Qt::UserRole + 1, enmInfoRow);
+    setItem(iNewRow, 1, pItem1);
+
+    QITableWidgetItem *pItem2 = new QITableWidgetItem(strInfo);
+    AssertPtrReturnVoid(pItem2);
+    pItem2->setData(Qt::UserRole + 1, enmInfoRow);
+    setItem(iNewRow, 2, pItem2);
+
     int iMargin = 0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     setRowHeight(iNewRow, 2 * iMargin + m_iFontHeight);
 }
@@ -292,7 +301,7 @@ void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
     int iRowCount = rowCount();
     for (int i = iRowCount - 1; i >= 0; --i)
     {
-        QTableWidgetItem *pItem = item(i, 1);
+        QITableWidgetItem *pItem = static_cast<QITableWidgetItem*>(item(i, 1));
         if (pItem && pItem->type() == InfoRow_Resolution)
             removeRow(i);
     }
@@ -331,8 +340,15 @@ void UIRuntimeInfoWidget::updateUpTime()
 void UIRuntimeInfoWidget::updateTitleRow()
 {
     /* Add the title row always as 0th row: */
-    QTableWidgetItem *pTitleIcon = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), "", InfoRow_Title);
-    QTableWidgetItem *pTitleItem = new QTableWidgetItem(m_strTableTitle, InfoRow_Title);
+    QITableWidgetItem *pTitleIcon = new QITableWidgetItem("");
+    AssertReturnVoid(pTitleIcon);
+    pTitleIcon->setIcon(UIIconPool::iconSet(":/state_running_16px.png"));
+    pTitleIcon->setData(Qt::UserRole + 1, InfoRow_Title);
+
+    QITableWidgetItem *pTitleItem = new QITableWidgetItem(m_strTableTitle);
+    AssertReturnVoid(pTitleItem);
+    pTitleItem->setData(Qt::UserRole + 1, InfoRow_Title);
+
     QFont titleFont(font());
     titleFont.setBold(true);
     pTitleItem->setFont(titleFont);
@@ -460,9 +476,13 @@ QString UIRuntimeInfoWidget::tableData() const
     for (int i = 0; i < rowCount(); ++i)
     {
         /* Skip the first column as it contains only icon and no text: */
-        QTableWidgetItem *pItem = item(i, 1);
+        QITableWidgetItem *pItem = static_cast<QITableWidgetItem*>(item(i, 1));
+        if (!pItem)
+            continue;
         QString strColumn1 = pItem ? pItem->text() : QString();
-        pItem = item(i, 2);
+        pItem = static_cast<QITableWidgetItem*>(item(i, 2));
+        if (!pItem)
+            continue;
         QString strColumn2 = pItem ? pItem->text() : QString();
         if (strColumn2.isEmpty())
             data << strColumn1;
@@ -475,10 +495,10 @@ QString UIRuntimeInfoWidget::tableData() const
 
 void UIRuntimeInfoWidget::updateInfoRow(InfoRow enmLine, const QString &strColumn0, const QString &strColumn1)
 {
-    QTableWidgetItem *pItem = 0;
+    QITableWidgetItem *pItem = 0;
     for (int i = 0; i < rowCount() && !pItem; ++i)
     {
-        pItem = item(i, 2);
+        pItem = static_cast<QITableWidgetItem*>(item(i, 2));
         if (!pItem)
             continue;
         if (pItem->type() != enmLine)
