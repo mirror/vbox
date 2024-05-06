@@ -302,7 +302,7 @@ void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
     for (int i = iRowCount - 1; i >= 0; --i)
     {
         QITableWidgetItem *pItem = static_cast<QITableWidgetItem*>(item(i, 1));
-        if (pItem && pItem->type() == InfoRow_Resolution)
+        if (pItem && pItem->data(Qt::UserRole + 1) == InfoRow_Resolution)
             removeRow(i);
     }
     for (ULONG iScreen = 0; iScreen < uGuestScreens; ++iScreen)
@@ -501,7 +501,7 @@ void UIRuntimeInfoWidget::updateInfoRow(InfoRow enmLine, const QString &strColum
         pItem = static_cast<QITableWidgetItem*>(item(i, 2));
         if (!pItem)
             continue;
-        if (pItem->type() != enmLine)
+        if (pItem->data(Qt::UserRole + 1) != enmLine)
             pItem = 0;
     }
     if (!pItem)
