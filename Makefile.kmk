@@ -2527,6 +2527,7 @@ ifdef VBOX_WITH_PARFAIT
 	 -g $(PATH_OUT)/html \
 	 -c $(PATH_ROOT)/tools/parfait-vbox.conf \
 	 --exclude-from=$(PATH_ROOT)/tools/parfait-vbox-exclude.conf \
+	 --mrr-include-flagged=all --mrr-exclude-flagged=false,wontfix
 	 -z $(PATH_ROOT) \
 	 -r $(VBOX_SVN_REV) \
 	 $(PATH_OUT)/obj
