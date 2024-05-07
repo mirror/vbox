@@ -191,7 +191,7 @@ void UIMediumSelector::sltRetranslateUI()
 
     if (m_pTreeWidget)
     {
-        m_pTreeWidget->setWhatsThis(tr("A list of all registered media"));
+        m_pTreeWidget->setWhatsThis(tr("Shows a list of all registered media"));
         m_pTreeWidget->headerItem()->setText(0, tr("Name"));
         m_pTreeWidget->headerItem()->setText(1, tr("Virtual Size"));
         m_pTreeWidget->headerItem()->setText(2, tr("Actual Size"));

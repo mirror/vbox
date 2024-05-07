@@ -562,6 +562,8 @@ void UIInformationRuntime::sltRetranslateUI()
 {
     if (m_pCopyWholeTableAction)
         m_pCopyWholeTableAction->setText(QApplication::translate("UIVMInformationDialog", "Copy All"));
+    if (m_pRuntimeInfoWidget)
+        m_pRuntimeInfoWidget->setWhatsThis(QApplication::translate("UIVMInformationDialog", "Displays the runtime information of the guest system"));
 }
 
 void UIInformationRuntime::prepareObjects()

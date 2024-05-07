@@ -104,6 +104,8 @@ void UIInformationConfiguration::sltRetranslateUI()
     m_strSharedFoldersTitle = QApplication::translate("UIVMInformationDialog", "Shared Folders");
     if (m_pCopyWholeTableAction)
         m_pCopyWholeTableAction->setText(QApplication::translate("UIVMInformationDialog", "Copy All"));
+    if (m_pTableWidget)
+        m_pTableWidget->setWhatsThis(QApplication::translate("UIVMInformationDialog", "Displays the configuration details of the guest system"));
     createTableItems();
 }
 
