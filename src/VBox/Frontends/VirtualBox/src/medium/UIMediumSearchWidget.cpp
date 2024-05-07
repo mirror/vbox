@@ -202,9 +202,15 @@ void UIMediumSearchWidget::sltRetranslateUI()
     if (m_pSearchTermLineEdit)
         m_pSearchTermLineEdit->setToolTip(tr("Enter the search term and press Enter/Return"));
     if (m_pShowPreviousMatchButton)
-        m_pShowPreviousMatchButton->setToolTip(tr("Show the previous item matching the search term"));
+    {
+        m_pShowPreviousMatchButton->setToolTip(tr("Navigates to the previous item matching the search term"));
+        m_pShowPreviousMatchButton->setText(tr("Previous Match"));
+    }
     if (m_pShowNextMatchButton)
-        m_pShowNextMatchButton->setToolTip(tr("Show the next item matching the search term"));
+    {
+        m_pShowNextMatchButton->setToolTip(tr("Navigates to the next item matching the search term"));
+        m_pShowNextMatchButton->setText(tr("Next Match"));
+    }
 }
 
 void UIMediumSearchWidget::showEvent(QShowEvent *pEvent)
