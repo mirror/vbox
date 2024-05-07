@@ -67,7 +67,7 @@ RT_C_DECLS_BEGIN
 typedef struct PDMSCATTERGATHER
 {
     /** Flags. */
-    size_t          fFlags;
+    uint64_t        fFlags;
     /** The number of bytes used.
      * This is cleared on alloc and set by the user. */
     size_t          cbUsed;
@@ -94,23 +94,23 @@ typedef PPDMSCATTERGATHER *PPPDMSCATTERGATHER;
 
 /** @name PDMSCATTERGATHER::fFlags
  * @{  */
-/** Magic value. */
-#define PDMSCATTERGATHER_FLAGS_MAGIC        UINT32_C(0xb1b10000)
+/** Magic value (Andrzej Sapkowski). */
+#define PDMSCATTERGATHER_FLAGS_MAGIC        UINT64_C(0x19480621b1b20000)
 /** Magic mask. */
-#define PDMSCATTERGATHER_FLAGS_MAGIC_MASK   UINT32_C(0xffff0000)
+#define PDMSCATTERGATHER_FLAGS_MAGIC_MASK   UINT64_C(0xffffffffffff0000)
 /** Owned by owner number 1. */
-#define PDMSCATTERGATHER_FLAGS_OWNER_1      UINT32_C(0x00000001)
+#define PDMSCATTERGATHER_FLAGS_OWNER_1      UINT64_C(0x0000000000000001)
 /** Owned by owner number 2. */
-#define PDMSCATTERGATHER_FLAGS_OWNER_2      UINT32_C(0x00000002)
+#define PDMSCATTERGATHER_FLAGS_OWNER_2      UINT64_C(0x0000000000000002)
 /** Owned by owner number 3. */
-#define PDMSCATTERGATHER_FLAGS_OWNER_3      UINT32_C(0x00000002)
+#define PDMSCATTERGATHER_FLAGS_OWNER_3      UINT64_C(0x0000000000000002)
 /** Owner mask. */
-#define PDMSCATTERGATHER_FLAGS_OWNER_MASK   UINT32_C(0x00000003)
+#define PDMSCATTERGATHER_FLAGS_OWNER_MASK   UINT64_C(0x0000000000000003)
 /** Mask of flags available to general use.
  * The parties using the SG must all agree upon how to use these of course. */
-#define PDMSCATTERGATHER_FLAGS_AVL_MASK     UINT32_C(0x0000f000)
+#define PDMSCATTERGATHER_FLAGS_AVL_MASK     UINT64_C(0x000000000000f000)
 /** Flags reserved for future use, MBZ. */
-#define PDMSCATTERGATHER_FLAGS_RVD_MASK     UINT32_C(0x00000ff8)
+#define PDMSCATTERGATHER_FLAGS_RVD_MASK     UINT64_C(0x0000000000000ff8)
 /** @} */
 
 
