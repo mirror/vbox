@@ -805,7 +805,8 @@ static int stac9220Construct(PHDACODECR3 pThis, HDACODECCFG *pCfg)
 
     AssertCompile(STAC9221_NUM_NODES <= RT_ELEMENTS(pThis->aNodes));
     pCfg->cTotalNodes       = STAC9221_NUM_NODES;
-    pCfg->idxAdcVolsLineIn  = STAC9220_NID_AMP_ADC0;
+    pCfg->idxAdcVolsLineIn  = STAC9220_NID_AMP_ADC0; /* We treat ADC0 as Line-In. */
+    pCfg->idxAdcVolsMicIn   = STAC9220_NID_AMP_ADC1; /* We treat ADC1 as Mic-In. */
     pCfg->idxDacLineOut     = STAC9220_NID_DAC1;
 
     /* Copy over the node class lists and popuplate afNodeClassifications. */
@@ -2105,25 +2106,42 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODECR3 pThis, uint32_t uCmd,
         if (fIsRight)
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), uCmd, 0);
 
-        /*
-         * Check if the node ID is the one we use for controlling the line-in volume;
-         * with STAC9220 this is connected to STAC9220_NID_AMP_ADC0 (ID 0x17).
-         *
-         * If we don't do this check here, some guests like newer Ubuntus mute mic-in
-         * afterwards (connected to STAC9220_NID_AMP_ADC1 (ID 0x18)). This then would
-         * also mute line-in, which breaks audio recording.
-         *
-         * See STAC9220 V1.0 01/08, p. 30 + oem2ticketref:53.
-         */
-        if (CODEC_NID(uCmd) == pThis->Cfg.idxAdcVolsLineIn)
-            hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
+        switch (pThis->Cfg.enmType)
+        {
+            case CODECTYPE_STAC9220:
+            {
+                /*
+                 * Check if the node ID is the one we use for controlling the recording (capturing) volume + mute status.
+                 *
+                 * The STAC9220 codec is connected to STAC9220_NID_AMP_ADC0 (ID 0x17) and
+                 * STAC9220_NID_AMP_ADC0 (ID 0x18).
+                 *
+                 * If we don't do this check here, some guests like newer Ubuntus mute mic-in
+                 * afterwards (connected to STAC9220_NID_AMP_ADC1 (ID 0x18)). This then would
+                 * also mute line-in, which breaks audio recording.
+                 *
+                 * See STAC9220 V1.0 01/08, p. 30 + @oem2ticketref{53}.
+                 */
+                if (CODEC_NID(uCmd) == pThis->Cfg.idxAdcVolsLineIn)
+                    hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
 
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-# error "Implement mic-in volume / mute setting."
-        else if (CODEC_NID(uCmd) == pThis->Cfg.idxAdcVolsMicIn)
-            hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_MIC_IN);
+#ifdef VBOX_AUDIO_HDA_MIC_IN_AS_LINE_IN
+                /* Newer Windows 10 versions use STAC9220_NID_AMP_ADC1 (ID 0x18) for microphone
+                 * volume control by default. */
+# ifndef VBOX_WITH_AUDIO_HDA_MIC_IN
+                /* If we don't implement dedicated microphone-in support (we then only offer recording via line-in),
+                 * make sure to propagate volume control from mic-in to our line-in mixer control.  See @oem2ticketref{93}. */
+                else if (CODEC_NID(uCmd) == pThis->Cfg.idxAdcVolsMicIn)
+                    hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
+# endif
 #endif
+                break;
+            }
 
+            default:
+                /* Nothing to do here. */
+                break;
+        }
     }
     if (fIsOut)
     {

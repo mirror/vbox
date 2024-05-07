@@ -836,11 +836,12 @@ typedef struct HDACODECCFG
 
     uint8_t         cTotalNodes;
     uint8_t         idxAdcVolsLineIn;
+    uint8_t         idxAdcVolsMicIn;
     uint8_t         idxDacLineOut;
 
     /** Align the lists below so they don't cross cache lines (assumes
      *  CODEC_NODES_MAX is 32). */
-    uint8_t const   abPadding1[CODEC_NODES_MAX - 15];
+    uint8_t const   abPadding1[CODEC_NODES_MAX - 16];
 
     /** @name Node classifications.
      * @note These are copies of the g_abStac9220Xxxx arrays in DevHdaCodec.cpp.
