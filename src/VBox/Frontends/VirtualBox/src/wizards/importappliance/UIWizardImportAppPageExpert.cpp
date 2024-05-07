@@ -435,6 +435,7 @@ void UIWizardImportAppPageExpert::sltRetranslateUI()
         m_pFileLabel->setText(UIWizardImportApp::tr("&File:"));
     if (m_pFileSelector)
     {
+        m_pFileSelector->setLineEditToolTip(UIWizardImportApp::tr("Holds the path of the file selected for import."));
         m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
         m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
         m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
@@ -469,9 +470,6 @@ void UIWizardImportAppPageExpert::sltRetranslateUI()
         m_pCheckboxImportHDsAsVDI->setToolTip(UIWizardImportApp::tr("When checked, all the hard drives that belong to this "
                                                                     "appliance will be imported in VDI format."));
     }
-    /* Translate file selector's tooltip: */
-    if (m_pFileSelector)
-        m_pFileSelector->setToolTip(UIWizardImportApp::tr("Holds the path of the file selected for import."));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;

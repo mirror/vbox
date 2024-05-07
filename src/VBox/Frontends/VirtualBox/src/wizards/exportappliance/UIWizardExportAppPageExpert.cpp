@@ -448,8 +448,12 @@ void UIWizardExportAppPageExpert::sltRetranslateUI()
 
     /* Translate File selector: */
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
-    m_pFileSelector->setChooseButtonToolTip(UIWizardExportApp::tr("Choose a file to export the virtual appliance to..."));
-    m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
+    if (m_pFileSelector)
+    {
+        m_pFileSelector->setLineEditToolTip(UIWizardExportApp::tr("Holds the path of the file selected for export."));
+        m_pFileSelector->setChooseButtonToolTip(UIWizardExportApp::tr("Choose a file to export the virtual appliance to..."));
+        m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
+    }
 
     /* Translate hard-coded values of Format combo-box: */
     m_pFormatComboBoxLabel->setText(UIWizardExportApp::tr("F&ormat:"));
@@ -518,10 +522,6 @@ void UIWizardExportAppPageExpert::sltRetranslateUI()
     m_exportModeButtons.value(CloudExportMode_DoNotAsk)->setText(UIWizardExportApp::tr("Do not ask me about it, leave custom &image for future usage"));
     m_exportModeButtons.value(CloudExportMode_AskThenExport)->setText(UIWizardExportApp::tr("Ask me about it &before exporting disk as custom image"));
     m_exportModeButtons.value(CloudExportMode_ExportThenAsk)->setText(UIWizardExportApp::tr("Ask me about it &after exporting disk as custom image"));
-
-    /* Translate file selector's tooltip: */
-    if (m_pFileSelector)
-        m_pFileSelector->setToolTip(UIWizardExportApp::tr("Holds the path of the file selected for export."));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;

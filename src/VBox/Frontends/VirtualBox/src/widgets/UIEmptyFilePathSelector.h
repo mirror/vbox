@@ -85,6 +85,8 @@ public:
     bool isModified () const { return mIsModified; }
     void resetModified () { mIsModified = false; }
 
+    void setLineEditToolTip(const QString &strToolTip);
+    QString lineEditToolTip() const;
     void setChooseButtonToolTip(const QString &strToolTip);
     QString chooseButtonToolTip() const;
 
@@ -117,6 +119,7 @@ private:
     UIEmptyFilePathSelector::Mode mMode;
     QILineEdit *mLineEdit;
     QToolButton *mSelectButton;
+    bool m_fLineEditoToolTipSet;
     bool m_fButtonToolTipSet;
     QString mFileDialogTitle;
     QString mFileFilters;

@@ -50,6 +50,7 @@ UIEmptyFilePathSelector::UIEmptyFilePathSelector (QWidget *aParent /* = NULL */)
     , mLabel (NULL)
     , mMode (UIEmptyFilePathSelector::Mode_File_Open)
     , mLineEdit (NULL)
+    , m_fLineEditoToolTipSet(false)
     , m_fButtonToolTipSet(false)
     , mHomeDir (QDir::current().absolutePath())
     , mIsModified (false)
@@ -175,6 +176,20 @@ QString UIEmptyFilePathSelector::defaultSaveExt() const
     return mDefaultSaveExt;
 }
 
+void UIEmptyFilePathSelector::setLineEditToolTip(const QString &strToolTip)
+{
+    if (mLineEdit)
+    {
+        m_fLineEditoToolTipSet = !strToolTip.isEmpty();
+        mLineEdit->setToolTip(strToolTip);
+    }
+}
+
+QString UIEmptyFilePathSelector::lineEditToolTip() const
+{
+    return mLineEdit ? mLineEdit->toolTip() : QString();
+}
+
 void UIEmptyFilePathSelector::setChooseButtonToolTip(const QString &strToolTip)
 {
     m_fButtonToolTipSet = !strToolTip.isEmpty();
@@ -219,6 +234,8 @@ QString UIEmptyFilePathSelector::homeDir() const
 
 void UIEmptyFilePathSelector::sltRetranslateUI()
 {
+    if (mLineEdit && !m_fLineEditoToolTipSet)
+        mLineEdit->setToolTip(tr("Contains selected file path."));
     if (!m_fButtonToolTipSet)
     {
         mSelectButton->setToolTip(tr("Choose..."));
