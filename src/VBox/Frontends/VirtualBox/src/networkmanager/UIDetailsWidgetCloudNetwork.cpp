@@ -270,7 +270,10 @@ void UIDetailsWidgetCloudNetwork::sltRetranslateUI()
     if (m_pEditorNetworkId)
         m_pEditorNetworkId->setToolTip(UINetworkManager::tr("Holds the id for this network."));
     if (m_pButtonNetworkId)
+    {
+        m_pButtonNetworkId->setText(UINetworkManager::tr("Select Network ID"));
         m_pButtonNetworkId->setToolTip(UINetworkManager::tr("Selects the id for this network."));
+    }
     if (m_pButtonBoxOptions)
     {
         m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setText(UINetworkManager::tr("Reset"));
