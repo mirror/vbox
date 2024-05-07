@@ -168,7 +168,7 @@ void UIHostnameDomainNameEditor::prepare()
     setLayout(m_pMainLayout);
     int iRow = 0;
     addLineEdit<UIMarkableLineEdit>(iRow, m_pHostnameLabel, m_pHostnameLineEdit, m_pMainLayout);
-    addLineEdit<QILineEdit>(iRow, m_pDomainNameLabel, m_pDomainNameLineEdit, m_pMainLayout);
+    addLineEdit<UIMarkableLineEdit>(iRow, m_pDomainNameLabel, m_pDomainNameLineEdit, m_pMainLayout);
 
     /* Host name and domain should be strings of minimum length of 2 and composed of alpha numerics, '-', and '.'
      * Exclude strings with . at the end: */
@@ -177,7 +177,7 @@ void UIHostnameDomainNameEditor::prepare()
 
     connect(m_pHostnameLineEdit, &UIMarkableLineEdit::textChanged,
             this, &UIHostnameDomainNameEditor::sltHostnameChanged);
-    connect(m_pDomainNameLineEdit, &QILineEdit::textChanged,
+    connect(m_pDomainNameLineEdit, &UIMarkableLineEdit::textChanged,
             this, &UIHostnameDomainNameEditor::sltDomainChanged);
 
     sltRetranslateUI();

@@ -82,7 +82,7 @@ private:
     void addLineEdit(int &iRow, QLabel *&pLabel, T *&pLineEdit, QGridLayout *pLayout);
 
     UIMarkableLineEdit *m_pHostnameLineEdit;
-    QILineEdit         *m_pDomainNameLineEdit;
+    UIMarkableLineEdit *m_pDomainNameLineEdit;
 
     QLabel *m_pHostnameLabel;
     QLabel *m_pDomainNameLabel;
