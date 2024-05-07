@@ -155,8 +155,8 @@ DECL_FORCE_INLINE(bool) iemNativeHlpReturnBreakViaLookupIsIrqOrForceFlagPending(
  * Used by TB code when encountering a non-zero status or rcPassUp after a call.
  */
 template <bool const a_fWithIrqCheck>
-static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMCPUCC pVCpu, uint8_t idxTbLookup,
-                                                                            uint32_t fFlags, RTGCPHYS GCPhysPc))
+IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMCPUCC pVCpu, uint8_t idxTbLookup,
+                                                                     uint32_t fFlags, RTGCPHYS GCPhysPc))
 {
     PIEMTB const    pTb     = pVCpu->iem.s.pCurTbR3;
     Assert(idxTbLookup < pTb->cTbLookupEntries);
@@ -259,7 +259,7 @@ static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMC
  * Used by TB code when encountering a non-zero status or rcPassUp after a call.
  */
 template <bool const a_fWithIrqCheck>
-static IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookupWithTlb,(PVMCPUCC pVCpu, uint8_t idxTbLookup))
+IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookupWithTlb,(PVMCPUCC pVCpu, uint8_t idxTbLookup))
 {
     PIEMTB const    pTb     = pVCpu->iem.s.pCurTbR3;
     Assert(idxTbLookup < pTb->cTbLookupEntries);
