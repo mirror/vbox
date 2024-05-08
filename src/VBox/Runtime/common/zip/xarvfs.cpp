@@ -1520,7 +1520,7 @@ static DECLCALLBACK(int) rtZipXarFss_Next(void *pvThis, char **ppszName, RTVFSOB
     xml::ElementNode const *pCurFile = pThis->XarReader.pCurFile;
     if (pCurFile)
         pThis->XarReader.pCurFile = pCurFile = rtZipXarGetNextFileElement(pCurFile, &pThis->XarReader.cCurDepth);
-    else if (!pThis->fEndOfStream)
+    else
     {
         pThis->XarReader.cCurDepth  = 0;
         pThis->XarReader.pCurFile   = pCurFile = pThis->XarReader.pToc->findChildElement("file");
@@ -1973,7 +1973,7 @@ static int rtZipXarReadAndValidateToc(RTVFSIOSTREAM hVfsIosIn, PCXARHEADER pXarH
                     xml::ElementNode const *pRootElem = pDoc->getRootElement();
                     xml::ElementNode const *pTocElem  = NULL;
                     if (pRootElem && pRootElem->nameEquals("xar"))
-                        pTocElem = pRootElem ? pRootElem->findChildElement("toc") : NULL;
+                        pTocElem = pRootElem->findChildElement("toc");
                     if (pTocElem)
                     {
 #ifndef USE_STD_LIST_FOR_CHILDREN
