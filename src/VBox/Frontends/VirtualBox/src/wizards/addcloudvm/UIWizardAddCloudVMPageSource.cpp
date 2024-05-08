@@ -29,12 +29,12 @@
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QLabel>
-#include <QListWidget>
 #include <QPushButton>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIComboBox.h"
+#include "QIListWidget.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
@@ -196,7 +196,7 @@ void UIWizardAddCloudVMSource::populateProfiles(QIComboBox *pCombo,
     pCombo->blockSignals(false);
 }
 
-void UIWizardAddCloudVMSource::populateProfileInstances(QListWidget *pList, UINotificationCenter *pCenter, const CCloudClient &comClient)
+void UIWizardAddCloudVMSource::populateProfileInstances(QIListWidget *pList, UINotificationCenter *pCenter, const CCloudClient &comClient)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pList);
@@ -219,7 +219,7 @@ void UIWizardAddCloudVMSource::populateProfileInstances(QListWidget *pList, UINo
         for (int i = 0; i < names.size(); ++i)
         {
             /* Create list item: */
-            QListWidgetItem *pItem = new QListWidgetItem(names.at(i), pList);
+            QIListWidgetItem *pItem = new QIListWidgetItem(names.at(i), pList);
             if (pItem)
             {
                 pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
@@ -236,10 +236,10 @@ void UIWizardAddCloudVMSource::populateProfileInstances(QListWidget *pList, UINo
     pList->blockSignals(false);
 }
 
-QStringList UIWizardAddCloudVMSource::currentListWidgetData(QListWidget *pList)
+QStringList UIWizardAddCloudVMSource::currentListWidgetData(QIListWidget *pList)
 {
     QStringList result;
-    foreach (QListWidgetItem *pItem, pList->selectedItems())
+    foreach (QIListWidgetItem *pItem, pList->selectedItems())
         result << pItem->data(Qt::UserRole).toString();
     return result;
 }
@@ -349,7 +349,7 @@ UIWizardAddCloudVMPageSource::UIWizardAddCloudVMPageSource()
                 m_pOptionsLayout->addWidget(m_pSourceInstanceLabel, 1, 0, Qt::AlignRight);
 
             /* Prepare source instances table: */
-            m_pSourceInstanceList = new QListWidget(this);
+            m_pSourceInstanceList = new QIListWidget(this);
             if (m_pSourceInstanceList)
             {
                 m_pSourceInstanceLabel->setBuddy(m_pSourceInstanceLabel);
@@ -390,7 +390,7 @@ UIWizardAddCloudVMPageSource::UIWizardAddCloudVMPageSource()
             this, &UIWizardAddCloudVMPageSource::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardAddCloudVMPageSource::sltHandleProfileButtonClick);
-    connect(m_pSourceInstanceList, &QListWidget::itemSelectionChanged,
+    connect(m_pSourceInstanceList, &QIListWidget::itemSelectionChanged,
             this, &UIWizardAddCloudVMPageSource::sltHandleSourceInstanceChange);
 }
 
@@ -434,7 +434,10 @@ void UIWizardAddCloudVMPageSource::sltRetranslateUI()
         m_pProfileToolButton->setText(UIWizardAddCloudVM::tr("Cloud Profile Manager"));
         m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Opens cloud profile manager..."));
     }
+
+    /* Translate source stuff: */
     m_pSourceInstanceLabel->setText(UIWizardAddCloudVM::tr("&Instances:"));
+    m_pSourceInstanceList->setWhatsThis(UIWizardAddCloudVM::tr("Lists all the cloud VM instances."));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;

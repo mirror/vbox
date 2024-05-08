@@ -30,13 +30,13 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
-#include <QListWidget>
 #include <QPushButton>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIComboBox.h"
+#include "QIListWidget.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
 #include "UIIconPool.h"
@@ -153,7 +153,7 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
                     pLayoutSource->setContentsMargins(0, 0, 0, 0);
 
                     /* Prepare source instances table: */
-                    m_pSourceInstanceList = new QListWidget(pWidgetSource);
+                    m_pSourceInstanceList = new QIListWidget(pWidgetSource);
                     if (m_pSourceInstanceList)
                     {
                         /* A bit of look&feel: */
@@ -186,7 +186,7 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
             this, &UIWizardAddCloudVMPageExpert::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardAddCloudVMPageExpert::sltHandleProfileButtonClick);
-    connect(m_pSourceInstanceList, &QListWidget::itemSelectionChanged,
+    connect(m_pSourceInstanceList, &QIListWidget::itemSelectionChanged,
             this, &UIWizardAddCloudVMPageExpert::sltHandleSourceInstanceChange);
 }
 
@@ -226,6 +226,9 @@ void UIWizardAddCloudVMPageExpert::sltRetranslateUI()
         m_pProfileToolButton->setText(UIWizardAddCloudVM::tr("Cloud Profile Manager"));
         m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Opens cloud profile manager..."));
     }
+
+    /* Translate source stuff: */
+    m_pSourceInstanceList->setWhatsThis(UIWizardAddCloudVM::tr("Lists all the cloud VM instances."));
 }
 
 void UIWizardAddCloudVMPageExpert::initializePage()

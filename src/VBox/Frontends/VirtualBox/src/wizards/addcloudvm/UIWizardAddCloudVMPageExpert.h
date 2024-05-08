@@ -37,6 +37,7 @@
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
+class QIListWidget;
 class UIToolBox;
 class UIWizardAddCloudVM;
 
@@ -102,7 +103,7 @@ private:
     /** Holds the source instance label instance. */
     QLabel       *m_pSourceInstanceLabel;
     /** Holds the source instance list instance. */
-    QListWidget  *m_pSourceInstanceList;
+    QIListWidget *m_pSourceInstanceList;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_addcloudvm_UIWizardAddCloudVMPageExpert_h */

@@ -40,8 +40,8 @@
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
-class QListWidget;
 class QIComboBox;
+class QIListWidget;
 class QIRichTextLabel;
 class QIToolButton;
 class UINotificationCenter;
@@ -70,10 +70,10 @@ namespace UIWizardAddCloudVMSource
       * @param  strProfileName        Brings the name of profile to be chosen by default. */
     void populateProfiles(QIComboBox *pCombo, UINotificationCenter *pCenter, const QString &strProviderShortName, const QString &strProfileName);
     /** Populates @a pList with profile instances available in @a comClient. */
-    void populateProfileInstances(QListWidget *pList, UINotificationCenter *pCenter, const CCloudClient &comClient);
+    void populateProfileInstances(QIListWidget *pList, UINotificationCenter *pCenter, const CCloudClient &comClient);
 
     /** Returns current user data for @a pList specified. */
-    QStringList currentListWidgetData(QListWidget *pList);
+    QStringList currentListWidgetData(QIListWidget *pList);
 }
 
 /** UINativeWizardPage extension for source page of the Add Cloud VM wizard,
@@ -143,7 +143,7 @@ private:
     /** Holds the source instance label instance. */
     QLabel       *m_pSourceInstanceLabel;
     /** Holds the source instance list instance. */
-    QListWidget  *m_pSourceInstanceList;
+    QIListWidget *m_pSourceInstanceList;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_addcloudvm_UIWizardAddCloudVMPageSource_h */
