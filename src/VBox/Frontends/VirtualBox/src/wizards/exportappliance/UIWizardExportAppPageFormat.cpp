@@ -1002,6 +1002,8 @@ void UIWizardExportAppPageFormat::sltRetranslateUI()
 
     /* Translate profile stuff: */
     m_pProfileLabel->setText(UIWizardExportApp::tr("&Profile:"));
+    if (m_pProfileComboBox)
+        m_pProfileComboBox->setToolTip(UIWizardExportApp::tr("Selects cloud profile."));
     if (m_pProfileToolButton)
     {
         m_pProfileToolButton->setText(UIWizardExportApp::tr("Cloud Profile Manager"));

@@ -444,6 +444,8 @@ void UIWizardImportAppPageExpert::sltRetranslateUI()
     /* Translate profile stuff: */
     if (m_pProfileLabel)
         m_pProfileLabel->setText(UIWizardImportApp::tr("&Profile:"));
+    if (m_pProfileComboBox)
+        m_pProfileComboBox->setToolTip(UIWizardImportApp::tr("Selects cloud profile."));
     if (m_pProfileToolButton)
     {
         m_pProfileToolButton->setText(UIWizardImportApp::tr("Cloud Profile Manager"));

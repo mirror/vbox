@@ -267,6 +267,8 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
     /* Translate profile stuff: */
     if (m_pProfileLabel)
         m_pProfileLabel->setText(UIWizardNewCloudVM::tr("&Profile:"));
+    if (m_pProfileComboBox)
+        m_pProfileComboBox->setToolTip(UIWizardNewCloudVM::tr("Selects cloud profile."));
     if (m_pProfileToolButton)
     {
         m_pProfileToolButton->setText(UIWizardNewCloudVM::tr("Cloud Profile Manager"));
