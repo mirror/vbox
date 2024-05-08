@@ -2124,7 +2124,7 @@ VMM_INT_DECL(int) PGMPhysGCPtr2CCPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, void **ppv, 
  *
  * @remark  Avoid calling this API from within critical sections (other than
  *          the PGM one) because of the deadlock risk.
- * @thread  EMT
+ * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVMCPUCC pVCpu, RTGCPTR GCPtr, void const **ppv, PPGMPAGEMAPLOCK pLock)
 {
@@ -2376,9 +2376,11 @@ int pgmPhysGCPhys2R3Ptr(PVMCC pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       The guest pointer to convert.
  * @param   pGCPhys     Where to store the GC physical address.
+ * @thread  EMT(pVCpu)
  */
 VMMDECL(int) PGMPhysGCPtr2GCPhys(PVMCPUCC pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
+    VM_ASSERT_EMT(pVCpu->CTX_SUFF(pVM));
     PGMPTWALK Walk;
     int rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtr, &Walk);
     if (pGCPhys && RT_SUCCESS(rc))
@@ -2396,9 +2398,11 @@ VMMDECL(int) PGMPhysGCPtr2GCPhys(PVMCPUCC pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhy
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       The guest pointer to convert.
  * @param   pHCPhys     Where to store the HC physical address.
+ * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(int) PGMPhysGCPtr2HCPhys(PVMCPUCC pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
 {
+    VM_ASSERT_EMT(pVCpu->CTX_SUFF(pVM));
     PVMCC     pVM = pVCpu->CTX_SUFF(pVM);
     PGMPTWALK Walk;
     int rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtr, &Walk);

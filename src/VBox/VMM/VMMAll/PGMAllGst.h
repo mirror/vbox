@@ -127,7 +127,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
 {
     int rc;
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 /** @def PGM_GST_SLAT_WALK
  * Macro to perform guest second-level address translation (EPT or Nested).
  *
@@ -138,7 +138,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
  * @param   a_GCPhysNested  The nested-guest physical address to translate.
  * @param   a_GCPhysOut     Where to store the guest-physical address (result).
  */
-# define PGM_GST_SLAT_WALK(a_pVCpu, a_GCPtrNested, a_GCPhysNested, a_GCPhysOut, a_pWalk) \
+#  define PGM_GST_SLAT_WALK(a_pVCpu, a_GCPtrNested, a_GCPhysNested, a_GCPhysOut, a_pWalk) \
     do { \
         if ((a_pVCpu)->pgm.s.enmGuestSlatMode == PGMSLAT_EPT) \
         { \
@@ -155,7 +155,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
             } \
         } \
     } while (0)
-#endif
+# endif
 
     /*
      * Init the walking structures.
@@ -202,9 +202,9 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
          * The PDPT.
          */
         RTGCPHYS GCPhysPdpt = Pml4e.u & X86_PML4E_PG_MASK;
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+#  ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         PGM_GST_SLAT_WALK(pVCpu, GCPtr, GCPhysPdpt, GCPhysPdpt, pWalk);
-#endif
+#  endif
         rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhysPdpt, &pGstWalk->pPdpt);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 3, rc);
@@ -213,7 +213,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
         rc = pgmGstGetPaePDPTPtrEx(pVCpu, &pGstWalk->pPdpt);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 8, rc);
-#endif
+# endif
     }
     {
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
@@ -228,11 +228,11 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
         if (RT_LIKELY(GST_IS_PDPE_VALID(pVCpu, Pdpe))) { /* likely */ }
         else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 3);
 
-# if PGM_GST_TYPE == PGM_TYPE_AMD64
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
         fEffective &= (Pdpe.u & (  X86_PDPE_P   | X86_PDPE_RW  | X86_PDPE_US
                                  | X86_PDPE_PWT | X86_PDPE_PCD | X86_PDPE_A));
         fEffective |= Pdpe.u & X86_PDPE_LM_NX;
-# else
+#  else
         /*
          * NX in the legacy-mode PAE PDPE is reserved. The valid check above ensures the NX bit is not set.
          * The RW, US, A bits MBZ in PAE PDPTE entries but must be 1 the way we compute cumulative (effective) access rights.
@@ -240,16 +240,16 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
         Assert(!(Pdpe.u & X86_PDPE_LM_NX));
         fEffective = X86_PDPE_P | X86_PDPE_RW  | X86_PDPE_US | X86_PDPE_A
                    | (Pdpe.u & (X86_PDPE_PWT | X86_PDPE_PCD));
-# endif
+#  endif
         pWalk->fEffective = fEffective;
 
         /*
          * The PD.
          */
         RTGCPHYS GCPhysPd = Pdpe.u & X86_PDPE_PG_MASK;
-# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+#  ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         PGM_GST_SLAT_WALK(pVCpu, GCPtr, GCPhysPd, GCPhysPd, pWalk);
-# endif
+#  endif
         rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhysPd, &pGstWalk->pPd);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 2, rc);
@@ -393,7 +393,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
             *pWalk = WalkSlat;
         return rc;
     }
-#  endif
+# endif
 
     /*
      * Fake it.
