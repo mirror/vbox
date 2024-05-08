@@ -1823,7 +1823,7 @@ int GstCtrlService::clientSessionCancelPrepared(ClientState *pClient, uint32_t c
     /*
      * Do the work.
      */
-    int rc = VWRN_NOT_FOUND;
+    int rc = VINF_SUCCESS;
     if (idSession == UINT32_MAX)
     {
         GstCtrlPreparedSession *pCur, *pNext;
@@ -1831,12 +1831,12 @@ int GstCtrlService::clientSessionCancelPrepared(ClientState *pClient, uint32_t c
         {
             RTListNodeRemove(&pCur->ListEntry);
             RTMemFree(pCur);
-            rc = VINF_SUCCESS;
         }
         m_cPreparedSessions = 0;
     }
     else
     {
+        rc = VWRN_NOT_FOUND;
         GstCtrlPreparedSession *pCur, *pNext;
         RTListForEachSafe(&m_PreparedSessions, pCur, pNext, GstCtrlPreparedSession, ListEntry)
         {
@@ -1850,7 +1850,7 @@ int GstCtrlService::clientSessionCancelPrepared(ClientState *pClient, uint32_t c
             }
         }
     }
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
