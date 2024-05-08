@@ -405,11 +405,13 @@ void UIWizardAddCloudVMPageSource::sltRetranslateUI()
     setTitle(UIWizardAddCloudVM::tr("Source to add from"));
 
     /* Translate main label: */
-    m_pLabelMain->setText(UIWizardAddCloudVM::tr("Please choose the source to add cloud virtual machine from.  This can "
-                                                 "be one of known cloud service providers below."));
+    if (m_pLabelMain)
+        m_pLabelMain->setText(UIWizardAddCloudVM::tr("Please choose the source to add cloud virtual machine from.  This can "
+                                                     "be one of known cloud service providers below."));
 
     /* Translate provider label: */
-    m_pProviderLabel->setText(UIWizardAddCloudVM::tr("&Source:"));
+    if (m_pProviderLabel)
+        m_pProviderLabel->setText(UIWizardAddCloudVM::tr("&Provider:"));
     /* Translate received values of Provider combo-box.
      * We are enumerating starting from 0 for simplicity: */
     if (m_pProviderComboBox)
@@ -420,13 +422,15 @@ void UIWizardAddCloudVMPageSource::sltRetranslateUI()
     }
 
     /* Translate description label: */
-    m_pLabelDescription->setText(UIWizardAddCloudVM::tr("Please choose one of cloud service profiles you have registered to "
-                                                        "add virtual machine from.  Existing instance list will be "
-                                                        "updated.  To continue, select at least one instance to add virtual "
-                                                        "machine on the basis of it."));
+    if (m_pLabelDescription)
+        m_pLabelDescription->setText(UIWizardAddCloudVM::tr("Please choose one of cloud service profiles you have registered to "
+                                                            "add virtual machine from.  Existing instance list will be "
+                                                            "updated.  To continue, select at least one instance to add virtual "
+                                                            "machine on the basis of it."));
 
     /* Translate profile stuff: */
-    m_pProfileLabel->setText(UIWizardAddCloudVM::tr("&Profile:"));
+    if (m_pProfileLabel)
+        m_pProfileLabel->setText(UIWizardAddCloudVM::tr("P&rofile:"));
     if (m_pProfileComboBox)
         m_pProfileComboBox->setToolTip(UIWizardAddCloudVM::tr("Selects cloud profile."));
     if (m_pProfileToolButton)
@@ -435,20 +439,27 @@ void UIWizardAddCloudVMPageSource::sltRetranslateUI()
         m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Opens cloud profile manager..."));
     }
 
-    /* Translate source stuff: */
-    m_pSourceInstanceLabel->setText(UIWizardAddCloudVM::tr("&Instances:"));
-    m_pSourceInstanceList->setWhatsThis(UIWizardAddCloudVM::tr("Lists all the cloud VM instances."));
+    /* Translate instances stuff: */
+    if (m_pSourceInstanceLabel)
+        m_pSourceInstanceLabel->setText(UIWizardAddCloudVM::tr("&Instances:"));
+    if (m_pSourceInstanceList)
+        m_pSourceInstanceList->setWhatsThis(UIWizardAddCloudVM::tr("Lists all the cloud VM instances."));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
-    labels << m_pProviderLabel;
-    labels << m_pProfileLabel;
-    labels << m_pSourceInstanceLabel;
+    if (m_pProviderLabel)
+        labels << m_pProviderLabel;
+    if (m_pProfileLabel)
+        labels << m_pProfileLabel;
+    if (m_pSourceInstanceLabel)
+        labels << m_pSourceInstanceLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
-    m_pProviderLayout->setColumnMinimumWidth(0, iMaxWidth);
-    m_pOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
+    if (m_pProviderLayout)
+        m_pProviderLayout->setColumnMinimumWidth(0, iMaxWidth);
+    if (m_pOptionsLayout)
+        m_pOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
 }
 
 void UIWizardAddCloudVMPageSource::initializePage()

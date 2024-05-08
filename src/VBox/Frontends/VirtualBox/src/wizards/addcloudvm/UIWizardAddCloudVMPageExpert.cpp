@@ -200,8 +200,8 @@ void UIWizardAddCloudVMPageExpert::sltRetranslateUI()
     /* Translate tool-box: */
     if (m_pToolBox)
     {
-        m_pToolBox->setPageTitle(0, UIWizardAddCloudVM::tr("Location"));
-        m_pToolBox->setPageTitle(1, UIWizardAddCloudVM::tr("Source"));
+        m_pToolBox->setPageTitle(0, UIWizardAddCloudVM::tr("Source"));
+        m_pToolBox->setPageTitle(1, UIWizardAddCloudVM::tr("Instances"));
     }
 
     /* Translate provider label: */
@@ -227,8 +227,9 @@ void UIWizardAddCloudVMPageExpert::sltRetranslateUI()
         m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Opens cloud profile manager..."));
     }
 
-    /* Translate source stuff: */
-    m_pSourceInstanceList->setWhatsThis(UIWizardAddCloudVM::tr("Lists all the cloud VM instances."));
+    /* Translate instances stuff: */
+    if (m_pSourceInstanceList)
+        m_pSourceInstanceList->setWhatsThis(UIWizardAddCloudVM::tr("Lists all the cloud VM instances."));
 }
 
 void UIWizardAddCloudVMPageExpert::initializePage()

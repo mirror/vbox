@@ -87,11 +87,11 @@ private:
     /** Holds the tool-box instance. */
     UIToolBox *m_pToolBox;
 
-    /** Holds the source layout instance. */
+    /** Holds the provider layout instance. */
     QGridLayout  *m_pLayoutProvider;
-    /** Holds the source type label instance. */
+    /** Holds the provider type label instance. */
     QLabel       *m_pProviderLabel;
-    /** Holds the source type combo-box instance. */
+    /** Holds the provider type combo-box instance. */
     QIComboBox   *m_pProviderComboBox;
     /** Holds the profile label instance. */
     QLabel       *m_pProfileLabel;
