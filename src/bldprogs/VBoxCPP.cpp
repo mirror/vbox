@@ -2116,6 +2116,8 @@ static RTEXITCODE vbcppMacroExpandValueWithArguments(PVBCPP pThis, PVBCPPMACROEX
                     break;
                 }
             }
+            if (rcExit != RTEXITCODE_SUCCESS)
+                break;
             rcExit = vbcppStrBufAppendN(pStrBuf, pszSrcSeq, pszSrc - pszSrcSeq);
         }
         else if (ch == '\'')
@@ -3198,8 +3200,7 @@ static RTEXITCODE vbcppDirectiveUndef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
                 /*
                  * Pass thru.
                  */
-                if (   rcExit == RTEXITCODE_SUCCESS
-                    && pThis->fPassThruDefines)
+                if (pThis->fPassThruDefines)
                 {
                     unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
                     ssize_t  cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*sundef %.*s",
@@ -5115,7 +5116,6 @@ static RTEXITCODE vbcppDirectiveInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, siz
     {
         size_t      cchFileSpec = 0;
         const char *pchFileSpec = NULL;
-        size_t      cchFilename = 0;
         const char *pchFilename = NULL;
 
         unsigned ch = ScmStreamPeekCh(pStrmInput);
@@ -5138,7 +5138,7 @@ static RTEXITCODE vbcppDirectiveInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, siz
             if (rcExit == RTEXITCODE_SUCCESS)
             {
                 if (ch != ~(unsigned)0)
-                    cchFileSpec = cchFilename = ScmStreamGetCur(pStrmInput) - pchFilename - 1;
+                    cchFileSpec = ScmStreamGetCur(pStrmInput) - pchFilename - 1;
                 else
                     rcExit = vbcppError(pThis, "Expected '%c'", chType);
             }
@@ -5296,7 +5296,7 @@ static RTEXITCODE vbcppDirectiveError(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
                 rcExit = vbcppOutputComment(pThis, pStrmInput, off1st, cch, 1);
             else
                 rcExit = vbcppError(pThis, "output error");
-            return RTEXITCODE_SUCCESS;
+            return rcExit;
         }
         return vbcppError(pThis, "Hit an #error");
     }
@@ -5701,6 +5701,8 @@ static RTEXITCODE vbcppParseOptions(PVBCPP pThis, int argc, char **argv, bool *p
 
             case 'U':
                 rcExit = vbcppMacroUndef(pThis, ValueUnion.psz, RTSTR_MAX, true);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
                 break;
 
             case 'h':
