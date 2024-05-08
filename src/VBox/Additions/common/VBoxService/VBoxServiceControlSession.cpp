@@ -2273,6 +2273,7 @@ static int vgsvcGstCtrlSessionHandleFsCreateTemp(const PVBOXSERVICECTRLSESSION p
      * Retrieve the request.
      */
     char     szTemplate[RTPATH_MAX];
+    char     szTempPathAbs[RTPATH_MAX] = ""; /* Absolute path to temporary directory / file created. */
     char     szPath[RTPATH_MAX];
     uint32_t fFlags = GSTCTL_CREATETEMP_F_NONE;
     RTFMODE  fMode  = 0700;
@@ -2302,10 +2303,9 @@ static int vgsvcGstCtrlSessionHandleFsCreateTemp(const PVBOXSERVICECTRLSESSION p
 
             if (RT_SUCCESS(rc))
             {
-                char szTemplateWithPath[RTPATH_MAX] = "";
                 if (szPath[0] != '\0')
                 {
-                    rc = RTStrCopy(szTemplateWithPath, sizeof(szTemplateWithPath), szPath);
+                    rc = RTStrCopy(szTempPathAbs, sizeof(szTempPathAbs), szPath);
                     if (RT_FAILURE(rc))
                     {
                         VGSvcError("createtemp: Path '%s' too long\n", szPath);
@@ -2314,7 +2314,7 @@ static int vgsvcGstCtrlSessionHandleFsCreateTemp(const PVBOXSERVICECTRLSESSION p
                 }
                 else
                 {
-                    rc = RTPathTemp(szTemplateWithPath, sizeof(szTemplateWithPath));
+                    rc = RTPathTemp(szTempPathAbs, sizeof(szTempPathAbs));
                     if (RT_FAILURE(rc))
                     {
                         VGSvcError("createtemp: Failed to get the temporary directory (%Rrc)", rc);
@@ -2324,7 +2324,7 @@ static int vgsvcGstCtrlSessionHandleFsCreateTemp(const PVBOXSERVICECTRLSESSION p
 
                 if (RT_SUCCESS(rc))
                 {
-                    rc = RTPathAppend(szTemplateWithPath, sizeof(szTemplateWithPath), szTemplate);
+                    rc = RTPathAppend(szTempPathAbs, sizeof(szTempPathAbs), szTemplate);
                     if (RT_FAILURE(rc))
                     {
                         VGSvcError("createtemp: Template '%s' too long for path\n", szTemplate);
@@ -2336,20 +2336,20 @@ static int vgsvcGstCtrlSessionHandleFsCreateTemp(const PVBOXSERVICECTRLSESSION p
                         if (fFlags & GSTCTL_CREATETEMP_F_DIRECTORY)
                         {
                             if (fSecure)
-                                rc = RTDirCreateTempSecure(szTemplateWithPath); /* File mode is fixed to 0700. */
+                                rc = RTDirCreateTempSecure(szTempPathAbs); /* File mode is fixed to 0700. */
                             else
-                                rc = RTDirCreateTemp(szTemplate, fMode);
+                                rc = RTDirCreateTemp(szTempPathAbs, fMode);
                         }
                         else /* File */
                         {
                             if (fSecure)
-                                rc = RTFileCreateTempSecure(szTemplateWithPath); /* File mode is fixed to 0700. */
+                                rc = RTFileCreateTempSecure(szTempPathAbs); /* File mode is fixed to 0700. */
                             else
-                                rc = RTFileCreateTemp(szTemplate, fMode);
+                                rc = RTFileCreateTemp(szTempPathAbs, fMode);
                         }
 
-                        VGSvcVerbose(3, "Creating temporary %s (szTemplate='%s', fFlags=%#x, fMode=%#x) -> rc=%Rrc\n",
-                                     pszWhat, szTemplate, fFlags, fMode, rc);
+                        VGSvcVerbose(3, "Creating temporary %s (szTemplate='%s', fFlags=%#x, fMode=%#x) -> %s, rc=%Rrc\n",
+                                     pszWhat, szTemplate, fFlags, fMode, szTempPathAbs, rc);
                     }
                 }
             }
@@ -2363,7 +2363,7 @@ static int vgsvcGstCtrlSessionHandleFsCreateTemp(const PVBOXSERVICECTRLSESSION p
         /*
          * Report result back to host.
          */
-        int rc2 = VbglR3GuestCtrlFsCbCreateTemp(pHostCtx, rc, szTemplate);
+        int rc2 = VbglR3GuestCtrlFsCbCreateTemp(pHostCtx, rc, szTempPathAbs);
         if (RT_FAILURE(rc2))
         {
             VGSvcError("Failed to report temporary file/directory creation status, rc=%Rrc\n", rc2);
