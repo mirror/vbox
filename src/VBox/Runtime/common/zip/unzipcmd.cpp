@@ -340,6 +340,8 @@ static RTEXITCODE rtZipUnzipDoWithMembers(PRTZIPUNZIPCMDOPS pOpts, PFNDOWITHMEMB
 
                 RTFOFF cBytes = 0;
                 rcExit = pfnCallback(pOpts, hVfsObj, pszName, rcExit, &cBytes);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    break;
 
                 cBytesSum += cBytes;
                 cFiles++;
@@ -357,10 +359,7 @@ static RTEXITCODE rtZipUnzipDoWithMembers(PRTZIPUNZIPCMDOPS pOpts, PFNDOWITHMEMB
          */
         for (uint32_t iFile = 0; iFile <pOpts->cFiles; iFile++)
             if (!ASMBitTest(pbmFound, iFile))
-            {
-                RTMsgError("%s: Was not found in the archive", pOpts->papszFiles[iFile]);
-                rcExit = RTEXITCODE_FAILURE;
-            }
+                rcExit = RTMsgErrorExitFailure("%s: Was not found in the archive", pOpts->papszFiles[iFile]);
 
         RTVfsFsStrmRelease(hVfsFssIn);
     }
@@ -370,7 +369,7 @@ static RTEXITCODE rtZipUnzipDoWithMembers(PRTZIPUNZIPCMDOPS pOpts, PFNDOWITHMEMB
     *pcFiles = cFiles;
     *pcBytes = cBytesSum;
 
-    return RTEXITCODE_SUCCESS;
+    return rcExit;
 }
 
 
