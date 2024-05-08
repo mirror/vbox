@@ -477,6 +477,7 @@ RuntimeBaseR3_SOURCES      := \
 	common/crypto/x509-asn1-decoder.cpp \
 	common/crypto/x509-certpaths.cpp \
 	common/crypto/x509-core.cpp \
+	common/crypto/x509-create-sign.cpp \
 	common/crypto/x509-file.cpp \
 	common/crypto/x509-init.cpp \
 	common/crypto/x509-sanity.cpp \
@@ -2356,6 +2357,7 @@ RuntimeBldProg_SOURCES          = \
 	common/crypto/x509-asn1-decoder.cpp \
 	common/crypto/x509-certpaths.cpp \
 	common/crypto/x509-core.cpp \
+	common/crypto/x509-create-sign.cpp \
 	common/crypto/x509-file.cpp \
 	common/crypto/x509-init.cpp \
 	common/crypto/x509-sanity.cpp \
@@ -3761,6 +3763,7 @@ RuntimeR0Drv_SOURCES.win = \
 	common/crypto/x509-asn1-decoder.cpp \
 	common/crypto/x509-certpaths.cpp \
 	common/crypto/x509-core.cpp \
+	common/crypto/x509-create-sign.cpp \
 	common/crypto/x509-init.cpp \
 	common/crypto/x509-sanity.cpp \
 	common/crypto/x509-verify.cpp \
@@ -3914,6 +3917,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	common/crypto/x509-asn1-decoder.cpp \
 	common/crypto/x509-certpaths.cpp \
 	common/crypto/x509-core.cpp \
+	common/crypto/x509-create-sign.cpp \
 	common/crypto/x509-init.cpp \
 	common/crypto/x509-sanity.cpp \
 	common/crypto/x509-verify.cpp \
