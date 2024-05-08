@@ -381,7 +381,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Install the public signing key.
         #
         if oTestVm.sKind not in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003'):
-            fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000,
+            fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 5 * 60 * 1000,
                                   '${CDROM}/%s/cert/VBoxCertUtil.exe' % (self.sGstPathGaPrefix,),
                                   ('${CDROM}/%s/cert/VBoxCertUtil.exe' % (self.sGstPathGaPrefix,),
                                    'add-trusted-publisher',
@@ -390,7 +390,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             if not fRc:
                 reporter.error('Error installing SHA1 certificate');
             else:
-                fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000,
+                fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 5 * 60 * 1000,
                                       '${CDROM}/%s/cert/VBoxCertUtil.exe' % (self.sGstPathGaPrefix,),
                                       ('${CDROM}/%s/cert/VBoxCertUtil.exe' % (self.sGstPathGaPrefix,),
                                        'add-trusted-publisher',
