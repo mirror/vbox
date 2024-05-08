@@ -236,7 +236,7 @@ QString UINameAndSystemEditor::typeId() const
 void UINameAndSystemEditor::markNameEditor(bool fError)
 {
     if (m_pEditorName)
-        m_pEditorName->mark(fError, fError ? tr("Invalid name") : QString("Name is valid"));
+        m_pEditorName->mark(fError, tr("Invalid guest machine name"), tr("Guest machine name is valid"));
 }
 
 void UINameAndSystemEditor::markImageEditor(bool fError, const QString &strErrorMessage)

@@ -74,11 +74,13 @@ void UIHostnameDomainNameEditor::mark()
     if (m_pHostnameLineEdit)
         m_pHostnameLineEdit->mark(!m_pHostnameLineEdit->hasAcceptableInput(),
                                   tr("Hostname should be at least 2 character long. "
-                                     "Allowed characters are alphanumerics, \"-\" and \".\""));
+                                     "Allowed characters are alphanumerics, \"-\" and \".\""),
+                                  tr("Hostname is valid"));
     if (m_pDomainNameLineEdit)
         m_pDomainNameLineEdit->mark(!m_pDomainNameLineEdit->hasAcceptableInput(),
                                     tr("Domain name should be at least 2 character long. "
-                                       "Allowed characters are alphanumerics, \"-\" and \".\""));
+                                       "Allowed characters are alphanumerics, \"-\" and \".\""),
+                                    tr("Domain name is valid"));
 }
 
 void UIHostnameDomainNameEditor::setHostname(const QString &strHostname)
@@ -135,8 +137,7 @@ void UIHostnameDomainNameEditor::sltRetranslateUI()
         m_pDomainNameLineEdit->setToolTip(tr("Holds the domain name."));
 }
 
-template<class T>
-void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLineEdit, QGridLayout *pLayout)
+void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, UIMarkableLineEdit *&pLineEdit, QGridLayout *pLayout)
 {
     AssertReturnVoid(pLayout);
     if (pLabel || pLineEdit)
@@ -145,17 +146,14 @@ void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLi
     pLabel = new QLabel;
     AssertReturnVoid(pLabel);
     pLabel->setAlignment(Qt::AlignRight);
-    //pLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
     pLayout->addWidget(pLabel, iRow, 0, 1, 1);
 
-    pLineEdit = new T;
+    pLineEdit = new UIMarkableLineEdit;
     AssertReturnVoid(pLineEdit);
 
     pLayout->addWidget(pLineEdit, iRow, 1, 1, 3);
     pLabel->setBuddy(pLineEdit);
     ++iRow;
-    return;
 }
 
 void UIHostnameDomainNameEditor::prepare()
@@ -167,8 +165,8 @@ void UIHostnameDomainNameEditor::prepare()
         return;
     setLayout(m_pMainLayout);
     int iRow = 0;
-    addLineEdit<UIMarkableLineEdit>(iRow, m_pHostnameLabel, m_pHostnameLineEdit, m_pMainLayout);
-    addLineEdit<UIMarkableLineEdit>(iRow, m_pDomainNameLabel, m_pDomainNameLineEdit, m_pMainLayout);
+    addLineEdit(iRow, m_pHostnameLabel, m_pHostnameLineEdit, m_pMainLayout);
+    addLineEdit(iRow, m_pDomainNameLabel, m_pDomainNameLineEdit, m_pMainLayout);
 
     /* Host name and domain should be strings of minimum length of 2 and composed of alpha numerics, '-', and '.'
      * Exclude strings with . at the end: */
@@ -189,7 +187,8 @@ void UIHostnameDomainNameEditor::sltHostnameChanged()
 {
     m_pHostnameLineEdit->mark(!m_pHostnameLineEdit->hasAcceptableInput(),
                               tr("Hostname should be at least 2 character long. "
-                                 "Allowed characters are alphanumerics, \"-\" and \".\""));
+                                 "Allowed characters are alphanumerics, \"-\" and \".\""),
+                              tr("Hostname is valid"));
     emit sigHostnameDomainNameChanged(hostnameDomainName(), isComplete());
 }
 
@@ -197,6 +196,7 @@ void UIHostnameDomainNameEditor::sltDomainChanged()
 {
     m_pDomainNameLineEdit->mark(!m_pDomainNameLineEdit->hasAcceptableInput(),
                                 tr("Domain name should be at least 2 character long. "
-                                   "Allowed characters are alphanumerics, \"-\" and \".\""));
+                                   "Allowed characters are alphanumerics, \"-\" and \".\""),
+                                tr("Domain name is valid"));
     emit sigHostnameDomainNameChanged(hostnameDomainName(), isComplete());
 }

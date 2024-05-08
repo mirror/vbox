@@ -96,35 +96,34 @@ private:
     QString m_strErrorMessage;
 };
 
-class SHARED_LIBRARY_STUFF UIMarkableLineEdit : public QWidget
+class SHARED_LIBRARY_STUFF UIMarkableLineEdit : public QLineEdit
 {
     Q_OBJECT;
 
 signals:
 
-    void textChanged(const QString &strText);
 
 public:
 
     UIMarkableLineEdit(QWidget *pParent = 0);
-    void mark(bool fError, const QString &strErrorMessage = QString());
+    void mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage);
 
     /** @name Pass through functions for QILineEdit.
       * @{ */
-        void setText(const QString &strText);
-        void setToolTip(const QString &strText);
-        QString text() const;
-        void setValidator(const QValidator *pValidator);
-        bool hasAcceptableInput() const;
-        void setPlaceholderText(const QString &strText);
+
+
     /** @} */
 
 private:
 
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pResizeEvent) RT_OVERRIDE;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+    void moveIconLabel();
     void prepare();
 
-    QILineEdit *m_pLineEdit;
     QLabel *m_pIconLabel;
+    int m_iIconMargin;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QILineEdit_h */

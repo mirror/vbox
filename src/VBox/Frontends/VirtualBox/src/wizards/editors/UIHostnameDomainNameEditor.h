@@ -78,8 +78,7 @@ private slots:
 private:
 
     void prepare();
-    template<class T>
-    void addLineEdit(int &iRow, QLabel *&pLabel, T *&pLineEdit, QGridLayout *pLayout);
+    void addLineEdit(int &iRow, QLabel *&pLabel, UIMarkableLineEdit *&pLineEdit, QGridLayout *pLayout);
 
     UIMarkableLineEdit *m_pHostnameLineEdit;
     UIMarkableLineEdit *m_pDomainNameLineEdit;
