@@ -556,9 +556,9 @@ static void pdmacFileAioMgrNormalRequestFree(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
 /**
  * Wrapper around RTFIleAioCtxSubmit() which is also doing error handling.
  */
-static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
-                                            PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
-                                            PRTFILEAIOREQ pahReqs, unsigned cReqs)
+static void pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
+                                             PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                             PRTFILEAIOREQ pahReqs, unsigned cReqs)
 {
     pAioMgr->cRequestsActive += cReqs;
     pEndpoint->AioMgr.cRequestsActive += cReqs;
@@ -620,8 +620,7 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                 if (rcReq == VERR_FILE_AIO_NOT_SUBMITTED)
                 {
                     /* We call ourself again to do any error handling which might come up now. */
-                    rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, &pahReqs[i], 1);
-                    AssertRC(rc);
+                    pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, &pahReqs[i], 1);
                 }
                 else if (rcReq != VERR_FILE_AIO_IN_PROGRESS)
                     pdmacFileAioMgrNormalReqCompleteRc(pAioMgr, pahReqs[i], rcReq, 0);
@@ -645,8 +644,6 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
             }
         }
     }
-
-    return VINF_SUCCESS;
 }
 
 static bool pdmacFileAioMgrNormalIsRangeLocked(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
@@ -1098,19 +1095,13 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
         /* Queue the requests if the array is full. */
         if (cRequests == RT_ELEMENTS(apReqs))
         {
-            rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, apReqs, cRequests);
+            pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, apReqs, cRequests);
             cRequests = 0;
-            AssertMsg(RT_SUCCESS(rc) || (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES),
-                      ("Unexpected return code\n"));
         }
     }
 
     if (cRequests)
-    {
-        rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, apReqs, cRequests);
-        AssertMsg(RT_SUCCESS(rc) || (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES),
-                  ("Unexpected return code rc=%Rrc\n", rc));
-    }
+        pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, apReqs, cRequests);
 
     if (pTaskHead)
     {
@@ -1520,9 +1511,7 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
                 AssertRC(rc);
 
                 pTask->hReq = hReq;
-                rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, &hReq, 1);
-                AssertMsg(RT_SUCCESS(rc) || (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES),
-                          ("Unexpected return code rc=%Rrc\n", rc));
+                pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, &hReq, 1);
             }
             else if (pTask->fPrefetch)
             {
@@ -1551,9 +1540,7 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
                                               offStart, pTask->pvBounceBuffer, cbToTransfer, pTask);
                 AssertRC(rc);
                 pTask->hReq = hReq;
-                rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, &hReq, 1);
-                AssertMsg(RT_SUCCESS(rc) || (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES),
-                          ("Unexpected return code rc=%Rrc\n", rc));
+                pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, &hReq, 1);
             }
             else
             {
