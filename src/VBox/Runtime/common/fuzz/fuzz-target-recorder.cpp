@@ -345,7 +345,10 @@ static int rtFuzzTgtRecScanStateForNewEdges(PRTFUZZTGTRECINT pThis, PRTFUZZTGTST
             cEdgesLeft--;
         }
 
-        rc = RTSemRWReleaseRead(pThis->hSemRwEdges); AssertRC(rc);
+        int rc2 = RTSemRWReleaseRead(pThis->hSemRwEdges); AssertRC(rc2);
+        if (   RT_FAILURE(rc2)
+            && RT_SUCCESS(rc))
+            rc = rc2;
     }
 
     return rc;
