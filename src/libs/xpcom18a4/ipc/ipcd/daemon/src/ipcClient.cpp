@@ -90,9 +90,16 @@ DECLHIDDEN(void) ipcdClientDestroy(PIPCDCLIENT pThis)
     pThis->mTargets.DeleteAll();
 
     IPCMsgFree(&pThis->MsgIn, false /*fFreeStruct*/);
-    pThis->fUsed = false;
 
-    /** @todo Free all outgoing messages. */
+    /* Free all outgoing messages. */
+    PIPCMSG pIt, pItNext;
+    RTListForEachSafe(&pThis->LstMsgsOut, pIt, pItNext, IPCMSG, NdMsg)
+    {
+        RTListNodeRemove(&pIt->NdMsg);
+        IPCMsgFree(pIt, true /*fFreeStruct*/);
+    }
+
+    pThis->fUsed = false;
 }
 
 
