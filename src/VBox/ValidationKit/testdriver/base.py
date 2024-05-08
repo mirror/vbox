@@ -1301,7 +1301,7 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
                 if cMsTimeout > cMsToDeadline:
                     reporter.log('adjusting timeout: %s ms -> %s ms (deadline)\n' % (cMsTimeout, cMsToDeadline,));
                     return cMsToDeadline;
-                reporter.log('adjustTimeoutMs: cMsTimeout (%s) > cMsToDeadline (%s)' % (cMsTimeout, cMsToDeadline,));
+                reporter.log('adjustTimeoutMs: cMsTimeout (%s) <= cMsToDeadline (%s)' % (cMsTimeout, cMsToDeadline,));
             else:
                 # Don't bother, we've passed the deadline.
                 reporter.log('adjustTimeoutMs: ooops! cMsToDeadline=%s (%s), timestampMilli()=%s, timestampSecond()=%s'
