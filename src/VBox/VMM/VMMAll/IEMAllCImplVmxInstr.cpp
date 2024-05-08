@@ -6738,17 +6738,19 @@ static int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr) RT_NOEXC
                     IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryIntInfoErrCodePe);
 
                 /* Exceptions that provide an error code. */
-                if (   uType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
-                    && (   uVector == X86_XCPT_DF
+                if (uType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
+                {
+                    if (   uVector == X86_XCPT_DF
                         || uVector == X86_XCPT_TS
                         || uVector == X86_XCPT_NP
                         || uVector == X86_XCPT_SS
                         || uVector == X86_XCPT_GP
                         || uVector == X86_XCPT_PF
-                        || uVector == X86_XCPT_AC))
-                { /* likely */ }
-                else
-                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryIntInfoErrCodeVec);
+                        || uVector == X86_XCPT_AC)
+                    { /* likely */ }
+                    else
+                        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryIntInfoErrCodeVec);
+                }
 
                 /* Exception error-code reserved bits. */
                 if (!(pVmcs->u32EntryXcptErrCode & ~VMX_ENTRY_INT_XCPT_ERR_CODE_VALID_MASK))
