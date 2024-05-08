@@ -236,20 +236,6 @@ void UIWizardAddCloudVMSource::populateProfileInstances(QListWidget *pList, UINo
     pList->blockSignals(false);
 }
 
-void UIWizardAddCloudVMSource::updateComboToolTip(QIComboBox *pCombo)
-{
-    /* Sanity check: */
-    AssertPtrReturnVoid(pCombo);
-
-    const int iCurrentIndex = pCombo->currentIndex();
-    if (iCurrentIndex != -1)
-    {
-        const QString strCurrentToolTip = pCombo->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
-        AssertMsg(!strCurrentToolTip.isEmpty(), ("Tool-tip data not found!\n"));
-        pCombo->setToolTip(strCurrentToolTip);
-    }
-}
-
 QStringList UIWizardAddCloudVMSource::currentListWidgetData(QListWidget *pList)
 {
     QStringList result;
@@ -424,12 +410,13 @@ void UIWizardAddCloudVMPageSource::sltRetranslateUI()
 
     /* Translate provider label: */
     m_pProviderLabel->setText(UIWizardAddCloudVM::tr("&Source:"));
-    /* Translate received values of Source combo-box.
+    /* Translate received values of Provider combo-box.
      * We are enumerating starting from 0 for simplicity: */
-    for (int i = 0; i < m_pProviderComboBox->count(); ++i)
+    if (m_pProviderComboBox)
     {
-        m_pProviderComboBox->setItemText(i, m_pProviderComboBox->itemData(i, ProviderData_Name).toString());
-        m_pProviderComboBox->setItemData(i, UIWizardAddCloudVM::tr("Add VM from cloud service provider."), Qt::ToolTipRole);
+        m_pProviderComboBox->setToolTip(UIWizardAddCloudVM::tr("Selects cloud service provider."));
+        for (int i = 0; i < m_pProviderComboBox->count(); ++i)
+            m_pProviderComboBox->setItemText(i, m_pProviderComboBox->itemData(i, ProviderData_Name).toString());
     }
 
     /* Translate description label: */
@@ -457,9 +444,6 @@ void UIWizardAddCloudVMPageSource::sltRetranslateUI()
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
     m_pProviderLayout->setColumnMinimumWidth(0, iMaxWidth);
     m_pOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
-
-    /* Update tool-tips: */
-    updateComboToolTip(m_pProviderComboBox);
 }
 
 void UIWizardAddCloudVMPageSource::initializePage()
@@ -502,9 +486,6 @@ bool UIWizardAddCloudVMPageSource::validatePage()
 
 void UIWizardAddCloudVMPageSource::sltHandleProviderComboChange()
 {
-    /* Update combo tool-tip: */
-    updateComboToolTip(m_pProviderComboBox);
-
     /* Update wizard fields: */
     wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
 

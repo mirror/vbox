@@ -248,14 +248,14 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
     /* Translate provider label: */
     if (m_pProviderLabel)
         m_pProviderLabel->setText(UIWizardNewCloudVM::tr("&Location:"));
-    /* Translate received values of Location combo-box.
+    /* Translate received values of Provider combo-box.
      * We are enumerating starting from 0 for simplicity: */
     if (m_pProviderComboBox)
+    {
+        m_pProviderComboBox->setToolTip(UIWizardNewCloudVM::tr("Selects cloud service provider."));
         for (int i = 0; i < m_pProviderComboBox->count(); ++i)
-        {
             m_pProviderComboBox->setItemText(i, m_pProviderComboBox->itemData(i, ProviderData_Name).toString());
-            m_pProviderComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
-        }
+    }
 
     /* Translate source tab-bar: */
     if (m_pSourceTabBar)
@@ -272,9 +272,6 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
         m_pProfileToolButton->setText(UIWizardNewCloudVM::tr("Cloud Profile Manager"));
         m_pProfileToolButton->setToolTip(UIWizardNewCloudVM::tr("Opens cloud profile manager..."));
     }
-
-    /* Update tool-tips: */
-    updateComboToolTip(m_pProviderComboBox);
 }
 
 void UIWizardNewCloudVMPageExpert::initializePage()
@@ -347,9 +344,6 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
 
 void UIWizardNewCloudVMPageExpert::sltHandleProviderComboChange()
 {
-    /* Update combo tool-tip: */
-    updateComboToolTip(m_pProviderComboBox);
-
     /* Update wizard fields: */
     wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
 

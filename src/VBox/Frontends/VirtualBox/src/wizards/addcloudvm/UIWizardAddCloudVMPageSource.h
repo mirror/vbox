@@ -72,9 +72,6 @@ namespace UIWizardAddCloudVMSource
     /** Populates @a pList with profile instances available in @a comClient. */
     void populateProfileInstances(QListWidget *pList, UINotificationCenter *pCenter, const CCloudClient &comClient);
 
-    /** Updates @a pCombo tool-tips. */
-    void updateComboToolTip(QIComboBox *pCombo);
-
     /** Returns current user data for @a pList specified. */
     QStringList currentListWidgetData(QListWidget *pList);
 }

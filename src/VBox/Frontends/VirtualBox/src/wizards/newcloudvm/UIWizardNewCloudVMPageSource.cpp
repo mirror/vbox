@@ -272,20 +272,6 @@ void UIWizardNewCloudVMSource::populateFormProperties(CVirtualSystemDescription 
         UINotificationMessage::cannotChangeVirtualSystemDescriptionParameter(comVSD, pWizard->notificationCenter());
 }
 
-void UIWizardNewCloudVMSource::updateComboToolTip(QIComboBox *pCombo)
-{
-    /* Sanity check: */
-    AssertPtrReturnVoid(pCombo);
-
-    const int iCurrentIndex = pCombo->currentIndex();
-    if (iCurrentIndex != -1)
-    {
-        const QString strCurrentToolTip = pCombo->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
-        AssertMsg(!strCurrentToolTip.isEmpty(), ("Tool-tip data not found!\n"));
-        pCombo->setToolTip(strCurrentToolTip);
-    }
-}
-
 QString UIWizardNewCloudVMSource::currentListWidgetData(QListWidget *pList)
 {
     /* Sanity check: */
@@ -488,12 +474,13 @@ void UIWizardNewCloudVMPageSource::sltRetranslateUI()
 
     /* Translate provider label: */
     m_pProviderLabel->setText(UIWizardNewCloudVM::tr("&Location:"));
-    /* Translate received values of Location combo-box.
+    /* Translate received values of Provider combo-box.
      * We are enumerating starting from 0 for simplicity: */
-    for (int i = 0; i < m_pProviderComboBox->count(); ++i)
+    if (m_pProviderComboBox)
     {
-        m_pProviderComboBox->setItemText(i, m_pProviderComboBox->itemData(i, ProviderData_Name).toString());
-        m_pProviderComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
+        m_pProviderComboBox->setToolTip(UIWizardNewCloudVM::tr("Selects cloud service provider."));
+        for (int i = 0; i < m_pProviderComboBox->count(); ++i)
+            m_pProviderComboBox->setItemText(i, m_pProviderComboBox->itemData(i, ProviderData_Name).toString());
     }
 
     /* Translate description label: */
@@ -525,9 +512,6 @@ void UIWizardNewCloudVMPageSource::sltRetranslateUI()
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
     m_pProviderLayout->setColumnMinimumWidth(0, iMaxWidth);
     m_pOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
-
-    /* Update tool-tips: */
-    updateComboToolTip(m_pProviderComboBox);
 }
 
 void UIWizardNewCloudVMPageSource::initializePage()
@@ -575,9 +559,6 @@ bool UIWizardNewCloudVMPageSource::validatePage()
 
 void UIWizardNewCloudVMPageSource::sltHandleProviderComboChange()
 {
-    /* Update combo tool-tip: */
-    updateComboToolTip(m_pProviderComboBox);
-
     /* Update wizard fields: */
     wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
 

@@ -91,9 +91,6 @@ namespace UIWizardNewCloudVMSource
                                 QTabBar *pTabBar,
                                 const QString &strImageId);
 
-    /** Updates @a pCombo tool-tips. */
-    void updateComboToolTip(QIComboBox *pCombo);
-
     /** Returns current user data for @a pList specified. */
     QString currentListWidgetData(QListWidget *pList);
 }
