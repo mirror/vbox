@@ -1211,10 +1211,6 @@ RTDECL(uint32_t) RTCrX509CertPathsGetPathLength(RTCRX509CERTPATHS hCertPaths, ui
 RTDECL(int) RTCrX509CertPathsGetPathVerifyResult(RTCRX509CERTPATHS hCertPaths, uint32_t iPath);
 RTDECL(PCRTCRX509CERTIFICATE) RTCrX509CertPathsGetPathNodeCert(RTCRX509CERTPATHS hCertPaths, uint32_t iPath, uint32_t iNode);
 
-/**
- * Generates and signs a certificate.
- */
-RTDECL(int) RTCrX509Certificate_Generate(const char *pszServerCertificate, const char *pszServerPrivateKey);
 
 RT_C_DECLS_END
 
@@ -1223,3 +1219,4 @@ RT_C_DECLS_END
 /** @} */
 
 #endif /* !IPRT_INCLUDED_crypto_x509_h */
+

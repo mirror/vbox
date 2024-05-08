@@ -37,7 +37,6 @@
 #include <iprt/ctype.h>
 #include <iprt/ldr.h>
 #include <iprt/path.h>
-#include <iprt/crypto/x509.h>
 
 #include <VBox/err.h>
 #include <VBox/sup.h>
@@ -233,37 +232,6 @@ HRESULT VRDEServer::i_saveSettings(settings::VRDESettings &data)
     return S_OK;
 }
 
-/**
- * Auto-generates a self-signed certificate for the VM.
- *
- * @note Locks this object for writing.
-*/
-HRESULT VRDEServer::i_generateServerCertificate()
-{
-    Utf8Str strServerCertificate = "server_cert.pem";
-    Utf8Str strServerPrivateKey = "server_key_private.pem";
-    mParent->i_calculateFullPath(strServerCertificate, strServerCertificate);
-    mParent->i_calculateFullPath(strServerPrivateKey, strServerPrivateKey);
-    const char *pszServerCertificate = strServerCertificate.c_str();
-    const char *pszServerPrivateKey = strServerPrivateKey.c_str();
-
-    HRESULT hrc = RTCrX509Certificate_Generate(pszServerCertificate, pszServerPrivateKey);
-
-    if (SUCCEEDED(hrc))
-    {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        mData.backup();
-
-        mData->mapProperties["Security/Method"] = Utf8Str("TLS");
-        mData->mapProperties["Security/ServerCertificate"] = strServerCertificate;
-        mData->mapProperties["Security/ServerPrivateKey"] = strServerPrivateKey;
-
-        /* Done with the properties access. */
-        alock.release();
-    }
-    return hrc;
-}
-
 // IVRDEServer properties
 /////////////////////////////////////////////////////////////////////////////
 
@@ -293,19 +261,6 @@ HRESULT VRDEServer::setEnabled(BOOL aEnabled)
 
         /* leave the lock before informing callbacks */
         alock.release();
-
-        /*
-        * If TLS is not explicitely disabled then auto-generate
-        * a self-signed certificate for this VM.
-        */
-        if (mData->mapProperties["Security/Method"] != "RDP")
-        {
-            hrc = i_generateServerCertificate();
-            if (FAILED(hrc))
-            {
-                LogRel(("Failed to auto generate server key and certificate: (%Rrc)\n", hrc));
-            }
-        }
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, needs no locking
         mParent->i_setModified(Machine::IsModified_VRDEServer);

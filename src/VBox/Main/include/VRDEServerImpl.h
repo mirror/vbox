@@ -59,7 +59,6 @@ public:
     // public methods only for internal purposes
     HRESULT i_loadSettings(const settings::VRDESettings &data);
     HRESULT i_saveSettings(settings::VRDESettings &data);
-    HRESULT i_generateServerCertificate();
     void i_rollback();
     void i_commit();
     void i_copyFrom(VRDEServer *aThat);
