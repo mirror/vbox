@@ -26,8 +26,10 @@
  */
 
 /* Qt includes: */
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QLabel>
 #include <QListWidget>
 #include <QPushButton>
 #include <QTableWidget>
@@ -50,6 +52,7 @@ using namespace UIWizardAddCloudVMSource;
 
 UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
     : m_pToolBox(0)
+    , m_pLayoutProvider(0)
     , m_pProviderLabel(0)
     , m_pProviderComboBox(0)
     , m_pProfileLabel(0)
@@ -76,34 +79,62 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
                 {
                     pLayoutLocation->setContentsMargins(0, 0, 0, 0);
 
-                    /* Prepare provider combo-box: */
-                    m_pProviderComboBox = new QIComboBox(pWidgetLocation);
-                    if (m_pProviderComboBox)
-                        pLayoutLocation->addWidget(m_pProviderComboBox);
-
-                    /* Prepare profile layout: */
-                    QHBoxLayout *pLayoutProfile = new QHBoxLayout;
-                    if (pLayoutProfile)
+                    /* Prepare provider layout: */
+                    m_pLayoutProvider = new QGridLayout;
+                    if (m_pLayoutProvider)
                     {
-                        pLayoutProfile->setContentsMargins(0, 0, 0, 0);
-                        pLayoutProfile->setSpacing(1);
+                        m_pLayoutProvider->setContentsMargins(0, 0, 0, 0);
+                        m_pLayoutProvider->setColumnStretch(0, 0);
+                        m_pLayoutProvider->setColumnStretch(1, 1);
 
-                        /* Prepare profile combo-box: */
-                        m_pProfileComboBox = new QIComboBox(pWidgetLocation);
-                        if (m_pProfileComboBox)
-                            pLayoutProfile->addWidget(m_pProfileComboBox);
+                        /* Prepare provider label: */
+                        m_pProviderLabel = new QLabel(this);
+                        if (m_pProviderLabel)
+                            m_pLayoutProvider->addWidget(m_pProviderLabel, 0, 0, Qt::AlignRight);
 
-                        /* Prepare profile tool-button: */
-                        m_pProfileToolButton = new QIToolButton(pWidgetLocation);
-                        if (m_pProfileToolButton)
+                        /* Prepare provider combo-box: */
+                        m_pProviderComboBox = new QIComboBox(pWidgetLocation);
+                        if (m_pProviderComboBox)
                         {
-                            m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
-                                                                              ":/cloud_profile_manager_disabled_16px.png"));
-                            pLayoutProfile->addWidget(m_pProfileToolButton);
+                            m_pProviderLabel->setBuddy(m_pProviderComboBox);
+                            m_pLayoutProvider->addWidget(m_pProviderComboBox, 0, 1);
+                        }
+
+                        /* Prepare profile label: */
+                        m_pProfileLabel = new QLabel(this);
+                        if (m_pProfileLabel)
+                            m_pLayoutProvider->addWidget(m_pProfileLabel, 1, 0, Qt::AlignRight);
+
+                        /* Prepare profile layout: */
+                        QHBoxLayout *pLayoutProfile = new QHBoxLayout;
+                        if (pLayoutProfile)
+                        {
+                            pLayoutProfile->setContentsMargins(0, 0, 0, 0);
+                            pLayoutProfile->setSpacing(1);
+
+                            /* Prepare profile combo-box: */
+                            m_pProfileComboBox = new QIComboBox(pWidgetLocation);
+                            if (m_pProfileComboBox)
+                            {
+                                m_pProfileLabel->setBuddy(m_pProfileComboBox);
+                                pLayoutProfile->addWidget(m_pProfileComboBox);
+                            }
+
+                            /* Prepare profile tool-button: */
+                            m_pProfileToolButton = new QIToolButton(pWidgetLocation);
+                            if (m_pProfileToolButton)
+                            {
+                                m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                                                                                  ":/cloud_profile_manager_disabled_16px.png"));
+                                pLayoutProfile->addWidget(m_pProfileToolButton);
+                            }
+
+                            /* Add into layout: */
+                            m_pLayoutProvider->addLayout(pLayoutProfile, 1, 1);
                         }
 
                         /* Add into layout: */
-                        pLayoutLocation->addLayout(pLayoutProfile);
+                        pLayoutLocation->addLayout(m_pLayoutProvider);
                     }
                 }
 
@@ -173,13 +204,9 @@ void UIWizardAddCloudVMPageExpert::sltRetranslateUI()
         m_pToolBox->setPageTitle(1, UIWizardAddCloudVM::tr("Source"));
     }
 
-    /* Translate profile stuff: */
-    if (m_pProfileToolButton)
-    {
-        m_pProfileToolButton->setText(UIWizardAddCloudVM::tr("Cloud Profile Manager"));
-        m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Opens cloud profile manager..."));
-    }
-
+    /* Translate provider label: */
+    if (m_pProviderLabel)
+        m_pProviderLabel->setText(UIWizardAddCloudVM::tr("&Provider:"));
     /* Translate received values of Provider combo-box.
      * We are enumerating starting from 0 for simplicity: */
     if (m_pProviderComboBox)
@@ -187,6 +214,15 @@ void UIWizardAddCloudVMPageExpert::sltRetranslateUI()
         m_pProviderComboBox->setToolTip(UIWizardAddCloudVM::tr("Selects cloud service provider."));
         for (int i = 0; i < m_pProviderComboBox->count(); ++i)
             m_pProviderComboBox->setItemText(i, m_pProviderComboBox->itemData(i, ProviderData_Name).toString());
+    }
+
+    /* Translate profile stuff: */
+    if (m_pProfileLabel)
+        m_pProfileLabel->setText(UIWizardAddCloudVM::tr("P&rofile:"));
+    if (m_pProfileToolButton)
+    {
+        m_pProfileToolButton->setText(UIWizardAddCloudVM::tr("Cloud Profile Manager"));
+        m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Opens cloud profile manager..."));
     }
 }
 
