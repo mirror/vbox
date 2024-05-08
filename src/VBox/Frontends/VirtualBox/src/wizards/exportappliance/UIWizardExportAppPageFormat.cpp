@@ -1002,7 +1002,7 @@ void UIWizardExportAppPageFormat::sltRetranslateUI()
 
     /* Translate profile stuff: */
     m_pProfileLabel->setText(UIWizardExportApp::tr("&Profile:"));
-    m_pProfileToolButton->setToolTip(UIWizardExportApp::tr("Open Cloud Profile Manager..."));
+    m_pProfileToolButton->setToolTip(UIWizardExportApp::tr("Open cloud profile manager..."));
 
     /* Translate option label: */
     m_pExportModeLabel->setText(UIWizardExportApp::tr("Machine Creation:"));

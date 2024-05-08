@@ -440,7 +440,7 @@ void UIWizardAddCloudVMPageSource::sltRetranslateUI()
 
     /* Translate profile stuff: */
     m_pProfileLabel->setText(UIWizardAddCloudVM::tr("&Profile:"));
-    m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Open Cloud Profile Manager..."));
+    m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Open cloud profile manager..."));
     m_pSourceInstanceLabel->setText(UIWizardAddCloudVM::tr("&Instances:"));
 
     /* Adjust label widths: */
