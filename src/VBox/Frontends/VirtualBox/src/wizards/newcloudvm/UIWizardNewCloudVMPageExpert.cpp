@@ -268,7 +268,10 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
     if (m_pProfileLabel)
         m_pProfileLabel->setText(UIWizardNewCloudVM::tr("&Profile:"));
     if (m_pProfileToolButton)
-        m_pProfileToolButton->setToolTip(UIWizardNewCloudVM::tr("Open cloud profile manager..."));
+    {
+        m_pProfileToolButton->setText(UIWizardNewCloudVM::tr("Cloud Profile Manager"));
+        m_pProfileToolButton->setToolTip(UIWizardNewCloudVM::tr("Opens cloud profile manager..."));
+    }
 
     /* Update tool-tips: */
     updateComboToolTip(m_pProviderComboBox);

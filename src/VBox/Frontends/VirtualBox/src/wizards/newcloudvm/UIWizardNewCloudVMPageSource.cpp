@@ -504,7 +504,11 @@ void UIWizardNewCloudVMPageSource::sltRetranslateUI()
 
     /* Translate profile stuff: */
     m_pProfileLabel->setText(UIWizardNewCloudVM::tr("&Profile:"));
-    m_pProfileToolButton->setToolTip(UIWizardNewCloudVM::tr("Open cloud profile manager..."));
+    if (m_pProfileToolButton)
+    {
+        m_pProfileToolButton->setText(UIWizardNewCloudVM::tr("Cloud Profile Manager"));
+        m_pProfileToolButton->setToolTip(UIWizardNewCloudVM::tr("Opens cloud profile manager..."));
+    }
     m_pSourceImageLabel->setText(UIWizardNewCloudVM::tr("&Source:"));
 
     /* Translate source tab-bar: */
