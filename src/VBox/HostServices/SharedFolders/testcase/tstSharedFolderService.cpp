@@ -419,7 +419,10 @@ extern int  testRTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pc
              LLUIFY(cbToRead)); */
     bufferFromPath((char *)pvBuf, cbToRead, g_testRTFileRead_pszData);
     if (pcbRead)
-        *pcbRead = RT_MIN(cbToRead, strlen(g_testRTFileRead_pszData) + 1);
+    {
+        size_t cchData = strlen(g_testRTFileRead_pszData) + 1;
+        *pcbRead = RT_MIN(cbToRead, cchData);
+    }
     g_testRTFileRead_pszData = 0;
     return VINF_SUCCESS;
 }
@@ -432,7 +435,10 @@ extern int  testRTFileReadAt(RTFILE hFile, uint64_t offFile, void *pvBuf, size_t
              LLUIFY(cbToRead)); */
     bufferFromPath((char *)pvBuf, cbToRead, g_testRTFileRead_pszData);
     if (pcbRead)
-        *pcbRead = RT_MIN(cbToRead, strlen(g_testRTFileRead_pszData) + 1);
+    {
+        size_t cchData = strlen(g_testRTFileRead_pszData) + 1;
+        *pcbRead = RT_MIN(cbToRead, cchData);
+    }
     g_testRTFileRead_pszData = 0;
     return VINF_SUCCESS;
 }
@@ -687,7 +693,8 @@ static SHFLROOT initWithWritableMapping(RTTEST hTest,
     int rc;
 
     initTable(psvcTable, psvcHelpers);
-    AssertReleaseRC(VBoxHGCMSvcLoad(psvcTable));
+    rc = VBoxHGCMSvcLoad(psvcTable);
+    AssertReleaseRC(rc);
     AssertRelease(  psvcTable->pvService
                   = RTTestGuardedAllocTail(hTest, psvcTable->cbClient));
     RT_BZERO(psvcTable->pvService, psvcTable->cbClient);
@@ -915,8 +922,10 @@ void testCreateFileSimple(RTTEST hTest)
     RTTEST_CHECK_MSG(hTest, Result == SHFL_FILE_CREATED,
                      (hTest, "Result=%d\n", (int) Result));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileClose_hFile == hFile,
                      (hTest, "File=%u\n", (uintptr_t)g_testRTFileClose_hFile));
@@ -950,8 +959,10 @@ void testCreateFileSimpleCaseInsensitive(RTTEST hTest)
     RTTEST_CHECK_MSG(hTest, Result == SHFL_FILE_CREATED,
                      (hTest, "Result=%d\n", (int) Result));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileClose_hFile == hFile,
                      (hTest, "File=%u\n", (uintptr_t)g_testRTFileClose_hFile));
@@ -986,8 +997,10 @@ void testCreateDirSimple(RTTEST hTest)
     RTTEST_CHECK_MSG(hTest, Result == SHFL_FILE_CREATED,
                      (hTest, "Result=%d\n", (int) Result));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTDirClose_hDir == hDir, (hTest, "hDir=%p\n", g_testRTDirClose_hDir));
 }
@@ -1023,8 +1036,10 @@ void testReadFileSimple(RTTEST hTest)
                      (hTest, "cbRead=%llu\n", LLUIFY(cbRead)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     RTTEST_CHECK_MSG(hTest, g_testRTFileClose_hFile == hFile, (hTest, "File=%u\n", g_testRTFileClose_hFile));
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
 }
 
@@ -1057,8 +1072,10 @@ void testWriteFileSimple(RTTEST hTest)
                      (hTest, "cbWritten=%llu\n", LLUIFY(cbWritten)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     RTTEST_CHECK_MSG(hTest, g_testRTFileClose_hFile == hFile, (hTest, "File=%u\n", g_testRTFileClose_hFile));
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
 }
 
@@ -1082,8 +1099,10 @@ void testFlushFileSimple(RTTEST hTest)
     RTTEST_CHECK_RC_OK(hTest, rc);
     RTTEST_CHECK_MSG(hTest, g_testRTFileFlush_hFile == hFile, (hTest, "File=%u\n", g_testRTFileFlush_hFile));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileClose_hFile == hFile, (hTest, "File=%u\n", g_testRTFileClose_hFile));
 }
@@ -1116,8 +1135,10 @@ void testDirListEmpty(RTTEST hTest)
     RTTEST_CHECK_MSG(hTest, cFiles == 0,
                      (hTest, "cFiles=%llu\n", LLUIFY(cFiles)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTDirClose_hDir == hDir, (hTest, "hDir=%p\n", g_testRTDirClose_hDir));
 }
@@ -1157,8 +1178,10 @@ void testFSInfoQuerySetFMode(RTTEST hTest)
     RTTEST_CHECK_MSG(hTest, g_testRTFileSet_fMode == fMode,
                      (hTest, "Size=%llu\n", LLUIFY(g_testRTFileSet_fMode)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileClose_hFile == hFile, (hTest, "File=%u\n", g_testRTFileClose_hFile));
 }
@@ -1200,8 +1223,10 @@ void testFSInfoQuerySetDirATime(RTTEST hTest)
                      (hTest, "ATime=%llu\n",
                       LLUIFY(RTTimeSpecGetNano(&g_testRTDirSetTimes_ATime))));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTDirClose_hDir == hDir, (hTest, "hDir=%p\n", g_testRTDirClose_hDir));
 }
@@ -1243,8 +1268,10 @@ void testFSInfoQuerySetFileATime(RTTEST hTest)
                      (hTest, "ATime=%llu\n",
                       LLUIFY(RTTimeSpecGetNano(&g_testRTFileSetTimes_ATime))));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileClose_hFile == hFile, (hTest, "File=%u\n", g_testRTFileClose_hFile));
 }
@@ -1276,8 +1303,10 @@ void testFSInfoQuerySetEndOfFile(RTTEST hTest)
     RTTEST_CHECK_MSG(hTest, g_testRTFileSetSize_cbSize == cbNew,
                      (hTest, "Size=%llu\n", LLUIFY(g_testRTFileSetSize_cbSize)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileClose_hFile == hFile, (hTest, "File=%u\n", g_testRTFileClose_hFile));
 }
@@ -1322,8 +1351,10 @@ void testLockFileSimple(RTTEST hTest)
                      (hTest, "Size=%llu\n", LLUIFY(g_testRTFileUnlock_cbLock)));
 #endif
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
-    AssertReleaseRC(svcTable.pfnUnload(NULL));
+    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
+    AssertReleaseRC(rc);
+    rc = svcTable.pfnUnload(NULL);
+    AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileClose_hFile == hFile, (hTest, "File=%u\n", g_testRTFileClose_hFile));
 }
