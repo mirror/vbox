@@ -114,7 +114,7 @@ private:
     /** Holds the source tab-bar instance. */
     QTabBar      *m_pSourceTabBar;
     /** Holds the source image list instance. */
-    QListWidget  *m_pSourceImageList;
+    QIListWidget *m_pSourceImageList;
 
     /** Holds the Form Editor widget instance. */
     UIFormEditorWidget *m_pFormEditor;

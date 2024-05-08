@@ -29,13 +29,13 @@
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QLabel>
-#include <QListWidget>
 #include <QPushButton>
 #include <QTabBar>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIComboBox.h"
+#include "QIListWidget.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
 #include "UIFormEditorWidget.h"
@@ -168,7 +168,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
                     }
 
                     /* Prepare source image list: */
-                    m_pSourceImageList = new QListWidget(pWidgetSource);
+                    m_pSourceImageList = new QIListWidget(pWidgetSource);
                     if (m_pSourceImageList)
                     {
                         /* We want to have sorting enabled: */
@@ -226,7 +226,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
             this, &UIWizardNewCloudVMPageExpert::sltHandleProfileButtonClick);
     connect(m_pSourceTabBar, &QTabBar::currentChanged,
             this, &UIWizardNewCloudVMPageExpert::sltHandleSourceTabBarChange);
-    connect(m_pSourceImageList, &QListWidget::currentRowChanged,
+    connect(m_pSourceImageList, &QIListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageExpert::sltHandleSourceImageChange);
 }
 
@@ -257,13 +257,6 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
             m_pProviderComboBox->setItemText(i, m_pProviderComboBox->itemData(i, ProviderData_Name).toString());
     }
 
-    /* Translate source tab-bar: */
-    if (m_pSourceTabBar)
-    {
-        m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Images"));
-        m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Boot Volumes"));
-    }
-
     /* Translate profile stuff: */
     if (m_pProfileLabel)
         m_pProfileLabel->setText(UIWizardNewCloudVM::tr("&Profile:"));
@@ -274,6 +267,16 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
         m_pProfileToolButton->setText(UIWizardNewCloudVM::tr("Cloud Profile Manager"));
         m_pProfileToolButton->setToolTip(UIWizardNewCloudVM::tr("Opens cloud profile manager..."));
     }
+
+    /* Translate source tab-bar: */
+    if (m_pSourceTabBar)
+    {
+        m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Images"));
+        m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Boot Volumes"));
+    }
+
+    /* Translate source image list: */
+    m_pSourceImageList->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the source images or boot volumes."));
 }
 
 void UIWizardNewCloudVMPageExpert::initializePage()

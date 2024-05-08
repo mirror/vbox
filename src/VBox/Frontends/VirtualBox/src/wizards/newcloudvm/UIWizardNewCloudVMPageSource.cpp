@@ -28,13 +28,13 @@
 /* Qt includes: */
 #include <QGridLayout>
 #include <QLabel>
-#include <QListWidget>
 #include <QPushButton>
 #include <QTabBar>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIComboBox.h"
+#include "QIListWidget.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
@@ -197,7 +197,7 @@ void UIWizardNewCloudVMSource::populateProfiles(QIComboBox *pCombo,
     pCombo->blockSignals(false);
 }
 
-void UIWizardNewCloudVMSource::populateSourceImages(QListWidget *pList,
+void UIWizardNewCloudVMSource::populateSourceImages(QIListWidget *pList,
                                                     QTabBar *pTabBar,
                                                     UINotificationCenter *pCenter,
                                                     const CCloudClient &comClient)
@@ -233,7 +233,7 @@ void UIWizardNewCloudVMSource::populateSourceImages(QListWidget *pList,
         for (int i = 0; i < names.size(); ++i)
         {
             /* Create list item: */
-            QListWidgetItem *pItem = new QListWidgetItem(names.at(i), pList);
+            QIListWidgetItem *pItem = new QIListWidgetItem(names.at(i), pList);
             if (pItem)
             {
                 pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
@@ -272,12 +272,12 @@ void UIWizardNewCloudVMSource::populateFormProperties(CVirtualSystemDescription 
         UINotificationMessage::cannotChangeVirtualSystemDescriptionParameter(comVSD, pWizard->notificationCenter());
 }
 
-QString UIWizardNewCloudVMSource::currentListWidgetData(QListWidget *pList)
+QString UIWizardNewCloudVMSource::currentListWidgetData(QIListWidget *pList)
 {
     /* Sanity check: */
     AssertPtrReturn(pList, QString());
 
-    QListWidgetItem *pItem = pList->currentItem();
+    QIListWidgetItem *pItem = QIListWidgetItem::toItem(pList->currentItem());
     return pItem ? pItem->data(Qt::UserRole).toString() : QString();
 }
 
@@ -407,7 +407,7 @@ UIWizardNewCloudVMPageSource::UIWizardNewCloudVMPageSource()
                 }
 
                 /* Prepare source image list: */
-                m_pSourceImageList = new QListWidget(this);
+                m_pSourceImageList = new QIListWidget(this);
                 if (m_pSourceImageList)
                 {
                     m_pSourceImageLabel->setBuddy(m_pSourceImageList);
@@ -454,7 +454,7 @@ UIWizardNewCloudVMPageSource::UIWizardNewCloudVMPageSource()
             this, &UIWizardNewCloudVMPageSource::sltHandleProfileButtonClick);
     connect(m_pSourceTabBar, &QTabBar::currentChanged,
             this, &UIWizardNewCloudVMPageSource::sltHandleSourceTabBarChange);
-    connect(m_pSourceImageList, &QListWidget::currentRowChanged,
+    connect(m_pSourceImageList, &QIListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageSource::sltHandleSourceImageChange);
 }
 
@@ -503,6 +503,9 @@ void UIWizardNewCloudVMPageSource::sltRetranslateUI()
     /* Translate source tab-bar: */
     m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Images"));
     m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Boot Volumes"));
+
+    /* Translate source image list: */
+    m_pSourceImageList->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the source images or boot volumes."));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;

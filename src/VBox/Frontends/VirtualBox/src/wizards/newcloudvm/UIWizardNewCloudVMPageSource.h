@@ -40,7 +40,7 @@
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
-class QListWidget;
+class QIListWidget;
 class QTabBar;
 class QIComboBox;
 class QIRichTextLabel;
@@ -78,7 +78,7 @@ namespace UIWizardNewCloudVMSource
     /** Populates @a pList with source images.
       @param  pTabBar    Brings the tab-bar source images should be acquired for.
       @param  comClient  Brings the cloud client source images should be acquired from. */
-    void populateSourceImages(QListWidget *pList,
+    void populateSourceImages(QIListWidget *pList,
                               QTabBar *pTabBar,
                               UINotificationCenter *pCenter,
                               const CCloudClient &comClient);
@@ -92,7 +92,7 @@ namespace UIWizardNewCloudVMSource
                                 const QString &strImageId);
 
     /** Returns current user data for @a pList specified. */
-    QString currentListWidgetData(QListWidget *pList);
+    QString currentListWidgetData(QIListWidget *pList);
 }
 
 /** UINativeWizardPage extension for source page of the New Cloud VM wizard,
@@ -170,7 +170,7 @@ private:
     /** Holds the source tab-bar instance. */
     QTabBar      *m_pSourceTabBar;
     /** Holds the source image list instance. */
-    QListWidget  *m_pSourceImageList;
+    QIListWidget *m_pSourceImageList;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageSource_h */
