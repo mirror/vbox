@@ -277,6 +277,9 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
 
     /* Translate source image list: */
     m_pSourceImageList->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the source images or boot volumes."));
+
+    /* Translate cloud VM properties table: */
+    m_pFormEditor->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the cloud VM properties."));
 }
 
 void UIWizardNewCloudVMPageExpert::initializePage()
