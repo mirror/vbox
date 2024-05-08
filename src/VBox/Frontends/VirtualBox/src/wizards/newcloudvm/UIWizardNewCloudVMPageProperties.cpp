@@ -101,13 +101,15 @@ void UIWizardNewCloudVMPageProperties::sltRetranslateUI()
     setTitle(UIWizardNewCloudVM::tr("Cloud Virtual Machine settings"));
 
     /* Translate description label: */
-    m_pLabel->setText(UIWizardNewCloudVM::tr("These are the the suggested settings of the cloud VM creation procedure, they are "
-                                             "influencing the resulting cloud VM instance.  You can change many of the "
-                                             "properties shown by double-clicking on the items and disable others using the "
-                                             "check boxes below."));
+    if (m_pLabel)
+        m_pLabel->setText(UIWizardNewCloudVM::tr("These are the the suggested settings of the cloud VM creation procedure, they "
+                                                 "are influencing the resulting cloud VM instance.  You can change many of the "
+                                                 "properties shown by double-clicking on the items and disable others using the "
+                                                 "check boxes below."));
 
     /* Translate cloud VM properties table: */
-    m_pFormEditor->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the cloud VM properties."));
+    if (m_pFormEditor)
+        m_pFormEditor->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the cloud VM properties."));
 }
 
 void UIWizardNewCloudVMPageProperties::initializePage()

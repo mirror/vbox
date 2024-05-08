@@ -165,6 +165,7 @@ private:
     QIComboBox   *m_pProfileComboBox;
     /** Holds the profile management tool-button instance. */
     QIToolButton *m_pProfileToolButton;
+
     /** Holds the source image label instance. */
     QLabel       *m_pSourceImageLabel;
     /** Holds the source tab-bar instance. */

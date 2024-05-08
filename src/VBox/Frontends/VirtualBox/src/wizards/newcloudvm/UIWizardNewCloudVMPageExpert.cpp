@@ -247,7 +247,7 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
 
     /* Translate provider label: */
     if (m_pProviderLabel)
-        m_pProviderLabel->setText(UIWizardNewCloudVM::tr("&Location:"));
+        m_pProviderLabel->setText(UIWizardNewCloudVM::tr("&Provider:"));
     /* Translate received values of Provider combo-box.
      * We are enumerating starting from 0 for simplicity: */
     if (m_pProviderComboBox)
@@ -259,7 +259,7 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
 
     /* Translate profile stuff: */
     if (m_pProfileLabel)
-        m_pProfileLabel->setText(UIWizardNewCloudVM::tr("&Profile:"));
+        m_pProfileLabel->setText(UIWizardNewCloudVM::tr("P&rofile:"));
     if (m_pProfileComboBox)
         m_pProfileComboBox->setToolTip(UIWizardNewCloudVM::tr("Selects cloud profile."));
     if (m_pProfileToolButton)
@@ -276,10 +276,12 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
     }
 
     /* Translate source image list: */
-    m_pSourceImageList->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the source images or boot volumes."));
+    if (m_pSourceImageList)
+        m_pSourceImageList->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the source images or boot volumes."));
 
     /* Translate cloud VM properties table: */
-    m_pFormEditor->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the cloud VM properties."));
+    if (m_pFormEditor)
+        m_pFormEditor->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the cloud VM properties."));
 }
 
 void UIWizardNewCloudVMPageExpert::initializePage()

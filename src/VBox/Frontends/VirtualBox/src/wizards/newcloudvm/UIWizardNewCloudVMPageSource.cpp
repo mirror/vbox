@@ -469,11 +469,13 @@ void UIWizardNewCloudVMPageSource::sltRetranslateUI()
     setTitle(UIWizardNewCloudVM::tr("Location to create"));
 
     /* Translate main label: */
-    m_pLabelMain->setText(UIWizardNewCloudVM::tr("Please choose the location to create cloud virtual machine in.  This can "
-                                                 "be one of known cloud service providers below."));
+    if (m_pLabelMain)
+        m_pLabelMain->setText(UIWizardNewCloudVM::tr("Please choose the location to create cloud virtual machine in.  This can "
+                                                     "be one of known cloud service providers below."));
 
     /* Translate provider label: */
-    m_pProviderLabel->setText(UIWizardNewCloudVM::tr("&Location:"));
+    if (m_pProviderLabel)
+        m_pProviderLabel->setText(UIWizardNewCloudVM::tr("&Provider:"));
     /* Translate received values of Provider combo-box.
      * We are enumerating starting from 0 for simplicity: */
     if (m_pProviderComboBox)
@@ -484,13 +486,15 @@ void UIWizardNewCloudVMPageSource::sltRetranslateUI()
     }
 
     /* Translate description label: */
-    m_pLabelDescription->setText(UIWizardNewCloudVM::tr("Please choose one of cloud service profiles you have registered to "
-                                                        "create virtual machine for.  Existing images list will be "
-                                                        "updated.  To continue, select one of images to create virtual "
-                                                        "machine on the basis of it."));
+    if (m_pLabelDescription)
+        m_pLabelDescription->setText(UIWizardNewCloudVM::tr("Please choose one of cloud service profiles you have registered to "
+                                                            "create virtual machine for.  Existing images list will be "
+                                                            "updated.  To continue, select one of images to create virtual "
+                                                            "machine on the basis of it."));
 
     /* Translate profile stuff: */
-    m_pProfileLabel->setText(UIWizardNewCloudVM::tr("&Profile:"));
+    if (m_pProfileLabel)
+        m_pProfileLabel->setText(UIWizardNewCloudVM::tr("P&rofile:"));
     if (m_pProfileComboBox)
         m_pProfileComboBox->setToolTip(UIWizardNewCloudVM::tr("Selects cloud profile."));
     if (m_pProfileToolButton)
@@ -498,25 +502,35 @@ void UIWizardNewCloudVMPageSource::sltRetranslateUI()
         m_pProfileToolButton->setText(UIWizardNewCloudVM::tr("Cloud Profile Manager"));
         m_pProfileToolButton->setToolTip(UIWizardNewCloudVM::tr("Opens cloud profile manager..."));
     }
-    m_pSourceImageLabel->setText(UIWizardNewCloudVM::tr("&Source:"));
 
-    /* Translate source tab-bar: */
-    m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Images"));
-    m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Boot Volumes"));
+    /* Translate source stuff: */
+    if (m_pSourceImageLabel)
+        m_pSourceImageLabel->setText(UIWizardNewCloudVM::tr("&Source:"));
+    if (m_pSourceTabBar)
+    {
+        m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Images"));
+        m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Boot Volumes"));
+    }
 
     /* Translate source image list: */
-    m_pSourceImageList->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the source images or boot volumes."));
+    if (m_pSourceImageList)
+        m_pSourceImageList->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the source images or boot volumes."));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
-    labels << m_pProviderLabel;
-    labels << m_pProfileLabel;
-    labels << m_pSourceImageLabel;
+    if (m_pProviderLabel)
+        labels << m_pProviderLabel;
+    if (m_pProfileLabel)
+        labels << m_pProfileLabel;
+    if (m_pSourceImageLabel)
+        labels << m_pSourceImageLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
-    m_pProviderLayout->setColumnMinimumWidth(0, iMaxWidth);
-    m_pOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
+    if (m_pProviderLayout)
+        m_pProviderLayout->setColumnMinimumWidth(0, iMaxWidth);
+    if (m_pOptionsLayout)
+        m_pOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
 }
 
 void UIWizardNewCloudVMPageSource::initializePage()

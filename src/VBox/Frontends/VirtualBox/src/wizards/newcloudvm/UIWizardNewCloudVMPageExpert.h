@@ -38,6 +38,7 @@
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
+class QIListWidget;
 class UIToolBox;
 class UIWizardNewCloudVM;
 
@@ -98,11 +99,11 @@ private:
     /** Holds the tool-box instance. */
     UIToolBox *m_pToolBox;
 
-    /** Holds the location layout instance. */
+    /** Holds the provider layout instance. */
     QGridLayout  *m_pLayoutProvider;
     /** Holds the provider type label instance. */
     QLabel       *m_pProviderLabel;
-    /** Holds the location type combo-box instance. */
+    /** Holds the provider type combo-box instance. */
     QIComboBox   *m_pProviderComboBox;
     /** Holds the profile label instance. */
     QLabel       *m_pProfileLabel;
