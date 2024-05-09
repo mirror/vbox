@@ -2965,11 +2965,11 @@ static int xhciR3ConsumeNonXferTRBs(PPDMDEVINS pDevIns, PXHCI pThis, uint8_t uSl
             case XHCI_TRB_LINK:
                 Log2(("Link extra-TD: Ptr=%RGp IOC=%u TC=%u CH=%u\n", xfer.link.rseg_ptr, xfer.link.ioc, xfer.link.toggle, xfer.link.chain));
                 Assert(!xfer.link.chain);
+                AssertCompile(XHCI_TRDP_DCS_MASK == 1); /* link.toggle is 0 or 1, can be used as XHCI_TRDP_DCS_MASK */
                 /* Set new TRDP but leave DCS bit alone... */
                 pEpCtx->trdp = (xfer.link.rseg_ptr & XHCI_TRDP_ADDR_MASK) | (pEpCtx->trdp & XHCI_TRDP_DCS_MASK);
                 /* ...and flip the DCS bit if required. Then update the TREP. */
-                if (xfer.link.toggle)
-                    pEpCtx->trdp = (pEpCtx->trdp & ~XHCI_TRDP_DCS_MASK) | (pEpCtx->trdp ^ XHCI_TRDP_DCS_MASK);
+                pEpCtx->trdp = pEpCtx->trdp ^ xfer.link.toggle;
                 if (!fInFlight)
                     pEpCtx->trep = pEpCtx->trdp;
                 if (xfer.link.ioc)
@@ -3942,8 +3942,7 @@ static int xhciR3ProcessDevCtx(PPDMDEVINS pDevIns, PXHCI pThis, PXHCICC pThisCC,
                 /* Set new TREP but leave DCS bit alone... */
                 ep_ctx.trep = (xfer.link.rseg_ptr & XHCI_TRDP_ADDR_MASK) | (ep_ctx.trep & XHCI_TRDP_DCS_MASK);
                 /* ...and flip the DCS bit if required. Then update the TREP. */
-                if (xfer.link.toggle)
-                    ep_ctx.trep = (ep_ctx.trep & ~XHCI_TRDP_DCS_MASK) | (ep_ctx.trep ^ XHCI_TRDP_DCS_MASK);
+                ep_ctx.trep = ep_ctx.trep ^ xfer.link.toggle;
                 rc = xhciR3WriteBackEp(pDevIns, pThis, uSlotID, uDBTarget, &ep_ctx);
                 break;
             case XHCI_TRB_NOOP_XFER:
