@@ -43,7 +43,6 @@
 #  include <io.h>
 # endif
 
-#include <stdio.h>
 #include <iprt/file.h>
 #include "internal/iprt.h"
 #include <iprt/crypto/x509.h>
