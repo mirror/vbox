@@ -52,7 +52,9 @@
 #  include "internal/compiler-vcc.h"
 # endif
 
-#include <fcntl.h>
+# if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+#  include <fcntl.h>
+# endif
 #include <iprt/err.h>
 #include <iprt/string.h>
 
@@ -61,6 +63,10 @@
 # include <openssl/pem.h>
 # include <openssl/x509.h>
 # include <openssl/bio.h>
+
+#if defined(RT_OS_OS2) && !defined(RTSTREAM_STANDALONE)
+# define _O_WRONLY   O_WRONLY
+#endif
 
 RTDECL(int) RTCrX509Certificate_Generate(const char *pszServerCertificate, const char *pszServerPrivateKey)
 {
