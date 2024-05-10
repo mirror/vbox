@@ -132,7 +132,9 @@ RTDECL(int) RTCrX509Certificate_Generate(const char *pszServerCertificate, const
     if ( RT_FAILURE(rc) )
         return rc;
     BIO_free(fp1);
+# ifdef _MSC_VER
     close(fd1);
+#endif
     RTFileClose(hKeyFile);
 
     RTFILE hCertFile;
@@ -152,7 +154,9 @@ RTDECL(int) RTCrX509Certificate_Generate(const char *pszServerCertificate, const
     if ( RT_FAILURE(rc) )
         return rc;
     BIO_free(fp2);
+# ifdef _MSC_VER
     close(fd2);
+#endif
     RTFileClose(hCertFile);
 
     X509_free(tempX509);
