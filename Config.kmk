@@ -2779,14 +2779,8 @@ ifeq ($(KBUILD_TARGET),darwin)
    VBOX_DEF_MACOSX_VERSION_MIN := 10.6#  Snow Leopard
   else if1of ($(VBOX_GCC_TOOL), VBoxXcode62)
    VBOX_DEF_MACOSX_VERSION_MIN := 10.9#  Mavericks
-  else ifeq ($(KBUILD_TARGET_ARCH),arm64)
-   VBOX_DEF_MACOSX_VERSION_MIN := 11.0# The Jack Kerouac novel.
   else
-   if defined(VBOX_WITH_VMNET) && !defined(VBOX_ONLY_BUILD) # Force SDK 10.15 for VMNET
-    VBOX_DEF_MACOSX_VERSION_MIN := 10.15# Catalina
-   else
-    VBOX_DEF_MACOSX_VERSION_MIN := 10.13# High Sierra
-   endif
+   VBOX_DEF_MACOSX_VERSION_MIN := 11.0#  Big Sur
   endif
  endif
  VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT := $(subst .,,$(VBOX_DEF_MACOSX_VERSION_MIN))
