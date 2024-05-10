@@ -206,40 +206,38 @@ UIMarkableLineEdit::UIMarkableLineEdit(QWidget *pParent /* = 0 */)
     prepare();
 }
 
-
 void UIMarkableLineEdit::mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage)
 {
+    AssertPtrReturnVoid(m_pIconLabel);
     const QIcon icon = fError ? UIIconPool::iconSet(":/status_error_16px.png") : UIIconPool::iconSet(":/status_check_16px.png");
-    const QString strToolTip = fError ? strErrorMessage : strNoErrorMessage;
-    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+    const int iIconMetric = qMin((int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * .625), height());
     const qreal fDevicePixelRatio = gpDesktop->devicePixelRatio(m_pIconLabel);
-    QPixmap iconPixmap = icon.pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio);
-    m_iIconMargin = QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-    int iHeight = height() -  m_iIconMargin;
-    iconPixmap = iconPixmap.scaledToHeight(iHeight, Qt::SmoothTransformation);
+    const QString strToolTip = fError ? strErrorMessage : strNoErrorMessage;
+    const QPixmap iconPixmap = icon.pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio);
     m_pIconLabel->setPixmap(iconPixmap);
+    m_pIconLabel->resize(m_pIconLabel->minimumSizeHint());
     m_pIconLabel->setToolTip(strToolTip);
-
+    m_iIconMargin = (height() - m_pIconLabel->height()) / 2;
     update();
 }
 
-void UIMarkableLineEdit::paintEvent(QPaintEvent *pEvent)
-{
-    QLineEdit::paintEvent(pEvent);
-    moveIconLabel();
-}
 void UIMarkableLineEdit::moveIconLabel()
 {
     AssertPtrReturnVoid(m_pIconLabel);
-    m_pIconLabel->setVisible(true);
-    int iHeight = height() -  m_iIconMargin;
-    m_pIconLabel->setGeometry(width() - iHeight - 0.5 * m_iIconMargin, 0.5 * m_iIconMargin, iHeight, iHeight);
+    m_pIconLabel->move(width() - m_pIconLabel->width() - m_iIconMargin, m_iIconMargin);
 }
 
 void UIMarkableLineEdit::resizeEvent(QResizeEvent *pResizeEvent)
 {
     /* Call to base-class: */
     QLineEdit::resizeEvent(pResizeEvent);
+    moveIconLabel();
+}
+
+void UIMarkableLineEdit::showEvent(QShowEvent *pShowEvent)
+{
+    /* Call to base-class: */
+    QLineEdit::showEvent(pShowEvent);
     moveIconLabel();
 }
 

@@ -117,8 +117,9 @@ public:
 private:
 
     /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QResizeEvent *pResizeEvent) RT_OVERRIDE;
-    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     void moveIconLabel();
     void prepare();
 
