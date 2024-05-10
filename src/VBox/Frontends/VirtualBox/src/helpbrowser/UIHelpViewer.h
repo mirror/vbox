@@ -117,6 +117,7 @@ private slots:
     void sltFindInPageSearchTextChange(const QString &strSearchText);
     void sltToggleFindInPageWidget(bool fVisible);
     void sltCloseFindInPageWidget();
+    void sltUpdateHighlightedURL(const QUrl &url);
 
 private:
 
@@ -161,6 +162,7 @@ private:
     QLabel *m_pOverlayLabel;
     QGraphicsBlurEffect *m_pOverlayBlurEffect;
     int m_iZoomPercentage;
+    QUrl m_highlightedUrl;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpViewer_h */

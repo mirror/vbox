@@ -1929,10 +1929,19 @@ void UIHelpBrowserWidget::sltHistoryChanged(bool fBackwardAvailable, bool fForwa
 
 void UIHelpBrowserWidget::sltLinkHighlighted(const QUrl &url)
 {
-    QString strMessage = url.url();
-    if (url.scheme() != "qthelp")
-        strMessage = QString("%1: %2").arg(tr("Click to open this link in an external browser")).arg(strMessage);
+    if (url.isEmpty())
+    {
+        emit sigStatusBarMessage("", 0);
+        return;
+    }
 
+    QString strMessage = url.url();
+    if (url.scheme() == "https" || url.scheme() == "http")
+        strMessage = QString("%1: %2").arg(tr("Click to open the following URL with an external browser")).arg(strMessage);
+    else if (url.scheme() == "qthelp")
+        strMessage = QString("%1: %2").arg(tr("Click to navigate to internal URL")).arg(strMessage);
+    else
+        strMessage = "";
     emit sigStatusBarMessage(strMessage, 0);
 }
 
@@ -2080,18 +2089,21 @@ void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
 
     QMenu menu;
     QAction *pOpen = menu.addAction(tr("Open Link"));
-    QAction *pOpenInNewTab = menu.addAction(tr("Open Link in New Tab"));
+    if (url.scheme() == "qthelp")
+    {
+        QAction *pOpenInNewTab = menu.addAction(tr("Open Link in New Tab"));
+        pOpenInNewTab->setData(url);
+        pOpenInNewTab->setEnabled(fURLValid);
+        connect(pOpenInNewTab, &QAction::triggered, this, &UIHelpBrowserWidget::sltOpenLinkInNewTab);
+    }
     QAction *pCopyLink = menu.addAction(tr("Copy Link"));
 
     pOpen->setData(url);
-    pOpenInNewTab->setData(url);
     pCopyLink->setData(url);
 
     pOpen->setEnabled(fURLValid);
-    pOpenInNewTab->setEnabled(fURLValid);
     pCopyLink->setEnabled(fURLValid);
 
-    connect(pOpenInNewTab, &QAction::triggered, this, &UIHelpBrowserWidget::sltOpenLinkInNewTab);
     connect(pOpen, &QAction::triggered, this, &UIHelpBrowserWidget::sltOpenLink);
     connect(pCopyLink, &QAction::triggered, this, &UIHelpBrowserWidget::sltCopyLink);
 

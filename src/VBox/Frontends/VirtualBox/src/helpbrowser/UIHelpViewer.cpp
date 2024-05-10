@@ -416,6 +416,8 @@ UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* =
             this, &UIHelpViewer::sltSelectNextMatch);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigClose,
             this, &UIHelpViewer::sltCloseFindInPageWidget);
+    connect(this, &UIHelpViewer::highlighted,
+            this, &UIHelpViewer::sltUpdateHighlightedURL);
 
     m_pFindInPageWidget->setVisible(false);
 
@@ -514,6 +516,11 @@ void UIHelpViewer::sltCloseFindInPageWidget()
     sltToggleFindInPageWidget(false);
 }
 
+void UIHelpViewer::sltUpdateHighlightedURL(const QUrl &url)
+{
+    m_highlightedUrl = url;
+}
+
 void UIHelpViewer::setFont(const QFont &font)
 {
     QTextBrowser::setFont(font);
@@ -606,13 +613,15 @@ void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
     menu.addAction(pCopyLink);
     menu.addAction(pFindInPage);
 
-    QString strAnchor = anchorAt(event->pos());
-    if (!strAnchor.isEmpty())
+    if (!m_highlightedUrl.isEmpty())
     {
-        QString strLink = source().resolved(anchorAt(event->pos())).toString();
+        QString strLink = m_highlightedUrl.toString();
         pOpenLinkAction->setData(strLink);
         pOpenInNewTabAction->setData(strLink);
         pCopyLink->setData(strLink);
+        if (m_highlightedUrl.scheme() == "https" ||
+            m_highlightedUrl.scheme() == "http")
+            pOpenInNewTabAction->setEnabled(false);
     }
     else
     {
