@@ -64,7 +64,7 @@
 # include <openssl/x509.h>
 # include <openssl/bio.h>
 
-#if defined(RT_OS_OS2) && !defined(RTSTREAM_STANDALONE)
+#if defined(RT_OS_OS2)
 # define _O_WRONLY   O_WRONLY
 #endif
 
