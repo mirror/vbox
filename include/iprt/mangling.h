@@ -4090,6 +4090,7 @@
 # define RTCrX509Validity_CheckSanity                   RT_MANGLER(RTCrX509Validity_CheckSanity)
 # define RTCrX509Certificate_VerifySignature            RT_MANGLER(RTCrX509Certificate_VerifySignature)
 # define RTCrX509Certificate_VerifySignatureSelfSigned  RT_MANGLER(RTCrX509Certificate_VerifySignatureSelfSigned)
+# define RTCrX509Certificate_Generate                   RT_MANGLER(RTCrX509Certificate_Generate)
 # define RTCrTafCertPathControls_DecodeAsn1             RT_MANGLER(RTCrTafCertPathControls_DecodeAsn1)
 # define RTCrTafTrustAnchorChoice_DecodeAsn1            RT_MANGLER(RTCrTafTrustAnchorChoice_DecodeAsn1)
 # define RTCrTafTrustAnchorInfo_DecodeAsn1              RT_MANGLER(RTCrTafTrustAnchorInfo_DecodeAsn1)
@@ -4389,4 +4390,3 @@
 #endif /* !DOXYGEN_RUNNING */
 
 #endif /* !IPRT_INCLUDED_mangling_h */
-
