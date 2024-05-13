@@ -30,15 +30,13 @@
 #include <QClipboard>
 #include <QComboBox>
 #include <QtGlobal>
-#include <QtHelp/QHelpEngine>
 #include <QtHelp/QHelpContentWidget>
+#include <QtHelp/QHelpEngine>
 #include <QtHelp/QHelpIndexWidget>
+#include <QtHelp/QHelpLink>
 #include <QtHelp/QHelpSearchEngine>
 #include <QtHelp/QHelpSearchQueryWidget>
 #include <QtHelp/QHelpSearchResultWidget>
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-# include <QtHelp/QHelpLink>
-#endif
 
 #include <QLabel>
 #include <QListWidget>
@@ -1861,22 +1859,12 @@ void UIHelpBrowserWidget::keyPressEvent(QKeyEvent *pEvent)
 
 void UIHelpBrowserWidget::findAndShowUrlForKeyword(const QString &strKeyword)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     QList<QHelpLink> links = m_pHelpEngine->documentsForIdentifier(strKeyword);
     if (!links.isEmpty())
     {
         /* We have to a have a single url per keyword in this case: */
         m_pTabManager->setSource(links.first().url, true /* new tab */);
     }
-#else
-    QMap<QString, QUrl> map = m_pHelpEngine->linksForIdentifier(strKeyword);
-    if (!map.isEmpty())
-    {
-        /* We have to a have a single url per keyword in this case: */
-        QUrl keywordUrl = map.first();
-        m_pTabManager->setSource(keywordUrl, true /* new tab */);
-    }
-#endif
 }
 
 void UIHelpBrowserWidget::sltWidgetVisibilityToggle(bool fToggled)
