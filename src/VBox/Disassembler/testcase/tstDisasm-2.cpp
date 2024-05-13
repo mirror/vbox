@@ -554,7 +554,7 @@ int main(int argc, char **argv)
                     enmStyle = kAsmStyle_yasm;
                 else if (!strcmp(ValueUnion.psz, "masm"))
                 {
-                    enmStyle = kAsmStyle_masm;
+                    //enmStyle = kAsmStyle_masm; Unused right now
                     RTStrmPrintf(g_pStdErr, "%s: masm style isn't implemented yet\n", argv0);
                     return 1;
                 }
