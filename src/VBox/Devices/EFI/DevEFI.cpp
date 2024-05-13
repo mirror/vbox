@@ -1225,6 +1225,8 @@ static int efiParseFirmware(PPDMDEVINS pDevIns, PDEVEFI pThis, PDEVEFIR3 pThisCC
         {
             /* Initialize the NVRAM content from the loaded ROM file as the NVRAM wasn't initialized yet. */
             rc = flashR3LoadFromBuf(&pThis->Flash, pThisCC->pu8EfiRom, pThisCC->cbNvram);
+            if (RT_FAILURE(rc))
+                return rc;
         }
         else if (RT_FAILURE(rc))
             return rc;
