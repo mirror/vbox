@@ -2507,13 +2507,9 @@ void UICommon::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCoun
     const int iSpinBoxWidth = pSpinBox->width();
     const int iSpinBoxEditFieldWidth = rect.width();
     const int iSpinBoxDelta = qMax(0, iSpinBoxWidth - iSpinBoxEditFieldWidth);
-    QFontMetrics metrics(pSpinBox->font(), pSpinBox);
+    const QFontMetrics metrics(pSpinBox->font(), pSpinBox);
     const QString strDummy(cCount, '0');
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     const int iTextWidth = metrics.horizontalAdvance(strDummy);
-#else
-    const int iTextWidth = metrics.width(strDummy);
-#endif
 
     /* Tune spin-box minimum-width: */
     pSpinBox->setMinimumWidth(iTextWidth + iSpinBoxDelta);

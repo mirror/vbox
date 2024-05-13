@@ -185,17 +185,9 @@ void SFTreeViewItem::processColumn(int iColumn)
     if (strOneString.isNull())
         return;
     const QFontMetrics fm = treeWidget()->fontMetrics();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     const int iOldSize = fm.horizontalAdvance(strOneString);
-#else
-    const int iOldSize = fm.width(strOneString);
-#endif
     const int iItemIndent = parentItem() ? treeWidget()->indentation() * 2 : treeWidget()->indentation();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     int iIndentSize = fm.horizontalAdvance(" ... ");
-#else
-    int iIndentSize = fm.width(" ... ");
-#endif
     if (iColumn == 0)
         iIndentSize += iItemIndent;
     const int cWidth = !parentItem() ? treeWidget()->viewport()->width() : treeWidget()->columnWidth(iColumn);
@@ -207,11 +199,7 @@ void SFTreeViewItem::processColumn(int iColumn)
     int iTextWidth = 0;
     do
     {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
         iTextWidth = fm.horizontalAdvance(strOneString);
-#else
-        iTextWidth = fm.width(strOneString);
-#endif
         if (   iTextWidth
             && iTextWidth + iIndentSize > cWidth)
         {
@@ -255,20 +243,12 @@ void SFTreeViewItem::processColumn(int iColumn)
 
     if (iPosition || m_enmFormat == FormatType_EllipsisFile)
         strOneString.insert(iPosition, "...");
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     const int iNewSize = fm.horizontalAdvance(strOneString);
-#else
-    const int iNewSize = fm.width(strOneString);
-#endif
     setText(iColumn, iNewSize < iOldSize ? strOneString : m_fields.at(iColumn));
     setToolTip(iColumn, text(iColumn) == getText(iColumn) ? QString() : getText(iColumn));
 
     /* Calculate item's size-hint: */
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     setSizeHint(iColumn, QSize(fm.horizontalAdvance(QString("  %1  ").arg(getText(iColumn))), fm.height()));
-#else
-    setSizeHint(iColumn, QSize(fm.width(QString("  %1  ").arg(getText(iColumn))), fm.height()));
-#endif
 }
 
 

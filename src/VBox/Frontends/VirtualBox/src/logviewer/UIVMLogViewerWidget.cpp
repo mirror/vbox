@@ -241,13 +241,9 @@ int UIVMLogViewerWidget::defaultLogPageWidth() const
     if (!pBrowser)
         return 0;
     /* Compute a width for 132 characters plus scrollbar and frame width: */
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-    int iDefaultWidth = pBrowser->fontMetrics().horizontalAdvance(QChar('x')) * 132 +
-#else
-    int iDefaultWidth = pBrowser->fontMetrics().width(QChar('x')) * 132 +
-#endif
-                        pBrowser->verticalScrollBar()->width() +
-                        pBrowser->frameWidth() * 2;
+    const int iDefaultWidth = pBrowser->fontMetrics().horizontalAdvance(QChar('x')) * 132
+                            + pBrowser->verticalScrollBar()->width()
+                            + pBrowser->frameWidth() * 2;
 
     return iDefaultWidth;
 }

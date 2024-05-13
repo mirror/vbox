@@ -172,13 +172,9 @@ int UIVMLogPage::defaultLogPageWidth() const
         return 0;
 
     /* Compute a width for 132 characters plus scrollbar and frame width: */
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-    int iDefaultWidth = m_pTextEdit->fontMetrics().horizontalAdvance(QChar('x')) * 132 +
-#else
-    int iDefaultWidth = m_pTextEdit->fontMetrics().width(QChar('x')) * 132 +
-#endif
-                        m_pTextEdit->verticalScrollBar()->width() +
-                        m_pTextEdit->frameWidth() * 2;
+    const int iDefaultWidth = m_pTextEdit->fontMetrics().horizontalAdvance(QChar('x')) * 132
+                            + m_pTextEdit->verticalScrollBar()->width()
+                            + m_pTextEdit->frameWidth() * 2;
 
     return iDefaultWidth;
 }

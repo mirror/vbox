@@ -775,13 +775,9 @@ void UIChooserItemMachine::updateMinimumNameWidth()
 {
     /* Calculate new minimum name width: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
-    QFontMetrics fm(m_nameFont, pPaintDevice);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-    int iMinimumNameWidth = fm.horizontalAdvance(compressText(m_nameFont, pPaintDevice, name(),
-                                                              textWidth(m_nameFont, pPaintDevice, 15)));
-#else
-    int iMinimumNameWidth = fm.width(compressText(m_nameFont, pPaintDevice, name(), textWidth(m_nameFont, pPaintDevice, 15)));
-#endif
+    const QFontMetrics fm(m_nameFont, pPaintDevice);
+    const int iMinimumNameWidth = fm.horizontalAdvance(compressText(m_nameFont, pPaintDevice, name(),
+                                                                    textWidth(m_nameFont, pPaintDevice, 15)));
 
     /* Is there something changed? */
     if (m_iMinimumNameWidth == iMinimumNameWidth)
@@ -800,16 +796,10 @@ void UIChooserItemMachine::updateMinimumSnapshotNameWidth()
     if (   cacheType() == UIVirtualMachineItemType_Local
         && !cache()->toLocal()->snapshotName().isEmpty())
     {
-        QFontMetrics fm(m_snapshotNameFont, model()->paintDevice());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-        int iBracketWidth = fm.horizontalAdvance("()"); /* bracket width */
-        int iActualTextWidth = fm.horizontalAdvance(cache()->toLocal()->snapshotName()); /* snapshot-name width */
-        int iMinimumTextWidth = fm.horizontalAdvance("..."); /* ellipsis width */
-#else
-        int iBracketWidth = fm.width("()"); /* bracket width */
-        int iActualTextWidth = fm.width(cache()->toLocal()->snapshotName()); /* snapshot-name width */
-        int iMinimumTextWidth = fm.width("..."); /* ellipsis width */
-#endif
+        const QFontMetrics fm(m_snapshotNameFont, model()->paintDevice());
+        const int iBracketWidth = fm.horizontalAdvance("()"); /* bracket width */
+        const int iActualTextWidth = fm.horizontalAdvance(cache()->toLocal()->snapshotName()); /* snapshot-name width */
+        const int iMinimumTextWidth = fm.horizontalAdvance("..."); /* ellipsis width */
         iMinimumSnapshotNameWidth = iBracketWidth + qMin(iActualTextWidth, iMinimumTextWidth);
     }
 
@@ -896,15 +886,11 @@ void UIChooserItemMachine::updateVisibleSnapshotName()
     QPaintDevice *pPaintDevice = model()->paintDevice();
 
     /* Calculate new visible snapshot-name: */
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-    int iBracketWidth = QFontMetrics(m_snapshotNameFont, pPaintDevice).horizontalAdvance("()");
-#else
-    int iBracketWidth = QFontMetrics(m_snapshotNameFont, pPaintDevice).width("()");
-#endif
+    const int iBracketWidth = QFontMetrics(m_snapshotNameFont, pPaintDevice).horizontalAdvance("()");
     QString strVisibleSnapshotName = compressText(m_snapshotNameFont, pPaintDevice, cache()->toLocal()->snapshotName(),
                                                   m_iMaximumSnapshotNameWidth - iBracketWidth);
     strVisibleSnapshotName = QString("(%1)").arg(strVisibleSnapshotName);
-    QSize visibleSnapshotNameSize = textSize(m_snapshotNameFont, pPaintDevice, strVisibleSnapshotName);
+    const QSize visibleSnapshotNameSize = textSize(m_snapshotNameFont, pPaintDevice, strVisibleSnapshotName);
 
     /* Update linked values: */
     if (m_visibleSnapshotNameSize != visibleSnapshotNameSize)

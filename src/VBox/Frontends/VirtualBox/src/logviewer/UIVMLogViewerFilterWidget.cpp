@@ -120,15 +120,11 @@ UIVMFilterLineEdit::UIVMFilterLineEdit(QWidget *parent /*= 0*/)
     home(false);
     setContextMenuPolicy(Qt::NoContextMenu);
     createButtons();
-    /** Try to guess the width of the space between filter terms so that remove button
-        we display when a term is selected does not hide the next/previous word: */
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-    int spaceWidth = fontMetrics().horizontalAdvance(' ');
-#else
-    int spaceWidth = fontMetrics().width(' ');
-#endif
-    if (spaceWidth != 0)
-        m_iTrailingSpaceCount = (m_iRemoveTermButtonSize / spaceWidth) + 1;
+    /* Try to guess the width of the space between filter terms so that remove button
+     * we display when a term is selected does not hide the next/previous word: */
+    const int iSpaceWidth = fontMetrics().horizontalAdvance(' ');
+    if (iSpaceWidth != 0)
+        m_iTrailingSpaceCount = (m_iRemoveTermButtonSize / iSpaceWidth) + 1;
 }
 
 void UIVMFilterLineEdit::addFilterTerm(const QString& filterTermString)
@@ -163,40 +159,35 @@ void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
 
     if (!m_pClearAllButton || !m_pRemoveTermButton)
         createButtons();
-    int clearButtonSize = height();
+    const int iClearButtonSize = height();
 
-    int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
+    const int iDeltaHeight = 0.5 * (height() - m_pClearAllButton->height());
 #ifdef VBOX_WS_MAC
-    m_pClearAllButton->setGeometry(width() - clearButtonSize - 2, deltaHeight, clearButtonSize, clearButtonSize);
+    m_pClearAllButton->setGeometry(width() - iClearButtonSize - 2, iDeltaHeight, iClearButtonSize, iClearButtonSize);
 #else
-    m_pClearAllButton->setGeometry(width() - clearButtonSize - 1, deltaHeight, clearButtonSize, clearButtonSize);
+    m_pClearAllButton->setGeometry(width() - iClearButtonSize - 1, iDeltaHeight, iClearButtonSize, iClearButtonSize);
 #endif
 
     /* If we have a selected term move the m_pRemoveTermButton to the end of the
        or start of the word (depending on the location of the word within line edit itself: */
     if (hasSelectedText())
     {
-        //int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
         m_pRemoveTermButton->show();
-        int buttonSize = m_iRemoveTermButtonSize;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-        int charWidth = fontMetrics().horizontalAdvance('x');
-#else
-        int charWidth = fontMetrics().width('x');
-#endif
+        const int iButtonSize = m_iRemoveTermButtonSize;
+        const int iCharWidth = fontMetrics().horizontalAdvance('x');
 #ifdef VBOX_WS_MAC
-        int buttonLeft = cursorRect().left() + 1;
+        int iButtonLeft = cursorRect().left() + 1;
 #else
-        int buttonLeft = cursorRect().right() - 0.9 * charWidth;
+        int iButtonLeft = cursorRect().right() - 0.9 * iCharWidth;
 #endif
-        /* If buttonLeft is in far right of the line edit, move the
+        /* If iButtonLeft is in far right of the line edit, move the
            button to left side of the selected word: */
-        if (buttonLeft + buttonSize  >=  width() - clearButtonSize)
+        if (iButtonLeft + iButtonSize  >=  width() - iClearButtonSize)
         {
-            int selectionWidth = charWidth * selectedText().length();
-            buttonLeft -= (selectionWidth + buttonSize);
+            const int iSelectionWidth = iCharWidth * selectedText().length();
+            iButtonLeft -= (iSelectionWidth + iButtonSize);
         }
-        m_pRemoveTermButton->setGeometry(buttonLeft, deltaHeight, buttonSize, buttonSize);
+        m_pRemoveTermButton->setGeometry(iButtonLeft, iDeltaHeight, iButtonSize, iButtonSize);
     }
     else
         m_pRemoveTermButton->hide();

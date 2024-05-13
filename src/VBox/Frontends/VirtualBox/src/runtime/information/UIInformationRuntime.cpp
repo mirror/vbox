@@ -220,12 +220,8 @@ void UIRuntimeInfoWidget::sltRetranslateUI()
         if (strLabel && strLongest->length() < strLabel->length())
             strLongest = strLabel;
     }
-    QFontMetrics fontMetrics(font());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    const QFontMetrics fontMetrics(font());
     setColumnWidth(0, 1.5 * fontMetrics.horizontalAdvance(*strLongest));
-#else
-    setColumnWidth(0, 1.5 * fontMetrics.width(*strLongest));
-#endif
 
     /* Make the API calls and populate the table: */
     createInfoRows();

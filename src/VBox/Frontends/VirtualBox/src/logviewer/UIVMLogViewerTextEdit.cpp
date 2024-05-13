@@ -355,20 +355,14 @@ int UIVMLogViewerTextEdit::lineNumberAreaWidth()
     if (!m_bShowLineNumbers)
         return 0;
 
-    int digits = 1;
-    int max = qMax(1, blockCount());
-    while (max >= 10) {
-        max /= 10;
-        ++digits;
+    int iDigits = 1;
+    int iMax = qMax(1, blockCount());
+    while (iMax >= 10) {
+        iMax /= 10;
+        ++iDigits;
     }
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-    int space = 3 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
-#else
-    int space = 3 + fontMetrics().width(QLatin1Char('9')) * digits;
-#endif
-
-    return space;
+    return 3 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * iDigits;
 }
 
 void UIVMLogViewerTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)

@@ -1561,19 +1561,15 @@ void UIChooserItemGroup::updateMinimumHeaderSize()
         return;
 
     /* Prepare variables: */
-    int iHeaderSpacing = data(GroupItemData_HeaderSpacing).toInt();
+    const int iHeaderSpacing = data(GroupItemData_HeaderSpacing).toInt();
 
     /* Calculate minimum visible name size: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
-    QFontMetrics fm(m_nameFont, pPaintDevice);
-    int iMaximumNameWidth = textWidth(m_nameFont, pPaintDevice, 20);
-    QString strCompressedName = compressText(m_nameFont, pPaintDevice, name(), iMaximumNameWidth);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-    int iMinimumNameWidth = fm.horizontalAdvance(strCompressedName);
-#else
-    int iMinimumNameWidth = fm.width(strCompressedName);
-#endif
-    int iMinimumNameHeight = fm.height();
+    const QFontMetrics fm(m_nameFont, pPaintDevice);
+    const int iMaximumNameWidth = textWidth(m_nameFont, pPaintDevice, 20);
+    const QString strCompressedName = compressText(m_nameFont, pPaintDevice, name(), iMaximumNameWidth);
+    const int iMinimumNameWidth = fm.horizontalAdvance(strCompressedName);
+    const int iMinimumNameHeight = fm.height();
 
     /* Calculate minimum width: */
     int iHeaderWidth = 0;
@@ -1610,7 +1606,7 @@ void UIChooserItemGroup::updateMinimumHeaderSize()
         iHeaderHeight = qMax(iHeaderHeight, iHeight);
 
     /* Calculate new minimum header size: */
-    QSize minimumHeaderSize = QSize(iHeaderWidth, iHeaderHeight);
+    const QSize minimumHeaderSize = QSize(iHeaderWidth, iHeaderHeight);
 
     /* Is there something changed? */
     if (m_minimumHeaderSize == minimumHeaderSize)

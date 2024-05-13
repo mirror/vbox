@@ -497,13 +497,8 @@ QString UIFilePathSelector::shrinkText(int iWidth) const
     if (strFullText.isEmpty())
         return strFullText;
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-    int iOldSize = fontMetrics().horizontalAdvance(strFullText);
-    int iIndentSize = fontMetrics().horizontalAdvance("x...x");
-#else
-    int iOldSize = fontMetrics().width(strFullText);
-    int iIndentSize = fontMetrics().width("x...x");
-#endif
+    const int iOldSize = fontMetrics().horizontalAdvance(strFullText);
+    const int iIndentSize = fontMetrics().horizontalAdvance("x...x");
 
     /* Compress text: */
     int iStart = 0;
@@ -511,11 +506,7 @@ QString UIFilePathSelector::shrinkText(int iWidth) const
     int iPosition = 0;
     int iTextWidth = 0;
     do {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
         iTextWidth = fontMetrics().horizontalAdvance(strFullText);
-#else
-        iTextWidth = fontMetrics().width(strFullText);
-#endif
         if (iTextWidth + iIndentSize > iWidth)
         {
             iStart = 0;
@@ -537,11 +528,7 @@ QString UIFilePathSelector::shrinkText(int iWidth) const
     } while (iTextWidth + iIndentSize > iWidth);
 
     strFullText.insert(iPosition, "...");
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-    int newSize = fontMetrics().horizontalAdvance(strFullText);
-#else
-    int newSize = fontMetrics().width(strFullText);
-#endif
+    const int newSize = fontMetrics().horizontalAdvance(strFullText);
 
     return newSize < iOldSize ? strFullText : fullPath(false);
 }

@@ -659,12 +659,8 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
         }
         else
             strAxisText = QString::number(iTotalSeconds - iTimeIndex);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-        int iTextWidth = fontMetrics.horizontalAdvance(strAxisText);
-#else
-        int iTextWidth = fontMetrics.width(strAxisText);
-#endif
-        int iTextX = m_lineChartRect.left() + i * m_lineChartRect.width() / (float) (iXSubAxisCount + 1);
+        const int iTextWidth = fontMetrics.horizontalAdvance(strAxisText);
+        const int iTextX = m_lineChartRect.left() + i * m_lineChartRect.width() / (float) (iXSubAxisCount + 1);
         if (i == 0)
         {
             if (!m_pMetric || !m_pMetric->hasDataLabels())
@@ -815,11 +811,7 @@ void UIChart::drawDisabledChartRectangle(QPainter &painter)
     do {
         font.setPixelSize(iFontSize);
         --iFontSize;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     } while (QFontMetrics(font).horizontalAdvance(m_strGAWarning) >= 0.8 * m_lineChartRect.width());
-#else
-    } while (QFontMetrics(font).width(m_strGAWarning) >= 0.8 * m_lineChartRect.width());
-#endif
     font.setBold(true);
     painter.setFont(font);
     painter.drawText(m_lineChartRect, m_strGAWarning);
@@ -1232,12 +1224,8 @@ void UIVMActivityMonitor::setInfoLabelWidth()
         QLabel *pLabel = m_infoLabels.begin().value();
         if (pLabel)
         {
-            QFontMetrics labelFontMetric(pLabel->font());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-            int iWidth = m_iMaximumLabelLength * labelFontMetric.horizontalAdvance('X');
-#else
-            int iWidth = m_iMaximumLabelLength * labelFontMetric.width('X');
-#endif
+            const QFontMetrics labelFontMetric(pLabel->font());
+            const int iWidth = m_iMaximumLabelLength * labelFontMetric.horizontalAdvance('X');
             foreach (QLabel *pInfoLabel, m_infoLabels)
                 pInfoLabel->setFixedWidth(iWidth);
         }
