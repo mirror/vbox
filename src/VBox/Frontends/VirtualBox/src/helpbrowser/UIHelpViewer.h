@@ -142,6 +142,7 @@ private:
     void loadImage(const QUrl &imageFileUrl);
     void clearOverlay();
     void enableOverlay();
+    bool isImage(const QString &strLink);
 
     const QHelpEngine* m_pHelpEngine;
     UIFindInPageWidget *m_pFindInPageWidget;

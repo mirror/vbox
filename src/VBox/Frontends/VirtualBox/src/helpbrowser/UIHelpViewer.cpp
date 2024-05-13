@@ -614,6 +614,8 @@ void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
         if (m_highlightedUrl.scheme() == "https" ||
             m_highlightedUrl.scheme() == "http")
             pOpenInNewTabAction->setEnabled(false);
+        if (isImage(strLink))
+            pOpenInNewTabAction->setEnabled(false);
     }
     else
     {
@@ -666,10 +668,7 @@ void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
     if (!strAnchor.isEmpty())
     {
         QString strLink = source().resolved(strAnchor).toString();
-        QFileInfo fInfo(strLink);
-        QMimeDatabase base;
-        QMimeType type = base.mimeTypeForFile(fInfo);
-        if (type.isValid() && type.inherits("image/png"))
+        if (isImage(strLink))
         {
             loadImage(source().resolved(strAnchor));
             return;
@@ -855,6 +854,11 @@ void UIHelpViewer::sltOpenLink()
     if (!pSender)
         return;
     QUrl url = pSender->data().toUrl();
+    if (isImage(url.toString()))
+    {
+        loadImage(url);
+        return;
+    }
     if (url.isValid())
         setSource(url);
 }
@@ -1039,5 +1043,16 @@ void UIHelpViewer::loadImage(const QUrl &imageFileUrl)
     }
 }
 
+bool UIHelpViewer::isImage(const QString &strLink)
+{
+    if (strLink.isEmpty())
+        return false;
+    QFileInfo fInfo(strLink);
+    QMimeDatabase base;
+    QMimeType type = base.mimeTypeForFile(fInfo);
+    if (type.isValid() && type.inherits("image/png"))
+        return true;
+    return false;
+}
 
 #include "UIHelpViewer.moc"
