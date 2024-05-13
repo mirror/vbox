@@ -318,6 +318,8 @@ int DBGDiggerCommonParseElfMod(PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszMod
                 continue;
 
             rc = RTDbgModSymbolAdd(hMod, pszSymbol, iSeg, offSeg, cbSym, 0 /*fFlags*/, NULL);
+            if (RT_FAILURE(rc))
+                LogRel(("%02x:%RGv %RGv %s!%s -> rc=%Rrc\n", paSyms[iSym].st_shndx, offSeg, cbSym, pszModName, pszSymbol, rc));
             Log(("%02x:%RGv %RGv %s!%s (rc=%Rrc)\n", paSyms[iSym].st_shndx, offSeg, cbSym, pszModName, pszSymbol, rc));
         }
         /*else: silently ignore */
