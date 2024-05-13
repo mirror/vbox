@@ -1103,8 +1103,9 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             {
                 SCSIINQUIRYDATA ScsiInquiryReply;
 
+                uint16_t cbDataReq = scsiBE2H_U16(&pVScsiReq->pbCDB[3]);
                 vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
-                vscsiReqSetXferSize(pVScsiReq, RT_MIN(sizeof(SCSIINQUIRYDATA), scsiBE2H_U16(&pVScsiReq->pbCDB[3])));
+                vscsiReqSetXferSize(pVScsiReq, RT_MIN(sizeof(SCSIINQUIRYDATA), cbDataReq));
                 memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
 
                 ScsiInquiryReply.cbAdditional           = 31;
