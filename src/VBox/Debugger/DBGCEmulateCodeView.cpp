@@ -2376,12 +2376,15 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                             break;
 
                         rc = DBGCCmdHlpPrintf(pCmdHlp, "         %4d: %s\n", Line.uLineNo - cBefore - 1, szLine);
+                        if (RT_FAILURE(rc))
+                            break;
                         szLine[0] = '\0';
                         const char *pszShutUpGcc = fgets(szLine, sizeof(szLine), phFile); NOREF(pszShutUpGcc);
                         cLines++;
                     }
                     /* print the actual line */
-                    rc = DBGCCmdHlpPrintf(pCmdHlp, "%08llx %4d: %s\n", Line.Address, Line.uLineNo, szLine);
+                    if (RT_SUCCESS(rc))
+                        rc = DBGCCmdHlpPrintf(pCmdHlp, "%08llx %4d: %s\n", Line.Address, Line.uLineNo, szLine);
                 }
                 fclose(phFile);
                 if (RT_FAILURE(rc))
@@ -2563,10 +2566,13 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                         {
                             if (iSameLine > 0)
                                 rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
-                            if (*pszActualPrefix == '\0')
-                                rc = DBGCCmdHlpPrintf(pCmdHlp, "%*s=%s\n", cchMaxNm, paRegs[iReg].pszName, szValue);
-                            else
-                                rc = DBGCCmdHlpPrintf(pCmdHlp, "%s%s=%s\n", pszActualPrefix, paRegs[iReg].pszName, szValue);
+                            if (RT_SUCCESS(rc))
+                            {
+                                if (*pszActualPrefix == '\0')
+                                    rc = DBGCCmdHlpPrintf(pCmdHlp, "%*s=%s\n", cchMaxNm, paRegs[iReg].pszName, szValue);
+                                else
+                                    rc = DBGCCmdHlpPrintf(pCmdHlp, "%s%s=%s\n", pszActualPrefix, paRegs[iReg].pszName, szValue);
+                            }
                             iSameLine = 0;
                         }
                         else
@@ -3746,8 +3752,9 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                                 rc = DBGCCmdHlpPrintf(pCmdHlp, " %s + %RGv", Symbol.szName, offDisp);
                             else
                                 rc = DBGCCmdHlpPrintf(pCmdHlp, " %s - %RGv", Symbol.szName, -offDisp);
-                            if (Symbol.cb > 0)
-                                rc = DBGCCmdHlpPrintf(pCmdHlp, " (LB %RGv)", Symbol.cb);
+                            if (   RT_SUCCESS(rc)
+                                && Symbol.cb > 0)
+                                DBGCCmdHlpPrintf(pCmdHlp, " (LB %RGv)", Symbol.cb);
                         }
                     }
 
@@ -3778,6 +3785,8 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                 }
             }
             rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
+            if (RT_FAILURE(rc))
+                return rc;
         }
         else
         {
@@ -3971,7 +3980,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
         else
             DBGCVAR_INIT_GC_FLAT(&VarDefault, 0);
         paArgs = &VarDefault;
-        cArgs = 1;
+        //cArgs = 1; Unused
     }
     else if (paArgs[0].enmType == DBGCVAR_TYPE_NUMBER)
     {
@@ -6161,10 +6170,13 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
             rc = DBGCCmdHlpPrintf(pCmdHlp, "%DV %s + %RGv", &AddrVar, Symbol.szName, offDisp);
         else
             rc = DBGCCmdHlpPrintf(pCmdHlp, "%DV %s - %RGv", &AddrVar, Symbol.szName, -offDisp);
-        if (Symbol.cb > 0)
-            rc = DBGCCmdHlpPrintf(pCmdHlp, " (LB %RGv)\n", Symbol.cb);
-        else
-            rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
+        if (RT_SUCCESS(rc))
+        {
+            if (Symbol.cb > 0)
+                rc = DBGCCmdHlpPrintf(pCmdHlp, " (LB %RGv)\n", Symbol.cb);
+            else
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
+        }
     }
 
     return rc;

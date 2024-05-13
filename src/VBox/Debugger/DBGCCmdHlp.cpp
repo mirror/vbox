@@ -1490,6 +1490,8 @@ static DECLCALLBACK(int) dbgcHlpRegPrintf(PDBGCCMDHLP pCmdHlp, VMCPUID idCpu, in
     char *pszRegs = strchr(szDisAndRegs, '\n');
     *pszRegs++ = '\0';
     rc = DBGCCmdHlpPrintf(pCmdHlp, "%s", pszRegs);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Disassemble one instruction at cs:[r|e]ip.
