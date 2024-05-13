@@ -2857,7 +2857,7 @@ DECL_HIDDEN_CALLBACK(int) dbgcGdbStubRunloop(PUVM pUVM, PCDBGCIO pIo, unsigned f
         {
             rc = DBGFR3Halt(pThis->Dbgc.pUVM, VMCPUID_ALL);
             if (RT_FAILURE(rc))
-                LogRel(("DBGC/Gdb: Failed to halt VM (%Rrc), debugger might behave unexpectedly\n"));
+                LogRel(("DBGC/Gdb: Failed to halt VM (%Rrc), debugger might behave unexpectedly\n", rc));
         }
 
         /*
