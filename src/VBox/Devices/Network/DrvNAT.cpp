@@ -270,11 +270,9 @@ static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread
 {
     RT_NOREF(pThread);
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    int rc;
-    rc = RTSemEventSignal(pThis->EventRecv);
 
     STAM_COUNTER_INC(&pThis->StatNATRecvWakeups);
-    return VINF_SUCCESS;
+    return RTSemEventSignal(pThis->EventRecv);
 }
 
 
