@@ -599,8 +599,12 @@ static DECLCALLBACK(int) flashR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         if (RT_SUCCESS(rc))
         {
             if (cbFlash <= pThis->cbFlashSize)
+            {
                 rc = pThis->Lun0.pDrvVfs->pfnReadAll(pThis->Lun0.pDrvVfs, FLASH_CFI_VFS_NAMESPACE, pThis->pszFlashFile,
                                                      pThis->pbFlash, pThis->cbFlashSize);
+                if (RT_FAILURE(rc))
+                    return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to read flash content from VFS layer\n"));
+            }
             else
                 return PDMDEV_SET_ERROR(pDevIns, VERR_BUFFER_OVERFLOW, N_("Configured flash size is too small to fit the saved NVRAM content"));
         }
