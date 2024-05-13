@@ -351,7 +351,7 @@ static DECLCALLBACK(int) drvNetSnifferAttach(PPDMDRVINS pDrvIns, uint32_t fFlags
         AssertMsgFailed(("Failed to attach to driver below! rc=%Rrc\n", rc));
 
     RTCritSectLeave(&pThis->XmitLock);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 

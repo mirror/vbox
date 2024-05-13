@@ -421,7 +421,7 @@ static DECLCALLBACK(int) drvR3NetShaperAttach(PPDMDRVINS pDrvIns, uint32_t fFlag
         AssertMsgFailed(("Failed to attach to driver below! rc=%Rrc\n", rc));
 
     PDMDrvHlpCritSectLeave(pDrvIns, &pThis->XmitLock);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
