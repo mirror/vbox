@@ -60,9 +60,6 @@
 #include <qcompilerdetection.h>
 #include <qconfig.h>
 #include <qcontainerfwd.h>
-#if QT_VERSION < QT_VERSION_CHECK(5, 8, 0)
-# include <qfeatures.h>
-#endif
 #include <qflags.h>
 #include <qgenericatomic.h>
 #include <qglobalstatic.h>
