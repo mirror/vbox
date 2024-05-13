@@ -1595,6 +1595,7 @@ static DECLCALLBACK(int) tpmR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     if (uPass == SSM_PASS_FINAL)
     {
         rc = pHlp->pfnSSMGetStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &g_aTpmFields[0], NULL);
+        AssertRCReturn(rc, rc);
 
         /* The marker. */
         rc = pHlp->pfnSSMGetU32(pSSM, &u32);
@@ -1747,7 +1748,8 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThisCC->pDrvTpm = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMITPMCONNECTOR);
         AssertLogRelMsgReturn(pThisCC->pDrvTpm, ("TPM#%d: Driver is missing the TPM interface.\n", iInstance), VERR_PDM_MISSING_INTERFACE);
 
-        pThis->cbCmdResp     = RT_MIN(pThisCC->pDrvTpm->pfnGetBufferSize(pThisCC->pDrvTpm), TPM_DATA_BUFFER_SIZE_MAX);
+        size_t cbBufDrv = pThisCC->pDrvTpm->pfnGetBufferSize(pThisCC->pDrvTpm);
+        pThis->cbCmdResp     = RT_MIN(cbBufDrv, TPM_DATA_BUFFER_SIZE_MAX);
         pThis->fLocChangeSup = pThisCC->pDrvTpm->pfnGetLocalityMax(pThisCC->pDrvTpm) > 0;
 
         pThis->enmTpmVers = pThisCC->pDrvTpm->pfnGetVersion(pThisCC->pDrvTpm);
