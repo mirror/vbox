@@ -958,10 +958,9 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, PCVMMR3VTABLE pVMM, voi
                     /*
                      * Try add the module.
                      */
-                    LogRel(("OSXDig: kmod_info @%RGv: '%s' ver '%s', image @%#llx LB %#llx cbHdr=%#llx\n", AddrModInfo.FlatPtr,
-                            pszName, pszVersion, uImageAddr, cbImage, cbHdr));
                     rc = dbgDiggerDarwinAddModule(pThis, pUVM, pVMM, uImageAddr, pszName, NULL);
-
+                    LogRel(("OSXDig: kmod_info @%RGv: '%s' ver '%s', image @%#llx LB %#llx cbHdr=%#llx -> %Rrc\n", AddrModInfo.FlatPtr,
+                            pszName, pszVersion, uImageAddr, cbImage, cbHdr, rc));
 
                     /*
                      * Advance to the next kmod_info entry.
