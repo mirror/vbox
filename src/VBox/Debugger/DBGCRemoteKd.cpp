@@ -2865,16 +2865,18 @@ static int dbgcKdCtxStateChangeSend(PKDCTX pThis, DBGFEVENTTYPE enmType)
             rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_ES, &StateChange64.uCtrlReport.Amd64.u16SegEs);
         if (RT_SUCCESS(rc))
             rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_FS, &StateChange64.uCtrlReport.Amd64.u16SegFs);
-
-        /* Read instruction bytes. */
-        StateChange64.uCtrlReport.Amd64.cbInsnStream = sizeof(StateChange64.uCtrlReport.Amd64.abInsn);
-        rc = DBGFR3MemRead(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, &AddrRip,
-                           &StateChange64.uCtrlReport.Amd64.abInsn[0], StateChange64.uCtrlReport.Amd64.cbInsnStream);
         if (RT_SUCCESS(rc))
         {
-            pThis->idPktNext = KD_PACKET_HDR_ID_INITIAL;
-            rc = dbgcKdCtxPktSend(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_CHANGE64,
-                                  &StateChange64, sizeof(StateChange64), false /*fAck*/);
+            /* Read instruction bytes. */
+            StateChange64.uCtrlReport.Amd64.cbInsnStream = sizeof(StateChange64.uCtrlReport.Amd64.abInsn);
+            rc = DBGFR3MemRead(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, &AddrRip,
+                               &StateChange64.uCtrlReport.Amd64.abInsn[0], StateChange64.uCtrlReport.Amd64.cbInsnStream);
+            if (RT_SUCCESS(rc))
+            {
+                pThis->idPktNext = KD_PACKET_HDR_ID_INITIAL;
+                rc = dbgcKdCtxPktSend(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_CHANGE64,
+                                      &StateChange64, sizeof(StateChange64), false /*fAck*/);
+            }
         }
     }
 
@@ -2913,6 +2915,8 @@ static int dbgcKdCtxPktManipulate64GetVersion(PKDCTX pThis, PCKDPACKETMANIPULATE
             rc = pThis->pIfWinNt->pfnQueryKernelPtrs(pThis->pIfWinNt, pThis->Dbgc.pUVM, VMMR3GetVTable(),
                                                      &Resp.u.GetVersion.u64PtrKernBase,
                                                      &Resp.u.GetVersion.u64PtrPsLoadedModuleList);
+        if (RT_FAILURE(rc))
+            LogRel(("DBGC/Kd: Failed to query WIndows version or kernel pointers rc=%Rrc\n", rc));
     }
 
     /* Fill in the request specific part. */
@@ -4114,7 +4118,8 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
                 }
             }
 
-            rc = dbgcKdCtxStateChangeSend(pThis, pEvent->enmType);
+            if (RT_SUCCESS(rc))
+                rc = dbgcKdCtxStateChangeSend(pThis, pEvent->enmType);
             break;
         }
 
@@ -4213,13 +4218,17 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
                                                      pEvtDesc->pszName, pEvtDesc->pszDesc);
                     else
                         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s!", pEvtDesc->pszName);
-                    if (pEvent->u.Generic.cArgs <= 1)
-                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " arg=%#llx\n", pEvent->u.Generic.auArgs[0]);
-                    else
+                    if (RT_SUCCESS(rc))
                     {
-                        for (uint32_t i = 0; i < pEvent->u.Generic.cArgs; i++)
-                            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " args[%u]=%#llx", i, pEvent->u.Generic.auArgs[i]);
-                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\n");
+                        if (pEvent->u.Generic.cArgs <= 1)
+                            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " arg=%#llx\n", pEvent->u.Generic.auArgs[0]);
+                        else
+                        {
+                            for (uint32_t i = 0; i < pEvent->u.Generic.cArgs; i++)
+                                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " args[%u]=%#llx", i, pEvent->u.Generic.auArgs[i]);
+                            if (RT_SUCCESS(rc))
+                                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\n");
+                        }
                     }
                 }
                 else
