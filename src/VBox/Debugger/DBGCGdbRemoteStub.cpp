@@ -2521,13 +2521,17 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
                                                      pEvtDesc->pszName, pEvtDesc->pszDesc);
                     else
                         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s!", pEvtDesc->pszName);
-                    if (pEvent->u.Generic.cArgs <= 1)
-                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " arg=%#llx\n", pEvent->u.Generic.auArgs[0]);
-                    else
+                    if (RT_SUCCESS(rc))
                     {
-                        for (uint32_t i = 0; i < pEvent->u.Generic.cArgs; i++)
-                            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " args[%u]=%#llx", i, pEvent->u.Generic.auArgs[i]);
-                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\n");
+                        if (pEvent->u.Generic.cArgs <= 1)
+                            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " arg=%#llx\n", pEvent->u.Generic.auArgs[0]);
+                        else
+                        {
+                            for (uint32_t i = 0; i < pEvent->u.Generic.cArgs; i++)
+                                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " args[%u]=%#llx", i, pEvent->u.Generic.auArgs[i]);
+                            if (RT_SUCCESS(rc))
+                                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\n");
+                        }
                     }
                 }
                 else
@@ -2850,7 +2854,11 @@ DECL_HIDDEN_CALLBACK(int) dbgcGdbStubRunloop(PUVM pUVM, PCDBGCIO pIo, unsigned f
         //dbgcRunInitScripts(pDbgc); Not yet
 
         if (!DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
+        {
             rc = DBGFR3Halt(pThis->Dbgc.pUVM, VMCPUID_ALL);
+            if (RT_FAILURE(rc))
+                LogRel(("DBGC/Gdb: Failed to halt VM (%Rrc), debugger might behave unexpectedly\n"));
+        }
 
         /*
          * Run the debugger main loop.
