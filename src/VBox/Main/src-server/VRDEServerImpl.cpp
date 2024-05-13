@@ -295,15 +295,19 @@ HRESULT VRDEServer::setEnabled(BOOL aEnabled)
         alock.release();
 
         /*
-        * If TLS is not explicitely disabled then auto-generate
-        * a self-signed certificate for this VM.
-        */
-        if (mData->mapProperties["Security/Method"] != "RDP")
+         * If TLS is not explicitly disabled and there is not an existing certificate
+         * then auto-generate a self-signed certificate for this VM.
+         */
+        Utf8Str strPath = mData->mapProperties["Security/ServerCertificate"];
+        if (aEnabled && strPath.isEmpty())
         {
-            int vrc = i_generateServerCertificate();
-            if (RT_FAILURE(vrc))
+            if (mData->mapProperties["Security/Method"] != "RDP")
             {
-                LogRel(("Failed to auto generate server key and certificate: (%Rrc)\n", vrc));
+                int vrc = i_generateServerCertificate();
+                if (RT_FAILURE(vrc))
+                {
+                    LogRel(("Failed to auto generate server key and certificate: (%Rrc)\n", vrc));
+                }
             }
         }
 
