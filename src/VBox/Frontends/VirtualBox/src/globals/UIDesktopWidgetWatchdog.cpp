@@ -35,9 +35,6 @@
 #ifdef VBOX_WS_NIX
 # include <QTimer>
 #endif
-#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
-# include <QDesktopWidget>
-#endif /* Qt < 5.10 */
 
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
@@ -330,11 +327,7 @@ int UIDesktopWidgetWatchdog::screenNumber(const QWidget *pWidget)
 /* static */
 int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     return screenToIndex(QGuiApplication::screenAt(point));
-#else /* Qt < 5.10 */
-    return QApplication::desktop()->screenNumber(point);
-#endif /* Qt < 5.10 */
 }
 
 QRect UIDesktopWidgetWatchdog::screenGeometry(QScreen *pScreen) const
@@ -366,7 +359,6 @@ QRect UIDesktopWidgetWatchdog::screenGeometry(const QWidget *pWidget) const
 
 QRect UIDesktopWidgetWatchdog::screenGeometry(const QPoint &point) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     /* Gather suitable screen, use primary if failed: */
     QScreen *pScreen = QGuiApplication::screenAt(point);
     if (!pScreen)
@@ -374,13 +366,6 @@ QRect UIDesktopWidgetWatchdog::screenGeometry(const QPoint &point) const
 
     /* Redirect call to wrapper above: */
     return screenGeometry(pScreen);
-#else /* Qt < 5.10 */
-    /* Gather suitable screen index: */
-    const int iHostScreenIndex = QApplication::desktop()->screenNumber(point);
-
-    /* Redirect call to wrapper above: */
-    return screenGeometry(iHostScreenIndex);
-#endif /* Qt < 5.10 */
 }
 
 QRect UIDesktopWidgetWatchdog::availableGeometry(QScreen *pScreen) const
@@ -426,7 +411,6 @@ QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget) const
 
 QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     /* Gather suitable screen, use primary if failed: */
     QScreen *pScreen = QGuiApplication::screenAt(point);
     if (!pScreen)
@@ -434,13 +418,6 @@ QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point) const
 
     /* Redirect call to wrapper above: */
     return availableGeometry(pScreen);
-#else /* Qt < 5.10 */
-    /* Gather suitable screen index: */
-    const int iHostScreenIndex = QApplication::desktop()->screenNumber(point);
-
-    /* Redirect call to wrapper above: */
-    return availableGeometry(iHostScreenIndex);
-#endif /* Qt < 5.10 */
 }
 
 /* static */
