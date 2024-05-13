@@ -1046,7 +1046,7 @@ static void dbgdiggerOS2ProcessModule(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGDIGGERO
     rc = RTDbgModSetTag(hDbgMod, DIG_OS2_MOD_TAG);
     if (RT_SUCCESS(rc))
     {
-        for (uint32_t i = 0; i < SwapMte.smte_objcnt; i++)
+        for (uint32_t i = 0; i < cSegments; i++)
             if (pBuf->aOtes[i].ote_base != 0)
             {
                 rc = RTDbgAsModuleLinkSeg(hAs, hDbgMod, i, pBuf->aOtes[i].ote_base, RTDBGASLINK_FLAGS_REPLACE /*fFlags*/);
