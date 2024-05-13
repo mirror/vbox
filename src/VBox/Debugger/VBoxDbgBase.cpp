@@ -327,7 +327,7 @@ VBoxDbgBaseWindow::vPolishSizeAndPos()
         || (m_x == INT_MAX && m_y == INT_MAX))
         return;
 
-    if (!m_fPolished && VBoxDbgBaseWindow::vGetBorderSize() != QSize(0,0))
+    if (VBoxDbgBaseWindow::vGetBorderSize() != QSize(0,0))
         m_fPolished = true;
 
     vReposition(m_x, m_y, m_cx, m_cy, m_cx || m_cy);
