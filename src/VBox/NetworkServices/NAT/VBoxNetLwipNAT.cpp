@@ -256,7 +256,9 @@ private:
 
 VBoxNetLwipNAT::VBoxNetLwipNAT()
   : m_uVerbosity(0),
-    m_hThrRecv(NIL_RTTHREAD)
+    m_hIf(NULL),
+    m_hThrRecv(NIL_RTTHREAD),
+    m_u16Mtu(1500)
 {
     LogFlowFuncEnter();
 
@@ -355,12 +357,13 @@ RTEXITCODE
 VBoxNetLwipNAT::parseArgs(int argc, char *argv[])
 {
     unsigned int uVerbosity = 0;
-    int rc;
 
     RTGETOPTSTATE State;
-    rc = RTGetOptInit(&State, argc, argv,
-                      s_aGetOptDef, RT_ELEMENTS(s_aGetOptDef),
-                      1, 0);
+    int rc = RTGetOptInit(&State, argc, argv,
+                          s_aGetOptDef, RT_ELEMENTS(s_aGetOptDef),
+                          1, 0);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc", rc);
 
     int ch;
     RTGETOPTUNION Val;
@@ -1346,19 +1349,17 @@ VBoxNetLwipNAT::netifInit(netif *pNetif) RT_NOTHROW_DEF
 int
 VBoxNetLwipNAT::run()
 {
-    int rc;
-
     AssertReturn(m_hThrRecv == NIL_RTTHREAD, VERR_INVALID_STATE);
 
     /* spawn the lwIP tcpip thread */
     vboxLwipCoreInitialize(VBoxNetLwipNAT::onLwipTcpIpInit, this);
 
     /* spawn intnet input pump */
-    rc = RTThreadCreate(&m_hThrRecv,
-             VBoxNetLwipNAT::receiveThread, this,
-             0, /* :cbStack */
-             RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
-             "RECV");
+    int rc = RTThreadCreate(&m_hThrRecv,
+                            VBoxNetLwipNAT::receiveThread, this,
+                            0, /* :cbStack */
+                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
+                            "RECV");
     AssertRCReturn(rc, rc);
 
     /* main thread will run the API event queue pump */
@@ -1399,7 +1400,7 @@ VBoxNetLwipNAT::run()
     rc = RTThreadWait(m_hThrRecv, 5000, NULL);
     m_hThrRecv = NIL_RTTHREAD;
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -2082,7 +2083,7 @@ void VBoxNetLwipNAT::reportErrorInfo(const com::ErrorInfo &info)
     {
         message.appendPrintf("%s" "callee %ls",
             pcszSeparator, info.getCalleeName().raw());
-        pcszSeparator = pcszComma;
+        //pcszSeparator = pcszComma; unused
     }
 
     reportError("%s", message.c_str());

@@ -467,7 +467,6 @@ proxy_connected_socket(int sdom, int stype,
     struct sockaddr_in dst_sin;
     struct sockaddr *pdst_sa;
     socklen_t dst_sa_len;
-    void *pdst_addr;
     const struct sockaddr *psrc_sa;
     socklen_t src_sa_len;
     int status;
@@ -480,7 +479,6 @@ proxy_connected_socket(int sdom, int stype,
     DPRINTF(("---> %s ", stype == SOCK_STREAM ? "TCP" : "UDP"));
     if (sdom == PF_INET6) {
         pdst_sa = (struct sockaddr *)&dst_sin6;
-        pdst_addr = (void *)&dst_sin6.sin6_addr;
 
         memset(&dst_sin6, 0, sizeof(dst_sin6));
 #if HAVE_SA_LEN
@@ -495,7 +493,6 @@ proxy_connected_socket(int sdom, int stype,
     }
     else { /* sdom = PF_INET */
         pdst_sa = (struct sockaddr *)&dst_sin;
-        pdst_addr = (void *)&dst_sin.sin_addr;
 
         memset(&dst_sin, 0, sizeof(dst_sin));
 #if HAVE_SA_LEN

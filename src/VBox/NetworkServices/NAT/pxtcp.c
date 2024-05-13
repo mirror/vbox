@@ -1747,8 +1747,7 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
 
         nread = pxtcp_sock_read(pxtcp, &stop_pollin);
         if (nread < 0) {
-            sockerr = -(int)nread;
-            DPRINTF0(("sock %d: POLLIN: %R[sockerr]\n", fd, sockerr));
+            DPRINTF0(("sock %d: POLLIN: %R[sockerr]\n", fd, -(int)nread));
             return pxtcp_schedule_reset(pxtcp);
         }
 

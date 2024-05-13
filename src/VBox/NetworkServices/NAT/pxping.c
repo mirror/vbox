@@ -685,7 +685,7 @@ pxping_recv6(void *arg, struct pbuf *p)
     struct icmp6_echo_hdr *icmph;
     int hopl;
     u16_t iphlen;
-    u16_t id, seq;
+    u16_t id;
     int status;
 
     iph = (/* UNCONST */ struct ip6_hdr *)ip6_current_header();
@@ -694,8 +694,6 @@ pxping_recv6(void *arg, struct pbuf *p)
     icmph = (struct icmp6_echo_hdr *)p->payload;
 
     id  = icmph->id;
-    seq = icmph->seqno;
-
     pcb = pxping_pcb_for_request(pxping, 1,
                                  ipX_current_src_addr(),
                                  ipX_current_dest_addr(),
@@ -707,7 +705,7 @@ pxping_recv6(void *arg, struct pbuf *p)
 
     DPRINTF(("ping %p: %R[ping_pcb] seq %d len %u hopl %d\n",
              pcb, pcb,
-             ntohs(seq), (unsigned int)p->tot_len,
+             ntohs(icmph->seqno), (unsigned int)p->tot_len,
              IP6H_HOPLIM(iph)));
 
     hopl = IP6H_HOPLIM(iph);
@@ -1258,7 +1256,7 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
 {
     struct ip_hdr *iph;
     struct icmp_echo_hdr *icmph;
-    u16_t id, seq;
+    u16_t id;
     ip_addr_t guest_ip, target_ip;
     int mapped;
     struct ping_pcb *pcb;
@@ -1271,10 +1269,8 @@ pxping_pmgr_icmp4_echo(struct pxping *pxping,
     icmph = (struct icmp_echo_hdr *)(pollmgr_udpbuf + IP_HLEN);
 
     id  = icmph->id;
-    seq = icmph->seqno;
-
     DPRINTF(("<--- PING %RTnaipv4 id 0x%x seq %d\n",
-             peer->sin_addr.s_addr, ntohs(id), ntohs(seq)));
+             peer->sin_addr.s_addr, ntohs(id), ntohs(icmph->seqno)));
 
     /*
      * Is this a reply to one of our pings?
@@ -1361,7 +1357,7 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
     struct ip_hdr *iph, *oiph;
     struct icmp_echo_hdr *icmph, *oicmph;
     u16_t oipoff, oiphlen, oiplen;
-    u16_t id, seq;
+    u16_t id;
     ip_addr_t guest_ip, target_ip, error_ip;
     int target_mapped, error_mapped;
     struct ping_pcb *pcb;
@@ -1423,10 +1419,9 @@ pxping_pmgr_icmp4_error(struct pxping *pxping,
     }
 
     id  = oicmph->id;
-    seq = oicmph->seqno;
 
     DPRINTF2(("%s: ping %RTnaipv4 id 0x%x seq %d",
-              __func__, ip4_addr_get_u32(&oiph->dest), ntohs(id), ntohs(seq)));
+              __func__, ip4_addr_get_u32(&oiph->dest), ntohs(id), ntohs(oicmph->seqno)));
     if (ICMPH_TYPE(icmph) == ICMP_DUR) {
         DPRINTF2((" unreachable (code %d)\n", ICMPH_CODE(icmph)));
     }

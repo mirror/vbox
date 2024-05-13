@@ -258,7 +258,6 @@ pollmgr_chan_send(int slot, void *buf, size_t nbytes)
     void *ptr;
     SOCKET fd;
     ssize_t nsent;
-    int rc;
 
     AssertReturn(0 <= slot && slot < POLLMGR_CHAN_COUNT, -1);
 
@@ -275,10 +274,15 @@ pollmgr_chan_send(int slot, void *buf, size_t nbytes)
 
     ptr = *(void **)buf;
 
-    rc = RTReqQueueCallEx(pollmgr.queue, NULL, 0,
-                          RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                          (PFNRT)pollmgr_chan_call_handler, 2,
-                          slot, ptr);
+    int rc = RTReqQueueCallEx(pollmgr.queue, NULL, 0,
+                              RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                              (PFNRT)pollmgr_chan_call_handler, 2,
+                              slot, ptr);
+    if (RT_FAILURE(rc))
+    {
+        DPRINTF(("Queuing pollmgr_chan_call_handler() on poll manager queue failed with %Rrc\n", rc));
+        return -1;
+    }
 
     fd = pollmgr.chan[POLLMGR_QUEUE][POLLMGR_CHFD_WR];
     nsent = send(fd, &notification, 1, 0);
@@ -303,18 +307,12 @@ pollmgr_chan_send(int slot, void *buf, size_t nbytes)
 static int
 pollmgr_queue_callback(struct pollmgr_handler *handler, SOCKET fd, int revents)
 {
-    ssize_t nread;
-    int sockerr;
-    int rc;
-
     RT_NOREF(handler, revents);
     Assert(pollmgr.queue != NIL_RTREQQUEUE);
 
-    nread = recv(fd, (char *)pollmgr_udpbuf, sizeof(pollmgr_udpbuf), 0);
-    sockerr = SOCKERRNO();      /* save now, may be clobbered */
-
+    ssize_t nread = recv(fd, (char *)pollmgr_udpbuf, sizeof(pollmgr_udpbuf), 0);
     if (nread == SOCKET_ERROR) {
-        DPRINTF0(("%s: recv: %R[sockerr]\n", __func__, sockerr));
+        DPRINTF0(("%s: recv: %R[sockerr]\n", __func__, SOCKERRNO()));
         return POLLIN;
     }
 
@@ -323,7 +321,7 @@ pollmgr_queue_callback(struct pollmgr_handler *handler, SOCKET fd, int revents)
         return POLLIN;
     }
 
-    rc = RTReqQueueProcess(pollmgr.queue, 0);
+    int rc = RTReqQueueProcess(pollmgr.queue, 0);
     if (RT_UNLIKELY(rc != VERR_TIMEOUT && RT_FAILURE_NP(rc))) {
         DPRINTF0(("%s: RTReqQueueProcess: %Rrc\n", __func__, rc));
     }
