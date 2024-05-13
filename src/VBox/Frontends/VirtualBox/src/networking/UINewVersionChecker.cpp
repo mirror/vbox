@@ -116,11 +116,7 @@ void UINewVersionChecker::processNetworkReplyFinished(UINetworkReply *pReply)
     /* Newer version of necessary package found: */
     if (strResponseData.indexOf(QRegularExpression("^\\d+\\.\\d+\\.\\d+(_[0-9A-Z]+)? \\S+$")) == 0)
     {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         const QStringList response = strResponseData.split(" ", Qt::SkipEmptyParts);
-#else
-        const QStringList response = strResponseData.split(" ", QString::SkipEmptyParts);
-#endif
         UINotificationMessage::showUpdateSuccess(response[0], response[1]);
     }
     /* No newer version of necessary package found: */

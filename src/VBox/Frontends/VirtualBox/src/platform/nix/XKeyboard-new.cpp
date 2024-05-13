@@ -207,11 +207,7 @@ void initMappedX11Keyboard(Display *pDisplay, const QString &remapScancodes)
 
     if (remapScancodes != QString())
     {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-        QStringList tuples = remapScancodes.split(",", Qt::SkipEmptyParts);
-#else
-        QStringList tuples = remapScancodes.split(",", QString::SkipEmptyParts);
-#endif
+        const QStringList tuples = remapScancodes.split(",", Qt::SkipEmptyParts);
         scancodes = scancodesTail = new int [tuples.size()+1][2];
         for (int i = 0; i < tuples.size(); ++i)
         {
