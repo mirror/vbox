@@ -2972,6 +2972,8 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void
         {
             static const uint8_t s_abNeedleOSuseX86[] = "nmi"; /* OpenSuSe 10.2 x86 */
             rc = dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, pVMM, s_abNeedleOSuseX86, sizeof(s_abNeedleOSuseX86) - 1);
+            if (RT_FAILURE(rc))
+                LogRel(("dbgDiggerLinuxInit: Failed to find symbol table from needle kobj, kobjec or nmi -> %Rrc\n", rc));
         }
     }
 
