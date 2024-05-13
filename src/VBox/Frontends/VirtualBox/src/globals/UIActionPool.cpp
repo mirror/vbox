@@ -3646,7 +3646,7 @@ void UIActionPool::preparePool()
     m_menuUpdateHandlers[UIActionIndex_M_FileManager].ptf = &UIActionPool::updateMenuFileManager;
 
     /* Invalidate all known menus: */
-    const QList<int> const updateHandlerKeys = m_menuUpdateHandlers.keys();
+    const QList<int> updateHandlerKeys = m_menuUpdateHandlers.keys();
     m_invalidations.unite(QSet<int>(updateHandlerKeys.begin(), updateHandlerKeys.end()));
 
     /* Apply language settings: */
