@@ -5302,16 +5302,16 @@ static VBOXSTRICTRC HcRhStatus_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t iReg,
 #ifdef IN_RING3
     POHCICC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
 
+#ifdef LOG_ENABLED
     /* log */
     uint32_t old = pThis->RootHub.status;
-    uint32_t chg;
     if (val & ~0x80038003)
         Log2(("HcRhStatus_w: Unknown bits %#x are set!!!\n", val & ~0x80038003));
     if ( (val & OHCI_RHS_LPSC) && (val & OHCI_RHS_LPS) )
         Log2(("HcRhStatus_w: Warning both CGP and SGP are set! (Clear/Set Global Power)\n"));
     if ( (val & OHCI_RHS_DRWE) && (val & OHCI_RHS_CRWE) )
         Log2(("HcRhStatus_w: Warning both CRWE and SRWE are set! (Clear/Set Remote Wakeup Enable)\n"));
-
+#endif
 
     /* write 1 to clear OCIC */
     if ( val & OHCI_RHS_OCIC )
@@ -5341,7 +5341,8 @@ static VBOXSTRICTRC HcRhStatus_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t iReg,
     if ( val & OHCI_RHS_CRWE )
         pThis->RootHub.status &= ~OHCI_RHS_DRWE;
 
-    chg = pThis->RootHub.status ^ old;
+#ifdef LOG_ENABLED
+    uint32_t chg = pThis->RootHub.status ^ old;
     Log2(("HcRhStatus_w(%#010x) => %sCGP=%d %sOCI=%d %sSRWE=%d %sSGP=%d %sOCIC=%d %sCRWE=%d\n",
           val,
            chg        & 1 ? "*" : "", val        & 1,
@@ -5350,6 +5351,7 @@ static VBOXSTRICTRC HcRhStatus_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t iReg,
           (chg >> 16) & 1 ? "*" : "", (val >> 16) & 1,
           (chg >> 17) & 1 ? "*" : "", (val >> 17) & 1,
           (chg >> 31) & 1 ? "*" : "", (val >> 31) & 1));
+#endif
     RT_NOREF(pDevIns, iReg);
     return VINF_SUCCESS;
 #else  /* !IN_RING3 */
