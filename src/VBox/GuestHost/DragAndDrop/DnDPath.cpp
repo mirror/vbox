@@ -182,11 +182,8 @@ int DnDPathRebase(const char *pcszPath, const char *pcszBaseOld, const char *pcs
 
     /* Do we need to see if the given path is part of the old base? */
     size_t idxBase;
-    if (   pcszBaseOld
-        && RTPathStartsWith(pcszPath, pcszBaseOld))
-    {
+    if (RTPathStartsWith(pcszPath, pcszBaseOld))
         idxBase = strlen(pcszBaseOld);
-    }
     else
         idxBase = 0;
 

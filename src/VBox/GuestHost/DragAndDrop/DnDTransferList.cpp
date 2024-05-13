@@ -542,6 +542,8 @@ static int dndTransferListAppendDirectory(PDNDTRANSFERLIST pList, char* pszPathA
                 && fPathIsRoot)
             {
                 rc = dndTransferListRootEntryAdd(pList, pszPathAbs);
+                if (RT_FAILURE(rc))
+                    break;
             }
         }
         else if (rc == VERR_NO_MORE_FILES)
