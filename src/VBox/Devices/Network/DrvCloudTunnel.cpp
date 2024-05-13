@@ -871,7 +871,7 @@ static int drvCloudTunnelExecuteRemoteCommandNoOutput(PDRVCLOUDTUNNEL pThis, con
     }
     ssh_channel_free(channel);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -976,7 +976,7 @@ static int drvCloudTunnelExecuteRemoteCommand(PDRVCLOUDTUNNEL pThis, const char 
     }
     ssh_channel_free(channel);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
