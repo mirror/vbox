@@ -276,7 +276,6 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
              * the keyboard before the target window sees the click. (GNOME Shell's hot corner has
              * the same problem. At present we just let that problem be.) */
 
-# if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
             /* Make sure we really do still have the focus.  Qt as of version 5.13 started
              * reporting it with delay, so ask the X server directly.  We could remove the
              * version check some time in the future.  If we do, remove the comment above
@@ -288,7 +287,6 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
             free(pFocusReply);
             if (xcbFocusWindow != m_windows[m_iKeyboardCaptureViewIndex]->winId())
                 return true;
-# endif
 
             /* Grab the mouse button.
              * We do not check for failure as we do not currently implement a back-up plan. */

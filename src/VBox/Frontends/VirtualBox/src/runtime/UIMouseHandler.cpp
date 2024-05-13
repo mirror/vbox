@@ -776,13 +776,8 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                     }
                     if (mouseEvent(pWheelEvent->type(),
                                    uScreenId,
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
                                    pWheelEvent->position().toPoint(),
                                    pWheelEvent->globalPosition().toPoint(),
-#else
-                                   pWheelEvent->pos(),
-                                   pWheelEvent->globalPos(),
-#endif
 #ifdef VBOX_WS_MAC
                                    // WORKAROUND:
                                    // Qt Cocoa is buggy. It always reports a left button pressed when the
