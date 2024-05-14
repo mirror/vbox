@@ -298,9 +298,7 @@ int ShClBackendReadData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTC
     if (RT_SUCCESS(rc))
     {
         LogRel2(("Shared Clipboard: Read %RU32 bytes host X11 clipboard data\n", cbRead));
-
-        if (pcbActual)
-            *pcbActual = cbRead;
+        *pcbActual = cbRead;
     }
 
     if (RT_FAILURE(rc))
