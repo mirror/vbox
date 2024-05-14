@@ -1232,6 +1232,7 @@ RTDECL(uint64_t)    RTVfsIoStrmGetOpenFlags(RTVFSIOSTREAM hVfsIos);
  * @param   fFlags          Flags governing the validation, see
  *                          RTVFS_VALIDATE_UTF8_XXX.
  * @param   poffError       Where to return the error offset. Optional.
+ *                          Not implemented yet!
  */
 RTDECL(int)        RTVfsIoStrmValidateUtf8Encoding(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, PRTFOFF poffError);
 

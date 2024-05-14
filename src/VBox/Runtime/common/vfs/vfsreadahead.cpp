@@ -714,7 +714,7 @@ static DECLCALLBACK(int) rtVfsReadAheadThreadProc(RTTHREAD hThreadSelf, void *pv
          */
         rc = RTThreadUserWait(hThreadSelf, RT_MS_1MIN);
         if (RT_SUCCESS(rc))
-            rc = RTThreadUserReset(hThreadSelf);
+            RTThreadUserReset(hThreadSelf);
     }
 
     return VINF_SUCCESS;

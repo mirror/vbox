@@ -117,6 +117,9 @@ RTDECL(int) RTVfsIoStrmValidateUtf8Encoding(RTVFSIOSTREAM hVfsIos, uint32_t fFla
             }
         }
 
+        if (RT_FAILURE(rc))
+            break;
+
         if (off < cbUsed)
         {
             cbUsed -= off;
@@ -129,6 +132,7 @@ RTDECL(int) RTVfsIoStrmValidateUtf8Encoding(RTVFSIOSTREAM hVfsIos, uint32_t fFla
      */
     if (poffError && RT_FAILURE(rc))
     {
+        /** @todo r=andy Implement this? */
     }
 
     return rc == VINF_EOF ? VINF_SUCCESS : rc;
