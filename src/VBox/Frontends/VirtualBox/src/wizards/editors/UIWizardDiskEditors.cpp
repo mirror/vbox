@@ -333,10 +333,11 @@ bool UIMediumSizeAndPathGroupBox::isComplete() const
 {
     if (QFileInfo(mediumFilePath()).exists())
     {
-        m_pLocationEditor->mark(true, tr("Disk file name is not unique"));
+        m_pLocationEditor->mark(true, tr("Disk file name is not unique"), tr("Disk file name is valid"));
         return false;
     }
-    m_pLocationEditor->mark(false);
+    m_pLocationEditor->mark(false, tr("Disk file name is not unique"), tr("Disk file name is valid"));
+
     return true;
 }
 
@@ -355,7 +356,10 @@ void UIMediumSizeAndPathGroupBox::prepare(qulonglong uMinimumMediumSize)
         m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
     }
     if (m_pLocationEditor)
+    {
+        m_pLocationEditor->setMarkable(true);
         m_pLocationEditor->setToolTip(tr("Holds the location of the virtual disk file."));
+    }
     if (m_pLocationOpenButton)
         m_pLocationEditor->setToolTip(tr("Opens file selection dialog so that a location for the disk file can be selected."));
     pLocationLayout->addWidget(m_pLocationEditor);

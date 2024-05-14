@@ -312,12 +312,13 @@ void QIComboBox::setSizeAdjustPolicy(QComboBox::SizeAdjustPolicy enmPolicy)
     m_pComboBox->setSizeAdjustPolicy(enmPolicy);
 }
 
-void QIComboBox::mark(bool fError, const QString &strErrorMessage /* = QString() */)
+void QIComboBox::mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage)
 {
     AssertPtrReturnVoid(m_pComboBox);
     QILineEdit *pLineEdit = isEditable() ? qobject_cast<QILineEdit*>(m_pComboBox->lineEdit()) : 0;
+    setMarkable(true);
     if (pLineEdit)
-        pLineEdit->mark(fError, strErrorMessage);
+        pLineEdit->mark(fError, strErrorMessage, strNoErrorMessage);
 }
 
 void QIComboBox::insertSeparator(int iIndex)
@@ -384,6 +385,13 @@ void QIComboBox::setItemText(int iIndex, const QString &strText) const
     /* Redirect to combo-box: */
     AssertPtrReturnVoid(m_pComboBox);
     m_pComboBox->setItemText(iIndex, strText);
+}
+
+void QIComboBox::setMarkable(bool fMarkable)
+{
+    QILineEdit *pLineEdit = isEditable() ? qobject_cast<QILineEdit*>(m_pComboBox->lineEdit()) : 0;
+    if (pLineEdit)
+        pLineEdit->setMarkable(fMarkable);
 }
 
 void QIComboBox::prepare()

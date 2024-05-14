@@ -467,7 +467,8 @@ void UIWizardNewVMExpertPage::markWidgets() const
     {
         m_pNameAndSystemEditor->markNameEditor(m_pNameAndSystemEditor->name().isEmpty());
         m_pNameAndSystemEditor->markImageEditor(!UIWizardNewVMNameOSTypeCommon::checkISOFile(m_pNameAndSystemEditor),
-                                                UIWizardNewVM::tr("Invalid file path or unreadable file"));
+                                                UIWizardNewVM::tr("Invalid file path or unreadable file"),
+                                                UIWizardNewVM::tr("File path is valid"));
     }
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     if (pWizard && pWizard->installGuestAdditions() && m_pGAInstallationISOContainer)

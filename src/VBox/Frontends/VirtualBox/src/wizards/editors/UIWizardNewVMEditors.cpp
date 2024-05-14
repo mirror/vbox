@@ -197,7 +197,8 @@ void UIGAInstallationGroupBox::mark()
 {
     bool fError = !UIWizardNewVMUnattendedCommon::checkGAISOFile(path());
     if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->mark(fError, UIWizardNewVM::tr("Invalid Guest Additions installation media"));
+        m_pGAISOFilePathSelector->mark(fError, UIWizardNewVM::tr("Invalid guest additions installation media"),
+                                       UIWizardNewVM::tr("Guest additions installation media is valid"));
 }
 
 bool UIGAInstallationGroupBox::isComplete() const

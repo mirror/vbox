@@ -239,10 +239,10 @@ void UINameAndSystemEditor::markNameEditor(bool fError)
         m_pEditorName->mark(fError, tr("Invalid guest machine name"), tr("Guest machine name is valid"));
 }
 
-void UINameAndSystemEditor::markImageEditor(bool fError, const QString &strErrorMessage)
+void UINameAndSystemEditor::markImageEditor(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage)
 {
     if (m_pSelectorImage)
-        m_pSelectorImage->mark(fError, strErrorMessage);
+        m_pSelectorImage->mark(fError, strErrorMessage, strNoErrorMessage);
 }
 
 void UINameAndSystemEditor::setEditionNameAndIndices(const QVector<QString> &names, const QVector<ulong> &ids)
@@ -430,10 +430,11 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pLayout->addWidget(m_pLabelName, iRow, 0);
             }
             /* Prepare name editor: */
-            m_pEditorName = new UIMarkableLineEdit(this);
+            m_pEditorName = new QILineEdit(this);
             if (m_pEditorName)
             {
                 m_pLabelName->setBuddy(m_pEditorName);
+                m_pEditorName->setMarkable(true);
                 m_pLayout->addWidget(m_pEditorName, iRow, 1, 1, 2);
             }
             ++iRow;
@@ -601,7 +602,7 @@ void UINameAndSystemEditor::prepareWidgets()
 void UINameAndSystemEditor::prepareConnections()
 {
     if (m_pEditorName)
-        connect(m_pEditorName, &UIMarkableLineEdit::textChanged,
+        connect(m_pEditorName, &QILineEdit::textChanged,
                 this, &UINameAndSystemEditor::sigNameChanged);
     if (m_pSelectorPath)
         connect(m_pSelectorPath, &UIFilePathSelector::pathChanged,

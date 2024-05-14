@@ -62,7 +62,9 @@ public:
     void setFixedWidthByText(const QString &strText);
 
     /** Puts an icon to mark some error on the right hand side of the line edit. @p is used as tooltip of the icon. */
-    void mark(bool fError, const QString &strErrorMessage = QString());
+    void mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage);
+
+    void setMarkable(bool fMarkable);
 
 protected:
 
@@ -71,6 +73,9 @@ protected:
 
     /** Handles resize @a pEvent. */
     virtual void resizeEvent(QResizeEvent *pResizeEvent) RT_OVERRIDE;
+
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
@@ -85,46 +90,19 @@ private:
     /** Calculates suitable @a strText size. */
     QSize fitTextWidth(const QString &strText) const;
 
+    /** Sets the geometry of the icon label. */
+    void moveIconLabel();
+
     /** Holds whether this is allowed to copy contents when disabled. */
     bool     m_fAllowToCopyContentsWhenDisabled;
     /** Holds the copy to clipboard action. */
     QAction *m_pCopyAction;
 
     QLabel *m_pIconLabel;
-    QIcon   m_markIcon;
     bool    m_fMarkForError;
+    bool    m_fMarkable;
     QString m_strErrorMessage;
-};
-
-class SHARED_LIBRARY_STUFF UIMarkableLineEdit : public QLineEdit
-{
-    Q_OBJECT;
-
-signals:
-
-
-public:
-
-    UIMarkableLineEdit(QWidget *pParent = 0);
-    void mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage);
-
-    /** @name Pass through functions for QILineEdit.
-      * @{ */
-
-
-    /** @} */
-
-private:
-
-    /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
-    /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
-    void moveIconLabel();
-    void prepare();
-
-    QLabel *m_pIconLabel;
-    int m_iIconMargin;
+    int     m_iIconMargin;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QILineEdit_h */

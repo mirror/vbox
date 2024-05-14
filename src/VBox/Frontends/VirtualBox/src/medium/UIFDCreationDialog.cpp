@@ -185,7 +185,7 @@ void UIFDCreationDialog::sltHandleMediumCreated(const CMedium &comMedium)
 void UIFDCreationDialog::sltPathChanged(const QString &strPath)
 {
     bool fIsFileUnique = checkFilePath(strPath);
-    m_pFilePathSelector->mark(!fIsFileUnique, tr("File already exists"));
+    m_pFilePathSelector->mark(!fIsFileUnique, tr("File already exists"), tr("File path is valid"));
 
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Ok))
         m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(fIsFileUnique);

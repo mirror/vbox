@@ -47,7 +47,6 @@ class QLabel;
 class QRadioButton;
 class QILineEdit;
 class UIFilePathSelector;
-class UIMarkableLineEdit;
 
 /** MAC address policies. */
 enum MACAddressClonePolicy
@@ -94,7 +93,7 @@ private:
     void prepare();
 
     QGridLayout *m_pContainerLayout;
-    UIMarkableLineEdit  *m_pNameLineEdit;
+    QILineEdit  *m_pNameLineEdit;
     UIFilePathSelector  *m_pPathSelector;
     QLabel      *m_pNameLabel;
     QLabel      *m_pPathLabel;

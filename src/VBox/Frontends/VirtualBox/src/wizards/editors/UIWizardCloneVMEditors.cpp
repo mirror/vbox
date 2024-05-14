@@ -74,7 +74,7 @@ bool UICloneVMNamePathEditor::isComplete(const QString &strMachineGroup)
     const QString &strPath = m_pPathSelector->path();
     QDir dir(strPath);
     bool fInvalidPath = strPath.isEmpty() || !dir.exists() || !dir.isReadable();
-    m_pPathSelector->mark(fInvalidPath, UIWizardCloneVM::tr("Path is invalid"));
+    m_pPathSelector->mark(fInvalidPath, UIWizardCloneVM::tr("Path is invalid"), UIWizardCloneVM::tr("Path is valid"));
 
     /* Check if there is already a machine folder for this name and path: */
     bool fExists = false;
@@ -151,12 +151,13 @@ void UICloneVMNamePathEditor::prepare()
         m_pContainerLayout->addWidget(m_pNameLabel, 0, 0, 1, 1);
     }
 
-    m_pNameLineEdit = new UIMarkableLineEdit();
+    m_pNameLineEdit = new QILineEdit();
     if (m_pNameLineEdit)
     {
+        m_pNameLineEdit->setMarkable(true);
         m_pContainerLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 1);
         m_pNameLineEdit->setText(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
-        connect(m_pNameLineEdit, &UIMarkableLineEdit::textChanged,
+        connect(m_pNameLineEdit, &QILineEdit::textChanged,
                 this, &UICloneVMNamePathEditor::sigCloneNameChanged);
         if (m_pNameLabel)
             m_pNameLabel->setBuddy(m_pNameLineEdit);

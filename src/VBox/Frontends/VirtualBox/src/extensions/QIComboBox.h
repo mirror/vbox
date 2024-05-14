@@ -129,10 +129,13 @@ public:
     /** Defines size adjust @a enmPolicy. */
     void setSizeAdjustPolicy(QComboBox::SizeAdjustPolicy enmPolicy);
     /** Marks the line edit of the combobox. Refer to QILineEdit::mark(..). */
-    void mark(bool fError, const QString &strErrorMessage = QString());
+    void mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage);
 
     /** Inserts separator at position with specified @a iIndex. */
     void insertSeparator(int iIndex);
+
+    /** Calls QILineEdit member's setMarkable API. */
+    void setMarkable(bool fMarkable);
 
 public slots:
 

@@ -44,7 +44,6 @@ class QGridLayout;
 class QLabel;
 class QILineEdit;
 class QIToolButton;
-class UIMarkableLineEdit;
 class UIPasswordLineEdit;
 
 class SHARED_LIBRARY_STUFF UIPasswordLineEdit : public QLineEdit
@@ -125,7 +124,7 @@ private:
     bool isUserNameComplete();
     bool isPasswordComplete();
 
-    UIMarkableLineEdit *m_pUserNameLineEdit;
+    QILineEdit         *m_pUserNameLineEdit;
     UIPasswordLineEdit *m_pPasswordLineEdit;
     UIPasswordLineEdit *m_pPasswordRepeatLineEdit;
 

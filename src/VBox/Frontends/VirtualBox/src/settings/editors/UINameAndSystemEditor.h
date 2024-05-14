@@ -45,7 +45,6 @@ class QLabel;
 class QILineEdit;
 class QString;
 class UIFilePathSelector;
-class UIMarkableLineEdit;
 
 /** UIEditor sub-class providing complex editor for basic VM parameters. */
 class SHARED_LIBRARY_STUFF UINameAndSystemEditor : public UIEditor
@@ -130,7 +129,7 @@ public:
     void markNameEditor(bool fError);
     /** Passes the @p fError and @a strErrorMessage to UIFilePathSelector::mark(bool)
       *  effectively changing the background color and error-text. */
-    void markImageEditor(bool fError, const QString &strErrorMessage);
+    void markImageEditor(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage);
 
     /** @p names and @p indices are parallel array storing edition names and their indices, respectively.*/
     void setEditionNameAndIndices(const QVector<QString> &names, const QVector<ulong> &ids);
@@ -220,7 +219,7 @@ private:
         /** Holds the VM name label instance. */
         QLabel             *m_pLabelName;
         /** Holds the VM name editor instance. */
-        UIMarkableLineEdit *m_pEditorName;
+        QILineEdit *m_pEditorName;
 
         /** Holds the VM path label instance. */
         QLabel             *m_pLabelPath;
