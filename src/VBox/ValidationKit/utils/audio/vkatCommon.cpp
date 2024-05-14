@@ -604,7 +604,7 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                 uint64_t const cNsWritten = PDMAudioPropsBytesToNano64(pMix->pProps, offStream - cbPreBuffer);
                 uint64_t const cNsElapsed = nsNow - nsStarted;
                 if (cNsWritten > cNsElapsed + RT_NS_10MS)
-                    RTThreadSleep((cNsWritten - cNsElapsed - RT_NS_10MS / 2) / RT_NS_1MS);
+                    RTThreadSleep(uint32_t(cNsWritten - cNsElapsed - RT_NS_10MS / 2) / RT_NS_1MS);
             }
 
             uint32_t       cbWritten  = 0;

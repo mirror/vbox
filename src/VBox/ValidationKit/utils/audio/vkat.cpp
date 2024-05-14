@@ -132,10 +132,6 @@ enum
 {
     VKAT_TEST_OPT_COUNT = 900,
     VKAT_TEST_OPT_DEV,
-    VKAT_TEST_OPT_GUEST_ATS_ADDR,
-    VKAT_TEST_OPT_GUEST_ATS_PORT,
-    VKAT_TEST_OPT_HOST_ATS_ADDR,
-    VKAT_TEST_OPT_HOST_ATS_PORT,
     VKAT_TEST_OPT_MODE,
     VKAT_TEST_OPT_NO_AUDIO_OK,
     VKAT_TEST_OPT_NO_VERIFY,
@@ -191,10 +187,6 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--drvaudio",          'd',                               RTGETOPT_REQ_NOTHING },
     { "--exclude",           'e',                               RTGETOPT_REQ_UINT32  },
     { "--exclude-all",       'a',                               RTGETOPT_REQ_NOTHING },
-    { "--guest-ats-addr",    VKAT_TEST_OPT_GUEST_ATS_ADDR,      RTGETOPT_REQ_STRING  },
-    { "--guest-ats-port",    VKAT_TEST_OPT_GUEST_ATS_PORT,      RTGETOPT_REQ_UINT32  },
-    { "--host-ats-address",  VKAT_TEST_OPT_HOST_ATS_ADDR,       RTGETOPT_REQ_STRING  },
-    { "--host-ats-port",     VKAT_TEST_OPT_HOST_ATS_PORT,       RTGETOPT_REQ_UINT32  },
     { "--include",           'i',                               RTGETOPT_REQ_UINT32  },
     { "--outdir",            VKAT_TEST_OPT_OUTDIR,              RTGETOPT_REQ_STRING  },
     { "--count",             VKAT_TEST_OPT_COUNT,               RTGETOPT_REQ_UINT32  },
@@ -728,14 +720,6 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
                                                        "    Default: random duration";
         case VKAT_TEST_OPT_TONE_VOL_PERCENT:    return "Test tone volume (percent)\n"
                                                        "    Default: 100";
-        case VKAT_TEST_OPT_GUEST_ATS_ADDR:      return "Address of guest ATS to connect to\n"
-                                                       "    Default: " ATS_TCP_DEF_CONNECT_GUEST_STR;
-        case VKAT_TEST_OPT_GUEST_ATS_PORT:      return "Port of guest ATS to connect to (needs NAT port forwarding)\n"
-                                                       "    Default: 6042"; /* ATS_TCP_DEF_CONNECT_PORT_GUEST */
-        case VKAT_TEST_OPT_HOST_ATS_ADDR:       return "Address of host ATS to connect to\n"
-                                                       "    Default: " ATS_TCP_DEF_CONNECT_HOST_ADDR_STR;
-        case VKAT_TEST_OPT_HOST_ATS_PORT:       return "Port of host ATS to connect to\n"
-                                                       "    Default: 6052"; /* ATS_TCP_DEF_BIND_PORT_VALKIT */
         case VKAT_TEST_OPT_MODE:                return "Test mode to use when running the tests\n"
                                                         "    Available modes:\n"
                                                         "        guest: Run as a guest-side ATS\n"
@@ -789,11 +773,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     bool        fProbeBackends = false;
     bool        fNoAudioOk     = false;
 
-    const char *pszGuestTcpAddr  = NULL;
-    uint16_t    uGuestTcpPort    = ATS_TCP_DEF_BIND_PORT_GUEST;
-    const char *pszValKitTcpAddr = NULL;
-    uint16_t    uValKitTcpPort   = ATS_TCP_DEF_BIND_PORT_VALKIT;
-
     int           ch;
     RTGETOPTUNION ValueUnion;
     while ((ch = RTGetOpt(pGetState, &ValueUnion)))
@@ -819,22 +798,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 if (ValueUnion.u32 >= RT_ELEMENTS(g_aTests))
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid test number %u passed to --exclude", ValueUnion.u32);
                 g_aTests[ValueUnion.u32].fExcluded = true;
-                break;
-
-            case VKAT_TEST_OPT_GUEST_ATS_ADDR:
-                pszGuestTcpAddr = ValueUnion.psz;
-                break;
-
-            case VKAT_TEST_OPT_GUEST_ATS_PORT:
-                uGuestTcpPort = ValueUnion.u32;
-                break;
-
-            case VKAT_TEST_OPT_HOST_ATS_ADDR:
-                pszValKitTcpAddr = ValueUnion.psz;
-                break;
-
-            case VKAT_TEST_OPT_HOST_ATS_PORT:
-                uValKitTcpPort = ValueUnion.u32;
                 break;
 
             case VKAT_TEST_OPT_MODE:
