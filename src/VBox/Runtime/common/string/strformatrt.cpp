@@ -819,7 +819,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                             return rtStrFormatBadPointer(0, pfnOutput, pvArgOutput, cchWidth, fFlags, psz,
                                                          szBuf, RT_STR_TUPLE("!BadFnNm"));
 
-                        while ((ch = *psz) != '\0' && ch != '(')
+                        while ((ch = *psz) != '\0')
                         {
                             if (RT_C_IS_BLANK(ch))
                             {
@@ -1527,7 +1527,6 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     char const  chAddSafe = chVariant == 'p' ? '/'
                                           : chVariant == 'q' ? '+' /* '+' in queries is problematic, so no escape. */
                                           :                    '~' /* whatever */;
-                    size_t      cchOutput = 0;
                     const char *pszStr    = va_arg(*pArgs, char *);
                     ssize_t     cchStr;
                     ssize_t     offCur;
