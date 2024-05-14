@@ -1087,7 +1087,6 @@ static RTEXITCODE generateHeader(PSCMSTREAM pStrm)
                             "); \\\n"
                             "        } \\\n"
                             "        { \\\n" );
-            uint32_t iArg = 0;
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
                 if ((pArg->fType & (VTG_TYPE_FIXED_SIZED | VTG_TYPE_AUTO_CONV_PTR)) == VTG_TYPE_FIXED_SIZED)
@@ -1102,7 +1101,6 @@ static RTEXITCODE generateHeader(PSCMSTREAM pStrm)
                                     "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n",
                                     pArg->pszName,
                                     pArg->pszTracerType);
-                iArg++;
             }
             ScmStreamPrintf(pStrm,
                             "        } \\\n"
