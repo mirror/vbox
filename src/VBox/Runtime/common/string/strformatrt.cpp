@@ -1527,6 +1527,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     char const  chAddSafe = chVariant == 'p' ? '/'
                                           : chVariant == 'q' ? '+' /* '+' in queries is problematic, so no escape. */
                                           :                    '~' /* whatever */;
+                    size_t      cchOutput = 0;
                     const char *pszStr    = va_arg(*pArgs, char *);
                     ssize_t     cchStr;
                     ssize_t     offCur;
