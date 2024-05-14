@@ -347,7 +347,6 @@
             <Control Id="Text" Type="Text" X="25" Y="70" Width="320" Height="20">
                 <Text Value="!(loc.Customize2Dlg_Desc)" />
             </Control>
-<?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
             <!-- Note the gray background behind the checkboxes. Unfortunately there's no easy way to
                  fix this, without fixing it in the WiX source code. Because the control's background
                  uses the default dialog background color, changing the background image for the dialog to
@@ -367,9 +366,11 @@
             <Control Id="RegisterFileExtensionsCheckBox" Type="CheckBox" X="25" Y="155" Width="200" Height="17" Property="VBOX_REGISTERFILEEXTENSIONS" CheckBoxValue="1" Default="no">
                 <Text Value="!(loc.Customize2Dlg_RegisterFileExtensions)" />
             </Control>
-<?endif?> <!-- VBOX_WITH_QTGUI -->
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)" />
             <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)" />
+            <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Cancel)">
+                <Publish Event="SpawnDialog" Value="VBoxCancelDlg" />
+            </Control>
 
             <!-- Build number text drawn left bottom -->
             <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
