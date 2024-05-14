@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QAbstractNativeEventFilter>
+#include <QAccessibleWidget>
 #include <QApplication>
 #include <QBitmap>
 #include <QCoreApplication>
@@ -41,6 +42,8 @@
 #include "UIActionPoolRuntime.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIFrameBuffer.h"
+#include "UIKeyboardHandler.h"
 #include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMessageCenter.h"
@@ -50,10 +53,9 @@
 #include "UIMachineViewFullscreen.h"
 #include "UIMachineViewSeamless.h"
 #include "UIMachineViewScale.h"
-#include "UINotificationCenter.h"
-#include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
-#include "UIFrameBuffer.h"
+#include "UINotificationCenter.h"
+#include "UITranslationEventListener.h"
 #ifdef VBOX_WS_MAC
 # include "UICocoaApplication.h"
 # include "DarwinKeyboard.h"
@@ -101,6 +103,82 @@
 #else
 # define DNDDEBUG(x)
 #endif
+
+
+/** QAccessibleWidget extension used as an accessibility interface for Machine-view. */
+class UIAccessibilityInterfaceForUIMachineView : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating Machine-view accessibility interface: */
+        if (pObject && strClassname == QLatin1String("UIMachineView"))
+            return new UIAccessibilityInterfaceForUIMachineView(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    UIAccessibilityInterfaceForUIMachineView(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::Canvas)
+    {}
+
+    /** Returns the number of children. */
+    virtual int childCount() const RT_OVERRIDE
+    {
+        /* Make sure view still alive: */
+        AssertPtrReturn(view(), 0);
+
+        /* Zero by default: */
+        return 0;
+    }
+
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE
+    {
+        /* Make sure view still alive: */
+        AssertPtrReturn(view(), 0);
+        /* Make sure index is valid: */
+        AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Returns the index of passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE
+    {
+        /* Make sure view still alive: */
+        AssertPtrReturn(view(), -1);
+        /* Make sure child is valid: */
+        AssertReturn(pChild, -1);
+
+        /* -1 by default: */
+        return -1;;
+    }
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
+    {
+        /* Make sure view still alive: */
+        AssertPtrReturn(view(), QString());
+
+        /* Gather suitable text: */
+        Q_UNUSED(enmTextRole);
+        QString strText = view()->toolTip();
+        if (strText.isEmpty())
+            strText = view()->whatsThis();
+        return strText;
+    }
+
+private:
+
+    /** Returns corresponding Machine-view. */
+    UIMachineView *view() const { return qobject_cast<UIMachineView*>(widget()); }
+};
 
 
 /** QAbstractNativeEventFilter extension
@@ -1144,6 +1222,11 @@ void UIMachineView::sltDetachCOM()
 #endif
 }
 
+void UIMachineView::sltRetranslateUI()
+{
+    setWhatsThis(tr("Holds the graphical canvas containing guest screen contents."));
+}
+
 UIMachineView::UIMachineView(UIMachineWindow *pMachineWindow, ulong uScreenId)
     : QAbstractScrollArea(pMachineWindow->centralWidget())
     , m_pMachineWindow(pMachineWindow)
@@ -1157,6 +1240,8 @@ UIMachineView::UIMachineView(UIMachineWindow *pMachineWindow, ulong uScreenId)
 #endif
     , m_pNativeEventFilter(0)
 {
+    /* Install Machine-view accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUIMachineView::pFactory);
 }
 
 void UIMachineView::loadMachineViewSettings()
@@ -1320,15 +1405,18 @@ void UIMachineView::prepareConnections()
 {
     /* UICommon connections: */
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIMachineView::sltDetachCOM);
+
     /* Desktop resolution change (e.g. monitor hotplug): */
     connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenResized,
             this, &UIMachineView::sltDesktopResized);
+
     /* Scale-factor change: */
     connect(gEDataManager, &UIExtraDataManager::sigScaleFactorChange,
             this, &UIMachineView::sltHandleScaleFactorChange);
     /* Scaling-optimization change: */
     connect(gEDataManager, &UIExtraDataManager::sigScalingOptimizationTypeChange,
             this, &UIMachineView::sltHandleScalingOptimizationChange);
+
     /* Action-pool connections: */
     UIActionPoolRuntime *pActionPoolRuntime = qobject_cast<UIActionPoolRuntime*>(actionPool());
     if (pActionPoolRuntime)
@@ -1338,6 +1426,11 @@ void UIMachineView::prepareConnections()
         connect(pActionPoolRuntime, &UIActionPoolRuntime::sigNotifyAboutTriggeringViewScreenResize,
                 this, &UIMachineView::sltHandleActionTriggerViewScreenResize);
     }
+
+    /* Translate initially: */
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UIMachineView::sltRetranslateUI);
+    sltRetranslateUI();
 }
 
 void UIMachineView::prepareConsoleConnections()

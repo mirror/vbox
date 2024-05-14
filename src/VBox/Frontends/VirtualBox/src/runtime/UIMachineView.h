@@ -233,6 +233,9 @@ protected slots:
     /** Detaches COM. */
     void sltDetachCOM();
 
+    /** Handles translation event. */
+    void sltRetranslateUI();
+
 protected:
 
     /* Machine-view constructor: */
