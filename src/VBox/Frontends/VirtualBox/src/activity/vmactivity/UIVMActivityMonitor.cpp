@@ -1353,11 +1353,9 @@ void UIVMActivityMonitorLocal::openSession()
 
 void UIVMActivityMonitorLocal::obtainDataAndUpdate()
 {
-    if (m_performanceCollector.isNull())
-        return;
     ++m_iTimeStep;
 
-    if (m_metrics.contains(Metric_Type_RAM))
+    if (m_metrics.contains(Metric_Type_RAM) && !m_performanceCollector.isNull())
     {
         quint64 iTotalRAM = 0;
         quint64 iFreeRAM = 0;
