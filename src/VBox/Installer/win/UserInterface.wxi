@@ -1135,11 +1135,11 @@
         <!-- Property which defines whether the installer checks the serial number or not. -->
         <Property Id="VBOX_SHOW_SERIAL_CHECK_DLG" Value="1" />
 <?endif?>
-<?if $(env.VBOX_WITH_QTGUI) = "no" ?>
+<?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <!-- Property which defines whether to show the second customization dialog. This second customization
              dialog only is needed for GUI-based options, so skip if we either don't ship FE/Qt or don't show
              the (first) customization dialog. -->
-        <Property Id="VBOX_SHOW_CUSTOMIZE2_DLG" Value="VBOX_SHOW_CUSTOMIZE_DLG" />
+        <Property Id="VBOX_SHOW_CUSTOMIZE2_DLG" Value="1" />
 <?endif?>
 
 
