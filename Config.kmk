@@ -298,7 +298,7 @@ endif
 # Some info on the vendor
 VBOX_VENDOR       = Oracle and/or its affiliates
 VBOX_VENDOR_SHORT = Oracle
-VBOX_PRODUCT      = Oracle VM VirtualBox
+VBOX_PRODUCT      = Oracle VirtualBox
 # Not all could be done automatically. Here is a list of known places which
 # have to be updated manually, please keep this up to date:
 #	src/VBox/Devices/PC/PXE/client/uinit.asm
