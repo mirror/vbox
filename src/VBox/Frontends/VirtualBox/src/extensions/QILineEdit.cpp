@@ -136,7 +136,11 @@ void QILineEdit::resizeEvent(QResizeEvent *pResizeEvent)
     /* Call to base-class: */
     QLineEdit::resizeEvent(pResizeEvent);
     if (m_fMarkable)
+    {
+        m_pIconLabel->resize(m_pIconLabel->minimumSizeHint());
+        m_iIconMargin = (height() - m_pIconLabel->height()) / 2;
         moveIconLabel();
+    }
 }
 
 void QILineEdit::moveIconLabel()
