@@ -203,6 +203,7 @@ struct Host::Data
 {
     Data()
         :
+          pParent(NULL),
           fDVDDrivesListBuilt(false),
           fFloppyDrivesListBuilt(false),
           fPersistentConfigUpToDate(false)

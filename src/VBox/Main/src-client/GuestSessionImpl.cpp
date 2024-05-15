@@ -1083,7 +1083,7 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
             {
                 // Nothing to do here.
             }
-            else if (pEvent->HasGuestError() && pvrcGuest)
+            else if (pEvent->HasGuestError())
                 *pvrcGuest = pEvent->GuestResult();
         }
     }
@@ -1249,7 +1249,7 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int
     if (RT_SUCCESS(vrc))
     {
         vrc = pEvent->Wait(GSTCTL_DEFAULT_TIMEOUT_MS);
-        if (pEvent->HasGuestError() && pvrcGuest)
+        if (pEvent->HasGuestError())
             *pvrcGuest = pEvent->GuestResult();
     }
 
@@ -1421,8 +1421,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
                 }
                 else
                 {
-                    if (pvrcGuest)
-                        *pvrcGuest = vrcGuest;
+                    *pvrcGuest = vrcGuest;
                     vrc = VERR_GSTCTL_GUEST_ERROR;
                 }
             }
@@ -1530,8 +1529,7 @@ int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo, ComObj
     if (RT_SUCCESS(vrc))
     {
         /* Nothing further to do here yet. */
-        if (pvrcGuest)
-            *pvrcGuest = VINF_SUCCESS;
+        *pvrcGuest = VINF_SUCCESS;
     }
 
     LogFlowFuncLeaveRC(vrc);

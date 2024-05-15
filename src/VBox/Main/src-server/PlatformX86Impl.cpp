@@ -402,8 +402,7 @@ HRESULT PlatformX86::setCPUProperty(CPUPropertyTypeX86_T aProperty, BOOL aValue)
         {
             m->bd.backup();
             m->bd->fX2APIC = !!aValue;
-            if (aValue)
-                m->bd->fAPIC = !!aValue;
+            m->bd->fAPIC   = !!aValue;
             break;
         }
 

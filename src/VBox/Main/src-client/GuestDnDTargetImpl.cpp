@@ -1209,7 +1209,8 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
 
     /* Protocol version 1 sends the file path *every* time with a new file chunk.
      * In protocol version 2 we only do this once with HOST_DND_FN_HG_SND_FILE_HDR. */
-    if (m_pState->m_uProtocolVersion <= 1)
+    AssertReturn(m_pState->m_uProtocolVersion, VERR_WRONG_ORDER);
+    if (m_pState->m_uProtocolVersion == 1)
     {
         const size_t cchDstPath = RTStrNLen(pcszDstPath, RTPATH_MAX);
 

@@ -946,7 +946,7 @@ int GuestDirectory::i_readInternal(GuestFsObjData &objData, int *pvrcGuest)
                     vrc = VERR_GSTCTL_GUEST_ERROR;
                 }
             }
-            else if (pEvent->HasGuestError() && pvrcGuest)
+            else if (pEvent->HasGuestError())
                 *pvrcGuest = pEvent->GuestResult();
         }
     }

@@ -533,8 +533,11 @@ int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
             LogRel(("DnD: Guest reported error %Rrc\n", vrcOp));
 
             if (!fCompleted)
+            {
                 hrc = m_pProgress->i_notifyComplete(VBOX_E_DND_ERROR, COM_IIDOF(IGuest),
                                                     m_pParent->getComponentName(), strMsg.c_str());
+                AssertComRC(hrc);
+            }
             break;
         }
 
@@ -1552,12 +1555,10 @@ int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDState *pState,
     LogFlowFunc(("cbExtra=%zu, cbProcessed=%zu, cbRemaining=%zu, cbDataAdd=%zu\n",
                  pData->cbExtra, pData->cbProcessed, pData->getRemaining(), cbDataAdd));
 
-    if (   !pState
-        || !cbDataAdd) /* Only update if something really changes. */
+    if (!cbDataAdd) /* Only update if something really changes. */
         return VINF_SUCCESS;
 
-    if (cbDataAdd)
-        pData->addProcessed(cbDataAdd);
+    pData->addProcessed(cbDataAdd);
 
     const uint8_t uPercent = pData->getPercentComplete();
 

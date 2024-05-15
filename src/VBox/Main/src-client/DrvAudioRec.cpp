@@ -777,6 +777,9 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
                         LogRel(("Recording: Error creating audio file '%s' (%Rrc)\n", pszFile, vrc));
                 }
                 break;
+        #else
+                vrc = VERR_NOT_SUPPORTED;
+                break;
         #endif
             }
 

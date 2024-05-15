@@ -194,6 +194,7 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
                                      pCodec->Video.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
                                      /* Source */
                                      pVideoFrame->pu8RGBBuf, pCodec->Parms.Video.uWidth, pCodec->Parms.Video.uHeight);
+    AssertRCReturn(vrc, vrc);
 
     PRECORDINGCODECVPX pVPX = &pCodec->Video.VPX;
 

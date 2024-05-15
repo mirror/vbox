@@ -52,6 +52,7 @@ struct RecordingScreenSettings::Data
 {
     Data()
         : pParent(NULL)
+        , uScreenId(0)
         , cRefs(0)
     { }
 
