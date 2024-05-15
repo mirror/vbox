@@ -2635,6 +2635,7 @@ HRESULT GuestSessionTaskUpdateAdditions::setUpdateErrorMsg(HRESULT hrc, const Ut
  * @returns Returns \a hrc for convenience.
  * @param   hrc                 Progress operation result to set.
  * @param   strMsg              Message to set.
+ * @param   guestErrorInfo      Guest error info to use.
  */
 HRESULT GuestSessionTaskUpdateAdditions::setUpdateErrorMsg(HRESULT hrc, const Utf8Str &strMsg, const GuestErrorInfo &guestErrorInfo)
 {
