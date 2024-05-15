@@ -44,6 +44,7 @@
 #include "UIActionPool.h"
 #include "UICommon.h"
 #include "UIConverter.h"
+#include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UITranslator.h"
@@ -1479,6 +1480,9 @@ void UIVMActivityMonitorLocal::prepareWidgets()
         Metric_Type_Network_InOut << Metric_Type_Disk_InOut;
 #ifdef DEBUG
     chartOrder << Metric_Type_VM_Exits;
+#else
+    if (gEDataManager->VMActivityMonitorShowVMExits())
+        chartOrder << Metric_Type_VM_Exits;
 #endif
     int iRow = 0;
     foreach (Metric_Type enmType, chartOrder)

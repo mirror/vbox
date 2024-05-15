@@ -476,6 +476,7 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_VMActivityOverview_HiddenColumns;
         SHARED_LIBRARY_STUFF extern const char *GUI_VMActivityOverview_ShowAllMachines;
         SHARED_LIBRARY_STUFF extern const char *GUI_VMActivityMonitor_DataSeriesColors;
+        SHARED_LIBRARY_STUFF extern const char *GUI_VMActivityMonitor_ShowVMExits;
     /** @} */
 
     /** @name Medium Selector stuff

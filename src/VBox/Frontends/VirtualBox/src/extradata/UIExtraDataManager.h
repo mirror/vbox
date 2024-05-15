@@ -875,6 +875,8 @@ public:
         void setVMActivityOverviewShowAllMachines(bool fShow);
         void setVMActivityMonitorDataSeriesColors(const QStringList &colorList);
         QStringList VMActivityMonitorDataSeriesColors();
+        bool VMActivityMonitorShowVMExits();
+        void setVMActivityMonitorShowVMExits(bool fShow);
     /** @} */
 
     /** @name Medium Selector

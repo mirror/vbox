@@ -4807,6 +4807,16 @@ QStringList UIExtraDataManager::VMActivityMonitorDataSeriesColors()
     return extraDataStringList(GUI_VMActivityMonitor_DataSeriesColors);
 }
 
+bool UIExtraDataManager::VMActivityMonitorShowVMExits()
+{
+    return isFeatureAllowed(GUI_VMActivityMonitor_ShowVMExits);
+}
+
+void UIExtraDataManager::setVMActivityMonitorShowVMExits(bool fShow)
+{
+    setExtraDataString(GUI_VMActivityMonitor_ShowVMExits, toFeatureAllowed(fShow));
+}
+
 QRect UIExtraDataManager::mediumSelectorDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)
 {
     return dialogGeometry(GUI_MediumSelector_DialogGeometry, pWidget, pParentWidget, defaultGeometry);
