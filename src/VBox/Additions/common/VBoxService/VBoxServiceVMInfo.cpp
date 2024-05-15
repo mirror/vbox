@@ -312,7 +312,8 @@ static DECLCALLBACK(int) vbsvcVMInfoInit(void)
         if (RT_SUCCESS(rc2))
         {
             AssertPtr(pszValue);
-            g_uVMInfoUserIdleThresholdMS = RT_CLAMP(RTStrToUInt32(pszValue), 1000, UINT32_MAX - 1);
+            g_uVMInfoUserIdleThresholdMS = RTStrToUInt32(pszValue);
+            g_uVMInfoUserIdleThresholdMS = RT_CLAMP(g_uVMInfoUserIdleThresholdMS, 1000, UINT32_MAX - 1);
             RTStrFree(pszValue);
         }
     }
