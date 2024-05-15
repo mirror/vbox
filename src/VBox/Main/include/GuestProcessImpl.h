@@ -251,7 +251,9 @@ public:
 
 public:
 
+#if 0 /* unused */
     virtual int onOutputCallback(uint32_t uHandle, const std::vector<Utf8Str> &vecData);
+#endif
 
     virtual int onOutputCallback(uint32_t uHandle, const BYTE *pbData, size_t cbData);
 

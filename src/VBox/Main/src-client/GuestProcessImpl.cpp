@@ -2443,6 +2443,7 @@ int GuestProcessWrapper::terminate(uint32_t uTimeoutMS, int *pvrcGuest)
     return vrc;
 }
 
+#if 0 /* unused */
 /**
  * Default callback implementation for process output.
  *
@@ -2488,6 +2489,7 @@ int GuestProcessWrapper::onOutputCallback(uint32_t uHandle, const std::vector<Ut
 
     return vrc;
 }
+#endif
 
 /**
  * Default callback implementation for process output.
