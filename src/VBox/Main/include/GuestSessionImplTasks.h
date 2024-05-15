@@ -353,6 +353,41 @@ public:
 };
 
 /**
+ * Implementation for a Guest Additions update process for logging process output to the release log.
+ */
+class UpdateAdditionsProcess : public GuestProcessWrapper
+{
+public:
+
+    UpdateAdditionsProcess(void) { }
+
+    virtual ~UpdateAdditionsProcess();
+
+    int onOutputCallback(uint32_t uHandle, const BYTE *pbData, size_t cbData);
+
+protected:
+
+    /** Current line of stdout. */
+    Utf8Str mLineStdOut;
+    /** Current line of stderr. */
+    Utf8Str mLineStdErr;
+};
+
+/**
+ * Tweaked startup info for a guest Guest Additions update process.
+ */
+class UpdateAdditionsStartupInfo : public GuestProcessStartupInfo
+{
+public:
+
+    UpdateAdditionsStartupInfo(void)
+    {
+        /* We want to have stdout / stderr handled by default for update processes. */
+        mFlags = ProcessCreateFlag_WaitForStdOut | ProcessCreateFlag_WaitForStdErr;
+    }
+};
+
+/**
  * Guest session task for automatically updating the Guest Additions on the guest.
  */
 class GuestSessionTaskUpdateAdditions : public GuestSessionTask

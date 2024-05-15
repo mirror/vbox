@@ -2443,6 +2443,264 @@ int GuestProcessWrapper::terminate(uint32_t uTimeoutMS, int *pvrcGuest)
     return vrc;
 }
 
+/**
+ * Default callback implementation for process output.
+ *
+ * @returns VBox status code.
+ * @param   uHandle             Process output handle.
+ * @param   vecData             Process output data.
+ *
+ * @note    Only stdout (handle ID 1) and stderr (handle ID 2) are implemented.
+ */
+/* virtual */
+int GuestProcessWrapper::onOutputCallback(uint32_t uHandle, const std::vector<Utf8Str> &vecData)
+{
+    GuestProcessOutputStream *pStream = NULL;
+
+    switch (uHandle)
+    {
+        case GUEST_PROC_OUT_H_STDOUT:
+            pStream = &mStdOut;
+            break;
+
+        case GUEST_PROC_OUT_H_STDERR:
+            pStream = &mStdErr;
+            break;
+
+        default:
+            /* Ignore. */
+            break;
+    }
+
+    int vrc = VINF_SUCCESS;
+
+    if (pStream)
+    {
+        std::vector<Utf8Str>::const_iterator itData = vecData.begin();
+        while (itData != vecData.end())
+        {
+            vrc = pStream->AddData((BYTE *)(*itData).c_str(), (*itData).length());
+            if (RT_FAILURE(vrc))
+                break;
+            ++itData;
+        }
+    }
+
+    return vrc;
+}
+
+/**
+ * Default callback implementation for process output.
+ *
+ * @returns VBox status code.
+ * @param   uHandle             Process output handle.
+ * @param   pbData              Pointer to data.
+ * @param   cbData              Size (in bytes) of \a pbData.
+ *
+ * @note    Only stdout (handle ID 1) and stderr (handle ID 2) are implemented.
+ */
+/* virtual */
+int GuestProcessWrapper::onOutputCallback(uint32_t uHandle, const BYTE *pbData, size_t cbData)
+{
+    AssertPtrReturn(pbData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    GuestProcessOutputStream *pStream = NULL;
+
+    switch (uHandle)
+    {
+        case GUEST_PROC_OUT_H_STDOUT:
+            pStream = &mStdOut;
+            break;
+
+        case GUEST_PROC_OUT_H_STDERR:
+            pStream = &mStdErr;
+            break;
+
+        default:
+            /* Ignore. */
+            break;
+    }
+
+    int vrc = VINF_SUCCESS;
+
+    if (pStream)
+        vrc = pStream->AddData(pbData, cbData);
+
+    return vrc;
+}
+
+/**
+ * Default callback implementation for process input.
+ * Does not provide any input data.
+ *
+ * @returns VBox status code.
+ * @param   uHandle             Process input handle.
+ * @param   vecData             Process input data.
+ */
+/* virtual */
+int GuestProcessWrapper::onInputCallback(uint32_t uHandle, std::vector<Utf8Str> &vecData)
+{
+    RT_NOREF(uHandle);
+
+    vecData.clear();
+
+    /* No input data given by default. */
+    return VINF_SUCCESS;
+}
+
+/**
+ * Waits for a guest process and handle input / output via callbacks.
+ *
+ * @returns VBox status code.
+ * @param   pvrcGuest           Where to return the guest error when
+ *                              VERR_GSTCTL_GUEST_ERROR was returned. Optional.
+ */
+int GuestProcessWrapper::wait(int *pvrcGuest)
+{
+    int vrc;
+
+    /* Do the waiting. */
+    uint32_t fProcWaitForFlags = ProcessWaitForFlag_Terminate;
+    if (mStartupInfo.mFlags & ProcessCreateFlag_WaitForStdOut)
+        fProcWaitForFlags |= ProcessWaitForFlag_StdOut;
+    if (mStartupInfo.mFlags & ProcessCreateFlag_WaitForStdErr)
+        fProcWaitForFlags |= ProcessWaitForFlag_StdErr;
+
+    /** @todo Decrease timeout while running. */
+    uint64_t u64StartMS = RTTimeMilliTS();
+    uint32_t uTimeoutMS = mStartupInfo.mTimeoutMS;
+
+    int vrcGuest = VINF_SUCCESS;
+    bool fDone = false;
+
+    BYTE abBuf[_64K];
+    uint32_t cbRead;
+
+    bool fHandleStdOut = false;
+    bool fHandleStdErr = false;
+
+    /**
+     * Updates the elapsed time and checks if a
+     * timeout happened, then breaking out of the loop.
+     */
+#define UPDATE_AND_CHECK_ELAPSED_TIME()          \
+    u64ElapsedMS = RTTimeMilliTS() - u64StartMS; \
+    if (   uTimeoutMS   != RT_INDEFINITE_WAIT    \
+        && u64ElapsedMS >= uTimeoutMS)           \
+    {                                            \
+        vrc = VERR_TIMEOUT;                      \
+        break;                                   \
+    }
+
+    /**
+     * Returns the remaining time (in ms).
+     */
+#define GET_REMAINING_TIME (uTimeoutMS == RT_INDEFINITE_WAIT ? RT_INDEFINITE_WAIT : uTimeoutMS - (uint32_t)u64ElapsedMS)
+
+    ProcessWaitResult_T waitRes = ProcessWaitResult_None;
+    do
+    {
+        uint64_t u64ElapsedMS;
+        UPDATE_AND_CHECK_ELAPSED_TIME();
+
+        vrc = pProcess->i_waitFor(fProcWaitForFlags, GET_REMAINING_TIME, waitRes, &vrcGuest);
+        if (RT_FAILURE(vrc))
+            break;
+
+        switch (waitRes)
+        {
+            case ProcessWaitResult_StdIn:
+                vrc = VERR_NOT_IMPLEMENTED;
+                break;
+
+            case ProcessWaitResult_StdOut:
+                fHandleStdOut = true;
+                break;
+
+            case ProcessWaitResult_StdErr:
+                fHandleStdErr = true;
+                break;
+
+            case ProcessWaitResult_WaitFlagNotSupported:
+                if (fProcWaitForFlags & ProcessWaitForFlag_StdOut)
+                    fHandleStdOut = true;
+                if (fProcWaitForFlags & ProcessWaitForFlag_StdErr)
+                    fHandleStdErr = true;
+                /* Since waiting for stdout / stderr is not supported by the guest,
+                 * wait a bit to not hog the CPU too much when polling for data. */
+                RTThreadSleep(1); /* Optional, don't check vrc. */
+                break;
+
+            case ProcessWaitResult_Error:
+                vrc = VERR_GSTCTL_GUEST_ERROR;
+                break;
+
+            case ProcessWaitResult_Terminate:
+                fDone = true;
+                break;
+
+            case ProcessWaitResult_Timeout:
+                vrc = VERR_TIMEOUT;
+                break;
+
+            case ProcessWaitResult_Start:
+            case ProcessWaitResult_Status:
+                /* Not used here, just skip. */
+                break;
+
+            default:
+                AssertMsgFailed(("Unhandled process wait result %RU32\n", waitRes));
+                break;
+        }
+
+        if (RT_FAILURE(vrc))
+            break;
+
+#define HANDLE_OUTPUT(a_Handle) \
+            cbRead = 0; \
+            vrc = pProcess->i_readData(a_Handle, sizeof(abBuf), \
+                                       GET_REMAINING_TIME, \
+                                       abBuf, sizeof(abBuf), \
+                                       &cbRead, &vrcGuest); \
+            if (   RT_FAILURE(vrc) \
+                || vrc == VWRN_GSTCTL_OBJECTSTATE_CHANGED) \
+                break; \
+            if (cbRead) \
+                vrc = onOutputCallback(GUEST_PROC_OUT_H_STDOUT, abBuf, cbRead);
+
+        if (fHandleStdOut)
+        {
+            UPDATE_AND_CHECK_ELAPSED_TIME();
+            HANDLE_OUTPUT(GUEST_PROC_OUT_H_STDOUT);
+            fHandleStdOut = false;
+        }
+
+        if (fHandleStdErr)
+        {
+            UPDATE_AND_CHECK_ELAPSED_TIME();
+            HANDLE_OUTPUT(GUEST_PROC_OUT_H_STDERR);
+            fHandleStdErr = false;
+        }
+
+#undef HANDLE_OUTPUT
+
+    } while (!fDone && RT_SUCCESS(vrc));
+
+#undef UPDATE_AND_CHECK_ELAPSED_TIME
+#undef GET_REMAINING_TIME
+
+    if (RT_FAILURE(vrcGuest))
+        vrc = VERR_GSTCTL_GUEST_ERROR;
+
+    LogFlowThisFunc(("Loop ended with vrc=%Rrc, vrcGuest=%Rrc, waitRes=%RU32\n", vrc, vrcGuest, waitRes));
+    if (pvrcGuest)
+        *pvrcGuest = vrcGuest;
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
@@ -2475,6 +2733,8 @@ int GuestProcessToolbox::wait(uint32_t fToolWaitFlags, int *pvrcGuest)
  * @param   pStrmBlkOut         Where to store the guest toolbox output.
  * @param   pvrcGuest           Where to return the guest error when
  *                              VERR_GSTCTL_GUEST_ERROR was returned. Optional.
+ *
+ * @sa GuestProcessWrapper::wait() -- mostly duplicate code, kept for backwards compatibility.
  */
 int GuestProcessToolbox::waitEx(uint32_t fToolWaitFlags, GuestToolboxStreamBlock *pStrmBlkOut, int *pvrcGuest)
 {

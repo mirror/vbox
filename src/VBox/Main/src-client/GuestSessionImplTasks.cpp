@@ -2482,6 +2482,81 @@ int GuestSessionTaskCopyTo::Run(void)
     return vrc;
 }
 
+UpdateAdditionsProcess::~UpdateAdditionsProcess()
+{
+    /* Log any remainders if not done yet. */
+    if (mLineStdOut.isNotEmpty())
+        LogRel(("Guest Additions Update: %s\n", mLineStdOut.c_str()));
+    if (mLineStdErr.isNotEmpty())
+        LogRel(("Guest Additions Update: %s\n", mLineStdErr.c_str()));
+}
+
+/**
+ * Callback implementation to output guest update process stdout / stderr output to the release log.
+ * Only complete lines will be logged for cosmetic reasons.
+ *
+ * @returns VBox status code.
+ * @param   uHandle             Process output handle.
+ * @param   pbData              Pointer to data.
+ * @param   cbData              Size (in bytes) of \a pbData.
+ *
+ * @note    Only stdout (handle ID 1) and stderr (handle ID 2) are implemented.
+ */
+int UpdateAdditionsProcess::onOutputCallback(uint32_t uHandle, const BYTE *pbData, size_t cbData)
+{
+    AssertReturn(RTStrValidateEncodingEx((const char *)pbData, cbData,   RTSTR_VALIDATE_ENCODING_EXACT_LENGTH
+                                                                       | RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED),
+                 VERR_INVALID_PARAMETER);
+
+    Utf8Str *pstrLine = NULL;
+
+    switch (uHandle)
+    {
+        case GUEST_PROC_OUT_H_STDOUT:
+            pstrLine = &mLineStdOut;
+            break;
+
+        case GUEST_PROC_OUT_H_STDERR:
+            pstrLine = &mLineStdErr;
+            break;
+
+        default:
+            /* Ignore. */
+            break;
+    }
+
+    int vrc = VINF_SUCCESS;
+
+    if (pstrLine)
+    {
+        const char *cch = (const char *)pbData;
+        while (cbData)
+        {
+            if (*cch == '\n')
+                break;
+            pstrLine->append(*cch);
+            cch++;
+            cbData--;
+        }
+
+        if (*cch == '\n')
+        {
+            LogRel(("Guest Additions Update: %s\n", pstrLine->c_str()));
+            pstrLine->setNull();
+            cch++;
+        }
+
+        while (cbData)
+        {
+            pstrLine->append(*cch);
+            cch++;
+            cbData--;
+        }
+    }
+
+    return vrc;
+}
+
 GuestSessionTaskUpdateAdditions::GuestSessionTaskUpdateAdditions(GuestSession *pSession,
                                                                  const Utf8Str &strSource,
                                                                  const ProcessArguments &aArguments,
@@ -2661,15 +2736,15 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
 #else
     LogRel(("Guest Additions Update: Running \"%s\" ...\n", procInfo.mName.c_str()));
 
-    GuestProcessToolbox procToRun;
+    UpdateAdditionsProcess guestProc;
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = procToRun.init(pSession, procInfo, false /* Async */, &vrcGuest);
+    int vrc = guestProc.init(pSession, procInfo, false /* Async */, &vrcGuest);
     if (RT_SUCCESS(vrc))
     {
         if (RT_SUCCESS(vrcGuest))
-            vrc = procToRun.wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &vrcGuest);
+            vrc = guestProc.wait(&vrcGuest);
         if (RT_SUCCESS(vrc))
-            vrc = procToRun.getTerminationStatus();
+            vrc = guestProc.getTerminationStatus();
     }
 
     if (   RT_FAILURE(vrc)
@@ -2678,11 +2753,16 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
         switch (vrc)
         {
             case VERR_GSTCTL_PROCESS_EXIT_CODE:
+            {
+                int32_t iExitCode;
+                vrc = guestProc.getTerminationStatus(&iExitCode);
+                Assert(vrc == VERR_GSTCTL_PROCESS_EXIT_CODE);
                 setUpdateErrorMsg(VBOX_E_GSTCTL_GUEST_ERROR,
-                                  Utf8StrFmt(tr("Running update file \"%s\" on guest failed: %Rrc"),
-                                             procInfo.mExecutable.c_str(), procToRun.getRc()));
+                                  Utf8StrFmt(tr("Running update file \"%s\" on guest failed with exit code %d"),
+                                             procInfo.mExecutable.c_str(), iExitCode));
                 break;
 
+            }
             case VERR_GSTCTL_GUEST_ERROR:
                 setUpdateErrorMsg(VBOX_E_GSTCTL_GUEST_ERROR, tr("Running update file on guest failed"),
                                   GuestErrorInfo(GuestErrorInfo::Type_Process, vrcGuest, procInfo.mExecutable.c_str()));
@@ -3097,7 +3177,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                                     /* Out certificate installation utility. */
                                     /* First pass: Copy over the file (first time only) + execute it to remove any
                                      *             existing VBox certificates. */
-                                    GuestProcessStartupInfo siCertUtilRem;
+                                    UpdateAdditionsStartupInfo siCertUtilRem;
                                     siCertUtilRem.mName = "VirtualBox Certificate Utility, removing old VirtualBox certificates";
                                     /* The argv[0] should contain full path to the executable module */
                                     siCertUtilRem.mArguments.push_back(strUpdateDir + "VBoxCertUtil.exe");
@@ -3112,7 +3192,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                                     fCopyCertUtil = 0;
                                     /* Second pass: Only execute (but don't copy) again, this time installng the
                                      *              recent certificates just copied over. */
-                                    GuestProcessStartupInfo siCertUtilAdd;
+                                    UpdateAdditionsStartupInfo siCertUtilAdd;
                                     siCertUtilAdd.mName = "VirtualBox Certificate Utility, installing VirtualBox certificates";
                                     /* The argv[0] should contain full path to the executable module */
                                     siCertUtilAdd.mArguments.push_back(strUpdateDir + "VBoxCertUtil.exe");
@@ -3135,7 +3215,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                                                      strUpdateDir + "VBoxWindowsAdditions-amd64.exe",
                                                      ISOFILE_FLAG_COPY_FROM_ISO));
                             /* The stub loader which decides which flavor to run. */
-                            GuestProcessStartupInfo siInstaller;
+                            UpdateAdditionsStartupInfo siInstaller;
                             siInstaller.mName = "VirtualBox Windows Guest Additions Installer";
                             /* Set a running timeout of 5 minutes -- the Windows Guest Additions
                              * setup can take quite a while, so be on the safe side. */
@@ -3172,7 +3252,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                             mFiles.push_back(ISOFile("VBOXLINUXADDITIONS.RUN",
                                                      strUpdateDir + "VBoxLinuxAdditions.run", ISOFILE_FLAG_COPY_FROM_ISO));
 
-                            GuestProcessStartupInfo siInstaller;
+                            UpdateAdditionsStartupInfo siInstaller;
                             siInstaller.mName = "VirtualBox Linux Guest Additions Installer";
                             /* Set a running timeout of 5 minutes -- compiling modules and stuff for the Linux Guest Additions
                              * setup can take quite a while, so be on the safe side. */

@@ -247,6 +247,16 @@ public:
 
     int terminate(uint32_t uTimeoutMS, int *pvrcGuest);
 
+    int wait(int *pvrcGuest);
+
+public:
+
+    virtual int onOutputCallback(uint32_t uHandle, const std::vector<Utf8Str> &vecData);
+
+    virtual int onOutputCallback(uint32_t uHandle, const BYTE *pbData, size_t cbData);
+
+    virtual int onInputCallback(uint32_t uHandle, std::vector<Utf8Str> &vecData);
+
 protected:
 
     /** Pointer to session this toolbox object is bound to. */
