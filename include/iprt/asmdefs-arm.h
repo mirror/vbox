@@ -67,7 +67,7 @@
 /** Marks the beginning of a code section. */
 #ifdef ASM_FORMAT_MACHO
 # define BEGINCODE .section __TEXT,__text,regular,pure_instructions
-#elif defined(ASM_FORMAT_ELF)
+#elif defined(ASM_FORMAT_ELF) || defined(ASM_FORMAT_PE)
 # define BEGINCODE .section .text
 #else
 # error "Port me!"
@@ -76,7 +76,7 @@
 /** Marks the end of a code section. */
 #ifdef ASM_FORMAT_MACHO
 # define ENDCODE
-#elif defined(ASM_FORMAT_ELF)
+#elif defined(ASM_FORMAT_ELF) || defined(ASM_FORMAT_PE)
 # define ENDCODE
 #else
 # error "Port me!"
@@ -86,7 +86,7 @@
 /** Marks the beginning of a data section. */
 #ifdef ASM_FORMAT_MACHO
 # define BEGINDATA .section __DATA,__data
-#elif defined(ASM_FORMAT_ELF)
+#elif defined(ASM_FORMAT_ELF) || defined(ASM_FORMAT_PE)
 # define BEGINDATA .section .data
 #else
 # error "Port me!"
@@ -95,7 +95,7 @@
 /** Marks the end of a data section. */
 #ifdef ASM_FORMAT_MACHO
 # define ENDDATA
-#elif defined(ASM_FORMAT_ELF)
+#elif defined(ASM_FORMAT_ELF) || defined(ASM_FORMAT_PE)
 # define ENDDATA
 #else
 # error "Port me!"
@@ -105,7 +105,7 @@
 /** Marks the beginning of a readonly data section. */
 #ifdef ASM_FORMAT_MACHO
 # define BEGINCONST .section __RODATA,__rodata
-#elif defined(ASM_FORMAT_ELF)
+#elif defined(ASM_FORMAT_ELF) || defined(ASM_FORMAT_PE)
 # define BEGINCONST .section .rodata
 #else
 # error "Port me!"
@@ -114,7 +114,7 @@
 /** Marks the end of a readonly data section. */
 #ifdef ASM_FORMAT_MACHO
 # define ENDCONST
-#elif defined(ASM_FORMAT_ELF)
+#elif defined(ASM_FORMAT_ELF) || defined(ASM_FORMAT_PE)
 # define ENDCONST
 #else
 # error "Port me!"
@@ -124,7 +124,7 @@
 /** Marks the beginning of a readonly C strings section. */
 #ifdef ASM_FORMAT_MACHO
 # define BEGINCONSTSTRINGS .section __TEXT,__cstring,cstring_literals
-#elif defined(ASM_FORMAT_ELF)
+#elif defined(ASM_FORMAT_ELF) || defined(ASM_FORMAT_PE)
 # define BEGINCONSTSTRINGS .section .rodata
 #else
 # error "Port me!"
@@ -133,7 +133,7 @@
 /** Marks the end of a readonly C strings section. */
 #ifdef ASM_FORMAT_MACHO
 # define ENDCONSTSTRINGS
-#elif defined(ASM_FORMAT_ELF)
+#elif defined(ASM_FORMAT_ELF) || defined(ASM_FORMAT_PE)
 # define ENDCONSTSTRINGS
 #else
 # error "Port me!"
@@ -152,6 +152,7 @@
 # define NAME(a_SymbolC)    a_SymbolC
 #endif
 
+#ifndef RT_OS_WINDOWS
 /**
  * Returns the page address of the given symbol (used with the adrp instruction primarily).
  *
@@ -180,6 +181,8 @@
 # error "Port me!"
 #endif
 
+#endif /* RT_OS_WINDOWS */
+
 
 /**
  * Starts an externally visible procedure.
@@ -197,9 +200,9 @@ NAME(\a_Name):
  * @param   a_Name      The unmangled symbol name.
  */
 .macro BEGINPROC_HIDDEN, a_Name
-#ifndef ASM_FORMAT_ELF
+#ifdef ASM_FORMAT_MACHO
         .private_extern NAME(\a_Name)
-#else
+#elif defined(ASM_FORMAT_ELF)
         .hidden         NAME(\a_Name)
 #endif
         .globl          NAME(\a_Name)
