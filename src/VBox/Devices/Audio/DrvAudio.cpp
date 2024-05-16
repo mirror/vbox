@@ -1622,7 +1622,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PDRVAUDIOSTREAM 
                      PDMAudioPropsFramesToMilli(&pCfgAcq->Props, pCfgAcq->Backend.cFramesPreBuffering), pCfgAcq->Backend.cFramesPreBuffering));
         }
     }
-    else if (CfgReq.Backend.cFramesPreBuffering == 0) /* Was the pre-buffering requested as being disabeld? Tell the users. */
+    else /* Was the pre-buffering requested as being disabeld? Tell the users. */
     {
         LogRel2(("Audio: Pre-buffering is disabled for stream '%s'\n", pCfgAcq->szName));
         pCfgAcq->Backend.cFramesPreBuffering = 0;

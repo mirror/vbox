@@ -351,9 +351,9 @@ void XtFree(char *ptr)
 char *XGetAtomName(Display *display, Atom atom)
 {
     RT_NOREF(display);
-    const char *pcszName = NULL;
-    if (atom < 0x1000)
+    if (!atom)
         return NULL;
+    const char *pcszName = NULL;
     if (0x1000 <= atom && atom < 0x2000)
     {
         unsigned index = atom - 0x1000;

@@ -1079,28 +1079,25 @@ int hdaR3StreamEnable(PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pS
     {
         Assert(AudioHlpPcmPropsAreValidAndSupported(&pStreamShared->State.Cfg.Props));
 
-        if (fEnable)
+        if (!AudioHlpFileIsOpen(pStreamR3->Dbg.Runtime.pFileStream))
         {
-            if (!AudioHlpFileIsOpen(pStreamR3->Dbg.Runtime.pFileStream))
-            {
-                int rc2 = AudioHlpFileOpen(pStreamR3->Dbg.Runtime.pFileStream, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
-                                           &pStreamShared->State.Cfg.Props);
-                AssertRC(rc2);
-            }
+            int rc2 = AudioHlpFileOpen(pStreamR3->Dbg.Runtime.pFileStream, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
+                                       &pStreamShared->State.Cfg.Props);
+            AssertRC(rc2);
+        }
 
-            if (!AudioHlpFileIsOpen(pStreamR3->Dbg.Runtime.pFileDMARaw))
-            {
-                int rc2 = AudioHlpFileOpen(pStreamR3->Dbg.Runtime.pFileDMARaw, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
-                                           &pStreamShared->State.Cfg.Props);
-                AssertRC(rc2);
-            }
+        if (!AudioHlpFileIsOpen(pStreamR3->Dbg.Runtime.pFileDMARaw))
+        {
+            int rc2 = AudioHlpFileOpen(pStreamR3->Dbg.Runtime.pFileDMARaw, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
+                                       &pStreamShared->State.Cfg.Props);
+            AssertRC(rc2);
+        }
 
-            if (!AudioHlpFileIsOpen(pStreamR3->Dbg.Runtime.pFileDMAMapped))
-            {
-                int rc2 = AudioHlpFileOpen(pStreamR3->Dbg.Runtime.pFileDMAMapped, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
-                                           &pStreamShared->State.Cfg.Props);
-                AssertRC(rc2);
-            }
+        if (!AudioHlpFileIsOpen(pStreamR3->Dbg.Runtime.pFileDMAMapped))
+        {
+            int rc2 = AudioHlpFileOpen(pStreamR3->Dbg.Runtime.pFileDMAMapped, AUDIOHLPFILE_DEFAULT_OPEN_FLAGS,
+                                       &pStreamShared->State.Cfg.Props);
+            AssertRC(rc2);
         }
     }
 

@@ -1790,8 +1790,7 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
              && (pCtx->vboxFormats & VBOX_SHCL_FMT_BITMAP))
     {
         rc = shClX11RequestDataForX11CallbackHelper(pCtx, VBOX_SHCL_FMT_BITMAP, &pv, &cb);
-        if (   RT_SUCCESS(rc)
-            && (fmtX11 == SHCLX11FMT_BMP))
+        if (RT_SUCCESS(rc))
         {
             /* Create a full BMP from it. */
             rc = ShClDibToBmp(pv, cb, (void **)pValReturn,

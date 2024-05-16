@@ -463,11 +463,8 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTE
     }
     else
     {
-        if (pClient)
-        {
-            atsTcpFreeClient(pThis, pClient);
-            pClient = NULL;
-        }
+        atsTcpFreeClient(pThis, pClient);
+        pClient = NULL;
     }
 
     if (RT_FAILURE(rc))
