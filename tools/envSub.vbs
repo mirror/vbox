@@ -93,7 +93,7 @@ function Main()
    if strRealArch = "" then strRealArch = Trim(EnvGet("PROCESSOR_ARCHITECTURE"))
    if strRealArch = "" then strRealArch = "amd64"
    strRealArch = LCase(strRealArch)
-   if strRealArch <> "amd64" and strRealArch <> "x86" then
+   if strRealArch <> "amd64" and strRealArch <> "x86" and strRealArch <> "arm64" then
       MsgError "Unsupported host architecture: " & strRealArch ' quits
    end if
 
