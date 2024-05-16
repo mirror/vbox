@@ -93,8 +93,29 @@ PROPS_DLLS_ACCUMULATE_L      += INTERMEDIATES
 PROPS_SYSMODS_ACCUMULATE_L   += INTERMEDIATES
 PROPS_MISCBINS_ACCUMULATE_L  += INTERMEDIATES
 
+# Some info on the vendor
+VBOX_VENDOR       = Oracle and/or its affiliates
+VBOX_VENDOR_SHORT = Oracle
+VBOX_PRODUCT      = Oracle VM VirtualBox
+VBOX_PUEL_PRODUCT = $(VBOX_PRODUCT) Extension Pack
+# Not all could be done automatically. Here is a list of known places which
+# have to be updated manually, please keep this up to date:
+#	src/VBox/Devices/PC/PXE/client/uinit.asm
+#	src/VBox/RDP/webclient/flash/com/sun/network/rdp/Version.as
+#	src/VBox/Frontends/VirtualBox/src/globals/UICommon.cpp
+#	src/VBox/Frontends/VirtualBox/src/settings/global/VBoxGLSettingsLanguage.cpp
+#	src/VBox/Frontends/VirtualBox/nls/*.ts
+#	debian/control
+#	src/VBox/Installer/linux/{debian,rpm}
+#	src/VBox/Installer/linux/virtualbox.desktop
+#	src/VBox/Additions/WINNT/Installer/ISO/ReadmeDrivers.txt
+#	src/VBox/Main/nls/*.ts
+#	src/VBox/ExtPacks/Puel/nls/*.ts
+# src/VBox/Frontends/VBoxManage/nls/*.ts
+#	*/*.inf, */*.rc
+
 # Misc names used by the install paths below.
-VBOX_PUEL_MANGLED_NAME := Oracle_VM_VirtualBox_Extension_Pack
+VBOX_PUEL_MANGLED_NAME = $(shell echo $(VBOX_PUEL_PRODUCT) | $(SED_EXT) -ne 's| |_|gp')
 
 # Install paths
 ## @todo This will change after 4.1 is branched off!
@@ -294,26 +315,6 @@ ifneq ($(VBOX_RELEASE_EXACT_MATCH),)
  export VBOX_EFI_SH_MODE           = release
  export VBOX_EXTPACKS_SH_MODE      = release
 endif
-
-# Some info on the vendor
-VBOX_VENDOR       = Oracle and/or its affiliates
-VBOX_VENDOR_SHORT = Oracle
-VBOX_PRODUCT      = Oracle VM VirtualBox
-# Not all could be done automatically. Here is a list of known places which
-# have to be updated manually, please keep this up to date:
-#	src/VBox/Devices/PC/PXE/client/uinit.asm
-#	src/VBox/RDP/webclient/flash/com/sun/network/rdp/Version.as
-#	src/VBox/Frontends/VirtualBox/src/globals/UICommon.cpp
-#	src/VBox/Frontends/VirtualBox/src/settings/global/VBoxGLSettingsLanguage.cpp
-#	src/VBox/Frontends/VirtualBox/nls/*.ts
-#	debian/control
-#	src/VBox/Installer/linux/{debian,rpm}
-#	src/VBox/Installer/linux/virtualbox.desktop
-#	src/VBox/Additions/WINNT/Installer/ISO/ReadmeDrivers.txt
-#	src/VBox/Main/nls/*.ts
-#	src/VBox/ExtPacks/Puel/nls/*.ts
-# src/VBox/Frontends/VBoxManage/nls/*.ts
-#	*/*.inf, */*.rc
 
 # Maybe we want set this manually.
 VBOX_C_YEAR = $(date-utc %Y)
@@ -9167,6 +9168,7 @@ $(VBOX_PRODUCT_HEADER): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VENDOR "$(VBOX_VENDOR)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VENDOR_SHORT "$(VBOX_VENDOR_SHORT)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_PRODUCT "$(VBOX_PRODUCT)"'
+	$(QUIET)$(APPEND) $@.tmp '#define VBOX_PUEL_PRODUCT "$(VBOX_PUEL_PRODUCT)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_BUILD_PUBLISHER "$(VBOX_BUILD_PUBLISHER)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_C_YEAR "$(VBOX_C_YEAR)"'
 	$(QUIET)$(APPEND) $@.tmp ''
