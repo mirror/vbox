@@ -124,7 +124,9 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
   #
   # Windows extras.
   #
-  INSTALLS.win += VBoxNetFlt-inf
+  ifdef VBOX_WITH_VBOXDRV
+   INSTALLS.win += VBoxNetFlt-inf
+  endif
   VBoxNetFlt-inf_TEMPLATE = VBoxR0DrvInfCat
   VBoxNetFlt-inf_SOURCES = \
   	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf \
@@ -166,7 +168,9 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
   #
   # VBoxNetLwf.sys - The light-weight filter driver for NDIS6.
   #
-  SYSMODS += VBoxNetLwf
+  ifdef VBOX_WITH_VBOXDRV
+   SYSMODS += VBoxNetLwf
+  endif
   VBoxNetLwf_TEMPLATE = VBoxR0Drv
   VBoxNetLwf_INST = $(INST_VBOXNETFLT)
   if defined(VBOX_SIGNING_MODE)
@@ -204,7 +208,9 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
   #
   # VBoxNetLwf installation.
   #
-  INSTALLS.win += VBoxNetLwf-inf
+  ifdef VBOX_WITH_VBOXDRV
+   INSTALLS.win += VBoxNetLwf-inf
+  endif
   VBoxNetLwf-inf_TEMPLATE = VBoxR0DrvInfCat
   VBoxNetLwf-inf_SOURCES = \
   	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.inf
@@ -378,7 +384,9 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
   #
   # VBoxNetAdp.sys - The VirtualBox Adapter miniport driver.
   #
-  SYSMODS.win += VBoxNetAdp
+  ifdef VBOX_WITH_VBOXDRV
+   SYSMODS.win += VBoxNetAdp
+  endif
   VBoxNetAdp_TEMPLATE = VBoxR0Drv
   #VBoxNetAdp_INST = $(INST_VBOXNETADP)
   if defined(VBOX_SIGNING_MODE)
@@ -408,7 +416,9 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
   	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 
 
-  INSTALLS.win += VBoxNetAdp-inf
+  ifdef VBOX_WITH_VBOXDRV
+   INSTALLS.win += VBoxNetAdp-inf
+  endif
   VBoxNetAdp-inf_TEMPLATE = VBoxR0DrvInfCat
   VBoxNetAdp-inf_SOURCES = \
   	$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.inf

@@ -38,9 +38,11 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES.win += usbd
-SYSMODS.win   += VBoxUSB VBoxUSBMon
+ifdef VBOX_WITH_VBOXDRV
+ SYSMODS.win   += VBoxUSB VBoxUSBMon
+ INSTALLS.win  += install-infs
+endif
 PROGRAMS.win  += USBInstall USBUninstall USBTest
-INSTALLS.win  += install-infs
 
 #
 # usbd

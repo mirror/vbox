@@ -56,7 +56,9 @@ if   defined(VBOX_WITH_HARDENING) \
  LIBRARIES += SUPR3HardenedStatic
 endif
 ifndef VBOX_ONLY_BUILD
- DLLS.win += VBoxSupLib
+ ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.arm64)
+  DLLS.win += VBoxSupLib
+ endif
 endif
 ifdef VBOX_WITH_32_ON_64_MAIN_API
  LIBRARIES += SUPR3-x86
@@ -905,34 +907,36 @@ if   !defined(VBOX_ONLY_DOCS) \
  endif # linux freebsd
 
 
- ifeq ($(KBUILD_TARGET),win)
-  INSTALLS.win += VBoxSup-inf
-  VBoxSup-inf_TEMPLATE = VBoxR0DrvInfCat
-  VBoxSup-inf_SOURCES = \
-  	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf
-  VBoxSup-inf_CLEAN = $(VBoxSup-inf_SOURCES)
-  VBoxSup-inf_BLDDIRS = $(PATH_TARGET)/VBoxSupCat.dir
+ ifdef VBOX_WITH_VBOXDRV
+  ifeq ($(KBUILD_TARGET),win)
+   INSTALLS.win += VBoxSup-inf
+   VBoxSup-inf_TEMPLATE = VBoxR0DrvInfCat
+   VBoxSup-inf_SOURCES = \
+   	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf
+   VBoxSup-inf_CLEAN = $(VBoxSup-inf_SOURCES)
+   VBoxSup-inf_BLDDIRS = $(PATH_TARGET)/VBoxSupCat.dir
 
-  $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf: $(PATH_SUB_CURRENT)/win/VBoxSup.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,VBoxSup-inf,$@,$<)
-	$(call VBOX_EDIT_INF_FN,$<,$@)
+   $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf: $(PATH_SUB_CURRENT)/win/VBoxSup.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+ 	$(call MSG_GENERATE,VBoxSup-inf,$@,$<)
+ 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
-  ifdef VBOX_SIGNING_MODE
-   VBoxSup-inf_SOURCES += \
-   	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys \
-   	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat \
-   	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat=>VBoxSup-PreW10.cat
+   ifdef VBOX_SIGNING_MODE
+    VBoxSup-inf_SOURCES += \
+    	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys \
+    	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat \
+    	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat=>VBoxSup-PreW10.cat
 
-   $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys: $$(VBoxDrv_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 -- "$<" "$(@D)"
+    $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys: $$(VBoxDrv_1_TARGET) | $$(dir $$@)
+ 	$(INSTALL) -m 644 -- "$<" "$(@D)"
 
-   $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat: \
-   		$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf \
-   		$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys
-	$(call MSG_TOOL,Inf2Cat,VBoxSup-inf,$@,$<)
-	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
-  endif # signing
- endif # win
+    $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat: \
+    		$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf \
+    		$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys
+ 	$(call MSG_TOOL,Inf2Cat,VBoxSup-inf,$@,$<)
+ 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+   endif # signing
+  endif # win
+ endif # VBOX_WITH_VBOXDRV
 
  #
  # Linux only.
