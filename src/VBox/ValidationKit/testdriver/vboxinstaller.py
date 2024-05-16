@@ -1052,8 +1052,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 reporter.logXcpt();
                 continue;
             #reporter.log('Info: %s=%s' % (sProdCode, sProdName));
-            if  sProdName.startswith('Oracle VM VirtualBox') \
-             or sProdName.startswith('Sun VirtualBox'):
+            if sProdName.startswith('Oracle VirtualBox') \
+            or sProdName.startswith('Oracle VM VirtualBox') \
+            or sProdName.startswith('Sun VirtualBox'):
                 asProdCodes.append([sProdCode, sProdName]);
 
         # Before we start uninstalling anything, just ruthlessly kill any cdb,
