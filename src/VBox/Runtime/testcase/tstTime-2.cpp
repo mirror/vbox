@@ -46,7 +46,7 @@
 
 
 /* HACK ALERT! */
-#if (defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)) && defined(RT_ARCH_ARM64)
+#if (defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)) && defined(RT_ARCH_ARM64)
 # undef  RTTimeNanoTSWorkerName
 # define RTTimeNanoTSWorkerName() "system"
 #endif
