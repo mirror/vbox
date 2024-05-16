@@ -44,11 +44,13 @@
 #if defined(_MSC_VER) && RT_INLINE_ASM_USES_INTRIN
 /* Emit the intrinsics at all optimization levels. */
 # include <iprt/sanitized/intrin.h>
-# pragma intrinsic(__emul)
-# pragma intrinsic(__emulu)
-# ifdef RT_ARCH_AMD64
-#  pragma intrinsic(_mul128)
-#  pragma intrinsic(_umul128)
+# if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+#  pragma intrinsic(__emul)
+#  pragma intrinsic(__emulu)
+#  ifdef RT_ARCH_AMD64
+#   pragma intrinsic(_mul128)
+#   pragma intrinsic(_umul128)
+#  endif
 # endif
 #endif
 
