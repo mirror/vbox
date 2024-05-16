@@ -44,7 +44,7 @@
 #include <iprt/string.h>
 
 
-RTDECL(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
+DECLASM(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
 {
     memset((void *)pv, 0, cb);
 }

@@ -45,7 +45,7 @@
 #include <iprt/assert.h>
 
 
-RTDECL(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_DEF
+DECLASM(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_DEF
 {
     Assert(!(cb & 3));
     size_t cFills = cb / sizeof(uint32_t);

@@ -44,7 +44,7 @@
 #include <iprt/assert.h>
 
 
-RTDECL(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_DEF
+DECLASM(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_DEF
 {
     const volatile size_t RT_FAR *pu = (const volatile size_t RT_FAR *)pvBitmap;
     Assert(!(cBits & 31));
