@@ -43,7 +43,7 @@
 
 
 
-DECLASM(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t u32C)
+RTDECL(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t u32C)
 {
     RTUINT64U   u;
     uint64_t    u64Lo = (uint64_t)(u64A & 0xffffffff) * u32B;
