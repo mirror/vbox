@@ -49,6 +49,7 @@
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
+#include <VBox/version.h> /* VBOX_PRODUCT */
 
 QPointer<UIHelpBrowserDialog> UIHelpBrowserDialog::m_pInstance;
 
@@ -90,7 +91,7 @@ void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
 
 void UIHelpBrowserDialog::sltRetranslateUI()
 {
-    setWindowTitle(UIHelpBrowserWidget::tr("Oracle VM VirtualBox User Manual"));
+    setWindowTitle(UIHelpBrowserWidget::tr("%1 User Manual", "[Product Name] User Manual").arg(VBOX_PRODUCT));
 }
 
 bool UIHelpBrowserDialog::event(QEvent *pEvent)
