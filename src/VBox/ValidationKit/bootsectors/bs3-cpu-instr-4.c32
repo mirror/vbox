@@ -237,6 +237,12 @@ static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig1[] =
 };
 
 
+/**
+ * Returns the name of an X86 exception given the vector.
+ *
+ * @returns Name of the exception.
+ * @param   uVector     The exception vector.
+ */
 static const char BS3_FAR *bs3CpuInstr4XcptName(uint8_t uVector)
 {
     switch (uVector)
@@ -269,16 +275,21 @@ static const char BS3_FAR *bs3CpuInstr4XcptName(uint8_t uVector)
 }
 
 
+/**
+ * Gets the names of floating-point exception flags that are set for a given MXCSR.
+ *
+ * @returns Names of floating-point exception flags that are set.
+ * @param   pszBuf  Where to store the floating-point exception flags.
+ * @param   cchBuf  The size of the buffer.
+ * @param   fMxCsr  The MXCSR value.
+ */
 static size_t bs3CpuInstr4GetXcptFlags(char BS3_FAR *pszBuf, size_t cchBuf, uint32_t fMxCsr)
 {
     if (!(fMxCsr & X86_MXCSR_XCPT_FLAGS))
         return Bs3StrPrintf(pszBuf, cchBuf, " None");
-    return Bs3StrPrintf(pszBuf, cchBuf, "%s%s%s%s%s%s", fMxCsr & X86_MXCSR_IE ? " IE" : "",
-                                                        fMxCsr & X86_MXCSR_DE ? " DE" : "",
-                                                        fMxCsr & X86_MXCSR_ZE ? " ZE" : "",
-                                                        fMxCsr & X86_MXCSR_OE ? " OE" : "",
-                                                        fMxCsr & X86_MXCSR_UE ? " UE" : "",
-                                                        fMxCsr & X86_MXCSR_PE ? " PE" : "");
+    return Bs3StrPrintf(pszBuf, cchBuf, "%s%s%s%s%s%s", fMxCsr & X86_MXCSR_IE ? " IE" : "", fMxCsr & X86_MXCSR_DE ? " DE" : "",
+                                                        fMxCsr & X86_MXCSR_ZE ? " ZE" : "", fMxCsr & X86_MXCSR_OE ? " OE" : "",
+                                                        fMxCsr & X86_MXCSR_UE ? " UE" : "", fMxCsr & X86_MXCSR_PE ? " PE" : "");
 }
 
 
@@ -425,6 +436,12 @@ static PBS3EXTCTX bs3CpuInstrXAllocExtCtxs(PBS3EXTCTX BS3_FAR *ppExtCtx2)
 }
 
 
+/**
+ * Frees the extended CPU contexts allocated by bs3CpuInstrXAllocExtCtxs.
+ *
+ * @param   pExtCtx1        The first extended context.
+ * @param   pExtCtx2        The second extended context.
+ */
 static void bs3CpuInstrXFreeExtCtxs(PBS3EXTCTX pExtCtx1, PBS3EXTCTX BS3_FAR pExtCtx2)
 {
     RT_NOREF_PV(pExtCtx2);
@@ -468,9 +485,8 @@ static void bs3CpuInstr4SetupSseAndAvx(PBS3REGCTX pCtx, PCBS3EXTCTX pExtCtx)
 }
 
 
-
 /**
- * Configures the buffer with electrict fences in paged modes.
+ * Configures the buffer with electric fences in paged modes.
  *
  * @returns Adjusted buffer pointer.
  * @param   pbBuf       The buffer pointer.
@@ -570,7 +586,7 @@ DECLINLINE(uint8_t) bs3CpuInstrXMemOpSize(uint8_t cbOperand, uint8_t enmRm)
 
 
 /*
- * Code to make testing the tests faster.  `bs3CpuInstrX_SkipIt()' randomly
+ * Code to make testing the tests faster. `bs3CpuInstrX_SkipIt()' randomly
  * skips a large fraction of the micro-tests.  It is sufficiently random
  * that over a large number of runs, all micro-tests will be hit.
  *
@@ -725,6 +741,9 @@ typedef struct BS3CPUINSTR4_TEST1_CTX_T
 typedef BS3CPUINSTR4_TEST1_CTX_T BS3_FAR *PBS3CPUINSTR4_TEST1_CTX_T;
 
 
+/**
+ * Worker for bs3CpuInstrX_WorkerTestType1.
+ */
 static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_TEST1_CTX_T pTestCtx,
                                                    PCBS3CPUINSTRX_CONFIG_SAVED_T pSavedCfg)
 {
@@ -933,7 +952,6 @@ static uint8_t bs3CpuInstrX_WorkerTestType1(uint8_t bMode, BS3CPUINSTR4_TEST1_T 
     pbBuf = bs3CpuInstrXBufSetup(pbBuf, &cbBuf, bMode);
     Bs3RegCtxSaveForMode(&Ctx, bMode, 1024);
     bs3CpuInstr4SetupSseAndAvx(&Ctx, pExtCtx);
-    //Bs3TestPrintf("FTW=%#x mm1/st1=%.16Rhxs\n",  pExtCtx->Ctx.x87.FTW, &pExtCtx->Ctx.x87.aRegs[1]);
 
     /*
      * Run the tests in all rings since alignment issues may behave
