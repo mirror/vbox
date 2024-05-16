@@ -457,11 +457,11 @@ ifdef VBOX_WITH_BS3KIT
  	bs3-cpu-instr-4-asm.asm
  bs3-cpu-instr-4.c32_DEPS = $(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm-auto.h
  bs3-cpu-instr-4_CLEANS = $(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm-auto.h
- 
+
  $$(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm-auto.h: \
  		$$(VBoxBs3Obj2Hdr_1_TARGET) $$(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm.o16
 	$(VBoxBs3Obj2Hdr_1_TARGET) --output "$@" "$(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm.o16"
- 
+
  bs3-cpu-instr-4-template.o:: \
  		$$(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm.o16
 
