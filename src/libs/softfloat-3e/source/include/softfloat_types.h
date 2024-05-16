@@ -48,8 +48,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 | (typically 'float' and 'double', and possibly 'long double').
 *----------------------------------------------------------------------------*/
 typedef struct { uint16_t v; } float16_t;
+#ifndef VBOX
 typedef struct { uint32_t v; } float32_t;
 typedef struct { uint64_t v; } float64_t;
+#else
+# if !defined(RT_OS_WINDOWS) && !defined(RT_ARCH_ARM64) /* Conflicts with type definition in arm64_neon.h. */
+typedef struct { uint32_t v; } float32_t;
+typedef struct { uint64_t v; } float64_t;
+# else
+typedef struct { uint32_t v; } soft_float32_t;
+typedef struct { uint64_t v; } soft_float64_t;
+
+#define float32_t soft_float32_t
+#define float64_t soft_float64_t
+# endif
+#endif
 typedef struct { uint64_t v[2]; } float128_t;
 
 /*----------------------------------------------------------------------------
