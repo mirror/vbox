@@ -129,8 +129,10 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
   ifndef TOOL_$(VBOX_VCC_TOOL)
    include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk
   endif
-  ifndef TOOL_$(VBOX_VCC_TOOL_STEM)X86
-   include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL_STEM)X86.kmk
+  ifneq ($(KBUILD_TARGET_ARCH),arm64)
+   ifndef TOOL_$(VBOX_VCC_TOOL_STEM)X86
+    include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL_STEM)X86.kmk
+   endif
   endif
   ifdef PATH_TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST
    InstallExternalLibs_SOURCES += \
