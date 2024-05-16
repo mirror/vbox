@@ -73,7 +73,7 @@
 #   define PAGE_SIZE        RT_DONT_USE_PAGE_SIZE_ON_LINUX_ARM64_IN_USERSPACE_DUE_TO_VARIABLE_PAGE_SIZE
 #  endif
 # elif defined(RT_OS_WINDOWS)
-#  define PAGE_SIZE     	4096
+#  define PAGE_SIZE         4096
 # else
 #  error "This needs porting"
 # endif
