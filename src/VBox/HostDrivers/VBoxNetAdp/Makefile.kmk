@@ -227,5 +227,3 @@ ifeq ($(KBUILD_TARGET),freebsd)
 endif # freebsd
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
-a
