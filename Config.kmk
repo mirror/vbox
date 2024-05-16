@@ -351,7 +351,7 @@ VBOX_PACKAGE_STRING = $(VBOX_PACKAGE_OS)_$(VBOX_PACKAGE_ARCH)_$(VBOX_PACKAGE_DIS
 
 # Supported VirtualBox host architectures.
 VBOX_SUPPORTED_HOST_ARCHS := amd64
-if1of ($(KBUILD_TARGET), darwin) # Work in progress.
+if1of ($(KBUILD_TARGET), darwin win) # Work in progress.
  VBOX_SUPPORTED_HOST_ARCHS += arm64
 endif
 
@@ -547,13 +547,15 @@ if1of ($(KBUILD_TARGET), win darwin)
  VBOX_WITH_NATIVE_NEM = 1
 endif
 # Enable NEM fallback if the driver is not available.
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET), darwin win)
  VBOX_WITH_DRIVERLESS_NEM_FALLBACK = 1
 endif
 # Enable forced driverless mode by default.
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET), darwin win)
  VBOX_WITH_DRIVERLESS_FORCED = 1
- VBOX_WITH_INTNET_SERVICE_IN_R3 = 1
+ ifeq ($(KBUILD_TARGET), darwin)
+  VBOX_WITH_INTNET_SERVICE_IN_R3 = 1
+ endif
 endif
 # Enables the new breakpoint handling code, see @bugref{8650}
 VBOX_WITH_DBGF_FLOW_TRACING = 1
@@ -1950,7 +1952,7 @@ ifndef VBOX_GCC_TOOL
    TOOL_MINGW32_CFLAGS := $(UNDEFINED) # override -g
   else ifeq ($(KBUILD_TARGET_ARCH),amd64)
    VBOX_GCC_TOOL := MINGWW64
-  else_ifeq ($(KBUILD_TARGET_ARCH),arm64)
+  else ifeq ($(KBUILD_TARGET_ARCH),arm64)
    VBOX_GCC_TOOL := CLANGVCC143ARM64
   endif
  else ifeq ($(KBUILD_TARGET),os2)
