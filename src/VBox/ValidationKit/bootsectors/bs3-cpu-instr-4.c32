@@ -1116,7 +1116,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
             { /* =>      */ { RTFLOAT64U_INIT_INF(1),  RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
-              /*flags    */ X86_MXCSR_IE | X86_MXCSR_DE | X86_MXCSR_ZE | X86_MXCSR_OE | X86_MXCSR_UE | X86_MXCSR_PE  },
+              /*flags    */ X86_MXCSR_IE },
     };
 
     static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
