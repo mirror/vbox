@@ -138,13 +138,17 @@ class org_virtualbox_VBoxGuest : public IOService
     OSDeclareDefaultStructors(org_virtualbox_VBoxGuest);
 
 private:
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN
     IOPCIDevice                *m_pIOPCIDevice;
+    RT_GCC_NO_WARN_DEPRECATED_END
     IOMemoryMap                *m_pMap;
     IOFilterInterruptEventSource *m_pInterruptSrc;
 
     bool setupVmmDevInterrupts(IOService *pProvider);
     bool disableVmmDevInterrupts(void);
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN
     bool isVmmDev(IOPCIDevice *pIOPCIDevice);
+    RT_GCC_NO_WARN_DEPRECATED_END
 
 protected:
     /** Non-NULL if interrupts are registered.  Probably same as getProvider(). */
@@ -237,8 +241,13 @@ static struct cdevsw    g_DevCW =
     /*.d_select   = */ eno_select,
     /*.d_mmap     = */ eno_mmap,
     /*.d_strategy = */ eno_strat,
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
+    /*.d_getc     = */ eno_getc,
+    /*.d_putc     = */ eno_putc,
+#else /* Apple got it wrong in the 10.5 SDK */
     /*.d_getc     = */ (void *)(uintptr_t)&enodev, //eno_getc,
     /*.d_putc     = */ (void *)(uintptr_t)&enodev, //eno_putc,
+#endif
     /*.d_type     = */ 0
 };
 
@@ -876,7 +885,9 @@ bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
         /*
          * Make sure it's a PCI device.
          */
+        RT_GCC_NO_WARN_DEPRECATED_BEGIN
         m_pIOPCIDevice = OSDynamicCast(IOPCIDevice, pProvider);
+        RT_GCC_NO_WARN_DEPRECATED_END
         if (m_pIOPCIDevice)
         {
             /*
@@ -1126,7 +1137,9 @@ bool org_virtualbox_VBoxGuest::disableVmmDevInterrupts(void)
  * @returns true if it is, false if it isn't.
  * @param   pIOPCIDevice    The PCI device we think might be the VMM device.
  */
+RT_GCC_NO_WARN_DEPRECATED_BEGIN
 bool org_virtualbox_VBoxGuest::isVmmDev(IOPCIDevice *pIOPCIDevice)
+RT_GCC_NO_WARN_DEPRECATED_END
 {
     if (pIOPCIDevice)
     {
