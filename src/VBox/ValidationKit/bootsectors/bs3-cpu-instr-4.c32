@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - bs3-cpu-instr-4 - SSE and AVX FPU instructions, C code template.
+ * BS3Kit - bs3-cpu-instr-4 - SSE, AVX FPU instructions, C code template.
  */
 
 /*
@@ -43,20 +43,6 @@
 
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
-
-
-/*********************************************************************************************************************************
-*   External Symbols                                                                                                             *
-*********************************************************************************************************************************/
-BS3TRAPFRAME volatile       g_Bs3CpuInstr4TrapFrame;
-/** The extended CPU context to save from the trap handler. */
-BS3EXTCTX volatile          g_Bs3CpuInstr4ExtCtxTrap;
-/** Whether the trap handler was called. */
-bool volatile               g_Bs3CpuInstr4TrapRaised;
-
-extern FNBS3TRAPHANDLER16   bs3CpuInstr4TrapHandler_c16;
-extern FNBS3TRAPHANDLER32   bs3CpuInstr4TrapHandler_c32;
-extern FNBS3TRAPHANDLER64   bs3CpuInstr4TrapHandler_c64;
 
 
 /*********************************************************************************************************************************
@@ -827,13 +813,10 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
     /*
      * Prepare globals and execute.
      */
-    g_Bs3CpuInstr4TrapRaised = false;
     g_uBs3TrapEipHint = pCtx->rip.u32;
     if (    bXcptExpect == X86_XCPT_DB
         && !fFpFlagsExpect)
         g_uBs3TrapEipHint += cbInstr + 1;
-    //Bs3MemZero((void *)&g_Bs3CpuInstr4TrapFrame, sizeof(g_Bs3CpuInstr4TrapFrame));
-    //Bs3TrapSetHandlerEx(bFpXcpt, bs3CpuInstr4TrapHandler_c16, bs3CpuInstr4TrapHandler_c32, bs3CpuInstr4TrapHandler_c64);
     Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(pCtx, pExtCtx, pTrapFrame, pExtCtxOut);
 
     /*

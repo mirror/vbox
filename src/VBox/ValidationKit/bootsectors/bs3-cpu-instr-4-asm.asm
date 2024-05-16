@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - bs3-cpu-instr-4
+; BS3Kit - bs3-cpu-instr-4 - SSE, AVX FPU instructions.
 ;
 
 ;

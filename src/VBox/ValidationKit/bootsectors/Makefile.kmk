@@ -451,19 +451,11 @@ ifdef VBOX_WITH_BS3KIT
  MISCBINS += bs3-cpu-instr-4
  bs3-cpu-instr-4_TEMPLATE = VBoxBS3KitImg
  bs3-cpu-instr-4_INCS = . $(bs3-cpu-instr-4_0_OUTDIR)
- bs3-cpu-instr-4_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-instr-4-traphandler.c
- bs3-cpu-instr-4_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-instr-4-traphandler.c
  bs3-cpu-instr-4_SOURCES = \
  	bs3kit/bs3-first-init-all-pe32.asm \
- 	bs3kit/bs3-cmn-instantiate-x0.c16 \
- 	bs3kit/bs3-cmn-instantiate.c32 \
- 	bs3kit/bs3-cmn-instantiate.c64 \
  	bs3-cpu-instr-4.c32 \
  	bs3-cpu-instr-4-asm.asm
  bs3-cpu-instr-4.c32_DEPS = $(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm-auto.h
- bs3-cpu-instr-4_bs3kit/bs3-cmn-instantiate-x0.c16_DEPS = $(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm-auto.h
- bs3-cpu-instr-4_bs3kit/bs3-cmn-instantiate.c32_DEPS = $(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm-auto.h
- bs3-cpu-instr-4_bs3kit/bs3-cmn-instantiate.c64_DEPS = $(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm-auto.h
  bs3-cpu-instr-4_CLEANS = $(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm-auto.h
  
  $$(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm-auto.h: \
@@ -471,9 +463,6 @@ ifdef VBOX_WITH_BS3KIT
 	$(VBoxBs3Obj2Hdr_1_TARGET) --output "$@" "$(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm.o16"
  
  bs3-cpu-instr-4-template.o:: \
- 		$$(bs3-cpu-instr-4_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
- 		$$(bs3-cpu-instr-4_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
- 		$$(bs3-cpu-instr-4_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
  		$$(bs3-cpu-instr-4_0_OUTDIR)/bs3-cpu-instr-4-asm.o16
 
  #
