@@ -917,8 +917,8 @@ if   !defined(VBOX_ONLY_DOCS) \
    VBoxSup-inf_BLDDIRS = $(PATH_TARGET)/VBoxSupCat.dir
 
    $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf: $(PATH_SUB_CURRENT)/win/VBoxSup.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
- 	$(call MSG_GENERATE,VBoxSup-inf,$@,$<)
- 	$(call VBOX_EDIT_INF_FN,$<,$@)
+	$(call MSG_GENERATE,VBoxSup-inf,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
 
    ifdef VBOX_SIGNING_MODE
     VBoxSup-inf_SOURCES += \
@@ -927,13 +927,13 @@ if   !defined(VBOX_ONLY_DOCS) \
     	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat=>VBoxSup-PreW10.cat
 
     $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys: $$(VBoxDrv_1_TARGET) | $$(dir $$@)
- 	$(INSTALL) -m 644 -- "$<" "$(@D)"
+	$(INSTALL) -m 644 -- "$<" "$(@D)"
 
     $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat: \
     		$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf \
     		$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys
- 	$(call MSG_TOOL,Inf2Cat,VBoxSup-inf,$@,$<)
- 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+	$(call MSG_TOOL,Inf2Cat,VBoxSup-inf,$@,$<)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
    endif # signing
   endif # win
  endif # VBOX_WITH_VBOXDRV
