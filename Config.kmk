@@ -1950,7 +1950,7 @@ ifndef VBOX_GCC_TOOL
    TOOL_MINGW32_CFLAGS := $(UNDEFINED) # override -g
   else ifeq ($(KBUILD_TARGET_ARCH),amd64)
    VBOX_GCC_TOOL := MINGWW64
-  else_ifeq ($(KBUILD_TARGET_ARCH),arm64)
+  else ifeq ($(KBUILD_TARGET_ARCH),arm64)
    VBOX_GCC_TOOL := CLANGVCC143ARM64
   endif
  else ifeq ($(KBUILD_TARGET),os2)
