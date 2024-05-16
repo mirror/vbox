@@ -2001,7 +2001,7 @@ endif
 #
 ifndef VBOX_VCC_TOOL_STEM
  ifdef VBOX_WITH_NEW_VCC
-  ifeq ($(KBUILD_TARGET_ARCH),arm64)
+  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.arm64)
    VBOX_VCC_TOOL_STEM := VCC143
   else
    VBOX_VCC_TOOL_STEM := VCC142
@@ -3802,6 +3802,9 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142"  # With v16.11.9, not with v16.6.0 4242
 endif
 #    -wd4548: socket.cpp(1931): warning C4548: expression before comma has no effect; expected expression with side-effect
 VBOX_VCC_WARN_ALL += -wd4548
+if "$(VBOX_VCC_TOOL_STEM)" >= "VCC143" && "$(KBUILD_TARGET_ARCH)" == "arm64"
+ VBOX_VCC_WARN_ALL += -wd4746
+endif
 ifndef VBOX_WITH_NEW_WINDOWS_SDK
  #    -wd5031: iprt/win/windows.h(55): warning C5031: #pragma warning(pop): likely mismatch, popping warning state pushed in different file
  #    -wd5032: iprt/win/windows.h(37): warning C5032: detected #pragma warning(push) with no corresponding #pragma warning(pop)
