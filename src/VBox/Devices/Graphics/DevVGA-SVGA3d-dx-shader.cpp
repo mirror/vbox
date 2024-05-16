@@ -41,7 +41,7 @@
 
 #include "DevVGA-SVGA3d-dx-shader.h"
 
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) && !defined(RT_ARCH_ARM64)
 #include <d3d11TokenizedProgramFormat.hpp>
 #else
 #define D3D11_SB_EXTENDED_OPCODE_RESOURCE_DIM 2
