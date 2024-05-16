@@ -1,0 +1,159 @@
+; $Id$
+;; @file
+; BS3Kit - bs3-cpu-instr-4 - MMX, SSE, AVX FPU instructions, assembly template.
+;
+
+;
+; Copyright (C) 2024 Oracle and/or its affiliates.
+;
+; This file is part of VirtualBox base platform packages, as
+; available from https://www.virtualbox.org.
+;
+; This program is free software; you can redistribute it and/or
+; modify it under the terms of the GNU General Public License
+; as published by the Free Software Foundation, in version 3 of the
+; License.
+;
+; This program is distributed in the hope that it will be useful, but
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with this program; if not, see <https://www.gnu.org/licenses>.
+;
+; The contents of this file may alternatively be used under the terms
+; of the Common Development and Distribution License Version 1.0
+; (CDDL), a copy of it is provided in the "COPYING.CDDL" file included
+; in the VirtualBox distribution, in which case the provisions of the
+; CDDL are applicable instead of those of the GPL.
+;
+; You may elect to license modified versions of this file under the
+; terms and conditions of either the GPL or the CDDL or both.
+;
+; SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
+;
+
+
+;*********************************************************************************************************************************
+;*  Header Files                                                                                                                 *
+;*********************************************************************************************************************************
+%include "bs3kit-template-header.mac"   ; setup environment
+
+
+;*********************************************************************************************************************************
+;*  External Symbols                                                                                                             *
+;*********************************************************************************************************************************
+TMPL_BEGIN_TEXT
+
+
+;
+; Test code snippets containing code which differs between 16-bit, 32-bit
+; and 64-bit CPUs modes.
+;
+%ifdef BS3_INSTANTIATING_CMN
+
+
+;;
+; Variant on BS3_PROC_BEGIN_CMN w/ BS3_PBC_NEAR that prefixes the function
+; with an instruction length byte.
+;
+; ASSUMES the length is between the start of the function and the .again label.
+;
+ %ifndef BS3CPUINSTRX_PROC_BEGIN_CMN_DEFINED
+  %define BS3CPUINSTRX_PROC_BEGIN_CMN_DEFINED
+  %macro BS3CPUINSTRX_PROC_BEGIN_CMN 1
+        align   8, db 0cch
+        db      BS3_CMN_NM(%1).again - BS3_CMN_NM(%1)
+BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
+  %endmacro
+ %endif ; !BS3CPUINSTRX_PROC_BEGIN_CMN_DEFINED
+
+;;
+; The EMIT_INSTR_PLUS_ICEBP macros is for creating a common function for and
+; named after a single instruction, followed by a looping ICEBP.
+;
+; This works like a prefix to the instruction invocation, only exception is that
+; instead of [fs:xBX] you write FSxBS as that's what is wanted in the name.
+;
+ %ifndef EMIT_INSTR_PLUS_ICEBP_DEFINED
+  %define EMIT_INSTR_PLUS_ICEBP_DEFINED
+
+  %macro EMIT_INSTR_PLUS_ICEBP 2
+BS3CPUINSTRX_PROC_BEGIN_CMN bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _icebp
+   %define FSxBX [fs:xBX]
+        %1      %2
+   %undef  FSxBX
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _icebp
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP 3
+BS3CPUINSTRX_PROC_BEGIN_CMN bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _icebp
+   %define FSxBX [fs:xBX]
+        %1      %2, %3
+   %undef  FSxBX
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _icebp
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP 4
+BS3CPUINSTRX_PROC_BEGIN_CMN bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _icebp
+   %define FSxBX [fs:xBX]
+        %1      %2, %3, %4
+   %undef  FSxBX
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _icebp
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP 5
+BS3CPUINSTRX_PROC_BEGIN_CMN bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _ %+ %5 %+ _icebp
+   %define FSxBX [fs:xBX]
+        %1      %2, %3, %4, %5
+   %undef  FSxBX
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _ %+ %5 %+ _icebp
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP_C64 2
+   %if TMPL_BITS == 64
+    EMIT_INSTR_PLUS_ICEBP %1, %2
+   %endif
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP_C64 3
+   %if TMPL_BITS == 64
+    EMIT_INSTR_PLUS_ICEBP %1, %2, %3
+   %endif
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP_C64 4
+   %if TMPL_BITS == 64
+    EMIT_INSTR_PLUS_ICEBP %1, %2, %3, %4
+   %endif
+  %endmacro
+
+  %macro EMIT_INSTR_PLUS_ICEBP_C64 5
+   %if TMPL_BITS == 64
+    EMIT_INSTR_PLUS_ICEBP %1, %2, %3, %4, %5
+   %endif
+  %endmacro
+
+ %endif ; !EMIT_INSTR_PLUS_ICEBP_DEFINED
+
+;
+;; [v]addpd
+;
+EMIT_INSTR_PLUS_ICEBP       addpd, XMM1, XMM2
+
+%endif ; BS3_INSTANTIATING_CMN
+
+%include "bs3kit-template-footer.mac"   ; reset environment
