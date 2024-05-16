@@ -1012,6 +1012,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  VBoxC_DEFS.darwin.x86 = VBOX_WITH_2X_4GB_ADDR_SPACE
  VBoxC_DEFS.win.x86 += _WIN32_WINNT=0x0500
  VBoxC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
+ VBoxC_DEFS.win.arm64 += _WIN32_WINNT=0x0510
 
  if $(KBUILD_TARGET) != "win" && $(VBOX_GCC_VERSION_CXX) >= 40900 # gcc 4.9.x (4.8.x is causing endless RT_ELEMENT trouble)
   # VBoxC_CXXFLAGS = -Wunused -Wconversion
@@ -1400,6 +1401,7 @@ ifeq ($(KBUILD_TARGET),win)
  endif
  VBoxCOM_DEFS.x86      = _WIN32_WINNT=0x0500
  VBoxCOM_DEFS.amd64    = _WIN32_WINNT=0x0510
+ VBoxCOM_DEFS.arm64    = _WIN32_WINNT=0x0510
  VBoxCOM_SOURCES      += \
  	$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c
  VBoxCOM_CLEAN         = \
@@ -1512,7 +1514,8 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined
  ifdef VBOX_WITH_SDS_CLIENT_WATCHER
   VBoxProxyStub_DEFS   += VBOX_WITH_SDS_CLIENT_WATCHER,)
  endif
- VBoxProxyStub_DEFS.win.x86 = WIN32
+ VBoxProxyStub_DEFS.win.x86   = WIN32
+ VBoxProxyStub_DEFS.win.arm64 = WIN32
  VBoxProxyStub_SDKS     = VBoxNtDll
  VBoxProxyStub_DEFPATH  = $(VBoxCOM_0_OUTDIR)/# Hack to workaround drive letter in $(VBoxCOM_0_OUTDIR)/ for CFLAGS hack below.
  VBoxProxyStub_INCS     = $(VBoxCOM_0_OUTDIR)/
@@ -1525,18 +1528,20 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined
  src-all/win/VBoxProxyStub.rc_DEPS = $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
  VBoxProxyStub_VirtualBox_p.c_CFLAGS.x86 = /Gz # Workaround for incorrect ObjectStublessClient* prototypes in SDK v7.1.
 
- DLLS += VBoxProxyStubLegacy
- VBoxProxyStubLegacy_TEMPLATE = VBoxMainComp
- VBoxProxyStubLegacy_EXTENDS  = VBoxProxyStub
- VBoxProxyStubLegacy_DEFS     = $(VBoxProxyStub_DEFS) VBOX_IN_PROXY_STUB_LEGACY
- VBoxProxyStubLegacy_INCS     = $(VBoxCOM_0_OUTDIR)/legacy/
- VBoxProxyStubLegacy_SOURCES  = \
- 	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c \
- 	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
- 	src-all/win/VBoxProxyStub.def \
- 	src-all/win/VBoxProxyStubLegacy.rc \
- 	src-all/win/VBoxProxyStub.c
- src-all/win/VBoxProxyStubLegacy.rc_DEPS = $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb
+ ifn1of ($(KBUILD_TARGET_ARCH),arm64)
+  DLLS += VBoxProxyStubLegacy
+  VBoxProxyStubLegacy_TEMPLATE = VBoxMainComp
+  VBoxProxyStubLegacy_EXTENDS  = VBoxProxyStub
+  VBoxProxyStubLegacy_DEFS     = $(VBoxProxyStub_DEFS) VBOX_IN_PROXY_STUB_LEGACY
+  VBoxProxyStubLegacy_INCS     = $(VBoxCOM_0_OUTDIR)/legacy/
+  VBoxProxyStubLegacy_SOURCES  = \
+  	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c \
+  	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
+  	src-all/win/VBoxProxyStub.def \
+  	src-all/win/VBoxProxyStubLegacy.rc \
+  	src-all/win/VBoxProxyStub.c
+  src-all/win/VBoxProxyStubLegacy.rc_DEPS = $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb
+ endif
 
  ifdef VBOX_WITH_32_ON_64_MAIN_API
   DLLS += VBoxProxyStub-x86
@@ -1683,7 +1688,7 @@ if "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_
  + $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_MIDL_REDIRECT) $(VBOX_WIN_MIDL) /nologo /W4 \
-		/env $(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" ,amd64,win32) \
+		/env $(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" ,amd64,$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.arm64" ,arm64,win32)) \
 		/robust /protocol all /target $(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),NT61,NT51) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM_0_OUTDIR)) \
 		/cpp_cmd $(VBOX_MIDL_CPP_CMD) \
