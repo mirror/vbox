@@ -547,15 +547,13 @@ if1of ($(KBUILD_TARGET), win darwin)
  VBOX_WITH_NATIVE_NEM = 1
 endif
 # Enable NEM fallback if the driver is not available.
-if1of ($(KBUILD_TARGET), darwin win)
+if1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_DRIVERLESS_NEM_FALLBACK = 1
 endif
 # Enable forced driverless mode by default.
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 darwin.arm64 win.arm64)
+if1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_DRIVERLESS_FORCED = 1
- ifeq ($(KBUILD_TARGET), darwin)
-  VBOX_WITH_INTNET_SERVICE_IN_R3 = 1
- endif
+ VBOX_WITH_INTNET_SERVICE_IN_R3 = 1
 endif
 # Enables the new breakpoint handling code, see @bugref{8650}
 VBOX_WITH_DBGF_FLOW_TRACING = 1
