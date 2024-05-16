@@ -4243,6 +4243,10 @@ static int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, uint32_t fFlag
             cbOptionalHeader = sizeof(IMAGE_OPTIONAL_HEADER64);
             *penmArch = RTLDRARCH_AMD64;
             break;
+        case IMAGE_FILE_MACHINE_ARM64:
+            cbOptionalHeader = sizeof(IMAGE_OPTIONAL_HEADER64);
+            *penmArch = RTLDRARCH_ARM64;
+            break;
 
         default:
             Log(("rtldrPEOpen: %s: Unsupported Machine=%#x\n", pszLogName, pFileHdr->Machine));
