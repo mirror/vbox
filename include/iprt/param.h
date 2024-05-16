@@ -72,6 +72,8 @@
 #  else
 #   define PAGE_SIZE        RT_DONT_USE_PAGE_SIZE_ON_LINUX_ARM64_IN_USERSPACE_DUE_TO_VARIABLE_PAGE_SIZE
 #  endif
+# elif defined(RT_OS_WINDOWS)
+#  define PAGE_SIZE     	4096
 # else
 #  error "This needs porting"
 # endif
@@ -94,6 +96,8 @@
 #  else
 #   define PAGE_SHIFT       RT_DONT_USE_PAGE_SHIFT_ON_LINUX_ARM64_IN_USERSPACE_DUE_TO_VARIABLE_PAGE_SIZE
 #  endif
+# elif defined(RT_OS_WINDOWS)
+#  define PAGE_SHIFT        12
 # else
 #  error "This needs porting"
 # endif
@@ -118,6 +122,8 @@
 #  else
 #   define PAGE_OFFSET_MASK  RT_DONT_USE_PAGE_OFFSET_MASK_ON_LINUX_ARM64_IN_USERSPACE_DUE_TO_VARIABLE_PAGE_SIZE
 #  endif
+# elif defined(RT_OS_WINDOWS)
+#  define PAGE_OFFSET_MASK   0xfff
 # else
 #  error "This needs porting"
 # endif
