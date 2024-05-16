@@ -42,7 +42,7 @@
   <refnamediv>
     <refname>VBoxHeadless</refname>
     <refpurpose>&product-name; remote desktop server</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

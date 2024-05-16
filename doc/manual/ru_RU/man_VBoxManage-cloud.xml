@@ -37,7 +37,7 @@
   <refmeta>
     <refentrytitle>VBoxManage-cloud</refentrytitle>
     <manvolnum>1</manvolnum>
-    <refmiscinfo class="manual">Oracle VM VirtualBox</refmiscinfo>
+    <refmiscinfo class="manual">&product-name;</refmiscinfo>
   </refmeta>
 
   <refnamediv>

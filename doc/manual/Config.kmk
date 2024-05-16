@@ -334,6 +334,7 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
 		'<!-- Entities for product names -->' \
 		'<!ENTITY product-version "$(VBOX_VERSION_STRING)">' \
 		'<!ENTITY product-name "Oracle VM VirtualBox">' \
+		'<!ENTITY extpack-name "Oracle VM VirtualBox Extension Pack">' \
 		'<!ENTITY vbox-mgr "VirtualBox Manager">' \
 		'<!ENTITY oci "Oracle Cloud Infrastructure">' \
 		'' \

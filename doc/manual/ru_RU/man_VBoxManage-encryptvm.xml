@@ -42,7 +42,7 @@
   <refnamediv>
     <refname>VBoxManage-encryptvm</refname>
     <refpurpose>изменение шифрования и паролей ВМ</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

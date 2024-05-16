@@ -139,7 +139,7 @@
           How to list extension packs:
 <screen>$ VBoxManage list extpacks
 Extension Packs: 1
-Pack no. 0:   Oracle VM VirtualBox Extension Pack
+Pack no. 0:   &extpack-name;
 Version:      4.1.12
 Revision:     77218
 Edition:
@@ -149,9 +149,9 @@ Usable:       true
 Why unusable:</screen></para>
 
     <para>How to remove an extension pack:
-<screen>$ VBoxManage extpack uninstall "Oracle VM VirtualBox Extension Pack"
+<screen>$ VBoxManage extpack uninstall "&extpack-name;"
 0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
-Successfully uninstalled "Oracle VM VirtualBox Extension Pack".</screen></para>
+Successfully uninstalled "&extpack-name;".</screen></para>
   </refsect1>
 
 </refentry>

@@ -42,7 +42,7 @@
   <refnamediv>
     <refname>vboximg-mount</refname>
     <refpurpose>FUSE mount a virtual disk image for Mac OS and Linux hosts</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
