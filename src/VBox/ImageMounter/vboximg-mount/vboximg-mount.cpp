@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -71,6 +71,7 @@
 #include <VBox/com/array.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/vd-plugin.h>
+#include <VBox/version.h> /* VBOX_PUEL_PRODUCT */
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/message.h>
@@ -104,7 +105,7 @@ enum {
 # define S_ISTXT (S_ISVTX)
 #endif
 
-#define VBOX_EXTPACK                "Oracle VM VirtualBox Extension Pack"
+#define VBOX_EXTPACK                VBOX_PUEL_PRODUCT
 #define VERBOSE                     g_vboximgOpts.fVerbose
 
 #define SAFENULL(strPtr)   (strPtr ? strPtr : "")

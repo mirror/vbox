@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -3155,7 +3155,7 @@ int Console::i_configNetwork(const char *pszDevice,
 #ifdef VBOX_WITH_CLOUD_NET
             case NetworkAttachmentType_Cloud:
             {
-                static const char *s_pszCloudExtPackName = "Oracle VM VirtualBox Extension Pack";
+                static const char *s_pszCloudExtPackName = VBOX_PUEL_PRODUCT;
                 /*
                  * Cloud network attachments do not work wihout installed extpack.
                  * Without extpack support they won't work either.

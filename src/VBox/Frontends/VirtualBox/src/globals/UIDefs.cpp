@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -28,10 +28,13 @@
 /* GUI includes: */
 #include "UIDefs.h"
 
+/* Other VBox includes: */
+#include <VBox/version.h> /* VBOX_PUEL_PRODUCT */
+
 
 /* File name definitions: */
 const char* UIDefs::GUI_GuestAdditionsName = "VBoxGuestAdditions";
-const char* UIDefs::GUI_ExtPackName = "Oracle VM VirtualBox Extension Pack";
+const char* UIDefs::GUI_ExtPackName = VBOX_PUEL_PRODUCT;
 
 /* File extensions definitions: */
 QStringList UIDefs::VBoxFileExts = QStringList() << "xml" << "vbox";
