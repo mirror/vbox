@@ -45,7 +45,7 @@ iPxeBiosBin_SOURCES  = $(iPxeBiosBin_0_OUTDIR)/iPxeBiosBin.c
 iPxeBiosBin_CLEAN    = \
 	$(iPxeBiosBin_0_OUTDIR)/iPxeBiosBin.c \
 
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 darwin.arm64 linux.arm64 os2.x86 solaris.amd64 win.amd64)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 darwin.arm64 linux.arm64 os2.x86 solaris.amd64 win.amd64 win.arm64)
  $$(iPxeBiosBin_0_OUTDIR)/iPxeBiosBin.c: $(PATH_SUB_CURRENT)/iPxeBiosBin.rom $(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,iPxeBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -min 32 -max 56 -mask 0x1ff -export NetBiosBinary $< $@
