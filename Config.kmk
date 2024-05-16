@@ -558,7 +558,7 @@ endif
 # Enables the new breakpoint handling code, see @bugref{8650}
 VBOX_WITH_DBGF_FLOW_TRACING = 1
 # Enables ARMv8 virtualization, see @bugref{10383}
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64 win.arm64)
  VBOX_WITH_VIRT_ARMV8 = 1
 endif
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.amd64)
@@ -780,7 +780,7 @@ VBOX_WITH_GUEST_INSTALLER_UNICODE = 1
 # The kernel driver/module and related runtime libraries.
 # On Linux we build this as a test case instead.
 # On darwin we don't use a support driver.
-if "$(KBUILD_TARGET)" != "linux" && "$(KBUILD_TARGET)" != "darwin"
+if "$(KBUILD_TARGET)" != "linux" && "$(KBUILD_TARGET)" != "darwin" && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" != "win.arm64"
  VBOX_WITH_VBOXDRV = 1
 endif
 # The main api.
@@ -1948,8 +1948,10 @@ ifndef VBOX_GCC_TOOL
   ifeq ($(KBUILD_TARGET_ARCH),x86)
    VBOX_GCC_TOOL := MINGW32
    TOOL_MINGW32_CFLAGS := $(UNDEFINED) # override -g
-  else
+  else ifeq ($(KBUILD_TARGET_ARCH),amd64)
    VBOX_GCC_TOOL := MINGWW64
+  else_ifeq ($(KBUILD_TARGET_ARCH),arm64)
+   VBOX_GCC_TOOL := CLANGVCC143ARM64
   endif
  else ifeq ($(KBUILD_TARGET),os2)
   VBOX_GCC_TOOL := GXX3OMF
@@ -1997,12 +1999,16 @@ endif
 #
 ifndef VBOX_VCC_TOOL_STEM
  ifdef VBOX_WITH_NEW_VCC
-  VBOX_VCC_TOOL_STEM := VCC142
+  ifeq ($(KBUILD_TARGET_ARCH),arm64)
+   VBOX_VCC_TOOL_STEM := VCC143
+  else
+   VBOX_VCC_TOOL_STEM := VCC142
+  endif
  else
   VBOX_VCC_TOOL_STEM := VCC100
  endif
-else ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120 VCC140 VCC141 VCC142)
- $(error VBox: VBOX_VCC_TOOL_STEM='$(VBOX_VCC_TOOL_STEM)' is not supported, only VCC100, VCC110, VCC120, VCC140, VCC141, VCC142 are)
+else ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120 VCC140 VCC141 VCC142 VCC143)
+ $(error VBox: VBOX_VCC_TOOL_STEM='$(VBOX_VCC_TOOL_STEM)' is not supported, only VCC100, VCC110, VCC120, VCC140, VCC141, VCC142, VCC143 are)
 endif
 ifndef VBOX_VCC_TOOL
  VBOX_VCC_TOOL := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_TARGET_ARCH))
@@ -2017,7 +2023,7 @@ ifndef VBOX_NEWER_VCC_TOOL_STEM
  else
   VBOX_NEWER_VCC_TOOL_STEM := VCC120
  endif
-else ifn1of ($(VBOX_NEWER_VCC_TOOL_STEM), VCC120 VCC140 VCC141 VCC142)
+else ifn1of ($(VBOX_NEWER_VCC_TOOL_STEM), VCC120 VCC140 VCC141 VCC142 VCC143)
  $(error VBox: VBOX_NEWER_VCC_TOOL_STEM='$(VBOX_NEWER_VCC_TOOL_STEM)' is not supported)
 endif
 ifndef VBOX_NEWER_VCC_TOOL
@@ -3223,16 +3229,18 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
  # Note! That a harmless warning is printed if the file doesn't exist.
  # Note! Changes in GCC are not detected automatically (yet).
  #
- if $(pos VBox,$(VBOX_GCC_TOOL)) > 0
-  include $(KBUILD_TOOL_PATHS)/$(VBOX_GCC_TOOL).kmk
- else
-  include $(KBUILD_PATH)/tools/$(VBOX_GCC_TOOL).kmk
- endif
- ifneq ($(VBOX_GCC_TOOL),$(VBOX_GCC32_TOOL))
-  if $(pos VBox,$(VBOX_GCC32_TOOL)) > 0
-   include $(KBUILD_TOOL_PATHS)/$(VBOX_GCC32_TOOL).kmk
+ ifneq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.arm64)
+  if $(pos VBox,$(VBOX_GCC_TOOL)) > 0
+   include $(KBUILD_TOOL_PATHS)/$(VBOX_GCC_TOOL).kmk
   else
-   include $(KBUILD_PATH)/tools/$(VBOX_GCC32_TOOL).kmk
+   include $(KBUILD_PATH)/tools/$(VBOX_GCC_TOOL).kmk
+  endif
+  ifneq ($(VBOX_GCC_TOOL),$(VBOX_GCC32_TOOL))
+   if $(pos VBox,$(VBOX_GCC32_TOOL)) > 0
+    include $(KBUILD_TOOL_PATHS)/$(VBOX_GCC32_TOOL).kmk
+   else
+    include $(KBUILD_PATH)/tools/$(VBOX_GCC32_TOOL).kmk
+   endif
   endif
  endif
 
@@ -3435,7 +3443,9 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_VERSION_CXX           ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CXX))'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_PATH_CC               ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CC))'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_PATH_CXX              ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CXX))'
+ ifneq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.arm64)
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_LIBGCC                ?= $(shell $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-libgcc-file-name)'
+ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-pointer-sign      ?= $(call VBOX_GCC_CHECK_CC,-Wno-pointer-sign,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-array_bounds      ?= $(call VBOX_GCC_CHECK_CC,-Wno-array-bounds,)'
  # -Wextra produces additional useful warnings but includes -Wno-missing-field-initializers (too noisy)
@@ -5256,6 +5266,7 @@ endif
 SDK_VBoxNtDll                 := Mini NTDLL import library, required by IPRT.
 SDK_VBoxNtDll_LIBS.x86        ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-x86.lib
 SDK_VBoxNtDll_LIBS.amd64      ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-amd64.lib
+SDK_VBoxNtDll_LIBS.arm64      ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-arm64.lib
 
 #
 # SDK for including newdev.lib.
@@ -5265,6 +5276,7 @@ SDK_VBoxWinNewDevLib            := Abstracts where to find newdev.lib.
 ifn1of ($(VBOX_WINPSDK), WINPSDK71 WINPSDK80)
  SDK_VBoxWinNewDevLib_LIBS.x86   = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/newdev.lib
  SDK_VBoxWinNewDevLib_LIBS.amd64 = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.amd64)/newdev.lib
+ SDK_VBoxWinNewDevLib_LIBS.arm64 = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.arm64)/newdev.lib
 else
  SDK_VBoxWinNewDevLib_LIBS.x86   = $(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/newdev.lib
  SDK_VBoxWinNewDevLib_LIBS.amd64 = $(PATH_SDK_$(VBOX_WINDDK)_LIB.amd64)/newdev.lib
@@ -6293,6 +6305,7 @@ ifeq ($(KBUILD_TARGET),win)
  # TEMPLATE_VBoxR3Exe_TOOL               = $(VBOX_VCC_TOOL)
  TEMPLATE_VBoxR3Exe_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
  TEMPLATE_VBoxR3Exe_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
+ TEMPLATE_VBoxR3Exe_TOOL.win.arm64     = $(VBOX_VCC_TOOL_STEM)ARM64
  TEMPLATE_VBoxR3Exe_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBoxR3Exe_SDKS              = ReorderCompilerIncs WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER) $(VBOX_WINPSDK)
@@ -6357,6 +6370,11 @@ ifeq ($(KBUILD_TARGET),win)
   	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.amd64)_LIB)/oldnames.lib
+  TEMPLATE_VBoxR3Exe_LIBS.arm64         = \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.arm64)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.arm64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.arm64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.arm64)_LIB)/oldnames.lib
   ifeq ($(KBUILD_TYPE),asan)
    TEMPLATE_VBoxR3Exe_LIBS.x86         += \
    	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.x86)_LIB)/clang_rt.asan_dynamic-i386.lib \
@@ -6689,6 +6707,11 @@ ifeq ($(KBUILD_TARGET),win)
    	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
    	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
    	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.amd64)_LIB)/oldnames.lib
+   TEMPLATE_VBoxR3StaticBase_LIBS.arm64        = \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.arm64)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.arm64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.arm64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.arm64)_LIB)/oldnames.lib
   endif
   ifeq ($(KBUILD_TYPE),asan)
    TEMPLATE_VBoxR3StaticBase_LIBS.x86         += \
@@ -6711,6 +6734,10 @@ ifeq ($(KBUILD_TARGET),win)
    	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
    	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
    	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.amd64)_LIB)/oldnames.lib
+   TEMPLATE_VBoxR3StaticBase_LIBS.arm64        = \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.arm64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.arm64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxR3StaticBase_TOOL.win.arm64)_LIB)/oldnames.lib
   endif
  endif
 else
@@ -7244,6 +7271,7 @@ ifeq ($(KBUILD_TARGET),win)
  #TEMPLATE_VBoxMainExe_TOOL               = $(VBOX_VCC_TOOL)
  TEMPLATE_VBoxMainExe_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
  TEMPLATE_VBoxMainExe_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
+ TEMPLATE_VBoxMainExe_TOOL.win.arm64     = $(VBOX_VCC_TOOL_STEM)ARM64
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBoxMainExe_SDKS              = ReorderCompilerIncs WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER) $(VBOX_WINPSDK) $(VBOX_WINDDK)
  else
@@ -7314,6 +7342,11 @@ ifeq ($(KBUILD_TARGET),win)
   	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.amd64)_LIB)/oldnames.lib
+  TEMPLATE_VBoxMainExe_LIBS.arm64         = \
+    $(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.arm64)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.arm64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.arm64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.arm64)_LIB)/oldnames.lib
   ifeq ($(KBUILD_TYPE),asan)
    TEMPLATE_VBoxMainExe_LIBS.x86         += \
    	$(PATH_TOOL_$(TEMPLATE_VBoxMainExe_TOOL.win.x86)_LIB)/clang_rt.asan_dynamic-i386.lib \
@@ -8790,6 +8823,10 @@ if "$(KBUILD_TARGET)" == "win" && "$(VBOX_NEWER_VCC_TOOL_STEM)" != "$(VBOX_VCC_T
   	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB)/oldnames.lib \
   	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
+  TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.arm64         = \
+    $(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.arm64)_LIB)/oldnames.lib \
+    $(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.arm64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
+    $(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.arm64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib
  endif # !VBOX_WITH_NOCRT_STATIC
  # Hack end
 endif
