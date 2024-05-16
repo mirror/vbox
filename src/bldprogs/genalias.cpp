@@ -281,7 +281,7 @@ static int WriteAliasObjectX86COFF(FILE *pOutput, const char *pszAlias, const ch
     return WriteAliasObjectCOFF(pOutput, pszAlias, pszReal, true  /*fUnderscored*/);
 }
 
-static int WriteAliasObjectAmd64COFF(FILE *pOutput, const char *pszAlias, const char *pszReal)
+static int WriteAliasObjectAmd64Arm64COFF(FILE *pOutput, const char *pszAlias, const char *pszReal)
 {
     return WriteAliasObjectCOFF(pOutput, pszAlias, pszReal, false /*fUnderscored*/);
 }
@@ -423,7 +423,9 @@ int main(int argc, char **argv)
     else if (!strcmp(argv[2], "coff.x86"))
         pfnWriter = WriteAliasObjectX86COFF;
     else if (!strcmp(argv[2], "coff.amd64"))
-        pfnWriter = WriteAliasObjectAmd64COFF;
+        pfnWriter = WriteAliasObjectAmd64Arm64COFF;
+    else if (!strcmp(argv[2], "coff.arm64"))
+        pfnWriter = WriteAliasObjectAmd64Arm64COFF;
     else if (!strcmp(argv[2], "elf"))
         pfnWriter = WriteAliasObjectELF;
     else if (!strcmp(argv[2], "omf"))
