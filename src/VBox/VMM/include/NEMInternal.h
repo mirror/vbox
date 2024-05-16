@@ -251,17 +251,24 @@ typedef struct NEM
 #elif defined(RT_OS_WINDOWS)
     /** Set if we've created the EMTs. */
     bool                        fCreatedEmts : 1;
+# if defined(VBOX_VMM_TARGET_ARMV8)
+    bool                        fHypercallExit : 1;
+    bool                        fGpaAccessFaultExit : 1;
+    /** Cache line flush size as a power of two. */
+    uint8_t                     cPhysicalAddressWidth;
+# else
     /** WHvRunVpExitReasonX64Cpuid is supported. */
     bool                        fExtendedMsrExit : 1;
     /** WHvRunVpExitReasonX64MsrAccess is supported. */
     bool                        fExtendedCpuIdExit : 1;
     /** WHvRunVpExitReasonException is supported. */
     bool                        fExtendedXcptExit : 1;
-# ifdef NEM_WIN_WITH_A20
+#  ifdef NEM_WIN_WITH_A20
     /** Set if we've started more than one CPU and cannot mess with A20. */
     bool                        fA20Fixed : 1;
     /** Set if A20 is enabled. */
     bool                        fA20Enabled : 1;
+#  endif
 # endif
     /** The reported CPU vendor.   */
     CPUMCPUVENDOR               enmCpuVendor;
@@ -472,6 +479,11 @@ typedef struct NEMCPU
 
 
 #elif defined(RT_OS_WINDOWS)
+# ifdef VBOX_VMM_TARGET_ARMV8
+    /** Flag whether the ID registers were synced to the guest context
+     * (for first guest exec call on the EMT after loading the saved state). */
+    bool                        fIdRegsSynced;
+# else
     /** The current state of the interrupt windows (NEM_WIN_INTW_F_XXX). */
     uint8_t                     fCurrentInterruptWindows;
     /** The desired state of the interrupt windows (NEM_WIN_INTW_F_XXX). */
@@ -486,6 +498,7 @@ typedef struct NEMCPU
     RTR3PTR                     pvMsgSlotMapping;
     /** The windows thread handle. */
     RTR3PTR                     hNativeThreadHandle;
+# endif
 
     /** @name Statistics
      * @{ */
