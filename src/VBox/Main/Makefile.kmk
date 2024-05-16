@@ -1528,7 +1528,7 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined
  src-all/win/VBoxProxyStub.rc_DEPS = $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
  VBoxProxyStub_VirtualBox_p.c_CFLAGS.x86 = /Gz # Workaround for incorrect ObjectStublessClient* prototypes in SDK v7.1.
 
- ifn1of ($(KBUILD_TARGET_ARCH),arm64)
+ ifn1of ($(KBUILD_TARGET_ARCH), arm64)
   DLLS += VBoxProxyStubLegacy
   VBoxProxyStubLegacy_TEMPLATE = VBoxMainComp
   VBoxProxyStubLegacy_EXTENDS  = VBoxProxyStub
