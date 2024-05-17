@@ -722,7 +722,7 @@ typedef struct BS3CPUINSTR4_TEST1_CTX_T
 {
     BS3CPUINSTR4_CONFIG_T const BS3_FAR          *pConfig;
     BS3CPUINSTR4_TEST1_T const BS3_FAR           *pTest;
-    BS3CPUINSTR4_TEST1_VALUES_PD_T const BS3_FAR *pValues;
+    unsigned                                      iVal;
     const char BS3_FAR                           *pszMode;
     PBS3TRAPFRAME                                 pTrapFrame;
     PBS3REGCTX                                    pCtx;
@@ -747,8 +747,8 @@ typedef BS3CPUINSTR4_TEST1_CTX_T BS3_FAR *PBS3CPUINSTR4_TEST1_CTX_T;
 static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_TEST1_CTX_T pTestCtx,
                                                    PCBS3CPUINSTRX_CONFIG_SAVED_T pSavedCfg)
 {
-    BS3CPUINSTR4_TEST1_T const BS3_FAR *       pTest   = pTestCtx->pTest;
-    BS3CPUINSTR4_TEST1_VALUES_PD_T const BS3_FAR *pValues = pTestCtx->pValues;
+    BS3CPUINSTR4_TEST1_T const BS3_FAR           *pTest   = pTestCtx->pTest;
+    BS3CPUINSTR4_TEST1_VALUES_PD_T const BS3_FAR *pValues = &pTestCtx->pTest->paValues[pTestCtx->iVal];
     PBS3TRAPFRAME    pTrapFrame     = pTestCtx->pTrapFrame;
     PBS3REGCTX       pCtx           = pTestCtx->pCtx;
     PBS3EXTCTX       pExtCtx        = pTestCtx->pExtCtx;
@@ -817,17 +817,15 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
     }
 
     /* Setup MXCSR for the current test. */
-    {
-        uMxCsr = (pSavedCfg->uMxCsr         & ~(X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_MASK))
-               | (pValues->fMxCsrMask       & X86_MXCSR_XCPT_MASK)
-               | (pValues->fRoundingCtlMask & X86_MXCSR_RC_MASK);
-        if (   pValues->fDenormalsAreZero
-            && g_fMxCsrDazSupported)
-            uMxCsr |= X86_MXCSR_DAZ;
-        if (pValues->fFlushToZero)
-            uMxCsr |= X86_MXCSR_FZ;
-        Bs3ExtCtxSetMxCsr(pExtCtx, uMxCsr);
-    }
+    uMxCsr = (pSavedCfg->uMxCsr         & ~(X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_MASK))
+           | (pValues->fMxCsrMask       & X86_MXCSR_XCPT_MASK)
+           | (pValues->fRoundingCtlMask & X86_MXCSR_RC_MASK);
+    if (   pValues->fDenormalsAreZero
+        && g_fMxCsrDazSupported)
+        uMxCsr |= X86_MXCSR_DAZ;
+    if (pValues->fFlushToZero)
+        uMxCsr |= X86_MXCSR_FZ;
+    Bs3ExtCtxSetMxCsr(pExtCtx, uMxCsr);
 
     /*
      * Prepare globals and execute.
@@ -863,7 +861,6 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
 
     if (bXcptExpect == X86_XCPT_DB)
     {
-        PBS3TRAPFRAME volatile pTrapFrameXcpt = pTrapFrame;
         uint32_t const fMxCsrXcptFlags = Bs3ExtCtxGetMxCsr(pExtCtxOut) & X86_MXCSR_XCPT_FLAGS;
 
         /* Check if the SIMD FP exception flags (or lack of) are as expected. */
@@ -879,16 +876,16 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
         /* Check if the SIMD FP exception (or lack of) is as expected. */
         if (fFpFlagsExpect)
         {
-            if (pTrapFrameXcpt->bXcpt == bFpXcpt)
+            if (pTrapFrame->bXcpt == bFpXcpt)
             { /* likely */ }
             else
                 Bs3TestFailedF("Expected floating-point xcpt %s, got %s", bs3CpuInstr4XcptName(bFpXcpt),
-                               bs3CpuInstr4XcptName(pTrapFrameXcpt->bXcpt));
+                               bs3CpuInstr4XcptName(pTrapFrame->bXcpt));
         }
-        else if (pTrapFrameXcpt->bXcpt == X86_XCPT_DB)
+        else if (pTrapFrame->bXcpt == X86_XCPT_DB)
         { /* likely */ }
         else
-            Bs3TestFailedF("Expected no xcpt, got %s", bs3CpuInstr4XcptName(pTrapFrameXcpt->bXcpt));
+            Bs3TestFailedF("Expected no xcpt, got %s", bs3CpuInstr4XcptName(pTrapFrame->bXcpt));
     }
     /* Check if non-FP exception is as expected. */
     else if (pTrapFrame->bXcpt != bXcptExpect)
@@ -903,7 +900,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
     }
     if (bXcptExpect == X86_XCPT_PF)
         pCtx->cr2.u = (uintptr_t)puMemOp;
-    Bs3TestCheckRegCtxEx(&pTrapFrame->Ctx, pCtx, bXcptExpect == X86_XCPT_DB && !fFpFlagsExpect ? cbInstr + 1 : 0, 0,
+    Bs3TestCheckRegCtxEx(&pTrapFrame->Ctx, pCtx, bXcptExpect == X86_XCPT_DB && !fFpFlagsExpect ? cbInstr + 1 : 0, 0 /*cbSpAdjust*/,
                          (bXcptExpect == X86_XCPT_DB && !fFpFlagsExpect) || BS3_MODE_IS_16BIT_SYS(bMode) ? 0 : X86_EFL_RF,
                          pTestCtx->pszMode, pTestCtx->idTestStep);
     pCtx->cr2.u = 0;
@@ -1022,7 +1019,6 @@ static uint8_t bs3CpuInstrX_WorkerTestType1(uint8_t bMode, BS3CPUINSTR4_TEST1_T 
                         {
                             uint16_t cErrors;
                             BS3CPUINSTR4_TEST1_CTX_T TestCtx;
-                            BS3CPUINSTR4_TEST1_VALUES_PD_T const BS3_FAR *pValues = &pTest->paValues[iVal];
 
                             if (BS3_SKIPIT(bRing, iCfg, iTest, iVal, 0))
                                 continue;
@@ -1034,7 +1030,7 @@ static uint8_t bs3CpuInstrX_WorkerTestType1(uint8_t bMode, BS3CPUINSTR4_TEST1_T 
                              */
                             TestCtx.pConfig             = &paConfigs[iCfg];
                             TestCtx.pTest               = pTest;
-                            TestCtx.pValues             = pValues;
+                            TestCtx.iVal                = iVal;
                             TestCtx.pszMode             = pszMode;
                             TestCtx.pTrapFrame          = &TrapFrame;
                             TestCtx.pCtx                = &Ctx;
