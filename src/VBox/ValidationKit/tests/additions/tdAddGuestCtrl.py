@@ -5570,11 +5570,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         """
 
-        ## @todo currently disabled everywhere.
-        if self.oTstDrv.fpApiVer < 100.0:
-            reporter.log("Skipping updating GAs everywhere for now...");
-            return None;
-
         # Skip test for updating Guest Additions if we run on a too old (Windows) guest.
         ##
         ## @todo make it work everywhere!
