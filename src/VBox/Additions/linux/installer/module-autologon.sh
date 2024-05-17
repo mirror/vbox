@@ -1,4 +1,4 @@
-# Oracle VM VirtualBox
+# Oracle VirtualBox
 # $Id$
 ## @file
 # VirtualBox Linux Guest Additions installer - autologon module
@@ -179,4 +179,3 @@ mod_autologon_config_save()
 MOD_AUTOLOGON_LIGHTDM_CONFIG='$MOD_AUTOLOGON_LIGHTDM_CONFIG'
 MOD_AUTOLOGON_LIGHTDM_GREETER_DIR='$MOD_AUTOLOGON_LIGHTDM_GREETER_DIR'"
 }
-

@@ -1,4 +1,4 @@
-# Oracle VM VirtualBox
+# Oracle VirtualBox
 # VirtualBox to Linux kernel coding style conversion script.
 
 #
