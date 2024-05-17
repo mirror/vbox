@@ -610,12 +610,12 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
   buildserver-extpacks_INST = $(INST_DIST)
   buildserver-extpacks_MODE = 0644
   buildserver-extpacks_SOURCES = \
-  	$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack
+  	$(buildserver-extpacks_0_OUTDIR)/$(VBOX_PUEL_MANGLED_NAME).vbox-extpack
   buildserver-extpacks_CLEANS = \
-  	$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack \
-  	$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack.tmp
+  	$(buildserver-extpacks_0_OUTDIR)/$(VBOX_PUEL_MANGLED_NAME).vbox-extpack \
+  	$(buildserver-extpacks_0_OUTDIR)/$(VBOX_PUEL_MANGLED_NAME).vbox-extpack.tmp
 
-  $$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack: \
+  $$(buildserver-extpacks_0_OUTDIR)/$(VBOX_PUEL_MANGLED_NAME).vbox-extpack: \
   		$(VBOX_SVN_REV_KMK) $(KBUILD_DEVTOOLS)/bin/extpacks.sh | $$(dir $$@)
 	$(RM) -f -- "$@.tmp" "$@"
 	$(SHELL) $(KBUILD_DEVTOOLS)/bin/extpacks.sh --cmd fetch --filename "$@.tmp" --vbox-version "$(VBOX_VERSION_STRING_NO_PUB)" \
