@@ -7653,8 +7653,11 @@ int Console::i_recordingStart(util::AutoWriteLock *pAutoLock /* = NULL */)
 
 /**
  * Stops recording. Does nothing if recording is not active.
+ *
+ * Note: This does *not* disable recording for a VM, in other words,
+ *       it does not change the VM's recording (enabled) setting.
  */
-int Console::i_recordingStop(util::AutoWriteLock *pAutoLock /* = NULL */)
+int Console::i_recordingStop(util::AutoWriteLock *)
 {
     if (!mRecording.mCtx.IsStarted())
         return VINF_SUCCESS;
@@ -7667,18 +7670,6 @@ int Console::i_recordingStop(util::AutoWriteLock *pAutoLock /* = NULL */)
         const size_t cStreams = mRecording.mCtx.GetStreamCount();
         for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
             mDisplay->i_recordingScreenChanged(uScreen);
-
-        if (pAutoLock)
-            pAutoLock->release();
-
-        ComPtr<IRecordingSettings> pRecordSettings;
-        HRESULT hrc = mMachine->COMGETTER(RecordingSettings)(pRecordSettings.asOutParam());
-        ComAssertComRC(hrc);
-        hrc = pRecordSettings->COMSETTER(Enabled)(FALSE);
-        ComAssertComRC(hrc);
-
-        if (pAutoLock)
-            pAutoLock->acquire();
     }
 
     LogFlowFuncLeaveRC(vrc);
