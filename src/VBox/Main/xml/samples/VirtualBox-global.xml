@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<!-- Oracle VM VirtualBox Sample Global Configuration -->
+<!-- Oracle VirtualBox Sample Global Configuration -->
 <!--
  *  :tabSize=2:indentSize=2:noTabs=true:
  *  :folding=explicit:collapseFolds=1:
@@ -58,5 +58,3 @@
   </Global>
 
 </VirtualBox>
-
-

@@ -279,7 +279,8 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
      */
 # ifdef VBOX_WITH_EXTPACK
     static const char *s_pszPCIRawExtPackName = VBOX_PUEL_PRODUCT;
-    if (!mptrExtPackManager->i_isExtPackUsable(s_pszPCIRawExtPackName))
+    if (   !mptrExtPackManager->i_isExtPackUsable(s_pszPCIRawExtPackName)
+        && !mptrExtPackManager->i_isExtPackUsable("Oracle VM VirtualBox Extension Pack")) /* Legacy name -- see @bugref{10690}. */
         /* Always fatal! */
         return pVMM->pfnVMR3SetError(pUVM, VERR_NOT_FOUND, RT_SRC_POS,
                                      N_("Implementation of the PCI passthrough framework not found!\n"

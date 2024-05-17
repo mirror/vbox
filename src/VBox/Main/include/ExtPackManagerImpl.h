@@ -40,7 +40,7 @@
 #include <iprt/fs.h>
 
 
-/** The name of the oracle extension back. */
+/** The name of the Oracle extension pack. */
 #define ORACLE_PUEL_EXTPACK_NAME VBOX_PUEL_PRODUCT
 
 

@@ -3,7 +3,7 @@
  *  :tabSize=2:indentSize=2:noTabs=true:
  *  :folding=explicit:collapseFolds=1:
  *
- *  Oracle VM VirtualBox Settings Schema
+ *  Oracle VirtualBox Settings Schema
  *  Common definitions
 -->
 <!--
@@ -38,7 +38,7 @@
 
 <xsd:annotation>
   <xsd:documentation xml:lang="en">
-    Oracle VM VirtualBox Settings Schema (common definitions).
+    Oracle VirtualBox Settings Schema (common definitions).
     Copyright (C) 2004-2023 Oracle and/or its affiliates.
   </xsd:documentation>
 </xsd:annotation>

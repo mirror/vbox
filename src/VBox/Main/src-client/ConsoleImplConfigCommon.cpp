@@ -3161,7 +3161,8 @@ int Console::i_configNetwork(const char *pszDevice,
                  * Without extpack support they won't work either.
                  */
 # ifdef VBOX_WITH_EXTPACK
-                if (!mptrExtPackManager->i_isExtPackUsable(s_pszCloudExtPackName))
+                if (   !mptrExtPackManager->i_isExtPackUsable(s_pszCloudExtPackName)
+                    && !mptrExtPackManager->i_isExtPackUsable("Oracle VM VirtualBox Extension Pack")) /* Legacy name -- see @bugref{10690}. */
 # endif
                 {
                     return pVMM->pfnVMR3SetError(pUVM, VERR_NOT_FOUND, RT_SRC_POS,
