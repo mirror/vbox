@@ -197,7 +197,7 @@ def __processSudoKill(uPid, iSignal, fSudo):
         os.kill(uPid, iSignal);
         return True;
     except:
-        reporter.logXcpt('uPid=%s' % (uPid,));
+        reporter.logXcpt('uPid=%s, iSignal=%d, fSudo=%s' % (uPid, iSignal, fSudo));
     return False;
 
 def processInterrupt(uPid, fSudo = False):
