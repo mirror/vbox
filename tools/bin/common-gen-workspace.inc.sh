@@ -348,6 +348,7 @@ my_generate_all_projects()
     # src/VBox/HostServices
     my_generate_project "HS-auth"       "src/VBox/HostServices/auth"            --begin-incs "include" "src/VBox/HostServices/auth"            --end-includes "src/VBox/HostServices/auth"
     my_generate_project "HS-common"     "src/VBox/HostServices/common"          --begin-incs "include" "src/VBox/HostServices/common"          --end-includes "src/VBox/HostServices/common"
+    my_generate_project "HS-testcase"   "src/VBox/HostServices/testcase"        --begin-incs "include" "src/VBox/HostServices/testcase"        --end-includes "src/VBox/HostServices/testcase"
     my_generate_project "GstCtl-HS"     "src/VBox/HostServices/GuestControl"    --begin-incs "include" "src/VBox/HostServices/GuestControl"    --end-includes "src/VBox/HostServices/GuestControl"
     if test -z "$MY_OPT_MINIMAL"; then
         my_generate_project "DragAndDrop-HS" "src/VBox/HostServices/DragAndDrop" --begin-incs "include" "src/VBox/HostServices/DragAndDrop"     --end-includes "src/VBox/HostServices/DragAndDrop"
