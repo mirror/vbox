@@ -5620,8 +5620,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log('Testing #%d, sSrc="%s", afFlags="%s" ...' % (i, oCurTest.sSrc, oCurTest.afFlags,));
 
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            if not fRc:
-                break;
+
             fRc, _ = oCurTest.createSession('Test #%d' % (i,));
             if fRc is not True:
                 fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
