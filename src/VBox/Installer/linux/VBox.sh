@@ -1,6 +1,6 @@
 #!/bin/sh
 ## @file
-# Oracle VM VirtualBox startup script, Linux hosts.
+# Oracle VirtualBox startup script, Linux hosts.
 #
 
 #

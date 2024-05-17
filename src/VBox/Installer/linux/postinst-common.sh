@@ -1,7 +1,7 @@
 #!/bin/sh
 # $Id$
 ## @file
-# Oracle VM VirtualBox
+# Oracle VirtualBox
 # VirtualBox Linux post-installer common portions
 #
 

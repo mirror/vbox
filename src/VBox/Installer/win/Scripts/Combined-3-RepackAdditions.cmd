@@ -237,7 +237,7 @@ rem TBD: that has to be converted to invoke auto-generated .cmd
         -E "PATH_TARGET_X86=%_MY_REPACK_DIR_X86%\resources" ^
         -E "VBOX_PATH_ADDITIONS_WIN_X86=%_MY_REPACK_DIR_AMD64%\..\bin\additions" ^
         -E "VBOX_PATH_DIFX=%KBUILD_DEVTOOLS%\win.amd64\DIFx\v2.1-r3" ^
-        -E "VBOX_VENDOR=Oracle Corporation" -E "VBOX_VENDOR_SHORT=Oracle" -E "VBOX_PRODUCT=Oracle VM VirtualBox" ^
+        -E "VBOX_VENDOR=Oracle Corporation" -E "VBOX_VENDOR_SHORT=Oracle" -E "VBOX_PRODUCT=Oracle VirtualBox" ^
         -E "VBOX_C_YEAR=@VBOX_C_YEAR@" -E "VBOX_VERSION_STRING=@VBOX_VERSION_STRING@" -E "VBOX_VERSION_STRING_RAW=@VBOX_VERSION_STRING_RAW@" ^
         -E "VBOX_VERSION_MAJOR=@VBOX_VERSION_MAJOR@" -E "VBOX_VERSION_MINOR=@VBOX_VERSION_MINOR@" -E "VBOX_VERSION_BUILD=@VBOX_VERSION_BUILD@" -E "VBOX_SVN_REV=@VBOX_SVN_REV@" ^
         -E "VBOX_WINDOWS_ADDITIONS_ICON_FILE=%_MY_OPT_SRC_DIR%\VirtualBoxGA-vista.ico" ^
@@ -268,7 +268,7 @@ rem TBD: that has to be converted to invoke auto-generated .cmd
         -E "PATH_TARGET_X86=%_MY_REPACK_DIR_X86%\resources" ^
         -E "VBOX_PATH_ADDITIONS_WIN_X86=%_MY_REPACK_DIR_X86%\..\bin\additions" ^
         -E "VBOX_PATH_DIFX=%KBUILD_DEVTOOLS%\win.x86\DIFx\v2.1-r3" ^
-        -E "VBOX_VENDOR=Oracle Corporation" -E "VBOX_VENDOR_SHORT=Oracle" -E "VBOX_PRODUCT=Oracle VM VirtualBox" ^
+        -E "VBOX_VENDOR=Oracle Corporation" -E "VBOX_VENDOR_SHORT=Oracle" -E "VBOX_PRODUCT=Oracle VirtualBox" ^
         -E "VBOX_C_YEAR=@VBOX_C_YEAR@" -E "VBOX_VERSION_STRING=@VBOX_VERSION_STRING@" -E "VBOX_VERSION_STRING_RAW=@VBOX_VERSION_STRING_RAW@" ^
         -E "VBOX_VERSION_MAJOR=@VBOX_VERSION_MAJOR@" -E "VBOX_VERSION_MINOR=@VBOX_VERSION_MINOR@" -E "VBOX_VERSION_BUILD=@VBOX_VERSION_BUILD@" -E "VBOX_SVN_REV=@VBOX_SVN_REV@" ^
         -E "VBOX_WINDOWS_ADDITIONS_ICON_FILE=%_MY_OPT_SRC_DIR%\VirtualBoxGA-vista.ico" ^

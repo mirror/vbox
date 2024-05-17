@@ -32,7 +32,7 @@ Recommends: ${alsa}, ${pulse}, ${sdlttf}, kmod | kldutils | module-init-tools,
 Provides: virtualbox
 Replaces: virtualbox
 Conflicts: virtualbox, virtualbox-dkms, virtualbox-ose, virtualbox-qt, virtualbox-guest-additions-iso
-Description: Oracle VM VirtualBox
+Description: Oracle VirtualBox
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
  Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad
@@ -46,7 +46,7 @@ Depends: virtualbox-7.0 (= ${binary:Version})
 Provides: virtualbox-dbg
 Replaces: virtualbox-dbg
 Conflicts: virtualbox-dbg, virtualbox-ose-dbg, virtualbox-qt-dbg
-Description: Oracle VM VirtualBox debugging symbols
+Description: Oracle VirtualBox debugging symbols
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
  Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad

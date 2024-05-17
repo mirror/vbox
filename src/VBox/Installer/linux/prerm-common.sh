@@ -1,7 +1,7 @@
 #!/bin/sh
 # $Id$
 ## @file
-# Oracle VM VirtualBox
+# Oracle VirtualBox
 # VirtualBox Linux pre-uninstaller common portions
 #
 

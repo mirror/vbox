@@ -32,7 +32,7 @@
 %global __requires_exclude_from ^/usr/lib/virtualbox/VBoxPython.*$|^/usr/lib/python.*$|^.*\\.py$
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
-Summary:   Oracle VM VirtualBox
+Summary:   Oracle VirtualBox
 Name:      %NAME%
 Version:   %BUILDVER%_%BUILDREL%
 Release:   1

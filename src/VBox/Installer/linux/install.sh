@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Oracle VM VirtualBox
+# Oracle VirtualBox
 # VirtualBox linux installation script
 
 #

@@ -1,5 +1,5 @@
 # $Id$
-# Oracle VM VirtualBox
+# Oracle VirtualBox
 # VirtualBox installer shell routines
 #
 
@@ -507,4 +507,3 @@ print("%s.%s" % (sys.version_info[0], sys.version_info[1]))' 2> /dev/null`"
 
     return 0
 }
-

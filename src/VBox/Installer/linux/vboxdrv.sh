@@ -1,5 +1,5 @@
 #! /bin/sh
-# Oracle VM VirtualBox
+# Oracle VirtualBox
 # Linux kernel module init script
 
 #

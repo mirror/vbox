@@ -1,6 +1,6 @@
 #!/bin/sh
 ## @file
-# Oracle VM VirtualBox startup script, Solaris hosts.
+# Oracle VirtualBox startup script, Solaris hosts.
 #
 
 #
@@ -79,4 +79,3 @@ case "$APP" in
         ;;
 esac
 exit 0
-
