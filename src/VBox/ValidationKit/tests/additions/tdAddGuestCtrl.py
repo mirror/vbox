@@ -5655,9 +5655,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     oWrapperProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr,
                                                                     self.oTstDrv, "gctrlUpGA");
                     oWrapperProgress.wait();
-                    if not oWrapperProgress.isSuccess():
-                        oWrapperProgress.logResult(fIgnoreErrors = not oCurRes.fRc);
-                        fRc = False;
+                    assert oWrapperProgress.isCompleted();
+                    fRc = oWrapperProgress.isSuccess();
+                    if not fRc:
+                        oWrapperProgress.logResult(fIgnoreErrors = True);
                 else:
                     fRc = reporter.error('No progress object returned');
 
@@ -5669,10 +5670,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     ##               Maybe check creation dates on certain .sys/.dll/.exe files?
                     pass;
             else:
-                fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, oCurRes.fRc));
-                break;
+                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, oCurRes.fRc));
 
-        return (fRc, oTxsSession);
+        return (True, oTxsSession); # Always return True here; errors are counted via the reporter.
 
     def checkScreenShot(self, iWidth, iHeight, aRGBData):      # pylint: disable=unused-argument
         """
