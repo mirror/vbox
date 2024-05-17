@@ -29,7 +29,7 @@ Recommends: ${alsa}, ${pulse}, ${sdlttf}, kmod | kldutils | module-init-tools,
   linux-headers-generic | linux-headers-generic-pae | linux-headers-686-pae | linux-headers-amd64 | linux-headers-2.6-686 | linux-headers-2.6-amd64 | linux-headers,
   linux-image, gcc, make | build-essential | dpkg-dev, binutils,
   pdf-viewer, libgl1
-Description: Oracle VM VirtualBox
+Description: Oracle VirtualBox
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
  Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad
@@ -40,7 +40,7 @@ XB-Python-Version: ${python:Versions}
 Package: virtualbox-ose-dbg
 Architecture: i386 amd64
 Depends: virtualbox-ose (= ${binary:Version})
-Description: Oracle VM VirtualBox debugging symbols
+Description: Oracle VirtualBox debugging symbols
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
  Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad
