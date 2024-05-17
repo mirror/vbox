@@ -135,7 +135,7 @@ extern void set_mode(int mode);
     "int    10h"        \
     parm [ax];
 
-char msg_vga_init[] = "Oracle VM VirtualBox Version " VBOX_VERSION_STRING " VGA BIOS\r\n";
+char msg_vga_init[] = VBOX_PRODUCT " Version " VBOX_VERSION_STRING " VGA BIOS\r\n";
 
 /*
  * Boot time harware inits
