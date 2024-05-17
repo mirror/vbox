@@ -60,11 +60,13 @@ public:
         , m_fInSaveState(fInSaveState)
     {}
 
+#if 0 /* unused */
     /** Returns whether this item is less than @a other. */
     bool operator<(const QIListWidgetItem &other) const
     {
         return text().toLower() < other.text().toLower();
     }
+#endif
 
     /** Returns the machine ID. */
     QUuid uuid() const { return m_uUuid; }
