@@ -75,6 +75,7 @@ void UIMediumSizeEditor::setMediumSize(qulonglong uSize)
     m_pEditor->setText(UITranslator::formatSize(m_uSize));
     m_strSizeSuffix = gpConverter->toString(UITranslator::parseSizeSuffix(m_pEditor->text()));
     m_pEditor->blockSignals(false);
+    updateSizeToolTips(m_uSize);
 }
 
 void UIMediumSizeEditor::sltRetranslateUI()
@@ -99,6 +100,7 @@ void UIMediumSizeEditor::sltSizeSliderChanged(int iValue)
     m_pEditor->setText(UITranslator::formatSize(m_uSize));
     m_strSizeSuffix = gpConverter->toString(UITranslator::parseSizeSuffix(m_pEditor->text()));
     m_pEditor->blockSignals(false);
+    updateSizeToolTips(m_uSize);
     /* Notify the listeners: */
     emit sigSizeChanged(m_uSize);
 }
@@ -121,6 +123,7 @@ void UIMediumSizeEditor::sltSizeEditorTextChanged()
     m_pSlider->blockSignals(true);
     m_pSlider->setValue(sizeMBToSlider(m_uSize, m_iSliderScale));
     m_pSlider->blockSignals(false);
+    updateSizeToolTips(m_uSize);
     /* Notify the listeners: */
     emit sigSizeChanged(m_uSize);
 }
