@@ -115,7 +115,7 @@ VBOX_PUEL_PRODUCT = $(VBOX_PRODUCT) Extension Pack
 #	*/*.inf, */*.rc
 
 # Misc names used by the install paths below.
-VBOX_PUEL_MANGLED_NAME = $(shell echo $(VBOX_PUEL_PRODUCT) | $(SED_EXT) -ne 's| |_|gp')
+VBOX_PUEL_MANGLED_NAME = $(subst $(SP),_,$(VBOX_PUEL_PRODUCT))
 
 # Install paths
 ## @todo This will change after 4.1 is branched off!
@@ -9105,7 +9105,7 @@ VBOX_VER_TMP2 :=
 # directory. If you don't run it there, you get a consistent sub-tree only.
 #
 VBOX_BAD_CHAR_SET   = ,;:/\$(SP)$(TAB)$(HASH)=![]@%&''()*""<>?^{}|~
-VBOX_VERSION_STAMP  = $(PATH_OUT)/version-stamp-raw-api-$(translate $(VBOX_VERSION_STRING)-$(VBOX_C_YEAR)-$(VBOX_VENDOR)-$(VBOX_PRODUCT)-$(VBOX_API_VERSION)-$(VBOX_BUILD_PUBLISHER)-$(USERNAME),$(VBOX_BAD_CHAR_SET),,_)
+VBOX_VERSION_STAMP  = $(PATH_OUT)/version-stamp-raw-api-puel-$(translate $(VBOX_VERSION_STRING)-$(VBOX_C_YEAR)-$(VBOX_VENDOR)-$(VBOX_PRODUCT)-$(VBOX_API_VERSION)-$(VBOX_PUEL_PRODUCT)-$(VBOX_BUILD_PUBLISHER)-$(USERNAME),$(VBOX_BAD_CHAR_SET),,_)
 VBOX_VERSION_HEADER = $(PATH_OUT)/version-generated.h
 VBOX_VERSION_MK     = $(PATH_OUT)/version-generated.mk
 
