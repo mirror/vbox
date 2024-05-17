@@ -112,7 +112,7 @@ TEMPLATE_VBoxBios32Lib_POST_CMDS  = $(NO_SUCH_VARIABLE)
 #
 VBOX_AUDIO_DEFS :=
 if 0 # Not stable yet.
- # Enable microphone-in support for HDA. Otherwise only line-in is supported.
+ # Enable dedicated microphone-in support for HDA. Otherwise only line-in is supported.
  VBOX_AUDIO_DEFS += VBOX_WITH_AUDIO_HDA_MIC_IN
 
  # Enable interleavig streams support for HDA. Needed for 5.1 surround support.
@@ -121,6 +121,16 @@ if 0 # Not stable yet.
  # Enable 5.1 surround support (Front, Center/LFE, Rear) for HDA.
  # Without this, only stereo output (Front) is supported.
  VBOX_AUDIO_DEFS += VBOX_WITH_AUDIO_HDA_51_SURROUND
+endif
+
+# If dedicated microphone-in support for HDA isn't enabled, treat mic-in as line-in to
+# propagate the volume (+ mute) settings appropriately.
+ifndef VBOX_WITH_AUDIO_HDA_MIC_IN
+ VBOX_AUDIO_DEFS  += VBOX_AUDIO_HDA_MIC_IN_AS_LINE_IN
+endif
+
+if defined(VBOX_WITH_AUDIO_HDA_MIC_IN) && defined(VBOX_AUDIO_HDA_MIC_IN_AS_LINE_IN)
+ $(error Defining VBOX_WITH_AUDIO_HDA_MIC_IN and VBOX_AUDIO_HDA_MIC_IN_AS_LINE_IN at the same time makes no sense!)
 endif
 
 # Enable backend-independent device enumeration support.
