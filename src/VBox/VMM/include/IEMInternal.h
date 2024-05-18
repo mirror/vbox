@@ -5934,6 +5934,23 @@ IEM_CIMPL_PROTO_2(iemCImpl_fxch_underflow, uint8_t, iStReg, uint16_t, uFpuOpcode
 IEM_CIMPL_PROTO_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, bool, fUCmp, uint32_t, uPopAndFpuOpcode);
 IEM_CIMPL_PROTO_2(iemCImpl_rdseed, uint8_t, iReg, IEMMODE, enmEffOpSize);
 IEM_CIMPL_PROTO_2(iemCImpl_rdrand, uint8_t, iReg, IEMMODE, enmEffOpSize);
+IEM_CIMPL_PROTO_4(iemCImpl_vmaskmovps_load_u128, uint8_t, iXRegDst, uint8_t, iXRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vmaskmovps_load_u256, uint8_t, iYRegDst, uint8_t, iYRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vmaskmovps_store_u128, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iXRegMsk, uint8_t, iXRegSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vmaskmovps_store_u256, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iYRegMsk, uint8_t, iYRegSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovd_load_u128, uint8_t, iXRegDst, uint8_t, iXRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovd_load_u256, uint8_t, iYRegDst, uint8_t, iYRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovd_store_u128, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iXRegMsk, uint8_t, iXRegSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovd_store_u256, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iYRegMsk, uint8_t, iYRegSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vmaskmovpd_load_u128, uint8_t, iXRegDst, uint8_t, iXRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vmaskmovpd_load_u256, uint8_t, iYRegDst, uint8_t, iYRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vmaskmovpd_store_u128, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iXRegMsk, uint8_t, iXRegSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vmaskmovpd_store_u256, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iYRegMsk, uint8_t, iYRegSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovq_load_u128, uint8_t, iXRegDst, uint8_t, iXRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovq_load_u256, uint8_t, iYRegDst, uint8_t, iYRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovq_store_u128, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iXRegMsk, uint8_t, iXRegSrc);
+IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovq_store_u256, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iYRegMsk, uint8_t, iYRegSrc);
+
 /** @} */
 
 /** @name IEMAllCImplStrInstr.cpp.h

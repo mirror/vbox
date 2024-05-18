@@ -9881,5 +9881,704 @@ IEM_CIMPL_DEF_2(iemCImpl_rdrand, uint8_t, iReg, IEMMODE, enmEffOpSize)
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
+
+/**
+ * Worker for 'VMASKMOVPS / VPMASKMOVD' 128-bit 32-bit-masked load.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   iXRegDst        The destination XMM register index.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+static VBOXSTRICTRC iemCImpl_maskmov_load_u128_32_worker(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iXRegDst, uint8_t iXRegMsk, uint8_t iEffSeg, RTGCPTR GCPtrEffSrc)
+{
+    uint32_t fAccessed = 0;
+
+     PRTUINT128U puDst =  (PRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iXRegDst];
+    PCRTUINT128U puMsk = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iXRegMsk];
+    PCRTUINT128U puSrc;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puMsk->au32); i++)
+    {
+        fAccessed |= puMsk->au32[i];
+    }
+
+    if (fAccessed & RT_BIT(31)) {
+        /*
+         * Access the source memory.
+         */
+        uint8_t bUnmapInfo;
+        void   *pvMemSrc;
+        VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMemSrc, &bUnmapInfo, sizeof(*puSrc),
+                                          iEffSeg, GCPtrEffSrc, IEM_ACCESS_DATA_R, 0);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        puSrc = (PCRTUINT128U)pvMemSrc;
+
+        for (uint32_t i = 0; i < RT_ELEMENTS(puSrc->au32); i++)
+        {
+            puDst->au32[i] = (puMsk->au32[i] & RT_BIT(31)) ? puSrc->au32[i] : 0;
+        }
+        pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iXRegDst].au64[0] = 0;
+        pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iXRegDst].au64[1] = 0;
+
+        rcStrict = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+        pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iXRegDst].au64[0] = 0;
+        pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iXRegDst].au64[1] = 0;
+    }
+
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
+
+
+/**
+ * Worker for 'VMASKMOVPS / VPMASKMOVD' 256-bit 32-bit-masked load.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   iYRegDst        The destination YMM register index.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+static VBOXSTRICTRC iemCImpl_maskmov_load_u256_32_worker(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iYRegDst, uint8_t iYRegMsk, uint8_t iEffSeg, RTGCPTR GCPtrEffSrc)
+{
+    uint32_t fAccessed = 0;
+
+     PRTUINT128U puDstLo =  (PRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegDst];
+     PRTUINT128U puDstHi =  (PRTUINT128U)&pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDst];
+    PCRTUINT128U puMskLo = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegMsk];
+    PCRTUINT128U puMskHi = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegMsk];
+    PCRTUINT256U puSrc;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puMskLo->au32); i++)
+    {
+        fAccessed |= puMskLo->au32[i] | puMskHi->au32[i];
+    }
+
+    if (fAccessed & RT_BIT(31)) {
+        /*
+         * Access the source memory.
+         */
+        uint8_t bUnmapInfo;
+        void   *pvMemSrc;
+        VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMemSrc, &bUnmapInfo, sizeof(*puSrc),
+                                          iEffSeg, GCPtrEffSrc, IEM_ACCESS_DATA_R, 0);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        puSrc   = (PCRTUINT256U)pvMemSrc;
+
+        uint8_t const iHalf = RT_ELEMENTS(puSrc->au32) / 2;
+
+        for (uint32_t i = 0; i < iHalf; i++)
+        {
+            puDstLo->au32[i] = (puMskLo->au32[i] & RT_BIT(31)) ? puSrc->au32[i] : 0;
+        }
+        for (uint32_t i = iHalf; i < RT_ELEMENTS(puSrc->au32); i++)
+        {
+            puDstHi->au32[i - iHalf] = (puMskHi->au32[i - iHalf] & RT_BIT(31)) ? puSrc->au32[i] : 0;
+        }
+
+        rcStrict = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+    else
+    {
+        puDstLo->au64[0] = 0;
+        puDstLo->au64[1] = 0;
+        puDstHi->au64[0] = 0;
+        puDstHi->au64[1] = 0;
+    }
+
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
+
+/**
+ * Worker for 'VMASKMOVPS / VPMASKMOVD' 128-bit 32-bit-masked store.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iXRegSrc        The source XMM register index.
+ */
+static VBOXSTRICTRC iemCImpl_maskmov_store_u128_32_worker(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrEffDst, uint8_t iXRegMsk, uint8_t iXRegSrc)
+{
+    uint32_t fAccessed = 0;
+
+     PRTUINT128U puDst;
+    PCRTUINT128U puMsk = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iXRegMsk];
+    PCRTUINT128U puSrc = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iXRegSrc];
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puMsk->au32); i++)
+    {
+        fAccessed |= puMsk->au32[i];
+    }
+
+    if (fAccessed & RT_BIT(31)) {
+        /*
+         * Access the destination memory.
+         */
+        uint8_t bUnmapInfo;
+        void   *pvMemDst;
+        VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMemDst, &bUnmapInfo, sizeof(*puDst),
+                                          iEffSeg, GCPtrEffDst, IEM_ACCESS_DATA_RW, 0);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        puDst =  (PRTUINT128U)pvMemDst;
+
+        for (uint32_t i = 0; i < RT_ELEMENTS(puDst->au32); i++)
+        {
+            if (puMsk->au32[i] & RT_BIT(31))
+                puDst->au32[i] = puSrc->au32[i];
+        }
+
+        rcStrict = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
+
+
+/**
+ * Worker for 'VMASKMOVPS / VPMASKMOVD' 256-bit 32-bit-masked store.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iYRegSrc        The source YMM register index.
+ */
+static VBOXSTRICTRC iemCImpl_maskmov_store_u256_32_worker(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrEffDst, uint8_t iYRegMsk, uint8_t iYRegSrc)
+{
+    uint32_t fAccessed = 0;
+
+     PRTUINT256U puDst;
+    PCRTUINT128U puMskLo = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegMsk];
+    PCRTUINT128U puMskHi = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegMsk];
+    PCRTUINT128U puSrcLo = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegSrc];
+    PCRTUINT128U puSrcHi = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegSrc];
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puMskLo->au32); i++)
+    {
+        fAccessed |= puMskLo->au32[i] | puMskHi->au32[i];
+    }
+
+    if (fAccessed & RT_BIT(31)) {
+        /*
+         * Access the destination memory.
+         */
+        uint8_t bUnmapInfo;
+        void   *pvMemDst;
+        VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMemDst, &bUnmapInfo, sizeof(*puDst),
+                                          iEffSeg, GCPtrEffDst, IEM_ACCESS_DATA_RW, 0);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        puDst   =  (PRTUINT256U)pvMemDst;
+
+        uint8_t const iHalf = RT_ELEMENTS(puDst->au32) / 2;
+
+        for (uint32_t i = 0; i < iHalf; i++)
+        {
+            if (puMskLo->au32[i] & RT_BIT(31))
+                puDst->au32[i] = puSrcLo->au32[i];
+        }
+        for (uint32_t i = iHalf; i < RT_ELEMENTS(puDst->au32); i++)
+        {
+            if (puMskHi->au32[i - iHalf] & RT_BIT(31))
+                puDst->au32[i] = puSrcHi->au32[i - iHalf];
+        }
+
+        rcStrict = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
+
+/**
+ * Worker for 'VMASKMOVPD / VPMASKMOVQ' 128-bit 64-bit-masked load.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   iXRegDst        The destination XMM register index.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+static VBOXSTRICTRC iemCImpl_maskmov_load_u128_64_worker(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iXRegDst, uint8_t iXRegMsk, uint8_t iEffSeg, RTGCPTR GCPtrEffSrc)
+{
+    uint64_t fAccessed = 0;
+
+     PRTUINT128U puDst =  (PRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iXRegDst];
+    PCRTUINT128U puMsk = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iXRegMsk];
+    PCRTUINT128U puSrc;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puMsk->au64); i++)
+    {
+        fAccessed |= puMsk->au64[i];
+    }
+
+    if (fAccessed & RT_BIT_64(63)) {
+        /*
+         * Access the source memory.
+         */
+        uint8_t bUnmapInfo;
+        void   *pvMemSrc;
+        VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMemSrc, &bUnmapInfo, sizeof(*puSrc),
+                                          iEffSeg, GCPtrEffSrc, IEM_ACCESS_DATA_R, 0);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        puSrc = (PCRTUINT128U)pvMemSrc;
+
+        for (uint32_t i = 0; i < RT_ELEMENTS(puSrc->au64); i++)
+        {
+            puDst->au64[i] = (puMsk->au64[i] & RT_BIT_64(63)) ? puSrc->au64[i] : 0;
+        }
+        pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iXRegDst].au64[0] = 0;
+        pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iXRegDst].au64[1] = 0;
+
+        rcStrict = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+    else
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+        pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iXRegDst].au64[0] = 0;
+        pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iXRegDst].au64[1] = 0;
+    }
+
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
+
+
+/**
+ * Worker for 'VMASKMOVPD / VPMASKMOVQ' 256-bit 64-bit-masked load.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   iYRegDst        The destination YMM register index.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+static VBOXSTRICTRC iemCImpl_maskmov_load_u256_64_worker(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iYRegDst, uint8_t iYRegMsk, uint8_t iEffSeg, RTGCPTR GCPtrEffSrc)
+{
+    uint64_t fAccessed = 0;
+
+     PRTUINT128U puDstLo =  (PRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegDst];
+     PRTUINT128U puDstHi =  (PRTUINT128U)&pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDst];
+    PCRTUINT128U puMskLo = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegMsk];
+    PCRTUINT128U puMskHi = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegMsk];
+    PCRTUINT256U puSrc;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puMskLo->au64); i++)
+    {
+        fAccessed |= puMskLo->au64[i] | puMskHi->au64[i];
+    }
+
+    if (fAccessed & RT_BIT_64(63)) {
+        /*
+         * Access the source memory.
+         */
+        uint8_t bUnmapInfo;
+        void   *pvMemSrc;
+        VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMemSrc, &bUnmapInfo, sizeof(*puSrc),
+                                          iEffSeg, GCPtrEffSrc, IEM_ACCESS_DATA_R, 0);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        puSrc   = (PCRTUINT256U)pvMemSrc;
+
+        uint8_t const iHalf = RT_ELEMENTS(puSrc->au64) / 2;
+
+        for (uint32_t i = 0; i < iHalf; i++)
+        {
+            puDstLo->au64[i] = (puMskLo->au64[i] & RT_BIT_64(63)) ? puSrc->au64[i] : 0;
+        }
+        for (uint32_t i = iHalf; i < RT_ELEMENTS(puSrc->au64); i++)
+        {
+            puDstHi->au64[i - iHalf] = (puMskHi->au64[i - iHalf] & RT_BIT_64(63)) ? puSrc->au64[i] : 0;
+        }
+
+        rcStrict = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+    else
+    {
+        puDstLo->au64[0] = 0;
+        puDstLo->au64[1] = 0;
+        puDstHi->au64[0] = 0;
+        puDstHi->au64[1] = 0;
+    }
+
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
+
+/**
+ * Worker for 'VMASKMOVPD / VPMASKMOVQ' 128-bit 64-bit-masked store.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iXRegSrc        The source XMM register index.
+ */
+static VBOXSTRICTRC iemCImpl_maskmov_store_u128_64_worker(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrEffDst, uint8_t iXRegMsk, uint8_t iXRegSrc)
+{
+    uint64_t fAccessed = 0;
+
+     PRTUINT128U puDst;
+    PCRTUINT128U puMsk = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iXRegMsk];
+    PCRTUINT128U puSrc = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iXRegSrc];
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puMsk->au64); i++)
+    {
+        fAccessed |= puMsk->au64[i];
+    }
+
+    if (fAccessed & RT_BIT_64(63)) {
+        /*
+         * Access the destination memory.
+         */
+        uint8_t bUnmapInfo;
+        void   *pvMemDst;
+        VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMemDst, &bUnmapInfo, sizeof(*puDst),
+                                          iEffSeg, GCPtrEffDst, IEM_ACCESS_DATA_RW, 0);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        puDst =  (PRTUINT128U)pvMemDst;
+
+        for (uint32_t i = 0; i < RT_ELEMENTS(puDst->au64); i++)
+        {
+            if (puMsk->au64[i] & RT_BIT_64(63))
+                puDst->au64[i] = puSrc->au64[i];
+        }
+
+        rcStrict = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
+
+
+/**
+ * Worker for 'VMASKMOVPD / VPMASKMOVQ' 256-bit 64-bit-masked store.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr         The current instruction length.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iYRegSrc        The source YMM register index.
+ */
+static VBOXSTRICTRC iemCImpl_maskmov_store_u256_64_worker(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrEffDst, uint8_t iYRegMsk, uint8_t iYRegSrc)
+{
+    uint64_t fAccessed = 0;
+
+     PRTUINT256U puDst;
+    PCRTUINT128U puMskLo = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegMsk];
+    PCRTUINT128U puMskHi = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegMsk];
+    PCRTUINT128U puSrcLo = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegSrc];
+    PCRTUINT128U puSrcHi = (PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegSrc];
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(puMskLo->au64); i++)
+    {
+        fAccessed |= puMskLo->au64[i] | puMskHi->au64[i];
+    }
+
+    if (fAccessed & RT_BIT_64(63)) {
+        /*
+         * Access the destination memory.
+         */
+        uint8_t bUnmapInfo;
+        void   *pvMemDst;
+        VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMemDst, &bUnmapInfo, sizeof(*puDst),
+                                          iEffSeg, GCPtrEffDst, IEM_ACCESS_DATA_RW, 0);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        puDst   =  (PRTUINT256U)pvMemDst;
+
+        uint8_t const iHalf = RT_ELEMENTS(puDst->au64) / 2;
+
+        for (uint32_t i = 0; i < iHalf; i++)
+        {
+            if (puMskLo->au64[i] & RT_BIT_64(63))
+                puDst->au64[i] = puSrcLo->au64[i];
+        }
+        for (uint32_t i = iHalf; i < RT_ELEMENTS(puDst->au64); i++)
+        {
+            if (puMskHi->au64[i - iHalf] & RT_BIT_64(63))
+                puDst->au64[i] = puSrcHi->au64[i - iHalf];
+        }
+
+        rcStrict = iemMemCommitAndUnmap(pVCpu, bUnmapInfo);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
+
+/**
+ * Implements 'VMASKMOVPS' 128-bit 32-bit-masked load.
+ *
+ * @param   iXRegDst        The destination XMM register index.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vmaskmovps_load_u128, uint8_t, iXRegDst, uint8_t, iXRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
+{
+    return iemCImpl_maskmov_load_u128_32_worker(pVCpu, cbInstr, iXRegDst, iXRegMsk, iEffSeg, GCPtrEffSrc);
+}
+
+
+/**
+ * Implements 'VMASKMOVPS' 256-bit 32-bit-masked load.
+ *
+ * @param   iYRegDst        The destination YMM register index.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vmaskmovps_load_u256, uint8_t, iYRegDst, uint8_t, iYRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
+{
+    return iemCImpl_maskmov_load_u256_32_worker(pVCpu, cbInstr, iYRegDst, iYRegMsk, iEffSeg, GCPtrEffSrc);
+}
+
+
+/**
+ * Implements 'VMASKMOVPS' 128-bit 32-bit-masked store.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iXRegSrc        The source XMM register index.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vmaskmovps_store_u128, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iXRegMsk, uint8_t, iXRegSrc)
+{
+    return iemCImpl_maskmov_store_u128_32_worker(pVCpu, cbInstr, iEffSeg, GCPtrEffDst, iXRegMsk, iXRegSrc);
+}
+
+
+/**
+ * Implements 'VMASKMOVPS' 256-bit 32-bit-masked store.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iYRegSrc        The source YMM register index.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vmaskmovps_store_u256, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iYRegMsk, uint8_t, iYRegSrc)
+{
+    return iemCImpl_maskmov_store_u256_32_worker(pVCpu, cbInstr, iEffSeg, GCPtrEffDst, iYRegMsk, iYRegSrc);
+}
+
+
+/**
+ * Implements 'VPMASKMOVD' 128-bit 32-bit-masked load.
+ *
+ * @param   iXRegDst        The destination XMM register index.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vpmaskmovd_load_u128, uint8_t, iXRegDst, uint8_t, iXRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
+{
+    return iemCImpl_maskmov_load_u128_32_worker(pVCpu, cbInstr, iXRegDst, iXRegMsk, iEffSeg, GCPtrEffSrc);
+}
+
+
+/**
+ * Implements 'VPMASKMOVD' 256-bit 32-bit-masked load.
+ *
+ * @param   iYRegDst        The destination YMM register index.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vpmaskmovd_load_u256, uint8_t, iYRegDst, uint8_t, iYRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
+{
+    return iemCImpl_maskmov_load_u256_32_worker(pVCpu, cbInstr, iYRegDst, iYRegMsk, iEffSeg, GCPtrEffSrc);
+}
+
+
+/**
+ * Implements 'VPMASKMOVD' 128-bit 32-bit-masked store.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iXRegSrc        The source XMM register index.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vpmaskmovd_store_u128, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iXRegMsk, uint8_t, iXRegSrc)
+{
+    return iemCImpl_maskmov_store_u128_32_worker(pVCpu, cbInstr, iEffSeg, GCPtrEffDst, iXRegMsk, iXRegSrc);
+}
+
+
+/**
+ * Implements 'VPMASKMOVD' 256-bit 32-bit-masked store.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iYRegSrc        The source YMM register index.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vpmaskmovd_store_u256, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iYRegMsk, uint8_t, iYRegSrc)
+{
+    return iemCImpl_maskmov_store_u256_32_worker(pVCpu, cbInstr, iEffSeg, GCPtrEffDst, iYRegMsk, iYRegSrc);
+}
+
+
+/**
+ * Implements 'VMASKMOVPD' 128-bit 64-bit-masked load.
+ *
+ * @param   iXRegDst        The destination XMM register index.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vmaskmovpd_load_u128, uint8_t, iXRegDst, uint8_t, iXRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
+{
+    return iemCImpl_maskmov_load_u128_64_worker(pVCpu, cbInstr, iXRegDst, iXRegMsk, iEffSeg, GCPtrEffSrc);
+}
+
+
+/**
+ * Implements 'VMASKMOVPD' 256-bit 64-bit-masked load.
+ *
+ * @param   iYRegDst        The destination YMM register index.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vmaskmovpd_load_u256, uint8_t, iYRegDst, uint8_t, iYRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
+{
+    return iemCImpl_maskmov_load_u256_64_worker(pVCpu, cbInstr, iYRegDst, iYRegMsk, iEffSeg, GCPtrEffSrc);
+}
+
+
+/**
+ * Implements 'VMASKMOVPD' 128-bit 64-bit-masked store.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iXRegSrc        The source XMM register index.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vmaskmovpd_store_u128, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iXRegMsk, uint8_t, iXRegSrc)
+{
+    return iemCImpl_maskmov_store_u128_64_worker(pVCpu, cbInstr, iEffSeg, GCPtrEffDst, iXRegMsk, iXRegSrc);
+}
+
+
+/**
+ * Implements 'VMASKMOVPD' 256-bit 64-bit-masked store.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iYRegSrc        The source YMM register index.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vmaskmovpd_store_u256, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iYRegMsk, uint8_t, iYRegSrc)
+{
+    return iemCImpl_maskmov_store_u256_64_worker(pVCpu, cbInstr, iEffSeg, GCPtrEffDst, iYRegMsk, iYRegSrc);
+}
+
+
+/**
+ * Implements 'VPMASKMOVQ' 128-bit 64-bit-masked load.
+ *
+ * @param   iXRegDst        The destination XMM register index.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vpmaskmovq_load_u128, uint8_t, iXRegDst, uint8_t, iXRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
+{
+    return iemCImpl_maskmov_load_u128_64_worker(pVCpu, cbInstr, iXRegDst, iXRegMsk, iEffSeg, GCPtrEffSrc);
+}
+
+
+/**
+ * Implements 'VPMASKMOVQ' 256-bit 64-bit-masked load.
+ *
+ * @param   iYRegDst        The destination YMM register index.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffSrc     The source memory address.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vpmaskmovq_load_u256, uint8_t, iYRegDst, uint8_t, iYRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
+{
+    return iemCImpl_maskmov_load_u256_64_worker(pVCpu, cbInstr, iYRegDst, iYRegMsk, iEffSeg, GCPtrEffSrc);
+}
+
+
+/**
+ * Implements 'VPMASKMOVQ' 128-bit 64-bit-masked store.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iXRegMsk        The mask XMM register index.
+ * @param   iXRegSrc        The source XMM register index.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vpmaskmovq_store_u128, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iXRegMsk, uint8_t, iXRegSrc)
+{
+    return iemCImpl_maskmov_store_u128_64_worker(pVCpu, cbInstr, iEffSeg, GCPtrEffDst, iXRegMsk, iXRegSrc);
+}
+
+
+/**
+ * Implements 'VPMASKMOVQ' 256-bit 64-bit-masked store.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEffDst     The destination memory address.
+ * @param   iYRegMsk        The mask YMM register index.
+ * @param   iYRegSrc        The source YMM register index.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vpmaskmovq_store_u256, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iYRegMsk, uint8_t, iYRegSrc)
+{
+    return iemCImpl_maskmov_store_u256_64_worker(pVCpu, cbInstr, iEffSeg, GCPtrEffDst, iYRegMsk, iYRegSrc);
+}
+
+
 /** @} */
 
