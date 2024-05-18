@@ -90,7 +90,8 @@ typedef enum
 enum {
     RM_REG = 0,
     RM_MEM,
-    RM_MEM_DI, /**< Memory operand pointer is implicitly RDI.  Hack for maskmovq, [v]maskmovdqu. */
+    RM_RANGE,  /**< Instruction may fault anywhere within the memory address range.  Hack for vmaskmov[sd], vpmaskmov[dq]. */
+    RM_MEM_DI, /**< Memory operand pointer is implicitly RDI and may fault anywhere in range.  Hack for maskmovq, [v]maskmovdqu. */
     RM_MEM8,   /**< Memory operand is  8 bits.  Hack for movss and similar. */
     RM_MEM16,  /**< Memory operand is 16 bits.  Hack for movss and similar. */
     RM_MEM32,  /**< Memory operand is 32 bits.  Hack for movss and similar. */
@@ -915,14 +916,13 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                             }
                             if (bXcptExpect == X86_XCPT_PF)
                                 Ctx.cr2.u = (uintptr_t)puMemOp;
-                            if (paTests[iTest].enmRm == RM_MEM_DI)
-                            {
-                                Ctx.cr2Range = cbMemOp;
-                            }
+                            Ctx.cr2Range = (paTests[iTest].enmRm == RM_MEM_DI || paTests[iTest].enmRm == RM_RANGE) ? cbMemOp - 1 : 0;
                             Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &Ctx, bXcptExpect == X86_XCPT_DB ? cbInstr + 1 : 0, 0,
                                                  bXcptExpect == X86_XCPT_DB || BS3_MODE_IS_16BIT_SYS(bMode) ? 0 : X86_EFL_RF,
                                                  pszMode, idTestStep);
                             Ctx.cr2.u = 0;
+                            Ctx.cr2Range = 0;
+
                             if (paTests[iTest].enmRm == RM_MEM_DI)
                             {
                                 Ctx.cr2Range = 0;
@@ -13542,10 +13542,12 @@ static uint8_t bs3CpuInstr3_WorkerTestType5(uint8_t bMode, BS3CPUINSTR3_TEST5_T 
                             }
                             if (bXcptExpect == X86_XCPT_PF)
                                 Ctx.cr2.u = (uintptr_t)puMemOp;
+                            Ctx.cr2Range = (paTests[iTest].enmRm == RM_MEM_DI || paTests[iTest].enmRm == RM_RANGE) ? cbMemOp - 1 : 0;
                             Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &Ctx, bXcptExpect == X86_XCPT_DB ? cbInstr + 1 : 0, 0,
                                                  bXcptExpect == X86_XCPT_DB || BS3_MODE_IS_16BIT_SYS(bMode) ? 0 : X86_EFL_RF,
                                                  pszMode, idTestStep);
                             Ctx.cr2.u = 0;
+                            Ctx.cr2Range = 0;
 
                             if (   paTests[iTest].enmRm >= RM_MEM
                                 && Bs3MemCmp(puMemOpAlias, &uMemOpExpect, cbMemOp) != 0)
