@@ -197,12 +197,12 @@ static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig4[] =
     { 0, 0,  0,  1,      1,       0,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
     { 0, 0,  0,  1,      1,       1,   1,   1,   1,        0,       0,    X86_XCPT_MF, X86_XCPT_DB, X86_XCPT_DB }, /* #9 - pending x87 exception */
     /* Memory misalignment and alignment checks: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_DB, X86_XCPT_GP, X86_XCPT_DB }, /* #10 */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_AC, X86_XCPT_GP, X86_XCPT_AC }, /* #11 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_DB, X86_XCPT_GP, X86_XCPT_DB }, /* #10 */  /* [Avx]:DB */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_AC, X86_XCPT_GP, X86_XCPT_AC }, /* #11 */  /* [Avx]:AC */
     { 0, 0,  0,  1,      1,       1,   1,   0,   1,        1,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
     /* AMD only: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #13 */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #14 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #13 */  /* [Avx]:DB */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #14 */  /* [Avx]:AC */
 };
 
 /** Exception type \#4 test configurations, for the SSE version of movups. */
@@ -225,12 +225,12 @@ static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig4Unaligned[] =
     { 0, 0,  0,  1,      1,       0,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
     { 0, 0,  0,  1,      1,       1,   1,   1,   1,        0,       0,    X86_XCPT_MF, X86_XCPT_DB, X86_XCPT_DB }, /* #9 - pending x87 exception */
     /* Memory misalignment and alignment checks: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #10 */  /* movups special */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_AC, X86_XCPT_DB, X86_XCPT_AC }, /* #11 */  /* movups special */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #10 */  /* [Sse,Avx]:DB */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_AC, X86_XCPT_DB, X86_XCPT_AC }, /* #11 */  /* [Sse]:DB, [Avx]:AC */
     { 0, 0,  0,  1,      1,       1,   1,   0,   1,        1,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
     /* AMD only: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #13 */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #14 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #13 */  /* [Avx]:DB */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #14 */  /* [Avx]:AC */
 };
 
 /** Exception type \#5 test configurations, less than 16 byte operands. */
@@ -252,12 +252,12 @@ static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig5[] =
     { 0, 0,  0,  1,      1,       0,   0,   0,   1,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
     { 0, 0,  0,  1,      1,       1,   1,   1,   1,        0,       0,    X86_XCPT_MF, X86_XCPT_DB, X86_XCPT_DB }, /* #9 - pending x87 exception */
     /* Memory misalignment and alignment checks: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #10 */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #11 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #10 */  /* [Sse,Avx]:DB */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #11 */  /* [Sse,Avx]:AC */
     { 0, 0,  0,  1,      1,       1,   1,   0,   1,        1,       0,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
     /* AMD only: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #13 */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #14 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_DB, X86_XCPT_DB, X86_XCPT_DB }, /* #13 */  /* [Avx]:DB */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_AC, X86_XCPT_AC, X86_XCPT_AC }, /* #14 */  /* [Avx]:AC */
 };
 
 /** Exception type \#6 test configurations, VEX encoded instructions without legacy SSE analogues. */
@@ -268,7 +268,7 @@ static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig6[] =
  *                                               +AVX      +AMD/SSE
  *   CR0 CR0 CR0 CR4     CR4      XCR0 XCR0 FCW                      MXCSR
  *   MP, EM, TS, OSFXSR, OSXSAVE, SSE, AVX, ES+, fAligned, AC/AM,   MM,   bXcptMmx,    bXcptSse,    bXcptAvx */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #0 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #0 */  /* All rows: [Mmx,Sse]:UD */
     { 1, 0,  0,  1,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #1 */
     { 0, 1,  0,  1,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #2 */
     { 0, 0,  1,  1,      1,       1,   1,   0,   1,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_NM }, /* #3 */
@@ -279,12 +279,12 @@ static const BS3CPUINSTR3_CONFIG_T g_aXcptConfig6[] =
     { 0, 0,  0,  1,      1,       0,   0,   0,   1,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_UD }, /* #8 */
     { 0, 0,  0,  1,      1,       1,   1,   1,   1,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #9 - pending x87 exception */
     /* Memory misalignment and alignment checks: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #10 */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_AC }, /* #11 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #10 */  /* [Avx]:DB */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_AC }, /* #11 */  /* [Avx]:AC */
     { 0, 0,  0,  1,      1,       1,   1,   0,   1,        1,       0,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #12 */
     /* AMD only: */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #13 */
-    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_AC }, /* #14 */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        0,       1,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_DB }, /* #13 */  /* [Avx]:DB */
+    { 0, 0,  0,  1,      1,       1,   1,   0,   0,        1,       1,    X86_XCPT_UD, X86_XCPT_UD, X86_XCPT_AC }, /* #14 */  /* [Avx]:AC */
 };
 
 
