@@ -600,7 +600,8 @@ DECLINLINE(uint8_t) bs3CpuInstr3MemOpSize(uint8_t cbOperand, uint8_t enmRm)
  *       it requires the test code to be run a number of times before it kicks
  *       in and does the native recompilation (currently around 16 times).
  */
-#define BS3_SKIPIT_AVG_SKIP 26
+#define BS3_SKIPIT_AVG_SKIP     26
+#define BS3_SKIPIT_REPORT_COUNT 150000
 #undef  BS3_SKIPIT_DO_SKIP
 #undef  BS3_SKIPIT_DO_ARGS
 
@@ -659,7 +660,7 @@ static bool bs3CpuInstr3_SkipIt(void)
     if (fSkip)
         ++g_cSkipped;
 
-    if (++g_cSeen % 25000 == 0)
+    if (++g_cSeen % BS3_SKIPIT_REPORT_COUNT == 0)
         bs3CpuInstr3_ShowTallies();
     return fSkip;
 }
