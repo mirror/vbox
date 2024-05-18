@@ -923,11 +923,6 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                             Ctx.cr2.u = 0;
                             Ctx.cr2Range = 0;
 
-                            if (paTests[iTest].enmRm == RM_MEM_DI)
-                            {
-                                Ctx.cr2Range = 0;
-                            }
-
                             if (   paTests[iTest].enmRm >= RM_MEM
                                 && Bs3MemCmp(puMemOpAlias, &uMemOpExpect, cbMemOp) != 0)
                                 Bs3TestFailedF("Expected uMemOp %.*Rhxs, got %.*Rhxs", cbMemOp, &uMemOpExpect, cbMemOp, puMemOpAlias);
