@@ -3219,6 +3219,66 @@ EMIT_INSTR_PLUS_ICEBP           vmaskmovdqu, XMM0,  XMM1
 EMIT_INSTR_PLUS_ICEBP_C64       vmaskmovdqu, XMM8,  XMM9
 %undef EMIT_FS_PREFIX
 
+;
+; VMASKMOVPS
+;
+EMIT_INSTR_PLUS_ICEBP           vmaskmovps,  XMM0,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64       vmaskmovps,  XMM8,  XMM9, FSxBX
+
+EMIT_INSTR_PLUS_ICEBP           vmaskmovps,  YMM0,  YMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64       vmaskmovps,  YMM8,  YMM9, FSxBX
+
+EMIT_INSTR_PLUS_ICEBP           vmaskmovps,  FSxBX, XMM0, XMM1
+EMIT_INSTR_PLUS_ICEBP_C64       vmaskmovps,  FSxBX, XMM8, XMM9
+
+EMIT_INSTR_PLUS_ICEBP           vmaskmovps,  FSxBX, YMM0, YMM1
+EMIT_INSTR_PLUS_ICEBP_C64       vmaskmovps,  FSxBX, YMM8, YMM9
+
+;
+; VMASKMOVPD
+;
+EMIT_INSTR_PLUS_ICEBP           vmaskmovpd,  XMM0,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64       vmaskmovpd,  XMM8,  XMM9, FSxBX
+
+EMIT_INSTR_PLUS_ICEBP           vmaskmovpd,  YMM0,  YMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64       vmaskmovpd,  YMM8,  YMM9, FSxBX
+
+EMIT_INSTR_PLUS_ICEBP           vmaskmovpd,  FSxBX, XMM0, XMM1
+EMIT_INSTR_PLUS_ICEBP_C64       vmaskmovpd,  FSxBX, XMM8, XMM9
+
+EMIT_INSTR_PLUS_ICEBP           vmaskmovpd,  FSxBX, YMM0, YMM1
+EMIT_INSTR_PLUS_ICEBP_C64       vmaskmovpd,  FSxBX, YMM8, YMM9
+
+;
+; VPMASKMOVD
+;
+EMIT_INSTR_PLUS_ICEBP           vpmaskmovd,  XMM0,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64       vpmaskmovd,  XMM8,  XMM9, FSxBX
+
+EMIT_INSTR_PLUS_ICEBP           vpmaskmovd,  YMM0,  YMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64       vpmaskmovd,  YMM8,  YMM9, FSxBX
+
+EMIT_INSTR_PLUS_ICEBP           vpmaskmovd,  FSxBX, XMM0, XMM1
+EMIT_INSTR_PLUS_ICEBP_C64       vpmaskmovd,  FSxBX, XMM8, XMM9
+
+EMIT_INSTR_PLUS_ICEBP           vpmaskmovd,  FSxBX, YMM0, YMM1
+EMIT_INSTR_PLUS_ICEBP_C64       vpmaskmovd,  FSxBX, YMM8, YMM9
+
+;
+; VPMASKMOVQ
+;
+EMIT_INSTR_PLUS_ICEBP           vpmaskmovq,  XMM0,  XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64       vpmaskmovq,  XMM8,  XMM9, FSxBX
+
+EMIT_INSTR_PLUS_ICEBP           vpmaskmovq,  YMM0,  YMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64       vpmaskmovq,  YMM8,  YMM9, FSxBX
+
+EMIT_INSTR_PLUS_ICEBP           vpmaskmovq,  FSxBX, XMM0, XMM1
+EMIT_INSTR_PLUS_ICEBP_C64       vpmaskmovq,  FSxBX, XMM8, XMM9
+
+EMIT_INSTR_PLUS_ICEBP           vpmaskmovq,  FSxBX, YMM0, YMM1
+EMIT_INSTR_PLUS_ICEBP_C64       vpmaskmovq,  FSxBX, YMM8, YMM9
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment
