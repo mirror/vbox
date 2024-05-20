@@ -429,7 +429,28 @@
 /** TCR_EL1 register - RW. */
 #define ARMV8_AARCH64_SYSREG_TCR_EL1                ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 0, 2)
 
-/** @todo APIA,APIB,APDA,APDB,APGA registers. */
+/** APIAKeyLo_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_APIAKeyLo_EL1          ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 1, 0)
+/** APIAKeyHi_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_APIAKeyHi_EL1          ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 1, 1)
+/** APIBKeyLo_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_APIBKeyLo_EL1          ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 1, 2)
+/** APIBKeyHi_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_APIBKeyHi_EL1          ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 1, 3)
+
+/** APDAKeyLo_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_APDAKeyLo_EL1          ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 2, 0)
+/** APDAKeyHi_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_APDAKeyHi_EL1          ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 2, 1)
+/** APDBKeyLo_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_APDBKeyLo_EL1          ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 2, 2)
+/** APDBKeyHi_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_APDBKeyHi_EL1          ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 2, 3)
+
+/** APGAKeyLo_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_APGAKeyLo_EL1          ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 3, 0)
+/** APGAKeyHi_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_APGAKeyHi_EL1          ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 2, 3, 1)
 
 /** SPSR_EL1 register - RW. */
 #define ARMV8_AARCH64_SYSREG_SPSR_EL1               ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 4, 0, 0)
