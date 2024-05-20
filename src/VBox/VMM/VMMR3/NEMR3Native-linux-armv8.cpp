@@ -266,6 +266,24 @@ static const struct
     { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_MDSCR_EL1), RT_UOFFSETOF(CPUMCTX, Mdscr.u64) }
 #undef CPUM_DBGREG_EMIT
 };
+/** PAuth key system registers. */
+static const struct
+{
+    uint64_t    idKvmReg;
+    uint32_t    offCpumCtx;
+} s_aCpumPAuthKeyRegs[] =
+{
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_APDAKeyLo_EL1), RT_UOFFSETOF(CPUMCTX, Apda.Low.u64)  },
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_APDAKeyHi_EL1), RT_UOFFSETOF(CPUMCTX, Apda.High.u64) },
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_APDBKeyLo_EL1), RT_UOFFSETOF(CPUMCTX, Apdb.Low.u64)  },
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_APDBKeyHi_EL1), RT_UOFFSETOF(CPUMCTX, Apdb.High.u64) },
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_APGAKeyLo_EL1), RT_UOFFSETOF(CPUMCTX, Apga.Low.u64)  },
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_APGAKeyHi_EL1), RT_UOFFSETOF(CPUMCTX, Apga.High.u64) },
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_APIAKeyLo_EL1), RT_UOFFSETOF(CPUMCTX, Apia.Low.u64)  },
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_APIAKeyHi_EL1), RT_UOFFSETOF(CPUMCTX, Apia.High.u64) },
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_APIBKeyLo_EL1), RT_UOFFSETOF(CPUMCTX, Apib.Low.u64)  },
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_APIBKeyHi_EL1), RT_UOFFSETOF(CPUMCTX, Apib.High.u64) }
+};
 /** ID registers. */
 static const struct
 {
@@ -652,14 +670,12 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx)
     if (   rc == VINF_SUCCESS
         && (fWhat & CPUMCTX_EXTRN_SYSREG_PAUTH_KEYS))
     {
-#if 0
         /* PAuth registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumPAuthKeyRegs); i++)
         {
             uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumPAuthKeyRegs[i].offCpumCtx);
-            hrc |= nemR3LnxKvmQueryReg(pVCpu, s_aCpumPAuthKeyRegs[i].idKvmReg, pu64);
+            rc |= nemR3LnxKvmQueryRegU64(pVCpu, s_aCpumPAuthKeyRegs[i].idKvmReg, pu64);
         }
-#endif
     }
 
     if (   rc == VINF_SUCCESS
@@ -774,14 +790,12 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (   rc == VINF_SUCCESS
         && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_SYSREG_PAUTH_KEYS))
     {
-#if 0
-        /* Debug registers. */
+        /* PAuth registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumPAuthKeyRegs); i++)
         {
             uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumPAuthKeyRegs[i].offCpumCtx);
-            hrc |= hv_vcpu_set_sys_reg(pVCpu->nem.s.hVCpu, s_aCpumPAuthKeyRegs[i].enmHvReg, *pu64);
+            rc |= nemR3LnxKvmSetRegU64(pVCpu, s_aCpumPAuthKeyRegs[i].idKvmReg, pu64);
         }
-#endif
     }
 
     if (   rc == VINF_SUCCESS
