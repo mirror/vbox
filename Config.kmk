@@ -352,7 +352,7 @@ VBOX_PACKAGE_STRING = $(VBOX_PACKAGE_OS)_$(VBOX_PACKAGE_ARCH)_$(VBOX_PACKAGE_DIS
 
 # Supported VirtualBox host architectures.
 VBOX_SUPPORTED_HOST_ARCHS := amd64
-if1of ($(KBUILD_TARGET), darwin win) # Work in progress.
+if1of ($(KBUILD_TARGET), darwin win linux) # Work in progress.
  VBOX_SUPPORTED_HOST_ARCHS += arm64
 endif
 
@@ -548,18 +548,20 @@ if1of ($(KBUILD_TARGET), win darwin)
  VBOX_WITH_NATIVE_NEM = 1
 endif
 # Enable NEM fallback if the driver is not available.
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 darwin.arm64 linux.arm64)
  VBOX_WITH_DRIVERLESS_NEM_FALLBACK = 1
 endif
 # Enable forced driverless mode by default.
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64 darwin.arm64 linux.arm64)
  VBOX_WITH_DRIVERLESS_FORCED = 1
- VBOX_WITH_INTNET_SERVICE_IN_R3 = 1
+ ifn1of ($(KBUILD_TARGET), linux)
+  VBOX_WITH_INTNET_SERVICE_IN_R3 = 1
+ endif
 endif
 # Enables the new breakpoint handling code, see @bugref{8650}
 VBOX_WITH_DBGF_FLOW_TRACING = 1
 # Enables ARMv8 virtualization, see @bugref{10383}
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64 win.arm64)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64 win.arm64 linux.arm64)
  VBOX_WITH_VIRT_ARMV8 = 1
 endif
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.amd64)
@@ -1236,6 +1238,21 @@ ifeq ($(KBUILD_TARGET),win)
  VBOX_WITH_SDS = 1
 endif
 
+#
+# To make it easier to build the host side VBox bits and not have to
+# care about multiple page sizes right now.
+#
+ifdef VBOX_WITH_16K_PAGE_SIZE_ON_LINUX_ARM64
+ VBOX_WITH_STATIC_ARM64_PAGE_SHIFT = 14
+else
+ ifdef VBOX_WITH_4K_PAGE_SIZE_ON_LINUX_ARM64
+  VBOX_WITH_STATIC_ARM64_PAGE_SHIFT = 10
+ else
+  ifdef VBOX_WITH_64K_PAGE_SIZE_ON_LINUX_ARM64
+   VBOX_WITH_STATIC_ARM64_PAGE_SHIFT = 16
+  endif
+ endif
+endif
 
 #
 # Branding
@@ -2114,6 +2131,9 @@ ifdef VBOX_WITH_PARFAIT
  ifeq ($(KBUILD_TARGET),win)
   DEFS += RT_RELAXED_CALLBACKS_TYPES
  endif
+endif
+ifdef VBOX_WITH_STATIC_ARM64_PAGE_SHIFT
+ DEFS.linux.arm64 += IPRT_STATIC_ARM64_PAGE_SHIFT=$(VBOX_WITH_STATIC_ARM64_PAGE_SHIFT)
 endif
 
 # Don't flood CDEFS, old MASMs doesn't like too many defines.
@@ -7542,7 +7562,7 @@ ifn1of ($(KBUILD_TARGET), win)
  TEMPLATE_VBoxMainComp_INST      = $(INST_BIN)components/
 endif
 ifneq ($(KBUILD_TARGET),win)
- ifeq ($(filter-out solaris.x86 %.amd64 %.sparc32 %.sparc64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),) ## TODO: cleanup!
+ ifeq ($(filter-out linux.arm64 solaris.x86 %.amd64 %.sparc32 %.sparc64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),) ## TODO: cleanup!
   TEMPLATE_VBoxMainComp_DEFS     = PIC $(TEMPLATE_VBoxMainExe_DEFS)
   TEMPLATE_VBoxMainComp_CFLAGS   = -fPIC $(TEMPLATE_VBoxMainExe_CFLAGS)
   TEMPLATE_VBoxMainComp_CXXFLAGS = -fPIC $(TEMPLATE_VBoxMainExe_CXXFLAGS)
