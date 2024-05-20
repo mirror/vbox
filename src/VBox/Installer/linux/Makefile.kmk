@@ -194,18 +194,25 @@ VBOX_LNX_STRIP_BIN = \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
 	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)
 
+ifdef VBOX_WITH_VIRT_ARMV8
+ VBOX_LNX_STRIP_BIN += \
+ 	VBoxVMMArm.so
+endif
+
+ifdef VBOX_WITH_R0_MODULES
 # Do not remove relocation information of these binaries
-VBOX_LNX_STRIP_OBJ = \
-	VBoxDDR0.r0 \
-	VMMR0.r0
-ifdef VBOX_NO_LINUX_RUN_INSTALLER
- VBOX_LNX_STRIP_OBJ += \
- 	VBoxDDR0.debug \
- 	VMMR0.debug
-else
- VBOX_LNX_DBG_BIN = \
- 	VBoxDDR0.debug \
- 	VMMR0.debug
+ VBOX_LNX_STRIP_OBJ = \
+ 	VBoxDDR0.r0 \
+ 	VMMR0.r0
+ ifdef VBOX_NO_LINUX_RUN_INSTALLER
+  VBOX_LNX_STRIP_OBJ += \
+  	VBoxDDR0.debug \
+  	VMMR0.debug
+ else
+  VBOX_LNX_DBG_BIN = \
+  	VBoxDDR0.debug \
+  	VMMR0.debug
+ endif
 endif
 
 ifdef VBOX_WITH_RAW_MODE

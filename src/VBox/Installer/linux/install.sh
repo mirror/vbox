@@ -162,6 +162,9 @@ case "$cpu" in
   x86_64)
     cpu="amd64"
     ;;
+  aarch64|arm64)
+    cpu="arm64"
+    ;;
 esac
 if [ "$cpu" != "$ARCH" ]; then
   info "Detected unsupported $cpu environment."
