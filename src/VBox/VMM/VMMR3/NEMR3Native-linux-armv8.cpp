@@ -219,6 +219,53 @@ static const struct
     { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_TPIDR_EL1),      CPUMCTX_EXTRN_SYSREG_MISC,      RT_UOFFSETOF(CPUMCTX, aTpIdr[1].u64)    },
     { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_MDCCINT_EL1),    CPUMCTX_EXTRN_SYSREG_MISC,      RT_UOFFSETOF(CPUMCTX, MDccInt.u64)      }
 };
+/** Debug system registers. */
+static const struct
+{
+    uint64_t    idKvmReg;
+    uint32_t    offCpumCtx;
+} s_aCpumDbgRegs[] =
+{
+#define CPUM_DBGREG_EMIT(a_BorW, a_Idx) \
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_DBG ## a_BorW ## CRn_EL1(a_Idx)), RT_UOFFSETOF(CPUMCTX, a ## a_BorW ## p[a_Idx].Ctrl.u64) }, \
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_DBG ## a_BorW ## VRn_EL1(a_Idx)), RT_UOFFSETOF(CPUMCTX, a ## a_BorW ## p[a_Idx].Value.u64) }
+    /* Breakpoint registers. */
+    CPUM_DBGREG_EMIT(B, 0),
+    CPUM_DBGREG_EMIT(B, 1),
+    CPUM_DBGREG_EMIT(B, 2),
+    CPUM_DBGREG_EMIT(B, 3),
+    CPUM_DBGREG_EMIT(B, 4),
+    CPUM_DBGREG_EMIT(B, 5),
+    CPUM_DBGREG_EMIT(B, 6),
+    CPUM_DBGREG_EMIT(B, 7),
+    CPUM_DBGREG_EMIT(B, 8),
+    CPUM_DBGREG_EMIT(B, 9),
+    CPUM_DBGREG_EMIT(B, 10),
+    CPUM_DBGREG_EMIT(B, 11),
+    CPUM_DBGREG_EMIT(B, 12),
+    CPUM_DBGREG_EMIT(B, 13),
+    CPUM_DBGREG_EMIT(B, 14),
+    CPUM_DBGREG_EMIT(B, 15),
+    /* Watchpoint registers. */
+    CPUM_DBGREG_EMIT(W, 0),
+    CPUM_DBGREG_EMIT(W, 1),
+    CPUM_DBGREG_EMIT(W, 2),
+    CPUM_DBGREG_EMIT(W, 3),
+    CPUM_DBGREG_EMIT(W, 4),
+    CPUM_DBGREG_EMIT(W, 5),
+    CPUM_DBGREG_EMIT(W, 6),
+    CPUM_DBGREG_EMIT(W, 7),
+    CPUM_DBGREG_EMIT(W, 8),
+    CPUM_DBGREG_EMIT(W, 9),
+    CPUM_DBGREG_EMIT(W, 10),
+    CPUM_DBGREG_EMIT(W, 11),
+    CPUM_DBGREG_EMIT(W, 12),
+    CPUM_DBGREG_EMIT(W, 13),
+    CPUM_DBGREG_EMIT(W, 14),
+    CPUM_DBGREG_EMIT(W, 15),
+    { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_MDSCR_EL1), RT_UOFFSETOF(CPUMCTX, Mdscr.u64) }
+#undef CPUM_DBGREG_EMIT
+};
 /** ID registers. */
 static const struct
 {
@@ -236,6 +283,7 @@ static const struct
     { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_ID_AA64PFR0_EL1),       RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Pfr0El1)  },
     { KVM_ARM64_REG_SYS_CREATE(ARMV8_AARCH64_SYSREG_ID_AA64PFR1_EL1),       RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Pfr1El1)  }
 };
+
 
 
 /* Forward declarations of things called by the template. */
@@ -593,14 +641,12 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx)
     if (   rc == VINF_SUCCESS
         && (fWhat & CPUMCTX_EXTRN_SYSREG_DEBUG))
     {
-#if 0
         /* Debug registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumDbgRegs); i++)
         {
             uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumDbgRegs[i].offCpumCtx);
-            rc |= nemR3LnxKvmQueryReg(pVCpu, s_aCpumDbgRegs[i].idKvmReg, pu64);
+            rc |= nemR3LnxKvmQueryRegU64(pVCpu, s_aCpumDbgRegs[i].idKvmReg, pu64);
         }
-#endif
     }
 
     if (   rc == VINF_SUCCESS
@@ -717,14 +763,12 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (   rc == VINF_SUCCESS
         && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_SYSREG_DEBUG))
     {
-#if 0
         /* Debug registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumDbgRegs); i++)
         {
             uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumDbgRegs[i].offCpumCtx);
-            hrc |= hv_vcpu_set_sys_reg(pVCpu->nem.s.hVCpu, s_aCpumDbgRegs[i].enmHvReg, *pu64);
+            rc |= nemR3LnxKvmSetRegU64(pVCpu, s_aCpumDbgRegs[i].idKvmReg, pu64);
         }
-#endif
     }
 
     if (   rc == VINF_SUCCESS
