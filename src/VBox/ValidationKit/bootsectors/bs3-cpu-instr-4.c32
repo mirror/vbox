@@ -134,15 +134,13 @@ typedef BS3CPUINSTRX_CONFIG_SAVED_T BS3_FAR *PBS3CPUINSTRX_CONFIG_SAVED_T;
 typedef BS3CPUINSTRX_CONFIG_SAVED_T const BS3_FAR *PCBS3CPUINSTRX_CONFIG_SAVED_T;
 
 /**
- * YMM packed double precision floating-point register.
+ * YMM packed double-precision floating-point register.
  * @todo move to x86.h?
  */
 typedef union X86YMMFLOATPDREG
 {
-    /** Double precision packed floating point view. */
+    /** Packed double-precision floating-point view. */
     RTFLOAT64U  ar64[4];
-    /** Single precision packed floating point view. */
-    RTFLOAT32U  ar32[8];
     /** 256-bit integer view. */
     RTUINT256U  ymm;
 } X86YMMFLOATPDREG;
@@ -155,23 +153,42 @@ typedef X86YMMFLOATPDREG BS3_FAR *PX86YMMFLOATPDREG;
 typedef X86YMMFLOATPDREG const BS3_FAR *PCX86YMMFLOATPDREG;
 
 /**
- * YMM scalar floating-point register.
+ * YMM packed single-precision floating-point register.
  * @todo move to x86.h?
  */
-typedef union X86YMMSFLOATREG
+typedef union X86YMMFLOATPSREG
 {
-    /** Double precision scalar floating point view. */
+    /** Packed single-precision floating-point view. */
+    RTFLOAT32U  ar32[8];
+    /** 256-bit integer view. */
+    RTUINT256U  ymm;
+} X86YMMFLOATPSREG;
+# ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86YMMFLOATPSREG, 32);
+# endif
+/** Pointer to a YMM packed single-precision floating-point register. */
+typedef X86YMMFLOATPSREG BS3_FAR *PX86YMMFLOATPSREG;
+/** Pointer to a const YMM single-precision packed floating-point register. */
+typedef X86YMMFLOATPSREG const BS3_FAR *PCX86YMMFLOATPSREG;
+
+/**
+ * YMM scalar quadruple-precision floating-point register.
+ * @todo move to x86.h?
+ */
+typedef union X86YMMFLOATSQREG
+{
+    /** Scalar quadruple-precision floating point view. */
     RTFLOAT128U ar128[2];
     /** 256-bit integer view. */
     RTUINT256U  ymm;
-} X86YMMSFLOATREG;
+} X86YMMFLOATSQREG;
 # ifndef VBOX_FOR_DTRACE_LIB
-AssertCompileSize(X86YMMSFLOATREG, 32);
+AssertCompileSize(X86YMMFLOATSQREG, 32);
 # endif
-/** Pointer to a YMM scalar floating-point register. */
-typedef X86YMMSFLOATREG *PX86YMMSFLOATREG;
-/** Pointer to a const YMM scalar floating-point register. */
-typedef X86YMMSFLOATREG const *PCX86YMMSFLOATREG;
+/** Pointer to a YMM scalar quadruple-precision floating-point register. */
+typedef X86YMMFLOATSQREG *PX86YMMFLOATSQREG;
+/** Pointer to a const YMM scalar quadruple-precision floating-point register. */
+typedef X86YMMFLOATSQREG const *PCX86YMMFLOATSQREG;
 
 
 /*********************************************************************************************************************************
@@ -679,6 +696,46 @@ static bool bs3CpuInstrX_SkipIt(void)
 
 #endif /* BS3_SKIPIT_DO_SKIP */
 
+/*
+ * Test type #1.
+ * Generic YMM registers.
+ */
+typedef struct BS3CPUINSTR4_TEST1_VALUES_T
+{
+    X86YMMREG           uSrc2;               /**< Second source operand. */
+    X86YMMREG           uSrc1;               /**< uDstIn for SSE */
+    X86YMMREG           uDstOut;             /**< Destination output. */
+    uint32_t            fMxCsrMask;          /**< MXCSR exception mask to use. */
+    bool                fDenormalsAreZero;   /**< Whether DAZ (Denormals-Are-Zero) is used. */
+    bool                fFlushToZero;        /**< Whether Flush-To-Zero (FZ) is used. */
+    uint32_t            fRoundingCtlMask;    /**< Rounding control mask (X86_MXCSR_RC_MASK) to use. */
+    uint32_t            fExpectedMxCsrFlags; /**< Expected MXCSR exception flags. */
+} BS3CPUINSTR4_TEST1_VALUES_T;
+
+/*
+ * Test type #1.
+ * Packed single-precision.
+ */
+typedef struct BS3CPUINSTR4_TEST1_VALUES_PS_T
+{
+    X86YMMFLOATPSREG    uSrc2;               /**< Second source operand. */
+    X86YMMFLOATPSREG    uSrc1;               /**< uDstIn for SSE */
+    X86YMMFLOATPSREG    uDstOut;             /**< Destination output. */
+    uint32_t            fMxCsrMask;          /**< MXCSR exception mask to use. */
+    bool                fDenormalsAreZero;   /**< Whether DAZ (Denormals-Are-Zero) is used. */
+    bool                fFlushToZero;        /**< Whether Flush-To-Zero (FZ) is used. */
+    uint32_t            fRoundingCtlMask;    /**< Rounding control mask (X86_MXCSR_RC_MASK) to use. */
+    uint32_t            fExpectedMxCsrFlags; /**< Expected MXCSR exception flags. */
+} BS3CPUINSTR4_TEST1_VALUES_PS_T;
+AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_PS_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uSrc2,               BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uSrc1,               BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uDstOut,             BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, fMxCsrMask,          BS3CPUINSTR4_TEST1_VALUES_T, fMxCsrMask);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, fDenormalsAreZero,   BS3CPUINSTR4_TEST1_VALUES_T, fDenormalsAreZero);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, fFlushToZero,        BS3CPUINSTR4_TEST1_VALUES_T, fFlushToZero);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, fRoundingCtlMask,    BS3CPUINSTR4_TEST1_VALUES_T, fRoundingCtlMask);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, fExpectedMxCsrFlags, BS3CPUINSTR4_TEST1_VALUES_T, fExpectedMxCsrFlags);
 
 /*
  * Test type #1.
@@ -695,6 +752,40 @@ typedef struct BS3CPUINSTR4_TEST1_VALUES_PD_T
     uint32_t            fRoundingCtlMask;    /**< Rounding control mask (X86_MXCSR_RC_MASK) to use. */
     uint32_t            fExpectedMxCsrFlags; /**< Expected MXCSR exception flags. */
 } BS3CPUINSTR4_TEST1_VALUES_PD_T;
+AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_PD_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uSrc2,               BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uSrc1,               BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uDstOut,             BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, fMxCsrMask,          BS3CPUINSTR4_TEST1_VALUES_T, fMxCsrMask);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, fDenormalsAreZero,   BS3CPUINSTR4_TEST1_VALUES_T, fDenormalsAreZero);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, fFlushToZero,        BS3CPUINSTR4_TEST1_VALUES_T, fFlushToZero);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, fRoundingCtlMask,    BS3CPUINSTR4_TEST1_VALUES_T, fRoundingCtlMask);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, fExpectedMxCsrFlags, BS3CPUINSTR4_TEST1_VALUES_T, fExpectedMxCsrFlags);
+
+/*
+ * Test type #1.
+ * Scalar quadruple-precision.
+ */
+typedef struct BS3CPUINSTR4_TEST1_VALUES_SQ_T
+{
+    X86YMMFLOATSQREG    uSrc2;               /**< Second source operand. */
+    X86YMMFLOATSQREG    uSrc1;               /**< uDstIn for SSE */
+    X86YMMFLOATSQREG    uDstOut;             /**< Destination output. */
+    uint32_t            fMxCsrMask;          /**< MXCSR exception mask to use. */
+    bool                fDenormalsAreZero;   /**< Whether DAZ (Denormals-Are-Zero) is used. */
+    bool                fFlushToZero;        /**< Whether Flush-To-Zero (FZ) is used. */
+    uint32_t            fRoundingCtlMask;    /**< Rounding control mask (X86_MXCSR_RC_MASK) to use. */
+    uint32_t            fExpectedMxCsrFlags; /**< Expected MXCSR exception flags. */
+} BS3CPUINSTR4_TEST1_VALUES_SQ_T;
+AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_SQ_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uSrc2,               BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uSrc1,               BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uDstOut,             BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, fMxCsrMask,          BS3CPUINSTR4_TEST1_VALUES_T, fMxCsrMask);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, fDenormalsAreZero,   BS3CPUINSTR4_TEST1_VALUES_T, fDenormalsAreZero);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, fFlushToZero,        BS3CPUINSTR4_TEST1_VALUES_T, fFlushToZero);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, fRoundingCtlMask,    BS3CPUINSTR4_TEST1_VALUES_T, fRoundingCtlMask);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, fExpectedMxCsrFlags, BS3CPUINSTR4_TEST1_VALUES_T, fExpectedMxCsrFlags);
 
 typedef struct BS3CPUINSTR4_TEST1_T
 {
@@ -706,7 +797,7 @@ typedef struct BS3CPUINSTR4_TEST1_T
     uint8_t             iRegSrc1;            /**< Index of first source register, UINT8_MAX if N/A. */
     uint8_t             iRegSrc2;            /**< Index of second source register, UINT8_MAX if N/A. */
     uint8_t             cValues;             /**< Number of test values in @c paValues. */
-    BS3CPUINSTR4_TEST1_VALUES_PD_T const BS3_FAR *paValues; /**< Test values. */
+    BS3CPUINSTR4_TEST1_VALUES_T const BS3_FAR *paValues; /**< Test values. */
 } BS3CPUINSTR4_TEST1_T;
 
 typedef struct BS3CPUINSTR4_TEST1_MODE_T
@@ -748,8 +839,8 @@ typedef BS3CPUINSTR4_TEST1_CTX_T BS3_FAR *PBS3CPUINSTR4_TEST1_CTX_T;
 static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_TEST1_CTX_T pTestCtx,
                                                    PCBS3CPUINSTRX_CONFIG_SAVED_T pSavedCfg)
 {
-    BS3CPUINSTR4_TEST1_T const BS3_FAR           *pTest   = pTestCtx->pTest;
-    BS3CPUINSTR4_TEST1_VALUES_PD_T const BS3_FAR *pValues = &pTestCtx->pTest->paValues[pTestCtx->iVal];
+    BS3CPUINSTR4_TEST1_T const BS3_FAR        *pTest   = pTestCtx->pTest;
+    BS3CPUINSTR4_TEST1_VALUES_T const BS3_FAR *pValues = &pTestCtx->pTest->paValues[pTestCtx->iVal];
     PBS3TRAPFRAME    pTrapFrame     = pTestCtx->pTrapFrame;
     PBS3REGCTX       pCtx           = pTestCtx->pCtx;
     PBS3EXTCTX       pExtCtx        = pTestCtx->pExtCtx;
@@ -869,7 +960,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
         {
             char szGotBuf[BS3_FP_XCPT_NAMES_MAXLEN];
             char szExpectBuf[BS3_FP_XCPT_NAMES_MAXLEN];
-            bs3CpuInstr4GetXcptFlags(&szExpectBuf[0], sizeof(szExpectBuf),  pValues->fExpectedMxCsrFlags);
+            bs3CpuInstr4GetXcptFlags(&szExpectBuf[0], sizeof(szExpectBuf), pValues->fExpectedMxCsrFlags);
             bs3CpuInstr4GetXcptFlags(&szGotBuf[0], sizeof(szGotBuf),  fMxCsrXcptFlags);
             Bs3TestFailedF("Expected floating-point xcpt flags%s, got%s", szExpectBuf, szGotBuf);
         }
@@ -1018,9 +1109,8 @@ static uint8_t bs3CpuInstrX_WorkerTestType1(uint8_t bMode, BS3CPUINSTR4_TEST1_T 
                     {
                         for (iVal = 0; iVal < cValues; iVal++, idTestStep++, cRecompRuns++)
                         {
-                            uint16_t cErrors;
+                            uint16_t                 cErrors;
                             BS3CPUINSTR4_TEST1_CTX_T TestCtx;
-
                             if (BS3_SKIPIT(bRing, iCfg, iTest, iVal, 0))
                                 continue;
 
@@ -1029,23 +1119,22 @@ static uint8_t bs3CpuInstrX_WorkerTestType1(uint8_t bMode, BS3CPUINSTR4_TEST1_T 
                              * A few of these can be figured out by the worker but initializing
                              * it outside the inner most loop is more optimal.
                              */
-                            TestCtx.pConfig             = &paConfigs[iCfg];
-                            TestCtx.pTest               = pTest;
-                            TestCtx.iVal                = iVal;
-                            TestCtx.pszMode             = pszMode;
-                            TestCtx.pTrapFrame          = &TrapFrame;
-                            TestCtx.pCtx                = &Ctx;
-                            TestCtx.pExtCtx             = pExtCtx;
-                            TestCtx.pExtCtxOut          = pExtCtxOut;
-                            TestCtx.puMemOp             = (uint8_t *)puMemOp;
-                            TestCtx.puMemOpAlias        = puMemOpAlias;
-                            TestCtx.cbMemOp             = cbMemOp;
-                            TestCtx.cbOperand           = cbOperand;
-                            TestCtx.bXcptExpect         = bXcptExpect;
-                            TestCtx.fSseInstr           = fSseInstr;
-                            TestCtx.idTestStep          = idTestStep;
+                            TestCtx.pConfig      = &paConfigs[iCfg];
+                            TestCtx.pTest        = pTest;
+                            TestCtx.iVal         = iVal;
+                            TestCtx.pszMode      = pszMode;
+                            TestCtx.pTrapFrame   = &TrapFrame;
+                            TestCtx.pCtx         = &Ctx;
+                            TestCtx.pExtCtx      = pExtCtx;
+                            TestCtx.pExtCtxOut   = pExtCtxOut;
+                            TestCtx.puMemOp      = (uint8_t *)puMemOp;
+                            TestCtx.puMemOpAlias = puMemOpAlias;
+                            TestCtx.cbMemOp      = cbMemOp;
+                            TestCtx.cbOperand    = cbOperand;
+                            TestCtx.bXcptExpect  = bXcptExpect;
+                            TestCtx.fSseInstr    = fSseInstr;
+                            TestCtx.idTestStep   = idTestStep;
                             cErrors = bs3CpuInstr4_WorkerTestType1_Inner(bMode, &TestCtx, &SavedCfg);
-
                             if (cErrors != Bs3TestSubErrorCount())
                             {
                                 if (paConfigs[iCfg].fAligned)
@@ -1125,15 +1214,15 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
 
     static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
     {
-        { bs3CpuInstrX_addpd_XMM1_XMM2_icebp_c16, 255, RM_REG, T_SSE, 1, 1, 2, RT_ELEMENTS(s_aValues), s_aValues },
+        { bs3CpuInstrX_addpd_XMM1_XMM2_icebp_c16, 255, RM_REG, T_SSE, 1, 1, 2, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
     };
     static BS3CPUINSTR4_TEST1_T const s_aTests32[] =
     {
-        { bs3CpuInstrX_addpd_XMM1_XMM2_icebp_c32, 255, RM_REG, T_SSE, 1, 1, 2, RT_ELEMENTS(s_aValues), s_aValues },
+        { bs3CpuInstrX_addpd_XMM1_XMM2_icebp_c32, 255, RM_REG, T_SSE, 1, 1, 2, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
     };
     static BS3CPUINSTR4_TEST1_T const s_aTests64[] =
     {
-        { bs3CpuInstrX_addpd_XMM1_XMM2_icebp_c64, 255, RM_REG, T_SSE, 1, 1, 2, RT_ELEMENTS(s_aValues), s_aValues },
+        { bs3CpuInstrX_addpd_XMM1_XMM2_icebp_c64, 255, RM_REG, T_SSE, 1, 1, 2, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
     };
 
     static BS3CPUINSTR4_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR4_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
