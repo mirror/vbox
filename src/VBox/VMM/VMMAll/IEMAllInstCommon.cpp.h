@@ -689,7 +689,7 @@ IEM_STATIC const IEMOPSHIFTDBLSIZES * const g_iemAImpl_shrd_eflags[] =
 };
 
 
-# ifndef IEM_WITHOUT_ASSEMBLY
+# if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
 /** Function table for the VPXOR instruction */
 IEM_STATIC const IEMOPMEDIAOPTF3 g_iemAImpl_vpand          = { iemAImpl_vpand_u128,   iemAImpl_vpand_u256 };
 /** Function table for the VPXORN instruction */
