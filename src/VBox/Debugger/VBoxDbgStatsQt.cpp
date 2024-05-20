@@ -3165,7 +3165,7 @@ VBoxDbgStatsModel::loadFilterConfig(const char *a_pszConfig)
         if (psz)
             *psz++ = '\0';
         else
-            psz = strchr(psz, '\0');
+            psz = strchr(pszItem, '\0');
         pszItem = RTStrStrip(pszItem);
 
         /* Is it a path or a variable=value pair. */
