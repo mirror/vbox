@@ -200,7 +200,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
 endif
 
 ifdef VBOX_WITH_R0_MODULES
-# Do not remove relocation information of these binaries
+ # Do not remove relocation information of these binaries
  VBOX_LNX_STRIP_OBJ = \
  	VBoxDDR0.r0 \
  	VMMR0.r0
