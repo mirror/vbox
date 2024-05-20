@@ -153,6 +153,9 @@ BS3_PROC_END_CMN            bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4
 ;; [v]addpd
 ;
 EMIT_INSTR_PLUS_ICEBP       addpd, XMM1, XMM2
+EMIT_INSTR_PLUS_ICEBP       addpd, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   addpd, XMM8, XMM9
+EMIT_INSTR_PLUS_ICEBP_C64   addpd, XMM8, FSxBX
 
 %endif ; BS3_INSTANTIATING_CMN
 
