@@ -298,6 +298,16 @@
 
 /** @name System register IDs.
  * @{ */
+/** MDSCR_EL1 - RW. */
+#define ARMV8_AARCH64_SYSREG_MDSCR_EL1              ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 0, 2, 2)
+/** DBGBVR<0..15>_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_DBGBVRn_EL1(a_Id)      ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 0, (a_Id), 4)
+/** DBGBCR<0..15>_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_DBGBCRn_EL1(a_Id)      ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 0, (a_Id), 5)
+/** DBGWVR<0..15>_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_DBGWVRn_EL1(a_Id)      ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 0, (a_Id), 6)
+/** DBGWCR<0..15>_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_DBGWCRn_EL1(a_Id)      ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 0, (a_Id), 7)
 /** MDCCINT_EL1 register - RW. */
 #define ARMV8_AARCH64_SYSREG_MDCCINT_EL1            ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 0, 2, 0)
 /** OSLAR_EL1 register - WO. */
