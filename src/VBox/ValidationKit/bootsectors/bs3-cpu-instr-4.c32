@@ -853,23 +853,25 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
     uint8_t const    cbInstr        = ((uint8_t const BS3_FAR *)(uintptr_t)pTestCtx->pTest->pfnWorker)[-1];
     uint8_t          bXcptExpect    = pTestCtx->bXcptExpect;
     uint8_t const    bFpXcpt        = pTestCtx->pConfig->fCr4OsXmmExcpt ? X86_XCPT_XF : X86_XCPT_UD;
-    bool const       fFpFlagsExpect = RT_BOOL(pValues->fExpectedMxCsrFlags & X86_MXCSR_XCPT_FLAGS);
+    bool const       fFpFlagsExpect = RT_BOOL(  (pValues->fExpectedMxCsrFlags
+                                              & (~pValues->fMxCsrMask >> X86_MXCSR_XCPT_MASK_SHIFT)) & X86_MXCSR_XCPT_FLAGS);
     uint32_t         uMxCsr;
-    X86YMMREG        uMemOpExpect;
+    X86YMMREG        MemOpExpect;
     uint16_t         cErrors;
 
     /*
      * Set up the context and some expectations.
      */
     /* Destination. */
+    Bs3MemZero(&MemOpExpect, sizeof(MemOpExpect));
     if (pTest->iRegDst == UINT8_MAX)
     {
         BS3_ASSERT(pTest->enmRm >= RM_MEM);
         Bs3MemSet(puMemOpAlias, 0xcc, cbMemOp);
         if (bXcptExpect == X86_XCPT_DB)
-            uMemOpExpect.ymm = pValues->uDstOut.ymm;
+            MemOpExpect.ymm = pValues->uDstOut.ymm;
         else
-            Bs3MemSet(&uMemOpExpect, 0xcc, sizeof(uMemOpExpect));
+            Bs3MemSet(&MemOpExpect, 0xcc, sizeof(MemOpExpect));
     }
 
     /* Source #1 (/ destination for SSE). */
@@ -880,7 +882,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
         if (pTest->iRegDst == UINT8_MAX)
             BS3_ASSERT(pTestCtx->fSseInstr);
         else
-            uMemOpExpect.ymm = pValues->uSrc1.ymm;
+            MemOpExpect.ymm = pValues->uSrc1.ymm;
     }
     else if (pTestCtx->fSseInstr)
         Bs3ExtCtxSetXmm(pExtCtx, pTest->iRegSrc1, &pValues->uSrc1.ymm.DQWords.dqw0);
@@ -893,7 +895,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
         BS3_ASSERT(pTest->enmRm >= RM_MEM);
         BS3_ASSERT(pTest->iRegDst != UINT8_MAX && pTest->iRegSrc1 != UINT8_MAX);
         Bs3MemCpy(puMemOpAlias, &pValues->uSrc2, cbMemOp);
-        uMemOpExpect.ymm = pValues->uSrc2.ymm;
+        MemOpExpect.ymm = pValues->uSrc2.ymm;
     }
     else if (pTestCtx->fSseInstr)
         Bs3ExtCtxSetXmm(pExtCtx, pTest->iRegSrc2, &pValues->uSrc2.ymm.DQWords.dqw0);
@@ -962,7 +964,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
             char szGotBuf[BS3_FP_XCPT_NAMES_MAXLEN];
             char szExpectBuf[BS3_FP_XCPT_NAMES_MAXLEN];
             bs3CpuInstr4GetXcptFlags(&szExpectBuf[0], sizeof(szExpectBuf), pValues->fExpectedMxCsrFlags);
-            bs3CpuInstr4GetXcptFlags(&szGotBuf[0], sizeof(szGotBuf),  fMxCsrXcptFlags);
+            bs3CpuInstr4GetXcptFlags(&szGotBuf[0], sizeof(szGotBuf), fMxCsrXcptFlags);
             Bs3TestFailedF("Expected floating-point xcpt flags%s, got%s", szExpectBuf, szGotBuf);
         }
 
@@ -999,8 +1001,8 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
     pCtx->cr2.u = 0;
 
     if (   pTest->enmRm >= RM_MEM
-        && Bs3MemCmp(puMemOpAlias, &uMemOpExpect, cbMemOp) != 0)
-        Bs3TestFailedF("Expected uMemOp %.*Rhxs, got %.*Rhxs", cbMemOp, &uMemOpExpect, cbMemOp, puMemOpAlias);
+        && Bs3MemCmp(puMemOpAlias, &MemOpExpect, cbMemOp) != 0)
+        Bs3TestFailedF("Expected uMemOp %.*Rhxs, got %.*Rhxs", cbMemOp, &MemOpExpect, cbMemOp, puMemOpAlias);
 
     return cErrors;
 }
@@ -1206,10 +1208,16 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
               /*flags    */ 0 },
-    /* 4*/{ { /*src2     */ { RTFLOAT64U_INIT_INF(0),  RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
-            { /*src1     */ { RTFLOAT64U_INIT_INF(1),  RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
-            { /* =>      */ { RTFLOAT64U_INIT_INF(1),  RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
+    /* 4*/{ { /*src2     */ { RTFLOAT64U_INIT_INF(0), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
+            { /*src1     */ { RTFLOAT64U_INIT_INF(1), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
+            { /* =>      */ { RTFLOAT64U_INIT_INF(1), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ X86_MXCSR_IE },
+    /* 5*/{ { /*src2     */ { RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_INF(1), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
+            { /*src1     */ { RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_INF(0), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
+            { /* =>      */ { RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_QNAN(1), RTFLOAT64U_INIT_ZERO(0), RTFLOAT64U_INIT_ZERO(0) } },
+              /*mask     */ X86_MXCSR_IM | X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM,
               /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
               /*flags    */ X86_MXCSR_IE },
     };
