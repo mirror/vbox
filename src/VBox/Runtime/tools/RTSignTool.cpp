@@ -6231,6 +6231,164 @@ static RTEXITCODE HandleMakeTaInfo(int cArgs, char **papszArgs)
 
 
 
+/*********************************************************************************************************************************
+*   The 'create-self-signed-rsa-cert' command.                                                                                   *
+*********************************************************************************************************************************/
+static RTEXITCODE HelpCreateSelfSignedRsaCert(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
+{
+    RT_NOREF_PV(enmLevel);
+    RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
+                        "create-self-signed-rsa-cert [--verbose|--quiet] [--key-bits <count>] [--digest <hash>] [--out-cert=]<certificate-file.pem> [--out-pkey=]<private-key-file.pem>\n");
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTDIGESTTYPE DigestTypeStringToValue(const char *pszType)
+{
+    for (int iType = RTDIGESTTYPE_INVALID + 1; iType < RTDIGESTTYPE_END; iType++)
+        if (iType != RTDIGESTTYPE_UNKNOWN)
+        {
+            const char * const pszName = RTCrDigestTypeToName((RTDIGESTTYPE)iType);
+            size_t             offType = 0;
+            size_t             offName = 0;
+            for (;;)
+            {
+                char chType = RT_C_TO_UPPER(pszType[offType]);
+                char chName = RT_C_TO_UPPER(pszName[offType]);
+                if (chType != chName)
+                {
+                    /* allow 'sha1' as well as 'sha-1' */
+                    if (chName != '-')
+                        break;
+                    chName = pszName[++offName];
+                    chName = RT_C_TO_UPPER(chName);
+                    if (chType != chName)
+                        break;
+                }
+                if (chType == '\0')
+                    return (RTDIGESTTYPE)iType;
+            }
+        }
+    return RTDIGESTTYPE_INVALID;
+}
+
+
+static RTEXITCODE HandleCreateSelfSignedRsaCert(int cArgs, char **papszArgs)
+{
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--digest",           'd', RTGETOPT_REQ_STRING },
+        { "--bits",             'b', RTGETOPT_REQ_UINT32 },
+        { "--key-bits",         'b', RTGETOPT_REQ_UINT32 },
+        { "--days",             'D', RTGETOPT_REQ_UINT32 },
+        { "--days",             'D', RTGETOPT_REQ_UINT32 },
+        { "--out-cert",         'c', RTGETOPT_REQ_UINT32 },
+        { "--out-certificate",  'c', RTGETOPT_REQ_UINT32 },
+        { "--out-pkey",         'p', RTGETOPT_REQ_UINT32 },
+        { "--out-private-key",  'p', RTGETOPT_REQ_UINT32 },
+        { "--secs",             's', RTGETOPT_REQ_UINT32 },
+        { "--seconds",          's', RTGETOPT_REQ_UINT32 },
+    };
+
+    RTDIGESTTYPE    enmDigestType   = RTDIGESTTYPE_SHA384;
+    uint32_t        cKeyBits        = 4096;
+    uint32_t        cSecsValidFor   = 365 * RT_SEC_1DAY;
+    uint32_t        fKeyUsage       = 0;
+    uint32_t        fExtKeyUsage    = 0;
+    const char     *pszOutCert      = NULL;
+    const char     *pszOutPrivKey   = NULL;
+
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    RTGETOPTUNION ValueUnion;
+    int ch;
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (ch)
+        {
+            case 'b':
+                cKeyBits = ValueUnion.u32;
+                break;
+
+            case 'd':
+                enmDigestType = DigestTypeStringToValue(ValueUnion.psz);
+                if (enmDigestType == RTDIGESTTYPE_INVALID)
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unknown digest type: %s", ValueUnion.psz);
+                break;
+
+            case 'D':
+                cSecsValidFor = ValueUnion.u32 * RT_SEC_1DAY;
+                if (cSecsValidFor / RT_SEC_1DAY != ValueUnion.u32)
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "The --days option value is out of range: %u", ValueUnion.u32);
+                break;
+
+            case 'c':
+                if (pszOutCert)
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "The --out-cert option can only be used once.");
+                pszOutCert = ValueUnion.psz;
+                break;
+
+            case 'p':
+                if (pszOutPrivKey)
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "The --out-pkey option can only be used once.");
+                pszOutPrivKey = ValueUnion.psz;
+                break;
+
+            case 's':
+                cSecsValidFor = ValueUnion.u32;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!pszOutCert)
+                    pszOutCert = ValueUnion.psz;
+                else if (!pszOutPrivKey)
+                    pszOutPrivKey = ValueUnion.psz;
+                else
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Too many output files specified: %s", ValueUnion.psz);
+                break;
+
+            case 'V': return HandleVersion(cArgs, papszArgs);
+            case 'h': return HelpCreateSelfSignedRsaCert(g_pStdOut, RTSIGNTOOLHELP_FULL);
+            default:  return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+    if (!pszOutCert)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No output certificate file name specified.");
+    if (!pszOutPrivKey)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No output private key file name specified.");
+
+    /*
+     * Do the work.
+     */
+    RTERRINFOSTATIC StaticErrInfo;
+    rc = RTCrX509Certificate_GenerateSelfSignedRsa(enmDigestType, cKeyBits, cSecsValidFor,
+                                                   fKeyUsage, fExtKeyUsage, NULL /*pvSubjectTodo*/,
+                                                   pszOutCert, pszOutPrivKey, RTErrInfoInitStatic(&StaticErrInfo));
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Test load it.
+         */
+        RTCRX509CERTIFICATE Certificate;
+        rc = RTCrX509Certificate_ReadFromFile(&Certificate, pszOutCert, RTCRX509CERT_READ_F_PEM_ONLY,
+                                              &g_RTAsn1DefaultAllocator, RTErrInfoInitStatic(&StaticErrInfo));
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error reading the new certificate from %s: %Rrc%#RTeim",
+                                  pszOutCert, rc, &StaticErrInfo.Core);
+        RTCrX509Certificate_Delete(&Certificate);
+        return RTEXITCODE_SUCCESS;
+    }
+
+    return RTMsgErrorExitFailure("RTCrX509Certificate_GenerateSelfSignedRsa(%d,%u,%u,%s,%s,) failed: %Rrc%#RTeim",
+                                 enmDigestType, cKeyBits, cSecsValidFor, pszOutCert, pszOutPrivKey, rc, &StaticErrInfo.Core);
+}
+
+
+
 /*
  * The 'version' command.
  */
@@ -6296,6 +6454,9 @@ const g_aCommands[] =
     { "show-cat",                       HandleShowCat,                      HelpShowCat },
     { "hash-exe",                       HandleHashExe,                      HelpHashExe },
     { "make-tainfo",                    HandleMakeTaInfo,                   HelpMakeTaInfo },
+#ifndef IPRT_IN_BUILD_TOOL
+    { "create-self-signed-rsa-cert",    HandleCreateSelfSignedRsaCert,      HelpCreateSelfSignedRsaCert },
+#endif
     { "help",                           HandleHelp,                         HelpHelp },
     { "--help",                         HandleHelp,                         NULL },
     { "-h",                             HandleHelp,                         NULL },

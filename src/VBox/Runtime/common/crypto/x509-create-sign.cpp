@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Crypto - X.509, Certificate Creation and Signing.
+ * IPRT - Crypto - X.509, Certificate Creation.
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -38,135 +38,180 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-
-# if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-#  include <io.h>
-# endif
-
-#include <iprt/file.h>
 #include "internal/iprt.h"
 #include <iprt/crypto/x509.h>
 
-# ifdef _MSC_VER
-#  define IPRT_COMPILER_VCC_WITH_C_INIT_TERM_SECTIONS
-#  include "internal/compiler-vcc.h"
-# endif
-
-# if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-#  include <fcntl.h>
-# endif
-#include <iprt/err.h>
-#include <iprt/string.h>
-
 #ifdef IPRT_WITH_OPENSSL
+# include <iprt/err.h>
+# include <iprt/file.h>
+# include <iprt/rand.h>
+
+# include "internal/iprt-openssl.h"
+# include "internal/openssl-pre.h"
 # include <openssl/evp.h>
 # include <openssl/pem.h>
 # include <openssl/x509.h>
 # include <openssl/bio.h>
+# include "internal/openssl-post.h"
 
-#if defined(RT_OS_OS2)
-# define _O_WRONLY   O_WRONLY
-#endif
 
-RTDECL(int) RTCrX509Certificate_Generate(const char *pszServerCertificate, const char *pszServerPrivateKey)
+
+RTDECL(int) RTCrX509Certificate_GenerateSelfSignedRsa(RTDIGESTTYPE enmDigestType, uint32_t cBits, uint32_t cSecsValidFor,
+                                                      uint32_t fKeyUsage, uint64_t fExtKeyUsage, void *pvSubjectTodo,
+                                                      const char *pszCertFile, const char *pszPrivateKeyFile, PRTERRINFO pErrInfo)
 {
-    int rc = VINF_SUCCESS;
+    AssertReturn(cSecsValidFor <= (uint32_t)INT32_MAX, VERR_OUT_OF_RANGE); /* larger values are not portable (win) */
+    AssertReturn(!fKeyUsage, VERR_NOT_IMPLEMENTED);
+    AssertReturn(!fExtKeyUsage, VERR_NOT_IMPLEMENTED);
+    AssertReturn(pvSubjectTodo == NULL, VERR_NOT_IMPLEMENTED);
+
     /*
-     * Set up private key using rsa
+     * Translate enmDigestType.
      */
-    EVP_PKEY * pkey;
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) /* OpenSSL 3 needed */
-    pkey = EVP_RSA_gen(2048);
-#else
-    pkey = EVP_PKEY_new();
-    RSA * rsa;
-    rsa = RSA_generate_key(
-        2048,   /* Number of bits for the key */
+    const EVP_MD * const pEvpDigest = (const EVP_MD *)rtCrOpenSslConvertDigestType(enmDigestType, pErrInfo);
+    AssertReturn(pEvpDigest, pErrInfo ? pErrInfo->rc : VERR_CR_DIGEST_NOT_SUPPORTED);
+
+    /*
+     * Create a new RSA private key.
+     */
+# if OPENSSL_VERSION_NUMBER >= 0x30000000 /* RSA_generate_key is depreated in v3 */
+    EVP_PKEY * const pPrivateKey = EVP_RSA_gen(cBits);
+    if (!pPrivateKey)
+        return RTErrInfoSetF(pErrInfo, VERR_CR_KEY_GEN_FAILED_RSA, "EVP_RSA_gen(%u) failed", cBits);
+# else
+    RSA * const pRsaKey = RSA_generate_key(
+        cBits,  /* Number of bits for the key */
         RSA_F4, /* Exponent - RSA_F4 is defined as 0x10001L */
         NULL,   /* Callback */
         NULL    /* Callback argument */
     );
-    EVP_PKEY_assign_RSA(pkey, rsa);
-#endif
+    if (!pRsaKey)
+        return RTErrInfoSetF(pErrInfo, VERR_CR_KEY_GEN_FAILED_RSA, "RSA_generate_key(%u,RSA_F4,,) failed", cBits);
 
-    if ( pkey == NULL )
-        return VERR_CR_KEY_GEN_FAILED_RSA;
+    EVP_PKEY * const pPrivateKey = EVP_PKEY_new();
+    if (pPrivateKey)
+        EVP_PKEY_assign_RSA(pPrivateKey, pRsaKey); /* Takes ownership of pRsaKey. */
+    else
+    {
+        RSA_free(pRsaKey);
+        return RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new failed");
+    }
+# endif
 
     /*
-     * Set up certificate
+     * Construct the certificate.
      */
-    X509* tempX509 = X509_new();
-    if ( tempX509 == NULL )
-        return VERR_CR_X509_GENERIC_ERROR;
-    X509_set_version(tempX509,0); /** Set to X509 version 1 */
-    ASN1_INTEGER_set(X509_get_serialNumber(tempX509), 1);
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-    X509_gmtime_adj(X509_getm_notBefore(tempX509), 0);
-    X509_gmtime_adj(X509_getm_notAfter(tempX509), 60*60*24*3650); /** 10 years time */
-#else
-    X509_gmtime_adj(X509_get_notBefore(tempX509), 0);
-    X509_gmtime_adj(X509_get_notAfter(tempX509), 60*60*24*3650); /** 10 years time */
-#endif
-    X509_set_pubkey(tempX509,pkey);
+    int   rc = VINF_SUCCESS;
+    X509 *pNewCert = X509_new();
+    if (pNewCert)
+    {
+        int rcOssl;
 
-    X509_NAME *x509_name = NULL;
-    x509_name = X509_get_subject_name(tempX509);
-
-    rc = X509_set_issuer_name(tempX509, x509_name);
-    if ( RT_FAILURE(rc) )
-        return rc;
-
-    rc = X509_sign( tempX509, pkey, EVP_sha1());
-    if ( RT_FAILURE(rc) )
-        return rc;
-
-    RTFILE hKeyFile;
-    rc = RTFileOpen(&hKeyFile, pszServerPrivateKey, RTFILE_O_WRITE | RTFILE_O_DENY_ALL | RTFILE_O_CREATE | (0600 << RTFILE_O_CREATE_MODE_SHIFT) );
-    if ( RT_FAILURE(rc) )
-        return rc;
-# ifndef _MSC_VER
-    int fd1 = (int)RTFileToNative(hKeyFile);
-# else
-    int fd1 = _open_osfhandle(RTFileToNative(hKeyFile), _O_WRONLY);
+        /* Set to X509 version 1: */
+# if 0
+        if (fKeyUsage || fExtKeyUsage)
+            rcOssl = X509_set_version(pNewCert, RTCRX509TBSCERTIFICATE_V3);
+        else
 # endif
-    if ( fd1 < 0 )
-        return VERR_FILE_IO_ERROR;
+            rcOssl = X509_set_version(pNewCert, RTCRX509TBSCERTIFICATE_V1);
+        AssertStmt(rcOssl > 0, rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "X509_set_version failed"));
 
-    BIO *fp1 = BIO_new_fd(fd1, BIO_NOCLOSE);
-    rc = PEM_write_bio_PrivateKey( fp1, pkey, NULL, NULL, 0, NULL, NULL);
-    if ( RT_FAILURE(rc) )
-        return rc;
-    BIO_free(fp1);
-# ifdef _MSC_VER
-    close(fd1);
-#endif
-    RTFileClose(hKeyFile);
+        /* Set the serial number to a random number in the 1 - 1G range: */
+        rcOssl = ASN1_INTEGER_set(X509_get_serialNumber(pNewCert), RTRandU32Ex(1, UINT32_MAX / 4));
+        AssertStmt(rcOssl > 0, rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "X509_set_version failed"));
 
-    RTFILE hCertFile;
-    rc = RTFileOpen(&hCertFile, pszServerCertificate, RTFILE_O_WRITE | RTFILE_O_DENY_ALL | RTFILE_O_CREATE | (0600 << RTFILE_O_CREATE_MODE_SHIFT) );
-    if ( RT_FAILURE(rc) )
-        return rc;
-# ifndef _MSC_VER
-    int fd2 = (int)RTFileToNative(hCertFile);
+        /* The certificate is valid from now and the specifice number of seconds forwards: */
+# if OPENSSL_VERSION_NUMBER >= 0x30000000
+        AssertStmt(X509_gmtime_adj(X509_getm_notBefore(pNewCert), 0),
+                   rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "X509_gmtime_adj/before failed"));
+        AssertStmt(X509_gmtime_adj(X509_getm_notAfter(pNewCert), cSecsValidFor),
+                   rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "X509_gmtime_adj/after failed"));
 # else
-    int fd2 = _open_osfhandle(RTFileToNative(hCertFile), _O_WRONLY);
+        AssertStmt(X509_gmtime_adj(X509_get_notBefore(pNewCert), 0),
+                   rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "X509_gmtime_adj/before failed"));
+        AssertStmt(X509_gmtime_adj(X509_get_notAfter(pNewCert), cSecsValidFor),
+                   rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "X509_gmtime_adj/after failed"));
 # endif
-    if ( fd2 < 0 )
-        return VERR_FILE_IO_ERROR;
 
-    BIO *fp2 = BIO_new_fd(fd2, BIO_NOCLOSE);
-    rc = PEM_write_bio_X509( fp2, tempX509 );
-    if ( RT_FAILURE(rc) )
-        return rc;
-    BIO_free(fp2);
-# ifdef _MSC_VER
-    close(fd2);
-#endif
-    RTFileClose(hCertFile);
+        /* Set the public key (part of the private): */
+        rcOssl = X509_set_pubkey(pNewCert, pPrivateKey);
+        AssertStmt(rcOssl > 0, rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "X509_set_pubkey failed"));
 
-    X509_free(tempX509);
-    EVP_PKEY_free(pkey);
+# if 0
+        /* Set key usage. */
+        if (fKeyUsage)
+        {
+        }
+        /* Set extended key usage. */
+        if (fExtKeyUsage)
+        {
+        }
+# endif
+        /** @todo set other certificate attributes? */
 
+
+        /** @todo check what the subject name is...  Offer way to specify it? */
+
+        /* Make it self signed: */
+        X509_NAME *pX509Name = X509_get_subject_name(pNewCert);
+        rcOssl = X509_set_issuer_name(pNewCert, pX509Name);
+        AssertStmt(rcOssl > 0, rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "X509_set_issuer_name failed"));
+
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Sign the certificate.
+             */
+            rcOssl = X509_sign(pNewCert, pPrivateKey, pEvpDigest);
+            if (rcOssl > 0)
+            {
+                /*
+                 * Write out the result to the two files.
+                 */
+                /* The certificate (not security sensitive). */
+                BIO * const pCertBio = BIO_new(BIO_s_mem());
+                if (pCertBio)
+                {
+                    rcOssl = PEM_write_bio_X509(pCertBio, pNewCert);
+                    if (rcOssl > 0)
+                        rc = rtCrOpenSslWriteMemBioToNewFile(pCertBio, pszCertFile, pErrInfo);
+                    else
+                        rc = RTErrInfoSet(pErrInfo, VERR_CR_KEY_GEN_FAILED_RSA, "PEM_write_bio_X509 failed");
+                    BIO_free(pCertBio);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+
+                if (RT_SUCCESS(rc))
+                {
+                    /* The private key as plain text (security sensitive, thus last). */
+                    BIO * const pPkBio = BIO_new(BIO_s_secmem());
+                    if (pPkBio)
+                    {
+                        rcOssl = PEM_write_bio_PrivateKey(pPkBio, pPrivateKey,
+                                                          NULL /*enc*/, NULL /*kstr*/, 0 /*klen*/, NULL /*cb*/, NULL /*u*/);
+                        if (rcOssl > 0)
+                            rc = rtCrOpenSslWriteMemBioToNewFile(pPkBio, pszPrivateKeyFile, pErrInfo);
+                        else
+                            rc = RTErrInfoSet(pErrInfo, VERR_CR_KEY_GEN_FAILED_RSA, "PEM_write_bio_PrivateKey failed");
+                        BIO_free(pPkBio);
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                    if (RT_FAILURE(rc))
+                        RTFileDelete(pszCertFile);
+                }
+            }
+            else
+                rc = RTErrInfoSet(pErrInfo, VERR_CR_KEY_GEN_FAILED_RSA, "X509_sign failed");
+        }
+
+        X509_free(pNewCert);
+    }
+    else
+        rc = RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "X509_new failed");
+
+    EVP_PKEY_free(pPrivateKey);
     return rc;
 }
 

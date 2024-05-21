@@ -240,20 +240,36 @@ HRESULT VRDEServer::i_saveSettings(settings::VRDESettings &data)
 */
 int VRDEServer::i_generateServerCertificate()
 {
-    Utf8Str strServerCertificate = "server_cert.pem";
-    Utf8Str strServerPrivateKey = "server_key_private.pem";
-    mParent->i_calculateFullPath(strServerCertificate, strServerCertificate);
-    mParent->i_calculateFullPath(strServerPrivateKey, strServerPrivateKey);
-    const char *pszServerCertificate = strServerCertificate.c_str();
-    const char *pszServerPrivateKey = strServerPrivateKey.c_str();
+    Utf8Str strServerCertificate("server_cert.pem");
+    int vrc = mParent->i_calculateFullPath(strServerCertificate, strServerCertificate);
+    AssertRCReturn(vrc, vrc);
 
-    int vrc = RTCrX509Certificate_Generate(pszServerCertificate, pszServerPrivateKey);
+    Utf8Str strServerPrivateKey("server_key_private.pem");
+    vrc = mParent->i_calculateFullPath(strServerPrivateKey, strServerPrivateKey);
+    AssertRCReturn(vrc, vrc);
 
+    vrc = RTCrX509Certificate_GenerateSelfSignedRsa(RTDIGESTTYPE_SHA1, 2048 /*cBits*/, 10 * 365 * RT_SEC_1DAY,
+                                                    0 /*fKeyUsage*/, 0 /*fExtKeyUsage*/, NULL /*pvSubjectTodo*/,
+                                                    strServerCertificate.c_str(), strServerPrivateKey.c_str(), NULL /*pErrInfo*/);
     if (RT_SUCCESS(vrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         mData.backup();
 
+/** @todo r=bird: These statements may trigger exceptions and leave
+ * dangling server_cert.pem & server_key_private.pem files around.
+ * Since we're not doing an active settings save here (problematic IIRC) there
+ * are probably hundreds more likely ways this could go belly up and leave those
+ * files behind.
+ *
+ * The problem is that the code relies on the _settings_ to decide whether they
+ * are there or not, and if no it creates them.  If anything goes wrong before
+ * we can save settings, this function will fail to retify the situation because
+ * the file already exist and RTCrX509Certificate_GenerateSelfSignedRsa won't
+ * overwrite existing files.
+ *
+ * Klaus, some settings saving input required here!
+ */
         mData->mapProperties["Security/Method"] = Utf8Str("TLS");
         mData->mapProperties["Security/ServerCertificate"] = strServerCertificate;
         mData->mapProperties["Security/ServerPrivateKey"] = strServerPrivateKey;
@@ -305,9 +321,7 @@ HRESULT VRDEServer::setEnabled(BOOL aEnabled)
             {
                 int vrc = i_generateServerCertificate();
                 if (RT_FAILURE(vrc))
-                {
                     LogRel(("Failed to auto generate server key and certificate: (%Rrc)\n", vrc));
-                }
             }
         }
 

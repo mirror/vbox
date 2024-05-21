@@ -42,6 +42,7 @@
 
 #ifdef IPRT_WITH_OPENSSL    /* Whole file. */
 # include <iprt/err.h>
+# include <iprt/file.h>
 # include <iprt/string.h>
 # include <iprt/mem.h>
 # include <iprt/asn1.h>
@@ -168,11 +169,12 @@ DECLHIDDEN(const void /*EVP_MD*/ *) rtCrOpenSslConvertDigestType(RTDIGESTTYPE en
     return pEvpMdType;
 }
 
+
 DECLHIDDEN(int) rtCrOpenSslConvertPkcs7Attribute(void **ppvOsslAttrib, PCRTCRPKCS7ATTRIBUTE pAttrib, PRTERRINFO pErrInfo)
 {
-    const unsigned char *pabEncoded;
-    uint32_t             cbEncoded;
-    void                *pvFree;
+    const unsigned char *pabEncoded = NULL;
+    uint32_t             cbEncoded  = 0;
+    void                *pvFree     = NULL;
     int rc = RTAsn1EncodeQueryRawBits(RTCrPkcs7Attribute_GetAsn1Core(pAttrib),
                                       (const uint8_t **)&pabEncoded, &cbEncoded, &pvFree, pErrInfo);
     if (RT_SUCCESS(rc))
@@ -195,6 +197,53 @@ DECLHIDDEN(int) rtCrOpenSslConvertPkcs7Attribute(void **ppvOsslAttrib, PCRTCRPKC
 DECLHIDDEN(void) rtCrOpenSslFreeConvertedPkcs7Attribute(void *pvOsslAttrib)
 {
     X509_ATTRIBUTE_free((X509_ATTRIBUTE *)pvOsslAttrib);
+}
+
+
+/**
+ * Writes the content of the @a pvMemBio to the new file @a pszFilename.
+ *
+ * @returns IPRT status code.
+ * @param   pvMemBio    The memory BIO to write out.
+ * @param   pszFilename The destination file.  This will be created.
+ *                      The function will fail if this already exists.
+ * @param   pErrInfo    Where to provide additional error details. Optional.
+ */
+DECLHIDDEN(int) rtCrOpenSslWriteMemBioToNewFile(void *pvMemBio, const char *pszFilename, PRTERRINFO pErrInfo)
+{
+    int rc;
+
+    /* Get the BIO buffer pointer first. */
+    BUF_MEM *pBioBuf = NULL;
+    long rcOssl = BIO_get_mem_ptr((BIO *)pvMemBio, &pBioBuf);
+    if (rcOssl > 0)
+    {
+        AssertPtr(pBioBuf);
+        RTFILE hFile = NIL_RTFILE;
+        rc = RTFileOpen(&hFile, pszFilename,
+                        RTFILE_O_WRITE | RTFILE_O_DENY_ALL | RTFILE_O_CREATE | (0600 << RTFILE_O_CREATE_MODE_SHIFT));
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileWrite(hFile, pBioBuf->data, pBioBuf->length, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTFileClose(hFile);
+                AssertRCStmt(rc, rc = RTErrInfoSetF(pErrInfo, rc, "RTFileClose failed on '%s'", pszFilename));
+            }
+            else
+            {
+                rc = RTErrInfoSetF(pErrInfo, rc, "RTFileWrite(,,%#zx,) failed on '%s'", pBioBuf->length, pszFilename);
+                RTFileClose(hFile);
+            }
+            if (RT_FAILURE(rc))
+                RTFileDelete(pszFilename);
+        }
+        else
+            rc = RTErrInfoSetF(pErrInfo, rc, "RTFileOpen failed on '%s'", pszFilename);
+    }
+    else
+        rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "BIO_get_mem_ptr");
+    return rc;
 }
 
 
