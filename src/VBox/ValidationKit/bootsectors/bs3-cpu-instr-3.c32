@@ -4050,7 +4050,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movss(uint8_t bMode)
 
 
 /*
- * [V]MOVSD - move (mem) or merge (reg) scalar single-precision floating-point value.
+ * [V]MOVSD - move (mem) or merge (reg) scalar double-precision floating-point value.
  */
 BS3_DECL_FAR(uint8_t) bs3CpuInstr3_v_movsd(uint8_t bMode)
 {
