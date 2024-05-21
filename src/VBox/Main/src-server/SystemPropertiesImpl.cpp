@@ -1037,9 +1037,6 @@ HRESULT SystemProperties::getSupportedPlatformArchitectures(std::vector<Platform
 # error "Port me!"
         PlatformArchitecture_None
 #endif
-#ifdef VBOX_WITH_GCC_SANITIZER
-      , PlatformArchitecture_32BitHack
-#endif
     };
     aSupportedPlatformArchitectures.assign(aPlatformArchitectures,
                                            aPlatformArchitectures + RT_ELEMENTS(aPlatformArchitectures));
@@ -1199,9 +1196,6 @@ HRESULT SystemProperties::getSupportedRecordingVideoCodecs(std::vector<Recording
         RecordingVideoCodec_VP9,
         RecordingVideoCodec_AV1,
 #endif
-#ifdef VBOX_WITH_GCC_SANITIZER
-        RecordingVideoCodec_32BitHack
-#endif
     };
     aSupportedRecordingVideoCodecs.assign(aRecordingVideoCodecs,
                                           aRecordingVideoCodecs + RT_ELEMENTS(aRecordingVideoCodecs));
@@ -1217,9 +1211,6 @@ HRESULT SystemProperties::getSupportedRecordingVSModes(std::vector<RecordingVide
         RecordingVideoScalingMode_NearestNeighbor,
         RecordingVideoScalingMode_Bilinear,
         RecordingVideoScalingMode_Bicubic,
-#endif
-#ifdef VBOX_WITH_GCC_SANITIZER
-        RecordingVideoScalingMode_32BitHack
 #endif
     };
     aSupportedRecordingVideoScalingModes.assign(aRecordingVideoScalingModes,
