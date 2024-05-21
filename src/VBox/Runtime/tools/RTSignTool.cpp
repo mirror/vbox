@@ -6234,6 +6234,8 @@ static RTEXITCODE HandleMakeTaInfo(int cArgs, char **papszArgs)
 /*********************************************************************************************************************************
 *   The 'create-self-signed-rsa-cert' command.                                                                                   *
 *********************************************************************************************************************************/
+#ifndef IPRT_IN_BUILD_TOOL
+
 static RTEXITCODE HelpCreateSelfSignedRsaCert(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
     RT_NOREF_PV(enmLevel);
@@ -6387,6 +6389,7 @@ static RTEXITCODE HandleCreateSelfSignedRsaCert(int cArgs, char **papszArgs)
                                  enmDigestType, cKeyBits, cSecsValidFor, pszOutCert, pszOutPrivKey, rc, &StaticErrInfo.Core);
 }
 
+#endif /* !IPRT_IN_BUILD_TOOL */
 
 
 /*
