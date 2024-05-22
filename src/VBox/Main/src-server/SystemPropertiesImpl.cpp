@@ -59,6 +59,29 @@
 // defines
 /////////////////////////////////////////////////////////////////////////////
 
+/** @def MY_VECTOR_ASSIGN_ARRAY
+ * Safe way to copy an array (static + const) into a vector w/ minimal typing.
+ *
+ * @param a_rVector     The destination vector reference.
+ * @param a_aSrcArray   The source array to assign to the vector.
+ */
+#if RT_GNUC_PREREQ(13, 0) && !RT_GNUC_PREREQ(14, 0) && defined(VBOX_WITH_GCC_SANITIZER)
+/* Workaround for g++ 13.2 incorrectly failing on arrays with a single entry in ASAN builds.
+   This is restricted to [13.0, 14.0), assuming the issue was introduced in the 13 cycle
+   and will be fixed by the time 14 is done.  If 14 doesn't fix it, extend the range
+   version by version till it is fixed. */
+# define MY_VECTOR_ASSIGN_ARRAY(a_rVector, a_aSrcArray) do { \
+        _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wstringop-overread\""); \
+        (a_rVector).assign(&a_aSrcArray[0], &a_aSrcArray[RT_ELEMENTS(a_aSrcArray)]); \
+        _Pragma("GCC diagnostic pop"); \
+    } while (0)
+#else
+# define MY_VECTOR_ASSIGN_ARRAY(a_rVector, a_aSrcArray) do { \
+        (a_rVector).assign(&a_aSrcArray[0], &a_aSrcArray[RT_ELEMENTS(a_aSrcArray)]); \
+    } while (0)
+#endif
+
+
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1022,7 +1045,7 @@ HRESULT SystemProperties::setProxyURL(const com::Utf8Str &aProxyURL)
 
 HRESULT SystemProperties::getSupportedPlatformArchitectures(std::vector<PlatformArchitecture_T> &aSupportedPlatformArchitectures)
 {
-    static const PlatformArchitecture_T aPlatformArchitectures[] =
+    static const PlatformArchitecture_T s_aPlatformArchitectures[] =
     {
 #if   defined(RT_ARCH_X86)   || defined(RT_ARCH_AMD64)
         /* Currently x86 can run x86 VMs only. */
@@ -1038,42 +1061,39 @@ HRESULT SystemProperties::getSupportedPlatformArchitectures(std::vector<Platform
         PlatformArchitecture_None
 #endif
     };
-    aSupportedPlatformArchitectures.assign(aPlatformArchitectures,
-                                           aPlatformArchitectures + RT_ELEMENTS(aPlatformArchitectures));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedPlatformArchitectures, s_aPlatformArchitectures);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedClipboardModes(std::vector<ClipboardMode_T> &aSupportedClipboardModes)
 {
-    static const ClipboardMode_T aClipboardModes[] =
+    static const ClipboardMode_T s_aClipboardModes[] =
     {
         ClipboardMode_Disabled,
         ClipboardMode_HostToGuest,
         ClipboardMode_GuestToHost,
         ClipboardMode_Bidirectional,
     };
-    aSupportedClipboardModes.assign(aClipboardModes,
-                                    aClipboardModes + RT_ELEMENTS(aClipboardModes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedClipboardModes, s_aClipboardModes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedDnDModes(std::vector<DnDMode_T> &aSupportedDnDModes)
 {
-    static const DnDMode_T aDnDModes[] =
+    static const DnDMode_T s_aDnDModes[] =
     {
         DnDMode_Disabled,
         DnDMode_HostToGuest,
         DnDMode_GuestToHost,
         DnDMode_Bidirectional,
     };
-    aSupportedDnDModes.assign(aDnDModes,
-                              aDnDModes + RT_ELEMENTS(aDnDModes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedDnDModes, s_aDnDModes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedPointingHIDTypes(std::vector<PointingHIDType_T> &aSupportedPointingHIDTypes)
 {
-    static const PointingHIDType_T aPointingHIDTypes[] =
+    static const PointingHIDType_T s_aPointingHIDTypes[] =
     {
         PointingHIDType_PS2Mouse,
 #ifdef DEBUG
@@ -1086,14 +1106,13 @@ HRESULT SystemProperties::getSupportedPointingHIDTypes(std::vector<PointingHIDTy
         PointingHIDType_USBMultiTouch,
         PointingHIDType_USBMultiTouchScreenPlusPad,
     };
-    aSupportedPointingHIDTypes.assign(aPointingHIDTypes,
-                                      aPointingHIDTypes + RT_ELEMENTS(aPointingHIDTypes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedPointingHIDTypes, s_aPointingHIDTypes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedKeyboardHIDTypes(std::vector<KeyboardHIDType_T> &aSupportedKeyboardHIDTypes)
 {
-    static const KeyboardHIDType_T aKeyboardHIDTypes[] =
+    static const KeyboardHIDType_T s_aKeyboardHIDTypes[] =
     {
         KeyboardHIDType_PS2Keyboard,
         KeyboardHIDType_USBKeyboard,
@@ -1101,14 +1120,13 @@ HRESULT SystemProperties::getSupportedKeyboardHIDTypes(std::vector<KeyboardHIDTy
         KeyboardHIDType_ComboKeyboard,
 #endif
     };
-    aSupportedKeyboardHIDTypes.assign(aKeyboardHIDTypes,
-                                      aKeyboardHIDTypes + RT_ELEMENTS(aKeyboardHIDTypes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedKeyboardHIDTypes, s_aKeyboardHIDTypes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedVFSTypes(std::vector<VFSType_T> &aSupportedVFSTypes)
 {
-    static const VFSType_T aVFSTypes[] =
+    static const VFSType_T s_aVFSTypes[] =
     {
         VFSType_File,
         VFSType_Cloud,
@@ -1117,50 +1135,46 @@ HRESULT SystemProperties::getSupportedVFSTypes(std::vector<VFSType_T> &aSupporte
         VFSType_WebDav,
 #endif
     };
-    aSupportedVFSTypes.assign(aVFSTypes,
-                              aVFSTypes + RT_ELEMENTS(aVFSTypes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedVFSTypes, s_aVFSTypes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedImportOptions(std::vector<ImportOptions_T> &aSupportedImportOptions)
 {
-    static const ImportOptions_T aImportOptions[] =
+    static const ImportOptions_T s_aImportOptions[] =
     {
         ImportOptions_KeepAllMACs,
         ImportOptions_KeepNATMACs,
         ImportOptions_ImportToVDI,
     };
-    aSupportedImportOptions.assign(aImportOptions,
-                                   aImportOptions + RT_ELEMENTS(aImportOptions));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedImportOptions, s_aImportOptions);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedExportOptions(std::vector<ExportOptions_T> &aSupportedExportOptions)
 {
-    static const ExportOptions_T aExportOptions[] =
+    static const ExportOptions_T s_aExportOptions[] =
     {
         ExportOptions_CreateManifest,
         ExportOptions_ExportDVDImages,
         ExportOptions_StripAllMACs,
         ExportOptions_StripAllNonNATMACs,
     };
-    aSupportedExportOptions.assign(aExportOptions,
-                                   aExportOptions + RT_ELEMENTS(aExportOptions));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedExportOptions, s_aExportOptions);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedRecordingFeatures(std::vector<RecordingFeature_T> &aSupportedRecordingFeatures)
 {
 #ifdef VBOX_WITH_RECORDING
-    static const RecordingFeature_T aRecordingFeatures[] =
+    static const RecordingFeature_T s_aRecordingFeatures[] =
     {
 # ifdef VBOX_WITH_AUDIO_RECORDING
         RecordingFeature_Audio,
 # endif
         RecordingFeature_Video,
     };
-    aSupportedRecordingFeatures.assign(aRecordingFeatures,
-                                       aRecordingFeatures + RT_ELEMENTS(aRecordingFeatures));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingFeatures, s_aRecordingFeatures);
 #else  /* !VBOX_WITH_RECORDING */
     aSupportedRecordingFeatures.clear();
 #endif /* VBOX_WITH_RECORDING */
@@ -1169,7 +1183,7 @@ HRESULT SystemProperties::getSupportedRecordingFeatures(std::vector<RecordingFea
 
 HRESULT SystemProperties::getSupportedRecordingAudioCodecs(std::vector<RecordingAudioCodec_T> &aSupportedRecordingAudioCodecs)
 {
-    static const RecordingAudioCodec_T aRecordingAudioCodecs[] =
+    static const RecordingAudioCodec_T s_aRecordingAudioCodecs[] =
     {
         RecordingAudioCodec_None,
 #ifdef DEBUG
@@ -1179,14 +1193,13 @@ HRESULT SystemProperties::getSupportedRecordingAudioCodecs(std::vector<Recording
         RecordingAudioCodec_OggVorbis,
 #endif
     };
-    aSupportedRecordingAudioCodecs.assign(aRecordingAudioCodecs,
-                                          aRecordingAudioCodecs + RT_ELEMENTS(aRecordingAudioCodecs));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingAudioCodecs, s_aRecordingAudioCodecs);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedRecordingVideoCodecs(std::vector<RecordingVideoCodec_T> &aSupportedRecordingVideoCodecs)
 {
-    static const RecordingVideoCodec_T aRecordingVideoCodecs[] =
+    static const RecordingVideoCodec_T s_aRecordingVideoCodecs[] =
     {
         RecordingVideoCodec_None,
 #ifdef VBOX_WITH_LIBVPX
@@ -1197,14 +1210,13 @@ HRESULT SystemProperties::getSupportedRecordingVideoCodecs(std::vector<Recording
         RecordingVideoCodec_AV1,
 #endif
     };
-    aSupportedRecordingVideoCodecs.assign(aRecordingVideoCodecs,
-                                          aRecordingVideoCodecs + RT_ELEMENTS(aRecordingVideoCodecs));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingVideoCodecs, s_aRecordingVideoCodecs);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedRecordingVSModes(std::vector<RecordingVideoScalingMode_T> &aSupportedRecordingVideoScalingModes)
 {
-    static const RecordingVideoScalingMode_T aRecordingVideoScalingModes[] =
+    static const RecordingVideoScalingMode_T s_aRecordingVideoScalingModes[] =
     {
         RecordingVideoScalingMode_None,
 #ifdef DEBUG
@@ -1213,14 +1225,13 @@ HRESULT SystemProperties::getSupportedRecordingVSModes(std::vector<RecordingVide
         RecordingVideoScalingMode_Bicubic,
 #endif
     };
-    aSupportedRecordingVideoScalingModes.assign(aRecordingVideoScalingModes,
-                                                aRecordingVideoScalingModes + RT_ELEMENTS(aRecordingVideoScalingModes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingVideoScalingModes, s_aRecordingVideoScalingModes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedRecordingARCModes(std::vector<RecordingRateControlMode_T> &aSupportedRecordingAudioRateControlModes)
 {
-    static const RecordingRateControlMode_T aRecordingAudioRateControlModes[] =
+    static const RecordingRateControlMode_T s_aRecordingAudioRateControlModes[] =
     {
 #ifdef DEBUG
         RecordingRateControlMode_ABR,
@@ -1228,14 +1239,13 @@ HRESULT SystemProperties::getSupportedRecordingARCModes(std::vector<RecordingRat
 #endif
         RecordingRateControlMode_VBR
     };
-    aSupportedRecordingAudioRateControlModes.assign(aRecordingAudioRateControlModes,
-                                                    aRecordingAudioRateControlModes + RT_ELEMENTS(aRecordingAudioRateControlModes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingAudioRateControlModes, s_aRecordingAudioRateControlModes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedRecordingVRCModes(std::vector<RecordingRateControlMode_T> &aSupportedRecordingVideoRateControlModes)
 {
-    static const RecordingRateControlMode_T aRecordingVideoRateControlModes[] =
+    static const RecordingRateControlMode_T s_aRecordingVideoRateControlModes[] =
     {
 #ifdef DEBUG
         RecordingRateControlMode_ABR,
@@ -1243,14 +1253,13 @@ HRESULT SystemProperties::getSupportedRecordingVRCModes(std::vector<RecordingRat
 #endif
         RecordingRateControlMode_VBR
     };
-    aSupportedRecordingVideoRateControlModes.assign(aRecordingVideoRateControlModes,
-                                                    aRecordingVideoRateControlModes + RT_ELEMENTS(aRecordingVideoRateControlModes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingVideoRateControlModes, s_aRecordingVideoRateControlModes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedCloneOptions(std::vector<CloneOptions_T> &aSupportedCloneOptions)
 {
-    static const CloneOptions_T aCloneOptions[] =
+    static const CloneOptions_T s_aCloneOptions[] =
     {
         CloneOptions_Link,
         CloneOptions_KeepAllMACs,
@@ -1258,28 +1267,26 @@ HRESULT SystemProperties::getSupportedCloneOptions(std::vector<CloneOptions_T> &
         CloneOptions_KeepDiskNames,
         CloneOptions_KeepHwUUIDs,
     };
-    aSupportedCloneOptions.assign(aCloneOptions,
-                                  aCloneOptions + RT_ELEMENTS(aCloneOptions));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedCloneOptions, s_aCloneOptions);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedAutostopTypes(std::vector<AutostopType_T> &aSupportedAutostopTypes)
 {
-    static const AutostopType_T aAutostopTypes[] =
+    static const AutostopType_T s_aAutostopTypes[] =
     {
         AutostopType_Disabled,
         AutostopType_SaveState,
         AutostopType_PowerOff,
         AutostopType_AcpiShutdown,
     };
-    aSupportedAutostopTypes.assign(aAutostopTypes,
-                                   aAutostopTypes + RT_ELEMENTS(aAutostopTypes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedAutostopTypes, s_aAutostopTypes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedVMProcPriorities(std::vector<VMProcPriority_T> &aSupportedVMProcPriorities)
 {
-    static const VMProcPriority_T aVMProcPriorities[] =
+    static const VMProcPriority_T s_aVMProcPriorities[] =
     {
         VMProcPriority_Default,
         VMProcPriority_Flat,
@@ -1287,14 +1294,13 @@ HRESULT SystemProperties::getSupportedVMProcPriorities(std::vector<VMProcPriorit
         VMProcPriority_Normal,
         VMProcPriority_High,
     };
-    aSupportedVMProcPriorities.assign(aVMProcPriorities,
-                                      aVMProcPriorities + RT_ELEMENTS(aVMProcPriorities));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedVMProcPriorities, s_aVMProcPriorities);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedNetworkAttachmentTypes(std::vector<NetworkAttachmentType_T> &aSupportedNetworkAttachmentTypes)
 {
-    static const NetworkAttachmentType_T aNetworkAttachmentTypes[] =
+    static const NetworkAttachmentType_T s_aNetworkAttachmentTypes[] =
     {
         NetworkAttachmentType_NAT,
         NetworkAttachmentType_Bridged,
@@ -1310,14 +1316,13 @@ HRESULT SystemProperties::getSupportedNetworkAttachmentTypes(std::vector<Network
 #endif
         NetworkAttachmentType_Null,
     };
-    aSupportedNetworkAttachmentTypes.assign(aNetworkAttachmentTypes,
-                                            aNetworkAttachmentTypes + RT_ELEMENTS(aNetworkAttachmentTypes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedNetworkAttachmentTypes, s_aNetworkAttachmentTypes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedPortModes(std::vector<PortMode_T> &aSupportedPortModes)
 {
-    static const PortMode_T aPortModes[] =
+    static const PortMode_T s_aPortModes[] =
     {
         PortMode_Disconnected,
         PortMode_HostPipe,
@@ -1325,14 +1330,13 @@ HRESULT SystemProperties::getSupportedPortModes(std::vector<PortMode_T> &aSuppor
         PortMode_RawFile,
         PortMode_TCP,
     };
-    aSupportedPortModes.assign(aPortModes,
-                               aPortModes + RT_ELEMENTS(aPortModes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedPortModes, s_aPortModes);
     return S_OK;
 }
 
 HRESULT SystemProperties::getSupportedAudioDriverTypes(std::vector<AudioDriverType_T> &aSupportedAudioDriverTypes)
 {
-    static const AudioDriverType_T aAudioDriverTypes[] =
+    static const AudioDriverType_T s_aAudioDriverTypes[] =
     {
         AudioDriverType_Default,
 #ifdef RT_OS_WINDOWS
@@ -1364,8 +1368,7 @@ HRESULT SystemProperties::getSupportedAudioDriverTypes(std::vector<AudioDriverTy
 #endif
         AudioDriverType_Null,
     };
-    aSupportedAudioDriverTypes.assign(aAudioDriverTypes,
-                                      aAudioDriverTypes + RT_ELEMENTS(aAudioDriverTypes));
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedAudioDriverTypes, s_aAudioDriverTypes);
     return S_OK;
 }
 
@@ -1377,7 +1380,7 @@ HRESULT SystemProperties::getExecutionEnginesForVmCpuArchitecture(CPUArchitectur
         case CPUArchitecture_x86:
         case CPUArchitecture_AMD64:
         {
-            static const VMExecutionEngine_T aExecEngines[] =
+            static const VMExecutionEngine_T s_aExecEngines[] =
             {
                 VMExecutionEngine_Default,
 #ifdef RT_ARCH_AMD64
@@ -1393,8 +1396,7 @@ HRESULT SystemProperties::getExecutionEnginesForVmCpuArchitecture(CPUArchitectur
                 VMExecutionEngine_Recompiler,
 #endif
             };
-            aExecutionEngines.assign(aExecEngines,
-                                     aExecEngines + RT_ELEMENTS(aExecEngines));
+            MY_VECTOR_ASSIGN_ARRAY(aExecutionEngines, s_aExecEngines);
             break;
         }
 
@@ -1412,8 +1414,7 @@ HRESULT SystemProperties::getExecutionEnginesForVmCpuArchitecture(CPUArchitectur
                 VMExecutionEngine_NativeApi,
 # endif
             };
-            aExecutionEngines.assign(aExecEngines,
-                                     aExecEngines + RT_ELEMENTS(aExecEngines));
+            MY_VECTOR_ASSIGN_ARRAY(aExecutionEngines, s_aExecEngines);
 #else
             aExecutionEngines.clear();
 #endif
