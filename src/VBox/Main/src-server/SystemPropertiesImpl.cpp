@@ -1439,10 +1439,10 @@ HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
     if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT hrc = i_setDefaultMachineFolder(data.strDefaultMachineFolder);
-    if (FAILED(hrc)) return hrc;
 
-    hrc = i_setLoggingLevel(data.strLoggingLevel);
+    i_setLoggingLevel(data.strLoggingLevel); /* ignore errors here! */
+
+    HRESULT hrc = i_setDefaultMachineFolder(data.strDefaultMachineFolder);
     if (FAILED(hrc)) return hrc;
 
     hrc = i_setDefaultHardDiskFormat(data.strDefaultHardDiskFormat);
@@ -1666,29 +1666,37 @@ HRESULT SystemProperties::i_setDefaultMachineFolder(const Utf8Str &strPath)
 
 HRESULT SystemProperties::i_setLoggingLevel(const com::Utf8Str &aLoggingLevel)
 {
-    Utf8Str useLoggingLevel(aLoggingLevel);
-    if (useLoggingLevel.isEmpty())
-        useLoggingLevel = VBOXSVC_LOG_DEFAULT;
-    int vrc = RTLogGroupSettings(RTLogRelGetDefaultInstance(), useLoggingLevel.c_str());
-    //  If failed and not the default logging level - try to use the default logging level.
-    if (RT_FAILURE(vrc))
+    static const char s_szDefaultLevel[] = VBOXSVC_LOG_DEFAULT;
+    const char       *pszUseLoggingLevel = aLoggingLevel.isEmpty() || aLoggingLevel.equalsIgnoreCase(s_szDefaultLevel)
+                                         ? s_szDefaultLevel : aLoggingLevel.c_str();
+    HRESULT           hrc                = S_OK;
+    PRTLOGGER const   pRelLog            = RTLogRelGetDefaultInstance();
+    if (pRelLog)
     {
-        // If failed write message to the release log.
-        LogRel(("Cannot set passed logging level=%s Error=%Rrc \n", useLoggingLevel.c_str(), vrc));
-        //  If attempted logging level not the default one then try the default one.
-        if (!useLoggingLevel.equals(VBOXSVC_LOG_DEFAULT))
+        int vrc = RTLogGroupSettings(pRelLog, pszUseLoggingLevel);
+        if (RT_FAILURE(vrc))
         {
-            vrc = RTLogGroupSettings(RTLogRelGetDefaultInstance(), VBOXSVC_LOG_DEFAULT);
-            // If failed report this to the release log.
-            if (RT_FAILURE(vrc))
-                LogRel(("Cannot set default logging level Error=%Rrc \n", vrc));
+            LogRel(("Failed to set release logging level to '%s': %Rrc\n", pszUseLoggingLevel, vrc));
+            hrc = setErrorVrc(vrc, tr("RTLogGroupSettings failed: %Rrc (input: %s)"), vrc, pszUseLoggingLevel);
+
+            // If attempted logging level not the default one then use the default one.
+            if (pszUseLoggingLevel != s_szDefaultLevel)
+            {
+                pszUseLoggingLevel = s_szDefaultLevel;
+                vrc = RTLogGroupSettings(pRelLog, s_szDefaultLevel);
+                if (RT_FAILURE(vrc))
+                    LogRel(("Failed to set default release logging level: %Rrc\n", vrc));
+            }
         }
-        // On any failure - set default level as the one to be stored.
-        useLoggingLevel = VBOXSVC_LOG_DEFAULT;
     }
-    //  Set to passed value or if default used/attempted (even if error condition) use empty string.
-    m->strLoggingLevel = (useLoggingLevel.equals(VBOXSVC_LOG_DEFAULT) ? "" : useLoggingLevel);
-    return RT_SUCCESS(vrc) ? S_OK : E_FAIL;
+
+    // Set to passed value or if default used/attempted (even if error condition) use empty string.
+    if (pszUseLoggingLevel == s_szDefaultLevel)
+        m->strLoggingLevel.setNull();
+    else
+        m->strLoggingLevel = aLoggingLevel;
+
+    return hrc;
 }
 
 HRESULT SystemProperties::i_setDefaultHardDiskFormat(const com::Utf8Str &aFormat)
