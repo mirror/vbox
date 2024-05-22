@@ -54,6 +54,10 @@
 # include <openssl/bio.h>
 # include "internal/openssl-post.h"
 
+# if OPENSSL_VERSION_NUMBER < 0x1010000f
+#  define BIO_s_secmem      BIO_s_mem
+# endif
+
 
 
 RTDECL(int) RTCrX509Certificate_GenerateSelfSignedRsa(RTDIGESTTYPE enmDigestType, uint32_t cBits, uint32_t cSecsValidFor,
@@ -169,11 +173,7 @@ RTDECL(int) RTCrX509Certificate_GenerateSelfSignedRsa(RTDIGESTTYPE enmDigestType
                  * Write out the result to the two files.
                  */
                 /* The certificate (not security sensitive). */
-# if OPENSSL_VERSION_NUMBER >= 0x1010000f
                 BIO * const pCertBio = BIO_new(BIO_s_mem());
-# else
-                BIO * const pCertBio = BIO_new(BIO_s_mem());
-# endif
                 if (pCertBio)
                 {
                     rcOssl = PEM_write_bio_X509(pCertBio, pNewCert);
