@@ -436,7 +436,7 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 {
     AssertPtrReturn(m_pCtx, VERR_WRONG_ORDER);
 
-    if RT_UNLIKELY(!NeedsUpdate(msTimestamp))
+    if (RT_UNLIKELY(!NeedsUpdate(msTimestamp)))
         return VINF_RECORDING_THROTTLED;
 
     lock();
