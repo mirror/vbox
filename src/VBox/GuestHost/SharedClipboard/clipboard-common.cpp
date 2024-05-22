@@ -941,15 +941,8 @@ int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pu16Dst, s
         {
             /* Insert '\r' in front of '\n', but avoid '\r\r\n' situations
                because it will result in extra empty lines on the other side. */
-            if (   i == 0
-                || (   i > 1
-                    && pcwszSrc[i - 1] != VBOX_SHCL_CARRIAGERETURN
-                   )
-               )
-            {
-                pu16Dst[j] = VBOX_SHCL_CARRIAGERETURN;
-                ++j;
-            }
+            if (i == 0 || pcwszSrc[i - 1] != VBOX_SHCL_CARRIAGERETURN)
+                pu16Dst[j++] = VBOX_SHCL_CARRIAGERETURN;
 
             /* Not enough space in destination? */
             if (j == cwDst)
@@ -963,15 +956,8 @@ int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pu16Dst, s
         else if (pcwszSrc[i] == VBOX_SHCL_CARRIAGERETURN)
         {
             /* Set CR.r, but avoid '\r\r'. */
-            if (   i == 0
-                || (   i > 1
-                    && pcwszSrc[i - 1] != VBOX_SHCL_CARRIAGERETURN
-                   )
-               )
-            {
-                pu16Dst[j] = VBOX_SHCL_CARRIAGERETURN;
-                ++j;
-            }
+            if (i == 0 || pcwszSrc[i - 1] != VBOX_SHCL_CARRIAGERETURN)
+                pu16Dst[j++] = VBOX_SHCL_CARRIAGERETURN;
 
             /* Not enough space in destination? */
             if (j == cwDst)
