@@ -1407,7 +1407,7 @@ HRESULT SystemProperties::getExecutionEnginesForVmCpuArchitecture(CPUArchitectur
         case CPUArchitecture_ARMv8_64:
         {
 #ifdef VBOX_WITH_VIRT_ARMV8
-            static const VMExecutionEngine_T aExecEngines[] =
+            static const VMExecutionEngine_T s_aExecEngines[] =
             {
                 VMExecutionEngine_Default,
 # ifdef VBOX_WITH_NATIVE_NEM
