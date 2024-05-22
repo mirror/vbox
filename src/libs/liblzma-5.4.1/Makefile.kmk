@@ -29,13 +29,13 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-LIBRARIES += VBox-liblzma VBox-liblzma-static
-VBox-liblzma_TEMPLATE = VBoxR3RuntimeDllNonPedantic
-VBox-liblzma_CFLAGS.linux   = -std=gnu99
-VBox-liblzma_CFLAGS.solaris = -std=gnu99
-VBox-liblzma_CFLAGS.darwin  = -std=gnu99
-VBox-liblzma_CFLAGS.os2     = -std=gnu99
-VBox-liblzma_INCS += \
+LIBRARIES += VBox-liblzma
+VBox-liblzma_TEMPLATE       := VBoxR3RuntimeDllNonPedantic
+VBox-liblzma_CFLAGS.linux   := -std=gnu99
+VBox-liblzma_CFLAGS.solaris := -std=gnu99
+VBox-liblzma_CFLAGS.darwin  := -std=gnu99
+VBox-liblzma_CFLAGS.os2     := -std=gnu99
+VBox-liblzma_INCS           := \
 	api \
 	common \
 	check \
@@ -45,8 +45,7 @@ VBox-liblzma_INCS += \
 	delta \
 	simple \
 	vbox
-VBox-liblzma_DEFS = \
-	IN_RT \
+VBox-liblzma_DEFS := \
 	TUKLIB_SYMBOL_PREFIX=lzma_ \
 	ASSUME_RAM=128 \
 	HAVE_CHECK_CRC32=1 \
@@ -81,13 +80,13 @@ VBox-liblzma_DEFS = \
 	HAVE_MF_HC4=1 \
 	HAVE_STDBOOL_H=1 \
 	NDEBUG=1
-VBox-liblzma_DEFS.amd64 += \
+VBox-liblzma_DEFS.amd64 := \
 	SIZEOF_SIZE_T=8
-VBox-liblzma_DEFS.arm64 += \
+VBox-liblzma_DEFS.arm64 := \
 	SIZEOF_SIZE_T=8
-VBox-liblzma_DEFS.x86 += \
+VBox-liblzma_DEFS.x86 := \
 	SIZEOF_SIZE_T=4
-VBox-liblzma_SOURCES = \
+VBox-liblzma_SOURCES := \
 	common/common.c \
 	common/block_util.c \
 	common/easy_preset.c \
@@ -167,22 +166,19 @@ VBox-liblzma_SOURCES = \
 	simple/arm64.c \
 	simple/sparc.c
 
-VBox-liblzma-static_TEMPLATE = VBoxR3StaticNonPedantic
-VBox-liblzma-static_DEFS = $(VBox-liblzma_DEFS)
-VBox-liblzma-static_INCS = $(VBox-liblzma_INCS)
-VBox-liblzma-static_CFLAGS.linux   = $(VBox-liblzma_CFLAGS.linux)
-VBox-liblzma-static_CFLAGS.solaris = $(VBox-liblzma_CFLAGS.solaris)
-VBox-liblzma-static_CFLAGS.darwin  = $(VBox-liblzma_CFLAGS.darwin)
-VBox-liblzma-static_CFLAGS.os2     = $(VBox-liblzma_CFLAGS.os2)
-ifdef VBOX_WITH_NOCRT_STATIC
- VBox-liblzma-static_DEFS += IPRT_NO_CRT_FOR_3RD_PARTY
-endif
-VBox-liblzma-static_SOURCES = $(VBox-liblzma_SOURCES)
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.
  LIBRARIES += VBox-liblzma-x86
- VBox-liblzma-x86_TEMPLATE = VBoxR3DllNonPedantic-x86
- VBox-liblzma-x86_EXTENDS = VBox-liblzma
+ VBox-liblzma-x86_TEMPLATE := VBoxR3RuntimeDllNonPedantic-x86
+ VBox-liblzma-x86_EXTENDS  := VBox-liblzma
+endif
+
+
+LIBRARIES += VBox-liblzma-static
+VBox-liblzma-static_TEMPLATE := VBoxR3StaticNonPedantic
+VBox-liblzma-static_EXTENDS  := VBox-liblzma
+ifdef VBOX_WITH_NOCRT_STATIC
+ VBox-liblzma-static_DEFS     = $(VBox-liblzma_DEFS) IPRT_NO_CRT_FOR_3RD_PARTY
 endif
 
 
