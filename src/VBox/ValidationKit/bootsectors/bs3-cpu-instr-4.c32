@@ -54,6 +54,39 @@
 
 /** Maximum length for the names of all SIMD FP exception flags combined. */
 #define BS3_FP_XCPT_NAMES_MAXLEN              sizeof(" IE DE ZE OE UE PE ")
+
+/*
+ * Single-precision (32 bits) floating-point defines.
+ */
+/** The max exponent value for a single-precision floating-point normal. */
+#define BS3_FP32_EXP_NORMAL_MAX               254
+/** The min exponent value for a single-precision floating-point normal. */
+#define BS3_FP32_EXP_NORMAL_MIN               0
+/** The max fraction value for a single-precision floating-point normal. */
+#define BS3_FP32_FRACTION_NORMAL_MAX          0x7fffff
+/** The min fraction value for a single-precision floating-point normal. */
+#define BS3_FP32_FRACTION_NORMAL_MIN          0
+
+#define BS3_FP32_NORMAL_MAX(a_Sign)           RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_NORMAL_MAX, BS3_FP32_EXP_NORMAL_MAX)
+#define BS3_FP32_NORMAL_MIN(a_Sign)           RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_NORMAL_MIN, BS3_FP32_EXP_NORMAL_MIN)
+#define BS3_FP32_ZERO(a_Sign)                 RTFLOAT32U_INIT_ZERO(a_Sign)
+#define BS3_FP32_VAL(a_Sign, a_Frac, a_Exp)   RTFLOAT32U_INIT_C(a_Sign, a_Frac, a_Exp)
+#define BS3_FP32_INF(a_Sign)                  RTFLOAT32U_INIT_INF(a_Sign)
+#define BS3_FP32_QNAN(a_Sign)                 RTFLOAT32U_INIT_QNAN(a_Sign)
+#define BS3_FP32_SNAN(a_Sign)                 RTFLOAT32U_INIT_SNAN(a_Sign)
+
+/*
+ * Single-precision floating normals.
+ * Fraction - 23 bits, all usable.
+ * Exponent - 8 bits, least significant bit MBZ.
+ */
+#define BS3_FP32_NORMAL_VAL_1(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x5fcabd, 0xbc)
+#define BS3_FP32_NORMAL_VAL_2(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x7e117a, 0x7e)
+#define BS3_FP32_NORMAL_VAL_3(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x5b5b5b, 0x9a)
+
+/*
+ * Double-precision (64 bits) floating-point defines.
+ */
 /** The max exponent value for a double-precision floating-point normal. */
 #define BS3_FP64_EXP_NORMAL_MAX               2046
 /** The min exponent value for a double-precision floating-point normal. */
@@ -72,7 +105,7 @@
 #define BS3_FP64_SNAN(a_Sign)                 RTFLOAT64U_INIT_SNAN(a_Sign)
 
 /*
- * 64-bit floating normals.
+ * Double-precision floating normals.
  * Fraction - 52 bits, all usable.
  * Exponent - 11 bits, least significant bit MBZ.
  */
@@ -1203,6 +1236,64 @@ static uint8_t bs3CpuInstrX_WorkerTestType1(uint8_t bMode, BS3CPUINSTR4_TEST1_T 
 
 
 /*
+ * [V]ADDPS.
+ */
+BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addps(uint8_t bMode)
+{
+    static BS3CPUINSTR4_TEST1_VALUES_PS_T const s_aValues[] =
+    {
+    /* 0*/{ { /*src2     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+            { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+            { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ 0 },
+    /* 1*/{ { /*src2     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+            { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+            { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+              /*mask     */ ~X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ 0 },
+    /* 2*/{ { /*src2     */ { BS3_FP32_INF(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)} },
+            { /*src1     */ { BS3_FP32_INF(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)} },
+            { /* =>      */ { BS3_FP32_INF(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)} },
+              /*mask     */ ~X86_MXCSR_IM,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ X86_MXCSR_IE },
+    /* 3*/{ { /*src2     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_INF(1),  BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)} },
+            { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_INF(0),  BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)} },
+            { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_QNAN(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)} },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ X86_MXCSR_IE },
+    };
+
+    static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
+    {
+        { bs3CpuInstrX_addps_XMM1_XMM2_icebp_c16,  255, RM_REG, T_SSE, 1, 1, 2,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstrX_addps_XMM1_FSxBX_icebp_c16, 255, RM_MEM, T_SSE, 1, 1, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+    };
+    static BS3CPUINSTR4_TEST1_T const s_aTests32[] =
+    {
+        { bs3CpuInstrX_addps_XMM1_XMM2_icebp_c32,  255, RM_REG, T_SSE, 1, 1, 2,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstrX_addps_XMM1_FSxBX_icebp_c32, 255, RM_MEM, T_SSE, 1, 1, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+    };
+    static BS3CPUINSTR4_TEST1_T const s_aTests64[] =
+    {
+        { bs3CpuInstrX_addps_XMM1_XMM2_icebp_c64,  255, RM_REG, T_SSE, 1, 1, 2,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstrX_addps_XMM1_FSxBX_icebp_c64, 255, RM_MEM, T_SSE, 1, 1, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstrX_addps_XMM8_XMM9_icebp_c64,  255, RM_REG, T_SSE, 8, 8, 9,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstrX_addps_XMM8_FSxBX_icebp_c64, 255, RM_MEM, T_SSE, 8, 8, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+    };
+
+    static BS3CPUINSTR4_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR4_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
+    unsigned const                         iTest       = BS3CPUINSTR4_TEST_MODES_INDEX(bMode);
+    return bs3CpuInstrX_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
+                                        g_aXcptConfig1, RT_ELEMENTS(g_aXcptConfig1));
+}
+
+
+/*
  * [V]ADDPD.
  */
 BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
@@ -1315,6 +1406,7 @@ BS3_DECL(void) Main_pe32()
 # define ALL_TESTS
 #endif
 #if defined(ALL_TESTS)
+        { "[v]addps",       bs3CpuInstrX_v_addps, 0 },
         { "[v]addpd",       bs3CpuInstrX_v_addpd, 0 },
 #endif
     };

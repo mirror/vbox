@@ -157,6 +157,14 @@ EMIT_INSTR_PLUS_ICEBP       addpd, XMM1, FSxBX
 EMIT_INSTR_PLUS_ICEBP_C64   addpd, XMM8, XMM9
 EMIT_INSTR_PLUS_ICEBP_C64   addpd, XMM8, FSxBX
 
+;
+;; [v]addps
+;
+EMIT_INSTR_PLUS_ICEBP       addps, XMM1, XMM2
+EMIT_INSTR_PLUS_ICEBP       addps, XMM1, FSxBX
+EMIT_INSTR_PLUS_ICEBP_C64   addps, XMM8, XMM9
+EMIT_INSTR_PLUS_ICEBP_C64   addps, XMM8, FSxBX
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment
