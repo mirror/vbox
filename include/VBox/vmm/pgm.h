@@ -1022,9 +1022,9 @@ VMMR3DECL(int)      PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhy
 VMMR3DECL(int)      PGMR3QueryMemoryStats(PUVM pUVM, uint64_t *pcbTotalMem, uint64_t *pcbPrivateMem, uint64_t *pcbSharedMem, uint64_t *pcbZeroMem);
 VMMR3DECL(int)      PGMR3QueryGlobalMemoryStats(PUVM pUVM, uint64_t *pcbAllocMem, uint64_t *pcbFreeMem, uint64_t *pcbBallonedMem, uint64_t *pcbSharedMem);
 
-VMMR3DECL(int)      PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMPHYSHANDLERTYPE hType,
+VMMR3_INT_DECL(int) PGMR3PhysMmioRegister(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTGCPHYS cb, PGMPHYSHANDLERTYPE hType,
                                           uint64_t uUser, const char *pszDesc);
-VMMR3DECL(int)      PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
+VMMR3_INT_DECL(int) PGMR3PhysMmioDeregister(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTGCPHYS cb);
 
 /** @name PGMPHYS_MMIO2_FLAGS_XXX - MMIO2 registration flags.
  * @see PGMR3PhysMmio2Register, PDMDevHlpMmio2Create

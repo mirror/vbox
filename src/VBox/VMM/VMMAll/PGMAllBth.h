@@ -2311,7 +2311,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                 }
                 else /* MMIO or invalid page: emulated in #PF handler. */
                 {
-                    LogFlow(("PGM_GCPHYS_2_PTR %RGp failed with %Rrc\n", GCPhys, rc));
+                    LogFlow(("PGM_GCPHYS_2_PTR_V2 %RGp failed with %Rrc\n", GCPhys, rc));
                     Assert(!SHW_PTE_IS_P(pPTDst->a[(GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK]));
                 }
             }
@@ -2408,7 +2408,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                 }
                 else
                 {
-                    LogFlow(("PGM_GCPHYS_2_PTR %RGp (big) failed with %Rrc\n", GCPhys, rc));
+                    LogFlow(("pgmPhysGetPageEx %RGp (big) failed with %Rrc\n", GCPhys, rc));
                     /** @todo must wipe the shadow page table entry in this
                      *        case. */
                 }

@@ -2275,19 +2275,21 @@ int pgmR3PhysRamTerm(PVM pVM)
  * @returns VBox status code.
  *
  * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhys          The start of the MMIO region.
  * @param   cb              The size of the MMIO region.
  * @param   hType           The physical access handler type registration.
  * @param   uUser           The user argument.
  * @param   pszDesc         The description of the MMIO region.
+ * @thread  EMT(pVCpu)
  */
-VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMPHYSHANDLERTYPE hType,
-                                     uint64_t uUser, const char *pszDesc)
+VMMR3_INT_DECL(int) PGMR3PhysMmioRegister(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTGCPHYS cb, PGMPHYSHANDLERTYPE hType,
+                                          uint64_t uUser, const char *pszDesc)
 {
     /*
      * Assert on some assumption.
      */
-    VM_ASSERT_EMT(pVM);
+    VMCPU_ASSERT_EMT(pVCpu);
     AssertReturn(!(cb & GUEST_PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(!(GCPhys & GUEST_PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
@@ -2362,7 +2364,6 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMP
         /** @todo not entirely SMP safe; assuming for now the guest takes
          *   care of this internally (not touch mapped mmio while changing the
          *   mapping). */
-        PVMCPU pVCpu = VMMGetCpu(pVM);
         pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }
@@ -2374,7 +2375,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMP
          * Note that we don't have to tell REM about this range because
          * PGMHandlerPhysicalRegisterEx will do that for us.
          */
-        Log(("PGMR3PhysMMIORegister: Adding ad hoc MMIO range for %RGp-%RGp %s\n", GCPhys, GCPhysLast, pszDesc));
+        Log(("PGMR3PhysMmioRegister: Adding ad hoc MMIO range for %RGp-%RGp %s\n", GCPhys, GCPhysLast, pszDesc));
 
         /* Alloc. */
         const uint32_t cPages      = cb >> GUEST_PAGE_SHIFT;
@@ -2468,12 +2469,14 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMP
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhys          The start of the MMIO region.
  * @param   cb              The size of the MMIO region.
+ * @thread  EMT(pVCpu)
  */
-VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
+VMMR3_INT_DECL(int) PGMR3PhysMmioDeregister(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTGCPHYS cb)
 {
-    VM_ASSERT_EMT(pVM);
+    VMCPU_ASSERT_EMT(pVCpu);
 
     int rc = PGM_LOCK(pVM);
     AssertRCReturn(rc, rc);
@@ -2522,7 +2525,7 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                     /*
                      * Ad-hoc range, unlink and free it.
                      */
-                    Log(("PGMR3PhysMMIODeregister: Freeing ad hoc MMIO range for %RGp-%RGp %s\n",
+                    Log(("PGMR3PhysMmioDeregister: Freeing ad hoc MMIO range for %RGp-%RGp %s\n",
                          GCPhys, GCPhysLast, pRam->pszDesc));
                     /** @todo check the ad-hoc flags? */
 
@@ -2599,7 +2602,6 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
     /* Force a PGM pool flush as guest ram references have been changed. */
     /** @todo Not entirely SMP safe; assuming for now the guest takes care of
      *       this internally (not touch mapped mmio while changing the mapping). */
-    PVMCPU pVCpu = VMMGetCpu(pVM);
     pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 

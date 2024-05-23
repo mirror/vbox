@@ -305,10 +305,12 @@ DECL_HIDDEN_CALLBACK(int) pdmR3DevHlpTracing_MmioMap(PPDMDEVINS pDevIns, IOMMMIO
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioMap: caller='%s'/%d: hRegion=%#x GCPhys=%#RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion, GCPhys));
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
-    int rc = IOMR3MmioMap(pVM, pDevIns, hRegion, GCPhys);
+    PVM    const pVM   = pDevIns->Internal.s.pVMR3;
+    PVMCPU const pVCpu = VMMGetCpu(pVM);
+    AssertReturn(pVCpu, VERR_VM_THREAD_NOT_EMT);
+
+    int rc = IOMR3MmioMap(pVM, pVCpu, pDevIns, hRegion, GCPhys);
     DBGFTracerEvtMmioMap(pVM, pDevIns->Internal.s.hDbgfTraceEvtSrc, hRegion, GCPhys);
 
     LogFlow(("pdmR3DevHlp_MmioMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -321,10 +323,12 @@ DECL_HIDDEN_CALLBACK(int) pdmR3DevHlpTracing_MmioUnmap(PPDMDEVINS pDevIns, IOMMM
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioUnmap: caller='%s'/%d: hRegion=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
-    int rc = IOMR3MmioUnmap(pVM, pDevIns, hRegion);
+    PVM    const pVM   = pDevIns->Internal.s.pVMR3;
+    PVMCPU const pVCpu = VMMGetCpu(pVM);
+    AssertReturn(pVCpu, VERR_VM_THREAD_NOT_EMT);
+
+    int rc = IOMR3MmioUnmap(pVM, pVCpu, pDevIns, hRegion);
     DBGFTracerEvtMmioUnmap(pVM, pDevIns->Internal.s.hDbgfTraceEvtSrc, hRegion);
 
     LogFlow(("pdmR3DevHlp_MmioUnmap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));

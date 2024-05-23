@@ -354,11 +354,12 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
 /**
  * Worker for PDMDEVHLPR3::pfnMmioMap.
  */
-VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys)
+VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PVMCPU pVCpu, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys)
 {
     /*
      * Validate input and state.
      */
+    VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
     AssertPtrReturn(pDevIns, VERR_INVALID_HANDLE);
     AssertReturn(hRegion < pVM->iom.s.cMmioRegs, VERR_IOM_INVALID_MMIO_HANDLE);
     PIOMMMIOENTRYR3 const pRegEntry = &pVM->iom.s.paMmioRegs[hRegion];
@@ -407,7 +408,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
                     {
                         /* Register with PGM before we shuffle the array: */
                         ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
-                        rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
+                        rc = PGMR3PhysMmioRegister(pVM, pVCpu, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
                                                    hRegion, pRegEntry->pszDesc);
                         AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
@@ -426,7 +427,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
                     {
                         /* Register with PGM before we shuffle the array: */
                         ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
-                        rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
+                        rc = PGMR3PhysMmioRegister(pVM, pVCpu, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
                                                    hRegion, pRegEntry->pszDesc);
                         AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
@@ -453,7 +454,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
         {
             /* First entry in the lookup table: */
             ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
-            rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType, hRegion, pRegEntry->pszDesc);
+            rc = PGMR3PhysMmioRegister(pVM, pVCpu, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType, hRegion, pRegEntry->pszDesc);
             AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
             pEntry = paEntries;
@@ -506,11 +507,12 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
 /**
  * Worker for PDMDEVHLPR3::pfnMmioUnmap.
  */
-VMMR3_INT_DECL(int)  IOMR3MmioUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+VMMR3_INT_DECL(int) IOMR3MmioUnmap(PVM pVM, PVMCPU pVCpu, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
 {
     /*
      * Validate input and state.
      */
+    VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
     AssertPtrReturn(pDevIns, VERR_INVALID_HANDLE);
     AssertReturn(hRegion < pVM->iom.s.cMmioRegs, VERR_IOM_INVALID_MMIO_HANDLE);
     PIOMMMIOENTRYR3 const pRegEntry = &pVM->iom.s.paMmioRegs[hRegion];
@@ -569,7 +571,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE h
                     memmove(pEntry, pEntry + 1, sizeof(*pEntry) * (cEntries - i - 1));
                 pVM->iom.s.cMmioLookupEntries = cEntries - 1;
 
-                rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRegEntry->cbRegion);
+                rc = PGMR3PhysMmioDeregister(pVM, pVCpu, GCPhys, pRegEntry->cbRegion);
                 AssertRC(rc);
 
                 pRegEntry->fMapped = false;

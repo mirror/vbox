@@ -122,6 +122,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMPTWALK pWa
  * @param   GCPtr       The guest virtual address to walk by.
  * @param   pWalk       The page walk info.
  * @param   pGstWalk    The guest mode specific page walk info.
+ * @thread  EMT(pVCpu)
  */
 DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PGSTPTWALK pGstWalk)
 {
@@ -360,22 +361,17 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
 /**
  * Gets effective Guest OS page information.
  *
- * When GCPtr is in a big page, the function will return as if it was a normal
- * 4KB page. If the need for distinguishing between big and normal page becomes
- * necessary at a later point, a PGMGstGetPage Ex() will be created for that
- * purpose.
- *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       Guest Context virtual address of the page.
  * @param   pWalk       Where to store the page walk info.
+ * @thread  EMT(pVCpu)
  */
 PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
 {
 #if PGM_GST_TYPE == PGM_TYPE_REAL \
  || PGM_GST_TYPE == PGM_TYPE_PROT
 
-    RT_ZERO(*pWalk);
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
     if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
     {
@@ -384,6 +380,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
         int const rc = pgmGstSlatWalk(pVCpu, GCPtr, true /* fIsLinearAddrValid */, GCPtr, &WalkSlat, &WalkGstSlat);
         if (RT_SUCCESS(rc))
         {
+            RT_ZERO(*pWalk);
             pWalk->fSucceeded = true;
             pWalk->GCPtr      = GCPtr;
             pWalk->GCPhys     = WalkSlat.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
@@ -398,6 +395,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
     /*
      * Fake it.
      */
+    RT_ZERO(*pWalk);
     pWalk->fSucceeded = true;
     pWalk->GCPtr      = GCPtr;
     pWalk->GCPhys     = GCPtr & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
@@ -426,14 +424,12 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
 # endif
                  ;
     else
-    {
         fFlags = (GstWalk.Pde.u & ~(GST_PTE_PG_MASK | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_PS))   /* NX not needed */
                | (pWalk->fEffective & (PGM_PTATTRS_W_MASK | PGM_PTATTRS_US_MASK | PGM_PTATTRS_PAT_MASK))
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
                | (pWalk->fEffective & PGM_PTATTRS_NX_MASK)
 # endif
                ;
-    }
 
     pWalk->GCPhys    &= ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
     pWalk->fEffective = fFlags;
