@@ -107,6 +107,8 @@ private:
     HRESULT getMaxInstancesOfStorageBus(ChipsetType_T aChipset,
                                         StorageBus_T aBus,
                                         ULONG *aMaxInstances) RT_OVERRIDE;
+    HRESULT getSupportedVRAMRange(GraphicsControllerType_T aGraphicsControllerType, BOOL fAccelerate3DEnabled,
+                                  ULONG *aMinMB, ULONG *aMaxMB, ULONG *aStrideSizeMB) RT_OVERRIDE;
     HRESULT getDeviceTypesForStorageBus(StorageBus_T aBus,
                                         std::vector<DeviceType_T> &aDeviceTypes) RT_OVERRIDE;
     HRESULT getStorageBusForControllerType(StorageControllerType_T aStorageControllerType,

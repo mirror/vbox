@@ -31,6 +31,10 @@
 #include "LoggingNew.h"
 #include "Global.h"
 
+#include "VBox/vmm/pdmcritsect.h"            /* required by DevVGA.h */
+#include "VBox/param.h"                      /* Ditto. */
+#include "DevVGA.h"
+
 #include <iprt/cpp/utils.h>
 
 #include <VBox/settings.h>
@@ -817,6 +821,78 @@ HRESULT PlatformProperties::getSupportedUSBControllerTypes(std::vector<USBContro
     };
     aSupportedUSBControllerTypes.assign(aUSBControllerTypes,
                                         aUSBControllerTypes + RT_ELEMENTS(aUSBControllerTypes));
+    return S_OK;
+}
+
+HRESULT PlatformProperties::getSupportedVRAMRange(GraphicsControllerType_T aGraphicsControllerType, BOOL fAccelerate3DEnabled,
+                                                  ULONG *aMinMB, ULONG *aMaxMB, ULONG *aStrideSizeMB)
+{
+#if !defined(VBOX_WITH_VMSVGA) || !defined(VBOX_WITH_VMSVGA3D)
+    RT_NOREF(fAccelerate3DEnabled);
+#endif
+
+    size_t cbMin;
+    size_t cbMax;
+    size_t cbStride = _1M; /* Default stride for all controllers. */
+
+    switch (aGraphicsControllerType)
+    {
+        case GraphicsControllerType::VBoxVGA:
+        {
+            cbMin = VGA_VRAM_MIN;
+            cbMax = VGA_VRAM_MAX;
+            break;
+        }
+
+        case GraphicsControllerType::VMSVGA:
+        {
+            cbMin = VGA_VRAM_MIN;
+            cbMax = VGA_VRAM_MAX;
+            break;
+        }
+
+        case GraphicsControllerType::VBoxSVGA:
+        {
+#ifdef VBOX_WITH_VMSVGA
+# ifdef VBOX_WITH_VMSVGA3D
+            if (fAccelerate3DEnabled)
+                cbMin = SVGA_VRAM_MIN_SIZE_3D;
+            else
+# endif /* VBOX_WITH_VMSVGA3D */
+                cbMin = SVGA_VRAM_MIN_SIZE;
+            cbMax = SVGA_VRAM_MAX_SIZE;
+#else
+            return setError(VBOX_E_NOT_SUPPORTED, tr("Support for SVGA not available in this version"));
+#endif
+            break;
+        }
+
+        case GraphicsControllerType::QemuRamFB:
+        {
+            /* We seem to hardcode 32-bit (4 bytes) as BPP, see RAMFB_BPP in QemuRamfb.c. */
+            cbMin = 4 /* BPP in bytes */ * 16    * 16;    /* Values taken from qemu/hw/display/ramfb.c */
+            cbMax = 4 /* BPP in bytes */ * 16000 * 12000; /* Values taken from bochs-vbe.h. */
+            break;
+        }
+
+        default:
+            return setError(E_INVALIDARG, tr("The graphics controller type (%d) is invalid"), aGraphicsControllerType);
+    }
+
+    *aMinMB        = (ULONG)(RT_ALIGN_64(cbMin, cbStride) / _1M);
+    *aMaxMB        = (ULONG)(RT_ALIGN_64(cbMax, cbStride) / _1M);
+    *aStrideSizeMB = (ULONG)cbStride / _1M;
+
+#define MAKE_POWER_OF_TWO(a_MB) \
+    while (!RT_IS_POWER_OF_TWO(a_MB)) \
+        a_MB = a_MB + 1; \
+
+    MAKE_POWER_OF_TWO(*aMinMB);
+    MAKE_POWER_OF_TWO(*aMaxMB);
+    MAKE_POWER_OF_TWO(*aStrideSizeMB);
+
+#undef MAKE_POWER_OF_TWO
+
     return S_OK;
 }
 
