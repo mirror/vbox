@@ -5088,7 +5088,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
             InsertConfigInteger(pCfg, "VmSvgaExposeLegacyVga", fExposeLegacyVga);
         }
 #else
-        RT_NOREF(enmGraphicsController);
+        RT_NOREF(enmGraphicsController, fForceVmSvga3, fExposeLegacyVga);
 #endif /* VBOX_WITH_VMSVGA */
 
         /* Custom VESA mode list */
