@@ -312,7 +312,7 @@ DECLHIDDEN(int) readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, 
                  */
                 Assert(cwcSrc == RTUtf16Len(pwszSrc));
                 size_t cwcDst = 0;
-                rc = ShClUtf16LFLenUtf8(pwszSrc, cwcSrc, &cwcDst);
+                rc = ShClUtf16CalcNormalizedEolToCRLFLength(pwszSrc, cwcSrc, &cwcDst);
                 if (RT_SUCCESS(rc))
                 {
                     cwcDst++; /* Add space for terminator. */

@@ -61,7 +61,11 @@ enum
 };
 
 /**
- * Returns the length (in UTF-8 characters) of an UTF-16 string with LF EOL.
+ * Returns calculated length (in UTF-8 characters) of normalized UTF-16 string with CRLF EOL.
+ *
+ * This function should be used in order to calculate number of UTF-8 characters
+ * in normalized UTF-16. Normalized string is expected to have LF characters replaced
+ * with CRLF sequences.
  *
  * @returns VBox status code.
  * @param   pcwszSrc            UTF-16 string to return size for.
@@ -69,7 +73,7 @@ enum
  * @param   pchLen              Where to return the length (in UTF-8 characters).
  *                              Does not include terminator.
  */
-int ShClUtf16LFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
+int ShClUtf16CalcNormalizedEolToCRLFLength(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
 
 /**
  * Returns the length (in UTF-8 characters) of an UTF-16 string with CRLF EOL.

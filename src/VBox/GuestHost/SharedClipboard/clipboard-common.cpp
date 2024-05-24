@@ -667,7 +667,7 @@ int ShClConvUtf16LFToCRLFA(PCRTUTF16 pcwszSrc, size_t cwcSrc,
     PRTUTF16 pwszDst = NULL;
     size_t   cchDst;
 
-    int rc = ShClUtf16LFLenUtf8(pcwszSrc, cwcSrc, &cchDst);
+    int rc = ShClUtf16CalcNormalizedEolToCRLFLength(pcwszSrc, cwcSrc, &cchDst);
     if (RT_SUCCESS(rc))
     {
         pwszDst = (PRTUTF16)RTMemAlloc((cchDst + 1 /* Leave space for terminator */) * sizeof(RTUTF16));
@@ -837,7 +837,7 @@ int ShClConvUtf16ToUtf8HTML(PCRTUTF16 pcwszSrc, size_t cwcSrc, char **ppszDst, s
     return rc;
 }
 
-int ShClUtf16LFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
+int ShClUtf16CalcNormalizedEolToCRLFLength(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
 {
     AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
     AssertPtrReturn(pchLen, VERR_INVALID_POINTER);
@@ -855,12 +855,18 @@ int ShClUtf16LFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
     for (; i < cwSrc; ++i, ++cLen)
     {
         /* Check for a single line feed */
-        if (pcwszSrc[i] == VBOX_SHCL_LINEFEED)
+        if (   pcwszSrc[i] == VBOX_SHCL_LINEFEED
+            && (i == 0 || pcwszSrc[i - 1] != VBOX_SHCL_CARRIAGERETURN))
+        {
             ++cLen;
+        }
 #ifdef RT_OS_DARWIN
         /* Check for a single carriage return (MacOS) */
-        if (pcwszSrc[i] == VBOX_SHCL_CARRIAGERETURN)
+        if (   pcwszSrc[i] == VBOX_SHCL_CARRIAGERETURN
+            && (i + 1 >= cwcSrc || pcwszSrc[i + 1] != VBOX_SHCL_LINEFEED))
+        {
             ++cLen;
+        }
 #endif
         if (pcwszSrc[i] == 0)
         {

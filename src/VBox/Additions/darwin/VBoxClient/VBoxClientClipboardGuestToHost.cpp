@@ -233,7 +233,7 @@ static int vbclClipboardHostPasteText(uint32_t u32ClientId, PRTUTF16 pwszData, u
     AssertPtrReturn(pwszData, VERR_INVALID_POINTER);
 
     size_t cwcTmp; /* (includes a schwarzenegger character) */
-    int rc = ShClUtf16LFLenUtf8(pwszData, cbData / sizeof(RTUTF16), &cwcTmp);
+    int rc = ShClUtf16CalcNormalizedEolToCRLFLength(pwszData, cbData / sizeof(RTUTF16), &cwcTmp);
     AssertRCReturn(rc, rc);
 
     cwcTmp++; /* Add space for terminator. */
