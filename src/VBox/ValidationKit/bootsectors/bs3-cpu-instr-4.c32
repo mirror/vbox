@@ -66,10 +66,15 @@
 #define BS3_FP32_FRACTION_NORMAL_MAX          0x7fffff
 /** The min fraction value for a single-precision floating-point normal. */
 #define BS3_FP32_FRACTION_NORMAL_MIN          0
+/** The exponent bias for the single-precision floating-point format. */
+#define BS3_FP32_EXP_BIAS                     RTFLOAT32U_EXP_BIAS
+/** Fraction width (in bits) for the single-precision floating-point format. */
+#define BS3_FP32_FRACTION_BITS                RTFLOAT32U_FRACTION_BITS
 
 #define BS3_FP32_NORMAL_MAX(a_Sign)           RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_NORMAL_MAX, BS3_FP32_EXP_NORMAL_MAX)
 #define BS3_FP32_NORMAL_MIN(a_Sign)           RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_NORMAL_MIN, BS3_FP32_EXP_NORMAL_MIN)
 #define BS3_FP32_ZERO(a_Sign)                 RTFLOAT32U_INIT_ZERO(a_Sign)
+#define BS3_FP32_ONE(a_Sign)                  RTFLOAT32U_INIT_C(a_Sign, 0, RTFLOAT32U_EXP_BIAS)
 #define BS3_FP32_VAL(a_Sign, a_Frac, a_Exp)   RTFLOAT32U_INIT_C(a_Sign, a_Frac, a_Exp)
 #define BS3_FP32_INF(a_Sign)                  RTFLOAT32U_INIT_INF(a_Sign)
 #define BS3_FP32_QNAN(a_Sign)                 RTFLOAT32U_INIT_QNAN(a_Sign)
@@ -84,6 +89,8 @@
 #define BS3_FP32_NORMAL_VAL_1(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x5fcabd, 0xbc)
 #define BS3_FP32_NORMAL_VAL_2(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x7e117a, 0x7e)
 #define BS3_FP32_NORMAL_VAL_3(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x5b5b5b, 0x9a)
+/* The maximum integer value (all 23 + 1 implied bit of the fraction part set) without losing precision. */
+#define BS3_FP32_NORMAL_SAFE_INT_MAX(a_Sign)  RTFLOAT64U_INIT_C(a_Sign, BS3_FP32_FRACTION_NORMAL_MAX, BS3_FP32_EXP_BIAS + BS3_FP32_FRACTION_BITS)
 
 /*
  * Double-precision (64 bits) floating-point defines.
@@ -96,10 +103,15 @@
 #define BS3_FP64_FRACTION_NORMAL_MAX          0xfffffffffffff
 /** The min fraction value for a double-precision floating-point normal. */
 #define BS3_FP64_FRACTION_NORMAL_MIN          0
+/** The exponent bias for the double-precision floating-point format. */
+#define BS3_FP64_EXP_BIAS                     RTFLOAT64U_EXP_BIAS
+/** Fraction width (in bits) for the double-precision floating-point format. */
+#define BS3_FP64_FRACTION_BITS                RTFLOAT64U_FRACTION_BITS
 
 #define BS3_FP64_NORMAL_MAX(a_Sign)           RTFLOAT64U_INIT_C(a_Sign, BS3_FP64_FRACTION_NORMAL_MAX, BS3_FP64_EXP_NORMAL_MAX)
 #define BS3_FP64_NORMAL_MIN(a_Sign)           RTFLOAT64U_INIT_C(a_Sign, BS3_FP64_FRACTION_NORMAL_MIN, BS3_FP64_EXP_NORMAL_MIN)
 #define BS3_FP64_ZERO(a_Sign)                 RTFLOAT64U_INIT_ZERO(a_Sign)
+#define BS3_FP64_ONE(a_Sign)                  RTFLOAT64U_INIT_C(a_Sign, 0, RTFLOAT64U_EXP_BIAS)
 #define BS3_FP64_VAL(a_Sign, a_Frac, a_Exp)   RTFLOAT64U_INIT_C(a_Sign, a_Frac, a_Exp)
 #define BS3_FP64_INF(a_Sign)                  RTFLOAT64U_INIT_INF(a_Sign)
 #define BS3_FP64_QNAN(a_Sign)                 RTFLOAT64U_INIT_QNAN(a_Sign)
@@ -115,6 +127,8 @@
 #define BS3_FP64_NORMAL_VAL_1(a_Sign)         RTFLOAT64U_INIT_C(a_Sign, 0xf10a7ab1ec01a, 0x4bc)
 #define BS3_FP64_NORMAL_VAL_2(a_Sign)         RTFLOAT64U_INIT_C(a_Sign, 0xca5cadea1b1ed, 0x3ae)
 #define BS3_FP64_NORMAL_VAL_3(a_Sign)         RTFLOAT64U_INIT_C(a_Sign, 0xb5b5b5b5b5b5b, 0xffe)
+/* The maximum integer value (all 52 + 1 implied bit of the fraction part set) without losing precision. */
+#define BS3_FP64_NORMAL_SAFE_INT_MAX(a_Sign)  RTFLOAT64U_INIT_C(a_Sign, BS3_FP64_FRACTION_NORMAL_MAX, BS3_FP64_EXP_BIAS + BS3_FP64_FRACTION_BITS)
 
 
 /*********************************************************************************************************************************
@@ -874,40 +888,23 @@ typedef struct BS3CPUINSTR4_TEST1_MODE_T
 
 typedef struct BS3CPUINSTR4_TEST1_CTX_T
 {
-    /** The test execution environment configuration. */
-    BS3CPUINSTR4_CONFIG_T const BS3_FAR *pConfig;
-    /** The instruction being tested. */
-    BS3CPUINSTR4_TEST1_T const BS3_FAR  *pTest;
-    /** Which iteration of the test value is this. */
-    unsigned                             iVal;
-    /** The testing mode (e.g. real, protected, paged and permutations). */
-    const char BS3_FAR                  *pszMode;
-    /** The exception (trap) frame. */
-    PBS3TRAPFRAME                        pTrapFrame;
-    /** The general-purpose register context. */
-    PBS3REGCTX                           pCtx;
-    /** The extended (FPU) register context. */
-    PBS3EXTCTX                           pExtCtx;
-    /** The output extended (FPU) register context. */
-    PBS3EXTCTX                           pExtCtxOut;
-    /** The memory operand buffer. */
-    uint8_t BS3_FAR                     *puMemOp;
-    /** The memory operand alias buffer for comparing result. */
-    uint8_t BS3_FAR                     *puMemOpAlias;
-    /** Size of the memory operand (and alias) buffer in bytes. */
-    uint8_t                              cbMemOp;
-    /** Size of the operand for the instruction (e.g., 8 for MMX, 16 for SSE etc. */
-    uint8_t                              cbOperand;
-    /** Size of the instruction opcode. */
-    uint8_t                              cbInstr;
-    /** The expected exception while/after executing the instruction. */
-    uint8_t                              bXcptExpect;
-    /** Whether this is an SSE instruction. */
-    bool                                 fSseInstr;
-    /** Whether this is an AVX instruction. */
-    bool                                 fAvxInstr;
-    /** The test iteration step. */
-    uint16_t                             idTestStep;
+    BS3CPUINSTR4_CONFIG_T const BS3_FAR *pConfig;      /**< The test execution environment configuration. */
+    BS3CPUINSTR4_TEST1_T const BS3_FAR  *pTest;        /**< The instruction being tested. */
+    unsigned                             iVal;         /**< Which iteration of the test value is this. */
+    const char BS3_FAR                  *pszMode;      /**< The testing mode (e.g. real, protected, paged and permutations). */
+    PBS3TRAPFRAME                        pTrapFrame;   /**< The exception (trap) frame. */
+    PBS3REGCTX                           pCtx;         /**< The general-purpose register context. */
+    PBS3EXTCTX                           pExtCtx;      /**< The extended (FPU) register context. */
+    PBS3EXTCTX                           pExtCtxOut;   /**< The output extended (FPU) register context. */
+    uint8_t BS3_FAR                     *puMemOp;      /**< The memory operand buffer. */
+    uint8_t BS3_FAR                     *puMemOpAlias; /**< The memory operand alias buffer for comparing result. */
+    uint8_t                              cbMemOp;      /**< Size of the memory operand (and alias) buffer in bytes. */
+    uint8_t                              cbOperand;    /**< Size of the instruction operand (8 for MMX, 16 for SSE etc). */
+    uint8_t                              cbInstr;      /**< Size of the instruction opcode. */
+    uint8_t                              bXcptExpect;  /**< The expected exception while/after executing the instruction. */
+    bool                                 fSseInstr;    /**< Whether this is an SSE instruction. */
+    bool                                 fAvxInstr;    /**< Whether this is an AVX instruction. */
+    uint16_t                             idTestStep;   /**< The test iteration step. */
 } BS3CPUINSTR4_TEST1_CTX_T;
 /** Pointer to a test 1 context. */
 typedef BS3CPUINSTR4_TEST1_CTX_T BS3_FAR *PBS3CPUINSTR4_TEST1_CTX_T;
@@ -1432,6 +1429,18 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
     /*16*/{ { /*src2     */ { BS3_FP64_VAL(0, 0x26580b4800000, 0x41d)/* 1234567890*/, BS3_FP64_VAL(0, 0xd6f3458800000, 0x41c)/*987654321*/, BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_VAL(1, 0x26580b4800000, 0x41d)/*-1234567890*/, BS3_FP64_VAL(1, 0x9000000000000, 0x405)/*     -100*/, BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_ZERO(0),                                       BS3_FP64_VAL(0, 0xd6f3426800000, 0x41c)/*987654221*/, BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
+              /*mask     */ ~X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ 0 },
+    /*17*/{ { /*src2     */ { BS3_FP64_VAL(0, BS3_FP64_FRACTION_NORMAL_MAX - 1, BS3_FP64_EXP_BIAS + BS3_FP64_FRACTION_BITS), BS3_FP64_NORMAL_SAFE_INT_MAX(0),                                                               BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
+            { /*src1     */ { BS3_FP64_ONE(0),                                                                               BS3_FP64_ONE(1),                                                                               BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
+            { /* =>      */ { BS3_FP64_NORMAL_SAFE_INT_MAX(0),                                                               BS3_FP64_VAL(0, BS3_FP64_FRACTION_NORMAL_MAX - 1, BS3_FP64_EXP_BIAS + BS3_FP64_FRACTION_BITS), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_ZERO,
+              /*flags    */ 0 },
+    /*18*/{ { /*src2     */ { BS3_FP64_NORMAL_SAFE_INT_MAX(0),                                    BS3_FP64_ONE(1),                                                    BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
+            { /*src1     */ { BS3_FP64_ONE(0),                                                    BS3_FP64_NORMAL_SAFE_INT_MAX(1),                                    BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
+            { /* =>      */ { BS3_FP64_VAL(0, 0, BS3_FP64_EXP_BIAS + BS3_FP64_FRACTION_BITS + 1), BS3_FP64_VAL(1, 0, BS3_FP64_EXP_BIAS + BS3_FP64_FRACTION_BITS + 1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
               /*flags    */ 0 },
