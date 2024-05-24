@@ -849,7 +849,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 oStorCfg.cleanup();
 
         if not fRc:
-            reporter.error('Failed to prepare host storage (fRamDisk=%s, cbPool=%d)' % (fRamDisk, cbPool,));
+            if cbPool is None:
+                reporter.error('Failed to prepare host storage (fRamDisk=%s)' % (fRamDisk,));
+            else:
+                reporter.error('Failed to prepare host storage (fRamDisk=%s, cbPool=%d)' % (fRamDisk, cbPool,));
         return sMountPoint;
 
     def cleanupStorage(self, oStorCfg):
