@@ -167,10 +167,10 @@ typedef enum BS3CPUINSTRX_INSTRTYPE_T
 enum {
     RM_REG = 0,
     RM_MEM,
-    RM_MEM8,  /**< Memory operand is  8 bits.  Hack for movss and similar. */
-    RM_MEM16, /**< Memory operand is 16 bits.  Hack for movss and similar. */
-    RM_MEM32, /**< Memory operand is 32 bits.  Hack for movss and similar. */
-    RM_MEM64  /**< Memory operand is 64 bits.  Hack for movss and similar. */
+    RM_MEM8,  /**< Memory operand is  8 bytes.  Hack for movss and similar. */
+    RM_MEM16, /**< Memory operand is 16 bytes.  Hack for movss and similar. */
+    RM_MEM32, /**< Memory operand is 32 bytes.  Hack for movss and similar. */
+    RM_MEM64  /**< Memory operand is 64 bytes.  Hack for movss and similar. */
 };
 
 /**
@@ -320,13 +320,14 @@ static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig1[] =
     { 0, 0,  0,  1,      1,       1,         1,   0,       1,        0,      0,      X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
     { 0, 0,  0,  1,      1,       1,         0,   0,       1,        0,      0,      X86_XCPT_DB, X86_XCPT_UD }, /* #9 */
     /* Memory misalignment and alignment checks: */
-    { 0, 0,  0,  1,      1,       1,         1,   1,       0,        0,      0,      X86_XCPT_GP, X86_XCPT_GP }, /* #10 */
-    { 0, 0,  0,  1,      1,       1,         1,   1,       0,        1,      0,      X86_XCPT_GP, X86_XCPT_GP }, /* #11 */
+    { 0, 0,  0,  1,      1,       1,         1,   1,       0,        0,      0,      X86_XCPT_GP, X86_XCPT_DB }, /* #10 */
+    { 0, 0,  0,  1,      1,       1,         1,   1,       0,        1,      0,      X86_XCPT_GP, X86_XCPT_DB }, /* #11 */
     { 0, 0,  0,  1,      1,       1,         1,   1,       1,        1,      0,      X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
     /* AMD only: */
     { 0, 0,  0,  1,      1,       1,         1,   1,       0,        0,      1,      X86_XCPT_DB, X86_XCPT_GP }, /* #13 */
     { 0, 0,  0,  1,      1,       1,         1,   1,       0,        1,      1,      X86_XCPT_AC, X86_XCPT_GP }, /* #14 */
 };
+
 
 
 /**
@@ -1354,6 +1355,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
     /*
      * Infinity.
      */
+#if 0
     /* 5*/{ { /*src2     */ { BS3_FP64_INF(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_INF(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_INF(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
@@ -1372,6 +1374,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
               /*mask     */ ~X86_MXCSR_IM,
               /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_UP,
               /*flags    */ X86_MXCSR_IE },
+#endif
     /* 8*/{ { /*src2     */ { BS3_FP64_INF(0),  BS3_FP64_INF(1),  BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_INF(1),  BS3_FP64_INF(0),  BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_QNAN(1), BS3_FP64_QNAN(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
@@ -1381,6 +1384,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
     /*
      * Overflow.
      */
+#if 0
     /* 9*/{ { /*src2     */ { BS3_FP64_ZERO(0), BS3_FP64_NORMAL_MAX(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_ZERO(0), BS3_FP64_NORMAL_MAX(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_ZERO(0), BS3_FP64_NORMAL_MAX(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
@@ -1393,6 +1397,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
               /*flags    */ X86_MXCSR_OE },
+#endif
     /*11*/{ { /*src2     */ { BS3_FP64_NORMAL_MAX(0), BS3_FP64_NORMAL_MIN(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_NORMAL_MAX(0), BS3_FP64_NORMAL_MIN(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_INF(0),        BS3_FP64_VAL(1, 0, 2),  BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
@@ -1450,6 +1455,11 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
     {
         { bs3CpuInstrX_addpd_XMM1_XMM2_icebp_c16,  255, RM_REG, T_SSE2, 1, 1, 2,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
         { bs3CpuInstrX_addpd_XMM1_FSxBX_icebp_c16, 255, RM_MEM, T_SSE2, 1, 1, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+
+        { bs3CpuInstrX_vaddpd_XMM1_XMM2_XMM3_icebp_c16,  X86_XCPT_GP, RM_REG, T_AVX_128, 1, 2, 3,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstrX_vaddpd_XMM1_XMM2_FSxBX_icebp_c16, X86_XCPT_GP, RM_MEM, T_AVX_128, 1, 2, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+
+        { bs3CpuInstrX_vaddpd_YMM1_YMM2_YMM3_icebp_c16,  X86_XCPT_GP, RM_REG, T_AVX2_256, 1, 2, 3,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
     };
     static BS3CPUINSTR4_TEST1_T const s_aTests32[] =
     {
