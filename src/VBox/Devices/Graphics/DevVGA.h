@@ -66,6 +66,9 @@
 
 #ifdef VBOX_WITH_VMSVGA
 # include "DevVGA-SVGA.h"
+#else
+# include <VBox/vmm/pdmifs.h>
+# include <VBox/vmm/stam.h>
 #endif
 
 #include <iprt/list.h>
