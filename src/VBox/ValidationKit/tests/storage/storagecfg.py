@@ -344,7 +344,7 @@ class StorageConfigOsLinux(StorageConfigOs):
                 sFdiskScript = ';\n'; # Single partition filling everything
                 if cbVol is not None:
                     sFdiskScript = ',' + str(cbVol // 512) + '\n'; # Get number of sectors
-                fRc = oExec.execBinaryNoStdOut('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath), \
+                fRc = oExec.execBinary('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath), \
                                                sFdiskScript);
                 if fRc:
                     if sDiskPath.find('nvme') != -1:
