@@ -837,21 +837,21 @@ HRESULT PlatformProperties::getSupportedVRAMRange(GraphicsControllerType_T aGrap
 
     switch (aGraphicsControllerType)
     {
-        case GraphicsControllerType::VBoxVGA:
+        case GraphicsControllerType_VBoxVGA:
         {
             cbMin = VGA_VRAM_MIN;
             cbMax = VGA_VRAM_MAX;
             break;
         }
 
-        case GraphicsControllerType::VMSVGA:
+        case GraphicsControllerType_VMSVGA:
         {
             cbMin = VGA_VRAM_MIN;
             cbMax = VGA_VRAM_MAX;
             break;
         }
 
-        case GraphicsControllerType::VBoxSVGA:
+        case GraphicsControllerType_VBoxSVGA:
         {
 #ifdef VBOX_WITH_VMSVGA
 # ifdef VBOX_WITH_VMSVGA3D
@@ -867,7 +867,7 @@ HRESULT PlatformProperties::getSupportedVRAMRange(GraphicsControllerType_T aGrap
             break;
         }
 
-        case GraphicsControllerType::QemuRamFB:
+        case GraphicsControllerType_QemuRamFB:
         {
             /* We seem to hardcode 32-bit (4 bytes) as BPP, see RAMFB_BPP in QemuRamfb.c. */
             cbMin = 4 /* BPP in bytes */ * 16    * 16;    /* Values taken from qemu/hw/display/ramfb.c */
