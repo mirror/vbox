@@ -214,8 +214,8 @@ VBOX_MAIN_DEFS += VBOX_WITH_NEW_SYS_V_KEYGEN
 # Main graphics include paths. Used by VBoxC and VBoxSVC.
 VBOX_MAIN_GRAPHICS_INCS = \
 	$(PATH_ROOT)/src/VBox/Devices/Graphics/ \
- 	$(if $(VBOX_WITH_VMSVGA),$(PATH_ROOT)/src/VBox/Devices/Graphics/vmsvga_include,) \
- 	$(VBOX_GRAPHICS_INCS)
+	$(if $(VBOX_WITH_VMSVGA),$(PATH_ROOT)/src/VBox/Devices/Graphics/vmsvga_include,) \
+	$(VBOX_GRAPHICS_INCS)
 
 VBOX_IDL_FILE.MSCOM    = $(VBOX_PATH_SDK)/bindings/mscom/idl/VirtualBox.idl
 VBOX_IDL_FILE.XPCOM    = $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl
@@ -574,7 +574,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	$(VBOX_MAIN_APIWRAPPER_INCS) \
  	$(VBOX_MAIN_GRAPHICS_INCS) \
  	. \
- VBoxSVC_INCS.win = \
+ 	VBoxSVC_INCS.win = \
  	$(VBoxCOM_0_OUTDIR)
  ifdef VBOX_WITH_USB
   VBoxSVC_INCS.os2 = \
@@ -1073,7 +1073,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	$(VBOX_MAIN_APIWRAPPER_INCS) \
  	$(dir $(VBOX_XML_SCHEMADEFS_H)) \
  	$(VBOX_MAIN_APIWRAPPER_DIR)/dtrace \
-	$(VBOX_MAIN_GRAPHICS_INCS)
+ 	$(VBOX_MAIN_GRAPHICS_INCS)
  VBoxC_INCS.win     = \
  	$(VBoxCOM_0_OUTDIR) \
  	.
