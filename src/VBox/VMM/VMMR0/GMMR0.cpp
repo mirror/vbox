@@ -51,6 +51,13 @@
  * to be set at compile time. The chunks are organized in an AVL tree with their
  * IDs being the keys.
  *
+ * @todo Scope the chunk+page IDs based on config setting: per VM,
+ *       per user (default), or global.  This will prevent ring-3 code screwing
+ *       around with random page IDs from accessing someone else's data in the
+ *       default config.  This would let us move HCPhys out of PGMPAGE when
+ *       restricting it to ring-0 only, w/o requiring any additional ring-0 per
+ *       page data (prereq mmio2 must go via GMM).  See @bugref{10696} for more.
+ *
  * The physical address of each page in an allocation chunk is maintained by
  * the #RTR0MEMOBJ and obtained using #RTR0MemObjGetPagePhysAddr. There is no
  * need to duplicate this information (it'll cost 8-bytes per page if we did).
