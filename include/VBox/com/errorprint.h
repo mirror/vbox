@@ -389,7 +389,7 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
  * expression to assert is false;
  * @remarks WARNING! @a expr is evalutated TWICE!
  */
-#define ASSERT_BREAK(expr, ret) \
+#define ASSERT_BREAK(expr) \
     if (1) { ASSERT(expr); if (!(expr)) break; } else do {} while (0)
 
 } /* namespace com */
