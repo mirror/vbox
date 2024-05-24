@@ -863,7 +863,7 @@ int ShClUtf16CalcNormalizedEolToCRLFLength(PCRTUTF16 pcwszSrc, size_t cwSrc, siz
 #ifdef RT_OS_DARWIN
         /* Check for a single carriage return (MacOS) */
         if (   pcwszSrc[i] == VBOX_SHCL_CARRIAGERETURN
-            && (i + 1 >= cwcSrc || pcwszSrc[i + 1] != VBOX_SHCL_LINEFEED))
+            && (i + 1 >= cwSrc || pcwszSrc[i + 1] != VBOX_SHCL_LINEFEED))
         {
             ++cLen;
         }
