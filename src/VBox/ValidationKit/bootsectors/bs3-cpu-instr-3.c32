@@ -13449,7 +13449,7 @@ static uint8_t bs3CpuInstr3_WorkerTestType5(uint8_t bMode, BS3CPUINSTR3_TEST5_T 
                                 BS3_ASSERT(paTests[iTest].enmRm >= RM_MEM);
                                 Bs3MemCpy(puMemOpAlias, &paValues[iVal].uSrc1, cbMemOp);
                                 if (paTests[iTest].iRegDst == UINT8_MAX)
-                                    BS3_ASSERT(fSseInstr);
+                                    BS3_ASSERT(fSseInstr || fAvxInstr);
                                 if (bXcptExpect != X86_XCPT_DB)
                                     uMemOpExpect = paValues[iVal].uSrc1;
                             }
