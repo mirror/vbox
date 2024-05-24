@@ -896,10 +896,18 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
 	$(QUIET)$(VBOX_XSLTPROC)  --stringparam mode define  -o $@ $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA)
 
  testvalidsettings: $(VBOX_XML_SCHEMA)
+ if ("$(KBUILD_TARGET)" == "solaris")
+	xmllint --schema $< --noout $(HOME)/.config/VirtualBox/VirtualBox.xml
+	xmllint --schema $< --noout $(HOME)/VirtualBox\ VMs/*/*.vbox
+ else if ("$(KBUILD_TARGET)" == "darwin")
+	xmllint --schema $< --noout $(HOME)/Library/VirtualBox/VirtualBox.xml
+	xmllint --schema $< --noout $(HOME)/VirtualBox\ VMs/*/*.vbox
+ else
 	xmllint --schema $< --noout $(HOME)/.VirtualBox/VirtualBox.xml
 	xmllint --schema $< --noout $(HOME)/.VirtualBox/Machines/*/*.xml
 	xmllint --schema $< --noout $(HOME)/.VirtualBox/Machines/*/*.vbox
 	xmllint --schema $< --noout $(HOME)/VirtualBox\ VMs/*/*.vbox
+ endif
 
  OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 

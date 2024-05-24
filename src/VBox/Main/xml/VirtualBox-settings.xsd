@@ -193,7 +193,7 @@
   <xsd:restriction base="xsd:dateTime">
     <xsd:minInclusive value="1900-01-01T00:00:00Z"/>
     <xsd:maxInclusive value="199999999-12-31T23:59:59Z"/>
-    <xsd:pattern value=".+-.+-.+T.+:.+:[0-9]{2}Z"/>
+    <xsd:pattern value=".+-.+-.+T.+:.+:[0-9]{2}.*Z"/>
   </xsd:restriction>
 </xsd:simpleType>
 
@@ -414,10 +414,12 @@
 <xsd:complexType name="TImage2">
   <xsd:sequence>
     <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
+    <xsd:element name="Property" type="TProperty" minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
   <xsd:attribute name="uuid" type="TNonNullUUID" use="required"/>
   <xsd:attribute name="location" type="TLocalFile" use="required"/>
   <xsd:attribute name="type" type="TMediumType"/>
+  <xsd:attribute name="format" type="xsd:string"/>
 </xsd:complexType>
 
 <xsd:complexType name="TImageRef">
@@ -468,6 +470,23 @@
   <xsd:attribute name="defaultVRDEExtPack" type="xsd:string"/>
   <xsd:attribute name="exclusiveHwVirt" type="xsd:boolean"/> <!-- deprecated since v1.20 -->
   <xsd:attribute name="proxyMode" type="xsd:string"/>
+  <xsd:attribute name="proxyUrl" type="xsd:string"/>
+</xsd:complexType>
+
+<xsd:complexType name="THostUpdates">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+  <xsd:attribute name="channel" type="xsd:unsignedInt" default="1"/>
+  <xsd:attribute name="checkFreqSec" type="xsd:unsignedInt" default="86400"/>
+  <xsd:attribute name="repoUrl" type="xsd:string"/>
+  <xsd:attribute name="lastCheckDate" type="TPresentDateTimeUTC"/>
+  <xsd:attribute name="checkCount" type="xsd:unsignedInt"/>
+</xsd:complexType>
+
+<xsd:complexType name="TUpdates">
+  <xsd:sequence>
+    <xsd:element name="Host" type="THostUpdates"/>
+  </xsd:sequence>
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
 </xsd:complexType>
 
 <xsd:complexType name="TExtraData">
@@ -550,6 +569,7 @@
         </xsd:sequence>
       </xsd:complexType>
     </xsd:element>
+    <xsd:element name="Updates" type="TUpdates"/>
     <xsd:element name="SystemProperties" type="TSystemProperties"/>
     <xsd:element name="ExtraData" type="TExtraData" minOccurs="0"/>
   </xsd:all>
@@ -693,15 +713,26 @@
 </xsd:complexType>
 
 <xsd:complexType name="TCPU">
-  <xsd:sequence>
+  <xsd:all>
     <xsd:element name="HardwareVirtEx" type="THWVirtExType" minOccurs="0"/> <!-- deprecated since v1.20. -->
     <xsd:element name="HardwareVirtExNestedPaging" type="THWVirtExNestedPagingType" minOccurs="0"/> <!-- deprecated since v1.20. -->
     <xsd:element name="HardwareVirtExVPID" type="THWVirtExVPIDType" minOccurs="0"/> <!-- deprecated since v1.20. -->
     <xsd:element name="HardwareVirtExUX" type="THWVirtExUXType" minOccurs="0"/> <!-- deprecated since v1.20. -->
     <xsd:element name="PAE" type="TPAEType" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="IBPBOn" type="TIBPBOn" minOccurs="0"/>
+    <xsd:element name="SpecCtrl" type="TSpecCtrl" minOccurs="0"/>
+    <xsd:element name="SpecCtrlByHost" type="TSpecCtrlByHost" minOccurs="0"/>
+    <xsd:element name="L1DFlushOn" type="TL1DFlushOn" minOccurs="0"/>
+    <xsd:element name="MDSClearOn" type="TMDSClearOn" minOccurs="0"/>
+    <xsd:element name="NestedHWVirt" type="TNestedHWVirt" minOccurs="0"/>
+    <xsd:element name="HardwareVirtExVirtVmsaveVmload" type="THardwareVirtExVirtVmsaveVmload" minOccurs="0"/>
     <xsd:element name="LongMode" type="TLongModeType" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="TripleFaultReset" type="TTripleFaultReset" minOccurs="0"/>
+    <xsd:element name="X2APIC" type="TX2APIC" minOccurs="0"/>
+    <xsd:element name="APIC" type="TAPIC" minOccurs="0"/>
     <xsd:element name="HardwareVirtExLargePages" type="THardwareVirtExLargePages" minOccurs="0"/> <!-- deprecated since v1.20. -->
     <xsd:element name="HardwareVirtForce" type="THardwareVirtForce" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="HardwareVirtExUseNativeApi" type="THardwareVirtExUseNativeApi" minOccurs="0"/>
     <xsd:element name="SyntheticCpu" type="TSyntheticCpuType" minOccurs="0"/>
     <xsd:element name="CpuIdTree" type="TCpuIdTreeX86" minOccurs="0"> <!-- deprecated since v1.20. -->
       <xsd:unique name="TCPU-CpuIdTree-CpuIdLeaf">
@@ -709,7 +740,7 @@
         <xsd:field xpath="@id"/>
       </xsd:unique>
     </xsd:element>
-  </xsd:sequence>
+  </xsd:all>
   <xsd:attribute name="count" type="TCPUCount" default="1"/>
   <xsd:attribute name="hotplug" type="xsd:boolean" default="false"/>
 </xsd:complexType>
@@ -854,6 +885,11 @@
           <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
       </xsd:complexType>
     </xsd:element>
+    <xsd:element name="AutoSerialNumGen" minOccurs="0">
+      <xsd:complexType>
+        <xsd:attribute name="enabled" type="xsd:boolean" default="true"/>
+      </xsd:complexType>
+    </xsd:element>
     <xsd:element name="IDEController" minOccurs="0"> <!-- deprecated -->
       <xsd:complexType>
         <xsd:attribute name="type">
@@ -868,7 +904,7 @@
       </xsd:complexType>
     </xsd:element>
   </xsd:all>
-  <xsd:attribute name="type" type="TFirmwareType" use="required"/> <!-- new since v1.20. -->
+  <xsd:attribute name="type" type="TFirmwareType" use="optional"/> <!-- new since v1.20. -->
 </xsd:complexType>
 
 <xsd:complexType name="TStorageControllerDevice">
@@ -1003,6 +1039,7 @@
   <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
   <xsd:attribute name="enabledIn" type="xsd:boolean" default="false"/>
   <xsd:attribute name="enabledOut" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="useDefault" type="xsd:boolean" default="true"/>
   <xsd:attribute name="controller" default="AC97">
     <xsd:simpleType>
       <xsd:restriction base="xsd:token">
@@ -1012,6 +1049,7 @@
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
+  <xsd:attribute name="codec" default="AD1980"/>
   <xsd:attribute name="driver" use="required">
     <xsd:simpleType>
       <xsd:restriction base="xsd:token">
@@ -1071,6 +1109,7 @@
   <xsd:attribute name="socksnd" type="xsd:unsignedInt"/>
   <xsd:attribute name="tcprcv" type="xsd:unsignedInt"/>
   <xsd:attribute name="tcpsnd" type="xsd:unsignedInt"/>
+  <xsd:attribute name="localhost-reachable" type="xsd:boolean" default="true"/>
 </xsd:complexType>
 
 <xsd:complexType name="TNetNATNetwork">
@@ -1173,7 +1212,8 @@
   </xsd:attribute>
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
   <xsd:attribute name="IRQ" type="TUInt8" use="required"/>
-  <xsd:attribute name="IOBase" type="TUInt16" use="required"/>
+  <xsd:attribute name="IOBase" type="TUInt16" use="optional"/>
+  <xsd:attribute name="IOAddress" type="TUInt16" use="optional"/>
   <xsd:attribute name="hostMode" type="TPortMode" use="required"/>
   <xsd:attribute name="path" type="TLocalFile"/>
   <xsd:attribute name="server" type="xsd:boolean" default="false"/>
@@ -1263,6 +1303,7 @@
   <xsd:attribute name="hostPath" type="TLocalFile" use="required"/>
   <xsd:attribute name="writable" type="xsd:boolean" default="true"/>
   <xsd:attribute name="autoMount" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="autoMountPoint" type="xsd:string"/>
 </xsd:complexType>
 
 <xsd:complexType name="TSharedFolders">
@@ -1273,6 +1314,7 @@
 
 <xsd:complexType name="TClipboard">
   <xsd:attribute name="mode" type="TClipboardMode" default="Disabled"/>
+  <xsd:attribute name="fileTransfersEnabled" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
 <xsd:complexType name="TDragAndDrop">
@@ -1388,6 +1430,8 @@
         <xsd:enumeration value="USBTablet"/>
         <xsd:enumeration value="PS2Mouse"/>
         <xsd:enumeration value="ComboMouse"/>
+        <xsd:enumeration value="USBMultiTouch"/>
+        <xsd:enumeration value="USBMTScreenPlusPad"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
@@ -1412,6 +1456,7 @@
       <xsd:restriction base="xsd:token">
         <xsd:enumeration value="PIIX3"/>
         <xsd:enumeration value="ICH9"/>
+        <xsd:enumeration value="ARMv8Virtual"/> <!-- new since v1.20. -->
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
@@ -1466,6 +1511,9 @@
 </xsd:complexType>
 
 <xsd:complexType name="TPlatformX86"> <!-- new since v1.20. -->
+  <xsd:sequence>
+    <xsd:element name="CPU" type="TCPUX86" minOccurs="0"/>
+  </xsd:sequence>
 </xsd:complexType>
 
 <xsd:complexType name="TPlatformARM"> <!-- new since v1.20. -->
@@ -1560,6 +1608,7 @@
     <xsd:element name="StorageControllers" type="TStorageControllers" minOccurs="0"/>
   </xsd:all>
   <xsd:attribute name="version" type="xsd:string" default="2"/>
+  <xsd:attribute name="uuid" type="TNonNullUUID" use="optional"/>
 </xsd:complexType>
 
 <xsd:complexType name="TGroup">
@@ -1605,6 +1654,7 @@
   <xsd:all>
     <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
     <xsd:element name="Hardware" type="THardware"/>
+    <xsd:element name="Platform" type="TPlatform" minOccurs="0"/> <!-- new since v1.20. -->
     <xsd:element name="StorageControllers" type="TStorageControllers" minOccurs="0"/>
     <xsd:element name="Snapshots" minOccurs="0">
       <xsd:complexType>
