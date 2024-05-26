@@ -2274,6 +2274,7 @@ FNIEMOP_STUB(iemOp_vaesdeclast_Vdq_Wdq);
 FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
 {
     IEMOP_MNEMONIC3(VEX_RVM, ANDN, andn, Gy, By, Ey, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
+    IEMOP_HLP_IGNORE_VEX_W_PREFIX_IF_NOT_IN_64BIT();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF | X86_EFL_PF);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
@@ -2376,6 +2377,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
 
 /** Body for the vex group 17 instructions. */
 #define IEMOP_BODY_By_Ey(a_Instr) \
+    IEMOP_HLP_IGNORE_VEX_W_PREFIX_IF_NOT_IN_64BIT(); \
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF | X86_EFL_PF); \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
@@ -2544,6 +2546,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
 
 /** Body for BZHI, BEXTR, ++; assumes VEX.L must be 0. */
 #define IEMOP_BODY_Gy_Ey_By(a_Instr, a_fFeatureMember, a_fUndefFlags) \
+    IEMOP_HLP_IGNORE_VEX_W_PREFIX_IF_NOT_IN_64BIT(); \
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fUndefFlags); \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
@@ -2640,6 +2643,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
 
 /** Body for SARX, SHLX, SHRX; assumes VEX.L must be 0. */
 #define IEMOP_BODY_Gy_Ey_By_NoEflags(a_Instr, a_fFeatureMember) \
+    IEMOP_HLP_IGNORE_VEX_W_PREFIX_IF_NOT_IN_64BIT(); \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
@@ -2739,6 +2743,7 @@ FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
 
 /** Body for PDEP and PEXT (similar to ANDN, except no EFLAGS). */
 #define IEMOP_BODY_Gy_By_Ey_NoEflags(a_Instr, a_fFeatureMember) \
+    IEMOP_HLP_IGNORE_VEX_W_PREFIX_IF_NOT_IN_64BIT(); \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
@@ -2854,6 +2859,7 @@ FNIEMOP_DEF(iemOp_pdep_Gy_By_Ey)
 FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
 {
     IEMOP_MNEMONIC4(VEX_RVM, MULX, mulx, Gy, By, Ey, rDX, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
+    IEMOP_HLP_IGNORE_VEX_W_PREFIX_IF_NOT_IN_64BIT();
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {

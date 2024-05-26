@@ -410,6 +410,14 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         } \
     } while (0)
 
+/** The instruction ignores any REX.W/VEX.W prefix if not in 64-bit mode. */
+#define IEMOP_HLP_IGNORE_VEX_W_PREFIX_IF_NOT_IN_64BIT() \
+    do \
+    { \
+        if (!IEM_IS_64BIT_CODE(pVCpu)) \
+            pVCpu->iem.s.fPrefixes &= ~IEM_OP_PRF_SIZE_REX_W; \
+    } while (0)
+
 /**
  * Done decoding.
  */

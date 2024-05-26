@@ -163,6 +163,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEMOP_HLP_DEFAULT_64BIT_OP_SIZE()                   do { } while (0)
 #define IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX()                          do { } while (0)
 #define IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE(a_szPrf)      do { } while (0)
+#define IEMOP_HLP_IGNORE_VEX_W_PREFIX_IF_NOT_IN_64BIT()     do { } while (0)
 #define IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX()            do { } while (0)
 #define IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(a_fFeature)                                       do { } while (0)
 #define IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX_2_OR(a_fFeature1, a_fFeature2)                    do { } while (0)
