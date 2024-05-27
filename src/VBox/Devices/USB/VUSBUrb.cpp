@@ -231,7 +231,7 @@ static void vusbMsgCompletion(PVUSBURB pUrb)
 int vusbUrbErrorRhEx(PVUSBROOTHUB pRh, PVUSBURB pUrb)
 {
     PVUSBDEV pDev = pUrb->pVUsb->pDev;
-    LogFlow(("%s: vusbUrbErrorRh: pDev=%p[%s] rh=%p\n", pUrb->pszDesc, pDev, pDev->pUsbIns ? pDev->pUsbIns->pszName : "", pRh));
+    LogFlow(("%s: vusbUrbErrorRh: pDev=%p[%s] rh=%p\n", pUrb->pszDesc, pDev, pDev && pDev->pUsbIns ? pDev->pUsbIns->pszName : "", pRh));
     RT_NOREF(pDev);
     return pRh->pIRhPort->pfnXferError(pRh->pIRhPort, pUrb);
 }
