@@ -2736,17 +2736,24 @@ static int shClX11ReadDataFromX11Internal(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEv
             {
                 if (pPayload)
                 {
-                    AssertReturn(pPayload->cbData == sizeof(SHCLX11RESPONSE), VERR_INVALID_PARAMETER);
-                    AssertPtrReturn(pPayload->pvData, VERR_INVALID_POINTER);
-                    PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
-                    AssertReturn(pResp->enmType == SHCLX11EVENTTYPE_READ, VERR_INVALID_PARAMETER);
+                    if (   pPayload->cbData == sizeof(SHCLX11RESPONSE)
+                        && RT_VALID_PTR(pPayload->pvData))
+                    {
+                        PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
+                        if (pResp->enmType == SHCLX11EVENTTYPE_READ)
+                        {
+                            pPayload->pvData = NULL; /* pvData (pResp) is owned by ppResp now. */
+                            pPayload->cbData = 0;
 
-                    pPayload->pvData = NULL; /* pvData (pResp) is owned by ppResp now. */
-                    pPayload->cbData = 0;
+                            ShClPayloadFree(pPayload);
 
-                    ShClPayloadFree(pPayload);
-
-                    *ppResp = pResp;
+                            *ppResp = pResp;
+                        }
+                        else
+                            rc = VERR_INVALID_PARAMETER;
+                    }
+                    else
+                        rc = VERR_INVALID_PARAMETER;
                 }
                 else /* No payload given; could happen on invalid / not-expected formats. */
                     rc = VERR_SHCLPB_NO_DATA;
