@@ -495,6 +495,8 @@ typedef const RTUINT64U RT_FAR *PCRTUINT64U;
 
 /**
  * 128-bit unsigned integer union.
+ *
+ * @note This is not necessarily automatically 16 byte aligned. Sorry.
  */
 #pragma pack(1)
 typedef union RTUINT128U

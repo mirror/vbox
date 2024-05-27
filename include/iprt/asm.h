@@ -2559,7 +2559,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU128(volatile uint128_t *pu128, const uint128_t
  * RTUINT128U wrapper for ASMAtomicCmpXchgU128.
  */
 DECLINLINE(bool) ASMAtomicCmpXchgU128U(volatile RTUINT128U *pu128, const RTUINT128U u128New,
-                                        const RTUINT128U u128Old, PRTUINT128U pu128Old) RT_NOTHROW_DEF
+                                       const RTUINT128U u128Old, PRTUINT128U pu128Old) RT_NOTHROW_DEF
 {
 # if (defined(__clang_major__) || defined(__GNUC__)) && defined(RT_ARCH_ARM64)
     return ASMAtomicCmpXchgU128(&pu128->u, u128New.u, u128Old.u, &pu128Old->u);
@@ -3522,6 +3522,158 @@ DECLINLINE(int64_t) ASMAtomicUoReadS64(volatile int64_t RT_FAR *pi64) RT_NOTHROW
 }
 
 
+/** @def RTASM_HAVE_READ_U128
+ * Defined in the target architecture supports atomic reading of 128-bit
+ * integers.
+ *
+ * The define value is zero if both ordered and unordered reads are implemented
+ * using ASMAtomicCmpXchgU128v2().  It is 1 if unordered reads are done natively
+ * w/o cmpxchg and 3 if both variants are done natively w/o cmpxchg.
+ *
+ * @note AMD64: Caller must check for cmpxchg16b support before use and make
+ *       sure variables are writable (won't be changed).
+ * @sa   RTASM_HAVE_CMP_XCHG_U128, RTASM_HAVE_WRITE_U128
+ */
+#if defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
+# define RTASM_HAVE_READ_U128   3
+#elif defined(RTASM_HAVE_CMP_XCHG_U128)
+# define RTASM_HAVE_READ_U128   0
+#endif
+
+#ifdef RTASM_HAVE_READ_U128
+
+/**
+ * Atomically reads an unsigned 128-bit value, ordered.
+ *
+ * @returns Current *pu128 value
+ * @param   pu128   Pointer to the 128-bit variable to read.
+ *                  The memory pointed to must be writable.
+ *
+ * @remarks AMD64: Requires the memory to be both readable and writable.
+ * @remarks AMD64: Requires support for cmpxchg16b.
+ */
+DECLINLINE(uint128_t) ASMAtomicReadU128(volatile uint128_t RT_FAR *pu128) RT_NOTHROW_DEF
+{
+    Assert(!((uintptr_t)pu128 & 15));
+# if defined(__GNUC__) && defined(RT_ARCH_ARM64)
+    RTUINT128U u128Ret;
+    __asm__ __volatile__("Lstart_ASMAtomicReadU128_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "ldp     %[uRetLo], %[uRetHi], %[pMem]\n\t"
+                         RTASM_ARM_DMB_SY
+                         : [uRetHi] "=r" (u128Ret.s.Hi)
+                         , [uRetLo] "=r" (u128Ret.s.Lo)
+                         : [pMem]   "Q"  (*pu128)
+                         : );
+    return u128Ret.u;
+# else
+    uint128_t u128Ret;
+    ASMAtomicCmpXchgU128v2(pu128, 0, 0, 0, 0, &u128Ret);
+    return u128Ret;
+# endif
+}
+
+/**
+ * Atomically reads an unsigned 128-bit value, ordered.
+ *
+ * @returns Current *pu128 value
+ * @param   pu128   Pointer to the 128-bit variable to read.
+ *                  The memory pointed to must be writable.
+ *
+ * @remarks AMD64: Requires the memory to be both readable and writable.
+ * @remarks AMD64: Requires support for cmpxchg16b.
+ */
+DECLINLINE(RTUINT128U) ASMAtomicReadU128U(volatile RTUINT128U RT_FAR *pu128) RT_NOTHROW_DEF
+{
+    Assert(!((uintptr_t)pu128 & 15));
+    RTUINT128U u128Ret;
+# if defined(__GNUC__) && defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("Lstart_ASMAtomicReadU128U_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+                         "ldp     %[uRetLo], %[uRetHi], %[pMem]\n\t"
+                         RTASM_ARM_DMB_SY
+                         : [uRetHi] "=r" (u128Ret.s.Hi)
+                         , [uRetLo] "=r" (u128Ret.s.Lo)
+                         : [pMem]   "Q"  (*pu128)
+                         : );
+    return u128Ret;
+# else
+    ASMAtomicCmpXchgU128v2(&pu128->u, 0, 0, 0, 0, &u128Ret.u);
+    return u128Ret;
+# endif
+}
+
+
+/**
+ * Atomically reads an unsigned 128-bit value, unordered.
+ *
+ * @returns Current *pu128 value
+ * @param   pu128   Pointer to the 128-bit variable to read.
+ *                  The memory pointed to must be writable.
+ *
+ * @remarks AMD64: Requires the memory to be both readable and writable.
+ * @remarks AMD64: Requires support for cmpxchg16b.
+ * @remarks AMD64: Is ordered.
+ */
+DECLINLINE(uint128_t) ASMAtomicUoReadU128(volatile uint128_t RT_FAR *pu128) RT_NOTHROW_DEF
+{
+    Assert(!((uintptr_t)pu128 & 15));
+# if defined(__GNUC__) && defined(RT_ARCH_ARM64)
+    RTUINT128U u128Ret;
+    __asm__ __volatile__("Lstart_ASMAtomicUoReadU128_%=:\n\t"
+                         "ldp     %[uRetLo], %[uRetHi], %[pMem]\n\t"
+                         : [uRetHi] "=r" (u128Ret.s.Hi)
+                         , [uRetLo] "=r" (u128Ret.s.Lo)
+                         : [pMem]   "Q"  (*pu128)
+                         : );
+    return u128Ret.u;
+
+# elif defined(RT_ARCH_AMD64) && 0
+    /* This doesn't work because __m128i can't be made volatile and we're not
+       able to force MSC (2019) to emit _mm_load_si128 (besides it emits movdqu
+       instead of movdqa). */
+    __m128i uTmpSse   = _mm_load_si128((__m128i volatile *)pu128);
+    __m128i uTmpSseHi = _mm_srli_si128(uTmpSse, 64 / 8);
+    RTUINT128U u128Ret;
+    u128Ret.s.Lo = (uint64_t)_mm_cvtsi128_si64(uTmpSse);
+    u128Ret.s.Hi = (uint64_t)_mm_cvtsi128_si64(uTmpSseHi);
+    return u128Ret.u;
+
+# else
+    return ASMAtomicReadU128(pu128);
+# endif
+}
+
+/**
+ * Atomically reads an unsigned 128-bit value, unordered.
+ *
+ * @returns Current *pu128 value
+ * @param   pu128   Pointer to the 128-bit variable to read.
+ *                  The memory pointed to must be writable.
+ *
+ * @remarks AMD64: Requires the memory to be both readable and writable.
+ * @remarks AMD64: Requires support for cmpxchg16b.
+ * @remarks AMD64: Is ordered.
+ */
+DECLINLINE(RTUINT128U) ASMAtomicUoReadU128U(volatile RTUINT128U RT_FAR *pu128) RT_NOTHROW_DEF
+{
+    Assert(!((uintptr_t)pu128 & 15));
+# if defined(__GNUC__) && defined(RT_ARCH_ARM64)
+    RTUINT128U u128Ret;
+    __asm__ __volatile__("Lstart_ASMAtomicUoReadU128U_%=:\n\t"
+                         "ldp     %[uRetLo], %[uRetHi], %[pMem]\n\t"
+                         : [uRetHi] "=r" (u128Ret.s.Hi)
+                         , [uRetLo] "=r" (u128Ret.s.Lo)
+                         : [pMem]   "Q"  (*pu128)
+                         : );
+    return u128Ret;
+# else
+    return ASMAtomicReadU128U(pu128);
+# endif
+}
+
+#endif /* RTASM_HAVE_READ_U128 */
+
 /**
  * Atomically reads a size_t value, ordered.
  *
@@ -4051,6 +4203,161 @@ DECLINLINE(void) ASMAtomicUoWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64)
 #endif
 }
 
+
+/** @def RTASM_HAVE_WRITE_U128
+ * Defined in the target architecture supports atomic of 128-bit integers.
+ *
+ * The define value is zero if both ordered and unordered writes are implemented
+ * using ASMAtomicCmpXchgU128v2().  It is 1 if unordered writes are done
+ * natively w/o cmpxchg and 3 if both variants are done natively w/o cmpxchg.
+ *
+ * @note AMD64: Caller must check for cmpxchg16b support before use.
+ * @sa   RTASM_HAVE_CMP_XCHG_U128
+ */
+#if defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
+# define RTASM_HAVE_WRITE_U128  3
+#elif defined(RTASM_HAVE_CMP_XCHG_U128)
+# define RTASM_HAVE_WRITE_U128  0
+#endif
+
+#ifdef RTASM_HAVE_WRITE_U128
+
+/**
+ * Atomically writes an unsigned 128-bit value, ordered.
+ *
+ * @param   pu128       Pointer to the variable to overwrite.  Must be aligned
+ *                      on 16 byte boundrary.
+ * @param   u64Hi       The high 64 bits of the new value.
+ * @param   u64Lo       The low 64 bits of the new value.
+ */
+DECLINLINE(void) ASMAtomicWriteU128v2(volatile uint128_t *pu128, const uint64_t u64Hi, const uint64_t u64Lo) RT_NOTHROW_DEF
+{
+    Assert(!((uintptr_t)pu128 & 15));
+# if defined(__GNUC__) && defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("Lstart_ASMAtomicWriteU128v2_%=:\n\t"
+# if 0 && defined(RTASM_ARM64_USE_FEAT_LSE128) /** @todo hw support?  test + debug */
+                         RTASM_ARM_DMB_SY
+                         "swpp    %[uValueLo], %[uValueHi], %[pMem]\n\t"
+# else
+                         RTASM_ARM_DMB_SY
+                         "stp     %[uValueLo], %[uValueHi], %[pMem]\n\t"
+                         "dmb     sy\n\t"
+# endif
+                         : [pMem]     "+Q" (*pu128)
+                         : [uValueHi] "r"  (u64Hi)
+                         , [uValueLo] "r"  (u64Lo)
+                         : );
+
+# else
+    RTUINT128U u128Old;
+#  ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
+    u128Old.u = *pu128;
+#  else
+    u128Old.u.Lo = pu128->Lo;
+    u128Old.u.Hi = pu128->Hi;
+#  endif
+    while (!ASMAtomicCmpXchgU128v2(pu128, u64Hi, u64Lo, u128Old.s.Hi, u128Old.s.Lo, &u128Old.u))
+    { }
+# endif
+}
+
+
+/**
+ * Atomically writes an unsigned 128-bit value, ordered.
+ *
+ * @param   pu128       Pointer to the variable to overwrite.  Must be aligned
+ *                      on 16 byte boundrary.
+ * @param   u64Hi       The high 64 bits of the new value.
+ * @param   u64Lo       The low 64 bits of the new value.
+ * @note    This is ordered on AMD64.
+ */
+DECLINLINE(void) ASMAtomicUoWriteU128v2(volatile uint128_t *pu128, const uint64_t u64Hi, const uint64_t u64Lo) RT_NOTHROW_DEF
+{
+    Assert(!((uintptr_t)pu128 & 15));
+# if defined(__GNUC__) && defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("Lstart_ASMAtomicUoWriteU128v2_%=:\n\t"
+                         "stp     %[uValueLo], %[uValueHi], %[pMem]\n\t"
+                         : [pMem]     "+Q" (*pu128)
+                         : [uValueHi] "r"  (u64Hi)
+                         , [uValueLo] "r"  (u64Lo)
+                         : );
+
+# else
+    RTUINT128U u128Old;
+#  ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
+    u128Old.u = *pu128;
+#  else
+    u128Old.u.Lo = pu128->Lo;
+    u128Old.u.Hi = pu128->Hi;
+#  endif
+    while (!ASMAtomicCmpXchgU128v2(pu128, u64Hi, u64Lo, u128Old.s.Hi, u128Old.s.Lo, &u128Old.u))
+    { }
+# endif
+}
+
+
+/**
+ * Atomically writes an unsigned 128-bit value, ordered.
+ *
+ * @param   pu128       Pointer to the variable to overwrite.  Must be aligned
+ *                      on 16 byte boundrary.
+ * @param   u128        The the new value.
+ */
+DECLINLINE(void) ASMAtomicWriteU128(volatile uint128_t *pu128, const uint128_t u128) RT_NOTHROW_DEF
+{
+# ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
+    ASMAtomicWriteU128v2(pu128, (uint64_t)(u128 >> 64), (uint64_t)u128);
+# else
+    ASMAtomicWriteU128v2(pu128, u128.Hi, u128.Lo);
+# endif
+}
+
+
+/**
+ * Atomically writes an unsigned 128-bit value, unordered.
+ *
+ * @param   pu128       Pointer to the variable to overwrite.  Must be aligned
+ *                      on 16 byte boundrary.
+ * @param   u128        The the new value.
+ * @note    This is ordered on AMD64.
+ */
+DECLINLINE(void) ASMAtomicUoWriteU128(volatile uint128_t *pu128, const uint128_t u128) RT_NOTHROW_DEF
+{
+# ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
+    ASMAtomicUoWriteU128v2(pu128, (uint64_t)(u128 >> 64), (uint64_t)u128);
+# else
+    ASMAtomicUoWriteU128v2(pu128, u128.Hi, u128.Lo);
+# endif
+}
+
+
+/**
+ * Atomically writes an unsigned 128-bit value, ordered.
+ *
+ * @param   pu128       Pointer to the variable to overwrite.  Must be aligned
+ *                      on 16 byte boundrary.
+ * @param   u128        The the new value.
+ */
+DECLINLINE(void) ASMAtomicWriteU128U(volatile RTUINT128U *pu128, const RTUINT128U u128) RT_NOTHROW_DEF
+{
+    ASMAtomicWriteU128v2(&pu128->u, u128.s.Hi, u128.s.Lo);
+}
+
+
+/**
+ * Atomically writes an unsigned 128-bit value, unordered.
+ *
+ * @param   pu128       Pointer to the variable to overwrite.  Must be aligned
+ *                      on 16 byte boundrary.
+ * @param   u128        The the new value.
+ * @note    This is ordered on AMD64.
+ */
+DECLINLINE(void) ASMAtomicUoWriteU128U(volatile RTUINT128U *pu128, const RTUINT128U u128) RT_NOTHROW_DEF
+{
+    ASMAtomicUoWriteU128v2(&pu128->u, u128.s.Hi, u128.s.Lo);
+}
+
+#endif /* RTASM_HAVE_WRITE_U128 */
 
 /**
  * Atomically writes a size_t value, ordered.
