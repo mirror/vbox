@@ -2232,6 +2232,32 @@ VMMR3_INT_DECL(int) gimR3HvHypercallExtGetBootZeroedMem(PVM pVM, int *prcHv)
     /*
      * Perform the hypercall.
      */
+/** @todo r=bird: This is *nothing* like the microsoft description (2024-05-28).
+ * https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/tlfs/hypercalls/hvextcallgetbootzeroedmemory
+ *
+ * It describes this as returning pages known to be all zeros at the time this
+ * hypercall is made.  What we return instead is a is a single entry:
+ *      GIMHVEXTGETBOOTZEROMEM::GCPhysStart = 0;
+ *      GIMHVEXTGETBOOTZEROMEM::cPages      = SUM(PGMRAMRANGE.cb) >> GIM_HV_PAGE_SHIFT;
+ *
+ * This isn't right for any VM configuration, given that VGA & MMIO & ROM memory
+ * starts at 0xa0000 and contains pages that aren't zero.  For VM configurations
+ * with more than 3GB (or 2) of memory, it doesn't take into account the RAM hole
+ * below 4G.
+ *
+ * A much better approach for VMs with large configs, but still not really correct,
+ * would be to find the highest RAM address (non-MMIO, non-MMIO2, non-ROM) and
+ * convert it to a page count and assign that to cPages.
+ *
+ * A slight improvement would be to report two or three ranges:
+ *      [0] = 0x00000-0xa0000,
+ *      [1] = 1MB - RamHole,
+ *      [2] = 4GB - EndOfRam;
+ *
+ * The best would be to implement this directly PGM, as the number of mapped RAM
+ * ranges doesn't need to be constant during the call if other VCPUs are
+ * enabling/disabling devices and such.
+ */
     uint32_t const cRanges = PGMR3PhysGetRamRangeCount(pVM);
     pOut->cPages = 0;
     for (uint32_t iRange = 0; iRange < cRanges; iRange++)
