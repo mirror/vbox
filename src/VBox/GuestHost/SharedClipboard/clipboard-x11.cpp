@@ -2740,7 +2740,6 @@ static int shClX11ReadDataFromX11Internal(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEv
                     AssertPtrReturn(pPayload->pvData, VERR_INVALID_POINTER);
                     PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
                     AssertReturn(pResp->enmType == SHCLX11EVENTTYPE_READ, VERR_INVALID_PARAMETER);
-                    AssertReturn(pResp->Read.cbData <= cbMax, VERR_BUFFER_OVERFLOW); /* Paranoia. */
 
                     pPayload->pvData = NULL; /* pvData (pResp) is owned by ppResp now. */
                     pPayload->cbData = 0;
