@@ -568,7 +568,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	$(VBOX_MAIN_APIWRAPPER_INCS) \
  	. \
  	$(VBOX_GRAPHICS_INCS)
- 	VBoxSVC_INCS.win = \
+ VBoxSVC_INCS.win        = \
  	$(VBoxCOM_0_OUTDIR)
  ifdef VBOX_WITH_USB
   VBoxSVC_INCS.os2 = \
