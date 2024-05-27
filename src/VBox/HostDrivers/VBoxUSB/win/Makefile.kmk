@@ -40,7 +40,7 @@ include $(KBUILD_PATH)/subheader.kmk
 LIBRARIES.win += usbd
 ifdef VBOX_WITH_VBOXDRV
  SYSMODS.win   += VBoxUSB VBoxUSBMon
- INSTALLS.win  += install-infs
+ INSTALLS.win  += VBoxUSB-inf
 endif
 PROGRAMS.win  += USBInstall USBUninstall USBTest
 
@@ -155,25 +155,25 @@ USBTest_SOURCES  = \
 #
 # Install the INF files.
 #
-install-infs_TEMPLATE = VBoxR0DrvInfCat
-install-infs_SOURCES = \
+VBoxUSB-inf_TEMPLATE = VBoxR0DrvInfCat
+VBoxUSB-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.inf \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf
-install-infs_CLEAN = $(install-infs_SOURCES)
-install-infs_BLDDIRS = \
+VBoxUSB-inf_CLEAN = $(VBoxUSB-inf_SOURCES)
+VBoxUSB-inf_BLDDIRS = \
 	$(PATH_TARGET)/VBoxUSBCat.dir \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir
 
 $(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.inf: $(PATH_SUB_CURRENT)/dev/VBoxUSB.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,install-infs,$@,$<)
+	$(call MSG_GENERATE,VBoxUSB-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
 $(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf: $(PATH_SUB_CURRENT)/mon/VBoxUSBMon.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,install-infs,$@,$<)
+	$(call MSG_GENERATE,VBoxUSB-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
 ifdef VBOX_SIGNING_MODE
- install-infs_SOURCES += \
+ VBoxUSB-inf_SOURCES += \
  	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat \
  	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat=>VBoxUSB-PreW10.cat \
  	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys \
