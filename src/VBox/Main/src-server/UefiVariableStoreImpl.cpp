@@ -532,19 +532,24 @@ HRESULT UefiVariableStore::enrollDefaultMsSignatures(void)
                                          GuidMs, SignatureType_X509);
     if (SUCCEEDED(hrc))
     {
-        hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoft3rdCa, g_cbUefiMicrosoft3rdCa,
+        hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidGlobalVar, "KEK", g_abUefiMicrosoftKek2023, g_cbUefiMicrosoftKek2023,
                                              GuidMs, SignatureType_X509);
         if (SUCCEEDED(hrc))
         {
-            hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoft3rdCa2023, g_cbUefiMicrosoft3rdCa2023,
+            hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoft3rdCa, g_cbUefiMicrosoft3rdCa,
                                                  GuidMs, SignatureType_X509);
             if (SUCCEEDED(hrc))
             {
-                hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoftWinCa, g_cbUefiMicrosoftWinCa,
+                hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoft3rdCa2023, g_cbUefiMicrosoft3rdCa2023,
                                                      GuidMs, SignatureType_X509);
                 if (SUCCEEDED(hrc))
-                    hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoftWinCa2023, g_cbUefiMicrosoftWinCa2023,
+                {
+                    hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoftWinCa, g_cbUefiMicrosoftWinCa,
                                                          GuidMs, SignatureType_X509);
+                    if (SUCCEEDED(hrc))
+                        hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoftWinCa2023, g_cbUefiMicrosoftWinCa2023,
+                                                             GuidMs, SignatureType_X509);
+                }
             }
         }
     }

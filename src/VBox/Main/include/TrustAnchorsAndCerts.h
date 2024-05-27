@@ -38,6 +38,9 @@ RT_C_DECLS_BEGIN
 extern const unsigned char g_abUefiMicrosoftKek[];
 extern const unsigned g_cbUefiMicrosoftKek;
 
+extern const unsigned char g_abUefiMicrosoftKek2023[];
+extern const unsigned g_cbUefiMicrosoftKek2023;
+
 extern const unsigned char g_abUefiMicrosoft3rdCa[];
 extern const unsigned g_cbUefiMicrosoft3rdCa;
 
