@@ -41,6 +41,8 @@
 
 #include "svga_types.h"
 
+#include <VBox/graphics.h> /* For VRAM ranges. */
+
 /*
  * SVGA_REG_ENABLE bit definitions.
  */
@@ -2267,9 +2269,6 @@ SVGAFifoCmdRemapGMR2;
 /*
  * Size of SVGA device memory such as frame buffer and FIFO.
  */
-#define SVGA_VRAM_MIN_SIZE             (4 * 640 * 480) /* bytes */
-#define SVGA_VRAM_MIN_SIZE_3D       (16 * 1024 * 1024)
-#define SVGA_VRAM_MAX_SIZE         (128 * 1024 * 1024)
 #define SVGA_MEMORY_SIZE_MAX      (1024 * 1024 * 1024)
 #define SVGA_FIFO_SIZE_MAX           (2 * 1024 * 1024)
 #define SVGA_GRAPHICS_MEMORY_KB_MIN     (32 * 1024)

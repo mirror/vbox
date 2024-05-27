@@ -31,12 +31,9 @@
 #include "LoggingNew.h"
 #include "Global.h"
 
-#include "VBox/vmm/pdmcritsect.h"            /* required by DevVGA.h */
-#include "VBox/param.h"                      /* Ditto. */
-#include "DevVGA.h"
-
 #include <iprt/cpp/utils.h>
 
+#include <VBox/graphics.h> /* For VRAM ranges. */
 #include <VBox/settings.h>
 
 // generated header
