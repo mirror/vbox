@@ -38,11 +38,17 @@ RT_C_DECLS_BEGIN
 extern const unsigned char g_abUefiMicrosoftKek[];
 extern const unsigned g_cbUefiMicrosoftKek;
 
-extern const unsigned char g_abUefiMicrosoftCa[];
-extern const unsigned g_cbUefiMicrosoftCa;
+extern const unsigned char g_abUefiMicrosoft3rdCa[];
+extern const unsigned g_cbUefiMicrosoft3rdCa;
 
-extern const unsigned char g_abUefiMicrosoftProPca[];
-extern const unsigned g_cbUefiMicrosoftProPca;
+extern const unsigned char g_abUefiMicrosoft3rdCa2023[];
+extern const unsigned g_cbUefiMicrosoft3rdCa2023;
+
+extern const unsigned char g_abUefiMicrosoftWinCa[];
+extern const unsigned g_cbUefiMicrosoftWinCa;
+
+extern const unsigned char g_abUefiMicrosoftWinCa2023[];
+extern const unsigned g_cbUefiMicrosoftWinCa2023;
 
 extern const unsigned char g_abUefiOracleDefPk[];
 extern const unsigned g_cbUefiOracleDefPk;

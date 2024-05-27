@@ -421,19 +421,23 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
 
  #
  # Trust anchors and certificates -> .cpp
+ # Source for the Microsoft Certificates: https://github.com/microsoft/secureboot_objects
  #
  VBOX_SVC_CERTS_FILE = $(VBoxSVC_0_OUTDIR)/TrustAnchorsAndCerts.cpp
  VBOX_SVC_CERTS := \
  	UefiMicrosoftKek=MicCorKEKCA2011_2011-06-24.crt \
- 	UefiMicrosoftCa=MicCorUEFCA2011_2011-06-27.crt \
- 	UefiMicrosoftProPca=MicWinProPCA2011_2011-10-19.crt \
+ 	UefiMicrosoftKek2023=microsoft_corporation_kek_2k_ca_2023.crt \
+ 	UefiMicrosoft3rdCa=MicCorUEFCA2011_2011-06-27.crt \
+ 	UefiMicrosoft3rdCa2023=microsoft_uefi_ca_2023.crt\
+ 	UefiMicrosoftWinCa=MicWinProPCA2011_2011-10-19.crt \
+ 	UefiMicrosoftWinCa2023=windows_uefi_ca_2023.crt \
  	UefiOracleDefPk=OrclUefiDefPk2021_2021-09-29.crt
 
- VBOX_SVC_CERT_NAMES := $(foreach cert,$(VBOX_SVC_CERTS),$(firstword $(subst =,$(SPACE) ,$(cert))))
+ VBOX_SVC_CERT_NAMES := $(foreach cert,$(VBOX_SVC_CERTS),$(firstword $(subst =,$(SP),$(cert))))
  VBOX_SVC_PATH_CERTIFICATES := $(PATH_SUB_CURRENT)/Certificates
 
  $$(VBOX_SVC_CERTS_FILE): $(MAKEFILE_CURRENT) \
- 		$(foreach cert,$(VBOX_SVC_CERTS),$(VBOX_SVC_PATH_CERTIFICATES)/$(lastword $(subst =,$(SPACE) ,$(cert)))) \
+ 		$(foreach cert,$(VBOX_SVC_CERTS),$(VBOX_SVC_PATH_CERTIFICATES)/$(lastword $(subst =,$(SP),$(cert)))) \
  		$(VBOX_BIN2C) \
  		| $$(dir $$@)
 	$(QUIET)$(RM) -f -- $@
@@ -442,8 +446,8 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
        	'#include "TrustAnchorsAndCerts.h"' \
                ''
 	$(foreach cert,$(VBOX_SVC_CERTS), $(NLTAB)$(VBOX_BIN2C) -ascii --append \
-		"$(firstword $(subst =,$(SP) ,$(cert)))" \
-		"$(VBOX_SVC_PATH_CERTIFICATES)/$(lastword $(subst =,$(SP) ,$(cert)))" \
+		"$(firstword $(subst =,$(SP),$(cert)))" \
+		"$(VBOX_SVC_PATH_CERTIFICATES)/$(lastword $(subst =,$(SP),$(cert)))" \
 		"$@")
 
  OTHER_CLEAN += $(VBOX_SVC_CERTS_FILE)

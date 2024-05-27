@@ -532,11 +532,21 @@ HRESULT UefiVariableStore::enrollDefaultMsSignatures(void)
                                          GuidMs, SignatureType_X509);
     if (SUCCEEDED(hrc))
     {
-        hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoftCa, g_cbUefiMicrosoftCa,
+        hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoft3rdCa, g_cbUefiMicrosoft3rdCa,
                                              GuidMs, SignatureType_X509);
         if (SUCCEEDED(hrc))
-            hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoftProPca, g_cbUefiMicrosoftProPca,
+        {
+            hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoft3rdCa2023, g_cbUefiMicrosoft3rdCa2023,
                                                  GuidMs, SignatureType_X509);
+            if (SUCCEEDED(hrc))
+            {
+                hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoftWinCa, g_cbUefiMicrosoftWinCa,
+                                                     GuidMs, SignatureType_X509);
+                if (SUCCEEDED(hrc))
+                    hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoftWinCa2023, g_cbUefiMicrosoftWinCa2023,
+                                                         GuidMs, SignatureType_X509);
+            }
+        }
     }
 
     i_releaseUefiVariableStore();
