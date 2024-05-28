@@ -444,6 +444,34 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #ifndef RT_IN_ASSEMBLER /* ASM-NOINC-START - the rest of the file */
 
 
+/** TB exit reasons. */
+typedef enum 
+{
+    kIemNativeExitReason_Invalid = 0,
+    kIemNativeExitReason_RaiseDe,                /**< Raise (throw) X86_XCPT_DE (00h). */
+    kIemNativeExitReason_RaiseUd,                /**< Raise (throw) X86_XCPT_UD (06h). */
+    kIemNativeExitReason_RaiseSseRelated,        /**< Raise (throw) X86_XCPT_UD or X86_XCPT_NM according to cr0 & cr4. */
+    kIemNativeExitReason_RaiseAvxRelated,        /**< Raise (throw) X86_XCPT_UD or X86_XCPT_NM according to xcr0, cr0 & cr4. */
+    kIemNativeExitReason_RaiseSseAvxFpRelated,   /**< Raise (throw) X86_XCPT_UD or X86_XCPT_XF according to c4. */
+    kIemNativeExitReason_RaiseNm,                /**< Raise (throw) X86_XCPT_NM (07h). */
+    kIemNativeExitReason_RaiseGp0,               /**< Raise (throw) X86_XCPT_GP (0dh) w/ errcd=0. */
+    kIemNativeExitReason_RaiseMf,                /**< Raise (throw) X86_XCPT_MF (10h). */
+    kIemNativeExitReason_RaiseXf,                /**< Raise (throw) X86_XCPT_XF (13h). */
+    kIemNativeExitReason_ObsoleteTb,
+    kIemNativeExitReason_NeedCsLimChecking,
+    kIemNativeExitReason_CheckBranchMiss,
+    kIemNativeExitReason_Return, /** @todo Eliminate (needed for the compile assertion below). */
+    kIemNativeExitReason_ReturnBreak,
+    kIemNativeExitReason_ReturnBreakFF,
+    kIemNativeExitReason_ReturnBreakViaLookup,
+    kIemNativeExitReason_ReturnBreakViaLookupWithIrq,
+    kIemNativeExitReason_ReturnBreakViaLookupWithTlb,
+    kIemNativeExitReason_ReturnBreakViaLookupWithTlbAndIrq,
+    kIemNativeExitReason_ReturnWithFlags,
+    kIemNativeExitReason_NonZeroRetOrPassUp,
+} IEMNATIVEEXITREASON;
+
+
 /** Native code generator label types. */
 typedef enum
 {
@@ -496,6 +524,33 @@ typedef enum
     kIemNativeLabelType_TlbDone,
     kIemNativeLabelType_End
 } IEMNATIVELABELTYPE;
+
+/* Temporary kludge until all jumps to TB exit labels are converted to the new TB exiting style,
+ * see @bugref{10677}. */
+#define IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(a_Reason) \
+    ((int)kIemNativeLabelType_ ## a_Reason == (int)kIemNativeExitReason_ ## a_Reason)
+AssertCompile(   IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseDe)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseUd)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseSseRelated)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseAvxRelated)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseSseAvxFpRelated)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseNm)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseGp0)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseMf)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseXf)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ObsoleteTb)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(NeedCsLimChecking)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(CheckBranchMiss)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(Return)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreak)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakFF)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookup)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookupWithIrq)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookupWithTlb)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookupWithTlbAndIrq)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnWithFlags)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(NonZeroRetOrPassUp));
+
 
 /** Native code generator label definition. */
 typedef struct IEMNATIVELABEL

@@ -214,8 +214,6 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
     uint32_t const idxLabelVmCheck = iemNativeLabelCreate(pReNative, kIemNativeLabelType_CheckIrq,
                                                           UINT32_MAX, pReNative->uCheckIrqSeqNo++);
 
-    uint32_t const idxLabelReturnBreakFF = iemNativeLabelCreate(pReNative, kIemNativeLabelType_ReturnBreakFF);
-
     /* Again, we need to load the extended EFLAGS before we actually need them
        in case we jump.  We couldn't use iemNativeRegAllocTmpForGuestReg if we
        loaded them inside the check, as the shadow state would not be correct
@@ -249,20 +247,21 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
     off = iemNativeEmitAndGprByImm(pReNative, off, idxTmpReg,
                                    ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC), true /*fSetFlags*/);
     /* Return VINF_IEM_REEXEC_BREAK if other FFs are set. */
-    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabelReturnBreakFF);
+    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeExitReason_ReturnBreakFF);
 
     /* So, it's only interrupt releated FFs and we need to see if IRQs are being
        suppressed by the CPU or not. */
     off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxEflReg, X86_EFL_IF_BIT, idxLabelVmCheck);
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxEflReg, CPUMCTX_INHIBIT_SHADOW,
-                                                              idxLabelReturnBreakFF);
+    off = iemNativeEmitTestAnyBitsInGprAndTbExitIfNoneSet(pReNative, off, idxEflReg, CPUMCTX_INHIBIT_SHADOW,
+                                                          kIemNativeExitReason_ReturnBreakFF);
 
     /* We've got shadow flags set, so we must check that the PC they are valid
        for matches our current PC value. */
     /** @todo AMD64 can do this more efficiently w/o loading uRipInhibitInt into
      *        a register. */
     off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.uRipInhibitInt));
-    off = iemNativeEmitTestIfGprNotEqualGprAndJmpToLabel(pReNative, off, idxTmpReg, idxPcReg, idxLabelReturnBreakFF);
+    off = iemNativeEmitTestIfGprNotEqualGprAndTbExit(pReNative, off, idxTmpReg, idxPcReg,
+                                                     kIemNativeExitReason_ReturnBreakFF);
 
     /*
      * Now check the force flags of the VM.
@@ -272,7 +271,7 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
     off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, CTX_SUFF(pVM))); /* idxTmpReg = pVM */
     off = iemNativeEmitLoadGprByGprU32(pReNative, off, idxTmpReg, idxTmpReg, RT_UOFFSETOF(VMCC, fGlobalForcedActions));
     off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxTmpReg, VM_FF_ALL_MASK, true /*fSetFlags*/);
-    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabelReturnBreakFF);
+    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeExitReason_ReturnBreakFF);
 
     /** @todo STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckIrqBreaks); */
 
@@ -314,8 +313,8 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckMode)
 
     off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, iem.s.fExec));
     off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxTmpReg, IEMTB_F_KEY_MASK);
-    off = iemNativeEmitTestIfGpr32NotEqualImmAndJmpToNewLabel(pReNative, off, idxTmpReg, fExpectedExec & IEMTB_F_KEY_MASK,
-                                                              kIemNativeLabelType_ReturnBreak);
+    off = iemNativeEmitTestIfGpr32NotEqualImmAndTbExit(pReNative, off, idxTmpReg, fExpectedExec & IEMTB_F_KEY_MASK,
+                                                       kIemNativeExitReason_ReturnBreak);
     iemNativeRegFreeTmp(pReNative, idxTmpReg);
 
     /* Maintain the recompiler fExec state. */
@@ -444,7 +443,7 @@ iemNativeEmitBltInCheckCsLim(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
     }
 
     /* 3. Jump if greater. */
-    off = iemNativeEmitJaToNewLabel(pReNative, off, kIemNativeLabelType_RaiseGp0);
+    off = iemNativeEmitJaTbExit(pReNative, off, kIemNativeExitReason_RaiseGp0);
 
     iemNativeRegFreeTmp(pReNative, idxRegCsLim);
     iemNativeRegFreeTmp(pReNative, idxRegPc);
@@ -532,7 +531,7 @@ iemNativeEmitBltInConsiderLimChecking(PIEMRECOMPILERSTATE pReNative, uint32_t of
 
     /* Compare the two and jump out if we're too close to the limit. */
     off = iemNativeEmitCmpGprWithGpr(pReNative, off, idxRegLeft, idxRegRight);
-    off = iemNativeEmitJlToNewLabel(pReNative, off, kIemNativeLabelType_NeedCsLimChecking);
+    off = iemNativeEmitJlTbExit(pReNative, off, kIemNativeExitReason_NeedCsLimChecking);
 
     iemNativeRegFreeTmp(pReNative, idxRegRight);
     iemNativeRegFreeTmp(pReNative, idxRegLeft);
@@ -565,8 +564,6 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
 #ifdef VBOX_STRICT
     off = iemNativeEmitMarker(pReNative, off, 0x80000003);
 #endif
-
-    uint32_t const      idxLabelObsoleteTb = iemNativeLabelCreate(pReNative, kIemNativeLabelType_ObsoleteTb);
 
     /*
      * Where to start and how much to compare.
@@ -604,16 +601,11 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
             } \
             else \
             { \
-                pbCodeBuf[off++] = 0x74; /* jz near +5 */ \
-                pbCodeBuf[off++] = 0x05 + BP_ON_OBSOLETION; \
+                pbCodeBuf[off++] = 0x74; /* jz near +6 */ \
+                pbCodeBuf[off++] = 0x06 + BP_ON_OBSOLETION; \
                 offConsolidatedJump = off; \
                 if (BP_ON_OBSOLETION) pbCodeBuf[off++] = 0xcc; \
-                pbCodeBuf[off++] = 0xe9; /* jmp rel32 */ \
-                iemNativeAddFixup(pReNative, off, idxLabelObsoleteTb, kIemNativeFixupType_Rel32, -4); \
-                pbCodeBuf[off++] = 0x00; \
-                pbCodeBuf[off++] = 0x00; \
-                pbCodeBuf[off++] = 0x00; \
-                pbCodeBuf[off++] = 0x00; \
+                off = iemNativeEmitTbExitEx(pReNative, pCodeBuf, off, kIemNativeExitReason_ObsoleteTb); \
             } \
         } while (0)
 
@@ -679,7 +671,7 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
             offPage &= 3;
         }
 
-        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5 + 14 + 54 + 8 + 6 + BP_ON_OBSOLETION /* = 87 */);
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6 + 14 + 54 + 8 + 6 + BP_ON_OBSOLETION /* = 88 */);
 
         if (cbLeft > 8)
             switch (offPage & 3)
@@ -723,7 +715,7 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
         /* RCX = counts. */
         uint8_t const idxRegCx = iemNativeRegAllocTmpEx(pReNative, &off, RT_BIT_32(X86_GREG_xCX));
 
-        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5 + 10 + 5 + 5 + 3 + 4 + 3 + BP_ON_OBSOLETION /*= 35*/);
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6 + 10 + 5 + 5 + 3 + 4 + 3 + BP_ON_OBSOLETION /*= 36*/);
 
         /** @todo profile and optimize this further.  Maybe an idea to align by
          *        offPage if the two cannot be reconsidled. */
@@ -857,8 +849,8 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
             {
                 if (fPendingJmp)
                 {
-                    iemNativeAddFixup(pReNative, off, idxLabelObsoleteTb, kIemNativeFixupType_RelImm19At5);
-                    pu32CodeBuf[off++] = Armv8A64MkInstrBCond(kArmv8InstrCond_Ne, 0);
+                    off = iemNativeEmitJccTbExitEx(pReNative, pu32CodeBuf, off, kIemNativeExitReason_ObsoleteTb,
+                                                   kArmv8InstrCond_Ne);
                     fPendingJmp = false;
                 }
 
@@ -894,8 +886,8 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
                 pu32CodeBuf[off++] = Armv8A64MkInstrCCmpReg(idxRegSrc1Val, idxRegSrc2Val,
                                                             ARMA64_NZCV_F_N0_Z0_C0_V0, kArmv8InstrCond_Eq);
 
-                iemNativeAddFixup(pReNative, off, idxLabelObsoleteTb, kIemNativeFixupType_RelImm19At5);
-                pu32CodeBuf[off++] = Armv8A64MkInstrBCond(kArmv8InstrCond_Ne, 0);
+                off = iemNativeEmitJccTbExitEx(pReNative, pu32CodeBuf, off, kIemNativeExitReason_ObsoleteTb,
+                                               kArmv8InstrCond_Ne);
 
                 /* Advance and loop. */
                 pu32CodeBuf[off++] = Armv8A64MkInstrAddUImm12(idxRegSrc1Ptr, idxRegSrc1Ptr, 0x20);
@@ -1028,11 +1020,9 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
      * Finally, the branch on difference.
      */
     if (fPendingJmp)
-    {
-        iemNativeAddFixup(pReNative, off, idxLabelObsoleteTb, kIemNativeFixupType_RelImm19At5);
-        pu32CodeBuf[off++] = Armv8A64MkInstrBCond(kArmv8InstrCond_Ne, 0);
-    }
-    RT_NOREF(pu32CodeBuf, cbLeft, offPage, pbOpcodes, offConsolidatedJump, idxLabelObsoleteTb);
+        off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeExitReason_ObsoleteTb);
+
+    RT_NOREF(pu32CodeBuf, cbLeft, offPage, pbOpcodes, offConsolidatedJump);
 
     /* max costs: memcmp-loop=54; memcmp-no-loop=41; only-src1-ptr=32 */
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -1191,7 +1181,7 @@ iemNativeEmitBltInCheckPcAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
     /* 3. Check that off is less than X86_PAGE_SIZE/cbInstrBufTotal. */
     off = iemNativeEmitCmpGprWithImm(pReNative, off, idxRegTmp, X86_PAGE_SIZE - 1);
-    off = iemNativeEmitJaToNewLabel(pReNative, off, kIemNativeLabelType_CheckBranchMiss);
+    off = iemNativeEmitJaTbExit(pReNative, off, kIemNativeExitReason_CheckBranchMiss);
 
     /* 4. Add iem.s.GCPhysInstrBuf and compare with GCPhysRangePageWithOffset. */
 #ifdef RT_ARCH_AMD64
@@ -1222,8 +1212,8 @@ iemNativeEmitBltInCheckPcAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off
     RTGCPHYS const GCPhysRangePageWithOffset = (  iemTbGetRangePhysPageAddr(pTb, idxRange)
                                                 | pTb->aRanges[idxRange].offPhysPage)
                                              + offRange;
-    off = iemNativeEmitTestIfGprNotEqualImmAndJmpToNewLabel(pReNative, off, idxRegTmp, GCPhysRangePageWithOffset,
-                                                            kIemNativeLabelType_CheckBranchMiss);
+    off = iemNativeEmitTestIfGprNotEqualImmAndTbExit(pReNative, off, idxRegTmp, GCPhysRangePageWithOffset,
+                                                     kIemNativeExitReason_CheckBranchMiss);
 
     iemNativeRegFreeTmp(pReNative, idxRegTmp);
     return off;
@@ -1332,8 +1322,8 @@ iemNativeEmitBltLoadTlbForNewPage(PIEMRECOMPILERSTATE pReNative, uint32_t off, P
      * Now check the physical address of the page matches the expected one.
      */
     RTGCPHYS const GCPhysNewPage = iemTbGetRangePhysPageAddr(pTb, idxRange);
-    off = iemNativeEmitTestIfGprNotEqualImmAndJmpToNewLabel(pReNative, off, idxRegGCPhys, GCPhysNewPage,
-                                                            kIemNativeLabelType_ObsoleteTb);
+    off = iemNativeEmitTestIfGprNotEqualImmAndTbExit(pReNative, off, idxRegGCPhys, GCPhysNewPage,
+                                                     kIemNativeExitReason_ObsoleteTb);
 
     iemNativeRegFreeTmp(pReNative, idxRegGCPhys);
     return off;
@@ -1370,7 +1360,6 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     /*
      * Define labels and allocate the register for holding the GCPhys of the new page.
      */
-    uint32_t const idxLabelCheckBranchMiss   = iemNativeLabelCreate(pReNative, kIemNativeLabelType_CheckBranchMiss);
     uint16_t const uTlbSeqNo                 = pReNative->uTlbSeqNo++;
     RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(pTb, idxRange)
                                              | pTb->aRanges[idxRange].offPhysPage;
@@ -1545,7 +1534,7 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     /** @todo synch the threaded BODY_LOAD_TLB_AFTER_BRANCH version with this. */
     off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegTmp2, GCPhysRangePageWithOffset);
     off = iemNativeEmitCmpGprWithGpr(pReNative, off, idxRegTmp, idxRegTmp2);
-    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabelCheckBranchMiss);
+    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeExitReason_CheckBranchMiss);
     uint32_t const offFixedJumpToEnd = off;
     off = iemNativeEmitJmpToFixed(pReNative, off, off + 512 /* force rel32 */);
 
@@ -1557,7 +1546,8 @@ iemNativeEmitBltLoadTlbAfterBranch(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     iemNativeFixupFixedJump(pReNative, offFixedJumpToTlbLoad, off);
 
     /* Check that we haven't been here before. */
-    off = iemNativeEmitTestIfGprIsNotZeroAndJmpToLabel(pReNative, off, idxRegTmp2,  false /*f64Bit*/, idxLabelCheckBranchMiss);
+    off = iemNativeEmitTestIfGprIsNotZeroAndTbExit(pReNative, off, idxRegTmp2,  false /*f64Bit*/,
+                                                   kIemNativeExitReason_CheckBranchMiss);
 
     /* Jump to the TLB lookup code. */
     uint32_t const idxLabelTlbLookup = !TlbState.fSkip

@@ -331,9 +331,9 @@ iemNativeEmitFinishInstructionFlagsCheck(PIEMRECOMPILERSTATE pReNative, uint32_t
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
                                                               kIemNativeGstRegUse_ForUpdate, false /*fNoVolatileRegs*/,
                                                               true /*fSkipLivenessAssert*/);
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxEflReg,
-                                                             X86_EFL_TF | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK,
-                                                             iemNativeLabelCreate(pReNative, kIemNativeLabelType_ReturnWithFlags));
+    off = iemNativeEmitTestAnyBitsInGprAndTbExitIfAnySet(pReNative, off, idxEflReg,
+                                                         X86_EFL_TF | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK,
+                                                         kIemNativeExitReason_ReturnWithFlags);
     off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxEflReg, ~(uint32_t)(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW));
     off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, idxEflReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.eflags));
 
@@ -393,7 +393,7 @@ iemNativeEmitFinishInstructionWithStatus(PIEMRECOMPILERSTATE pReNative, uint32_t
         off = iemNativeEmitStoreImmToVCpuU64(pReNative, off, (uintptr_t)ppTbLookupFirst,
                                              RT_UOFFSETOF(VMCPU, iem.s.ppTbLookupEntryR3));
 
-        return iemNativeEmitJmpToNewLabel(pReNative, off, kIemNativeLabelType_ReturnBreak);
+        return iemNativeEmitTbExit(pReNative, off, kIemNativeExitReason_ReturnBreak);
 
 #else
         /* Load the index as argument #1 for the helper call at the given label. */
@@ -436,13 +436,13 @@ iemNativeEmitFinishInstructionWithStatus(PIEMRECOMPILERSTATE pReNative, uint32_t
                                                 (pReNative->fExec & IEMTB_F_KEY_MASK) | IEMTB_F_TYPE_NATIVE);
 
                 if (pReNative->idxLastCheckIrqCallNo != UINT32_MAX)
-                    return iemNativeEmitJmpToNewLabel(pReNative, off, kIemNativeLabelType_ReturnBreakViaLookup);
-                return iemNativeEmitJmpToNewLabel(pReNative, off, kIemNativeLabelType_ReturnBreakViaLookupWithIrq);
+                    return iemNativeEmitTbExit(pReNative, off, kIemNativeExitReason_ReturnBreakViaLookup);
+                return iemNativeEmitTbExit(pReNative, off, kIemNativeExitReason_ReturnBreakViaLookupWithIrq);
             }
         }
         if (pReNative->idxLastCheckIrqCallNo != UINT32_MAX)
-            return iemNativeEmitJmpToNewLabel(pReNative, off, kIemNativeLabelType_ReturnBreakViaLookupWithTlb);
-        return iemNativeEmitJmpToNewLabel(pReNative, off, kIemNativeLabelType_ReturnBreakViaLookupWithTlbAndIrq);
+            return iemNativeEmitTbExit(pReNative, off, kIemNativeExitReason_ReturnBreakViaLookupWithTlb);
+        return iemNativeEmitTbExit(pReNative, off, kIemNativeExitReason_ReturnBreakViaLookupWithTlbAndIrq);
 #endif
     }
     return off;
@@ -1953,14 +1953,13 @@ iemNativeEmitMaybeRaiseDeviceNotAvailable(PIEMRECOMPILERSTATE pReNative, uint32_
 
         /* Allocate a temporary CR0 register. */
         uint8_t const idxCr0Reg       = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0, kIemNativeGstRegUse_ReadOnly);
-        uint8_t const idxLabelRaiseNm = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseNm);
 
         /*
          * if (cr0 & (X86_CR0_EM | X86_CR0_TS) != 0)
          *     return raisexcpt();
          */
         /* Test and jump. */
-        off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxCr0Reg, X86_CR0_EM | X86_CR0_TS, idxLabelRaiseNm);
+        off = iemNativeEmitTestAnyBitsInGprAndTbExitIfAnySet(pReNative, off, idxCr0Reg, X86_CR0_EM | X86_CR0_TS, kIemNativeExitReason_RaiseNm);
 
         /* Free but don't flush the CR0 register. */
         iemNativeRegFreeTmp(pReNative, idxCr0Reg);
@@ -2018,7 +2017,7 @@ iemNativeEmitMaybeRaiseWaitDeviceNotAvailable(PIEMRECOMPILERSTATE pReNative, uin
          */
         off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxCr0Reg, X86_CR0_MP | X86_CR0_TS);
         /* Test and jump. */
-        off = iemNativeEmitTestIfGpr32EqualsImmAndJmpToNewLabel(pReNative, off, idxCr0Reg, X86_CR0_MP | X86_CR0_TS, kIemNativeLabelType_RaiseNm);
+        off = iemNativeEmitTestIfGpr32EqualsImmAndTbExit(pReNative, off, idxCr0Reg, X86_CR0_MP | X86_CR0_TS, kIemNativeExitReason_RaiseNm);
 
         /* Free the CR0 register. */
         iemNativeRegFreeTmp(pReNative, idxCr0Reg);
@@ -2063,14 +2062,13 @@ iemNativeEmitMaybeRaiseFpuException(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
     /* Allocate a temporary FSW register. */
     uint8_t const idxFpuFswReg    = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_FpuFsw, kIemNativeGstRegUse_ReadOnly);
-    uint8_t const idxLabelRaiseMf = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseMf);
 
     /*
      * if (FSW & X86_FSW_ES != 0)
      *     return raisexcpt();
      */
     /* Test and jump. */
-    off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxFpuFswReg, X86_FSW_ES_BIT, idxLabelRaiseMf);
+    off = iemNativeEmitTestBitInGprAndTbExitIfSet(pReNative, off, idxFpuFswReg, X86_FSW_ES_BIT, kIemNativeExitReason_RaiseMf);
 
     /* Free but don't flush the FSW register. */
     iemNativeRegFreeTmp(pReNative, idxFpuFswReg);
@@ -2113,7 +2111,6 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
 #endif
 
         /* Allocate a temporary CR0 and CR4 register. */
-        uint8_t const idxLabelRaiseSseRelated = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseSseRelated);
         uint8_t const idxCr0Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0);
         uint8_t const idxCr4Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4);
         uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
@@ -2135,7 +2132,7 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
         off = iemNativeEmitOrGpr32ByGprEx(pCodeBuf, off,    idxTmpReg, idxCr0Reg);
         off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off,   idxTmpReg, X86_CR0_EM | X86_CR0_TS | X86_CR4_OSFXSR);
         off = iemNativeEmitXorGpr32ByImmEx(pCodeBuf, off,   idxTmpReg, X86_CR4_OSFXSR);
-        off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelRaiseSseRelated, kIemNativeInstrCond_ne);
+        off = iemNativeEmitJccTbExitEx(pReNative, pCodeBuf, off, kIemNativeExitReason_RaiseSseRelated, kIemNativeInstrCond_ne);
 
 #elif defined(RT_ARCH_ARM64)
         /*
@@ -2152,8 +2149,8 @@ iemNativeEmitMaybeRaiseSseRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
         Assert(Armv8A64ConvertImmRImmS2Mask32(0, 0) == 1);
         pCodeBuf[off++] = Armv8A64MkInstrEorImm(idxTmpReg, idxTmpReg, 0, 0, false /*f64Bit*/);
         /* -> idxTmpReg[0]=~OSFXSR; idxTmpReg[2]=EM; idxTmpReg[3]=TS; (the rest is zero) */
-        off = iemNativeEmitTestIfGprIsNotZeroAndJmpToLabelEx(pReNative, pCodeBuf, off, idxTmpReg, false /*f64Bit*/,
-                                                             idxLabelRaiseSseRelated);
+        off = iemNativeEmitTestIfGprIsNotZeroAndTbExitEx(pReNative, pCodeBuf, off, idxTmpReg, false /*f64Bit*/,
+                                                         kIemNativeExitReason_RaiseSseRelated);
 
 #else
 # error "Port me!"
@@ -2209,7 +2206,6 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
 #endif
 
         /* Allocate a temporary CR0, CR4 and XCR0 register. */
-        uint8_t const idxLabelRaiseAvxRelated = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseAvxRelated);
         uint8_t const idxCr0Reg  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr0);
         uint8_t const idxCr4Reg  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Cr4);
         uint8_t const idxXcr0Reg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Xcr0);
@@ -2242,7 +2238,7 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
         /* -> idxTmpReg[0]=CR0.TS idxTmpReg[1]=CR4.OSXSAVE; idxTmpReg[2]=0; idxTmpReg[3]=SSE; idxTmpReg[4]=YMM; */
         off = iemNativeEmitXorGpr32ByImmEx(pCodeBuf, off,                idxTmpReg, ((XSAVE_C_YMM | XSAVE_C_SSE) << 2) | 2);
         /* -> idxTmpReg[0]=CR0.TS idxTmpReg[1]=~CR4.OSXSAVE; idxTmpReg[2]=0; idxTmpReg[3]=~SSE; idxTmpReg[4]=~YMM; */
-        off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelRaiseAvxRelated, kIemNativeInstrCond_ne);
+        off = iemNativeEmitJccTbExitEx(pReNative, pCodeBuf, off, kIemNativeExitReason_RaiseAvxRelated, kIemNativeInstrCond_ne);
 
 #elif defined(RT_ARCH_ARM64)
         /*  if (!(  (((xcr0 & (XSAVE_C_YMM | XSAVE_C_SSE)) | ((cr4 >> X86_CR4_OSFXSR_BIT) & 1)) ^ 7) << 1)
@@ -2260,8 +2256,8 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
         pCodeBuf[off++] = Armv8A64MkInstrLslImm(idxTmpReg, idxTmpReg, 1, false /*f64Bit*/);
         pCodeBuf[off++] = Armv8A64MkInstrBfxil(idxTmpReg, idxCr0Reg, X86_CR0_TS_BIT, 1, false /*f64Bit*/);
         /* -> idxTmpReg[0]=CR0.TS; idxTmpReg[1]=~CR4.OSXSAVE; idxTmpReg[2]=~SSE; idxTmpReg[3]=~YMM; (the rest is zero) */
-        off = iemNativeEmitTestIfGprIsNotZeroAndJmpToLabelEx(pReNative, pCodeBuf, off, idxTmpReg, false /*f64Bit*/,
-                                                             idxLabelRaiseAvxRelated);
+        off = iemNativeEmitTestIfGprIsNotZeroAndTbExitEx(pReNative, pCodeBuf, off, idxTmpReg, false /*f64Bit*/,
+                                                         kIemNativeExitReason_RaiseAvxRelated);
 
 #else
 # error "Port me!"
@@ -2302,7 +2298,6 @@ iemNativeEmitSimdMaybeRaiseSseAvxSimdFpOrUdXcpt(PIEMRECOMPILERSTATE pReNative, u
     RT_NOREF(idxInstr);
 #endif
 
-    uint8_t const idxLabelRaiseSseAvxFpRelated = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseSseAvxFpRelated);
     uint8_t const idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr, kIemNativeGstRegUse_ReadOnly);
     uint8_t const idxRegTmp   = iemNativeRegAllocTmp(pReNative, &off);
 
@@ -2316,8 +2311,8 @@ iemNativeEmitSimdMaybeRaiseSseAvxSimdFpOrUdXcpt(PIEMRECOMPILERSTATE pReNative, u
     off = iemNativeEmitInvBitsGpr(pReNative, off, idxRegTmp, idxRegTmp, false /*f64Bit*/);
     /* tmp &= mxcsr */
     off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxRegTmp, idxRegMxCsr);
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_FLAGS,
-                                                             idxLabelRaiseSseAvxFpRelated);
+    off = iemNativeEmitTestAnyBitsInGprAndTbExitIfAnySet(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_FLAGS,
+                                                         kIemNativeExitReason_RaiseSseAvxFpRelated);
 
     /* Free but don't flush the MXCSR register. */
     iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
@@ -2353,12 +2348,8 @@ iemNativeEmitRaiseDivideError(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
     RT_NOREF(idxInstr);
 #endif
 
-    uint8_t const idxLabelRaiseDe = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseDe);
-
     /* raise \#DE exception unconditionally. */
-    off = iemNativeEmitJmpToLabel(pReNative, off, idxLabelRaiseDe);
-
-    return off;
+    return iemNativeEmitTbExit(pReNative, off, kIemNativeExitReason_RaiseDe);
 }
 
 
@@ -2392,10 +2383,10 @@ iemNativeEmitRaiseGp0IfEffAddrUnaligned(PIEMRECOMPILERSTATE pReNative, uint32_t 
     RT_NOREF(idxInstr);
 #endif
 
-    uint8_t const idxLabelRaiseGp0 = iemNativeLabelCreate(pReNative, kIemNativeLabelType_RaiseGp0);
-    uint8_t const idxVarReg        = iemNativeVarRegisterAcquire(pReNative, idxVarEffAddr, &off);
+    uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVarEffAddr, &off);
 
-    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxVarReg, cbAlign - 1, idxLabelRaiseGp0);
+    off = iemNativeEmitTestAnyBitsInGprAndTbExitIfAnySet(pReNative, off, idxVarReg, cbAlign - 1,
+                                                         kIemNativeExitReason_RaiseGp0);
 
     iemNativeVarRegisterRelease(pReNative, idxVarEffAddr);
     return off;

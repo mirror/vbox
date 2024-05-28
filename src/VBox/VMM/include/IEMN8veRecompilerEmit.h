@@ -7789,7 +7789,250 @@ iemNativeEmitLoadArgGregWithVarAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 }
 
 
+/*********************************************************************************************************************************
+*   TB exiting helpers.                                                                                                          *
+*********************************************************************************************************************************/
+
+
+/**
+ * Emits a Jcc rel32 / B.cc imm19 to the epilog.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitJccTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                       IEMNATIVEEXITREASON enmExitReason, IEMNATIVEINSTRCOND enmCond)
+{
+    return iemNativeEmitJccToNewLabel(pReNative, off, (IEMNATIVELABELTYPE)enmExitReason, 0 /*uData*/, enmCond);
+}
+
+
+/**
+ * Emits a JNZ/JNE rel32 / B.NE imm19 to the TB exit routine with the given reason.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJnzTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                   IEMNATIVEEXITREASON enmExitReason)
+{
+#ifdef RT_ARCH_AMD64
+    return iemNativeEmitJccTbExit(pReNative, off, enmExitReason, kIemNativeInstrCond_ne);
+#elif defined(RT_ARCH_ARM64)
+    return iemNativeEmitJccTbExit(pReNative, off, enmExitReason, kArmv8InstrCond_Ne);
+#else
+# error "Port me!"
+#endif
+}
+
+
+/**
+ * Emits a JZ/JE rel32 / B.EQ imm19 to the TB exit routine with the given reason.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJzTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                   IEMNATIVEEXITREASON enmExitReason)
+{
+#ifdef RT_ARCH_AMD64
+    return iemNativeEmitJccTbExit(pReNative, off, enmExitReason, kIemNativeInstrCond_e);
+#elif defined(RT_ARCH_ARM64)
+    return iemNativeEmitJccTbExit(pReNative, off, enmExitReason, kArmv8InstrCond_Eq);
+#else
+# error "Port me!"
+#endif
+}
+
+
+/**
+ * Emits a JA/JNBE rel32 / B.HI imm19 to the TB exit.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJaTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                  IEMNATIVEEXITREASON enmExitReason)
+{
+#ifdef RT_ARCH_AMD64
+    return iemNativeEmitJccTbExit(pReNative, off, enmExitReason, kIemNativeInstrCond_nbe);
+#elif defined(RT_ARCH_ARM64)
+    return iemNativeEmitJccTbExit(pReNative, off, enmExitReason, kArmv8InstrCond_Hi);
+#else
+# error "Port me!"
+#endif
+}
+
+
+/**
+ * Emits a JL/JNGE rel32 / B.LT imm19 to the TB exit with the given reason.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJlTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                  IEMNATIVEEXITREASON enmExitReason)
+{
+#ifdef RT_ARCH_AMD64
+    return iemNativeEmitJccTbExit(pReNative, off, enmExitReason, kIemNativeInstrCond_l);
+#elif defined(RT_ARCH_ARM64)
+    return iemNativeEmitJccTbExit(pReNative, off, enmExitReason, kArmv8InstrCond_Lt);
+#else
+# error "Port me!"
+#endif
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEEXITREASON enmExitReason)
+{
+    return iemNativeEmitJmpToNewLabel(pReNative, off, (IEMNATIVELABELTYPE)enmExitReason);
+}
+
+
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitTbExitEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBuf, uint32_t off, IEMNATIVEEXITREASON enmExitReason)
+{
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, (IEMNATIVELABELTYPE)enmExitReason, UINT32_MAX /*offWhere*/, 0 /*uData*/);
+    return iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabel);
+}
+
+
+/**
+ * Emits a jump to the TB exit with @a enmExitReason on the condition _any_ of the bits in @a fBits
+ * are set in @a iGprSrc.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitTestAnyBitsInGprAndTbExitIfAnySet(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                               uint8_t iGprSrc, uint64_t fBits, IEMNATIVEEXITREASON enmExitReason)
+{
+    Assert(fBits); Assert(!RT_IS_POWER_OF_TWO(fBits));
+
+    off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, iGprSrc, fBits);
+    return iemNativeEmitJnzTbExit(pReNative, off, enmExitReason);
+}
+
+
+/**
+ * Emits a jump to @a idxLabel on the condition _none_ of the bits in @a fBits
+ * are set in @a iGprSrc.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitTestAnyBitsInGprAndTbExitIfNoneSet(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                uint8_t iGprSrc, uint64_t fBits, IEMNATIVEEXITREASON enmExitReason)
+{
+    Assert(fBits); Assert(!RT_IS_POWER_OF_TWO(fBits));
+
+    off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, iGprSrc, fBits);
+    return iemNativeEmitJzTbExit(pReNative, off, enmExitReason);
+}
+
+
+/**
+ * Emits code that exits the TB with the given reason if @a iGprLeft and @a iGprRight
+ * differs.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitTestIfGprNotEqualGprAndTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                           uint8_t iGprLeft, uint8_t iGprRight, IEMNATIVEEXITREASON enmExitReason)
+{
+    off = iemNativeEmitCmpGprWithGpr(pReNative, off, iGprLeft, iGprRight);
+    off = iemNativeEmitJnzTbExit(pReNative, off, enmExitReason);
+    return off;
+}
+
+
+/**
+ * Emits code that jumps to the given label if 32-bit @a iGprSrc differs from
+ * @a uImm.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitTestIfGpr32NotEqualImmAndTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                         uint8_t iGprSrc, uint32_t uImm, IEMNATIVEEXITREASON enmExitReason)
+{
+    off = iemNativeEmitCmpGpr32WithImm(pReNative, off, iGprSrc, uImm);
+    off = iemNativeEmitJnzTbExit(pReNative, off, enmExitReason);
+    return off;
+}
+
+
+/**
+ * Emits code that exits the current TB if @a iGprSrc differs from @a uImm.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitTestIfGprNotEqualImmAndTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                           uint8_t iGprSrc, uint64_t uImm, IEMNATIVEEXITREASON enmExitReason)
+{
+    off = iemNativeEmitCmpGprWithImm(pReNative, off, iGprSrc, uImm);
+    off = iemNativeEmitJnzTbExit(pReNative, off, enmExitReason);
+    return off;
+}
+
+
+/**
+ * Emits code that exits the current TB with the given reason if 32-bit @a iGprSrc equals @a uImm.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitTestIfGpr32EqualsImmAndTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                       uint8_t iGprSrc, uint32_t uImm, IEMNATIVEEXITREASON enmExitReason)
+{
+    off = iemNativeEmitCmpGpr32WithImm(pReNative, off, iGprSrc, uImm);
+    off = iemNativeEmitJzTbExit(pReNative, off, enmExitReason);
+    return off;
+}
+
+
+/**
+ * Emits code to exit the current TB with the reason @a enmExitReason on the condition that bit @a iBitNo _is_ _set_ in
+ * @a iGprSrc.
+ *
+ * @note On ARM64 the range is only +/-8191 instructions.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitTestBitInGprAndTbExitIfSet(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                    uint8_t iGprSrc, uint8_t iBitNo, IEMNATIVEEXITREASON enmExitReason)
+{
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, (IEMNATIVELABELTYPE)enmExitReason, UINT32_MAX /*offWhere*/, 0 /*uData*/);
+    return iemNativeEmitTestBitInGprAndJmpToLabelIfCc(pReNative, off, iGprSrc, iBitNo, idxLabel, true /*fJmpIfSet*/);
+}
+
+
+/**
+ * Emits code that exits the current TB with @a enmExitReason if @a iGprSrc is not zero.
+ *
+ * The operand size is given by @a f64Bit.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitTestIfGprIsNotZeroAndTbExitEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBuf, uint32_t off,
+                                           uint8_t iGprSrc, bool f64Bit, IEMNATIVEEXITREASON enmExitReason)
+{
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, (IEMNATIVELABELTYPE)enmExitReason, UINT32_MAX /*offWhere*/, 0 /*uData*/);
+    return iemNativeEmitTestIfGprIsZeroOrNotZeroAndJmpToLabelEx(pReNative, pCodeBuf, off, iGprSrc,
+                                                                f64Bit, true /*fJmpIfNotZero*/, idxLabel);
+}
+
+
+/**
+ * Emits code to exit the current TB on the given condition.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitJccTbExitEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBuf, uint32_t off, IEMNATIVEEXITREASON enmExitReason, IEMNATIVEINSTRCOND enmCond)
+{
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, (IEMNATIVELABELTYPE)enmExitReason, UINT32_MAX /*offWhere*/, 0 /*uData*/);
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabel, enmCond);
+#elif defined(RT_ARCH_ARM64)
+    off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabel, enmCond);
+#else
+# error "Port me!"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits code to exit the current TB with the given reason @a enmExitReason if @a iGprSrc is not zero.
+ *
+ * The operand size is given by @a f64Bit.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitTestIfGprIsNotZeroAndTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                     uint8_t iGprSrc, bool f64Bit, IEMNATIVEEXITREASON enmExitReason)
+{
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, (IEMNATIVELABELTYPE)enmExitReason, UINT32_MAX /*offWhere*/, 0 /*uData*/);
+    return iemNativeEmitTestIfGprIsZeroOrNotZeroAndJmpToLabel(pReNative, off, iGprSrc, f64Bit, true /*fJmpIfNotZero*/, idxLabel);
+}
+
+
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
+/*********************************************************************************************************************************
+*   SIMD helpers.                                                                                                                *
+*********************************************************************************************************************************/
+
+
 /**
  * Emits code to load the variable address into an argument GPR.
  *
