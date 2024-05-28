@@ -6552,6 +6552,13 @@ static void dxDbgLogVertexElement(DXGI_FORMAT Format, void const *pvElementData)
                  pValues[0], pValues[1], pValues[2], pValues[3]));
             break;
         }
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+        {
+            uint8_t const *pValues = (uint8_t const *)pvElementData;
+            Log8(("{ /*8unorm*/  %u, %u, %u, %u },",
+                 pValues[0], pValues[1], pValues[2], pValues[3]));
+            break;
+        }
         case DXGI_FORMAT_R8G8B8A8_UNORM:
         {
             uint8_t const *pValues = (uint8_t const *)pvElementData;
