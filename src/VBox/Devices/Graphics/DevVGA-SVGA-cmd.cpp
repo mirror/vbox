@@ -1549,6 +1549,8 @@ static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE con
         fwrite(&hdrV4, 1, sizeof(hdrV4), f);
     }
     else
+#else
+    RT_NOREF(cBits);
 #endif
     {
         BMPFILEHDR fileHdr;
