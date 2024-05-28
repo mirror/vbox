@@ -3042,7 +3042,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                 break;
             }
 
-            STAM_REL_PROFILE_START(&pDisplay->Stats.Recording.profileRecording, b);
+            STAM_PROFILE_START(&pDisplay->Stats.Recording.profileRecording, b);
 
             uint64_t tsNowMs = RTTimeProgramMilliTS();
             for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
@@ -3053,7 +3053,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                 if (!pCtx->NeedsUpdate(uScreenId, tsNowMs))
                     continue;
 
-                STAM_REL_PROFILE_START(&pDisplay->Stats.Monitor[uScreenId].Recording.profileRecording, c);
+                STAM_PROFILE_START(&pDisplay->Stats.Monitor[uScreenId].Recording.profileRecording, c);
 
                 DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
                 if (!pFBInfo->fDisabled)
@@ -3096,10 +3096,10 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                         break;
                 }
 
-                STAM_REL_PROFILE_STOP(&pDisplay->Stats.Monitor[uScreenId].Recording.profileRecording, c);
+                STAM_PROFILE_STOP(&pDisplay->Stats.Monitor[uScreenId].Recording.profileRecording, c);
             }
 
-            STAM_REL_PROFILE_STOP(&pDisplay->Stats.Recording.profileRecording, b);
+            STAM_PROFILE_STOP(&pDisplay->Stats.Recording.profileRecording, b);
 
         } while (0);
     }
