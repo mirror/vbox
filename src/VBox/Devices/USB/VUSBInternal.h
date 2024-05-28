@@ -421,6 +421,8 @@ typedef struct VUSBROOTHUB
 
     /** Flag whether a frame is currently being processed. */
     volatile bool              fFrameProcessing;
+    /** Flag whether we are in the middle of saving the VM state. */
+    volatile bool              fSavingState;
 
 #if HC_ARCH_BITS == 32
     uint32_t                   Alignment1;
