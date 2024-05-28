@@ -431,7 +431,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	UefiMicrosoftKek=MicCorKEKCA2011_2011-06-24.crt \
  	UefiMicrosoftKek2023=microsoft_corporation_kek_2k_ca_2023.crt \
  	UefiMicrosoft3rdCa=MicCorUEFCA2011_2011-06-27.crt \
- 	UefiMicrosoft3rdCa2023=microsoft_uefi_ca_2023.crt\
+ 	UefiMicrosoft3rdCa2023=microsoft_uefi_ca_2023.crt \
  	UefiMicrosoftWinCa=MicWinProPCA2011_2011-10-19.crt \
  	UefiMicrosoftWinCa2023=windows_uefi_ca_2023.crt \
  	UefiOracleDefPk=OrclUefiDefPk2021_2021-09-29.crt
