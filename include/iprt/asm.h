@@ -3554,9 +3554,9 @@ DECLINLINE(int64_t) ASMAtomicUoReadS64(volatile int64_t RT_FAR *pi64) RT_NOTHROW
  */
 DECLINLINE(uint128_t) ASMAtomicReadU128(volatile uint128_t RT_FAR *pu128) RT_NOTHROW_DEF
 {
+    RTUINT128U u128Ret;
     Assert(!((uintptr_t)pu128 & 15));
 # if defined(__GNUC__) && defined(RT_ARCH_ARM64)
-    RTUINT128U u128Ret;
     __asm__ __volatile__("Lstart_ASMAtomicReadU128_%=:\n\t"
                          RTASM_ARM_DMB_SY
                          "ldp     %[uRetLo], %[uRetHi], %[pMem]\n\t"
@@ -3567,9 +3567,8 @@ DECLINLINE(uint128_t) ASMAtomicReadU128(volatile uint128_t RT_FAR *pu128) RT_NOT
                          : );
     return u128Ret.u;
 # else
-    uint128_t u128Ret;
-    ASMAtomicCmpXchgU128v2(pu128, 0, 0, 0, 0, &u128Ret);
-    return u128Ret;
+    ASMAtomicCmpXchgU128v2(pu128, 0, 0, 0, 0, &u128Ret.u);
+    return u128Ret.u;
 # endif
 }
 
@@ -3585,8 +3584,8 @@ DECLINLINE(uint128_t) ASMAtomicReadU128(volatile uint128_t RT_FAR *pu128) RT_NOT
  */
 DECLINLINE(RTUINT128U) ASMAtomicReadU128U(volatile RTUINT128U RT_FAR *pu128) RT_NOTHROW_DEF
 {
-    Assert(!((uintptr_t)pu128 & 15));
     RTUINT128U u128Ret;
+    Assert(!((uintptr_t)pu128 & 15));
 # if defined(__GNUC__) && defined(RT_ARCH_ARM64)
     __asm__ __volatile__("Lstart_ASMAtomicReadU128U_%=:\n\t"
                          RTASM_ARM_DMB_SY
@@ -4232,6 +4231,9 @@ DECLINLINE(void) ASMAtomicUoWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64)
  */
 DECLINLINE(void) ASMAtomicWriteU128v2(volatile uint128_t *pu128, const uint64_t u64Hi, const uint64_t u64Lo) RT_NOTHROW_DEF
 {
+# if !defined(__GNUC__) || !defined(RT_ARCH_ARM64)
+    RTUINT128U u128Old;
+# endif
     Assert(!((uintptr_t)pu128 & 15));
 # if defined(__GNUC__) && defined(RT_ARCH_ARM64)
     __asm__ __volatile__("Lstart_ASMAtomicWriteU128v2_%=:\n\t"
@@ -4249,7 +4251,6 @@ DECLINLINE(void) ASMAtomicWriteU128v2(volatile uint128_t *pu128, const uint64_t 
                          : );
 
 # else
-    RTUINT128U u128Old;
 #  ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
     u128Old.u = *pu128;
 #  else
@@ -4273,6 +4274,9 @@ DECLINLINE(void) ASMAtomicWriteU128v2(volatile uint128_t *pu128, const uint64_t 
  */
 DECLINLINE(void) ASMAtomicUoWriteU128v2(volatile uint128_t *pu128, const uint64_t u64Hi, const uint64_t u64Lo) RT_NOTHROW_DEF
 {
+# if !defined(__GNUC__) || !defined(RT_ARCH_ARM64)
+    RTUINT128U u128Old;
+# endif
     Assert(!((uintptr_t)pu128 & 15));
 # if defined(__GNUC__) && defined(RT_ARCH_ARM64)
     __asm__ __volatile__("Lstart_ASMAtomicUoWriteU128v2_%=:\n\t"
@@ -4283,7 +4287,6 @@ DECLINLINE(void) ASMAtomicUoWriteU128v2(volatile uint128_t *pu128, const uint64_
                          : );
 
 # else
-    RTUINT128U u128Old;
 #  ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
     u128Old.u = *pu128;
 #  else
