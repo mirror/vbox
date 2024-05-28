@@ -6136,13 +6136,9 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
                         if (   RT_SUCCESS(vrc)
                             && mRecording.mCtx.IsReady()) /* Any video recording (audio and/or video) feature enabled? */
                         {
-                            vrc = pDisplay->i_recordingInvalidate();
-                            if (RT_SUCCESS(vrc))
-                            {
-                                vrc = i_recordingStart(pAutoLock);
-                                if (RT_FAILURE(vrc))
-                                    setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Recording start failed (%Rrc) -- please consult log file for details"), vrc);
-                            }
+                            vrc = i_recordingStart(pAutoLock);
+                            if (RT_FAILURE(vrc))
+                                setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Recording start failed (%Rrc) -- please consult log file for details"), vrc);
                         }
                     }
                     else
@@ -7642,10 +7638,7 @@ int Console::i_recordingStart(util::AutoWriteLock *pAutoLock /* = NULL */)
 
     int vrc = mRecording.mCtx.Start();
     if (RT_SUCCESS(vrc))
-    {
-        for (unsigned uScreen = 0; uScreen < mRecording.mCtx.GetStreamCount(); uScreen++)
-            mDisplay->i_recordingScreenChanged(uScreen);
-    }
+        vrc = mDisplay->i_recordingStart();
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -7666,11 +7659,7 @@ int Console::i_recordingStop(util::AutoWriteLock *)
 
     int vrc = mRecording.mCtx.Stop();
     if (RT_SUCCESS(vrc))
-    {
-        const size_t cStreams = mRecording.mCtx.GetStreamCount();
-        for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
-            mDisplay->i_recordingScreenChanged(uScreen);
-    }
+        vrc = mDisplay->i_recordingStop();
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;

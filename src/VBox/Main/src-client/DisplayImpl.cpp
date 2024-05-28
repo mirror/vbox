@@ -1594,7 +1594,7 @@ HRESULT Display::attachFramebuffer(ULONG aScreenId, const ComPtr<IFramebuffer> &
     }
 
     Console::SafeVMPtrQuiet ptrVM(mParent);
-    if (ptrVM.isOk())
+    if (ptrVM.isOk()) /** @todo r=andy This apparently *never* is true at this point? */
         ptrVM.vtable()->pfnVMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
                                               3, this, aScreenId, false);
 
@@ -2095,14 +2095,65 @@ HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
 
 #ifdef VBOX_WITH_RECORDING
 /**
+ * Starts video (+ audio) recording.
+ *
+ * @returns VBox status code.
+ */
+int Display::i_recordingStart(void)
+{
+#ifdef VBOX_WITH_STATISTICS
+    Console::SafeVMPtrQuiet ptrVM(mParent);
+    if (ptrVM.isOk())
+    {
+        ptrVM.vtable()->pfnSTAMR3RegisterFU(ptrVM.rawUVM(), &Stats.profileDisplayRefreshCallback,
+                                                STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                                                "Profiling display refresh.", "/Main/Display/ProfRefresh");
+        ptrVM.vtable()->pfnSTAMR3RegisterFU(ptrVM.rawUVM(), &Stats.Recording.profileRecording,
+                                            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                                            "Profiling recording time for all monitors.", "/Main/Display/ProfRecording");
+
+        for (unsigned i = 0; i < mcMonitors; i++)
+            ptrVM.vtable()->pfnSTAMR3RegisterFU(ptrVM.rawUVM(), &Stats.Monitor[i].Recording.profileRecording,
+                                                STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                                                "Profiling recording time for this monitor.", "/Main/Display/Monitor%RU32/ProfRecording", i);
+    }
+#endif
+
+    return i_recordingInvalidate(true /* fForce */);
+}
+
+/**
+ * Stops video (+ audio) recording.
+ *
+ * @returns VBox status code.
+ */
+int Display::i_recordingStop(void)
+{
+#ifdef VBOX_WITH_STATISTICS
+    Console::SafeVMPtrQuiet ptrVM(mParent);
+    if (ptrVM.isOk())
+    {
+        ptrVM.vtable()->pfnSTAMR3DeregisterF(ptrVM.rawUVM(), "/Main/Display/ProfRefresh");
+        ptrVM.vtable()->pfnSTAMR3DeregisterF(ptrVM.rawUVM(), "/Main/Display/ProfRecording");
+
+        for (unsigned i = 0; i < mcMonitors; i++)
+            ptrVM.vtable()->pfnSTAMR3DeregisterF(ptrVM.rawUVM(), "/Main/Display/Monitor%RU32/ProfRecording", i);
+    }
+#endif
+
+    return i_recordingInvalidate(true /* fForce */);
+}
+
+/**
  * Invalidates the recording configuration.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
+ * @param   fForce              Whether to force invalidation or not. Default is @c false.
  */
-int Display::i_recordingInvalidate(void)
+int Display::i_recordingInvalidate(bool fForce /* = false */)
 {
     RecordingContext *pCtx = mParent->i_recordingGetContext();
-    if (!pCtx || !pCtx->IsStarted())
+    if (!pCtx)
         return VINF_SUCCESS;
 
     /*
@@ -2110,10 +2161,10 @@ int Display::i_recordingInvalidate(void)
      */
     for (unsigned uScreen = 0; uScreen < mcMonitors; uScreen++)
     {
-        RecordingStream *pRecordingStream = pCtx->GetStream(uScreen);
+        const RecordingStream *pRecordingStream = pCtx->GetStream(uScreen);
 
-        const bool fStreamEnabled = pRecordingStream->IsReady();
-              bool fChanged       = maRecordingEnabled[uScreen] != fStreamEnabled;
+        bool const fStreamEnabled = pRecordingStream->IsReady();
+        bool const fChanged       = (maRecordingEnabled[uScreen] != fStreamEnabled) || fForce;
 
         maRecordingEnabled[uScreen] = fStreamEnabled;
 
@@ -2124,6 +2175,11 @@ int Display::i_recordingInvalidate(void)
     return VINF_SUCCESS;
 }
 
+/**
+ * Called when the recording state of a screen got changed.
+ *
+ * @param   uScreenId           ID of screen for which the recording state got changed.
+ */
 void Display::i_recordingScreenChanged(unsigned uScreenId)
 {
     RecordingContext *pCtx = mParent->i_recordingGetContext();
@@ -2941,10 +2997,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-#ifdef DEBUG_sunlover_2
-    LogFlowFunc(("pDrv->pDisplay->mfVideoAccelEnabled = %d\n",
-                 pDrv->pDisplay->mfVideoAccelEnabled));
-#endif /* DEBUG_sunlover_2 */
+    STAM_PROFILE_START(&pDisplay->Stats.profileDisplayRefreshCallback, a);
 
     Display *pDisplay = pDrv->pDisplay;
     unsigned uScreenId;
@@ -2989,6 +3042,8 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                 break;
             }
 
+            STAM_REL_PROFILE_START(&pDisplay->Stats.Recording.profileRecording, b);
+
             uint64_t tsNowMs = RTTimeProgramMilliTS();
             for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
             {
@@ -2997,6 +3052,8 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
 
                 if (!pCtx->NeedsUpdate(uScreenId, tsNowMs))
                     continue;
+
+                STAM_REL_PROFILE_START(&pDisplay->Stats.Monitor[uScreenId].Recording.profileRecording, c);
 
                 DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
                 if (!pFBInfo->fDisabled)
@@ -3038,14 +3095,17 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                     if (vrc == VINF_TRY_AGAIN)
                         break;
                 }
+
+                STAM_REL_PROFILE_STOP(&pDisplay->Stats.Monitor[uScreenId].Recording.profileRecording, c);
             }
+
+            STAM_REL_PROFILE_STOP(&pDisplay->Stats.Recording.profileRecording, b);
+
         } while (0);
     }
 #endif /* VBOX_WITH_RECORDING */
 
-#ifdef DEBUG_sunlover_2
-    LogFlowFunc(("leave\n"));
-#endif /* DEBUG_sunlover_2 */
+    STAM_PROFILE_STOP(&pDisplay->Stats.profileDisplayRefreshCallback, a);
 }
 
 /**

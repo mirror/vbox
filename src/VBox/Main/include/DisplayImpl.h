@@ -189,7 +189,9 @@ public:
     void i_UpdateDeviceCursorCapabilities(void);
 
 #ifdef VBOX_WITH_RECORDING
-    int  i_recordingInvalidate(void);
+    int  i_recordingStart(void);
+    int  i_recordingStop(void);
+    int  i_recordingInvalidate(bool fForce = false);
     void i_recordingScreenChanged(unsigned uScreenId);
 #endif
 
@@ -417,6 +419,30 @@ private:
     RTCRITSECT           mVideoRecLock;
     /** Array which defines which screens are being enabled for recording. */
     bool                 maRecordingEnabled[SchemaDefs::MaxGuestMonitors];
+#endif
+
+#ifdef VBOX_WITH_STATISTICS
+    struct
+    {
+        /** Profiling Display::i_displayRefreshCallback(). */
+        STAMPROFILE profileDisplayRefreshCallback;
+        /** Statistics for monitor N. */
+        struct
+        {
+            /** Statistics for recording of monitor N. */
+            struct
+            {
+                /** Profiling recording code of monitor N. */
+                STAMPROFILE profileRecording;
+            } Recording;
+        } Monitor[SchemaDefs::MaxGuestMonitors];
+        /** Statistics for audio/video recording. */
+        struct
+        {
+            /** Profiling recording code of all active monitors. */
+            STAMPROFILE profileRecording;
+        } Recording;
+    } Stats;
 #endif
 
 public:
