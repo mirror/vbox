@@ -6661,10 +6661,14 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, X86_EFL_STATUS_BITS);
 
+#ifdef IEMNATIVE_WITH_RECOMPILER_EPILOGUE_SINGLETON
+    //off = iemNativeEmitBrk(pReNative, off, 0x7777);
+    off = iemNativeEmitJmpImm(pReNative, off, (uintptr_t)iemNativeTbEpilog);
+#else
     /*
      * Restore registers and return.
      */
-#ifdef RT_ARCH_AMD64
+# ifdef RT_ARCH_AMD64
     uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 20);
 
     /* Reposition esp at the r15 restore point. */
@@ -6682,16 +6686,16 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     pbCodeBuf[off++] = 0x58 + X86_GREG_x13 - 8;
     pbCodeBuf[off++] = X86_OP_REX_B;            /* pop r12 */
     pbCodeBuf[off++] = 0x58 + X86_GREG_x12 - 8;
-# ifdef RT_OS_WINDOWS
+#  ifdef RT_OS_WINDOWS
     pbCodeBuf[off++] = 0x58 + X86_GREG_xDI;     /* pop rdi */
     pbCodeBuf[off++] = 0x58 + X86_GREG_xSI;     /* pop rsi */
-# endif
+#  endif
     pbCodeBuf[off++] = 0x58 + X86_GREG_xBX;     /* pop rbx */
     pbCodeBuf[off++] = 0xc9;                    /* leave */
     pbCodeBuf[off++] = 0xc3;                    /* ret */
     pbCodeBuf[off++] = 0xcc;                    /* int3 poison */
 
-#elif RT_ARCH_ARM64
+# elif RT_ARCH_ARM64
     uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
 
     /* ldp x19, x20, [sp #IEMNATIVE_FRAME_VAR_SIZE]! ; Unallocate the variable space and restore x19+x20. */
@@ -6718,17 +6722,18 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                      IEMNATIVE_FRAME_SAVE_REG_SIZE);
 
     /* retab / ret */
-# ifdef RT_OS_DARWIN /** @todo See todo on pacibsp in the prolog. */
+#  ifdef RT_OS_DARWIN /** @todo See todo on pacibsp in the prolog. */
     if (1)
         pu32CodeBuf[off++] = ARMV8_A64_INSTR_RETAB;
     else
-# endif
+#  endif
         pu32CodeBuf[off++] = ARMV8_A64_INSTR_RET;
 
-#else
-# error "port me"
-#endif
+# else
+#  error "port me"
+# endif
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+#endif /* IEMNATIVE_WITH_RECOMPILER_EPILOGUE_SINGLETON */
 
     /* HACK: For IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK. */
     pReNative->Core.bmHstRegs &= ~RT_BIT_32(IEMNATIVE_CALL_RET_GREG);

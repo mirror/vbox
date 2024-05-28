@@ -81,6 +81,11 @@
 # define IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
 #endif
 
+/** @def IEMNATIVE_WITH_RECOMPILER_EPILOGUE_SINGLETON
+ * Enables having only a single epilogue for native TBs. */
+#if defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
+# define IEMNATIVE_WITH_RECOMPILER_EPILOGUE_SINGLETON
+#endif
 
 /** @name Stack Frame Layout
  *
@@ -2577,6 +2582,12 @@ extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeTbEntry, (PVMCPUCC pVCpu, uintp
 # elif defined(RT_ARCH_ARM64)
 extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeTbEntry, (PVMCPUCC pVCpu, PCPUMCTX pCpumCtx, uintptr_t pfnTbBody));
 # endif
+#endif
+
+#ifdef IEMNATIVE_WITH_RECOMPILER_EPILOGUE_SINGLETON
+/** The common epilog jumped to from a TB. 
+ * @note This is not a callable function! */
+extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeTbEpilog, (void));
 #endif
 
 #endif /* !RT_IN_ASSEMBLER - ASM-NOINC-END */

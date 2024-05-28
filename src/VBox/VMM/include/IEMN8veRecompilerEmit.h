@@ -7662,6 +7662,16 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJmpViaGpr(PIEMRECOMPILERSTATE pReNative
 }
 
 
+/**
+ * Emits an indirect jump to an immediate 64-bit address (uses the temporary GPR).
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitJmpImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t uPfn)
+{
+    off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, uPfn);
+    return iemNativeEmitJmpViaGpr(pReNative, off, IEMNATIVE_REG_FIXED_TMP0);
+}
+
+
 /*********************************************************************************************************************************
 *   Calls.                                                                                                                       *
 *********************************************************************************************************************************/
