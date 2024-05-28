@@ -1197,6 +1197,28 @@ RT_C_DECLS_END
         } \
     } while (0)
 
+/** @def AssertLogRelReturnStmt
+ * Assert that an expression is true, execute \a stmt & return \a rc if it
+ * isn't. Strict builds will hit a breakpoint, non-strict will only do LogRel.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   stmt    Statement to execute before break in case of a failed
+ *                  assertion.
+ * @param   rc      What is to be presented to return.
+ */
+#define AssertLogRelReturnStmt(expr, stmt, rc) \
+    do { \
+        if (RT_LIKELY(!!(expr))) \
+        { /* likely */ } \
+        else \
+        { \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
+            RTAssertPanic(); \
+            stmt; \
+            return (rc); \
+        } \
+    } while (0)
+
 /** @def AssertLogRelReturnVoid
  * Assert that an expression is true, return void if it isn't.
  * Strict builds will hit a breakpoint, non-strict will only do LogRel.
@@ -1211,6 +1233,27 @@ RT_C_DECLS_END
         { \
             RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertPanic(); \
+            return; \
+        } \
+    } while (0)
+
+/** @def AssertLogRelReturnVoidStmt
+ * Assert that an expression is true, execute \a stmt & return void if it isn't.
+ * Strict builds will hit a breakpoint, non-strict will only do LogRel.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   stmt    Statement to execute before break in case of a failed
+ *                  assertion.
+ */
+#define AssertLogRelReturnVoidStmt(expr, stmt) \
+    do { \
+        if (RT_LIKELY(!!(expr))) \
+        { /* likely */ } \
+        else \
+        { \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
+            RTAssertPanic(); \
+            stmt; \
             return; \
         } \
     } while (0)
