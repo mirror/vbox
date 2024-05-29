@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2020-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2020-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -37,7 +37,6 @@
 
 #include <iprt/asm-mem.h>
 #include <iprt/assert.h>
-#include <iprt/avl.h>
 #include <iprt/errcore.h>
 #include <iprt/mem.h>
 
@@ -65,11 +64,14 @@
 # define VBOX_D3D11_LIBRARY_NAME "VBoxDxVk"
 #endif
 
-/* One ID3D11Device object is used for all VMSVGA contexts. */
-/** @todo This should be the only option because VGPU freely uses surfaces from different VMSVGA contexts
- * and synchronization of access to shared surfaces kills performance.
+/* One ID3D11Device object is used for all VMSVGA guest contexts because the VGPU design makes resources
+ * independent from rendering contexts. I.e. multiple guest contexts freely access a surface.
+ *
+ * The initial implementation of this backend has used separate ID3D11Devices for each VMSVGA context
+ * and created shared resources to allow one ID3D11Device to access a resource which was rendered to by
+ * another ID3D11Device. This synchronization of access to shared resources kills performance actually.
  */
-#define DX_FORCE_SINGLE_DEVICE
+
 /* A single staging ID3D11Buffer is used for uploading data to other buffers. */
 #define DX_COMMON_STAGING_BUFFER
 /* Always flush after submitting a draw call for debugging. */
@@ -79,9 +81,6 @@
 #ifndef D3D_RELEASE
 # define D3D_RELEASE(a_Ptr) do { if ((a_Ptr)) (a_Ptr)->Release(); (a_Ptr) = NULL; } while (0)
 #endif
-
-/** Fake ID for the backend DX context. The context creates all shared textures. */
-#define DX_CID_BACKEND UINT32_C(0xfffffffe)
 
 #define D3D_RELEASE_ARRAY(a_Count, a_papArray) do { \
     for (uint32_t i = 0; i < (a_Count); ++i) \
@@ -216,30 +215,10 @@ typedef struct VMSVGA3DBACKENDSURFACE
 #endif
     } staging;
 
-    /* Screen targets are created as shared surfaces. */
-    HANDLE              SharedHandle;     /* The shared handle of this structure. */
-
-    /* DX context which last rendered to the texture.
-     * This is only for render targets and screen targets, which can be shared between contexts.
-     * The backend context (cid == DX_CID_BACKEND) can also be a drawing context.
-     */
-    uint32_t cidDrawing;
-
-    /** AVL tree containing DXSHAREDTEXTURE structures. */
-    AVLU32TREE SharedTextureTree;
-
     /* Render target views, depth stencil views and shader resource views created for this texture or buffer. */
     RTLISTANCHOR listView;                        /* DXVIEW */
 
 } VMSVGA3DBACKENDSURFACE;
-
-/* "The only resources that can be shared are 2D non-mipmapped textures." */
-typedef struct DXSHAREDTEXTURE
-{
-    AVLU32NODECORE              Core;             /* Key is context id which opened this texture. */
-    ID3D11Texture2D            *pTexture;         /* The opened shared texture. */
-    uint32_t sid;                                 /* Surface id. */
-} DXSHAREDTEXTURE;
 
 
 typedef struct VMSVGAHWSCREEN
@@ -387,17 +366,13 @@ typedef struct VMSVGA3DBACKEND
     RTLDRMOD                   hD3DCompiler;
     PFN_D3D_DISASSEMBLE        pfnD3DDisassemble;
 
-    DXDEVICE                   dxDevice;               /* Device for the VMSVGA3D context independent operation. */
+    DXDEVICE                   dxDevice;
     UINT                       VendorId;
     UINT                       DeviceId;
 
     SVGADXContextMobFormat     svgaDXContext;          /* Current state of pipeline. */
 
     DXBOUNDRESOURCES           resources;              /* What is currently applied to the pipeline. */
-
-    bool                       fSingleDevice;          /* Whether to use one DX device for all guest contexts. */
-
-    /** @todo Here a set of functions which do different job in single and multiple device modes. */
 } VMSVGA3DBACKEND;
 
 
@@ -1195,7 +1170,7 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDXDevice)
 {
     int rc = VINF_SUCCESS;
 
-    if (pBackend->fSingleDevice && pBackend->dxDevice.pDevice)
+    if (pBackend->dxDevice.pDevice)
     {
         pDXDevice->pDevice = pBackend->dxDevice.pDevice;
         pDXDevice->pDevice->AddRef();
@@ -1481,45 +1456,19 @@ RTListForEachSafe(&pSurface->pBackendSurface->listView, pIter, pNext, DXVIEW, no
 }
 
 
-DECLINLINE(bool) dxIsSurfaceShareable(PVMSVGA3DSURFACE pSurface)
-{
-    /* It is not expected that volume textures will be shared between contexts. */
-    if (pSurface->f.surfaceFlags & SVGA3D_SURFACE_VOLUME)
-        return false;
-
-    return (pSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET)
-        || (pSurface->f.surfaceFlags & SVGA3D_SURFACE_BIND_RENDER_TARGET);
-}
-
-
+/// @todo Rename, parameters
 static DXDEVICE *dxDeviceFromCid(uint32_t cid, PVMSVGA3DSTATE pState)
 {
-    if (cid != DX_CID_BACKEND)
-    {
-        if (pState->pBackend->fSingleDevice)
-            return &pState->pBackend->dxDevice;
-
-        VMSVGA3DDXCONTEXT *pDXContext;
-        int rc = vmsvga3dDXContextFromCid(pState, cid, &pDXContext);
-        if (RT_SUCCESS(rc))
-            return &pDXContext->pBackendDXContext->dxDevice;
-    }
-    else
-        return &pState->pBackend->dxDevice;
-
-    AssertFailed();
-    return NULL;
+    RT_NOREF(cid);
+    return &pState->pBackend->dxDevice;
 }
 
 
+/// @todo Rename, parameters
 static DXDEVICE *dxDeviceFromContext(PVMSVGA3DSTATE p3dState, VMSVGA3DDXCONTEXT *pDXContext)
 {
-    DXDEVICE *pDXDevice;
-    if (pDXContext && !p3dState->pBackend->fSingleDevice)
-        pDXDevice = &pDXContext->pBackendDXContext->dxDevice;
-    else
-        pDXDevice = &p3dState->pBackend->dxDevice;
-
+    RT_NOREF(pDXContext);
+    DXDEVICE *pDXDevice = &p3dState->pBackend->dxDevice;
 #ifdef DEBUG
     HRESULT hr = pDXDevice->pDevice->GetDeviceRemovedReason();
     Assert(SUCCEEDED(hr));
@@ -1552,101 +1501,15 @@ static int dxDeviceFlush(DXDEVICE *pDevice)
 }
 
 
-static int dxContextWait(uint32_t cidDrawing, PVMSVGA3DSTATE pState)
-{
-    if (pState->pBackend->fSingleDevice)
-      return VINF_SUCCESS;
-
-    /* Flush cidDrawing context and issue a query. */
-    DXDEVICE *pDXDevice = dxDeviceFromCid(cidDrawing, pState);
-    if (pDXDevice)
-        return dxDeviceFlush(pDXDevice);
-    /* cidDrawing does not exist anymore. */
-    return VINF_SUCCESS;
-}
-
-
-static int dxSurfaceWait(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface, uint32_t cidRequesting)
-{
-    if (pState->pBackend->fSingleDevice)
-        return VINF_SUCCESS;
-
-    VMSVGA3DBACKENDSURFACE *pBackendSurface = pSurface->pBackendSurface;
-    if (!pBackendSurface)
-        AssertFailedReturn(VERR_INVALID_STATE);
-
-    int rc = VINF_SUCCESS;
-    if (pBackendSurface->cidDrawing != SVGA_ID_INVALID)
-    {
-        if (pBackendSurface->cidDrawing != cidRequesting)
-        {
-            LogFunc(("sid = %u, assoc cid = %u, drawing cid = %u, req cid = %u\n",
-                     pSurface->id, pSurface->idAssociatedContext, pBackendSurface->cidDrawing, cidRequesting));
-            Assert(dxIsSurfaceShareable(pSurface));
-            rc = dxContextWait(pBackendSurface->cidDrawing, pState);
-            pBackendSurface->cidDrawing = SVGA_ID_INVALID;
-        }
-    }
-    return rc;
-}
-
-
+/// @todo Parameters
 static ID3D11Resource *dxResource(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface, VMSVGA3DDXCONTEXT *pDXContext)
 {
+    RT_NOREF(pState, pDXContext);
     VMSVGA3DBACKENDSURFACE *pBackendSurface = pSurface->pBackendSurface;
     if (!pBackendSurface)
         AssertFailedReturn(NULL);
 
-    ID3D11Resource *pResource;
-
-    uint32_t const cidRequesting = pDXContext ? pDXContext->cid : DX_CID_BACKEND;
-    if (cidRequesting == pSurface->idAssociatedContext || pState->pBackend->fSingleDevice)
-        pResource = pBackendSurface->u.pResource;
-    else
-    {
-        /*
-         * Context, which as not created the surface, is requesting.
-         */
-        AssertReturn(pDXContext, NULL);
-
-        Assert(dxIsSurfaceShareable(pSurface));
-        Assert(pSurface->idAssociatedContext == DX_CID_BACKEND);
-
-        DXSHAREDTEXTURE *pSharedTexture = (DXSHAREDTEXTURE *)RTAvlU32Get(&pBackendSurface->SharedTextureTree, pDXContext->cid);
-        if (!pSharedTexture)
-        {
-            DXDEVICE *pDevice = dxDeviceFromContext(pState, pDXContext);
-            AssertReturn(pDevice->pDevice, NULL);
-
-            AssertReturn(pBackendSurface->SharedHandle, NULL);
-
-            /* This context has not yet opened the texture. */
-            pSharedTexture = (DXSHAREDTEXTURE *)RTMemAllocZ(sizeof(DXSHAREDTEXTURE));
-            AssertReturn(pSharedTexture, NULL);
-
-            pSharedTexture->Core.Key = pDXContext->cid;
-            bool const fSuccess = RTAvlU32Insert(&pBackendSurface->SharedTextureTree, &pSharedTexture->Core);
-            AssertReturn(fSuccess, NULL);
-
-            HRESULT hr = pDevice->pDevice->OpenSharedResource(pBackendSurface->SharedHandle, __uuidof(ID3D11Texture2D), (void**)&pSharedTexture->pTexture);
-            Assert(SUCCEEDED(hr));
-            if (SUCCEEDED(hr))
-                pSharedTexture->sid = pSurface->id;
-            else
-            {
-                RTAvlU32Remove(&pBackendSurface->SharedTextureTree, pDXContext->cid);
-                RTMemFree(pSharedTexture);
-                return NULL;
-            }
-        }
-
-        pResource = pSharedTexture->pTexture;
-    }
-
-    /* Wait for drawing to finish. */
-    dxSurfaceWait(pState, pSurface, cidRequesting);
-
-    return pResource;
+    return pBackendSurface->u.pResource;
 }
 
 
@@ -1656,32 +1519,6 @@ static uint32_t dxGetRenderTargetViewSid(PVMSVGA3DDXCONTEXT pDXContext, uint32_t
 
     SVGACOTableDXRTViewEntry const *pRTViewEntry = &pDXContext->cot.paRTView[renderTargetViewId];
     return pRTViewEntry->sid;
-}
-
-
-static int dxTrackRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
-    AssertReturn(pState, VERR_INVALID_STATE);
-
-    for (unsigned long i = 0; i < RT_ELEMENTS(pDXContext->svgaDXContext.renderState.renderTargetViewIds); ++i)
-    {
-        uint32_t const renderTargetViewId = pDXContext->svgaDXContext.renderState.renderTargetViewIds[i];
-        if (renderTargetViewId == SVGA_ID_INVALID)
-            continue;
-
-        uint32_t const sid = dxGetRenderTargetViewSid(pDXContext, renderTargetViewId);
-        LogFunc(("[%u] sid = %u, drawing cid = %u\n", i, sid, pDXContext->cid));
-
-        PVMSVGA3DSURFACE pSurface;
-        int rc = vmsvga3dSurfaceFromSid(pState, sid, &pSurface);
-        if (RT_SUCCESS(rc))
-        {
-            AssertContinue(pSurface->pBackendSurface);
-            pSurface->pBackendSurface->cidDrawing = pDXContext->cid;
-        }
-    }
-    return VINF_SUCCESS;
 }
 
 
@@ -2486,30 +2323,9 @@ static int dxBackendSurfaceAlloc(PVMSVGA3DBACKENDSURFACE *ppBackendSurface)
 {
     PVMSVGA3DBACKENDSURFACE pBackendSurface = (PVMSVGA3DBACKENDSURFACE)RTMemAllocZ(sizeof(VMSVGA3DBACKENDSURFACE));
     AssertPtrReturn(pBackendSurface, VERR_NO_MEMORY);
-    pBackendSurface->cidDrawing = SVGA_ID_INVALID;
     RTListInit(&pBackendSurface->listView);
     *ppBackendSurface = pBackendSurface;
     return VINF_SUCCESS;
-}
-
-
-static HRESULT dxInitSharedHandle(PVMSVGA3DBACKEND pBackend, PVMSVGA3DBACKENDSURFACE pBackendSurface)
-{
-    if (pBackend->fSingleDevice)
-        return S_OK;
-
-    /* Get the shared handle. */
-    IDXGIResource *pDxgiResource = NULL;
-    HRESULT hr = pBackendSurface->u.pResource->QueryInterface(__uuidof(IDXGIResource), (void**)&pDxgiResource);
-    Assert(SUCCEEDED(hr));
-    if (SUCCEEDED(hr))
-    {
-        hr = pDxgiResource->GetSharedHandle(&pBackendSurface->SharedHandle);
-        Assert(SUCCEEDED(hr));
-        D3D_RELEASE(pDxgiResource);
-    }
-
-    return hr;
 }
 
 
@@ -2536,22 +2352,12 @@ static UINT dxBindFlags(SVGA3dSurfaceAllFlags surfaceFlags)
 }
 
 
+/// @todo Parameters
 static DXDEVICE *dxSurfaceDevice(PVMSVGA3DSTATE p3dState, PVMSVGA3DSURFACE pSurface, PVMSVGA3DDXCONTEXT pDXContext, UINT *pMiscFlags)
 {
-    if (p3dState->pBackend->fSingleDevice)
-    {
-        *pMiscFlags = 0;
-        return &p3dState->pBackend->dxDevice;
-    }
-
-    if (!pDXContext || dxIsSurfaceShareable(pSurface))
-    {
-        *pMiscFlags = D3D11_RESOURCE_MISC_SHARED;
-        return &p3dState->pBackend->dxDevice;
-    }
-
+    RT_NOREF(pSurface, pDXContext);
     *pMiscFlags = 0;
-    return &pDXContext->pBackendDXContext->dxDevice;
+    return &p3dState->pBackend->dxDevice;
 }
 
 
@@ -2805,9 +2611,6 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         }
 
         if (SUCCEEDED(hr))
-            hr = dxInitSharedHandle(pBackend, pBackendSurface);
-
-        if (SUCCEEDED(hr))
         {
             pBackendSurface->enmResType = VMSVGA3D_RESTYPE_TEXTURE_CUBE;
         }
@@ -2860,9 +2663,6 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             hr = pDXDevice->pDevice->CreateTexture1D(&td, paInitialData, &pBackendSurface->staging.pTexture1D);
             Assert(SUCCEEDED(hr));
         }
-
-        if (SUCCEEDED(hr))
-            hr = dxInitSharedHandle(pBackend, pBackendSurface);
 
         if (SUCCEEDED(hr))
         {
@@ -2920,9 +2720,6 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
                 hr = pDXDevice->pDevice->CreateTexture3D(&td, paInitialData, &pBackendSurface->staging.pTexture3D);
                 Assert(SUCCEEDED(hr));
             }
-
-            if (SUCCEEDED(hr))
-                hr = dxInitSharedHandle(pBackend, pBackendSurface);
 
             if (SUCCEEDED(hr))
             {
@@ -2985,9 +2782,6 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             }
 
             if (SUCCEEDED(hr))
-                hr = dxInitSharedHandle(pBackend, pBackendSurface);
-
-            if (SUCCEEDED(hr))
             {
                 pBackendSurface->enmResType = VMSVGA3D_RESTYPE_TEXTURE_2D;
             }
@@ -3016,10 +2810,6 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         LogFunc(("sid = %u\n", pSurface->id));
         pBackendSurface->enmDxgiFormat = dxgiFormat;
         pSurface->pBackendSurface = pBackendSurface;
-        if (p3dState->pBackend->fSingleDevice || RT_BOOL(MiscFlags & D3D11_RESOURCE_MISC_SHARED))
-            pSurface->idAssociatedContext = DX_CID_BACKEND;
-        else
-            pSurface->idAssociatedContext = pDXContext->cid;
         return VINF_SUCCESS;
     }
 
@@ -3109,7 +2899,6 @@ static int vmsvga3dBackSurfaceCreateBuffer(PVGASTATECC pThisCC, PVMSVGA3DDXCONTE
         pBackendSurface->enmResType = VMSVGA3D_RESTYPE_BUFFER;
         pBackendSurface->enmDxgiFormat = DXGI_FORMAT_UNKNOWN;
         pSurface->pBackendSurface = pBackendSurface;
-        pSurface->idAssociatedContext = pDXContext->cid;
         return VINF_SUCCESS;
     }
 
@@ -3182,7 +2971,6 @@ static int vmsvga3dBackSurfaceCreateSoBuffer(PVGASTATECC pThisCC, PVMSVGA3DDXCON
         pBackendSurface->enmResType = VMSVGA3D_RESTYPE_BUFFER;
         pBackendSurface->enmDxgiFormat = DXGI_FORMAT_UNKNOWN;
         pSurface->pBackendSurface = pBackendSurface;
-        pSurface->idAssociatedContext = pDXContext->cid;
         return VINF_SUCCESS;
     }
 
@@ -3254,7 +3042,6 @@ static int vmsvga3dBackSurfaceCreateConstantBuffer(PVGASTATECC pThisCC, PVMSVGA3
         pBackendSurface->enmResType = VMSVGA3D_RESTYPE_BUFFER;
         pBackendSurface->enmDxgiFormat = DXGI_FORMAT_UNKNOWN;
         pSurface->pBackendSurface = pBackendSurface;
-        pSurface->idAssociatedContext = pDXContext->cid;
         return VINF_SUCCESS;
     }
 
@@ -3394,7 +3181,6 @@ static int vmsvga3dBackSurfaceCreateResource(PVGASTATECC pThisCC, PVMSVGA3DDXCON
          * Success.
          */
         pSurface->pBackendSurface = pBackendSurface;
-        pSurface->idAssociatedContext = pDXContext->cid;
         return VINF_SUCCESS;
     }
 
@@ -3510,12 +3296,6 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
             rc2 = RTLdrGetSymbol(pBackend->hD3DCompiler, "D3DDisassemble", (void **)&pBackend->pfnD3DDisassemble);
         Log6Func(("Load D3DDisassemble: %Rrc\n", rc2));
     }
-
-#if !defined(RT_OS_WINDOWS) || defined(DX_FORCE_SINGLE_DEVICE)
-    pBackend->fSingleDevice = true;
-#endif
-
-    LogRelMax(1, ("VMSVGA: Single DX device mode: %s\n", pBackend->fSingleDevice ? "enabled" : "disabled"));
 
     vmsvga3dDXInitContextMobData(&pBackend->svgaDXContext);
 //DEBUG_BREAKPOINT_TEST();
@@ -3871,8 +3651,6 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfa
         || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_CUBE
         || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
     {
-        dxSurfaceWait(pState, pSurface, pSurface->idAssociatedContext);
-
         ID3D11Resource *pMappedResource;
         if (enmMapType == VMSVGA3D_SURFACE_MAP_READ)
         {
@@ -4089,8 +3867,6 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSur
 
             pDevice->pImmediateContext->CopySubresourceRegion(pDstResource, DstSubresource, DstX, DstY, DstZ,
                                                               pSrcResource, SrcSubresource, pSrcBox);
-
-            pBackendSurface->cidDrawing = pSurface->idAssociatedContext;
         }
     }
     else if (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_BUFFER)
@@ -4163,8 +3939,6 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSur
             SrcBox.back   = DstZ + pMap->box.d;
             pDevice->pImmediateContext->CopySubresourceRegion(pDstResource, DstSubresource, DstX, DstY, DstZ,
                                                               pSrcResource, SrcSubresource, &SrcBox);
-
-            pBackendSurface->cidDrawing = pSurface->idAssociatedContext;
         }
 #endif
     }
@@ -4262,9 +4036,6 @@ static DECLCALLBACK(int) vmsvga3dScreenTargetUpdate(PVGASTATECC pThisCC, VMSVGAS
     SVGA3dRect clipRect = *pRect;
     vmsvgaR3Clip3dRect(&boundRect, &clipRect);
     ASSERT_GUEST_RETURN(clipRect.w && clipRect.h, VERR_INVALID_PARAMETER);
-
-    /* Wait for the surface to finish drawing. */
-    dxSurfaceWait(pState, pSurface, DX_CID_BACKEND);
 
     /* Copy the screen texture to the shared surface. */
     DWORD result = pHwScreen->pDXGIKeyedMutex->AcquireSync(0, 10000);
@@ -4879,11 +4650,9 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurf
     rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, dest.sid, &pDstSurface);
     AssertRCReturn(rc, rc);
 
-    LogFunc(("src%s cid %d -> dst%s cid %d\n",
-             pSrcSurface->pBackendSurface ? "" : " sysmem",
-             pSrcSurface ? pSrcSurface->idAssociatedContext : SVGA_ID_INVALID,
-             pDstSurface->pBackendSurface ? "" : " sysmem",
-             pDstSurface ? pDstSurface->idAssociatedContext : SVGA_ID_INVALID));
+    LogFunc(("src%s sid = %u -> dst%s sid = %u\n",
+             pSrcSurface->pBackendSurface ? "" : " sysmem", pSrcSurface->id,
+             pDstSurface->pBackendSurface ? "" : " sysmem", pDstSurface->id));
 
     //DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     //AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
@@ -4892,23 +4661,13 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurf
     {
         if (pDstSurface->pBackendSurface == NULL)
         {
-            /* Create the target if it can be used as a device context shared resource (render or screen target). */
-            if (pBackend->fSingleDevice || dxIsSurfaceShareable(pDstSurface))
-            {
-                rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, NULL, pDstSurface);
-                AssertRCReturn(rc, rc);
-            }
+            rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, NULL, pDstSurface);
+            AssertRCReturn(rc, rc);
         }
 
         if (pDstSurface->pBackendSurface)
         {
             /* Surface -> Surface. */
-            /* Expect both of them to be shared surfaces created by the backend context. */
-            Assert(pSrcSurface->idAssociatedContext == DX_CID_BACKEND && pDstSurface->idAssociatedContext == DX_CID_BACKEND);
-
-            /* Wait for the source surface to finish drawing. */
-            dxSurfaceWait(pState, pSrcSurface, DX_CID_BACKEND);
-
             DXDEVICE *pDXDevice = &pBackend->dxDevice;
 
             /* Clip the box. */
@@ -4946,8 +4705,6 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurf
 
             pDXDevice->pImmediateContext->CopySubresourceRegion(pDstResource, DstSubresource, DstX, DstY, DstZ,
                                                                 pSrcResource, SrcSubresource, &SrcBox);
-
-            pDstSurface->pBackendSurface->cidDrawing = DX_CID_BACKEND;
         }
         else
         {
@@ -5399,9 +5156,6 @@ static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, bool f
     }
 
     RTMemFree(pBackendSurface);
-
-    /* No context has created the surface, because the surface does not exist anymore. */
-    pSurface->idAssociatedContext = SVGA_ID_INVALID;
 }
 
 
@@ -5759,38 +5513,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyContext(PVGASTATECC pThisCC, PVMSV
         RTMemFreeZ(pBackendDXContext->paVideoProcessorInputView, sizeof(pBackendDXContext->paVideoProcessorInputView[0]) * pBackendDXContext->cVideoProcessorInputView);
         RTMemFreeZ(pBackendDXContext->paVideoProcessorOutputView, sizeof(pBackendDXContext->paVideoProcessorOutputView[0]) * pBackendDXContext->cVideoProcessorOutputView);
 
-        /* Destroy backend surfaces which belong to this context. */
-        /** @todo The context should have a list of surfaces (and also shared resources). */
-        /** @todo This should not be needed in fSingleDevice mode. */
-        for (uint32_t sid = 0; sid < pThisCC->svga.p3dState->cSurfaces; ++sid)
-        {
-            PVMSVGA3DSURFACE const pSurface = pThisCC->svga.p3dState->papSurfaces[sid];
-            if (   pSurface
-                && pSurface->id == sid)
-            {
-                if (pSurface->idAssociatedContext == pDXContext->cid)
-                {
-                    if (pSurface->pBackendSurface)
-                        vmsvga3dBackSurfaceDestroy(pThisCC, true, pSurface);
-                }
-                else if (pSurface->idAssociatedContext == DX_CID_BACKEND)
-                {
-                    /* May have shared resources in this context. */
-                    if (pSurface->pBackendSurface)
-                    {
-                        DXSHAREDTEXTURE *pSharedTexture = (DXSHAREDTEXTURE *)RTAvlU32Get(&pSurface->pBackendSurface->SharedTextureTree, pDXContext->cid);
-                        if (pSharedTexture)
-                        {
-                            Assert(pSharedTexture->sid == sid);
-                            RTAvlU32Remove(&pSurface->pBackendSurface->SharedTextureTree, pDXContext->cid);
-                            D3D_RELEASE(pSharedTexture->pTexture);
-                            RTMemFreeZ(pSharedTexture, sizeof(*pSharedTexture));
-                        }
-                    }
-                }
-            }
-        }
-
         dxDeviceDestroy(pBackend, &pBackendDXContext->dxDevice);
 
         RTMemFreeZ(pBackendDXContext, sizeof(*pBackendDXContext));
@@ -5810,12 +5532,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXBindContext(PVGASTATECC pThisCC, PVMSVGA3
 
 static DECLCALLBACK(int) vmsvga3dBackDXSwitchContext(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-    if (!pBackend->fSingleDevice)
-        return VINF_NOT_IMPLEMENTED; /* Not required. */
-
     /* The new context state will be applied by the generic DX code. */
-    RT_NOREF(pDXContext);
+    RT_NOREF(pThisCC, pDXContext);
     return VINF_SUCCESS;
 }
 
@@ -7377,9 +7095,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXDraw(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         RTMemFree(paIndices);
     }
 
-    /* Note which surfaces are being drawn. */
-    dxTrackRenderTargets(pThisCC, pDXContext);
-
 #ifdef DX_FLUSH_AFTER_DRAW
     dxDeviceFlush(pDevice);
 #endif
@@ -7636,9 +7351,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXDrawIndexed(PVGASTATECC pThisCC, PVMSVGA3
         dxDrawIndexedTriangleFan(pDevice, indexCount, startIndexLocation, baseVertexLocation);
     }
 
-    /* Note which surfaces are being drawn. */
-    dxTrackRenderTargets(pThisCC, pDXContext);
-
 #ifdef DX_FLUSH_AFTER_DRAW
     dxDeviceFlush(pDevice);
 #endif
@@ -7666,9 +7378,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXDrawInstanced(PVGASTATECC pThisCC, PVMSVG
     Assert(pDXContext->svgaDXContext.inputAssembly.topology != SVGA3D_PRIMITIVE_TRIANGLEFAN);
 
     pDevice->pImmediateContext->DrawInstanced(vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
-
-    /* Note which surfaces are being drawn. */
-    dxTrackRenderTargets(pThisCC, pDXContext);
 
 #ifdef DX_FLUSH_AFTER_DRAW
     dxDeviceFlush(pDevice);
@@ -7698,9 +7407,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXDrawIndexedInstanced(PVGASTATECC pThisCC,
 
     pDevice->pImmediateContext->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 
-    /* Note which surfaces are being drawn. */
-    dxTrackRenderTargets(pThisCC, pDXContext);
-
 #ifdef DX_FLUSH_AFTER_DRAW
     dxDeviceFlush(pDevice);
 #endif
@@ -7722,9 +7428,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXDrawAuto(PVGASTATECC pThisCC, PVMSVGA3DDX
     Assert(pDXContext->svgaDXContext.inputAssembly.topology != SVGA3D_PRIMITIVE_TRIANGLEFAN);
 
     pDevice->pImmediateContext->DrawAuto();
-
-    /* Note which surfaces are being drawn. */
-    dxTrackRenderTargets(pThisCC, pDXContext);
 
 #ifdef DX_FLUSH_AFTER_DRAW
     dxDeviceFlush(pDevice);
@@ -8409,11 +8112,9 @@ static DECLCALLBACK(int) vmsvga3dBackDXPredCopyRegion(PVGASTATECC pThisCC, PVMSV
         AssertRCReturn(rc, rc);
     }
 
-    LogFunc(("cid %d: src cid %d%s -> dst cid %d%s\n",
-             pDXContext->cid, pSrcSurface->idAssociatedContext,
-             (pSrcSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "",
-             pDstSurface->idAssociatedContext,
-             (pDstSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : ""));
+    LogFunc(("src%s sid = %u -> dst%s sid = %u\n",
+             (pSrcSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "", pSrcSurface->id,
+             (pDstSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "", pDstSurface->id));
 
     /* Clip the box. */
     /** @todo Use [src|dst]SubResource to index p[Src|Dst]Surface->paMipmapLevels array directly. */
@@ -8475,7 +8176,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXPredCopyRegion(PVGASTATECC pThisCC, PVMSV
         Log(("Map failed %Rrc\n", rc));
 #endif
 
-    pDstSurface->pBackendSurface->cidDrawing = pDXContext->cid;
     return VINF_SUCCESS;
 }
 
@@ -8516,18 +8216,15 @@ static DECLCALLBACK(int) vmsvga3dBackDXPredCopy(PVGASTATECC pThisCC, PVMSVGA3DDX
         AssertRCReturn(rc, rc);
     }
 
-    LogFunc(("cid %d: src cid %d%s -> dst cid %d%s\n",
-             pDXContext->cid, pSrcSurface->idAssociatedContext,
-             (pSrcSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "",
-             pDstSurface->idAssociatedContext,
-             (pDstSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : ""));
+    LogFunc(("src%s sid = %u -> dst%s sid = %u\n",
+             (pSrcSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "", pSrcSurface->id,
+             (pDstSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "", pDstSurface->id));
 
     ID3D11Resource *pDstResource = dxResource(pThisCC->svga.p3dState, pDstSurface, pDXContext);
     ID3D11Resource *pSrcResource = dxResource(pThisCC->svga.p3dState, pSrcSurface, pDXContext);
 
     pDevice->pImmediateContext->CopyResource(pDstResource, pSrcResource);
 
-    pDstSurface->pBackendSurface->cidDrawing = pDXContext->cid;
     return VINF_SUCCESS;
 }
 
@@ -8828,11 +8525,9 @@ static DECLCALLBACK(int) vmsvga3dBackDXPresentBlt(PVGASTATECC pThisCC, PVMSVGA3D
         DEBUG_BREAKPOINT_TEST();
 #endif
 
-    LogFunc(("cid %d: src cid %d%s -> dst cid %d%s\n",
-             pDXContext->cid, pSrcSurface->idAssociatedContext,
-             (pSrcSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "",
-             pDstSurface->idAssociatedContext,
-             (pDstSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : ""));
+    LogFunc(("src%s sid = %u -> dst%s sid = %u\n",
+             (pSrcSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "", pSrcSurface->id,
+             (pDstSurface->f.surfaceFlags & SVGA3D_SURFACE_SCREENTARGET) ? " st" : "", pDstSurface->id));
 
     /* Clip the box. */
     /** @todo Use [src|dst]SubResource to index p[Src|Dst]Surface->paMipmapLevels array directly. */
@@ -8894,7 +8589,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXPresentBlt(PVGASTATECC pThisCC, PVMSVGA3D
     D3D_RELEASE(pSrcShaderResourceView);
     D3D_RELEASE(pDstRenderTargetView);
 
-    pDstSurface->pBackendSurface->cidDrawing = pDXContext->cid;
     return VINF_SUCCESS;
 }
 
@@ -9848,9 +9542,8 @@ static DECLCALLBACK(int) vmsvga3dBackIntraSurfaceCopy(PVGASTATECC pThisCC, PVMSV
     SVGA3dCopyBox clipBox = box;
     vmsvgaR3ClipCopyBox(&pMipLevel->mipmapSize, &pMipLevel->mipmapSize, &clipBox);
 
-    LogFunc(("surface%s cid %d\n",
-             pSurface->pBackendSurface ? "" : " sysmem",
-             pSurface ? pSurface->idAssociatedContext : SVGA_ID_INVALID));
+    LogFunc(("surface%s sid = %u\n",
+             pSurface->pBackendSurface ? "" : " sysmem", pSurface->id));
 
     if (pSurface->pBackendSurface)
     {
@@ -9939,7 +9632,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXResolveCopy(PVGASTATECC pThisCC, PVMSVGA3
     DXGI_FORMAT const dxgiFormat = vmsvgaDXSurfaceFormat2Dxgi(copyFormat);
     pDXDevice->pImmediateContext->ResolveSubresource(pDstResource, dstSubResource, pSrcResource, srcSubResource, dxgiFormat);
 
-    pDstSurface->pBackendSurface->cidDrawing = pDXContext->cid;
     return VINF_SUCCESS;
 }
 
@@ -10102,9 +9794,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXDrawIndexedInstancedIndirect(PVGASTATECC 
 
     pDevice->pImmediateContext->DrawIndexedInstancedIndirect(pBufferForArgs, byteOffsetForArgs);
 
-    /* Note which surfaces are being drawn. */
-    dxTrackRenderTargets(pThisCC, pDXContext);
-
 #ifdef DX_FLUSH_AFTER_DRAW
     dxDeviceFlush(pDevice);
 #endif
@@ -10141,9 +9830,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXDrawInstancedIndirect(PVGASTATECC pThisCC
     Assert(pDXContext->svgaDXContext.inputAssembly.topology != SVGA3D_PRIMITIVE_TRIANGLEFAN);
 
     pDevice->pImmediateContext->DrawInstancedIndirect(pBufferForArgs, byteOffsetForArgs);
-
-    /* Note which surfaces are being drawn. */
-    dxTrackRenderTargets(pThisCC, pDXContext);
 
 #ifdef DX_FLUSH_AFTER_DRAW
     dxDeviceFlush(pDevice);
