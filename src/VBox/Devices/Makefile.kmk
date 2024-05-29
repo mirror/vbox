@@ -1023,8 +1023,12 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   $$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.hex: $(PATH_SUB_CURRENT)/PC/vbox-cpuhotplug.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,VBoxDD,$<,$@)
 	$(QUIET)$(RM) -f $@ $@.tmp $@.pre
+  ifneq ($(KBUILD_HOST),win)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -P -x c -o $@.pre $<
-	$(QUIET)$(SED) -e "s/<NL>/\n/g" \
+  else
+	$(QUIET)$(REDIRECT) -wto $@.pre -- $(TOOL_$(VBOX_VCC_TOOL)_CC) /nologo /EP /Tc $<
+  endif
+	$(QUIET)$(SED) -e "/^[ ]*$$/d" -e "s/<NL>/\n/g" \
 		--output $@.pre1 $@.pre
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $@.pre1
 	$(QUIET)$(MV) -f $@ $@.tmp
