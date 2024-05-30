@@ -903,8 +903,8 @@ HRESULT PlatformProperties::s_getSupportedVRAMRange(GraphicsControllerType_T aGr
 #undef MAKE_POWER_OF_TWO
 
     /* Finally, clamp the values to our schema definitions before returning. */
-    cbMin = RT_CLAMP(cbMin, (size_t)SchemaDefs::MinGuestVRAM, (size_t)SchemaDefs::MaxGuestVRAM);
-    cbMax = RT_CLAMP(cbMax, (size_t)SchemaDefs::MinGuestVRAM, (size_t)SchemaDefs::MaxGuestVRAM);
+    if (cbMax > SchemaDefs::MaxGuestVRAM)
+        cbMax = SchemaDefs::MaxGuestVRAM;
 
     *aMinMB = (ULONG)cbMin;
     *aMaxMB = (ULONG)cbMax;
