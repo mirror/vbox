@@ -228,15 +228,23 @@ HRESULT GraphicsAdapter::getVRAMSize(ULONG *aVRAMSize)
 
 HRESULT GraphicsAdapter::setVRAMSize(ULONG aVRAMSize)
 {
-    /* check VRAM limits */
-    if (aVRAMSize > SchemaDefs::MaxGuestVRAM)
-        return setError(E_INVALIDARG,
-                        tr("Invalid VRAM size: %lu MB (must be in range [%lu, %lu] MB)"),
-                        aVRAMSize, SchemaDefs::MinGuestVRAM, SchemaDefs::MaxGuestVRAM);
-
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.hrc())) return adep.hrc();
+
+    ULONG uMin, uMax;
+    HRESULT hrc = PlatformProperties::s_getSupportedVRAMRange(mData->graphicsControllerType, mData->fAccelerate3D,
+                                                              &uMin, &uMax, NULL /* aStrideSizeMB */);
+    if (FAILED(hrc))
+        return setError(hrc,
+                        tr("Error getting VRAM range for selected graphics controller"));
+
+    /* check VRAM limits */
+    if (   aVRAMSize < uMin
+        || aVRAMSize > uMax)
+        return setError(E_INVALIDARG,
+                        tr("Invalid VRAM size: %lu MB (must be in range [%lu, %lu] MB)"),
+                        aVRAMSize, uMin, uMax);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 

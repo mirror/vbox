@@ -66,6 +66,7 @@ public:
     // public static methods, for stuff which does not have a state
     static ULONG s_getMaxNetworkAdapters(ChipsetType_T aChipset);
     static ULONG s_getMaxNetworkAdaptersOfType(ChipsetType_T aChipset, NetworkAttachmentType_T aType);
+    static HRESULT s_getSupportedVRAMRange(GraphicsControllerType_T aGraphicsControllerType, BOOL fAccelerate3DEnabled, ULONG *aMinMB, ULONG *aMaxMB, ULONG *aStrideSizeMB);
 
 private:
 

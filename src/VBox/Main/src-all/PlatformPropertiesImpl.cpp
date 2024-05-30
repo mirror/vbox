@@ -821,8 +821,19 @@ HRESULT PlatformProperties::getSupportedUSBControllerTypes(std::vector<USBContro
     return S_OK;
 }
 
-HRESULT PlatformProperties::getSupportedVRAMRange(GraphicsControllerType_T aGraphicsControllerType, BOOL fAccelerate3DEnabled,
-                                                  ULONG *aMinMB, ULONG *aMaxMB, ULONG *aStrideSizeMB)
+/**
+ * Returns the [minimum, maximum] VRAM range and stride size for a given graphics controller.
+ *
+ * @returns HRESULT
+ * @param   aGraphicsControllerType Graphics controller type to return values for.
+ * @param   fAccelerate3DEnabled    whether 3D acceleration is enabled / disabled for the selected graphics controller.
+ * @param   aMinMB                  Where to return the minimum VRAM (in MB).
+ * @param   aMaxMB                  Where to return the maximum VRAM (in MB).
+ * @param   aStrideSizeMB           Where to return stride size (in MB). Optional, can be NULL.
+ */
+/* static */
+HRESULT PlatformProperties::s_getSupportedVRAMRange(GraphicsControllerType_T aGraphicsControllerType, BOOL fAccelerate3DEnabled,
+                                                    ULONG *aMinMB, ULONG *aMaxMB, ULONG *aStrideSizeMB)
 {
 #if !defined(VBOX_WITH_VMSVGA) || !defined(VBOX_WITH_VMSVGA3D)
     RT_NOREF(fAccelerate3DEnabled);
@@ -859,7 +870,7 @@ HRESULT PlatformProperties::getSupportedVRAMRange(GraphicsControllerType_T aGrap
                 cbMin = SVGA_VRAM_MIN_SIZE;
             cbMax = SVGA_VRAM_MAX_SIZE;
 #else
-            return setError(VBOX_E_NOT_SUPPORTED, tr("Support for SVGA not available in this version"));
+            return VBOX_E_NOT_SUPPORTED;
 #endif
             break;
         }
@@ -873,22 +884,52 @@ HRESULT PlatformProperties::getSupportedVRAMRange(GraphicsControllerType_T aGrap
         }
 
         default:
-            return setError(E_INVALIDARG, tr("The graphics controller type (%d) is invalid"), aGraphicsControllerType);
+            return E_INVALIDARG;
     }
 
-    *aMinMB        = (ULONG)(RT_ALIGN_64(cbMin, cbStride) / _1M);
-    *aMaxMB        = (ULONG)(RT_ALIGN_64(cbMax, cbStride) / _1M);
-    *aStrideSizeMB = (ULONG)cbStride / _1M;
+    /* Convert bytes -> MB, align to stride. */
+    cbMin    = (ULONG)(RT_ALIGN_64(cbMin, cbStride) / _1M);
+    cbMax    = (ULONG)(RT_ALIGN_64(cbMax, cbStride) / _1M);
+    cbStride = (ULONG)cbStride / _1M;
 
 #define MAKE_POWER_OF_TWO(a_MB) \
     while (!RT_IS_POWER_OF_TWO(a_MB)) \
         a_MB = a_MB + 1; \
 
-    MAKE_POWER_OF_TWO(*aMinMB);
-    MAKE_POWER_OF_TWO(*aMaxMB);
-    MAKE_POWER_OF_TWO(*aStrideSizeMB);
+    MAKE_POWER_OF_TWO(cbMin);
+    MAKE_POWER_OF_TWO(cbMax);
+    MAKE_POWER_OF_TWO(cbStride);
 
 #undef MAKE_POWER_OF_TWO
+
+    /* Finally, clamp the values to our schema definitions before returning. */
+    cbMin = RT_CLAMP(cbMin, (size_t)SchemaDefs::MinGuestVRAM, (size_t)SchemaDefs::MaxGuestVRAM);
+    cbMax = RT_CLAMP(cbMax, (size_t)SchemaDefs::MinGuestVRAM, (size_t)SchemaDefs::MaxGuestVRAM);
+
+    *aMinMB = (ULONG)cbMin;
+    *aMaxMB = (ULONG)cbMax;
+    if (aStrideSizeMB)
+        *aStrideSizeMB = (ULONG)cbStride;
+
+    return S_OK;
+}
+
+HRESULT PlatformProperties::getSupportedVRAMRange(GraphicsControllerType_T aGraphicsControllerType, BOOL fAccelerate3DEnabled,
+                                                  ULONG *aMinMB, ULONG *aMaxMB, ULONG *aStrideSizeMB)
+{
+    HRESULT hrc = PlatformProperties::s_getSupportedVRAMRange(aGraphicsControllerType, fAccelerate3DEnabled, aMinMB, aMaxMB,
+                                                              aStrideSizeMB);
+    switch (hrc)
+    {
+        case VBOX_E_NOT_SUPPORTED:
+            return setError(VBOX_E_NOT_SUPPORTED, tr("Selected graphics controller not supported in this version"));
+
+        case E_INVALIDARG:
+            return setError(E_INVALIDARG, tr("The graphics controller type (%d) is invalid"), aGraphicsControllerType);
+
+        default:
+            break;
+    }
 
     return S_OK;
 }
