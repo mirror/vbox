@@ -129,6 +129,8 @@
 #define BS3_FP64_NORMAL_VAL_3(a_Sign)         RTFLOAT64U_INIT_C(a_Sign, 0xb5b5b5b5b5b5b, 0xffe)
 /* The maximum integer value (all 52 + 1 implied bit of the fraction part set) without losing precision. */
 #define BS3_FP64_NORMAL_SAFE_INT_MAX(a_Sign)  RTFLOAT64U_INIT_C(a_Sign, BS3_FP64_FRACTION_NORMAL_MAX, BS3_FP64_EXP_BIAS + BS3_FP64_FRACTION_BITS)
+/* The minimum integer value without losing precision. */
+#define BS3_FP64_NORMAL_SAFE_INT_MIN(a_Sign)  RTFLOAT64U_INIT_C(a_Sign, 0, 1)
 
 
 /*********************************************************************************************************************************
@@ -1471,6 +1473,12 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
             { /* =>      */ { BS3_FP64_VAL(0, 0, BS3_FP64_EXP_BIAS + BS3_FP64_FRACTION_BITS + 1), BS3_FP64_VAL(1, 0, BS3_FP64_EXP_BIAS + BS3_FP64_FRACTION_BITS + 1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ 0 },
+    /*19*/{ { /*src2     */ { BS3_FP64_NORMAL_SAFE_INT_MIN(0), BS3_FP64_ZERO(0),                BS3_FP64_NORMAL_SAFE_INT_MIN(0), BS3_FP64_NORMAL_SAFE_INT_MIN(0) } },
+            { /*src1     */ { BS3_FP64_NORMAL_SAFE_INT_MIN(1), BS3_FP64_NORMAL_SAFE_INT_MIN(1), BS3_FP64_ZERO(0),                BS3_FP64_NORMAL_SAFE_INT_MIN(0) } },
+            { /* =>      */ { BS3_FP64_ZERO(0),                BS3_FP64_NORMAL_SAFE_INT_MIN(1), BS3_FP64_NORMAL_SAFE_INT_MIN(0), BS3_FP64_VAL(0, 0, 2)           } },
+              /*mask     */ ~X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_ZERO,
               /*flags    */ 0 },
     };
 
