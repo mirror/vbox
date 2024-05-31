@@ -47,6 +47,7 @@
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/sg.h>
+#include <iprt/uuid.h>
 
 #include <iprt/formats/efi-signature.h>
 
@@ -157,7 +158,7 @@ static PCRTEFISIGDBDESC rtEfiSigDbGetDescByGuid(PCEFI_GUID pGuid)
 
 
 /**
- * Validates the given signature lsit header.
+ * Validates the given signature list header.
  *
  * @returns Flag whether the list header is considered valid.
  * @param   pLstHdr             The list header to validate.
@@ -265,7 +266,44 @@ static int rtEfiSigDbLoadSigList(PRTEFISIGDBINT pThis, RTVFSFILE hVfsFileIn, uin
 
 
 /**
- * Variant for written a list of signatures where each signature gets its own signature list header
+ * De-duplicate a signature database.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The signature database instance.
+ */
+static int rtEfiSigDbDeduplicate(PRTEFISIGDBINT pThis)
+{
+    /** @todo This currently deduplicates list nodes as a whole, not looking into signature lists.
+     * Good enough for the X.509 certificates which matter most to eliminate multiple enrollments. */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aLstSigTypes); i++)
+    {
+        PRTEFISIGNATURE pIt, pItNext;
+        RTListForEachSafe(&pThis->aLstSigTypes[i], pIt, pItNext, RTEFISIGNATURE, NdLst)
+        {
+            PRTEFISIGNATURE pIt2;
+            RTListForEach(&pThis->aLstSigTypes[i], pIt2, RTEFISIGNATURE, NdLst)
+            {
+                /* Compare up to element before pIt. */
+                if (pIt == pIt2)
+                    break;
+                if (   pIt->cbSignature == pIt2->cbSignature
+                    && !RTUuidCompare(&pIt->UuidOwner, &pIt2->UuidOwner)
+                    && !memcmp(&pIt->abSignature[0], &pIt2->abSignature[0], pIt->cbSignature))
+                {
+                    RTListNodeRemove(&pIt->NdLst);
+                    RTMemFree(pIt);
+                    break;
+                }
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Variant for writing a list of signatures where each signature gets its own signature list header
  * (for types where each signature can differ in size like X.509).
  *
  * @returns IPRT status code.
@@ -455,6 +493,10 @@ RTDECL(int) RTEfiSigDbAddFromExistingDb(RTEFISIGDB hEfiSigDb, RTVFSFILE hVfsFile
                  && cbFile);
     }
 
+    int rc2 = rtEfiSigDbDeduplicate(pThis);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
     return rc;
 }
 
@@ -491,6 +533,10 @@ RTDECL(int) RTEfiSigDbAddSignatureFromFile(RTEFISIGDB hEfiSigDb, RTEFISIGTYPE en
             rc = VERR_INVALID_PARAMETER;
     }
 
+    int rc2 = rtEfiSigDbDeduplicate(pThis);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
     return rc;
 }
 
@@ -521,6 +567,10 @@ RTDECL(int) RTEfiSigDbAddSignatureFromBuf(RTEFISIGDB hEfiSigDb, RTEFISIGTYPE enm
     }
     else
         rc = VERR_INVALID_PARAMETER;
+
+    int rc2 = rtEfiSigDbDeduplicate(pThis);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     return rc;
 }
