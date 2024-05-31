@@ -185,7 +185,9 @@ ifdef VBOX_SIGNING_MODE
 	$(call VBOX_SIGN_DMG_FN,$@,org.virtualbox.dmg)
   if $(intersects darwin darwin_notarize all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
 	@# Notarize the signed dmg (includes stapling).
-	$(call VBOX_NOTARIZE_FILE_FN,$@,org.virtualbox.VirtualBox.$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD).$(VBOX_SVN_REV))
+	$(call VBOX_NOTARIZE_FILE_FN,$@,org.virtualbox.VirtualBox.$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD).$(VBOX_SVN_REV),$(call VBOX_DIRX,$@).tmp)
+	$(MV) -f $(call VBOX_DIRX,$@).tmp/$(call VBOX_NOTDIRX,$@) $@
+	$(RMDIR) $(call VBOX_DIRX,$@).tmp
   endif
  endif
 endif

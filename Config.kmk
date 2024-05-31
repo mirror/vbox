@@ -4224,6 +4224,7 @@ ifdef VBOX_SIGNING_MODE
  VBOX_RETRY    ?= $(ASH) $(KBUILD_DEVTOOLS)/bin/retry.sh
  # temporary solution for a $(dir ...) equivalent which assumes that it gets a single path, possibly with spaces.
  VBOX_DIRX = $(subst ?,$(SP),$(dir $(subst $(SP),?,$1)))
+ VBOX_NOTDIRX = $(subst ?,$(SP),$(notdir $(subst $(SP),?,$1)))
  # Corp code signing client.
  VBOX_CCS_CLIENT_JAR := $(firstword $(rsort \
  			$(wildcard $(KBUILD_DEVTOOLS)/common/ccs/v*/Client.jar)) \
