@@ -209,6 +209,14 @@ cmds = [
     ('SVGA_3D_CMD_WAIT_FOR_QUERY', 'SVGA3dCmdWaitForQuery', (), None),
     #('SVGA_3D_CMD_PRESENT_READBACK', None, (), None),
     ('SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN', 'SVGA3dCmdBlitSurfaceToScreen', (), 'SVGASignedRect'),
+    ('SVGA_3D_CMD_DEFINE_GB_SCREENTARGET', 'SVGA3dCmdDefineGBScreenTarget', (), None),
+    ('SVGA_3D_CMD_BIND_GB_SCREENTARGET', 'SVGA3dCmdBindGBScreenTarget', (), None),
+    ('SVGA_3D_CMD_UPDATE_GB_SCREENTARGET', 'SVGA3dCmdUpdateGBScreenTarget', (), None),
+    ('SVGA_3D_CMD_UPDATE_GB_IMAGE', 'SVGA3dCmdUpdateGBImage', (), None),
+    ('SVGA_3D_CMD_DEFINE_GB_SURFACE', 'SVGA3dCmdDefineGBSurface', (), None),
+    ('SVGA_3D_CMD_BIND_GB_SURFACE', 'SVGA3dCmdBindGBSurface', (), None),
+    ('SVGA_3D_CMD_INVALIDATE_GB_SURFACE', 'SVGA3dCmdInvalidateGBSurface', (), None),
+    ('SVGA_3D_CMD_DESTROY_GB_SURFACE', 'SVGA3dCmdDestroyGBSurface', (), None),
 ]
 
 def dump_cmds():
