@@ -97,8 +97,8 @@ DECLHIDDEN(int)      VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                                  uint32_t cHeight,
                                                  uint8_t *pPixels,
                                                  uint32_t cbLength);
-DECLHIDDEN(int)      VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReportPosition, uint32_t x, uint32_t y,
-                                             uint32_t *pxHost, uint32_t *pyHost);
+DECLHIDDEN(int)      VBoxHGSMIReportCursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReportPosition, uint32_t x, uint32_t y,
+                                                   uint32_t *pxHost, uint32_t *pyHost);
 
 /** @}  */
 

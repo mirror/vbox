@@ -255,8 +255,8 @@ DECLHIDDEN(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx, uin
  * @returns  iprt status code.
  * @returns  VERR_NO_MEMORY      HGSMI heap allocation failed.
  */
-DECLHIDDEN(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReportPosition,
-                                        uint32_t x, uint32_t y, uint32_t *pxHost, uint32_t *pyHost)
+DECLHIDDEN(int) VBoxHGSMIReportCursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReportPosition,
+                                              uint32_t x, uint32_t y, uint32_t *pxHost, uint32_t *pyHost)
 {
     VBVACURSORPOSITION *p;
 

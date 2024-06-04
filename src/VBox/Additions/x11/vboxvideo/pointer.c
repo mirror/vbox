@@ -191,8 +191,7 @@ vbox_set_cursor_position(ScrnInfoPtr pScrn, int x, int y)
 {
     VBOXPtr pVBox = pScrn->driverPrivate;
 
-    /* This currently does nothing. */
-    VBoxHGSMICursorPosition(&pVBox->guestCtx, true, x, y, NULL, NULL);
+    VBoxHGSMIReportCursorPosition(&pVBox->guestCtx, true, x, y, NULL, NULL);
 }
 
 static void
