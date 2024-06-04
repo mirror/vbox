@@ -102,6 +102,10 @@ typedef struct _VBOXWDDM_POINTER_INFO
 
 typedef struct _VBOXWDDM_GLOBAL_POINTER_INFO
 {
+    /** Last updated X position. */
+    uint32_t iLastPosX;
+    /** Last updated Y position. */
+    uint32_t iLastPosY;
     uint32_t iLastReportedScreen;
 } VBOXWDDM_GLOBAL_POINTER_INFO, *PVBOXWDDM_GLOBAL_POINTER_INFO;
 

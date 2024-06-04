@@ -393,13 +393,12 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
             break;
         }
 
-        /* Sets pointer position, is called after IOCTL_VIDEO_ENABLE_POINTER. */
+        /* Sets (reports) pointer position, is called after IOCTL_VIDEO_ENABLE_POINTER. */
         case IOCTL_VIDEO_SET_POINTER_POSITION:
         {
             STARTIO_IN(VIDEO_POINTER_POSITION, pPos);
 
-            NOREF(pPos); /** @todo set pointer position*/
-            bResult = VBoxMPEnablePointer(pExt, TRUE, pStatus);
+            bResult = VBoxMPReportCursorPosition(pExt, pPos, pStatus);
             break;
         }
 

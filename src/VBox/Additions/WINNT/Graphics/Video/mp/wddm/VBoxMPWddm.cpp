@@ -3130,6 +3130,24 @@ static void vboxWddmHostPointerEnable(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnable)
     vboxWddmUpdatePointerShape(pDevExt, &PointerAttributes, sizeof(PointerAttributes));
 }
 
+/**
+ * Reports the current mouse cursor position to the host.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt             Device extension to use.
+ * @param   xPos                X position to report to the host.
+ * @param   yPos                Y position to report to the host.
+ */
+static int vboxWddmReportCursorPosition(PVBOXMP_DEVEXT pDevExt, uint32_t xPos, uint32_t yPos)
+{
+    VIDEO_POINTER_POSITION Pos;
+    RT_ZERO(Pos);
+    Pos.Column = xPos;
+    Pos.Row    = yPos;
+
+    return VBoxMPCmnReportCursorPosition(VBoxCommonFromDeviceExt(pDevExt), &Pos);
+}
+
 NTSTATUS
 APIENTRY
 DxgkDdiSetPointerPosition(
@@ -3168,7 +3186,9 @@ DxgkDdiSetPointerPosition(
 
     pGlobalPointerInfo->iLastReportedScreen = pSetPointerPosition->VidPnSourceId;
 
-    if ((fVisStateChanged || fScreenChanged) && VBoxQueryHostWantsAbsolute())
+    const bool fWantsAbsolute = VBoxQueryHostWantsAbsolute();
+
+    if ((fVisStateChanged || fScreenChanged) && fWantsAbsolute)
     {
         if (fScreenChanged)
         {
@@ -3183,7 +3203,18 @@ DxgkDdiSetPointerPosition(
         vboxWddmHostPointerEnable(pDevExt, pSetPointerPosition->Flags.Visible);
     }
 
-//    LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
+    /* Report the mouse cursor position to the host if changed. */
+    if (   fWantsAbsolute
+        && (   pGlobalPointerInfo->iLastPosX != (uint32_t)pSetPointerPosition->X
+            || pGlobalPointerInfo->iLastPosY != (uint32_t)pSetPointerPosition->Y))
+    {
+        vboxWddmReportCursorPosition(pDevExt, (uint32_t)pSetPointerPosition->X, (uint32_t)pSetPointerPosition->Y);
+
+        pGlobalPointerInfo->iLastPosX = (uint32_t)pSetPointerPosition->X;
+        pGlobalPointerInfo->iLastPosY = (uint32_t)pSetPointerPosition->Y;
+    }
+
+    //    LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
 
     return STATUS_SUCCESS;
 }

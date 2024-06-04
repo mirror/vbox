@@ -130,3 +130,30 @@ bool VBoxMPCmnUpdatePointerShape(PVBOXMP_COMMON pCommon, PVIDEO_POINTER_ATTRIBUT
                                          cbLength - sizeof(VIDEO_POINTER_ATTRIBUTES));
     return RT_SUCCESS(rc);
 }
+
+/**
+ * Reports the current mouse cursor position to the host and optionally retrieves the current position from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCommon             VBoxMP common context to use.
+ * @param   pPos                Mouse position to report to the host.
+ * @param   pxHost              X position reported from the host. Optional and can be NULL.
+ * @param   pyHost              Y position reported from the host. Optional and can be NULL.
+ */
+int VBoxMPCmnReportCursorPositionEx(PVBOXMP_COMMON pCommon, PVIDEO_POINTER_POSITION pPos, uint32_t *pxHost, uint32_t *pyHost)
+{
+    return VBoxHGSMIReportCursorPosition(&pCommon->guestCtx, true /* fReport */, pPos->Column, pPos->Row, pxHost, pyHost);
+}
+
+/**
+ * Reports the current mouse cursor position to the host.
+ *
+ * @returns VBox status code.
+ * @param   pCommon             VBoxMP common context to use.
+ * @param   pPos                Mouse position to report to the host.
+ */
+int VBoxMPCmnReportCursorPosition(PVBOXMP_COMMON pCommon, PVIDEO_POINTER_POSITION pPos)
+{
+    return VBoxMPCmnReportCursorPositionEx(pCommon, pPos, NULL /* pxHost */, NULL /* pyHost */);
+}
+
