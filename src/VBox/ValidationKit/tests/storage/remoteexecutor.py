@@ -215,7 +215,7 @@ class RemoteExecutor(object):
                     reporter.log('%s [stderr]: %s' % (sExec, sLine.encode(encoding = 'UTF-8', errors = 'strict'),));
         else:
             fRc = False;
-        return (fRc, sOutput, sError);
+        return fRc, sOutput, sError;
 
     def execBinaryNoStdOut(self, sExec, asArgs, sInput = None):
         """
