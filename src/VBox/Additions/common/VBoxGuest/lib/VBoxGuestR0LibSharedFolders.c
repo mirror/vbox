@@ -50,14 +50,14 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define VBOX_INIT_CALL(a, b, c) \
-    LogFunc(("%s, idClient=%d\n", "SHFL_FN_" # b, (c)->idClient)); \
-    VBGL_HGCM_HDR_INIT(a, (c)->idClient, SHFL_FN_##b, SHFL_CPARMS_##b); \
+#define VBOX_INIT_CALL(a, b, c, d) \
+    LogFunc(("%s, idClient=%d\n", #b, (c)->idClient)); \
+    VBGL_HGCM_HDR_INIT(a, (c)->idClient, b, d); \
     (a)->fInterruptible = false /* Currently we do like nfs with -o hard (default). */
 
-#define VBOX_INIT_CALL_EX(a, b, c, a_cbReq) \
-    LogFunc(("%s, idClient=%d\n", "SHFL_FN_" # b, (c)->idClient)); \
-    VBGL_HGCM_HDR_INIT_EX(a, (c)->idClient, SHFL_FN_##b, SHFL_CPARMS_##b, a_cbReq); \
+#define VBOX_INIT_CALL_EX(a, b, c, a_cbReq, d) \
+    LogFunc(("%s, idClient=%d\n", #b, (c)->idClient)); \
+    VBGL_HGCM_HDR_INIT_EX(a, (c)->idClient, b, d, a_cbReq); \
     (a)->fInterruptible = false /* Currently we do like nfs with -o hard (default). */
 
 
@@ -106,7 +106,7 @@ DECLVBGL(int) VbglR0SfSetUtf8(PVBGLSFCLIENT pClient)
     int rc;
     VBGLIOCHGCMCALL callInfo;
 
-    VBOX_INIT_CALL(&callInfo, SET_UTF8, pClient);
+    VBOX_INIT_CALL(&callInfo, SHFL_FN_SET_UTF8, pClient, SHFL_CPARMS_SET_UTF8);
     rc = VbglR0HGCMCall(pClient->handle, &callInfo, sizeof(callInfo));
 /*    Log(("VBOXSF: VbglR0SfSetUtf8: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
     return rc;
@@ -132,7 +132,7 @@ DECLVBGL(int) VbglR0SfQueryMappings(PVBGLSFCLIENT pClient, SHFLMAPPING paMapping
     int rc;
     VBoxSFQueryMappings data;
 
-    VBOX_INIT_CALL(&data.callInfo, QUERY_MAPPINGS, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_QUERY_MAPPINGS, pClient, SHFL_CPARMS_QUERY_MAPPINGS);
 
     data.flags.type                      = VMMDevHGCMParmType_32bit;
     data.flags.u.value32                 = SHFL_MF_UCS2;
@@ -158,7 +158,7 @@ DECLVBGL(int) VbglR0SfQueryMapName(PVBGLSFCLIENT pClient, SHFLROOT root, SHFLSTR
     int rc;
     VBoxSFQueryMapName data;
 
-    VBOX_INIT_CALL(&data.callInfo, QUERY_MAP_NAME, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_QUERY_MAP_NAME, pClient, SHFL_CPARMS_QUERY_MAP_NAME);
 
     data.root.type                   = VMMDevHGCMParmType_32bit;
     data.root.u.value32              = root;
@@ -177,7 +177,7 @@ DECLVBGL(int) VbglR0SfMapFolder(PVBGLSFCLIENT pClient, PSHFLSTRING szFolderName,
     int rc;
     VBoxSFMapFolder data;
 
-    VBOX_INIT_CALL(&data.callInfo, MAP_FOLDER, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_MAP_FOLDER, pClient, SHFL_CPARMS_MAP_FOLDER);
 
     data.path.type                    = VMMDevHGCMParmType_LinAddr;
     data.path.u.Pointer.size          = ShflStringSizeOfBuffer(szFolderName);
@@ -211,7 +211,7 @@ DECLVBGL(int) VbglR0SfUnmapFolder(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap)
     int rc;
     VBoxSFUnmapFolder data;
 
-    VBOX_INIT_CALL(&data.callInfo, UNMAP_FOLDER, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_UNMAP_FOLDER, pClient, SHFL_CPARMS_UNMAP_FOLDER);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -229,7 +229,7 @@ DECLVBGL(int) VbglR0SfCreate(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING
     int rc;
     VBoxSFCreate data;
 
-    VBOX_INIT_CALL(&data.callInfo, CREATE, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_CREATE, pClient, SHFL_CPARMS_CREATE);
 
     data.root.type                    = VMMDevHGCMParmType_32bit;
     data.root.u.value32               = pMap->root;
@@ -252,7 +252,7 @@ DECLVBGL(int) VbglR0SfClose(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE H
     int rc;
     VBoxSFClose data;
 
-    VBOX_INIT_CALL(&data.callInfo, CLOSE, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_CLOSE, pClient, SHFL_CPARMS_CLOSE);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -272,7 +272,7 @@ DECLVBGL(int) VbglR0SfRemove(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING
 
     VBoxSFRemove data;
 
-    VBOX_INIT_CALL(&data.callInfo, REMOVE, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_REMOVE, pClient, SHFL_CPARMS_REMOVE);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -294,7 +294,7 @@ DECLVBGL(int) VbglR0SfRename(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING
     int rc;
     VBoxSFRename data;
 
-    VBOX_INIT_CALL(&data.callInfo, RENAME, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_RENAME, pClient, SHFL_CPARMS_RENAME);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -321,7 +321,7 @@ DECLVBGL(int) VbglR0SfRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hF
     int rc;
     VBoxSFRead data;
 
-    VBOX_INIT_CALL(&data.callInfo, READ, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_READ, pClient, SHFL_CPARMS_READ);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -359,7 +359,7 @@ DECLVBGL(int) VbglR0SfReadPageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLH
     if (RT_UNLIKELY(!pData))
         return VERR_NO_TMP_MEMORY;
 
-    VBOX_INIT_CALL_EX(&pData->callInfo, READ, pClient, cbData);
+    VBOX_INIT_CALL_EX(&pData->callInfo, SHFL_FN_READ, pClient, cbData, SHFL_CPARMS_READ);
 
     pData->root.type                      = VMMDevHGCMParmType_32bit;
     pData->root.u.value32                 = pMap->root;
@@ -398,7 +398,7 @@ DECLVBGL(int) VbglR0SfWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE h
     int rc;
     VBoxSFWrite data;
 
-    VBOX_INIT_CALL(&data.callInfo, WRITE, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_WRITE, pClient, SHFL_CPARMS_WRITE);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -437,7 +437,7 @@ DECLVBGL(int) VbglR0SfWritePhysCont(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFL
     if (RT_UNLIKELY(!pData))
         return VERR_NO_TMP_MEMORY;
 
-    VBOX_INIT_CALL_EX(&pData->callInfo, WRITE, pClient, cbData);
+    VBOX_INIT_CALL_EX(&pData->callInfo, SHFL_FN_WRITE, pClient, cbData, SHFL_CPARMS_WRITE);
 
     pData->root.type                      = VMMDevHGCMParmType_32bit;
     pData->root.u.value32                 = pMap->root;
@@ -485,7 +485,7 @@ DECLVBGL(int) VbglR0SfWritePageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFL
     if (RT_UNLIKELY(!pData))
         return VERR_NO_TMP_MEMORY;
 
-    VBOX_INIT_CALL_EX(&pData->callInfo, WRITE, pClient, cbData);
+    VBOX_INIT_CALL_EX(&pData->callInfo, SHFL_FN_WRITE, pClient, cbData, SHFL_CPARMS_WRITE);
 
     pData->root.type                      = VMMDevHGCMParmType_32bit;
     pData->root.u.value32                 = pMap->root;
@@ -525,7 +525,7 @@ DECLVBGL(int) VbglR0SfFlush(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE h
     int rc;
     VBoxSFFlush data;
 
-    VBOX_INIT_CALL(&data.callInfo, FLUSH, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_FLUSH, pClient, SHFL_CPARMS_FLUSH);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -552,7 +552,7 @@ DECLVBGL(int) VbglR0SfDirInfo(
     int rc;
     VBoxSFList data;
 
-    VBOX_INIT_CALL(&data.callInfo, LIST, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_LIST, pClient, SHFL_CPARMS_LIST);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -591,7 +591,7 @@ DECLVBGL(int) VbglR0SfFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE 
     int rc;
     VBoxSFInformation data;
 
-    VBOX_INIT_CALL(&data.callInfo, INFORMATION, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_INFORMATION, pClient, SHFL_CPARMS_INFORMATION);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -624,7 +624,7 @@ DECLVBGL(int) VbglR0SfLock(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hF
     int rc;
     VBoxSFLock data;
 
-    VBOX_INIT_CALL(&data.callInfo, LOCK, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_LOCK, pClient, SHFL_CPARMS_LOCK);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -651,7 +651,7 @@ DECLVBGL(int) VbglR0SfReadLink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRI
     int rc;
     VBoxSFReadLink data;
 
-    VBOX_INIT_CALL(&data.callInfo, READLINK, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_READLINK, pClient, SHFL_CPARMS_READLINK);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -675,7 +675,7 @@ DECLVBGL(int) VbglR0SfSymlink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRIN
     int rc;
     VBoxSFSymlink data;
 
-    VBOX_INIT_CALL(&data.callInfo, SYMLINK, pClient);
+    VBOX_INIT_CALL(&data.callInfo, SHFL_FN_SYMLINK, pClient, SHFL_CPARMS_SYMLINK);
 
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
@@ -702,7 +702,7 @@ DECLVBGL(int) VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient)
     int rc;
     VBGLIOCHGCMCALL callInfo;
 
-    VBOX_INIT_CALL(&callInfo, SET_SYMLINKS, pClient);
+    VBOX_INIT_CALL(&callInfo, SHFL_FN_SET_SYMLINKS, pClient, SHFL_CPARMS_SET_SYMLINKS);
     rc = VbglR0HGCMCall(pClient->handle, &callInfo, sizeof(callInfo));
 /*    Log(("VBOXSF: VbglR0SfSetSymlinks: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
     return rc;
