@@ -1412,7 +1412,7 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 
 /** The number of entries in the RAM range TLBs (there is one for each
  *  context).  Must be a power of two. */
-#define PGM_RAMRANGE_TLB_ENTRIES            8
+#define PGM_RAMRANGE_TLB_ENTRIES            16
 
 /**
  * Calculates the RAM range TLB index for the physical address.
@@ -3111,19 +3111,12 @@ typedef struct PGM
 
 
     /** RAM range TLB for R3. */
-    R3PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR3[PGM_RAMRANGE_TLB_ENTRIES];
+    R3PTRTYPE(PPGMRAMRANGE)         apRamRangesTlb[PGM_RAMRANGE_TLB_ENTRIES];
     /** Shadow Page Pool - R3 Ptr. */
     R3PTRTYPE(PPGMPOOL)             pPoolR3;
-    /** Pointer to the list of ROM ranges - for R3.
-     * This is sorted by physical address and contains no overlapping ranges. */
-    R3PTRTYPE(PPGMROMRANGE)         pRomRangesR3;
 
-    /** RAM range TLB for R0. */
-    R0PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR0[PGM_RAMRANGE_TLB_ENTRIES];
     /** Shadow Page Pool - R0 Ptr. */
     R0PTRTYPE(PPGMPOOL)             pPoolR0;
-    /** R0 pointer corresponding to PGM::pRomRangesR3. */
-    R0PTRTYPE(PPGMROMRANGE)         pRomRangesR0;
 
     /** Hack: Number of deprecated page mapping locks taken by the current lock
      *  owner via pgmPhysGCPhys2CCPtrInternalDepr. */
@@ -3145,7 +3138,7 @@ typedef struct PGM
     /** Caching the last physical handler we looked. */
     uint32_t                        idxLastPhysHandler;
 
-    uint32_t                        au64Padding3[5];
+    uint32_t                        au64Padding3[9];
 
     /** PGM critical section.
      * This protects the physical, ram ranges, and the page flag updating (some of
@@ -3762,6 +3755,8 @@ typedef struct PGMR0PERVM
     /** The max RAM range ID (safe).   */
     uint32_t                        idRamRangeMax;
     uint8_t                         abAlignment1[64 - sizeof(uint32_t)];
+    /** RAM range TLB for R0. */
+    R0PTRTYPE(PPGMRAMRANGE)         apRamRangesTlb[PGM_RAMRANGE_TLB_ENTRIES];
     /** @} */
 
     /** @name MMIO2 ranges

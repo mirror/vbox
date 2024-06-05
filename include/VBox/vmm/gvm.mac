@@ -94,7 +94,7 @@ struc GVM
         alignb 64
         .pdmr0              resb 3008
         alignb 64
-        .pgmr0              resb 89600
+        .pgmr0              resb 89728
         alignb 64
         .iomr0              resb 512
         alignb 64

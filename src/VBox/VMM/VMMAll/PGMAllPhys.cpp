@@ -588,8 +588,10 @@ DECLHIDDEN(bool) pgmPhysAssertRamRangesLocked(PVMCC pVM, bool fInUpdate, bool fR
 void pgmPhysInvalidRamRangeTlbs(PVMCC pVM)
 {
     PGM_LOCK_VOID(pVM);
-    RT_ZERO(pVM->pgm.s.apRamRangesTlbR3);
-    RT_ZERO(pVM->pgm.s.apRamRangesTlbR0);
+    /* This is technically only required when freeing the PCNet MMIO2 range
+       during ancient saved state loading.  The code freeing the RAM range
+       will make sure this function is called in both rings. */
+    RT_ZERO(pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb);
     PGM_UNLOCK(pVM);
 }
 
@@ -629,7 +631,7 @@ PPGMRAMRANGE pgmPhysGetRangeSlow(PVMCC pVM, RTGCPHYS GCPhys)
             AssertReturn(idRamRange < RT_ELEMENTS(pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges), NULL);
             PPGMRAMRANGE const pRamRange  = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges[idRamRange];
             Assert(pRamRange);
-            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRamRange;
+            pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRamRange;
             return pRamRange;
         }
         if (RTGCPHYS_IS_NEGATIVE(off))
@@ -676,7 +678,7 @@ PPGMRAMRANGE pgmPhysGetRangeAtOrAboveSlow(PVMCC pVM, RTGCPHYS GCPhys)
             AssertReturn(idRamRange < RT_ELEMENTS(pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges), NULL);
             PPGMRAMRANGE const pRamRange  = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges[idRamRange];
             Assert(pRamRange);
-            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRamRange;
+            pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRamRange;
             return pRamRange;
         }
         if (RTGCPHYS_IS_NEGATIVE(off))
@@ -730,7 +732,7 @@ PPGMPAGE pgmPhysGetPageSlow(PVMCC pVM, RTGCPHYS GCPhys)
             AssertReturn(idRamRange < RT_ELEMENTS(pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges), NULL);
             PPGMRAMRANGE const pRamRange  = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges[idRamRange];
             AssertReturn(pRamRange, NULL);
-            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRamRange;
+            pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRamRange;
 
             /* Get the page. */
             Assert(off < pRamRange->cb);
@@ -783,7 +785,7 @@ int pgmPhysGetPageExSlow(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
             AssertReturn(idRamRange < RT_ELEMENTS(pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges), VERR_PGM_PHYS_RAM_LOOKUP_IPE);
             PPGMRAMRANGE const pRamRange  = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges[idRamRange];
             AssertReturn(pRamRange, VERR_PGM_PHYS_RAM_LOOKUP_IPE);
-            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRamRange;
+            pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRamRange;
 
             /* Get the page. */
             Assert(off < pRamRange->cb);
@@ -839,7 +841,7 @@ int pgmPhysGetPageAndRangeExSlow(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, P
             AssertReturn(idRamRange < RT_ELEMENTS(pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges), VERR_PGM_PHYS_RAM_LOOKUP_IPE);
             PPGMRAMRANGE const pRamRange  = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges[idRamRange];
             AssertReturn(pRamRange, VERR_PGM_PHYS_RAM_LOOKUP_IPE);
-            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRamRange;
+            pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRamRange;
 
             /* Get the page. */
             Assert(off < pRamRange->cb);
@@ -1102,6 +1104,10 @@ static int pgmPhysRamRangeFree(PVMCC pVM, PPGMRAMRANGE pRamRange)
 #endif
     }
 
+    /*
+     * Make sure the RAM range TLB does not contain any stale pointers to this range.
+     */
+    pgmPhysInvalidRamRangeTlbs(pVM);
     return rc;
 }
 

@@ -2851,7 +2851,7 @@ static int pgmR3PhysMmioUnmapLocked(PVM pVM, PVMCPU pVCpu, RTGCPHYS const GCPhys
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
     pgmPhysInvalidatePageMapTLB(pVM);
-    pgmPhysInvalidRamRangeTlbs(pVM);
+    /*pgmPhysInvalidRamRangeTlbs(pVM); - not necessary */
 
     return rc;
 }
@@ -3402,6 +3402,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Deregister(PVM pVM, PPDMDEVINS pDevIns, PGMMMI
                                     ("VMMR0_DO_PGM_PHYS_MMIO2_DEREGISTER: rc=%Rrc idx=%#x cChunks=%#x %s\n",
                                      rc2, idx, cChunks, pszDesc),
                                     rc = RT_SUCCESS(rc) ? rc2 : rc);
+                pgmPhysInvalidRamRangeTlbs(pVM); /* Ensure no stale pointers in the ring-3 RAM range TLB. */
             }
             if (RT_FAILURE(rc2))
             {
@@ -3904,7 +3905,7 @@ static int pgmR3PhysMmio2UnmapLocked(PVM pVM, uint32_t const idxFirst, uint32_t 
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
     pgmPhysInvalidatePageMapTLB(pVM);
-    pgmPhysInvalidRamRangeTlbs(pVM);
+    /* pgmPhysInvalidRamRangeTlbs(pVM); - not necessary */
 
     return rcRet;
 }
