@@ -41,11 +41,11 @@
 #endif
 
 /** The default amount of VGA VRAM (in bytes). */
-# define VGA_VRAM_DEFAULT           (_4M)
+#define VGA_VRAM_DEFAULT            (_4M)
 /** The minimum amount of VGA VRAM (in bytes). */
-# define VGA_VRAM_MIN               (_1M)
-/** The maximum amount of VGA VRAM (in bytes). Limited by VBOX_MAX_ALLOC_PAGE_COUNT. */
-# define VGA_VRAM_MAX               (256 * _1M)
+#define VGA_VRAM_MIN                (_1M)
+/** The maximum amount of VGA VRAM (in bytes).  */
+#define VGA_VRAM_MAX                (_1G)
 
 /** The minimum amount of SVGA VRAM (in bytes). */
 #define SVGA_VRAM_MIN_SIZE          (4 * 640 * 480)

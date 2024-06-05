@@ -433,6 +433,28 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     ComPtr<IPlatform> platform;
     pMachine->COMGETTER(Platform)(platform.asOutParam());                                   H();
 
+    /* We have to increase the RAM hole if lots of VRAM is assigned. We stupidly
+       have to do this before the MCFG region is subtracted, even if there
+       should be ample space for it after the VRAM due to alignment. See
+       assumptions in ich9pciFakePCIBIOS(). */
+    ComPtr<IGraphicsAdapter> ptrGraphicsAdapter;
+    hrc = pMachine->COMGETTER(GraphicsAdapter)(ptrGraphicsAdapter.asOutParam());            H();
+    ULONG cVRamMBs = 0;
+    hrc = ptrGraphicsAdapter->COMGETTER(VRAMSize)(&cVRamMBs);                               H();
+    if (cVRamMBs > 256)
+    {
+        uint32_t cVRamMBsPowerOfTwo = RT_MIN(cVRamMBs, 1024); /* 1GB is the absolute max given PCI alignment. */
+        if (!RT_IS_POWER_OF_TWO(cVRamMBsPowerOfTwo))
+            cVRamMBsPowerOfTwo = RT_BIT_32(ASMBitFirstSetU32(cVRamMBsPowerOfTwo)); /* returns [1..32] */
+        if (cbRamHole / _1M < cVRamMBsPowerOfTwo * 2)
+        {
+            cbRamHole = cVRamMBsPowerOfTwo * 2 * _1M; /* We must double the VRAM size due to PCI alignment. */
+/** @todo sort out the MCFG placement to better use available physical memory. */
+            //if (uMcfgBase)
+            //    uMcfgBase = _4G - cbRamHole + cVRamMBsPowerOfTwo * _1M;
+        }
+    }
+
     ChipsetType_T chipsetType;
     hrc = platform->COMGETTER(ChipsetType)(&chipsetType);                                   H();
     if (chipsetType == ChipsetType_ICH9)

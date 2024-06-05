@@ -681,7 +681,14 @@ static void pci_bios_init_device(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, PDEVP
                                     /* VGA: map frame buffer to default Bochs VBE address. Only
                                      * needed for legacy guest drivers. */
                                     if (fPrefetch)
+                                    {
                                         paddr = &uPciBiosSpecialVRAM;
+
+                                        /* Hack alert! Workaround for VRAM sizes higher than 256MB (absolute max is 1GB). */
+                                        if (   u32Size > 0x10000000  /* 256MB (what we can stuff at 0xe0000000) */
+                                            && uPciBiosSpecialVRAM == 0xe0000000)
+                                            uPciBiosSpecialVRAM = u32Size > 0x20000000 /*512MB*/ ? 0x80000000 : 0xc0000000;
+                                    }
                                 }
                             }
                         }
@@ -693,8 +700,9 @@ static void pci_bios_init_device(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, PDEVP
                         if (   !uNew
                             || uNew + u32Size - 1 >= UINT32_C(0xfec00000))
                         {
-                            LogRel(("PCI: no space left for BAR%u of device %u/%u/%u (vendor=%#06x device=%#06x)\n",
-                                    i, pBus->iBus, pPciDev->uDevFn >> 3, pPciDev->uDevFn & 7, vendor_id, device_id)); /** @todo make this a VM start failure later. */
+                            LogRel(("PCI: no space left for BAR%u (type=%#x size=%#RX32) of device %u/%u/%u (vendor=%#06x device=%#06x) - uNew=%#RX32 (*paddr=%#RX32)\n",
+                                    i, u8ResourceType, u32Size, pBus->iBus, pPciDev->uDevFn >> 3, pPciDev->uDevFn & 7,
+                                    vendor_id, device_id, uNew, *paddr)); /** @todo make this a VM start failure later. */
                             /* Undo the mapping mess caused by the size probing. */
                             devpciR3SetDWord(pDevIns, pPciDev, u32Address, UINT32_C(0));
                         }
