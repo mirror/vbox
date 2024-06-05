@@ -32,6 +32,7 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <VBox/AssertGuest.h>
 #include <VBox/log.h>
 #include <VBox/vmm/pdmdev.h>
@@ -1659,7 +1660,7 @@ static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE con
 void vmsvga3dMapWriteBmpFile(VMSVGA3D_MAPPED_SURFACE const *pMap, char const *pszPrefix)
 {
     static int idxBitmap = 0;
-    char *pszFilename = RTStrAPrintf2("bmp\\%s%d.bmp", pszPrefix, idxBitmap++);
+    char *pszFilename = RTStrAPrintf2("bmp" RTPATH_SLASH_STR "%s%d.bmp", pszPrefix, idxBitmap++);
     int rc = vmsvga3dBmpWrite(pszFilename, pMap);
     Log(("WriteBmpFile %s format %d %Rrc\n", pszFilename, pMap->format, rc)); RT_NOREF(rc);
     RTStrFree(pszFilename);
@@ -7754,8 +7755,8 @@ void vmsvgaR3CmdDefineGMRFB(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDef
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     STAM_REL_COUNTER_INC(&pSvgaR3State->StatR3CmdDefineGmrFb);
-    Log(("SVGA_CMD_DEFINE_GMRFB gmr=%x offset=%x bytesPerLine=%x bpp=%d color depth=%d\n",
-             pCmd->ptr.gmrId, pCmd->ptr.offset, pCmd->bytesPerLine, pCmd->format.bitsPerPixel, pCmd->format.colorDepth));
+    Log(("SVGA_CMD_DEFINE_GMRFB gmr=0x%x offset=0x%x bytesPerLine=0x%x(%d) bpp=%d color depth=%d\n",
+             pCmd->ptr.gmrId, pCmd->ptr.offset, pCmd->bytesPerLine, pCmd->bytesPerLine, pCmd->format.bitsPerPixel, pCmd->format.colorDepth));
 
     pSvgaR3State->GMRFB.ptr          = pCmd->ptr;
     pSvgaR3State->GMRFB.bytesPerLine = pCmd->bytesPerLine;
@@ -7777,6 +7778,11 @@ void vmsvgaR3CmdBlitGMRFBToScreen(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo
 
     VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, pCmd->destScreenId);
     AssertPtrReturnVoid(pScreen);
+
+    Log(("SVGA_CMD_BLIT_GMRFB_TO_SCREEN screen(%d): x=%d y=%d w=%d h=%d offVRAM=0x%x cbPitch=0x%x(%d)\n",
+            pScreen->idScreen,
+            pScreen->xOrigin, pScreen->yOrigin, pScreen->cWidth, pScreen->cHeight,
+            pScreen->offVRAM, pScreen->cbPitch, pScreen->cbPitch));
 
     /** @todo Support GMRFB.format.s.bitsPerPixel != pThis->svga.uBpp ?  */
     AssertReturnVoid(pSvgaR3State->GMRFB.format.bitsPerPixel == pScreen->cBpp);
