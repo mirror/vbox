@@ -328,7 +328,7 @@ RTR0DECL(int) RTR0MemObjZeroInitialize(RTR0MEMOBJ hMemObj, bool fForce)
     }
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTR0MemObjWasZeroInitialized);
+RT_EXPORT_SYMBOL(RTR0MemObjZeroInitialize);
 
 
 RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)

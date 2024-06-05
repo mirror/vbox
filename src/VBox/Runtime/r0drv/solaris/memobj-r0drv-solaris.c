@@ -1221,10 +1221,10 @@ DECLHIDDEN(int) rtR0MemObjNativeZeroInitWithoutMapping(PRTR0MEMOBJINTERNAL pMem)
     size_t               iPage;
     for (iPage = 0; iPage < cPages; iPage++)
     {
-        void          *pvPage;
+        void    *pvPage;
 
         /* Get the physical address of the page. */
-        RTHCPHYS const HCPhys = rtR0MemObjNativeGetPagePhysAddr(&pMemSolaris->Core, iPage);
+        RTHCPHYS HCPhys = rtR0MemObjNativeGetPagePhysAddr(&pMemSolaris->Core, iPage);
         AssertReturn(HCPhys != NIL_RTHCPHYS, VERR_INTERNAL_ERROR_3);
         Assert(!(HCPhys & PAGE_OFFSET_MASK));
 
