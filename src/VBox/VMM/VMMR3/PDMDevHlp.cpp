@@ -288,11 +288,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Mmio2Create(PPDMDEVINS pDevIns, PPDMPCIDEV 
     *phRegion   = NIL_PGMMMIO2HANDLE;
     AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 == pDevIns, VERR_INVALID_PARAMETER);
 
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
-    AssertMsgReturn(   pVM->enmVMState == VMSTATE_CREATING
-                    || pVM->enmVMState == VMSTATE_LOADING,
-                    ("state %s, expected CREATING or LOADING\n", VMGetStateName(pVM->enmVMState)), VERR_VM_INVALID_VM_STATE);
+    PVM const pVM = pDevIns->Internal.s.pVMR3;
 
     AssertReturn(!(iPciRegion & UINT16_MAX), VERR_INVALID_PARAMETER); /* not implemented. */
 
@@ -313,12 +309,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_Mmio2Destroy(PPDMDEVINS pDevIns, PGMMMIO2HA
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_Mmio2Destroy: caller='%s'/%d: hRegion=%#RX64\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
-
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
-    AssertMsgReturn(   pVM->enmVMState == VMSTATE_DESTROYING
-                    || pVM->enmVMState == VMSTATE_LOADING,
-                    ("state %s, expected DESTROYING or LOADING\n", VMGetStateName(pVM->enmVMState)), VERR_VM_INVALID_VM_STATE);
 
     int rc = PGMR3PhysMmio2Deregister(pDevIns->Internal.s.pVMR3, pDevIns, hRegion);
 

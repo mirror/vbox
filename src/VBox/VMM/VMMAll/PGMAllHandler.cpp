@@ -1647,35 +1647,47 @@ static PPGMPAGE pgmPhysResolveMmio2PageLocked(PVMCC pVM, PPDMDEVINS pDevIns, PGM
 {
     /* Only works if the handle is in the handle table! */
     AssertReturn(hMmio2 != 0, NULL);
-    hMmio2--;
+    uint32_t const cMmio2Ranges = RT_MIN(pVM->pgm.s.cMmio2Ranges, RT_ELEMENTS(pVM->pgm.s.aMmio2Ranges));
+    AssertReturn(hMmio2 <= cMmio2Ranges, NULL);
+    AssertCompile(RT_ELEMENTS(pVM->pgm.s.apMmio2RamRanges)    == RT_ELEMENTS(pVM->pgm.s.aMmio2Ranges));
+#ifdef IN_RING0
+    AssertCompile(RT_ELEMENTS(pVM->pgmr0.s.apMmio2RamRanges)  == RT_ELEMENTS(pVM->pgm.s.aMmio2Ranges));
+    AssertCompile(RT_ELEMENTS(pVM->pgmr0.s.acMmio2RangePages) == RT_ELEMENTS(pVM->pgm.s.aMmio2Ranges));
+#endif
+    uint32_t const idxFirst = hMmio2 - 1U;
 
     /* Must check the first one for PGMREGMMIO2RANGE_F_FIRST_CHUNK. */
-    AssertReturn(hMmio2 < RT_ELEMENTS(pVM->pgm.s.apMmio2RangesR3), NULL);
-    PPGMREGMMIO2RANGE pCur = pVM->pgm.s.CTX_SUFF(apMmio2Ranges)[hMmio2];
-    AssertReturn(pCur, NULL);
-    AssertReturn(pCur->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK, NULL);
+    AssertReturn(pVM->pgm.s.aMmio2Ranges[idxFirst].fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK, NULL);
+#ifdef IN_RING0
+    AssertReturn(pVM->pgmr0.s.ahMmio2MapObjs[idxFirst] != NIL_RTR0MEMOBJ, NULL); /* Only the first chunk has a backing object. */
+#endif
 
     /* Loop thru the sub-ranges till we find the one covering offMmio2. */
-    for (;;)
+    for (uint32_t idx = idxFirst; idx < cMmio2Ranges; idx++)
     {
 #ifdef IN_RING3
-        AssertReturn(pCur->pDevInsR3 == pDevIns, NULL);
+        AssertReturn(pVM->pgm.s.aMmio2Ranges[idx].pDevInsR3 == pDevIns, NULL);
 #else
-        AssertReturn(pCur->pDevInsR3 == pDevIns->pDevInsForR3, NULL);
+        AssertReturn(pVM->pgm.s.aMmio2Ranges[idx].pDevInsR3 == pDevIns->pDevInsForR3, NULL);
 #endif
 
         /* Does it match the offset? */
-        if (offMmio2Page < pCur->cbReal)
-            return &pCur->RamRange.aPages[offMmio2Page >> GUEST_PAGE_SHIFT];
+        PPGMRAMRANGE const pRamRange = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apMmio2RamRanges[idx];
+        AssertReturn(pRamRange, NULL);
+#ifdef IN_RING3
+        RTGCPHYS const     cbRange   = RT_MIN(pRamRange->cb, pVM->pgm.s.aMmio2Ranges[idx].cbReal);
+#else
+        RTGCPHYS const     cbRange   = RT_MIN(pRamRange->cb, (RTGCPHYS)pVM->pgmr0.s.acMmio2RangePages[idx] << GUEST_PAGE_SHIFT);
+#endif
+        if (offMmio2Page < cbRange)
+            return &pRamRange->aPages[offMmio2Page >> GUEST_PAGE_SHIFT];
 
-        /* Advance if we can. */
-        AssertReturn(!(pCur->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK), NULL);
-        offMmio2Page -= pCur->cbReal;
-        hMmio2++;
-        AssertReturn(hMmio2 < RT_ELEMENTS(pVM->pgm.s.apMmio2RangesR3), NULL);
-        pCur = pVM->pgm.s.CTX_SUFF(apMmio2Ranges)[hMmio2];
-        AssertReturn(pCur, NULL);
+        /* Advance. */
+        AssertReturn(!(pVM->pgm.s.aMmio2Ranges[idx].fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK), NULL);
+        offMmio2Page -= cbRange;
     }
+    AssertFailed();
+    return NULL;
 }
 
 
@@ -2081,7 +2093,6 @@ typedef struct PGMAHAFIS
  */
 VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVMCC pVM)
 {
-    PPGM        pPGM = &pVM->pgm.s;
     PGMAHAFIS   State;
     State.GCPhys  = 0;
     State.cErrors = 0;
@@ -2093,8 +2104,14 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVMCC pVM)
      * Check the RAM flags against the handlers.
      */
     PPGMPHYSHANDLERTREE const pPhysHandlerTree = pVM->VMCC_CTX(pgm).s.pPhysHandlerTree;
-    for (PPGMRAMRANGE pRam = pPGM->CTX_SUFF(pRamRangesX); pRam; pRam = pRam->CTX_SUFF(pNext))
+    uint32_t const            cLookupEntries   = RT_MIN(pVM->pgm.s.RamRangeUnion.cLookupEntries,
+                                                        RT_ELEMENTS(pVM->pgm.s.aRamRangeLookup));
+    for (uint32_t idxLookup = 0; idxLookup < cLookupEntries; idxLookup++)
     {
+        uint32_t const idRamRange = PGMRAMRANGELOOKUPENTRY_GET_ID(pVM->pgm.s.aRamRangeLookup[idxLookup]);
+        AssertContinue(idRamRange < RT_ELEMENTS(pVM->pgm.s.apRamRanges));
+        PPGMRAMRANGE const pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges[idRamRange];
+        AssertContinue(pRam);
         const uint32_t cPages = pRam->cb >> GUEST_PAGE_SHIFT;
         for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {

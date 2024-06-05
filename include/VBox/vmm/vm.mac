@@ -144,7 +144,7 @@ struc VM
     alignb 64
     .cpum                   resb 8832 + 128*8192
     alignb 16384
-    .pgm                    resb 53888
+    .pgm                    resb 127616
     alignb 64
     .vmm                    resb 1600
     alignb 64

@@ -274,7 +274,8 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
      */
     AssertPtrReturn(phRegion, VERR_INVALID_POINTER);
     *phRegion = UINT32_MAX;
-    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    PVMCPU const pVCpu = VMMGetCpu(pVM);
+    AssertReturn(pVCpu && pVCpu->idCpu == 0, VERR_VM_THREAD_NOT_EMT);
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
     AssertReturn(!pVM->iom.s.fMmioFrozen, VERR_WRONG_ORDER);
 
@@ -325,6 +326,13 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
     }
 
     /*
+     * Create a matching ad-hoc RAM range for this MMIO region.
+     */
+    uint16_t idRamRange = 0;
+    int rc = PGMR3PhysMmioRegister(pVM, pVCpu, cbRegion, pszDesc, &idRamRange);
+    AssertRCReturn(rc,  rc);
+
+    /*
      * Enter it.
      */
     pVM->iom.s.paMmioRegs[idx].cbRegion           = cbRegion;
@@ -340,6 +348,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
     pVM->iom.s.paMmioRegs[idx].idxStats           = (uint16_t)idxStats;
     pVM->iom.s.paMmioRegs[idx].fMapped            = false;
     pVM->iom.s.paMmioRegs[idx].fFlags             = fFlags;
+    pVM->iom.s.paMmioRegs[idx].idRamRange         = idRamRange;
     pVM->iom.s.paMmioRegs[idx].idxSelf            = idx;
 
     pVM->iom.s.cMmioRegs = idx + 1;
@@ -408,8 +417,8 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PVMCPU pVCpu, PPDMDEVINS pDevIns, IOM
                     {
                         /* Register with PGM before we shuffle the array: */
                         ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
-                        rc = PGMR3PhysMmioRegister(pVM, pVCpu, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
-                                                   hRegion, pRegEntry->pszDesc);
+                        rc = PGMR3PhysMmioMap(pVM, pVCpu, GCPhys, cbRegion, pRegEntry->idRamRange,
+                                              pVM->iom.s.hNewMmioHandlerType, hRegion);
                         AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
                         /* Insert after the entry we just considered: */
@@ -427,8 +436,8 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PVMCPU pVCpu, PPDMDEVINS pDevIns, IOM
                     {
                         /* Register with PGM before we shuffle the array: */
                         ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
-                        rc = PGMR3PhysMmioRegister(pVM, pVCpu, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
-                                                   hRegion, pRegEntry->pszDesc);
+                        rc = PGMR3PhysMmioMap(pVM, pVCpu, GCPhys, cbRegion, pRegEntry->idRamRange,
+                                              pVM->iom.s.hNewMmioHandlerType, hRegion);
                         AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
                         /* Insert at the entry we just considered: */
@@ -454,7 +463,8 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PVMCPU pVCpu, PPDMDEVINS pDevIns, IOM
         {
             /* First entry in the lookup table: */
             ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
-            rc = PGMR3PhysMmioRegister(pVM, pVCpu, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType, hRegion, pRegEntry->pszDesc);
+            rc = PGMR3PhysMmioMap(pVM, pVCpu, GCPhys, cbRegion, pRegEntry->idRamRange,
+                                  pVM->iom.s.hNewMmioHandlerType, hRegion);
             AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
             pEntry = paEntries;
@@ -571,7 +581,7 @@ VMMR3_INT_DECL(int) IOMR3MmioUnmap(PVM pVM, PVMCPU pVCpu, PPDMDEVINS pDevIns, IO
                     memmove(pEntry, pEntry + 1, sizeof(*pEntry) * (cEntries - i - 1));
                 pVM->iom.s.cMmioLookupEntries = cEntries - 1;
 
-                rc = PGMR3PhysMmioDeregister(pVM, pVCpu, GCPhys, pRegEntry->cbRegion);
+                rc = PGMR3PhysMmioUnmap(pVM, pVCpu, GCPhys, pRegEntry->cbRegion, pRegEntry->idRamRange);
                 AssertRC(rc);
 
                 pRegEntry->fMapped = false;
@@ -621,6 +631,7 @@ VMMR3_INT_DECL(int) IOMR3MmioUnmap(PVM pVM, PVMCPU pVCpu, PPDMDEVINS pDevIns, IO
 VMMR3_INT_DECL(int)  IOMR3MmioReduce(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS cbRegion)
 {
     RT_NOREF(pVM, pDevIns, hRegion, cbRegion);
+    AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 }
 

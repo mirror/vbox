@@ -203,7 +203,8 @@ VMMR3DECL(int) PGMR3DbgR3Ptr2HCPhys(PUVM pUVM, RTR3PTR R3Ptr, PRTHCPHYS pHCPhys)
 VMMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PUVM pUVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+    PVM const pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     /*
      * Validate and adjust the input a bit.
@@ -215,10 +216,15 @@ VMMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PUVM pUVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPh
     if (HCPhys == 0)
         return VERR_INVALID_POINTER;
 
-    for (PPGMRAMRANGE pRam = pUVM->pVM->pgm.s.CTX_SUFF(pRamRangesX);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
+    uint32_t const cLookupEntries = RT_MIN(pVM->pgm.s.RamRangeUnion.cLookupEntries, RT_ELEMENTS(pVM->pgm.s.aRamRangeLookup));
+    for (uint32_t idxLookup = 0; idxLookup < cLookupEntries; idxLookup++)
     {
+        uint32_t const idRamRange = PGMRAMRANGELOOKUPENTRY_GET_ID(pVM->pgm.s.aRamRangeLookup[idxLookup]);
+        AssertContinue(idRamRange < RT_ELEMENTS(pVM->pgm.s.apRamRanges));
+        PPGMRAMRANGE const pRam = pVM->pgm.s.apRamRanges[idRamRange];
+        if (pRam != NULL)   { /*likely*/ }
+        else                continue;
+
         uint32_t iPage = pRam->cb >> GUEST_PAGE_SHIFT;
         while (iPage-- > 0)
             if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
@@ -829,10 +835,16 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
      * bother to match across ranges.
      */
     PGM_LOCK_VOID(pVM);
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
+    uint32_t const cLookupEntries = RT_MIN(pVM->pgm.s.RamRangeUnion.cLookupEntries, RT_ELEMENTS(pVM->pgm.s.aRamRangeLookup));
+/** @todo binary search the start address.   */
+    for (uint32_t idxLookup = 0; idxLookup < cLookupEntries; idxLookup++)
     {
+        uint32_t const idRamRange = PGMRAMRANGELOOKUPENTRY_GET_ID(pVM->pgm.s.aRamRangeLookup[idxLookup]);
+        AssertContinue(idRamRange < RT_ELEMENTS(pVM->pgm.s.apRamRanges));
+        PPGMRAMRANGE const pRam = pVM->pgm.s.apRamRanges[idRamRange];
+        if (pRam != NULL)   { /*likely*/ }
+        else                continue;
+
         /*
          * If the search range starts prior to the current ram range record,
          * adjust the search range and possibly conclude the search.
@@ -3273,7 +3285,7 @@ void pgmLogState(PVM pVM)
     LOG_PGM_MEMBER("RTbool",        fNoMorePhysWrites);
     LOG_PGM_MEMBER("RTbool",        fPageFusionAllowed);
     LOG_PGM_MEMBER("RTbool",        fPciPassthrough);
-    LOG_PGM_MEMBER("#x",            cMmio2Regions);
+    LOG_PGM_MEMBER("#x",            cMmio2Ranges);
     LOG_PGM_MEMBER("RTbool",        fRestoreRomPagesOnReset);
     LOG_PGM_MEMBER("RTbool",        fZeroRamPagesOnReset);
     LOG_PGM_MEMBER("RTbool",        fFinalizedMappings);

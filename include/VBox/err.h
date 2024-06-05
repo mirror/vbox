@@ -661,6 +661,12 @@
 #define VERR_PGM_PAE_PDPE_RSVD                  (-1688)
 /** Attemted illegal operation in simplified memory management mode. */
 #define VERR_PGM_NOT_SUPPORTED_FOR_NEM_MODE     (-1689)
+/** Too many RAM ranges. */
+#define VERR_PGM_TOO_MANY_RAM_RANGES            (-1690)
+/** Internal processing error in the PGM physical RAM range lookup code. */
+#define VERR_PGM_PHYS_RAM_LOOKUP_IPE            (-1691)
+/** Too many ROM ranges. */
+#define VERR_PGM_TOO_MANY_ROM_RANGES            (-1692)
 /** @} */
 
 

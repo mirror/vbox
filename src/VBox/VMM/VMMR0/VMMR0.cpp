@@ -1919,6 +1919,30 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
             rc = PGMR0PhysHandlerInitReqHandler(pGVM, (uint32_t)u64Arg);
             break;
 
+        case VMMR0_DO_PGM_PHYS_ALLOCATE_RAM_RANGE:
+            if (idCpu != 0 || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            rc = PGMR0PhysAllocateRamRangeReq(pGVM, (PPGMPHYSALLOCATERAMRANGEREQ)pReqHdr);
+            break;
+
+        case VMMR0_DO_PGM_PHYS_MMIO2_REGISTER:
+            if (idCpu != 0 || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            rc = PGMR0PhysMmio2RegisterReq(pGVM, (PPGMPHYSMMIO2REGISTERREQ)pReqHdr);
+            break;
+
+        case VMMR0_DO_PGM_PHYS_MMIO2_DEREGISTER:
+            if (idCpu != 0 || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            rc = PGMR0PhysMmio2DeregisterReq(pGVM, (PPGMPHYSMMIO2DEREGISTERREQ)pReqHdr);
+            break;
+
+        case VMMR0_DO_PGM_PHYS_ROM_ALLOCATE_RANGE:
+            if (idCpu != 0 || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            rc = PGMR0PhysRomAllocateRangeReq(pGVM, (PPGMPHYSROMALLOCATERANGEREQ)pReqHdr);
+            break;
+
         /*
          * GMM wrappers.
          */

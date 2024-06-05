@@ -1740,10 +1740,12 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPUCC pVCpu, PPGMPOOL
     STAM_PROFILE_START(&pVM->pgm.s.Stats.StatTrackDeref, a);
     LogFlow(("SyncPageWorkerTrackDeref(%d,%d): Damn HCPhys=%RHp pShwPage->idx=%#x!!!\n",
              PGM_SHW_TYPE, PGM_GST_TYPE, HCPhys, pShwPage->idx));
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
+    uint32_t const idRamRangeMax = RT_MIN(pVM->pgm.s.idRamRangeMax, RT_ELEMENTS(pVM->pgm.s.apRamRanges) - 1U);
+    Assert(pVM->pgm.s.apRamRanges[0] == NULL);
+    for (uint32_t idx = 1; idx <= idRamRangeMax; idx++)
     {
+        PPGMRAMRANGE const pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRanges[idx];
+        AssertContinue(pRam);
         unsigned iPage = pRam->cb >> GUEST_PAGE_SHIFT;
         while (iPage-- > 0)
         {
@@ -3674,11 +3676,11 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
             Log2(("SyncPT:   BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} Shw=%RGv GCPhys=%RGp %s\n",
                   GCPtrPage, PdeSrc.u & X86_PDE_P, !!(PdeSrc.u & X86_PDE_RW), !!(PdeSrc.u & X86_PDE_US), (uint64_t)PdeSrc.u, GCPtr,
                   GCPhys, PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
-            PPGMRAMRANGE    pRam   = pgmPhysGetRangeAtOrAbove(pVM, GCPhys);
             unsigned        iPTDst = 0;
             while (     iPTDst < RT_ELEMENTS(pPTDst->a)
                    &&   !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
             {
+                PPGMRAMRANGE const pRam   = pgmPhysGetRangeAtOrAbove(pVM, GCPhys);
                 if (pRam && GCPhys >= pRam->GCPhys)
                 {
 # ifndef PGM_WITH_A20
@@ -3754,10 +3756,6 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                         iPTDst++;
                     } while (   iPTDst < RT_ELEMENTS(pPTDst->a)
                              && GCPhys <= pRam->GCPhysLast);
-
-                    /* Advance ram range list. */
-                    while (pRam && GCPhys > pRam->GCPhysLast)
-                        pRam = pRam->CTX_SUFF(pNext);
                 }
                 else if (pRam)
                 {

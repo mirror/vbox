@@ -1844,12 +1844,6 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     }
 
     /*
-     * Ram ranges.
-     */
-    if (pVM->pgm.s.pRamRangesXR3)
-        pgmR3PhysRelinkRamRanges(pVM);
-
-    /*
      * The page pool.
      */
     pgmR3PoolRelocate(pVM);
@@ -2120,7 +2114,7 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 
 
 /**
- * Dump registered MMIO ranges to the log.
+ * Display the RAM range info.
  *
  * @param   pVM         The cross context VM structure.
  * @param   pHlp        The info helpers.
@@ -2135,15 +2129,26 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                     "%.*s %.*s\n",
                     pVM,
                     sizeof(RTGCPHYS) * 4 + 1, "GC Phys Range                    ",
-                    sizeof(RTHCPTR) * 2,      "pvHC            ");
+                    sizeof(RTHCPTR) * 2,      "pbR3            ");
 
-    for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesXR3; pCur; pCur = pCur->pNextR3)
+    /*
+     * Traverse the lookup table so we only display mapped MMIO and get it in sorted order.
+     */
+    uint32_t const cRamRangeLookupEntries = RT_MIN(pVM->pgm.s.RamRangeUnion.cLookupEntries,
+                                                   RT_ELEMENTS(pVM->pgm.s.aRamRangeLookup));
+    for (uint32_t idxLookup = 0; idxLookup < cRamRangeLookupEntries; idxLookup++)
     {
+        uint32_t const idRamRange = PGMRAMRANGELOOKUPENTRY_GET_ID(pVM->pgm.s.aRamRangeLookup[idxLookup]);
+        AssertContinue(idRamRange < RT_ELEMENTS(pVM->pgm.s.apRamRanges));
+        PPGMRAMRANGE const pCur = pVM->pgm.s.apRamRanges[idRamRange];
+        if (pCur != NULL)   { /*likely*/ }
+        else                continue;
+
         pHlp->pfnPrintf(pHlp,
                         "%RGp-%RGp %RHv %s\n",
                         pCur->GCPhys,
                         pCur->GCPhysLast,
-                        pCur->pvR3,
+                        pCur->pbR3,
                         pCur->pszDesc);
         if (fVerbose)
         {
@@ -2181,12 +2186,19 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                     {
                         pszType = enmType == PGMPAGETYPE_ROM_SHADOW ? "ROM-shadowed" : "ROM";
 
-                        RTGCPHYS const  GCPhysFirstPg = iFirstPage * X86_PAGE_SIZE;
-                        PPGMROMRANGE    pRom          = pVM->pgm.s.pRomRangesR3;
-                        while (pRom && GCPhysFirstPg > pRom->GCPhysLast)
-                            pRom = pRom->pNextR3;
-                        if (pRom && GCPhysFirstPg - pRom->GCPhys < pRom->cb)
-                            pszMore = pRom->pszDesc;
+                        RTGCPHYS const GCPhysFirstPg = iFirstPage << GUEST_PAGE_SHIFT;
+                        uint32_t const cRomRanges    = RT_MIN(pVM->pgm.s.cRomRanges, RT_ELEMENTS(pVM->pgm.s.apRomRanges));
+                        for (uint32_t idxRom = 0; idxRom < cRomRanges; idxRom++)
+                        {
+                            PPGMROMRANGE const pRomRange = pVM->pgm.s.apRomRanges[idxRom];
+                            if (   pRomRange
+                                && GCPhysFirstPg <  pRomRange->GCPhysLast
+                                && GCPhysFirstPg >= pRomRange->GCPhys)
+                            {
+                                pszMore = pRomRange->pszDesc;
+                                break;
+                            }
+                        }
                         break;
                     }
 
@@ -2539,10 +2551,19 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     RT_ZERO(abZeroPg);
 
     PGM_LOCK_VOID(pVM);
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3;
-         pRam && pRam->GCPhys < GCPhysEnd && RT_SUCCESS(rc);
-         pRam = pRam->pNextR3)
+
+    uint32_t const cRamRangeLookupEntries = RT_MIN(pVM->pgm.s.RamRangeUnion.cLookupEntries,
+                                                   RT_ELEMENTS(pVM->pgm.s.aRamRangeLookup));
+    for (uint32_t idxLookup = 0; idxLookup < cRamRangeLookupEntries && RT_SUCCESS(rc); idxLookup++)
     {
+        if (PGMRAMRANGELOOKUPENTRY_GET_FIRST(pVM->pgm.s.aRamRangeLookup[idxLookup]) >= GCPhysEnd)
+            break;
+        uint32_t const idRamRange = PGMRAMRANGELOOKUPENTRY_GET_ID(pVM->pgm.s.aRamRangeLookup[idxLookup]);
+        AssertContinue(idRamRange < RT_ELEMENTS(pVM->pgm.s.apRamRanges));
+        PPGMRAMRANGE const pRam = pVM->pgm.s.apRamRanges[idRamRange];
+        AssertContinue(pRam);
+        Assert(pRam->GCPhys == PGMRAMRANGELOOKUPENTRY_GET_FIRST(pVM->pgm.s.aRamRangeLookup[idxLookup]));
+
         /* fill the gap */
         if (pRam->GCPhys > GCPhys && fIncZeroPgs)
         {

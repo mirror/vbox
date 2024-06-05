@@ -355,8 +355,14 @@ DECLCALLBACK(int) pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
 
     PGM_LOCK_VOID(pVM);
 
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
+    uint32_t const idRamRangeMax = RT_MIN(pVM->pgm.s.idRamRangeMax, RT_ELEMENTS(pVM->pgm.s.apRamRanges) - 1U);
+    for (uint32_t idRamRange = 0; idRamRange <= idRamRangeMax; idRamRange++)
     {
+        PPGMRAMRANGE const pRam = pVM->pgm.s.apRamRanges[idRamRange];
+        Assert(pRam || idRamRange == 0);
+        if (!pRam) continue;
+        Assert(pRam->idRange == idRamRange);
+
         PPGMPAGE    pPage  = &pRam->aPages[0];
         RTGCPHYS    GCPhys = pRam->GCPhys;
         uint32_t    cLeft  = pRam->cb >> GUEST_PAGE_SHIFT;
@@ -412,6 +418,7 @@ DECLCALLBACK(int) pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
                 pCmdHlp->pfnPrintf(pCmdHlp, NULL, ".");
         }
     }
+
     PGM_UNLOCK(pVM);
 
     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\nNumber of zero pages      %08x (%d MB)\n", cZero, cZero / 256);

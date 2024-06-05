@@ -926,6 +926,8 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RT
      * got a valid pvPages (typically isn't available during the early
      * notification, unless we're replacing RAM).
      */
+    /** @todo r=bird: if it's overlapping RAM, we shouldn't need an additional
+     *        registration, should we? */
     struct kvm_userspace_memory_region Region;
     Region.slot             = idSlot;
     Region.flags            = 0;

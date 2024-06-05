@@ -87,6 +87,36 @@ VMMR0_INT_DECL(int) PGMR0InitPerVMData(PGVM pGVM, RTR0MEMOBJ hMemObj)
     AssertCompile(sizeof(pGVM->pgm.s) <= sizeof(pGVM->pgm.padding));
     AssertCompile(sizeof(pGVM->pgmr0.s) <= sizeof(pGVM->pgmr0.padding));
 
+    /* Set the RAM range memory handles to NIL. */
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.acRamRangePages)   == RT_ELEMENTS(pGVM->pgmr0.s.apRamRanges));
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.ahRamRangeMemObjs) == RT_ELEMENTS(pGVM->pgmr0.s.apRamRanges));
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.ahRamRangeMapObjs) == RT_ELEMENTS(pGVM->pgmr0.s.apRamRanges));
+    for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->pgmr0.s.ahRamRangeMemObjs); i++)
+    {
+        pGVM->pgmr0.s.ahRamRangeMemObjs[i] = NIL_RTR0MEMOBJ;
+        pGVM->pgmr0.s.ahRamRangeMapObjs[i] = NIL_RTR0MEMOBJ;
+    }
+    Assert(pGVM->pgmr0.s.idRamRangeMax == 0); /* the structure is ZERO'ed */
+
+    /* Set the MMIO2 range memory handles to NIL. */
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.ahMmio2MemObjs) == RT_ELEMENTS(pGVM->pgmr0.s.apMmio2RamRanges));
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.ahMmio2MapObjs) == RT_ELEMENTS(pGVM->pgmr0.s.apMmio2RamRanges));
+    for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->pgmr0.s.ahMmio2MemObjs); i++)
+    {
+        pGVM->pgmr0.s.ahMmio2MemObjs[i] = NIL_RTR0MEMOBJ;
+        pGVM->pgmr0.s.ahMmio2MapObjs[i] = NIL_RTR0MEMOBJ;
+    }
+
+    /* Set the ROM range memory handles to NIL. */
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.ahRomRangeMemObjs) == RT_ELEMENTS(pGVM->pgmr0.s.apRomRanges));
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.ahRomRangeMapObjs) == RT_ELEMENTS(pGVM->pgmr0.s.apRomRanges));
+    for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->pgmr0.s.ahRomRangeMemObjs); i++)
+    {
+        pGVM->pgmr0.s.ahRomRangeMemObjs[i] = NIL_RTR0MEMOBJ;
+        pGVM->pgmr0.s.ahRomRangeMapObjs[i] = NIL_RTR0MEMOBJ;
+    }
+
+    /* Set the physical handler related memory handles to NIL. */
     AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.ahPoolMemObjs) == RT_ELEMENTS(pGVM->pgmr0.s.ahPoolMapObjs));
     for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->pgmr0.s.ahPoolMemObjs); i++)
     {
@@ -277,6 +307,58 @@ VMMR0_INT_DECL(void) PGMR0CleanupVM(PGVM pGVM)
         int rc = RTR0MemObjFree(pGVM->pgmr0.s.hPhysHandlerMemObj, true /*fFreeMappings*/);
         AssertRC(rc);
         pGVM->pgmr0.s.hPhysHandlerMemObj = NIL_RTR0MEMOBJ;
+    }
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->pgmr0.s.ahRomRangeMemObjs); i++)
+    {
+        if (pGVM->pgmr0.s.ahRomRangeMapObjs[i] != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pGVM->pgmr0.s.ahRomRangeMapObjs[i], true /*fFreeMappings*/);
+            AssertRC(rc);
+            pGVM->pgmr0.s.ahRomRangeMapObjs[i] = NIL_RTR0MEMOBJ;
+        }
+
+        if (pGVM->pgmr0.s.ahRomRangeMemObjs[i] != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pGVM->pgmr0.s.ahRomRangeMemObjs[i], true /*fFreeMappings*/);
+            AssertRC(rc);
+            pGVM->pgmr0.s.ahRomRangeMemObjs[i] = NIL_RTR0MEMOBJ;
+        }
+    }
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->pgmr0.s.ahMmio2MemObjs); i++)
+    {
+        if (pGVM->pgmr0.s.ahMmio2MapObjs[i] != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pGVM->pgmr0.s.ahMmio2MapObjs[i], true /*fFreeMappings*/);
+            AssertRC(rc);
+            pGVM->pgmr0.s.ahMmio2MapObjs[i] = NIL_RTR0MEMOBJ;
+        }
+
+        if (pGVM->pgmr0.s.ahMmio2MemObjs[i] != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pGVM->pgmr0.s.ahMmio2MemObjs[i], true /*fFreeMappings*/);
+            AssertRC(rc);
+            pGVM->pgmr0.s.ahMmio2MemObjs[i] = NIL_RTR0MEMOBJ;
+        }
+    }
+
+    uint32_t const cRangesMax = RT_MIN(pGVM->pgmr0.s.idRamRangeMax, RT_ELEMENTS(pGVM->pgmr0.s.ahRamRangeMemObjs) - 1U) + 1U;
+    for (uint32_t i = 0; i < cRangesMax; i++)
+    {
+        if (pGVM->pgmr0.s.ahRamRangeMapObjs[i] != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pGVM->pgmr0.s.ahRamRangeMapObjs[i], true /*fFreeMappings*/);
+            AssertRC(rc);
+            pGVM->pgmr0.s.ahRamRangeMapObjs[i] = NIL_RTR0MEMOBJ;
+        }
+
+        if (pGVM->pgmr0.s.ahRamRangeMemObjs[i] != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pGVM->pgmr0.s.ahRamRangeMemObjs[i], true /*fFreeMappings*/);
+            AssertRC(rc);
+            pGVM->pgmr0.s.ahRamRangeMemObjs[i] = NIL_RTR0MEMOBJ;
+        }
     }
 
     if (RTCritSectIsInitialized(&pGVM->pgmr0.s.PoolGrowCritSect))
@@ -709,23 +791,19 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHY
  * @param   pDevIns     The device instance owning the region.
  * @param   hMmio2      Handle to look up.
  */
-DECLINLINE(PPGMREGMMIO2RANGE) pgmR0PhysMmio2Find(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2)
+DECLINLINE(int32_t) pgmR0PhysMmio2ValidateHandle(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2)
 {
     /*
      * We use the lookup table here as list walking is tedious in ring-0 when using
      * ring-3 pointers and this probably will require some kind of refactoring anyway.
      */
-    if (hMmio2 <= RT_ELEMENTS(pGVM->pgm.s.apMmio2RangesR0) && hMmio2 != 0)
-    {
-        PPGMREGMMIO2RANGE pCur = pGVM->pgm.s.apMmio2RangesR0[hMmio2 - 1];
-        if (pCur && pCur->pDevInsR3 == pDevIns->pDevInsForR3)
-        {
-            Assert(pCur->idMmio2 == hMmio2);
-            return pCur;
-        }
-        Assert(!pCur);
-    }
-    return NULL;
+    AssertReturn(hMmio2 <= RT_ELEMENTS(pGVM->pgm.s.aMmio2Ranges) && hMmio2 != 0, VERR_INVALID_HANDLE);
+    uint32_t const idx = hMmio2 - 1U;
+    AssertReturn(pGVM->pgm.s.aMmio2Ranges[idx].pDevInsR3 == pDevIns->pDevInsForR3, VERR_NOT_OWNER);
+    AssertReturn(pGVM->pgm.s.aMmio2Ranges[idx].idMmio2 == hMmio2, VERR_INVALID_HANDLE);
+    AssertReturn(pGVM->pgmr0.s.ahMmio2MapObjs[idx] != NIL_RTR0MEMOBJ, VERR_INVALID_HANDLE);
+    AssertReturn(pGVM->pgmr0.s.acMmio2RangePages[idx] != 0, VERR_INVALID_HANDLE);
+    return idx;
 }
 
 
@@ -743,21 +821,22 @@ DECLINLINE(PPGMREGMMIO2RANGE) pgmR0PhysMmio2Find(PGVM pGVM, PPDMDEVINS pDevIns, 
 VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
                                             size_t offSub, size_t cbSub, void **ppvMapping)
 {
+    *ppvMapping = NULL;
     AssertReturn(!(offSub & HOST_PAGE_OFFSET_MASK), VERR_UNSUPPORTED_ALIGNMENT);
     AssertReturn(!(cbSub  & HOST_PAGE_OFFSET_MASK), VERR_UNSUPPORTED_ALIGNMENT);
 
     /*
-     * Translate hRegion into a range pointer.
+     * Validate and translate hMmio2 into an MMIO2 index.
      */
-    PPGMREGMMIO2RANGE pFirstRegMmio = pgmR0PhysMmio2Find(pGVM, pDevIns, hMmio2);
-    AssertReturn(pFirstRegMmio, VERR_NOT_FOUND);
+    uint32_t const   idxFirst = pgmR0PhysMmio2ValidateHandle(pGVM, pDevIns, hMmio2);
+    AssertReturn((int32_t)idxFirst >= 0, (int32_t)idxFirst);
+
 #ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
-    uint8_t * const pvR0  = (uint8_t *)pFirstRegMmio->pvR0;
+    uint8_t * const  pbR0     = pGVM->pgmr0.s.apbMmio2Backing[idxFirst];
 #else
-    RTR3PTR const  pvR3   = pFirstRegMmio->pvR3;
+    RTR0MEMOBJ const hMemObj  = pGVM->pgmr0.s.ahMmio2MemObjs[idxFirst];
 #endif
-    RTGCPHYS const cbReal = pFirstRegMmio->cbReal;
-    pFirstRegMmio = NULL;
+    RTGCPHYS const   cbReal   = (RTGCPHYS)pGVM->pgmr0.s.acMmio2RangePages[idxFirst] << GUEST_PAGE_SHIFT;
     ASMCompilerBarrier();
 
     AssertReturn(offSub < cbReal, VERR_OUT_OF_RANGE);
@@ -766,15 +845,24 @@ VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMM
     else
         AssertReturn(cbSub < cbReal && cbSub + offSub <= cbReal, VERR_OUT_OF_RANGE);
 
-    /*
-     * Do the mapping.
-     */
 #ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
-    AssertPtr(pvR0);
-    *ppvMapping = pvR0 + offSub;
+    /*
+     * Just return the address of the existing ring-0 mapping.
+     */
+    AssertPtrReturn(pbR0, VERR_INTERNAL_ERROR_4);
+    *ppvMapping = &pbR0[offSub];
     return VINF_SUCCESS;
 #else
-    return SUPR0PageMapKernel(pGVM->pSession, pvR3, (uint32_t)offSub, (uint32_t)cbSub, 0 /*fFlags*/, ppvMapping);
+    /*
+     * Call IPRT to do the mapping.  Cleanup is done indirectly by telling
+     * RTR0MemObjFree to include mappings.  It can only be done once, so no
+     * risk of excessive mapping leaks.
+     */
+    RTR0MEMOBJ hMapObj;
+    int rc = RTR0MemObjMapKernelEx(&hMapObj, hMemObj, (void *)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, offSub, cbSub);
+    if (RT_SUCCESS(rc))
+        *ppvMapping = RTR0MemObjAddress(hMapObj);
+    return rc;
 #endif
 }
 
@@ -1057,6 +1145,7 @@ VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM)
         return rc;
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
+# error fixme
     if (pGVM->pgm.s.fPciPassthrough)
     {
         /*

@@ -960,10 +960,10 @@ VMMDECL(int)        PGMSetLargePageUsage(PVMCC pVM, bool fUseLargePages);
 #define PGMIsUsingLargePages(pVM)   ((pVM)->pgm.s.fUseLargePages)
 
 
-#ifdef IN_RING0
 /** @defgroup grp_pgm_r0  The PGM Host Context Ring-0 API
  * @{
  */
+#ifdef IN_RING0
 VMMR0_INT_DECL(int)  PGMR0InitPerVMData(PGVM pGVM, RTR0MEMOBJ hMemObj);
 VMMR0_INT_DECL(int)  PGMR0InitVM(PGVM pGVM);
 VMMR0_INT_DECL(void) PGMR0DoneInitVM(PGVM pGVM);
@@ -975,6 +975,7 @@ VMMR0_INT_DECL(int)  PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMM
                                              size_t offSub, size_t cbSub, void **ppvMapping);
 VMMR0_INT_DECL(int)  PGMR0PhysSetupIoMmu(PGVM pGVM);
 VMMR0_INT_DECL(int)  PGMR0PhysHandlerInitReqHandler(PGVM pGVM, uint32_t cEntries);
+
 VMMR0_INT_DECL(int)  PGMR0HandlerPhysicalTypeSetUpContext(PGVM pGVM, PGMPHYSHANDLERKIND enmKind, uint32_t fFlags,
                                                           PFNPGMPHYSHANDLER pfnHandler, PFNPGMRZPHYSPFHANDLER pfnPfHandler,
                                                           const char *pszDesc, PGMPHYSHANDLERTYPE hType);
@@ -992,15 +993,111 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0NestedTrap0eHandlerNestedPaging(PGVMCPU pGVCpu, PGM
                                                              PCPUMCTX pCtx, RTGCPHYS GCPhysNestedFault,
                                                              bool fIsLinearAddrValid, RTGCPTR GCPtrNestedFault, PPGMPTWALK pWalk);
 # endif
-/** @} */
 #endif /* IN_RING0 */
 
+/**
+ * Request buffer for PGMR0PhysAllocateRamRangeReq / VMMR0_DO_PGM_PHYS_ALLOCATE_RAM_RANGE
+ */
+typedef struct PGMPHYSALLOCATERAMRANGEREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** Input: the GUEST_PAGE_SIZE value (for validation). */
+    uint32_t        cbGuestPage;
+    /** Input: Number of guest pages in the range. */
+    uint32_t        cGuestPages;
+    /** Input: The RAM range flags (PGM_RAM_RANGE_FLAGS_XXX). */
+    uint32_t        fFlags;
+    /** Output: The range identifier. */
+    uint32_t        idNewRange;
+} PGMPHYSALLOCATERAMRANGEREQ;
+/** Pointer to a PGMR0PhysAllocateRamRangeReq / VMMR0_DO_PGM_PHYS_ALLOCATE_RAM_RANGE request buffer. */
+typedef PGMPHYSALLOCATERAMRANGEREQ *PPGMPHYSALLOCATERAMRANGEREQ;
+
+VMMR0_INT_DECL(int)  PGMR0PhysAllocateRamRangeReq(PGVM pGVM, PPGMPHYSALLOCATERAMRANGEREQ pReq);
 
 
-#ifdef IN_RING3
+/**
+ * Request buffer for PGMR0PhysMmio2RegisterReq / VMMR0_DO_PGM_PHYS_MMIO2_REGISTER
+ */
+typedef struct PGMPHYSMMIO2REGISTERREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR          Hdr;
+    /** Input: the GUEST_PAGE_SIZE value (for validation). */
+    uint32_t                cbGuestPage;
+    /** Input: Number of guest pages in the MMIO2 range. */
+    uint32_t                cGuestPages;
+    /** Input: The MMIO2 ID of the first chunk. */
+    uint8_t                 idMmio2;
+    /** Input: The number of MMIO2 chunks needed. */
+    uint8_t                 cChunks;
+    /** Input: The sub-device number. */
+    uint8_t                 iSubDev;
+    /** Input: The device region number. */
+    uint8_t                 iRegion;
+    /** Input: Flags (PGMPHYS_MMIO2_FLAGS_XXX). */
+    uint32_t                fFlags;
+    /** Input: The owner device key. */
+    PPDMDEVINSR3            pDevIns;
+} PGMPHYSMMIO2REGISTERREQ;
+/** Pointer to a PGMR0PhysAllocateRamRangeReq / VMMR0_DO_PGM_PHYS_MMIO2_REGISTER request buffer. */
+typedef PGMPHYSMMIO2REGISTERREQ *PPGMPHYSMMIO2REGISTERREQ;
+
+VMMR0_INT_DECL(int)  PGMR0PhysMmio2RegisterReq(PGVM pGVM, PPGMPHYSMMIO2REGISTERREQ pReq);
+
+
+/*
+ * Request buffer for PGMR0PhysMmio2DeregisterReq / VMMR0_DO_PGM_PHYS_MMIO2_DEREGISTER
+ */
+typedef struct PGMPHYSMMIO2DEREGISTERREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR          Hdr;
+    /** Input: The MMIO2 ID of the first chunk. */
+    uint8_t                 idMmio2;
+    /** Input: The number of MMIO2 chunks to free. */
+    uint8_t                 cChunks;
+    /** Input: Reserved and must be zero. */
+    uint8_t                 abReserved[6];
+    /** Input: The owner device key. */
+    PPDMDEVINSR3            pDevIns;
+} PGMPHYSMMIO2DEREGISTERREQ;
+/** Pointer to a PGMR0PhysMmio2DeregisterReq / VMMR0_DO_PGM_PHYS_MMIO2_DEREGISTER request buffer. */
+typedef PGMPHYSMMIO2DEREGISTERREQ *PPGMPHYSMMIO2DEREGISTERREQ;
+
+VMMR0_INT_DECL(int)  PGMR0PhysMmio2DeregisterReq(PGVM pGVM, PPGMPHYSMMIO2DEREGISTERREQ pReq);
+
+/*
+ * Request buffer for PGMR0PhysRomAllocateRangeReq / VMMR0_DO_PGM_PHYS_ROM_ALLOCATE_RANGE
+ */
+typedef struct PGMPHYSROMALLOCATERANGEREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** Input: the GUEST_PAGE_SIZE value (for validation). */
+    uint32_t        cbGuestPage;
+    /** Input: Number of guest pages in the range. */
+    uint32_t        cGuestPages;
+    /** Input: The ROM range ID (index) to be allocated. */
+    uint32_t        idRomRange;
+    /** Input: The ROM range flags (PGMPHYS_ROM_FLAGS_XXX). */
+    uint32_t        fFlags;
+} PGMPHYSROMALLOCATERANGEREQ;
+/* Pointer to a PGMR0PhysRomAllocateRangeReq / VMMR0_DO_PGM_PHYS_ROM_ALLOCATE_RANGE request buffer. */
+typedef PGMPHYSROMALLOCATERANGEREQ *PPGMPHYSROMALLOCATERANGEREQ;
+
+VMMR0_INT_DECL(int)  PGMR0PhysRomAllocateRangeReq(PGVM pGVM, PPGMPHYSROMALLOCATERANGEREQ pReq);
+
+
+/** @} */
+
+
+
 /** @defgroup grp_pgm_r3  The PGM Host Context Ring-3 API
  * @{
  */
+#ifdef IN_RING3
 VMMR3_INT_DECL(void)    PGMR3EnableNemMode(PVM pVM);
 VMMR3_INT_DECL(bool)    PGMR3IsNemModeEnabled(PVM pVM);
 VMMR3DECL(int)      PGMR3Init(PVM pVM);
@@ -1022,9 +1119,11 @@ VMMR3DECL(int)      PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhy
 VMMR3DECL(int)      PGMR3QueryMemoryStats(PUVM pUVM, uint64_t *pcbTotalMem, uint64_t *pcbPrivateMem, uint64_t *pcbSharedMem, uint64_t *pcbZeroMem);
 VMMR3DECL(int)      PGMR3QueryGlobalMemoryStats(PUVM pUVM, uint64_t *pcbAllocMem, uint64_t *pcbFreeMem, uint64_t *pcbBallonedMem, uint64_t *pcbSharedMem);
 
-VMMR3_INT_DECL(int) PGMR3PhysMmioRegister(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTGCPHYS cb, PGMPHYSHANDLERTYPE hType,
-                                          uint64_t uUser, const char *pszDesc);
-VMMR3_INT_DECL(int) PGMR3PhysMmioDeregister(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTGCPHYS cb);
+VMMR3_INT_DECL(int) PGMR3PhysMmioRegister(PVM pVM, PVMCPU pVCpu, RTGCPHYS cb, const char *pszDesc, uint16_t *pidRamRange);
+VMMR3_INT_DECL(int) PGMR3PhysMmioMap(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTGCPHYS cb, uint16_t idRamRange,
+                                     PGMPHYSHANDLERTYPE hType, uint64_t uUser);
+VMMR3_INT_DECL(int) PGMR3PhysMmioUnmap(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTGCPHYS cb, uint16_t idRamRange);
+#endif /* IN_RING3 */
 
 /** @name PGMPHYS_MMIO2_FLAGS_XXX - MMIO2 registration flags.
  * @see PGMR3PhysMmio2Register, PDMDevHlpMmio2Create
@@ -1036,6 +1135,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmioDeregister(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPh
 #define PGMPHYS_MMIO2_FLAGS_VALID_MASK              UINT32_C(0x00000001)
 /** @} */
 
+#ifdef IN_RING3
 VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cb,
                                            uint32_t fFlags, const char *pszDesc, void **ppv, PGMMMIO2HANDLE *phRegion);
 VMMR3_INT_DECL(int) PGMR3PhysMmio2Deregister(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2);
@@ -1048,6 +1148,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2ChangeRegionNo(PVM pVM, PPDMDEVINS pDevIns, PG
 VMMR3_INT_DECL(int) PGMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
                                                            void *pvBitmap, size_t cbBitmap);
 VMMR3_INT_DECL(int) PGMR3PhysMmio2ControlDirtyPageTracking(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2, bool fEnabled);
+#endif /* IN_RING3 */
 
 /** @name PGMPHYS_ROM_FLAGS_XXX - ROM registration flags.
  * @see PGMR3PhysRegisterRom, PDMDevHlpROMRegister
@@ -1064,6 +1165,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2ControlDirtyPageTracking(PVM pVM, PPDMDEVINS p
 #define PGMPHYS_ROM_FLAGS_VALID_MASK                UINT8_C(0x07)
 /** @} */
 
+#ifdef IN_RING3
 VMMR3DECL(int)      PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cb,
                                          const void *pvBinary, uint32_t cbBinary, uint8_t fFlags, const char *pszDesc);
 VMMR3DECL(int)      PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROMPROT enmProt);
@@ -1108,10 +1210,11 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
 VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR cbRange, RTGCPTR GCPtrAlign, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPhysHit);
 VMMR3_INT_DECL(int) PGMR3DumpHierarchyShw(PVM pVM, uint64_t cr3, uint32_t fFlags, uint64_t u64FirstAddr, uint64_t u64LastAddr, uint32_t cMaxDepth, PCDBGFINFOHLP pHlp);
 VMMR3_INT_DECL(int) PGMR3DumpHierarchyGst(PVM pVM, uint64_t cr3, uint32_t fFlags, RTGCPTR FirstAddr, RTGCPTR LastAddr, uint32_t cMaxDepth, PCDBGFINFOHLP pHlp);
-
+#endif /* IN_RING3 */
 
 /** @name Page sharing
  * @{ */
+#ifdef IN_RING3
 VMMR3DECL(int)     PGMR3SharedModuleRegister(PVM pVM, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion,
                                              RTGCPTR GCBaseAddr, uint32_t cbModule,
                                              uint32_t cRegions, VMMDEVSHAREDREGIONDESC const *paRegions);
@@ -1119,10 +1222,10 @@ VMMR3DECL(int)     PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, cha
                                                RTGCPTR GCBaseAddr, uint32_t cbModule);
 VMMR3DECL(int)     PGMR3SharedModuleCheckAll(PVM pVM);
 VMMR3DECL(int)     PGMR3SharedModuleGetPageState(PVM pVM, RTGCPTR GCPtrPage, bool *pfShared, uint64_t *pfPageFlags);
+#endif /* IN_RING3 */
 /** @} */
 
 /** @} */
-#endif /* IN_RING3 */
 
 RT_C_DECLS_END
 

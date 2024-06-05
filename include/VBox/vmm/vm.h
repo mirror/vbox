@@ -1340,13 +1340,13 @@ typedef struct VM
     } cpum;
 
     /** PGM part.
-     * @note 16384 aligned for zero and mmio page storage. */
+     * @note Aligned on 16384 boundrary for zero and mmio page storage. */
     union
     {
 #ifdef VMM_INCLUDED_SRC_include_PGMInternal_h
         struct PGM  s;
 #endif
-        uint8_t     padding[53888];     /* multiple of 64 */
+        uint8_t     padding[127616];     /* multiple of 64 */
     } pgm;
 
     /** VMM part. */
@@ -1562,7 +1562,7 @@ typedef struct VM
     } gcm;
 
     /** Padding for aligning the structure size on a page boundrary. */
-    uint8_t         abAlignment2[8896 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[0x2c0 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 
     /* ---- end small stuff ---- */
 

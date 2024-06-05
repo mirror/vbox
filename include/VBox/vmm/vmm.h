@@ -290,6 +290,14 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_PGM_POOL_GROW,
     /** Call PGMR0PhysHandlerInitReqHandler(). */
     VMMR0_DO_PGM_PHYS_HANDLER_INIT,
+    /** Call PGMR0PhysAllocateRamRangeReq(). */
+    VMMR0_DO_PGM_PHYS_ALLOCATE_RAM_RANGE,
+    /** Call PGMR0PhysMmio2RegisterReq(). */
+    VMMR0_DO_PGM_PHYS_MMIO2_REGISTER,
+    /** Call PGMR0PhysMmio2DeregisterReq(). */
+    VMMR0_DO_PGM_PHYS_MMIO2_DEREGISTER,
+    /** Call PGMR0PhysRomAllocateRangeReq(). */
+    VMMR0_DO_PGM_PHYS_ROM_ALLOCATE_RANGE,
 
     /** Call GMMR0InitialReservation(). */
     VMMR0_DO_GMM_INITIAL_RESERVATION = 256,
