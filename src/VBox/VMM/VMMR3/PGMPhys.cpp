@@ -1812,7 +1812,7 @@ static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCP
     /*
      * Initialize the range.
      */
-    Assert(pNew->cb == GCPhysLast - GCPhys + 1U);
+    Assert(pNew->cb == GCPhysLast - GCPhys + 1U); RT_NOREF(GCPhysLast);
     pNew->pszDesc       = pszDesc;
     pNew->uNemRange     = UINT32_MAX;
     pNew->pbR3          = NULL;
@@ -3687,9 +3687,8 @@ static int pgmR3PhysMmio2MapLocked(PVM pVM, uint32_t const idxFirst, uint32_t co
         {
             for (uint32_t iChunk = 0, idx = idxFirst; iChunk < cChunks; iChunk++, idx++)
             {
-                PPGMREGMMIO2RANGE const pMmio2    = &pVM->pgm.s.aMmio2Ranges[idx];
-                PPGMRAMRANGE const      pRamRange = pVM->pgm.s.apMmio2RamRanges[idx];
-                Assert(pMmio2->GCPhys == pRamRange->GCPhys);
+                PPGMRAMRANGE const pRamRange = pVM->pgm.s.apMmio2RamRanges[idx];
+                Assert(pVM->pgm.s.aMmio2Ranges[idx].GCPhys == pRamRange->GCPhys);
 
                 rc = NEMR3NotifyPhysMmioExMapLate(pVM, pRamRange->GCPhys, pRamRange->cb, fNemFlags, NULL /*pvRam*/,
                                                   pRamRange->pbR3, &pRamRange->uNemRange);
