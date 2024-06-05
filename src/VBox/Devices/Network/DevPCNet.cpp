@@ -4393,7 +4393,8 @@ static DECLCALLBACK(int) pcnetR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     {
         /* older saved states contain the shared memory region which was never used for ages. */
         void *pvSharedMMIOR3;
-        rc = PDMDevHlpMmio2Create(pDevIns, pDevIns->apPciDevs[0], 2, _512K, 0, "PCnetSh", &pvSharedMMIOR3, &pThis->hMmio2Shared);
+        rc = PDMDevHlpMmio2Create(pDevIns, pDevIns->apPciDevs[0], 2 << 16, _512K, 0, "PCnetSh",
+                                  &pvSharedMMIOR3, &pThis->hMmio2Shared);
         if (RT_FAILURE(rc))
             rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                      N_("Failed to allocate the dummy shmem region for the PCnet device"));
