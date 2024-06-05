@@ -1110,7 +1110,7 @@ static uint32_t pgmR3PhysRamRangeFindOverlappingIndex(PVM pVM, RTGCPHYS GCPhys, 
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pRam        The RAM range to insert into the lookup table.
- * @param   GCPhys      The address of the first byte in the range.
+ * @param   GCPhys      The new mapping address to assign @a pRam on insertion.
  * @param   pidxLookup  Optional lookup table hint. This is updated.
  * @note    Caller must own PGM lock.
  */
