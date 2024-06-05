@@ -33,7 +33,7 @@
 
 #include <iprt/cpp/utils.h>
 
-#include <VBox/graphics.h> /* For VRAM ranges. */
+#include <VBox/param.h> /* For VRAM ranges. */
 #include <VBox/settings.h>
 
 // generated header
@@ -846,42 +846,43 @@ HRESULT PlatformProperties::s_getSupportedVRAMRange(GraphicsControllerType_T aGr
     switch (aGraphicsControllerType)
     {
         case GraphicsControllerType_VBoxVGA:
-        {
             cbMin = VGA_VRAM_MIN;
             cbMax = VGA_VRAM_MAX;
             break;
-        }
 
         case GraphicsControllerType_VMSVGA:
-        {
             cbMin = VGA_VRAM_MIN;
             cbMax = VGA_VRAM_MAX;
             break;
-        }
 
+/** @todo r=bird: I think this is wrong.  The VMSVGA variant is the one that
+ *        is trying to be the most compatible with the original HW (same PCI
+ *        IDs etc). So, I don't see why we're subjecting VBoxSVGA to the SVGA
+ *        limitations and the original VMSVGA variant to the VBox/VGA ones.
+ *
+ *        Other than the higher minimum values compared to VGA_VRAM_MIN,
+ *        I'm not sure we need to care too much about restricting the MAX to
+ *        128MB for either VMSVGA nor VBoxSVGA.  We should be using
+ *        VGA_VRAM_MAX for all three. */
         case GraphicsControllerType_VBoxSVGA:
-        {
 #ifdef VBOX_WITH_VMSVGA
 # ifdef VBOX_WITH_VMSVGA3D
             if (fAccelerate3DEnabled)
-                cbMin = SVGA_VRAM_MIN_SIZE_3D;
+                cbMin = VBOX_SVGA_VRAM_MIN_SIZE_3D;
             else
-# endif /* VBOX_WITH_VMSVGA3D */
-                cbMin = SVGA_VRAM_MIN_SIZE;
-            cbMax = SVGA_VRAM_MAX_SIZE;
+# endif
+                cbMin = VBOX_SVGA_VRAM_MIN_SIZE;
+            cbMax = VBOX_SVGA_VRAM_MAX_SIZE;
+            break;
 #else
             return VBOX_E_NOT_SUPPORTED;
 #endif
-            break;
-        }
 
         case GraphicsControllerType_QemuRamFB:
-        {
             /* We seem to hardcode 32-bit (4 bytes) as BPP, see RAMFB_BPP in QemuRamfb.c. */
             cbMin = 4 /* BPP in bytes */ * 16    * 16;    /* Values taken from qemu/hw/display/ramfb.c */
             cbMax = 4 /* BPP in bytes */ * 16000 * 12000; /* Values taken from bochs-vbe.h. */
             break;
-        }
 
         default:
             return E_INVALIDARG;
@@ -892,6 +893,8 @@ HRESULT PlatformProperties::s_getSupportedVRAMRange(GraphicsControllerType_T aGr
     cbMax    = (ULONG)(RT_ALIGN_64(cbMax, cbStride) / _1M);
     cbStride = (ULONG)cbStride / _1M;
 
+    /** @todo r=bird: Why this? Why do these have to be powers of two?
+     * The algorithm could be better, use ASMBitLastSetU32 next time. */
 #define MAKE_POWER_OF_TWO(a_MB) \
     while (!RT_IS_POWER_OF_TWO(a_MB)) \
         a_MB = a_MB + 1; \

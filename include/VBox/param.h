@@ -213,6 +213,24 @@
 /** @} */
 
 
+/** @defgroup grp_vbox_param_vga   VGA
+ * @{ */
+/** The default amount of VGA VRAM (in bytes). */
+#define VGA_VRAM_DEFAULT            (_4M)
+/** The minimum amount of VGA VRAM (in bytes). */
+#define VGA_VRAM_MIN                (_1M)
+/** The maximum amount of VGA VRAM (in bytes).  */
+#define VGA_VRAM_MAX                (_1G)
+
+/** The minimum amount of SVGA VRAM (in bytes).   */
+#define VBOX_SVGA_VRAM_MIN_SIZE     (4U * 640U * 480U)
+/** The maximum amount of SVGA VRAM (in bytes) when 3D acceleration is enabled. */
+#define VBOX_SVGA_VRAM_MIN_SIZE_3D  _16M
+/** The maximum amount of SVGA VRAM (in bytes). */
+#define VBOX_SVGA_VRAM_MAX_SIZE     _128M
+/** @} */
+
+
 /** @defgroup grp_vbox_param_misc  Misc
  * @{ */
 
