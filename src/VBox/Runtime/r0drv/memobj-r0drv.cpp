@@ -51,6 +51,7 @@
 #include <iprt/mp.h>
 #include <iprt/param.h>
 #include <iprt/process.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 
 #include "internal/memobj.h"
@@ -291,6 +292,41 @@ RTR0DECL(bool) RTR0MemObjWasZeroInitialized(RTR0MEMOBJ hMemObj)
     /* return the alloc init state. */
     return (pMem->fFlags & (RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC | RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC))
         ==                  RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
+}
+RT_EXPORT_SYMBOL(RTR0MemObjWasZeroInitialized);
+
+
+RTR0DECL(int) RTR0MemObjZeroInitialize(RTR0MEMOBJ hMemObj, bool fForce)
+{
+    PRTR0MEMOBJINTERNAL pMem;
+
+    /* Validate the object handle. */
+    AssertReturn(hMemObj != NIL_RTR0MEMOBJ, VERR_INVALID_HANDLE);
+    AssertPtrReturn(hMemObj, VERR_INVALID_HANDLE);
+    pMem = (PRTR0MEMOBJINTERNAL)hMemObj;
+    AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), VERR_INVALID_HANDLE);
+    AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), VERR_INVALID_HANDLE);
+    AssertReturn(   (pMem->enmType != RTR0MEMOBJTYPE_MAPPING || pMem->u.Mapping.R0Process == NIL_RTR0PROCESS)
+                 && (pMem->enmType != RTR0MEMOBJTYPE_LOCK    || pMem->u.Lock.R0Process    == NIL_RTR0PROCESS)
+                 && pMem->enmType != RTR0MEMOBJTYPE_RES_VIRT
+                 , VERR_WRONG_TYPE);
+    Assert(   (pMem->fFlags & (RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC | RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC))
+           !=                 (RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC | RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC));
+
+    /*
+     * Do we need to do anything?
+     */
+    if (   fForce
+        ||    (pMem->fFlags & (RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC | RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC))
+           !=                  RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC)
+    {
+        /* This is easy if there is a ring-0 mapping: */
+        if (pMem->pv)
+            RT_BZERO(pMem->pv, pMem->cb);
+        else
+            return rtR0MemObjNativeZeroInitWithoutMapping(pMem);
+    }
+    return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTR0MemObjWasZeroInitialized);
 

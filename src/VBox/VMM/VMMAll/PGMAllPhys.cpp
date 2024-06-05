@@ -1193,12 +1193,8 @@ DECLHIDDEN(int) pgmPhysMmio2RegisterWorker(PVMCC pVM, uint32_t const cGuestPages
         uint8_t *pbMmio2BackingR0 = (uint8_t *)RTR0MemObjAddress(hMemObj);
         AssertPtr(pbMmio2BackingR0);
 # endif
-        if (!RTR0MemObjWasZeroInitialized(hMemObj))
-        {
-            void *pv = RTR0MemObjAddress(hMemObj);
-            AssertReturnStmt(pv, RTR0MemObjFree(hMemObj, true /*fFreeMappings*/),  VERR_INTERNAL_ERROR_4);
-            RT_BZERO(pv, cbMmio2Aligned);
-        }
+        rc = RTR0MemObjZeroInitialize(hMemObj, false /*fForce*/);
+        AssertRCReturnStmt(rc, RTR0MemObjFree(hMemObj, true /*fFreeMappings*/), rc);
 #else
         RT_BZERO(pbMmio2BackingR3, cbMmio2Aligned);
 #endif

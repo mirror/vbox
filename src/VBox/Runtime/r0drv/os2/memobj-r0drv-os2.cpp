@@ -634,3 +634,10 @@ static void rtR0MemObjFixPageList(KernPageList_t *paPages, ULONG cPages, ULONG c
     }
 }
 
+
+DECLHIDDEN(int) rtR0MemObjNativeZeroInitWithoutMapping(PRTR0MEMOBJINTERNAL pMem)
+{
+    RT_NOREF(pMem);
+    return VERR_NOT_IMPLEMENTED;
+}
+

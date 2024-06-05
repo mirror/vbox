@@ -76,6 +76,7 @@
 #include <iprt/log.h>
 #include <iprt/param.h>
 #include <iprt/process.h>
+#include <iprt/string.h>
 #include "internal/memobj.h"
 
 
@@ -903,5 +904,30 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
         default:
             return NIL_RTHCPHYS;
     }
+}
+
+
+DECLHIDDEN(int) rtR0MemObjNativeZeroInitWithoutMapping(PRTR0MEMOBJINTERNAL pMem)
+{
+    PRTR0MEMOBJFREEBSD const pMemFreeBsd = (PRTR0MEMOBJFREEBSD)pMem;
+    size_t const             cPages      = pMemSolaris->Core.cb >> PAGE_SHIFT;
+    size_t                   iPage;
+    for (iPage = 0; iPage < cPages; iPage++)
+    {
+        void          *pvPage;
+
+        /* Get the physical address of the page. */
+        RTHCPHYS const HCPhys = rtR0MemObjNativeGetPagePhysAddr(&pMemFreeBsd->Core, iPage);
+        AssertReturn(HCPhys != NIL_RTHCPHYS, VERR_INTERNAL_ERROR_3);
+        Assert(!(HCPhys & PAGE_OFFSET_MASK));
+
+        /* Map it. */
+        pvPage = (void *)(uintptr_t)pmap_map(NULL, HCPhys, (HCPhys | PAGE_OFFSET_MASK) + 1, VM_PROT_WRITE | VM_PROT_READ);
+        AssertPtrReturn(pvPage, VERR_INTERNAL_ERROR_3);
+
+        /* Zero it. */
+        RT_BZERO(pvPage, PAGE_SIZE);
+    }
+    return VINF_SUCCESS;
 }
 

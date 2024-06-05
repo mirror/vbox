@@ -2180,3 +2180,32 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
     }
 }
 
+
+DECLHIDDEN(int) rtR0MemObjNativeZeroInitWithoutMapping(PRTR0MEMOBJINTERNAL pMem)
+{
+    PRTR0MEMOBJLNX const pMemLnx = (PRTR0MEMOBJLNX)pMem;
+    size_t const         cPages  = pMemLnx->Core.cb >> PAGE_SHIFT;
+    size_t               iPage;
+    /** @todo optimize this. */
+    for (iPage = 0; iPage < cPages; iPage++)
+    {
+        void          *pvPage;
+
+        /* Get the physical address of the page. */
+        RTHCPHYS const HCPhys = rtR0MemObjNativeGetPagePhysAddr(&pMemLnx->Core, iPage);
+        AssertReturn(HCPhys != NIL_RTHCPHYS, VERR_INTERNAL_ERROR_3);
+        Assert(!(HCPhys & PAGE_OFFSET_MASK));
+
+        /* Would've like to use valid_phys_addr_range for this test, but it isn't exported. */
+        AssertReturn((HCPhys | PAGE_OFFSET_MASK) < __pa(high_memory), VERR_INTERNAL_ERROR_3);
+
+        /* Map it. */
+        pvPage = phys_to_virt(HCPhys);
+        AssertPtrReturn(pvPage, VERR_INTERNAL_ERROR_3);
+
+        /* Zero it. */
+        RT_BZERO(pvPage, PAGE_SIZE);
+    }
+    return VINF_SUCCESS;
+}
+

@@ -49,6 +49,7 @@
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/process.h>
+#include <iprt/string.h>
 #include "internal/memobj.h"
 #include "memobj-r0drv-solaris.h"
 
@@ -1210,5 +1211,32 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
         default:
             return NIL_RTHCPHYS;
     }
+}
+
+
+DECLHIDDEN(int) rtR0MemObjNativeZeroInitWithoutMapping(PRTR0MEMOBJINTERNAL pMem)
+{
+    PRTR0MEMOBJSOL const pMemSolaris = (PRTR0MEMOBJSOL)pMem;
+    size_t const         cPages      = pMemSolaris->Core.cb >> PAGE_SHIFT;
+    size_t               iPage;
+    for (iPage = 0; iPage < cPages; iPage++)
+    {
+        void          *pvPage;
+
+        /* Get the physical address of the page. */
+        RTHCPHYS const HCPhys = rtR0MemObjNativeGetPagePhysAddr(&pMemSolaris->Core, iPage);
+        AssertReturn(HCPhys != NIL_RTHCPHYS, VERR_INTERNAL_ERROR_3);
+        Assert(!(HCPhys & PAGE_OFFSET_MASK));
+
+        /* Map it. */
+        HCPhys >>= PAGE_SHIFT;
+        AssertReturn(HCPhys <= physmax, VERR_INTERNAL_ERROR_3);
+        pvPage = hat_kpm_pfn2va(HCPhys);
+        AssertPtrReturn(pvPage, VERR_INTERNAL_ERROR_3);
+
+        /* Zero it. */
+        RT_BZERO(pvPage, PAGE_SIZE);
+    }
+    return VINF_SUCCESS;
 }
 
