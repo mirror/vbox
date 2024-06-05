@@ -257,7 +257,6 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
 DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag)
 {
-    AssertMsgReturn(cb <= _1G, ("%#x\n", cb), VERR_OUT_OF_RANGE); /* for safe size_t -> ULONG */
     RT_NOREF1(fExecutable);
 
     /*
@@ -315,6 +314,24 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
             ExFreePool(pMdl);
         }
     }
+
+    /*
+     * There are serveral limiting factors here.  First there the ULONG length
+     * parameter in the IoAllocateMdl call that means the absolute maximum is
+     * 4GiB - PAGE_SIZE.  That API is documented to limit the max length
+     * differently for the windows versions:
+     *  - Pre-vista: (65535 - sizeof(MLD)/sizeof(ULONG_PTR)) * PAGE_SIZE
+     *  - Vista & Server 2008: 2GiB - PAGE_SIZE.
+     *  - Windows 7 & Server 2008 R2 and higher: 4GiB - PAGE_SIZE.
+     *
+     * Before that we've got the limitations of the pool code and available
+     * kernel mapping space (32-bit).
+     */
+#if ARCH_BITS == 32
+    AssertMsgReturn(cb < _512M, ("%#x\n", cb), VERR_OUT_OF_RANGE);
+#else
+    AssertMsgReturn(cb < _4G, ("%#x\n", cb), VERR_OUT_OF_RANGE);
+#endif
 
     /*
      * Try allocate the memory and create an MDL for them so
