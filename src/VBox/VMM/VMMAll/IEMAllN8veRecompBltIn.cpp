@@ -605,7 +605,7 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
                 pbCodeBuf[off++] = 0x06 + BP_ON_OBSOLETION; \
                 offConsolidatedJump = off; \
                 if (BP_ON_OBSOLETION) pbCodeBuf[off++] = 0xcc; \
-                off = iemNativeEmitTbExitEx(pReNative, pCodeBuf, off, kIemNativeExitReason_ObsoleteTb); \
+                off = iemNativeEmitTbExitEx(pReNative, pbCodeBuf, off, kIemNativeExitReason_ObsoleteTb); \
             } \
         } while (0)
 
