@@ -5082,14 +5082,14 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
             InsertConfigInteger(pCfg, "VMSVGA3dEnabled", f3DEnabled);
 # else
             LogRel(("VMSVGA3d not available in this build!\n"));
-# endif /* VBOX_WITH_VMSVGA3D */
+# endif
 
             InsertConfigInteger(pCfg, "VmSvga3", fForceVmSvga3);
             InsertConfigInteger(pCfg, "VmSvgaExposeLegacyVga", fExposeLegacyVga);
         }
 #else
         RT_NOREF(enmGraphicsController, fForceVmSvga3, fExposeLegacyVga);
-#endif /* VBOX_WITH_VMSVGA */
+#endif /* !VBOX_WITH_VMSVGA */
 
         /* Custom VESA mode list */
         unsigned cModes = 0;
