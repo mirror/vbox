@@ -855,15 +855,6 @@ HRESULT PlatformProperties::s_getSupportedVRAMRange(GraphicsControllerType_T aGr
             cbMax = VGA_VRAM_MAX;
             break;
 
-/** @todo r=bird: I think this is wrong.  The VMSVGA variant is the one that
- *        is trying to be the most compatible with the original HW (same PCI
- *        IDs etc). So, I don't see why we're subjecting VBoxSVGA to the SVGA
- *        limitations and the original VMSVGA variant to the VBox/VGA ones.
- *
- *        Other than the higher minimum values compared to VGA_VRAM_MIN,
- *        I'm not sure we need to care too much about restricting the MAX to
- *        128MB for either VMSVGA nor VBoxSVGA.  We should be using
- *        VGA_VRAM_MAX for all three. */
         case GraphicsControllerType_VBoxSVGA:
 #ifdef VBOX_WITH_VMSVGA
 # ifdef VBOX_WITH_VMSVGA3D
@@ -872,7 +863,9 @@ HRESULT PlatformProperties::s_getSupportedVRAMRange(GraphicsControllerType_T aGr
             else
 # endif
                 cbMin = VBOX_SVGA_VRAM_MIN_SIZE;
-            cbMax = VBOX_SVGA_VRAM_MAX_SIZE;
+            /* We don't want to limit ourselves to VBOX_SVGA_VRAM_MAX_SIZE,
+             * so we use VGA_VRAM_MAX (as we do for VBoxVGA + VMSVGA) here as well. */
+            cbMax = VGA_VRAM_MAX;
             break;
 #else
             return VBOX_E_NOT_SUPPORTED;
@@ -892,18 +885,6 @@ HRESULT PlatformProperties::s_getSupportedVRAMRange(GraphicsControllerType_T aGr
     cbMin    = (ULONG)(RT_ALIGN_64(cbMin, cbStride) / _1M);
     cbMax    = (ULONG)(RT_ALIGN_64(cbMax, cbStride) / _1M);
     cbStride = (ULONG)cbStride / _1M;
-
-    /** @todo r=bird: Why this? Why do these have to be powers of two?
-     * The algorithm could be better, use ASMBitLastSetU32 next time. */
-#define MAKE_POWER_OF_TWO(a_MB) \
-    while (!RT_IS_POWER_OF_TWO(a_MB)) \
-        a_MB = a_MB + 1; \
-
-    MAKE_POWER_OF_TWO(cbMin);
-    MAKE_POWER_OF_TWO(cbMax);
-    MAKE_POWER_OF_TWO(cbStride);
-
-#undef MAKE_POWER_OF_TWO
 
     /* Finally, clamp the values to our schema definitions before returning. */
     if (cbMax > SchemaDefs::MaxGuestVRAM)
