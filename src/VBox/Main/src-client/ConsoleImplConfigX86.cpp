@@ -445,7 +445,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     {
         uint32_t cVRamMBsPowerOfTwo = RT_MIN(cVRamMBs, 1024); /* 1GB is the absolute max given PCI alignment. */
         if (!RT_IS_POWER_OF_TWO(cVRamMBsPowerOfTwo))
-            cVRamMBsPowerOfTwo = RT_BIT_32(ASMBitFirstSetU32(cVRamMBsPowerOfTwo)); /* returns [1..32] */
+            cVRamMBsPowerOfTwo = RT_BIT_32(ASMBitLastSetU32(cVRamMBsPowerOfTwo)); /* returns [1..32] */
         if (cbRamHole / _1M < cVRamMBsPowerOfTwo * 2)
         {
             cbRamHole = cVRamMBsPowerOfTwo * 2 * _1M; /* We must double the VRAM size due to PCI alignment. */
