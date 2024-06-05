@@ -9706,7 +9706,8 @@ l_profile_again:
     if (pTbAllocator->pDelayedFreeHead)
         iemTbAllocatorProcessDelayedFrees(pVCpu, pVCpu->iem.s.pTbAllocatorR3);
 
-    PIEMNATIVEINSTR const paFinalInstrBuf = (PIEMNATIVEINSTR)iemExecMemAllocatorAlloc(pVCpu, off * sizeof(IEMNATIVEINSTR), pTb);
+    PIEMNATIVEINSTR paFinalInstrBufRx = NULL;
+    PIEMNATIVEINSTR const paFinalInstrBuf = (PIEMNATIVEINSTR)iemExecMemAllocatorAlloc(pVCpu, off * sizeof(IEMNATIVEINSTR), pTb, (void **)&paFinalInstrBufRx);
     AssertReturn(paFinalInstrBuf, pTb);
     memcpy(paFinalInstrBuf, pReNative->pInstrBuf, off * sizeof(paFinalInstrBuf[0]));
 
@@ -9767,14 +9768,14 @@ l_profile_again:
         AssertFailed();
     }
 
-    iemExecMemAllocatorReadyForUse(pVCpu, paFinalInstrBuf, off * sizeof(IEMNATIVEINSTR));
+    iemExecMemAllocatorReadyForUse(pVCpu, paFinalInstrBufRx, off * sizeof(IEMNATIVEINSTR));
     STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbNativeCode, off * sizeof(IEMNATIVEINSTR));
 
     /*
      * Convert the translation block.
      */
     RTMemFree(pTb->Thrd.paCalls);
-    pTb->Native.paInstructions  = paFinalInstrBuf;
+    pTb->Native.paInstructions  = paFinalInstrBufRx;
     pTb->Native.cInstructions   = off;
     pTb->fFlags                 = (pTb->fFlags & ~IEMTB_F_TYPE_MASK) | IEMTB_F_TYPE_NATIVE;
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
