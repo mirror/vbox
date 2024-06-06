@@ -1436,7 +1436,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
     static BS3CPUINSTR4_TEST1_VALUES_PD_T const s_aValues[] =
     {
     /*
-     * Zero (Positive and Negative).
+     * Zero.
      */
     /* 0*/{ { /*src2     */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
