@@ -795,13 +795,12 @@ typedef struct BS3CPUINSTR4_TEST1_VALUES_T
     X86YMMREG           uSrc2;                  /**< Second source operand. */
     X86YMMREG           uSrc1;                  /**< uDstIn for SSE */
     X86YMMREG           uDstOut;                /**< Destination output. */
-    uint32_t            fMxCsrMask;             /**< MXCSR exception mask to use. */
-    bool                fDenormalsAreZero;      /**< Whether DAZ (Denormals-Are-Zero) is used. */
-    bool                fFlushToZero;           /**< Whether Flush-To-Zero (FZ) is used. */
+    uint32_t            fMxCsrMask;             /**< MXCSR exception mask. */
+    uint32_t            fDenormalsAreZero;      /**< DAZ (Denormals-Are-Zero) exception mask. */
+    uint32_t            fFlushToZero;           /**< Flush-To-Zero (FZ) exception mask. */
     uint32_t            fRoundingCtlMask;       /**< Rounding control mask (X86_MXCSR_RC_MASK) to use. */
     uint32_t            f128ExpectedMxCsrFlags; /**< Expected MXCSR exception flags for 128-bit instruction. */
     uint32_t            f256ExpectedMxCsrFlags; /**< Expected MXCSR exception flags for 256-bit instructions. */
-    uint32_t            fPad;
 } BS3CPUINSTR4_TEST1_VALUES_T;
 
 /*
@@ -813,13 +812,12 @@ typedef struct BS3CPUINSTR4_TEST1_VALUES_PS_T
     X86YMMFLOATPSREG    uSrc2;                  /**< Second source operand. */
     X86YMMFLOATPSREG    uSrc1;                  /**< uDstIn for SSE */
     X86YMMFLOATPSREG    uDstOut;                /**< Destination output. */
-    uint32_t            fMxCsrMask;             /**< MXCSR exception mask to use. */
-    bool                fDenormalsAreZero;      /**< Whether DAZ (Denormals-Are-Zero) is used. */
-    bool                fFlushToZero;           /**< Whether Flush-To-Zero (FZ) is used. */
+    uint32_t            fMxCsrMask;             /**< MXCSR exception mask. */
+    uint32_t            fDenormalsAreZero;      /**< DAZ (Denormals-Are-Zero) exception mask. */
+    uint32_t            fFlushToZero;           /**< Flush-To-Zero (FZ) exception mask. */
     uint32_t            fRoundingCtlMask;       /**< Rounding control mask (X86_MXCSR_RC_MASK) to use. */
     uint32_t            f128ExpectedMxCsrFlags; /**< Expected MXCSR exception flags for 128-bit instruction. */
     uint32_t            f256ExpectedMxCsrFlags; /**< Expected MXCSR exception flags for 256-bit instructions. */
-    uint32_t            fPad;
 } BS3CPUINSTR4_TEST1_VALUES_PS_T;
 AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_PS_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
 AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uSrc2,                  BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
@@ -841,13 +839,12 @@ typedef struct BS3CPUINSTR4_TEST1_VALUES_PD_T
     X86YMMFLOATPDREG    uSrc2;                  /**< Second source operand. */
     X86YMMFLOATPDREG    uSrc1;                  /**< uDstIn for SSE */
     X86YMMFLOATPDREG    uDstOut;                /**< Destination output. */
-    uint32_t            fMxCsrMask;             /**< MXCSR exception mask to use. */
-    bool                fDenormalsAreZero;      /**< Whether DAZ (Denormals-Are-Zero) is used. */
-    bool                fFlushToZero;           /**< Whether Flush-To-Zero (FZ) is used. */
+    uint32_t            fMxCsrMask;             /**< MXCSR exception mask. */
+    uint32_t            fDenormalsAreZero;      /**< DAZ (Denormals-Are-Zero) exception mask. */
+    uint32_t            fFlushToZero;           /**< Flush-To-Zero (FZ) exception mask. */
     uint32_t            fRoundingCtlMask;       /**< Rounding control mask (X86_MXCSR_RC_MASK) to use. */
     uint32_t            f128ExpectedMxCsrFlags; /**< Expected MXCSR exception flags for 128-bit instruction. */
     uint32_t            f256ExpectedMxCsrFlags; /**< Expected MXCSR exception flags for 256-bit instructions. */
-    uint32_t            fPad;
 } BS3CPUINSTR4_TEST1_VALUES_PD_T;
 AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_PD_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
 AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uSrc2,                  BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
@@ -869,13 +866,12 @@ typedef struct BS3CPUINSTR4_TEST1_VALUES_SQ_T
     X86YMMFLOATSQREG    uSrc2;                  /**< Second source operand. */
     X86YMMFLOATSQREG    uSrc1;                  /**< uDstIn for SSE */
     X86YMMFLOATSQREG    uDstOut;                /**< Destination output. */
-    uint32_t            fMxCsrMask;             /**< MXCSR exception mask to use. */
-    bool                fDenormalsAreZero;      /**< Whether DAZ (Denormals-Are-Zero) is used. */
-    bool                fFlushToZero;           /**< Whether Flush-To-Zero (FZ) is used. */
+    uint32_t            fMxCsrMask;             /**< MXCSR exception mask. */
+    uint32_t            fDenormalsAreZero;      /**< DAZ (Denormals-Are-Zero) exception mask. */
+    uint32_t            fFlushToZero;           /**< Flush-To-Zero (FZ) exception mask. */
     uint32_t            fRoundingCtlMask;       /**< Rounding control mask (X86_MXCSR_RC_MASK) to use. */
     uint32_t            f128ExpectedMxCsrFlags; /**< Expected MXCSR exception flags for 128-bit instruction. */
     uint32_t            f256ExpectedMxCsrFlags; /**< Expected MXCSR exception flags for 256-bit instructions. */
-    uint32_t            fPad;
 } BS3CPUINSTR4_TEST1_VALUES_SQ_T;
 AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_SQ_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
 AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uSrc2,                  BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
@@ -1018,10 +1014,10 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
     uMxCsr = (pSavedCfg->uMxCsr         & ~(X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_MASK))
            | (pValues->fMxCsrMask       & X86_MXCSR_XCPT_MASK)
            | (pValues->fRoundingCtlMask & X86_MXCSR_RC_MASK);
-    if (   pValues->fDenormalsAreZero
+    if (   pValues->fDenormalsAreZero == X86_MXCSR_DAZ
         && g_fMxCsrDazSupported)
         uMxCsr |= X86_MXCSR_DAZ;
-    if (pValues->fFlushToZero)
+    if (pValues->fFlushToZero == X86_MXCSR_FZ)
         uMxCsr |= X86_MXCSR_FZ;
     Bs3ExtCtxSetMxCsr(pExtCtx, uMxCsr);
 
@@ -1236,7 +1232,7 @@ static uint8_t bs3CpuInstrX_WorkerTestType1(uint8_t bMode, BS3CPUINSTR4_TEST1_T 
                              * is not influencing other cases.
                              */
                             if (   !g_fMxCsrDazSupported
-                                && pTest->paValues[iVal].fDenormalsAreZero
+                                && pTest->paValues[iVal].fDenormalsAreZero == X86_MXCSR_DAZ
                                 && (fExpectedMxCsrFlags & X86_MXCSR_DE))
                                 continue;
 
@@ -1326,25 +1322,25 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addps(uint8_t bMode)
             { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
             { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_UP,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
               /*flags    */ 0, 0 },
     /* 3*/{ { /*src2     */ { BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1) } },
             { /*src1     */ { BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1) } },
             { /* =>      */ { BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 0, X86_MXCSR_RC_ZERO,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, 0, X86_MXCSR_RC_ZERO,
               /*flags    */ 0, 0 },
     /* 4*/{ { /*src2     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(1) } },
             { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(1) } },
             { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(1) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 0, 1, X86_MXCSR_RC_ZERO,
+              /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
               /*flags    */ 0, 0 },
     /* 5*/{ { /*src2     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1) } },
             { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1) } },
             { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1) } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_DOWN,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_DOWN,
               /*flags    */ 0, 0 },
     /*
      * Infinity.
@@ -1365,19 +1361,19 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addps(uint8_t bMode)
             { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_INF(1),  BS3_FP32_ZERO(1), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0) } },
             { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_QNAN(1), BS3_FP32_ZERO(1), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0) } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 0, 1, X86_MXCSR_RC_NEAREST,
+              /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_NEAREST,
               /*flags    */ 0, X86_MXCSR_IE },
     /* 9*/{ { /*src2     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_INF(0)  } },
             { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_INF(1)  } },
             { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_QNAN(0) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 0, 1, X86_MXCSR_RC_NEAREST,
+              /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_NEAREST,
               /*flags    */ 0, X86_MXCSR_IE },
     /*10*/{ { /*src2     */ { BS3_FP32_INF(0), BS3_FP32_INF(1),  BS3_FP32_ZERO(0), BS3_FP32_INF(1),  BS3_FP32_ZERO(1), BS3_FP32_INF(1),  BS3_FP32_INF(1),  BS3_FP32_INF(0) } },
             { /*src1     */ { BS3_FP32_INF(1), BS3_FP32_INF(0),  BS3_FP32_ZERO(1), BS3_FP32_INF(0),  BS3_FP32_ZERO(0), BS3_FP32_INF(0),  BS3_FP32_INF(0),  BS3_FP32_INF(1) } },
             { /* =>      */ { BS3_FP32_INF(1), BS3_FP32_QNAN(1), BS3_FP32_ZERO(0), BS3_FP32_QNAN(1), BS3_FP32_ZERO(1), BS3_FP32_QNAN(1), BS3_FP32_QNAN(1), BS3_FP32_INF(1) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 0, 1, X86_MXCSR_RC_ZERO,
+              /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
               /*flags    */ X86_MXCSR_IE, X86_MXCSR_IE },
     };
 
@@ -1448,25 +1444,25 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
             { /*src1     */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 0, 1, X86_MXCSR_RC_NEAREST,
+              /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_NEAREST,
               /*flags    */ 0, 0 },
     /* 2*/{ { /*src2     */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(1), BS3_FP64_ZERO(1), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(1), BS3_FP64_ZERO(1), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(1), BS3_FP64_ZERO(1), BS3_FP64_ZERO(0) } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 0, X86_MXCSR_RC_DOWN,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, 0, X86_MXCSR_RC_DOWN,
               /*flags    */ 0, 0 },
     /* 3*/{ { /*src2     */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(1), BS3_FP64_ZERO(1) } },
             { /*src1     */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(1), BS3_FP64_ZERO(1) } },
             { /* =>      */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(1), BS3_FP64_ZERO(1) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_UP,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
               /*flags    */ 0, 0 },
     /* 4*/{ { /*src2     */ { BS3_FP64_ZERO(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(1), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_ZERO(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(1), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_ZERO(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(1), BS3_FP64_ZERO(0) } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_ZERO,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
               /*flags    */ 0, 0 },
     /*
      * Infinity.
@@ -1481,19 +1477,19 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
             { /*src1     */ { BS3_FP64_ZERO(0), BS3_FP64_INF(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_ZERO(0), BS3_FP64_INF(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
               /*mask     */ ~X86_MXCSR_IM,
-              /*daz,fz,rc*/ 0, 1, X86_MXCSR_RC_DOWN,
+              /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_DOWN,
               /*flags    */ X86_MXCSR_IE, X86_MXCSR_IE },
     /* 7*/{ { /*src2     */ { BS3_FP64_ZERO(0), BS3_FP64_INF(1), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_ZERO(0), BS3_FP64_INF(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_ZERO(0), BS3_FP64_INF(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
               /*mask     */ ~X86_MXCSR_IM,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_UP,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
               /*flags    */ X86_MXCSR_IE, X86_MXCSR_IE },
     /* 8*/{ { /*src2     */ { BS3_FP64_INF(0),  BS3_FP64_INF(1),  BS3_FP64_ZERO(0), BS3_FP64_INF(1) } },
             { /*src1     */ { BS3_FP64_INF(1),  BS3_FP64_INF(0),  BS3_FP64_ZERO(0), BS3_FP64_INF(0) } },
             { /* =>      */ { BS3_FP64_QNAN(1), BS3_FP64_QNAN(1), BS3_FP64_ZERO(0), BS3_FP64_QNAN(1) } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 0, X86_MXCSR_RC_ZERO,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, 0, X86_MXCSR_RC_ZERO,
               /*flags    */ X86_MXCSR_IE, X86_MXCSR_IE },
     /*
      * Overflow, Precision.
@@ -1514,13 +1510,13 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
             { /*src1     */ { BS3_FP64_NORMAL_MAX(0), BS3_FP64_NORMAL_MIN(1), BS3_FP64_ZERO(0), BS3_FP64_NORMAL_MAX(0) } },
             { /* =>      */ { BS3_FP64_INF(0),        BS3_FP64_VAL(1, 0, 2),  BS3_FP64_ZERO(0), BS3_FP64_INF(0),       } },
               /*mask     */ X86_MXCSR_OM | X86_MXCSR_PM,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_NEAREST,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_NEAREST,
               /*flags    */ X86_MXCSR_OE | X86_MXCSR_PE, X86_MXCSR_OE | X86_MXCSR_PE },
     /*12*/{ { /*src2     */ { BS3_FP64_NORMAL_MIN(1), BS3_FP64_NORMAL_MAX(0), BS3_FP64_NORMAL_MAX(0), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_NORMAL_MIN(1), BS3_FP64_NORMAL_MAX(0), BS3_FP64_NORMAL_MAX(1), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_VAL(1, 0, 2),  BS3_FP64_NORMAL_MAX(0), BS3_FP64_ZERO(0),       BS3_FP64_ZERO(0) } },
               /*mask     */ X86_MXCSR_OM | X86_MXCSR_PM,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_ZERO,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
               /*flags    */ X86_MXCSR_OE | X86_MXCSR_PE, X86_MXCSR_OE | X86_MXCSR_PE },
     /*13*/{ { /*src2     */ { BS3_FP64_NORMAL_MAX(0), BS3_FP64_NORMAL_MAX(1), BS3_FP64_NORMAL_MAX(1), BS3_FP64_NORMAL_MAX(0) } },
             { /*src1     */ { BS3_FP64_NORMAL_MAX(0), BS3_FP64_NORMAL_MAX(1), BS3_FP64_NORMAL_MAX(1), BS3_FP64_NORMAL_MAX(0) } },
@@ -1538,7 +1534,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
             { /*src1     */ { BS3_FP64_VAL(1, 0,               0x07d)/*-0.25*/, BS3_FP64_NORMAL_MAX(1), BS3_FP64_ZERO(0), BS3_FP64_VAL(0, 0,               0x3fe)/*0.50*/ } },
             { /* =>      */ { BS3_FP64_VAL(0, 0xbffffffffffff, 0x3ff)/* 1.50*/, BS3_FP64_ZERO(1),       BS3_FP64_ZERO(0), BS3_FP64_VAL(0, 0x8000000000000, 0x3fe)/*0.75*/ } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_DOWN,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_DOWN,
               /*flags    */ X86_MXCSR_PE, X86_MXCSR_PE },
     /*
      * Normals.
@@ -1565,7 +1561,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
             { /*src1     */ { BS3_FP64_ONE(0),                                                                               BS3_FP64_ONE(1),                                                                               BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_NORMAL_SAFE_INT_MAX(0),                                                               BS3_FP64_VAL(0, BS3_FP64_FRACTION_NORMAL_MAX - 1, BS3_FP64_EXP_BIAS + BS3_FP64_FRACTION_BITS), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_ZERO,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
               /*flags    */ 0, 0 },
     /*20*/{ { /*src2     */ { BS3_FP64_NORMAL_SAFE_INT_MAX(0),                                    BS3_FP64_ONE(1),                                                    BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /*src1     */ { BS3_FP64_ONE(0),                                                    BS3_FP64_NORMAL_SAFE_INT_MAX(1),                                    BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
@@ -1577,13 +1573,13 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
             { /*src1     */ { BS3_FP64_NORMAL_SAFE_INT_MIN(1), BS3_FP64_NORMAL_SAFE_INT_MIN(1), BS3_FP64_ZERO(0),                BS3_FP64_NORMAL_SAFE_INT_MIN(0) } },
             { /* =>      */ { BS3_FP64_ZERO(0),                BS3_FP64_NORMAL_SAFE_INT_MIN(1), BS3_FP64_NORMAL_SAFE_INT_MIN(0), BS3_FP64_VAL(0, 0, 2)           } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_ZERO,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
               /*flags    */ 0, 0 },
     /*22*/{ { /*src2     */ { BS3_FP64_VAL(0, 0xc122186c3cfd0, 0x42d)/*123456789876543.25*/, BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_NORMAL_SAFE_INT_MIN(1) } },
             { /*src1     */ { BS3_FP64_VAL(0, 0xb88e0395d49b0, 0x42d)/*121098765432102.75*/, BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_NORMAL_SAFE_INT_MIN(1) } },
             { /* =>      */ { BS3_FP64_VAL(0, 0xbcd80e0108cc0, 0x42e)/*244555555308646   */, BS3_FP64_ZERO(0), BS3_FP64_ZERO(0), BS3_FP64_VAL(1, 0, 2)           } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_DOWN,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_DOWN,
               /*flags    */ 0, 0 },
     /*
      * Denormals.
@@ -1598,13 +1594,13 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstrX_v_addpd(uint8_t bMode)
             { /*src1     */ { BS3_FP64_ZERO(0), BS3_FP64_DENORMAL_MAX(0), BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
             { /* =>      */ { BS3_FP64_ZERO(0), BS3_FP64_ZERO(0),         BS3_FP64_ZERO(0), BS3_FP64_ZERO(0) } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 0, X86_MXCSR_RC_NEAREST,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, 0, X86_MXCSR_RC_NEAREST,
               /*flags    */ 0, 0 },
     /*25*/{ { /*src2     */ { BS3_FP64_DENORMAL_MIN(0), BS3_FP64_DENORMAL_MIN(0), BS3_FP64_DENORMAL_MAX(0), BS3_FP64_DENORMAL_MAX(0) } },
             { /*src1     */ { BS3_FP64_DENORMAL_MAX(0), BS3_FP64_DENORMAL_MIN(0), BS3_FP64_DENORMAL_MAX(0), BS3_FP64_DENORMAL_MIN(0) } },
             { /* =>      */ { BS3_FP64_ZERO(0),         BS3_FP64_ZERO(0),         BS3_FP64_ZERO(0),         BS3_FP64_ZERO(0)         } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 1, 1, X86_MXCSR_RC_UP,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
               /*flags    */ 0, 0 },
     /** @todo More denormals; Underflow, Precision; Rounding, FZ etc. */
     };
