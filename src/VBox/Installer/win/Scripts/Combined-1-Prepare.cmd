@@ -46,8 +46,8 @@ rem Parse arguments.
 rem
 set _MY_OPT_UNTAR_DIR=%_MY_SCRIPT_DIR%\..\..\..
 for %%i in (%_MY_OPT_UNTAR_DIR%) do set _MY_OPT_UNTAR_DIR=%%~fi
-set _MY_OPT_EXTPACK=%_MY_OPT_UNTAR_DIR%\Oracle_VM_VirtualBox_Extension_Pack-%_MY_VER_REV%.vbox-extpack
-set _MY_OPT_EXTPACK_ENTERPRISE=%_MY_OPT_UNTAR_DIR%\Oracle_VM_VirtualBox_Extension_Pack-%_MY_VER_REV%-ENTERPRISE.vbox-extpack
+set _MY_OPT_EXTPACK=%_MY_OPT_UNTAR_DIR%\Oracle_VirtualBox_Extension_Pack-%_MY_VER_REV%.vbox-extpack
+set _MY_OPT_EXTPACK_ENTERPRISE=%_MY_OPT_UNTAR_DIR%\Oracle_VirtualBox_Extension_Pack-%_MY_VER_REV%-ENTERPRISE.vbox-extpack
 set _MY_OPT_BUILD_TYPE=@KBUILD_TYPE@
 set _MY_OPT_OUTDIR=%_MY_OPT_UNTAR_DIR%\output
 
@@ -212,8 +212,8 @@ rem Install the extpack in the bin directories.
 rem Note! Not really necessary, but whatever.
 rem
 echo on
-copy /y "%_MY_OPT_EXTPACK%" "%_MY_BINDIR_AMD64%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack" || goto end_failed
-copy /y "%_MY_OPT_EXTPACK%"   "%_MY_BINDIR_X86%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack" || goto end_failed
+copy /y "%_MY_OPT_EXTPACK%" "%_MY_BINDIR_AMD64%\Oracle_VirtualBox_Extension_Pack.vbox-extpack" || goto end_failed
+copy /y "%_MY_OPT_EXTPACK%"   "%_MY_BINDIR_X86%\Oracle_VirtualBox_Extension_Pack.vbox-extpack" || goto end_failed
 @echo off
 
 rem

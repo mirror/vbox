@@ -141,7 +141,7 @@ rem
 if not exist "%_MY_OPT_BINDIR_X86%"   goto error_bindir_x86_does_not_exist
 if not exist "%_MY_OPT_BINDIR_AMD64%" goto error_bindir_amd64_does_not_exist
 
-if ".%_MY_OPT_INPUT%" == "."        set _MY_OPT_INPUT=%_MY_OPT_BINDIR_X86%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack
+if ".%_MY_OPT_INPUT%" == "."        set _MY_OPT_INPUT=%_MY_OPT_BINDIR_X86%\Oracle_VirtualBox_Extension_Pack.vbox-extpack
 if not exist "%_MY_OPT_INPUT%"      goto error_input_not_found
 
 if ".%_MY_OPT_OUTPUT%" == "."       for %%i in ("%_MY_OPT_INPUT%") do set _MY_OPT_OUTPUT=.\%%~nxi

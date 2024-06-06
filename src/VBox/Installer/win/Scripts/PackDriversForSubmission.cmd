@@ -198,7 +198,7 @@ if not exist "%_MY_OPT_PDBDIR%"     goto error_pdbdir_does_not_exist
 
 if "%_MY_OPT_WITH_EXTPACK%" == "0"  goto no_extpack_validation
 if "%_MY_OPT_NO_EXTRACT%" == "1"    goto no_extpack_validation
-if ".%_MY_OPT_EXTPACK%" == "."      set _MY_OPT_EXTPACK=%_MY_OPT_BINDIR%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack
+if ".%_MY_OPT_EXTPACK%" == "."      set _MY_OPT_EXTPACK=%_MY_OPT_BINDIR%\Oracle_VirtualBox_Extension_Pack.vbox-extpack
 if not exist "%_MY_OPT_EXTPACK%"    goto error_extpack_does_not_exist
 :no_extpack_validation
 
@@ -223,7 +223,7 @@ rem       cygwin ones, and that we can use stuff from bin\tools if we like.
 rem
 set PATH=%SystemRoot%\System32;%PATH%;%_MY_OPT_BINDIR%
 if "%_MY_OPT_WITH_EXTPACK%" == "0" goto no_extpack_unpack
-set _MY_EXTPACK_DIR=%_MY_OPT_BINDIR%\ExtensionPacks\Oracle_VM_VirtualBox_Extension_Pack
+set _MY_EXTPACK_DIR=%_MY_OPT_BINDIR%\ExtensionPacks\Oracle_VirtualBox_Extension_Pack
 if not exist "%_MY_OPT_BINDIR%\ExtensionPacks"  ( mkdir "%_MY_OPT_BINDIR%\ExtensionPacks" || goto end_failed )
 if not exist "%_MY_EXTPACK_DIR%"                ( mkdir "%_MY_EXTPACK_DIR%" || goto end_failed )
 if "%_MY_OPT_NO_EXTRACT%" == "1" goto no_extpack_unpack

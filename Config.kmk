@@ -96,7 +96,7 @@ PROPS_MISCBINS_ACCUMULATE_L  += INTERMEDIATES
 # Some info on the vendor
 VBOX_VENDOR       = Oracle and/or its affiliates
 VBOX_VENDOR_SHORT = Oracle
-VBOX_PRODUCT      = Oracle VM VirtualBox
+VBOX_PRODUCT      = $(VBOX_VENDOR_SHORT) VirtualBox
 VBOX_PUEL_PRODUCT = $(VBOX_PRODUCT) Extension Pack
 # Not all could be done automatically. Here is a list of known places which
 # have to be updated manually, please keep this up to date:
