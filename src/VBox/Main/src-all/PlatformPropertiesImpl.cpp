@@ -835,10 +835,6 @@ HRESULT PlatformProperties::getSupportedUSBControllerTypes(std::vector<USBContro
 HRESULT PlatformProperties::s_getSupportedVRAMRange(GraphicsControllerType_T aGraphicsControllerType, BOOL fAccelerate3DEnabled,
                                                     ULONG *aMinMB, ULONG *aMaxMB, ULONG *aStrideSizeMB)
 {
-#if !defined(VBOX_WITH_VMSVGA) || !defined(VBOX_WITH_VMSVGA3D)
-    RT_NOREF(fAccelerate3DEnabled);
-#endif
-
     size_t cbMin;
     size_t cbMax;
     size_t cbStride = _1M; /* Default stride for all controllers. */
@@ -846,40 +842,42 @@ HRESULT PlatformProperties::s_getSupportedVRAMRange(GraphicsControllerType_T aGr
     switch (aGraphicsControllerType)
     {
         case GraphicsControllerType_VBoxVGA:
+        {
             cbMin = VGA_VRAM_MIN;
             cbMax = VGA_VRAM_MAX;
             break;
+        }
 
         case GraphicsControllerType_VMSVGA:
-            cbMin = VGA_VRAM_MIN;
-            cbMax = VGA_VRAM_MAX;
-            break;
-
+            RT_FALL_THROUGH();
         case GraphicsControllerType_VBoxSVGA:
-#ifdef VBOX_WITH_VMSVGA
-# ifdef VBOX_WITH_VMSVGA3D
+        {
             if (fAccelerate3DEnabled)
                 cbMin = VBOX_SVGA_VRAM_MIN_SIZE_3D;
             else
-# endif
                 cbMin = VBOX_SVGA_VRAM_MIN_SIZE;
             /* We don't want to limit ourselves to VBOX_SVGA_VRAM_MAX_SIZE,
-             * so we use VGA_VRAM_MAX (as we do for VBoxVGA + VMSVGA) here as well. */
+             * so we use VGA_VRAM_MAX for all controllers. */
             cbMax = VGA_VRAM_MAX;
             break;
-#else
-            return VBOX_E_NOT_SUPPORTED;
-#endif
+        }
 
         case GraphicsControllerType_QemuRamFB:
+        {
             /* We seem to hardcode 32-bit (4 bytes) as BPP, see RAMFB_BPP in QemuRamfb.c. */
             cbMin = 4 /* BPP in bytes */ * 16    * 16;    /* Values taken from qemu/hw/display/ramfb.c */
             cbMax = 4 /* BPP in bytes */ * 16000 * 12000; /* Values taken from bochs-vbe.h. */
+            /* Make the maximum value a power of two. */
+            cbMax = RT_BIT_64(ASMBitLastSetU64(cbMax));
             break;
+        }
 
         default:
             return E_INVALIDARG;
     }
+
+    /* Sanity. We want all max values to be a power of two. */
+    AssertMsg(RT_IS_POWER_OF_TWO(cbMax), ("Maximum VRAM value is not a power of two!\n"));
 
     /* Convert bytes -> MB, align to stride. */
     cbMin    = (ULONG)(RT_ALIGN_64(cbMin, cbStride) / _1M);
