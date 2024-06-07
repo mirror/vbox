@@ -31,6 +31,7 @@
 #include "LoggingNew.h"
 #include "Global.h"
 
+#include <iprt/asm.h>
 #include <iprt/cpp/utils.h>
 
 #include <VBox/param.h> /* For VRAM ranges. */
