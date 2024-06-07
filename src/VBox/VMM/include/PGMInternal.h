@@ -3903,6 +3903,7 @@ int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPend
 #ifdef VBOX_STRICT
 DECLHIDDEN(bool) pgmPhysAssertRamRangesLocked(PVMCC pVM, bool fInUpdate, bool fRamRelaxed);
 #endif
+DECLHIDDEN(void)            pgmR3PhysChunkInvalidateTLB(PVM pVM);
 void            pgmPhysInvalidRamRangeTlbs(PVMCC pVM);
 void            pgmPhysInvalidatePageMapTLB(PVMCC pVM);
 void            pgmPhysInvalidatePageMapTLBEntry(PVMCC pVM, RTGCPHYS GCPhys);

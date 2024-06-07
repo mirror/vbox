@@ -5899,6 +5899,8 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
                     /* Flush REM TLBs. */
                     CPUMSetChangedFlags(pVM->apCpusR3[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
                 }
+
+                pgmR3PhysChunkInvalidateTLB(pVM); /* includes pgmPhysInvalidatePageMapTLB call */
             }
         }
     }
@@ -6042,7 +6044,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
  *
  * @param   pVM         The cross context VM structure.
  */
-VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
+DECLHIDDEN(void) pgmR3PhysChunkInvalidateTLB(PVM pVM)
 {
     PGM_LOCK_VOID(pVM);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
