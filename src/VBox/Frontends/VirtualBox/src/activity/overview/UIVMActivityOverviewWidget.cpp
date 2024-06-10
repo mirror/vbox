@@ -591,16 +591,17 @@ void UIVMActivityOverviewHostStatsWidget::addVerticalLine(QHBoxLayout *pLayout)
 
 void UIVMActivityOverviewHostStatsWidget::prepare()
 {
-    QHBoxLayout *pLayout = new QHBoxLayout;
-    setLayout(pLayout);
+    QHBoxLayout *pMainLayout = new QHBoxLayout;
+    setLayout(pMainLayout);
     int iMinimumSize =  3 * QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
 
     /* CPU Stuff: */
     {
         /* Host CPU Labels: */
+        QHBoxLayout *pCPULayout = new QHBoxLayout;
         QWidget *pCPULabelContainer = new QWidget;
         pCPULabelContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-        pLayout->addWidget(pCPULabelContainer);
+        pCPULayout->addWidget(pCPULabelContainer);
         QVBoxLayout *pCPULabelsLayout = new QVBoxLayout;
         pCPULabelsLayout->setContentsMargins(0, 0, 0, 0);
         pCPULabelContainer->setLayout(pCPULabelsLayout);
@@ -614,23 +615,26 @@ void UIVMActivityOverviewHostStatsWidget::prepare()
         pCPULabelsLayout->addWidget(m_pCPUTotalLabel);
         pCPULabelsLayout->setAlignment(Qt::AlignTop);
         pCPULabelsLayout->setSpacing(0);
+
         /* Host CPU chart widget: */
         m_pHostCPUChart = new UIVMActivityOverviewDoughnutChart;
         if (m_pHostCPUChart)
         {
             m_pHostCPUChart->setMinimumSize(iMinimumSize, iMinimumSize);
             m_pHostCPUChart->setDataMaximum(100);
-            pLayout->addWidget(m_pHostCPUChart);
+            pCPULayout->addWidget(m_pHostCPUChart);
             m_pHostCPUChart->setChartColors(m_CPUUserColor, m_CPUKernelColor);
         }
+        pMainLayout->addLayout(pCPULayout);
     }
-    addVerticalLine(pLayout);
+    addVerticalLine(pMainLayout);
     /* RAM Stuff: */
     {
+        QHBoxLayout *pRAMLayout = new QHBoxLayout;
         QWidget *pRAMLabelContainer = new QWidget;
         pRAMLabelContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
-        pLayout->addWidget(pRAMLabelContainer);
+        pRAMLayout->addWidget(pRAMLabelContainer);
         QVBoxLayout *pRAMLabelsLayout = new QVBoxLayout;
         pRAMLabelsLayout->setContentsMargins(0, 0, 0, 0);
         pRAMLabelsLayout->setSpacing(0);
@@ -648,15 +652,18 @@ void UIVMActivityOverviewHostStatsWidget::prepare()
         if (m_pHostRAMChart)
         {
             m_pHostRAMChart->setMinimumSize(iMinimumSize, iMinimumSize);
-            pLayout->addWidget(m_pHostRAMChart);
+            pRAMLayout->addWidget(m_pHostRAMChart);
             m_pHostRAMChart->setChartColors(m_RAMUsedColor, m_RAMFreeColor);
         }
+        pMainLayout->addLayout(pRAMLayout);
     }
-    addVerticalLine(pLayout);
+
+    addVerticalLine(pMainLayout);
     /* FS Stuff: */
     {
+        QHBoxLayout *pFSLayout = new QHBoxLayout;
         QWidget *pFSLabelContainer = new QWidget;
-        pLayout->addWidget(pFSLabelContainer);
+        pFSLayout->addWidget(pFSLabelContainer);
         pFSLabelContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
         QVBoxLayout *pFSLabelsLayout = new QVBoxLayout;
         pFSLabelsLayout->setContentsMargins(0, 0, 0, 0);
@@ -675,12 +682,12 @@ void UIVMActivityOverviewHostStatsWidget::prepare()
         if (m_pHostFSChart)
         {
             m_pHostFSChart->setMinimumSize(iMinimumSize, iMinimumSize);
-            pLayout->addWidget(m_pHostFSChart);
+            pFSLayout->addWidget(m_pHostFSChart);
             m_pHostFSChart->setChartColors(m_RAMUsedColor, m_RAMFreeColor);
         }
-
+        pMainLayout->addLayout(pFSLayout);
     }
-    pLayout->addStretch(2);
+    pMainLayout->addStretch(2);
 }
 
 void UIVMActivityOverviewHostStatsWidget::updateLabels()
