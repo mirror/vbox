@@ -458,8 +458,9 @@ static void iemExecMemAllocatorPrune(PVMCPU pVCpu, PIEMEXECMEMALLOCATOR pExecMem
 /**
  * Try allocate a block of @a cReqUnits in the chunk @a idxChunk.
  */
-static void *iemExecMemAllocatorAllocInChunkInt(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint64_t *pbmAlloc, uint32_t idxFirst,
-                                                uint32_t cToScan, uint32_t cReqUnits, uint32_t idxChunk, PIEMTB pTb, void **ppvExec)
+static void *
+iemExecMemAllocatorAllocInChunkInt(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint64_t *pbmAlloc, uint32_t idxFirst,
+                                   uint32_t cToScan, uint32_t cReqUnits, uint32_t idxChunk, PIEMTB pTb, void **ppvExec)
 {
     /*
      * Shift the bitmap to the idxFirst bit so we can use ASMBitFirstClear.
@@ -528,7 +529,8 @@ static void *iemExecMemAllocatorAllocInChunkInt(PIEMEXECMEMALLOCATOR pExecMemAll
 
 
 static void *
-iemExecMemAllocatorAllocInChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint32_t idxChunk, uint32_t cbReq, PIEMTB pTb, void **ppvExec)
+iemExecMemAllocatorAllocInChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint32_t idxChunk, uint32_t cbReq, PIEMTB pTb,
+                                void **ppvExec)
 {
     /*
      * Figure out how much to allocate.
@@ -811,7 +813,7 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PVMCPUCC pVCpu, PIEMEXECMEM
     unsigned const cbUnwindInfo     = sizeof(s_aOpcodes) + RT_UOFFSETOF(IMAGE_UNWIND_INFO, aOpcodes);
     unsigned const cbNeeded         = sizeof(IMAGE_RUNTIME_FUNCTION_ENTRY) * cFunctionEntries + cbUnwindInfo;
     PIMAGE_RUNTIME_FUNCTION_ENTRY const paFunctions
-        = (PIMAGE_RUNTIME_FUNCTION_ENTRY)iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbNeeded, NULL);
+        = (PIMAGE_RUNTIME_FUNCTION_ENTRY)iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbNeeded, NULL, NULL);
     AssertReturn(paFunctions, VERR_INTERNAL_ERROR_5);
     pExecMemAllocator->aChunks[idxChunk].pvUnwindInfo = paFunctions;
 
@@ -1047,7 +1049,7 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PVMCPUCC pVCpu, PIEMEXECMEM
      * This seems to work best with ET_DYN.
      */
     GDBJITSYMFILE * const pSymFile = (GDBJITSYMFILE *)iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk,
-                                                                                      sizeof(GDBJITSYMFILE), NULL);
+                                                                                      sizeof(GDBJITSYMFILE), NULL, NULL);
     AssertReturn(pSymFile, VERR_INTERNAL_ERROR_5);
     unsigned const offSymFileInChunk = (uintptr_t)pSymFile - (uintptr_t)pvChunk;
 
