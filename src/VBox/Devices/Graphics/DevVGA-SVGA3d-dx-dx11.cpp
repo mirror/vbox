@@ -4579,7 +4579,8 @@ static DECLCALLBACK(int) vmsvga3dBackChangeMode(PVGASTATECC pThisCC)
 static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSurfaceImageId src,
                                uint32_t cCopyBoxes, SVGA3dCopyBox *pBox)
 {
-    RT_NOREF(cCopyBoxes, pBox);
+    RT_NOREF(cCopyBoxes);
+    AssertReturn(pBox, VERR_INVALID_PARAMETER);
 
     LogFunc(("src sid %d -> dst sid %d\n", src.sid, dest.sid));
 
@@ -4596,6 +4597,7 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurf
     rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, dest.sid, &pDstSurface);
     AssertRCReturn(rc, rc);
 
+/** @todo Implement a separate code paths for memory->texture, texture->memory and memory->memory transfers */
     LogFunc(("src%s sid = %u -> dst%s sid = %u\n",
              pSrcSurface->pBackendSurface ? "" : " sysmem", pSrcSurface->id,
              pDstSurface->pBackendSurface ? "" : " sysmem", pDstSurface->id));
@@ -4603,66 +4605,55 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurf
     //DXDEVICE *pDevice = dxDeviceGet(pThisCC->svga.p3dState);
     //AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 
-    if (pSrcSurface->pBackendSurface)
+    if (pSrcSurface->pBackendSurface == NULL)
     {
-        if (pDstSurface->pBackendSurface == NULL)
-        {
-            rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDstSurface);
-            AssertRCReturn(rc, rc);
-        }
-
-        if (pDstSurface->pBackendSurface)
-        {
-            /* Surface -> Surface. */
-            DXDEVICE *pDXDevice = &pBackend->dxDevice;
-
-            /* Clip the box. */
-            PVMSVGA3DMIPMAPLEVEL pSrcMipLevel;
-            rc = vmsvga3dMipmapLevel(pSrcSurface, src.face, src.mipmap, &pSrcMipLevel);
-            ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
-
-            PVMSVGA3DMIPMAPLEVEL pDstMipLevel;
-            rc = vmsvga3dMipmapLevel(pDstSurface, dest.face, dest.mipmap, &pDstMipLevel);
-            ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
-
-            SVGA3dCopyBox clipBox = *pBox;
-            vmsvgaR3ClipCopyBox(&pSrcMipLevel->mipmapSize, &pDstMipLevel->mipmapSize, &clipBox);
-
-            UINT DstSubresource = vmsvga3dCalcSubresource(dest.mipmap, dest.face, pDstSurface->cLevels);
-            UINT DstX = clipBox.x;
-            UINT DstY = clipBox.y;
-            UINT DstZ = clipBox.z;
-
-            UINT SrcSubresource = vmsvga3dCalcSubresource(src.mipmap, src.face, pSrcSurface->cLevels);
-            D3D11_BOX SrcBox;
-            SrcBox.left   = clipBox.srcx;
-            SrcBox.top    = clipBox.srcy;
-            SrcBox.front  = clipBox.srcz;
-            SrcBox.right  = clipBox.srcx + clipBox.w;
-            SrcBox.bottom = clipBox.srcy + clipBox.h;
-            SrcBox.back   = clipBox.srcz + clipBox.d;
-
-            Assert(cCopyBoxes == 1); /** @todo */
-
-            ID3D11Resource *pDstResource;
-            ID3D11Resource *pSrcResource;
-            pDstResource = dxResource(pDstSurface);
-            pSrcResource = dxResource( pSrcSurface);
-
-            pDXDevice->pImmediateContext->CopySubresourceRegion(pDstResource, DstSubresource, DstX, DstY, DstZ,
-                                                                pSrcResource, SrcSubresource, &SrcBox);
-        }
-        else
-        {
-            /* Surface -> Memory. */
-            AssertFailed(); /** @todo implement */
-        }
+        rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pSrcSurface);
+        AssertRCReturn(rc, rc);
     }
-    else
+
+    if (pDstSurface->pBackendSurface == NULL)
     {
-        /* Memory -> Surface. */
-        AssertFailed(); /** @todo implement */
+        rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDstSurface);
+        AssertRCReturn(rc, rc);
     }
+
+    DXDEVICE *pDXDevice = &pBackend->dxDevice;
+
+    /* Clip the box. */
+    PVMSVGA3DMIPMAPLEVEL pSrcMipLevel;
+    rc = vmsvga3dMipmapLevel(pSrcSurface, src.face, src.mipmap, &pSrcMipLevel);
+    ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
+
+    PVMSVGA3DMIPMAPLEVEL pDstMipLevel;
+    rc = vmsvga3dMipmapLevel(pDstSurface, dest.face, dest.mipmap, &pDstMipLevel);
+    ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
+
+    SVGA3dCopyBox clipBox = *pBox;
+    vmsvgaR3ClipCopyBox(&pSrcMipLevel->mipmapSize, &pDstMipLevel->mipmapSize, &clipBox);
+
+    UINT DstSubresource = vmsvga3dCalcSubresource(dest.mipmap, dest.face, pDstSurface->cLevels);
+    UINT DstX = clipBox.x;
+    UINT DstY = clipBox.y;
+    UINT DstZ = clipBox.z;
+
+    UINT SrcSubresource = vmsvga3dCalcSubresource(src.mipmap, src.face, pSrcSurface->cLevels);
+    D3D11_BOX SrcBox;
+    SrcBox.left   = clipBox.srcx;
+    SrcBox.top    = clipBox.srcy;
+    SrcBox.front  = clipBox.srcz;
+    SrcBox.right  = clipBox.srcx + clipBox.w;
+    SrcBox.bottom = clipBox.srcy + clipBox.h;
+    SrcBox.back   = clipBox.srcz + clipBox.d;
+
+    Assert(cCopyBoxes == 1); /** @todo */
+
+    ID3D11Resource *pDstResource;
+    ID3D11Resource *pSrcResource;
+    pDstResource = dxResource(pDstSurface);
+    pSrcResource = dxResource(pSrcSurface);
+
+    pDXDevice->pImmediateContext->CopySubresourceRegion(pDstResource, DstSubresource, DstX, DstY, DstZ,
+                                                        pSrcResource, SrcSubresource, &SrcBox);
 
     return rc;
 }
