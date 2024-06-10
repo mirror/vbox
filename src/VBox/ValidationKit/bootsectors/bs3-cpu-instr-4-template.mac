@@ -60,14 +60,14 @@ TMPL_BEGIN_TEXT
 ;
 ; ASSUMES the length is between the start of the function and the .again label.
 ;
- %ifndef BS3CPUINSTRX_PROC_BEGIN_CMN_DEFINED
-  %define BS3CPUINSTRX_PROC_BEGIN_CMN_DEFINED
-  %macro BS3CPUINSTRX_PROC_BEGIN_CMN 1
+ %ifndef BS3CPUINSTR4_PROC_BEGIN_CMN_DEFINED
+  %define BS3CPUINSTR4_PROC_BEGIN_CMN_DEFINED
+  %macro BS3CPUINSTR4_PROC_BEGIN_CMN 1
         align   8, db 0cch
         db      BS3_CMN_NM(%1).again - BS3_CMN_NM(%1)
 BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
   %endmacro
- %endif ; !BS3CPUINSTRX_PROC_BEGIN_CMN_DEFINED
+ %endif ; !BS3CPUINSTR4_PROC_BEGIN_CMN_DEFINED
 
 ;;
 ; The EMIT_INSTR_PLUS_ICEBP macros is for creating a common function for and
@@ -80,47 +80,47 @@ BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
   %define EMIT_INSTR_PLUS_ICEBP_DEFINED
 
   %macro EMIT_INSTR_PLUS_ICEBP 2
-BS3CPUINSTRX_PROC_BEGIN_CMN bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _icebp
+BS3CPUINSTR4_PROC_BEGIN_CMN bs3CpuInstr4_ %+ %1 %+ _ %+ %2 %+ _icebp
    %define FSxBX [fs:xBX]
         %1      %2
    %undef  FSxBX
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN            bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _icebp
+BS3_PROC_END_CMN            bs3CpuInstr4_ %+ %1 %+ _ %+ %2 %+ _icebp
   %endmacro
 
   %macro EMIT_INSTR_PLUS_ICEBP 3
-BS3CPUINSTRX_PROC_BEGIN_CMN bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _icebp
+BS3CPUINSTR4_PROC_BEGIN_CMN bs3CpuInstr4_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _icebp
    %define FSxBX [fs:xBX]
         %1      %2, %3
    %undef  FSxBX
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN            bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _icebp
+BS3_PROC_END_CMN            bs3CpuInstr4_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _icebp
   %endmacro
 
   %macro EMIT_INSTR_PLUS_ICEBP 4
-BS3CPUINSTRX_PROC_BEGIN_CMN bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _icebp
+BS3CPUINSTR4_PROC_BEGIN_CMN bs3CpuInstr4_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _icebp
    %define FSxBX [fs:xBX]
         %1      %2, %3, %4
    %undef  FSxBX
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN            bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _icebp
+BS3_PROC_END_CMN            bs3CpuInstr4_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _icebp
   %endmacro
 
   %macro EMIT_INSTR_PLUS_ICEBP 5
-BS3CPUINSTRX_PROC_BEGIN_CMN bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _ %+ %5 %+ _icebp
+BS3CPUINSTR4_PROC_BEGIN_CMN bs3CpuInstr4_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _ %+ %5 %+ _icebp
    %define FSxBX [fs:xBX]
         %1      %2, %3, %4, %5
    %undef  FSxBX
 .again:
         icebp
         jmp     .again
-BS3_PROC_END_CMN            bs3CpuInstrX_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _ %+ %5 %+ _icebp
+BS3_PROC_END_CMN            bs3CpuInstr4_ %+ %1 %+ _ %+ %2 %+ _ %+ %3 %+ _ %+ %4 %+ _ %+ %5 %+ _icebp
   %endmacro
 
   %macro EMIT_INSTR_PLUS_ICEBP_C64 2
