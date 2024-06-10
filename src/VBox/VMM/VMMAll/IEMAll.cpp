@@ -1014,9 +1014,13 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
 # if defined(IN_RING3) || defined(IN_RING0) /** @todo fixme */
         /*
          * Try do a direct read using the pbMappingR3 pointer.
+         * Note! Do not recheck the physical TLB revision number here as we have the
+         *       wrong response to changes in the else case.  If someone is updating
+         *       pVCpu->iem.s.CodeTlb.uTlbPhysRev in parallel to us, we should be fine
+         *       pretending we always won the race.
          */
-        if (    (pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PHYS_REV | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ))
-             == pVCpu->iem.s.CodeTlb.uTlbPhysRev)
+        if (    (pTlbe->fFlagsAndPhysRev & (/*IEMTLBE_F_PHYS_REV |*/ IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ))
+             == /*pVCpu->iem.s.CodeTlb.uTlbPhysRev*/ 0U)
         {
             uint32_t const offPg = (GCPtrFirst & X86_PAGE_OFFSET_MASK);
             pVCpu->iem.s.cbInstrBufTotal = offPg + cbMaxRead;

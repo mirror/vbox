@@ -3158,6 +3158,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
         }
         IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
         {
+            Assert(rcStrict != VINF_IEM_REEXEC_BREAK);
             pVCpu->iem.s.cLongJumps++;
 #ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
             pVCpu->iem.s.pvTbFramePointerR3 = NULL;

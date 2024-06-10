@@ -80,7 +80,8 @@ IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemCodeNewPageTlbMiss,(PVMCPUCC pVCpu)
     { /* likely */ }
     else
     {
-        IEM_DO_LONGJMP(pVCpu, VINF_IEM_REEXEC_BREAK);
+        AssertMsgFailed(("cs:rip=%04x:%08RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+        IEM_DO_LONGJMP(pVCpu, VINF_SUCCESS);
     }
 }
 
@@ -95,6 +96,7 @@ IEM_DECL_NATIVE_HLP_DEF(RTGCPHYS, iemNativeHlpMemCodeNewPageTlbMissWithOff,(PVMC
     pVCpu->iem.s.offCurInstrStart = GUEST_PAGE_SIZE - offInstr;
     pVCpu->iem.s.offInstrNextByte = GUEST_PAGE_SIZE;
     iemOpcodeFetchBytesJmp(pVCpu, 0, NULL);
+    AssertMsg(pVCpu->iem.s.pbInstrBuf, ("cs:rip=%04x:%08RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     return pVCpu->iem.s.pbInstrBuf ? pVCpu->iem.s.GCPhysInstrBuf : NIL_RTGCPHYS;
 }
 
