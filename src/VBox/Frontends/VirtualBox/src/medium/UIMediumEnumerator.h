@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2013-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -73,8 +73,12 @@ signals:
 
 public:
 
-    /** Constructs medium-enumerator object. */
-    UIMediumEnumerator();
+    /** Creates singleton instance. */
+    static void create();
+    /** Destroys singleton instance. */
+    static void destroy();
+    /** Returns singleton instance. */
+    static UIMediumEnumerator *instance();
 
     /** Returns cached UIMedium ID list. */
     QList<QUuid> mediumIDs() const;
@@ -134,6 +138,9 @@ private slots:
 
 private:
 
+    /** Constructs medium-enumerator object. */
+    UIMediumEnumerator();
+
     /** Creates medium-enumeration task for certain @a guiMedium. */
     void createMediumEnumerationTask(const UIMedium &guiMedium);
     /** Adds NULL UIMedium to specified @a outputMedia map. */
@@ -159,6 +166,9 @@ private:
       *                 IDs to be appended with newly enumerated. */
     void enumerateAllMediaOfMediumWithId(const QUuid &uMediumId, QList<QUuid> &result);
 
+    /** Returns singleton instance. */
+    static UIMediumEnumerator *s_pInstance;
+
     /** Holds whether full consolidated medium-enumeration process is requested. */
     bool  m_fFullMediumEnumerationRequested;
     /** Holds whether any consolidated medium-enumeration process is in progress. */
@@ -172,5 +182,8 @@ private:
     /** Holds a set of currently registered media IDs. */
     QSet<QUuid>  m_registeredMediaIds;
 };
+
+/** Singleton Medium Enumerator 'official' name. */
+#define gpMediumEnumerator UIMediumEnumerator::instance()
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumEnumerator_h */

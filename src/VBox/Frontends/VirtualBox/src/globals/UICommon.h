@@ -59,7 +59,6 @@ class CMachine;
 class CUSBDevice;
 class UIActionPool;
 class UIMedium;
-class UIMediumEnumerator;
 class UIThreadPool;
 class UITranslationEventListener;
 
@@ -668,10 +667,8 @@ private:
         /** Holds the medium enumerator cleanup protection token. */
         mutable QReadWriteLock  m_meCleanupProtectionToken;
 
-        /** Holds the medium enumerator. */
-        UIMediumEnumerator *m_pMediumEnumerator;
         /** List of medium names that should not appears in the recently used media extra data. */
-        QStringList         m_recentMediaExcludeList;
+        QStringList  m_recentMediaExcludeList;
     /** @} */
 
     /** @name Font scaling related variables.

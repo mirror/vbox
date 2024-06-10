@@ -223,7 +223,6 @@ UICommon::UICommon(UIType enmType)
     , m_fSettingsPwSet(false)
     , m_pThreadPool(0)
     , m_pThreadPoolCloud(0)
-    , m_pMediumEnumerator(0)
     , m_pTranlationEventListener(0)
 {
     /* Assign instance: */
@@ -704,18 +703,18 @@ void UICommon::prepare()
     m_fValid = true;
 
     /* Create medium-enumerator but don't do any immediate caching: */
-    m_pMediumEnumerator = new UIMediumEnumerator;
+    UIMediumEnumerator::create();
     {
         /* Prepare medium-enumerator: */
-        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumCreated,
+        connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumCreated,
                 this, &UICommon::sigMediumCreated);
-        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumDeleted,
+        connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumDeleted,
                 this, &UICommon::sigMediumDeleted);
-        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationStarted,
+        connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationStarted,
                 this, &UICommon::sigMediumEnumerationStarted);
-        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated,
+        connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated,
                 this, &UICommon::sigMediumEnumerated);
-        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationFinished,
+        connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationFinished,
                 this, &UICommon::sigMediumEnumerationFinished);
     }
 
@@ -799,8 +798,7 @@ void UICommon::cleanup()
     m_meCleanupProtectionToken.lockForWrite();
     {
         /* Destroy medium-enumerator: */
-        delete m_pMediumEnumerator;
-        m_pMediumEnumerator = 0;
+        UIMediumEnumerator::destroy();
     }
     /* Finishing medium-enumerator cleanup: */
     m_meCleanupProtectionToken.unlock();
@@ -1494,14 +1492,14 @@ void UICommon::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector()
         return;
 
     /* Make sure medium-enumerator is already created: */
-    if (!m_pMediumEnumerator)
+    if (!gpMediumEnumerator)
         return;
 
     /* Redirect request to medium-enumerator under proper lock: */
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
-        if (m_pMediumEnumerator)
-            m_pMediumEnumerator->enumerateMedia(comMedia);
+        if (gpMediumEnumerator)
+            gpMediumEnumerator->enumerateMedia(comMedia);
         m_meCleanupProtectionToken.unlock();
     }
 }
@@ -1518,29 +1516,29 @@ void UICommon::refreshMedia()
         return;
 
     /* Make sure medium-enumerator is already created: */
-    if (!m_pMediumEnumerator)
+    if (!gpMediumEnumerator)
         return;
     /* Make sure enumeration is not already started: */
-    if (m_pMediumEnumerator->isMediumEnumerationInProgress())
+    if (gpMediumEnumerator->isMediumEnumerationInProgress())
         return;
 
     /* We assume it's safe to call it without locking,
      * since we are performing blocking operation here. */
-    m_pMediumEnumerator->refreshMedia();
+    gpMediumEnumerator->refreshMedia();
 }
 
 bool UICommon::isFullMediumEnumerationRequested() const
 {
     /* Redirect request to medium-enumerator: */
-    return    m_pMediumEnumerator
-           && m_pMediumEnumerator->isFullMediumEnumerationRequested();
+    return    gpMediumEnumerator
+           && gpMediumEnumerator->isFullMediumEnumerationRequested();
 }
 
 bool UICommon::isMediumEnumerationInProgress() const
 {
     /* Redirect request to medium-enumerator: */
-    return    m_pMediumEnumerator
-           && m_pMediumEnumerator->isMediumEnumerationInProgress();
+    return    gpMediumEnumerator
+           && gpMediumEnumerator->isMediumEnumerationInProgress();
 }
 
 UIMedium UICommon::medium(const QUuid &uMediumID) const
@@ -1549,8 +1547,8 @@ UIMedium UICommon::medium(const QUuid &uMediumID) const
     {
         /* Redirect call to medium-enumerator: */
         UIMedium guiMedium;
-        if (m_pMediumEnumerator)
-            guiMedium = m_pMediumEnumerator->medium(uMediumID);
+        if (gpMediumEnumerator)
+            guiMedium = gpMediumEnumerator->medium(uMediumID);
         m_meCleanupProtectionToken.unlock();
         return guiMedium;
     }
@@ -1563,8 +1561,8 @@ QList<QUuid> UICommon::mediumIDs() const
     {
         /* Redirect call to medium-enumerator: */
         QList<QUuid> listOfMedia;
-        if (m_pMediumEnumerator)
-            listOfMedia = m_pMediumEnumerator->mediumIDs();
+        if (gpMediumEnumerator)
+            listOfMedia = gpMediumEnumerator->mediumIDs();
         m_meCleanupProtectionToken.unlock();
         return listOfMedia;
     }
@@ -1576,8 +1574,8 @@ void UICommon::createMedium(const UIMedium &guiMedium)
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         /* Create medium in medium-enumerator: */
-        if (m_pMediumEnumerator)
-            m_pMediumEnumerator->createMedium(guiMedium);
+        if (gpMediumEnumerator)
+            gpMediumEnumerator->createMedium(guiMedium);
         m_meCleanupProtectionToken.unlock();
     }
 }

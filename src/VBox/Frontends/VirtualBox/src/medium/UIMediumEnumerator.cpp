@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2013-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -108,6 +108,30 @@ private:
 /*********************************************************************************************************************************
 *   Class UIMediumEnumerator implementation.                                                                                     *
 *********************************************************************************************************************************/
+
+/* static */
+UIMediumEnumerator *UIMediumEnumerator::s_pInstance = 0;
+
+/* static */
+void UIMediumEnumerator::create()
+{
+    AssertReturnVoid(!s_pInstance);
+    s_pInstance = new UIMediumEnumerator;
+}
+
+/* static */
+void UIMediumEnumerator::destroy()
+{
+    AssertPtrReturnVoid(s_pInstance);
+    delete s_pInstance;
+    s_pInstance = 0;
+}
+
+/* static */
+UIMediumEnumerator *UIMediumEnumerator::instance()
+{
+    return s_pInstance;
+}
 
 UIMediumEnumerator::UIMediumEnumerator()
     : m_fFullMediumEnumerationRequested(false)

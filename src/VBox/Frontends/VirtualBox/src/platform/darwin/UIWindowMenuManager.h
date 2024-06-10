@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2010-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -52,7 +52,7 @@ public:
 
     /** Creates instance. */
     static void create();
-    /** Destroyes instance. */
+    /** Destroys instance. */
     static void destroy();
     /** Returns current instance. */
     static UIWindowMenuManager *instance() { return s_pInstance; }
