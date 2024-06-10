@@ -171,7 +171,10 @@ class SubTstDrvAppliance1(base.SubTestDriverBase):
         try:
             os.mkdir(sTmpDir, 0o755);
             oTarFile = tarfile.open(sOva, 'r:*'); # No 'with' support in 2.6.   pylint: disable=consider-using-with
-            oTarFile.extractall(sTmpDir);
+            if hasattr(tarfile, 'tar_filter'):
+                oTarFile.extractall(sTmpDir, filter = 'tar');
+            else:
+                oTarFile.extractall(sTmpDir);
             oTarFile.close();
         except:
             return reporter.errorXcpt('Unpacking "%s" to "%s" for OVF style importing failed' % (sOvf, sTmpDir,));

@@ -2335,7 +2335,10 @@ def unpackTarFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
                         if oTarInfo.isdir():
                             # Just make sure the user (we) got full access to dirs.  Don't bother getting it 100% right.
                             oTarInfo.mode |= 0x1c0; # (octal: 0700)
-                        oTarFile.extract(oTarInfo, sDstDir);
+                        if hasattr(tarfile, 'tar_filter'):
+                            oTarFile.extract(oTarInfo, sDstDir, filter = 'tar');
+                        else:
+                            oTarFile.extract(oTarInfo, sDstDir);
                     asMembers.append(os.path.join(sDstDir, oTarInfo.name.replace('/', os.path.sep)));
             except Exception as oXcpt:
                 fnError('Error unpacking "%s" member "%s" into "%s": %s' % (sArchive, oTarInfo.name, sDstDir, oXcpt));
