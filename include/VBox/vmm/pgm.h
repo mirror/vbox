@@ -865,12 +865,7 @@ VMMDECL(int)        PGMPhysSimpleDirtyWriteGCPtr(PVMCPUCC pVCpu, RTGCPTR GCPtrDs
 VMM_INT_DECL(int)   PGMPhysIemGCPhys2Ptr(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, bool fWritable, bool fByPassHandlers, void **ppv, PPGMPAGEMAPLOCK pLock);
 VMM_INT_DECL(int)   PGMPhysIemQueryAccess(PVMCC pVM, RTGCPHYS GCPhys, bool fWritable, bool fByPassHandlers);
 VMM_INT_DECL(int)   PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, uint64_t const volatile *puTlbPhysRev,
-#if defined(IN_RC)
-                                               R3PTRTYPE(uint8_t *) *ppb,
-#else
-                                               R3R0PTRTYPE(uint8_t *) *ppb,
-#endif
-                                               uint64_t *pfTlb);
+                                               R3R0PTRTYPE(uint8_t *) *ppb, uint64_t *pfTlb);
 /** @name Flags returned by PGMPhysIemGCPhys2PtrNoLock
  * @{ */
 #define PGMIEMGCPHYS2PTR_F_NO_WRITE     RT_BIT_32(3)    /**< Not writable (IEMTLBE_F_PG_NO_WRITE). */

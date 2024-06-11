@@ -1421,9 +1421,11 @@ static int pgmR3PhysRamRangeRemoveLookup(PVM pVM, PPGMRAMRANGE pRam, uint32_t *p
         }
     }
 
-    /* Update the RAM range entry to indicate that it is no longer mapped. */
-    pRam->GCPhys     = NIL_RTGCPHYS;
+    /* Update the RAM range entry to indicate that it is no longer mapped.
+       The GCPhys member is accessed by the lockless TLB lookup code, so update
+       it last and atomically to be on the safe side. */
     pRam->GCPhysLast = NIL_RTGCPHYS;
+    ASMAtomicWriteU64(&pRam->GCPhys, NIL_RTGCPHYS);
 
     /*
      * Update the generation and count in one go, signaling the end of the updating.
@@ -2653,7 +2655,7 @@ static int pgmR3PhysMmioMapLocked(PVM pVM, PVMCPU pVCpu, RTGCPHYS const GCPhys, 
             if (RT_SUCCESS(rc))
 #endif
             {
-                pgmPhysInvalidatePageMapTLB(pVM);
+                pgmPhysInvalidatePageMapTLB(pVM, false /*fInRendezvous*/);
                 return VINF_SUCCESS;
             }
 
@@ -2678,7 +2680,7 @@ static int pgmR3PhysMmioMapLocked(PVM pVM, PVMCPU pVCpu, RTGCPHYS const GCPhys, 
         pgmR3PhysRamRangeRemoveLookup(pVM, pMmioRamRange, &idxInsert);
     }
 
-    pgmPhysInvalidatePageMapTLB(pVM);
+    pgmPhysInvalidatePageMapTLB(pVM, false /*fInRendezvous*/);
     return rc;
 }
 
@@ -2850,7 +2852,7 @@ static int pgmR3PhysMmioUnmapLocked(PVM pVM, PVMCPU pVCpu, RTGCPHYS const GCPhys
     pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
-    pgmPhysInvalidatePageMapTLB(pVM);
+    pgmPhysInvalidatePageMapTLB(pVM, false /*fInRendezvous*/);
     /*pgmPhysInvalidRamRangeTlbs(pVM); - not necessary */
 
     return rc;
@@ -3426,7 +3428,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Deregister(PVM pVM, PPDMDEVINS pDevIns, PGMMMI
                 break;
         }
     }
-    pgmPhysInvalidatePageMapTLB(pVM);
+    pgmPhysInvalidatePageMapTLB(pVM, false /*fInRendezvous*/);
     PGM_UNLOCK(pVM);
     return !cFound && hMmio2 != NIL_PGMMMIO2HANDLE ? VERR_NOT_FOUND : rc;
 }
@@ -3670,7 +3672,7 @@ static int pgmR3PhysMmio2MapLocked(PVM pVM, uint32_t const idxFirst, uint32_t co
         pgmR3PhysMmio2EnableDirtyPageTracing(pVM, idxFirst, cChunks);
 
     /* Flush physical page map TLB. */
-    pgmPhysInvalidatePageMapTLB(pVM);
+    pgmPhysInvalidatePageMapTLB(pVM, false /*fInRendezvous*/);
 
 #ifdef VBOX_WITH_NATIVE_NEM
     /*
@@ -3904,7 +3906,7 @@ static int pgmR3PhysMmio2UnmapLocked(PVM pVM, uint32_t const idxFirst, uint32_t 
     pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
-    pgmPhysInvalidatePageMapTLB(pVM);
+    pgmPhysInvalidatePageMapTLB(pVM, false /*fInRendezvous*/);
     /* pgmPhysInvalidRamRangeTlbs(pVM); - not necessary */
 
     return rcRet;
@@ -4778,7 +4780,7 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
 #endif
 
             /* Flush physical page map TLB. */
-            pgmPhysInvalidatePageMapTLB(pVM);
+            pgmPhysInvalidatePageMapTLB(pVM, false /*fInRendezvous*/);
 
             /*
              * Register the ROM access handler.
@@ -4937,7 +4939,7 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
             }
         }
     }
-    pgmPhysInvalidatePageMapTLB(pVM);
+    pgmPhysInvalidatePageMapTLB(pVM, false /*fInRendezvous*/);
     pgmPhysInvalidRamRangeTlbs(pVM);
 
 #ifdef VBOX_WITH_PGM_NEM_MODE
@@ -5776,9 +5778,11 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLU32NODECORE pN
     }
 #endif
 
+#if 0 /* This is too much work with the PGMCPU::PhysTlb as well.  We flush them all instead. */
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbR3.aEntries); i++)
         if (pVM->pgm.s.PhysTlbR3.aEntries[i].pMap == pChunk)
             return 0;
+#endif
 
     pArg->pChunk = pChunk;
     return 0;
@@ -5900,7 +5904,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
                     CPUMSetChangedFlags(pVM->apCpusR3[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
                 }
 
-                pgmR3PhysChunkInvalidateTLB(pVM); /* includes pgmPhysInvalidatePageMapTLB call */
+                pgmR3PhysChunkInvalidateTLB(pVM, true /*fInRendezvous*/); /* includes pgmPhysInvalidatePageMapTLB call */
             }
         }
     }
@@ -6042,9 +6046,10 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
 /**
  * Invalidates the TLB for the ring-3 mapping cache.
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pVM             The cross context VM structure.
+ * @param   fInRendezvous   Set if we're in a rendezvous.
  */
-DECLHIDDEN(void) pgmR3PhysChunkInvalidateTLB(PVM pVM)
+DECLHIDDEN(void) pgmR3PhysChunkInvalidateTLB(PVM pVM, bool fInRendezvous)
 {
     PGM_LOCK_VOID(pVM);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
@@ -6053,7 +6058,7 @@ DECLHIDDEN(void) pgmR3PhysChunkInvalidateTLB(PVM pVM)
         pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk = NULL;
     }
     /* The page map TLB references chunks, so invalidate that one too. */
-    pgmPhysInvalidatePageMapTLB(pVM);
+    pgmPhysInvalidatePageMapTLB(pVM, fInRendezvous);
     PGM_UNLOCK(pVM);
 }
 

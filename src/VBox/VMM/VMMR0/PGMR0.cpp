@@ -721,7 +721,7 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
     }
     /** @todo this is a little expensive (~3000 ticks) since we'll have to
      * invalidate everything.  Add a version to the TLB? */
-    pgmPhysInvalidatePageMapTLB(pGVM);
+    pgmPhysInvalidatePageMapTLB(pGVM, false /*fInRendezvous*/);
     IEMTlbInvalidateAllPhysicalAllCpus(pGVM, idCpu, IEMTLBPHYSFLUSHREASON_ALLOCATED_LARGE);
 
     STAM_PROFILE_STOP(&pGVM->pgm.s.Stats.StatLargePageSetup, a);

@@ -688,6 +688,15 @@ typedef PGMPHYSHANDLERTREE                           *PPGMPHYSHANDLERTREE;
  */
 typedef union PGMPAGE
 {
+    /** 64-bit integer view. */
+    uint64_t    au64[2];
+    /** 16-bit view. */
+    uint32_t    au32[4];
+    /** 16-bit view. */
+    uint16_t    au16[8];
+    /** 8-bit view. */
+    uint8_t     au8[16];
+
     /** Structured view. */
     struct
     {
@@ -736,15 +745,6 @@ typedef union PGMPAGE
         /** The number of write locks on this page. */
         uint8_t     cWriteLocksY;
     } s;
-
-    /** 64-bit integer view. */
-    uint64_t    au64[2];
-    /** 16-bit view. */
-    uint32_t    au32[4];
-    /** 16-bit view. */
-    uint16_t    au16[8];
-    /** 8-bit view. */
-    uint8_t     au8[16];
 } PGMPAGE;
 AssertCompileSize(PGMPAGE, 16);
 /** Pointer to a physical guest page. */
@@ -1812,13 +1812,12 @@ typedef struct PGMPAGER0MAPTLBE
 typedef PGMPAGER0MAPTLBE *PPGMPAGER0MAPTLBE;
 
 
-/** The number of entries in the ring-3 guest page mapping TLB.
+/** The number of entries in the ring-0 guest page mapping TLB.
  * @remarks The value must be a power of two. */
 #define PGM_PAGER0MAPTLB_ENTRIES 256
 
 /**
- * Ring-3 guest page mapping TLB.
- * @remarks used in ring-0 as well at the moment.
+ * Ring-0 guest page mapping TLB.
  */
 typedef struct PGMPAGER0MAPTLB
 {
@@ -3452,6 +3451,8 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatRZFlushTLBSameCR3;              /**< RC/R0: The number of times PGMFlushTLB was called with the same CR3, non-global. (flush) */
     STAMCOUNTER StatRZFlushTLBSameCR3Global;        /**< RC/R0: The number of times PGMFlushTLB was called with the same CR3, global. (flush) */
     STAMPROFILE StatRZGstModifyPage;                /**< RC/R0: Profiling of the PGMGstModifyPage() body */
+    STAMCOUNTER StatRZRamRangeTlbHits;              /**< RC/R0: RAM range TLB hits (lockless). */
+    STAMCOUNTER StatRZPageMapTlbHits;               /**< RC/R0: Page mapper TLB hits (lockless). */
 
     STAMPROFILE StatR3SyncCR3;                      /**< R3: PGMSyncCR3() profiling. */
     STAMPROFILE StatR3SyncCR3Handlers;              /**< R3: Profiling of the PGMSyncCR3() update handler section. */
@@ -3499,6 +3500,8 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatR3FlushTLBSameCR3;              /**< R3: The number of times PGMFlushTLB was called with the same CR3, non-global. (flush) */
     STAMCOUNTER StatR3FlushTLBSameCR3Global;        /**< R3: The number of times PGMFlushTLB was called with the same CR3, global. (flush) */
     STAMPROFILE StatR3GstModifyPage;                /**< R3: Profiling of the PGMGstModifyPage() body */
+    STAMCOUNTER StatR3RamRangeTlbHits;              /**< R3: RAM range TLB hits (lockless). */
+    STAMCOUNTER StatR3PageMapTlbHits;               /**< R3: Page mapper TLB hits (lockless). */
 } PGMCPUSTATS;
 #endif /* VBOX_WITH_STATISTICS */
 
@@ -3688,12 +3691,26 @@ typedef struct PGMCPU
     /** Count the number of pgm pool access handler calls. */
     uint64_t                        cPoolAccessHandler;
 
+    /** Lockless RAM range TLB for R3. */
+    R3PTRTYPE(PPGMRAMRANGE)         apRamRangesTlb[PGM_RAMRANGE_TLB_ENTRIES];
+
+    /** Lockless page mapping TLB for R3. */
+    PGMPAGER3MAPTLB                 PhysTlb;
+
     /** @name Release Statistics
      * @{ */
     /** The number of times the guest has switched mode since last reset or statistics reset. */
     STAMCOUNTER                     cGuestModeChanges;
     /** The number of times the guest has switched mode since last reset or statistics reset. */
     STAMCOUNTER                     cA20Changes;
+
+    STAMCOUNTER                     StatRZRamRangeTlbMisses;        /**< RC/R0: RAM range TLB misses (lockless). */
+    STAMCOUNTER                     StatRZRamRangeTlbLocking;       /**< RC/R0: RAM range TLB lookup redone with locking. */
+    STAMCOUNTER                     StatRZPageMapTlbMisses;         /**< RC/R0: Page mapper TLB misses (lockless -> locked). */
+
+    STAMCOUNTER                     StatR3RamRangeTlbMisses;        /**< R3: RAM range TLB misses (lockless). */
+    STAMCOUNTER                     StatR3RamRangeTlbLocking;       /**< R3: RAM range TLB lookup redone with locking. */
+    STAMCOUNTER                     StatR3PageMapTlbMisses;         /**< R3: Page mapper TLB misses (lockless -> locked). */
     /** @} */
 
 #ifdef VBOX_WITH_STATISTICS
@@ -3727,11 +3744,13 @@ typedef PGMCPU *PPGMCPU;
  */
 typedef struct PGMR0PERVCPU
 {
+    /** Lockless RAM range TLB for R0. */
+    R0PTRTYPE(PPGMRAMRANGE)         apRamRangesTlb[PGM_RAMRANGE_TLB_ENTRIES];
+
 # ifdef VBOX_WITH_STATISTICS
     /** R0: Which statistic this \#PF should be attributed to. */
     R0PTRTYPE(PSTAMPROFILE)         pStatTrap0eAttributionR0;
 # endif
-    uint64_t                        u64Dummy;
 } PGMR0PERVCPU;
 
 
@@ -3875,6 +3894,9 @@ int             pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GC
 int             pgmPhysRecheckLargePage(PVMCC pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage);
 int             pgmPhysPageLoadIntoTlb(PVMCC pVM, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlbWithPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
+#ifdef IN_RING3
+DECLHIDDEN(int) pgmPhysPageLoadIntoLocklessTlbWithPage(PVMCPUCC pVCpu, PPGMPAGE pPage, RTGCPHYS GCPhys);
+#endif
 void            pgmPhysPageMakeWriteMonitoredWritable(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageMakeWritable(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageMakeWritableAndMap(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
@@ -3903,19 +3925,21 @@ int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPend
 #ifdef VBOX_STRICT
 DECLHIDDEN(bool) pgmPhysAssertRamRangesLocked(PVMCC pVM, bool fInUpdate, bool fRamRelaxed);
 #endif
-DECLHIDDEN(void)            pgmR3PhysChunkInvalidateTLB(PVM pVM);
+DECLHIDDEN(void)            pgmR3PhysChunkInvalidateTLB(PVM pVM, bool fInRendezvous);
 void            pgmPhysInvalidRamRangeTlbs(PVMCC pVM);
-void            pgmPhysInvalidatePageMapTLB(PVMCC pVM);
+void            pgmPhysInvalidatePageMapTLB(PVMCC pVM, bool fInRendezvous);
 void            pgmPhysInvalidatePageMapTLBEntry(PVMCC pVM, RTGCPHYS GCPhys);
-PPGMRAMRANGE    pgmPhysGetRangeSlow(PVMCC pVM, RTGCPHYS GCPhys);
-PPGMRAMRANGE    pgmPhysGetRangeAtOrAboveSlow(PVMCC pVM, RTGCPHYS GCPhys);
-PPGMPAGE        pgmPhysGetPageSlow(PVMCC pVM, RTGCPHYS GCPhys);
-int             pgmPhysGetPageExSlow(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage);
-int             pgmPhysGetPageAndRangeExSlow(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPGMRAMRANGE *ppRam);
-DECLHIDDEN(int) pgmPhysRamRangeAllocCommon(PVMCC pVM, uint32_t cPages, uint32_t fFlags, uint32_t *pidNewRange);
-DECLHIDDEN(int) pgmPhysRomRangeAllocCommon(PVMCC pVM, uint32_t cPages, uint8_t idRomRange, uint32_t fFlags);
+DECLHIDDEN(PPGMRAMRANGE)    pgmPhysGetRangeSlow(PVMCC pVM, RTGCPHYS GCPhys);
+DECLHIDDEN(PPGMRAMRANGE)    pgmPhysGetRangeAtOrAboveSlow(PVMCC pVM, RTGCPHYS GCPhys);
+DECLHIDDEN(PPGMPAGE)        pgmPhysGetPageSlow(PVMCC pVM, RTGCPHYS GCPhys);
+DECLHIDDEN(int)             pgmPhysGetPageExSlow(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage);
+DECLHIDDEN(int)             pgmPhysGetPageAndRangeExSlow(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPGMRAMRANGE *ppRam);
+DECLHIDDEN(int)             pgmPhysGetPageAndRangeExSlowLockless(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys,
+                                                                 PGMPAGE volatile **ppPage, PGMRAMRANGE volatile **ppRam);
+DECLHIDDEN(int)             pgmPhysRamRangeAllocCommon(PVMCC pVM, uint32_t cPages, uint32_t fFlags, uint32_t *pidNewRange);
+DECLHIDDEN(int)             pgmPhysRomRangeAllocCommon(PVMCC pVM, uint32_t cPages, uint8_t idRomRange, uint32_t fFlags);
 #ifdef VBOX_WITH_NATIVE_NEM
-void            pgmPhysSetNemStateForPages(PPGMPAGE paPages, RTGCPHYS cPages, uint8_t u2State);
+DECLHIDDEN(void)            pgmPhysSetNemStateForPages(PPGMPAGE paPages, RTGCPHYS cPages, uint8_t u2State);
 #endif
 
 #ifdef IN_RING3

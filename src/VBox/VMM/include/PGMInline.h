@@ -236,6 +236,39 @@ DECLINLINE(int) pgmPhysGetPageAndRangeEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE p
 
 
 /**
+ * Gets the PGMPAGE structure for a guest page together with the PGMRAMRANGE.
+ *
+ * @returns Pointer to the page on success.
+ * @returns NULL on a VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS condition.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   GCPhys      The GC physical address.
+ * @param   ppPage      Where to store the pointer to the PGMPAGE structure.
+ * @param   ppRam       Where to store the pointer to the PGMRAMRANGE structure.
+ */
+DECLINLINE(int) pgmPhysGetPageAndRangeExLockless(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys,
+                                                 PGMPAGE volatile **ppPage, PGMRAMRANGE volatile **ppRam)
+{
+    PGMRAMRANGE volatile * const pRam = pVCpu->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
+    if (RT_LIKELY(pRam))
+    {
+        RTGCPHYS const GCPhysFirst = pRam->GCPhys;
+        RTGCPHYS const off         = GCPhys - GCPhysFirst;
+        if (RT_LIKELY(   off    <  pRam->cb
+                      && GCPhys >= GCPhysFirst))
+        {
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
+            *ppRam  = pRam;
+            *ppPage = &pRam->aPages[off >> GUEST_PAGE_SHIFT];
+            return VINF_SUCCESS;
+        }
+    }
+    return pgmPhysGetPageAndRangeExSlowLockless(pVM, pVCpu, GCPhys, ppPage, ppRam);
+}
+
+
+/**
  * Convert GC Phys to HC Phys.
  *
  * @returns VBox status code.
@@ -303,7 +336,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS
 {
     int rc;
     PPGMPAGEMAPTLBE pTlbe = &pVM->pgm.s.CTX_SUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
-    if (pTlbe->GCPhys == (GCPhys & X86_PTE_PAE_PG_MASK))
+    if (pTlbe->GCPhys == (GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK))
     {
         STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,PageMapTlbHits));
         rc = VINF_SUCCESS;
@@ -317,6 +350,45 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS
     *ppTlbe = pTlbe;
     return rc;
 }
+
+
+#ifdef IN_RING3 /** @todo Need ensure a ring-0 version gets invalidated safely */
+/**
+ * Queries the VCPU local physical TLB entry for a physical guest page,
+ * attempting to load the TLB entry if necessary.
+ *
+ * Will acquire the PGM lock on TLB miss, does not require caller to own it.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success
+ * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pPage   Pointer to the PGMPAGE structure corresponding to GCPhys.
+ * @param   GCPhys  The address of the guest page.
+ * @param   ppTlbe  Where to store the pointer to the TLB entry.
+ * @thread  EMT(pVCpu)
+ */
+DECLINLINE(int) pgmPhysPageQueryLocklessTlbeWithPage(PVMCPUCC pVCpu, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAPTLBE ppTlbe)
+{
+    int rc;
+    PPGMPAGEMAPTLBE const pTlbe = &pVCpu->pgm.s.PhysTlb.aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
+    if (   pTlbe->GCPhys == (GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK)
+        && pTlbe->pPage  == pPage)
+    {
+        STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,PageMapTlbHits));
+        rc = VINF_SUCCESS;
+        AssertPtr(pTlbe->pv);
+# ifdef IN_RING3
+        Assert(!pTlbe->pMap || RT_VALID_PTR(pTlbe->pMap->pv));
+# endif
+    }
+    else
+        rc = pgmPhysPageLoadIntoLocklessTlbWithPage(pVCpu, pPage, GCPhys);
+    *ppTlbe = pTlbe;
+    return rc;
+}
+#endif /* IN_RING3 */
 
 
 /**

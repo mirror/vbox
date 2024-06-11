@@ -323,7 +323,7 @@ typedef struct VMCPU
 #ifdef VMM_INCLUDED_SRC_include_PGMInternal_h
         struct PGMCPU       s;
 #endif
-        uint8_t             padding[4096 + 28672]; /* multiple of 4096 */
+        uint8_t             padding[36864];     /* multiple of 4096 */
     } pgm;
 
     /** CPUM part. */
@@ -338,7 +338,7 @@ typedef struct VMCPU
          * others.  The rest will use the function based CPUM API. */
         CPUMCTX             GstCtx;
 #endif
-        uint8_t             padding[102400];     /* multiple of 4096 */
+        uint8_t             padding[102400];    /* multiple of 4096 */
     } cpum;
 
     /** EM part. */
@@ -347,9 +347,10 @@ typedef struct VMCPU
 #ifdef VMM_INCLUDED_SRC_include_EMInternal_h
         struct EMCPU        s;
 #endif
-        uint8_t             padding[40960];      /* multiple of 4096 */
+        uint8_t             padding[40960];     /* multiple of 4096 */
     } em;
 
+    uint8_t abPadding[12288];
 } VMCPU;
 
 

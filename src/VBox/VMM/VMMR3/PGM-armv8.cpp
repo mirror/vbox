@@ -237,7 +237,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     rc = PDMR3CritSectInit(pVM, &pVM->pgm.s.CritSectX, RT_SRC_POS, "PGM");
     AssertRCReturn(rc, rc);
 
-    pgmR3PhysChunkInvalidateTLB(pVM); /* includes pgmPhysInvalidatePageMapTLB call */
+    pgmR3PhysChunkInvalidateTLB(pVM, false /*fInRendezvous*/); /* includes pgmPhysInvalidatePageMapTLB call */
 
     /*
      * For the time being we sport a full set of handy pages in addition to the base

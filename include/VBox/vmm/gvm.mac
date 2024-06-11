@@ -63,7 +63,7 @@ struc GVMCPU
         alignb 64
         .vmmr0              resb 896
         alignb 64
-        .pgmr0              resb 64
+        .pgmr0              resb 192
         alignb 16384
 endstruc
 

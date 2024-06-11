@@ -933,7 +933,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     rc = PDMR3CritSectInit(pVM, &pVM->pgm.s.CritSectX, RT_SRC_POS, "PGM");
     AssertRCReturn(rc, rc);
 
-    pgmR3PhysChunkInvalidateTLB(pVM); /* includes pgmPhysInvalidatePageMapTLB call */
+    pgmR3PhysChunkInvalidateTLB(pVM, false /*fInRendezvous*/); /* includes pgmPhysInvalidatePageMapTLB call */
 
     /*
      * For the time being we sport a full set of handy pages in addition to the base
@@ -1416,6 +1416,14 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pPgmCpu->cGuestModeChanges, "/PGM/CPU%u/cGuestModeChanges",  "Number of guest mode changes.");
         PGM_REG_COUNTER(&pPgmCpu->cA20Changes, "/PGM/CPU%u/cA20Changes",  "Number of A20 gate changes.");
 
+        PGM_REG_COUNTER(&pPgmCpu->StatRZRamRangeTlbMisses,              "/PGM/CPU%u/RZ/RamRange/TlbMisses",         "TLB misses (lockless).");
+        PGM_REG_COUNTER(&pPgmCpu->StatRZRamRangeTlbLocking,             "/PGM/CPU%u/RZ/RamRange/TlbLocking",        "Lockless TLB failed, falling back on locked lookup.");
+        PGM_REG_COUNTER(&pPgmCpu->StatRZPageMapTlbMisses,               "/PGM/CPU%u/RZ/Page/MapTlbMisses",          "Lockless page map TLB failed, falling back on locked lookup.");
+
+        PGM_REG_COUNTER(&pPgmCpu->StatR3RamRangeTlbMisses,              "/PGM/CPU%u/R3/RamRange/TlbMisses",         "TLB misses (lockless).");
+        PGM_REG_COUNTER(&pPgmCpu->StatR3RamRangeTlbLocking,             "/PGM/CPU%u/R3/RamRange/TlbLocking",        "Lockless TLB failed, falling back on locked lookup.");
+        PGM_REG_COUNTER(&pPgmCpu->StatR3PageMapTlbMisses,               "/PGM/CPU%u/R3/Page/MapTlbMisses",          "Lockless page map TLB failed, falling back on locked lookup.");
+
 #ifdef VBOX_WITH_STATISTICS
         PGMCPUSTATS *pCpuStats = &pVM->apCpusR3[idCpu]->pgm.s.Stats;
 
@@ -1428,8 +1436,8 @@ static int pgmR3InitStats(PVM pVM)
                             "The number of SyncPage per PD n.", "/PGM/CPU%u/PDSyncPage/%04X", i, j);
 # endif
         /* R0 only: */
-        PGM_REG_PROFILE(&pCpuStats->StatR0NpMiscfg,                      "/PGM/CPU%u/R0/NpMiscfg",                     "PGMR0Trap0eHandlerNPMisconfig() profiling.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0NpMiscfgSyncPage,              "/PGM/CPU%u/R0/NpMiscfgSyncPage",             "SyncPage calls from PGMR0Trap0eHandlerNPMisconfig().");
+        PGM_REG_PROFILE(&pCpuStats->StatR0NpMiscfg,                     "/PGM/CPU%u/R0/NpMiscfg",                     "PGMR0Trap0eHandlerNPMisconfig() profiling.");
+        PGM_REG_COUNTER(&pCpuStats->StatR0NpMiscfgSyncPage,             "/PGM/CPU%u/R0/NpMiscfgSyncPage",             "SyncPage calls from PGMR0Trap0eHandlerNPMisconfig().");
 
         /* RZ only: */
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0e,                      "/PGM/CPU%u/RZ/Trap0e",                     "Profiling of the PGMTrap0eHandler() body.");
@@ -1568,6 +1576,8 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatRZFlushTLBSameCR3,             "/PGM/CPU%u/RZ/FlushTLB/SameCR3",           "The number of times PGMFlushTLB was called with the same CR3, non-global. (flush)");
         PGM_REG_COUNTER(&pCpuStats->StatRZFlushTLBSameCR3Global,       "/PGM/CPU%u/RZ/FlushTLB/SameCR3Global",     "The number of times PGMFlushTLB was called with the same CR3, global. (flush)");
         PGM_REG_PROFILE(&pCpuStats->StatRZGstModifyPage,               "/PGM/CPU%u/RZ/GstModifyPage",              "Profiling of the PGMGstModifyPage() body.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZRamRangeTlbHits,             "/PGM/CPU%u/RZ/RamRange/TlbHits",           "TLB hits (lockless).");
+        PGM_REG_COUNTER(&pCpuStats->StatRZPageMapTlbHits,              "/PGM/CPU%u/RZ/Page/MapTlbHits",            "TLB hits (lockless).");
 
         PGM_REG_PROFILE(&pCpuStats->StatR3SyncCR3,                     "/PGM/CPU%u/R3/SyncCR3",                        "Profiling of the PGMSyncCR3() body.");
         PGM_REG_PROFILE(&pCpuStats->StatR3SyncCR3Handlers,             "/PGM/CPU%u/R3/SyncCR3/Handlers",               "Profiling of the PGMSyncCR3() update handler section.");
@@ -1613,11 +1623,12 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatR3FlushTLBSameCR3,             "/PGM/CPU%u/R3/FlushTLB/SameCR3",           "The number of times PGMFlushTLB was called with the same CR3, non-global. (flush)");
         PGM_REG_COUNTER(&pCpuStats->StatR3FlushTLBSameCR3Global,       "/PGM/CPU%u/R3/FlushTLB/SameCR3Global",     "The number of times PGMFlushTLB was called with the same CR3, global. (flush)");
         PGM_REG_PROFILE(&pCpuStats->StatR3GstModifyPage,               "/PGM/CPU%u/R3/GstModifyPage",              "Profiling of the PGMGstModifyPage() body.");
+        PGM_REG_COUNTER(&pCpuStats->StatR3RamRangeTlbHits,             "/PGM/CPU%u/R3/RamRange/TlbHits",           "TLB hits (lockless).");
+        PGM_REG_COUNTER(&pCpuStats->StatR3PageMapTlbHits,              "/PGM/CPU%u/R3/Page/MapTlbHits",            "TLB hits (lockless).");
 #endif /* VBOX_WITH_STATISTICS */
 
 #undef PGM_REG_PROFILE
 #undef PGM_REG_COUNTER
-
     }
 
     return VINF_SUCCESS;
