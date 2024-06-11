@@ -70,11 +70,17 @@
  */
 DECLINLINE(PPGMRAMRANGE) pgmPhysGetRange(PVMCC pVM, RTGCPHYS GCPhys)
 {
-    PPGMRAMRANGE pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
-    if (!pRam || GCPhys - pRam->GCPhys >= pRam->cb)
-        return pgmPhysGetRangeSlow(pVM, GCPhys);
-    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
-    return pRam;
+    PPGMRAMRANGE const pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
+    if (pRam)
+    {
+        RTGCPHYS const GCPhysFirst = pRam->GCPhys;
+        if (GCPhys - GCPhysFirst < pRam->cb && GCPhys >= GCPhysFirst)
+        {
+            STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
+            return pRam;
+        }
+    }
+    return pgmPhysGetRangeSlow(pVM, GCPhys);
 }
 
 
@@ -90,12 +96,17 @@ DECLINLINE(PPGMRAMRANGE) pgmPhysGetRange(PVMCC pVM, RTGCPHYS GCPhys)
  */
 DECLINLINE(PPGMRAMRANGE) pgmPhysGetRangeAtOrAbove(PVMCC pVM, RTGCPHYS GCPhys)
 {
-    PPGMRAMRANGE pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
-    if (   !pRam
-        || (GCPhys - pRam->GCPhys) >= pRam->cb)
-        return pgmPhysGetRangeAtOrAboveSlow(pVM, GCPhys);
-    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
-    return pRam;
+    PPGMRAMRANGE const pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
+    if (pRam)
+    {
+        RTGCPHYS const GCPhysFirst = pRam->GCPhys;
+        if (GCPhys - GCPhysFirst < pRam->cb && GCPhys >= GCPhysFirst)
+        {
+            STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
+            return pRam;
+        }
+    }
+    return pgmPhysGetRangeAtOrAboveSlow(pVM, GCPhys);
 }
 
 
@@ -110,13 +121,16 @@ DECLINLINE(PPGMRAMRANGE) pgmPhysGetRangeAtOrAbove(PVMCC pVM, RTGCPHYS GCPhys)
  */
 DECLINLINE(PPGMPAGE) pgmPhysGetPage(PVMCC pVM, RTGCPHYS GCPhys)
 {
-    PPGMRAMRANGE pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
-    RTGCPHYS off;
-    if (   pRam
-        && (off = GCPhys - pRam->GCPhys) < pRam->cb)
+    PPGMRAMRANGE const pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
+    if (pRam)
     {
-        STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
-        return &pRam->aPages[off >> GUEST_PAGE_SHIFT];
+        RTGCPHYS const GCPhysFirst = pRam->GCPhys;
+        RTGCPHYS const off         = GCPhys - GCPhysFirst;
+        if (off < pRam->cb && GCPhys >= GCPhysFirst)
+        {
+            STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
+            return &pRam->aPages[off >> GUEST_PAGE_SHIFT];
+        }
     }
     return pgmPhysGetPageSlow(pVM, GCPhys);
 }
@@ -137,14 +151,19 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPage(PVMCC pVM, RTGCPHYS GCPhys)
  */
 DECLINLINE(int) pgmPhysGetPageEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
 {
-    PPGMRAMRANGE pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
-    RTGCPHYS off;
-    if (   !pRam
-        || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
-        return pgmPhysGetPageExSlow(pVM, GCPhys, ppPage);
-    *ppPage = &pRam->aPages[off >> GUEST_PAGE_SHIFT];
-    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
-    return VINF_SUCCESS;
+    PPGMRAMRANGE const pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
+    if (pRam)
+    {
+        RTGCPHYS const GCPhysFirst = pRam->GCPhys;
+        RTGCPHYS const off         = GCPhys - GCPhysFirst;
+        if (off < pRam->cb && GCPhys >= GCPhysFirst)
+        {
+            STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
+            *ppPage = &pRam->aPages[off >> GUEST_PAGE_SHIFT];
+            return VINF_SUCCESS;
+        }
+    }
+    return pgmPhysGetPageExSlow(pVM, GCPhys, ppPage);
 }
 
 
@@ -165,14 +184,17 @@ DECLINLINE(int) pgmPhysGetPageEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
  */
 DECLINLINE(int) pgmPhysGetPageWithHintEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPGMRAMRANGE *ppRamHint)
 {
-    RTGCPHYS off;
     PPGMRAMRANGE pRam = *ppRamHint;
-    if (    !pRam
-        ||  RT_UNLIKELY((off = GCPhys - pRam->GCPhys) >= pRam->cb))
+    RTGCPHYS     GCPhysFirst;
+    RTGCPHYS     off;
+    if (   !pRam
+        || RT_UNLIKELY(   (off = GCPhys - (GCPhysFirst = pRam->GCPhys)) >= pRam->cb
+                       && GCPhys >= GCPhysFirst) )
     {
         pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
         if (   !pRam
-            || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
+            || (off = GCPhys - (GCPhysFirst = pRam->GCPhys)) >= pRam->cb
+            || GCPhys < GCPhysFirst)
             return pgmPhysGetPageAndRangeExSlow(pVM, GCPhys, ppPage, ppRamHint);
 
         STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
@@ -197,15 +219,19 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE p
 DECLINLINE(int) pgmPhysGetPageAndRangeEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPGMRAMRANGE *ppRam)
 {
     PPGMRAMRANGE pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
-    RTGCPHYS off;
-    if (   !pRam
-        || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
-        return pgmPhysGetPageAndRangeExSlow(pVM, GCPhys, ppPage, ppRam);
-
-    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
-    *ppRam = pRam;
-    *ppPage = &pRam->aPages[off >> GUEST_PAGE_SHIFT];
-    return VINF_SUCCESS;
+    if (pRam)
+    {
+        RTGCPHYS const GCPhysFirst = pRam->GCPhys;
+        RTGCPHYS const off         = GCPhys - GCPhysFirst;
+        if (off < pRam->cb && GCPhys >= GCPhysFirst)
+        {
+            STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
+            *ppRam = pRam;
+            *ppPage = &pRam->aPages[off >> GUEST_PAGE_SHIFT];
+            return VINF_SUCCESS;
+        }
+    }
+    return pgmPhysGetPageAndRangeExSlow(pVM, GCPhys, ppPage, ppRam);
 }
 
 
