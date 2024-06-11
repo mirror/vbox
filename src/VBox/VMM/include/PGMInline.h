@@ -189,7 +189,7 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE p
     RTGCPHYS     off;
     if (   !pRam
         || RT_UNLIKELY(   (off = GCPhys - (GCPhysFirst = pRam->GCPhys)) >= pRam->cb
-                       && GCPhys >= GCPhysFirst) )
+                       || GCPhys < GCPhysFirst) )
     {
         pRam = pVM->CTX_EXPR(pgm, pgmr0, pgm).s.apRamRangesTlb[PGM_RAMRANGE_TLB_IDX(GCPhys)];
         if (   !pRam
