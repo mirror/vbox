@@ -1202,6 +1202,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
             reporter.log2('Failed to locate VirtualBox installation: %s' % (asLocs,));
         return None;
 
+    ksExtPackBasenames = [ 'Oracle_VirtualBox_Extension_Pack', 'Oracle_VM_VirtualBox_Extension_Pack', ];
     def _installExtPack(self):
         """ Installs the extension pack. """
         sVBox = self._getVBoxInstallPath(fFailIfNotFound = True);
@@ -1212,25 +1213,16 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if self._uninstallAllExtPacks() is not True:
             return False;
 
-        sExtPack = self._findFile('Oracle_VirtualBox_Extension_Pack.vbox-extpack');
-        if sExtPack is None:
-            sExtPack = self._findFile('Oracle_VirtualBox_Extension_Pack.*.vbox-extpack');
-        # legacy name check:
-        if sExtPack is None:
-            sExtPack = self._findFile('Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack');
+        for sExtPackBasename in self.ksExtPackBasenames:
+            sExtPack = self._findFile('%s.vbox-extpack' % (sExtPackBasename,));
+            if sExtPack is None:
+                sExtPack = self._findFile('%s.*.vbox-extpack' % (sExtPackBasename,));
             if sExtPack is not None:
-                fLegacyName = True;
-        if sExtPack is None:
-            sExtPack = self._findFile('Oracle_VM_VirtualBox_Extension_Pack.*.vbox-extpack');
-            if sExtPack is not None:
-                fLegacyName = True;
+                break;
         if sExtPack is None:
             return True;
 
-        if not fLegacyName:
-            sDstDir = os.path.join(sExtPackDir, 'Oracle_VirtualBox_Extension_Pack');
-        else:
-            sDstDir = os.path.join(sExtPackDir, 'Oracle_VM_VirtualBox_Extension_Pack');
+        sDstDir = os.path.join(sExtPackDir, sExtPackBasename);
         reporter.log('Installing extension pack "%s" to "%s"...' % (sExtPack, sExtPackDir));
         fRc, _ = self._sudoExecuteSync([ self.getBinTool('vts_tar'),
                                          '--extract',
