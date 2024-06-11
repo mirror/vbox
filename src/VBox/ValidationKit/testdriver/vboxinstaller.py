@@ -1203,6 +1203,17 @@ class VBoxInstallerTestDriver(TestDriverBase):
         return None;
 
     ksExtPackBasenames = [ 'Oracle_VirtualBox_Extension_Pack', 'Oracle_VM_VirtualBox_Extension_Pack', ];
+
+    def _findExtPack(self):
+        """ Locates the extension pack file. """
+        for sExtPackBasename in self.ksExtPackBasenames:
+            sExtPack = self._findFile('%s.vbox-extpack' % (sExtPackBasename,));
+            if sExtPack is None:
+                sExtPack = self._findFile('%s.*.vbox-extpack' % (sExtPackBasename,));
+            if sExtPack is not None:
+                return (sExtPack, sExtPackBasename);
+        return (None, None);
+
     def _installExtPack(self):
         """ Installs the extension pack. """
         sVBox = self._getVBoxInstallPath(fFailIfNotFound = True);
@@ -1213,12 +1224,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if self._uninstallAllExtPacks() is not True:
             return False;
 
-        for sExtPackBasename in self.ksExtPackBasenames:
-            sExtPack = self._findFile('%s.vbox-extpack' % (sExtPackBasename,));
-            if sExtPack is None:
-                sExtPack = self._findFile('%s.*.vbox-extpack' % (sExtPackBasename,));
-            if sExtPack is not None:
-                break;
+        (sExtPack, sExtPackBasename) = self._findExtPack();
         if sExtPack is None:
             return True;
 
