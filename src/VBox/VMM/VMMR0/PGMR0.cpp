@@ -86,6 +86,8 @@ VMMR0_INT_DECL(int) PGMR0InitPerVMData(PGVM pGVM, RTR0MEMOBJ hMemObj)
 {
     AssertCompile(sizeof(pGVM->pgm.s) <= sizeof(pGVM->pgm.padding));
     AssertCompile(sizeof(pGVM->pgmr0.s) <= sizeof(pGVM->pgmr0.padding));
+    AssertCompile(sizeof(pGVM->aCpus[0].pgm.s) <= sizeof(pGVM->aCpus[0].pgm.padding));
+    AssertCompile(sizeof(pGVM->aCpus[0].pgmr0.s) <= sizeof(pGVM->aCpus[0].pgmr0.padding));
 
     /* Set the RAM range memory handles to NIL. */
     AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.acRamRangePages)   == RT_ELEMENTS(pGVM->pgmr0.s.apRamRanges));

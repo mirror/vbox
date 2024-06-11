@@ -1412,7 +1412,7 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 
 /** The number of entries in the RAM range TLBs (there is one for each
  *  context).  Must be a power of two. */
-#define PGM_RAMRANGE_TLB_ENTRIES            16
+#define PGM_RAMRANGE_TLB_ENTRIES            64
 
 /**
  * Calculates the RAM range TLB index for the physical address.
@@ -1420,7 +1420,7 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
  * @returns RAM range TLB index.
  * @param   a_GCPhys    The guest physical address.
  */
-#define PGM_RAMRANGE_TLB_IDX(a_GCPhys)      ( ((a_GCPhys) >> 20) & (PGM_RAMRANGE_TLB_ENTRIES - 1) )
+#define PGM_RAMRANGE_TLB_IDX(a_GCPhys)      ( ((a_GCPhys) >> 19) & (PGM_RAMRANGE_TLB_ENTRIES - 1) )
 
 /**
  * Calculates the ring-3 address for a_GCPhysPage if the RAM range has a
