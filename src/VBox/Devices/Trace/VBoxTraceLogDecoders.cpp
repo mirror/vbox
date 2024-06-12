@@ -41,6 +41,7 @@
 #define LOG_GROUP LOG_GROUP_DEFAULT
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
+#include <iprt/log.h>
 #include <iprt/message.h>
 #include <iprt/tracelog-decoder-plugin.h>
 
