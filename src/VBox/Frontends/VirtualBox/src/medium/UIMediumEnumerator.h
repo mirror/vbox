@@ -123,6 +123,11 @@ public:
       * @param  strMediumLocation   Passes the medium location. */
     void updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMediumType, QString strMediumLocation);
 
+public slots:
+
+    /** Handles signal about @a comMedium was created. */
+    void sltHandleMediumCreated(const CMedium &comMedium);
+
 private slots:
 
     /** Handles machine-data-change event for a machine with specified @a uMachineId. */

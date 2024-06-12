@@ -39,11 +39,11 @@
 /* GUI includes: */
 #include "QITableWidget.h"
 #include "UIDetailsGenerator.h"
-#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIInformationConfiguration.h"
 #include "UIMachine.h"
+#include "UIMediumEnumerator.h"
 #include "UITranslationEventListener.h"
 #include "UIVirtualBoxEventHandler.h"
 
@@ -64,7 +64,7 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent)
             this, &UIInformationConfiguration::sltRetranslateUI);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
             this, &UIInformationConfiguration::sltMachineDataChanged);
-    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationFinished,
             this, &UIInformationConfiguration::sltMachineDataChanged);
 }
 

@@ -37,7 +37,6 @@
 /* GUI includes: */
 #include "UIDefs.h"
 #include "UILibraryDefs.h"
-#include "UIMediumDefs.h"
 #ifdef VBOX_WS_NIX
 # include "VBoxUtils-nix.h"
 #endif
@@ -53,7 +52,6 @@ class QSpinBox;
 class CCloudMachine;
 class CHostVideoInputDevice;
 class CMachine;
-class CMedium;
 class CUSBDevice;
 class UIThreadPool;
 class UITranslationEventListener;
@@ -100,21 +98,6 @@ signals:
         void sigCloudMachineRegistered(const QString &strProviderShortName,
                                        const QString &strProfileName,
                                        const CCloudMachine &comMachine);
-    /** @} */
-
-    /** @name COM: Virtual Media stuff.
-     * @{ */
-        /** Notifies listeners about medium with certain @a uMediumID created. */
-        void sigMediumCreated(const QUuid &uMediumID);
-        /** Notifies listeners about medium with certain @a uMediumID deleted. */
-        void sigMediumDeleted(const QUuid &uMediumID);
-
-        /** Notifies listeners about medium-enumeration started. */
-        void sigMediumEnumerationStarted();
-        /** Notifies listeners about medium with certain @a uMediumID enumerated. */
-        void sigMediumEnumerated(const QUuid &uMediumID);
-        /** Notifies listeners about medium-enumeration finished. */
-        void sigMediumEnumerationFinished();
     /** @} */
 
 public:
@@ -385,12 +368,6 @@ public slots:
      * @{ */
         /** Handles language change to new @a strLanguage. */
         void sltGUILanguageChange(QString strLanguage);
-    /** @} */
-
-    /** @name Media related stuff.
-     * @{ */
-        /** Handles signal about medium was created. */
-        void sltHandleMediumCreated(const CMedium &comMedium);
     /** @} */
 
     /** @name Machine related stuff.

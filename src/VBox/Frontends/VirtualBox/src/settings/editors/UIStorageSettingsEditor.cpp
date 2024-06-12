@@ -54,7 +54,6 @@
 #include "QIToolBar.h"
 #include "QIToolButton.h"
 #include "QITreeView.h"
-#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
@@ -5054,9 +5053,9 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
 void UIStorageSettingsEditor::prepareConnections()
 {
     /* Configure this: */
-    connect(&uiCommon(), &UICommon::sigMediumEnumerated,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated,
             this, &UIStorageSettingsEditor::sltHandleMediumEnumerated);
-    connect(&uiCommon(), &UICommon::sigMediumDeleted,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumDeleted,
             this, &UIStorageSettingsEditor::sltHandleMediumDeleted);
 
     /* Configure tree-view: */

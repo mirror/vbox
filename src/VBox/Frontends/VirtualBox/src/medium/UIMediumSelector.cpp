@@ -41,7 +41,6 @@
 #include "QIToolBar.h"
 #include "QIToolButton.h"
 #include "UIActionPool.h"
-#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UILoggingDefs.h"
@@ -283,13 +282,13 @@ void UIMediumSelector::prepareMenuAndToolBar()
 void UIMediumSelector::prepareConnections()
 {
     /* Configure medium-enumeration connections: */
-    connect(&uiCommon(), &UICommon::sigMediumCreated,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumCreated,
             this, &UIMediumSelector::sltHandleMediumCreated);
-    connect(&uiCommon(), &UICommon::sigMediumEnumerationStarted,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationStarted,
             this, &UIMediumSelector::sltHandleMediumEnumerationStart);
-    connect(&uiCommon(), &UICommon::sigMediumEnumerated,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated,
             this, &UIMediumSelector::sltHandleMediumEnumerated);
-    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationFinished,
             this, &UIMediumSelector::sltHandleMediumEnumerationFinish);
     if (m_pActionAdd)
         connect(m_pActionAdd, &QAction::triggered, this, &UIMediumSelector::sltAddMedium);

@@ -159,19 +159,19 @@ private slots:
 
     /** @name Medium operation stuff.
       * @{ */
-        /** Handles UICommon::sigMediumCreated signal. */
+        /** Handles UIMediumEnumerator::sigMediumCreated signal. */
         void sltHandleMediumCreated(const QUuid &uMediumID);
-        /** Handles UICommon::sigMediumDeleted signal. */
+        /** Handles UIMediumEnumerator::sigMediumDeleted signal. */
         void sltHandleMediumDeleted(const QUuid &uMediumID);
     /** @} */
 
     /** @name Medium enumeration stuff.
       * @{ */
-        /** Handles UICommon::sigMediumEnumerationStarted signal. */
+        /** Handles UIMediumEnumerator::sigMediumEnumerationStarted signal. */
         void sltHandleMediumEnumerationStart();
-        /** Handles UICommon::sigMediumEnumerated signal. */
+        /** Handles UIMediumEnumerator::sigMediumEnumerated signal. */
         void sltHandleMediumEnumerated(const QUuid &uMediumID);
-        /** Handles UICommon::sigMediumEnumerationFinished signal. */
+        /** Handles UIMediumEnumerator::sigMediumEnumerationFinished signal. */
         void sltHandleMediumEnumerationFinish();
         void sltHandleMachineStateChange(const QUuid &uId, const KMachineState state);
     /** @} */

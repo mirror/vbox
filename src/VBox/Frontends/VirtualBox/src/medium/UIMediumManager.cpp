@@ -767,17 +767,17 @@ void UIMediumManagerWidget::prepareConnections()
             this, &UIMediumManagerWidget::sltHandleMachineStateChange);
 
     /* Configure medium-processing connections: */
-    connect(&uiCommon(), &UICommon::sigMediumCreated,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumCreated,
             this, &UIMediumManagerWidget::sltHandleMediumCreated);
-    connect(&uiCommon(), &UICommon::sigMediumDeleted,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumDeleted,
             this, &UIMediumManagerWidget::sltHandleMediumDeleted);
 
     /* Configure medium-enumeration connections: */
-    connect(&uiCommon(), &UICommon::sigMediumEnumerationStarted,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationStarted,
             this, &UIMediumManagerWidget::sltHandleMediumEnumerationStart);
-    connect(&uiCommon(), &UICommon::sigMediumEnumerated,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated,
             this, &UIMediumManagerWidget::sltHandleMediumEnumerated);
-    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationFinished,
             this, &UIMediumManagerWidget::sltHandleMediumEnumerationFinish);
 
     /* Configure COM related connections: */

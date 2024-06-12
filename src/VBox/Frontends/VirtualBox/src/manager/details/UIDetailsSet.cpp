@@ -32,7 +32,6 @@
 #include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIDetailsElements.h"
 #include "UIDetailsModel.h"
 #include "UIDetailsSet.h"
@@ -690,7 +689,7 @@ void UIDetailsSet::prepareConnections()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore, this, &UIDetailsSet::sltMachineAttributesChange);
 
     /* Meidum-enumeration connections: */
-    connect(&uiCommon(), &UICommon::sigMediumEnumerated, this, &UIDetailsSet::sltMediumEnumerated);
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated, this, &UIDetailsSet::sltMediumEnumerated);
 }
 
 QVariant UIDetailsSet::data(int iKey) const

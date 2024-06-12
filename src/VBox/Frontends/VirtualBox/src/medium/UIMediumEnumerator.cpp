@@ -355,6 +355,22 @@ void UIMediumEnumerator::updateRecentlyUsedMediumListAndFolder(UIMediumDeviceTyp
     emit sigRecentMediaListUpdated(enmMediumType);
 }
 
+void UIMediumEnumerator::sltHandleMediumCreated(const CMedium &comMedium)
+{
+    /* Acquire device type: */
+    const KDeviceType enmDeviceType = comMedium.GetDeviceType();
+    if (!comMedium.isOk())
+        UINotificationMessage::cannotAcquireMediumParameter(comMedium);
+    else
+    {
+        /* Convert to medium type: */
+        const UIMediumDeviceType enmMediumType = mediumTypeToLocal(enmDeviceType);
+
+        /* Make sure we cached created medium in GUI: */
+        createMedium(UIMedium(comMedium, enmMediumType, KMediumState_Created));
+    }
+}
+
 void UIMediumEnumerator::sltRetranslateUI()
 {
     /* Translating NULL UIMedium by recreating it: */

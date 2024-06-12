@@ -26,7 +26,6 @@
  */
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIGlobalSession.h"
 #include "UIMedium.h"
 #include "UIMediumEnumerator.h"
@@ -102,7 +101,7 @@ bool UIWizardCloneVD::copyVirtualDisk()
                                                                                            comVirtualDisk,
                                                                                            variants);
     connect(pNotification, &UINotificationProgressMediumCopy::sigMediumCopied,
-            &uiCommon(), &UICommon::sltHandleMediumCreated);
+            gpMediumEnumerator, &UIMediumEnumerator::sltHandleMediumCreated);
     gpNotificationCenter->append(pNotification);
 
     /* Positive: */

@@ -55,7 +55,6 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UILoggingDefs.h"
-#include "UIMedium.h"
 #include "UIMediumEnumerator.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
@@ -87,8 +86,6 @@
 #include "CHostUSBDevice.h"
 #include "CHostVideoInputDevice.h"
 #include "CMachine.h"
-#include "CMedium.h"
-#include "CMediumAttachment.h"
 #include "CSystemProperties.h"
 #include "CUSBDevice.h"
 #include "CUSBDeviceFilter.h"
@@ -123,7 +120,6 @@
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
-using namespace UIMediumDefs;
 
 
 /* static */
@@ -676,19 +672,6 @@ void UICommon::prepare()
 
     /* Create medium-enumerator but don't do any immediate caching: */
     UIMediumEnumerator::create();
-    {
-        /* Prepare medium-enumerator: */
-        connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumCreated,
-                this, &UICommon::sigMediumCreated);
-        connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumDeleted,
-                this, &UICommon::sigMediumDeleted);
-        connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationStarted,
-                this, &UICommon::sigMediumEnumerationStarted);
-        connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated,
-                this, &UICommon::sigMediumEnumerated);
-        connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationFinished,
-                this, &UICommon::sigMediumEnumerationFinished);
-    }
 
     /* Create shortcut pool: */
     UIShortcutPool::create(uiType());
@@ -1918,22 +1901,6 @@ void UICommon::sltGUILanguageChange(QString strLanguage)
     AssertReturnVoid(!gpMediumEnumerator->isMediumEnumerationInProgress());
     /* Load passed language: */
     UITranslator::loadLanguage(strLanguage);
-}
-
-void UICommon::sltHandleMediumCreated(const CMedium &comMedium)
-{
-    /* Acquire device type: */
-    const KDeviceType enmDeviceType = comMedium.GetDeviceType();
-    if (!comMedium.isOk())
-        UINotificationMessage::cannotAcquireMediumParameter(comMedium);
-    else
-    {
-        /* Convert to medium type: */
-        const UIMediumDeviceType enmMediumType = mediumTypeToLocal(enmDeviceType);
-
-        /* Make sure we cached created medium in GUI: */
-        gpMediumEnumerator->createMedium(UIMedium(comMedium, enmMediumType, KMediumState_Created));
-    }
 }
 
 void UICommon::sltHandleMachineCreated(const CMachine &comMachine)

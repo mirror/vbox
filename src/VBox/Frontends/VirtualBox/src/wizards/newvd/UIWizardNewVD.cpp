@@ -160,7 +160,7 @@ bool UIWizardNewVD::createVirtualDisk()
                                                                                                m_uMediumSize,
                                                                                                variants);
     connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
-            &uiCommon(), &UICommon::sltHandleMediumCreated);
+            gpMediumEnumerator, &UIMediumEnumerator::sltHandleMediumCreated);
 
     m_uMediumId = comVirtualDisk.GetId();
 

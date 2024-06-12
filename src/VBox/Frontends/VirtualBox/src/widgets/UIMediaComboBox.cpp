@@ -31,7 +31,6 @@
 #include <QFileInfo>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIGlobalSession.h"
 #include "UIMediaComboBox.h"
 #include "UIMediumEnumerator.h"
@@ -220,15 +219,15 @@ void UIMediaComboBox::prepare()
     setSizePolicy(sp1);
 
     /* Setup medium-processing handlers: */
-    connect(&uiCommon(), &UICommon::sigMediumCreated,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumCreated,
             this, &UIMediaComboBox::sltHandleMediumCreated);
-    connect(&uiCommon(), &UICommon::sigMediumDeleted,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumDeleted,
             this, &UIMediaComboBox::sltHandleMediumDeleted);
 
     /* Setup medium-enumeration handlers: */
-    connect(&uiCommon(), &UICommon::sigMediumEnumerationStarted,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationStarted,
             this, &UIMediaComboBox::sltHandleMediumEnumerationStart);
-    connect(&uiCommon(), &UICommon::sigMediumEnumerated,
+    connect(gpMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated,
             this, &UIMediaComboBox::sltHandleMediumEnumerated);
 
     /* Setup other connections: */

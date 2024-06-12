@@ -132,7 +132,7 @@ void UIFDCreationDialog::accept()
     UINotificationProgressMediumCreate *pNotification =
         new UINotificationProgressMediumCreate(comMedium, m_pSizeCombo->currentData().toLongLong(), variants);
     connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
-            &uiCommon(), &UICommon::sltHandleMediumCreated);
+            gpMediumEnumerator, &UIMediumEnumerator::sltHandleMediumCreated);
     connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
             this, &UIFDCreationDialog::sltHandleMediumCreated);
     gpNotificationCenter->append(pNotification);
