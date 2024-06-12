@@ -77,11 +77,6 @@
 /* Always flush after submitting a draw call for debugging. */
 //#define DX_FLUSH_AFTER_DRAW
 
-/* This is not available on non Windows hosts. */
-#ifndef D3D_RELEASE
-# define D3D_RELEASE(a_Ptr) do { if ((a_Ptr)) (a_Ptr)->Release(); (a_Ptr) = NULL; } while (0)
-#endif
-
 #define D3D_RELEASE_ARRAY(a_Count, a_papArray) do { \
     for (uint32_t i = 0; i < (a_Count); ++i) \
         D3D_RELEASE((a_papArray)[i]); \

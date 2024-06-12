@@ -1404,7 +1404,6 @@ void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
 void vmsvga3dSurfaceMapInit(VMSVGA3D_MAPPED_SURFACE *pMap, VMSVGA3D_SURFACE_MAP enmMapType, SVGA3dBox const *pBox,
                             PVMSVGA3DSURFACE pSurface, void *pvData, uint32_t cbRowPitch, uint32_t cbDepthPitch);
 
-#if defined(RT_OS_WINDOWS)
 #define D3D_RELEASE(ptr) do { \
     if (ptr) \
     { \
@@ -1412,7 +1411,6 @@ void vmsvga3dSurfaceMapInit(VMSVGA3D_MAPPED_SURFACE *pMap, VMSVGA3D_SURFACE_MAP 
         (ptr) = 0; \
     } \
 } while (0)
-#endif
 
 #if defined(VMSVGA3D_DIRECT3D)
 HRESULT D3D9UpdateTexture(PVMSVGA3DCONTEXT pContext,
