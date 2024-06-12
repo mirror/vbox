@@ -184,111 +184,27 @@ UIMediumEnumerator::UIMediumEnumerator()
 
 QList<QUuid> UIMediumEnumerator::mediumIDs() const
 {
-    /* Return keys of current media map: */
-    return m_media.keys();
+    return mediumIDsSub();
 }
 
 UIMedium UIMediumEnumerator::medium(const QUuid &uMediumID) const
 {
-    /* Search through current media map
-     * for the UIMedium with passed ID: */
-    if (m_media.contains(uMediumID))
-        return m_media.value(uMediumID);
-    /* Return NULL UIMedium otherwise: */
-    return UIMedium();
+    return mediumSub(uMediumID);
 }
 
 void UIMediumEnumerator::createMedium(const UIMedium &guiMedium)
 {
-    /* Get UIMedium ID: */
-    const QUuid uMediumID = guiMedium.id();
-
-    /* Do not create UIMedium(s) with incorrect ID: */
-    AssertReturnVoid(!uMediumID.isNull());
-    /* Make sure UIMedium doesn't exist already: */
-    if (m_media.contains(uMediumID))
-        return;
-
-    /* Insert UIMedium: */
-    m_media[uMediumID] = guiMedium;
-    LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} created\n", uMediumID.toString().toUtf8().constData()));
-
-    /* Notify listener: */
-    emit sigMediumCreated(uMediumID);
+    createMediumSub(guiMedium);
 }
 
 void UIMediumEnumerator::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)
 {
-    /* Compose new map of currently cached media & their children.
-     * While composing we are using data from already cached media. */
-    UIMediumMap guiMedia;
-    addNullMediumToMap(guiMedia);
-    if (comMedia.isEmpty())
-    {
-        /* Compose new map of all known media & their children: */
-        addMediaToMap(gpGlobalSession->virtualBox().GetHardDisks(), guiMedia);
-        addMediaToMap(gpGlobalSession->host().GetDVDDrives(), guiMedia);
-        addMediaToMap(gpGlobalSession->virtualBox().GetDVDImages(), guiMedia);
-        addMediaToMap(gpGlobalSession->host().GetFloppyDrives(), guiMedia);
-        addMediaToMap(gpGlobalSession->virtualBox().GetFloppyImages(), guiMedia);
-    }
-    else
-    {
-        /* Compose new map of passed media & their children: */
-        addMediaToMap(comMedia, guiMedia);
-    }
-
-    /* UICommon is cleaning up, abort immediately: */
-    if (uiCommon().isCleaningUp())
-        return;
-
-    if (comMedia.isEmpty())
-    {
-        /* Replace existing media map since
-         * we have full medium enumeration: */
-        m_fFullMediumEnumerationRequested = true;
-        m_media = guiMedia;
-    }
-    else
-    {
-        /* Throw the media to existing map: */
-        foreach (const QUuid &uMediumId, guiMedia.keys())
-            m_media[uMediumId] = guiMedia.value(uMediumId);
-    }
-
-    /* If enumeration hasn't yet started: */
-    if (!m_fMediumEnumerationInProgress)
-    {
-        /* Notify listener about enumeration started: */
-        LogRel(("GUI: UIMediumEnumerator: Medium-enumeration started...\n"));
-        m_fMediumEnumerationInProgress = true;
-        emit sigMediumEnumerationStarted();
-
-        /* Make sure we really have more than one UIMedium (which is NULL): */
-        if (   guiMedia.size() == 1
-            && guiMedia.first().id() == UIMedium::nullID())
-        {
-            /* Notify listener about enumeration finished instantly: */
-            LogRel(("GUI: UIMediumEnumerator: Medium-enumeration finished!\n"));
-            m_fMediumEnumerationInProgress = false;
-            emit sigMediumEnumerationFinished();
-        }
-    }
-
-    /* Start enumeration for media with non-NULL ID: */
-    foreach (const QUuid &uMediumID, guiMedia.keys())
-        if (!uMediumID.isNull())
-            createMediumEnumerationTask(guiMedia[uMediumID]);
+    enumerateMediaSub(comMedia);
 }
 
 void UIMediumEnumerator::refreshMedia()
 {
-    /* Make sure we are not already in progress: */
-    AssertReturnVoid(!m_fMediumEnumerationInProgress);
-
-    /* Refresh all cached media we have: */
-    foreach (const QUuid &uMediumID, m_media.keys())
-        m_media[uMediumID].refresh();
+    refreshMediaSub();
 }
 
 void UIMediumEnumerator::sltRetranslateUI()
@@ -363,7 +279,7 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
     if (fRegistered)
     {
         /* Make sure this medium isn't already cached: */
-        if (!medium(uMediumId).isNull())
+        if (!mediumSub(uMediumId).isNull())
         {
             /* This medium can be known because of async event nature. Currently medium registration event comes
              * very late and other even unrelated events can come before it and request for this particular medium
@@ -414,7 +330,7 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
     else
     {
         /* Make sure this medium is still cached: */
-        if (medium(uMediumId).isNull())
+        if (mediumSub(uMediumId).isNull())
         {
             /* This medium can be wiped out already because of async event nature. Currently
              * medium unregistration event comes very late and other even unrealted events
@@ -517,6 +433,115 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
         m_fMediumEnumerationInProgress = false;
         emit sigMediumEnumerationFinished();
     }
+}
+
+QList<QUuid> UIMediumEnumerator::mediumIDsSub() const
+{
+    /* Return keys of current media map: */
+    return m_media.keys();
+}
+
+UIMedium UIMediumEnumerator::mediumSub(const QUuid &uMediumID) const
+{
+    /* Search through current media map
+     * for the UIMedium with passed ID: */
+    if (m_media.contains(uMediumID))
+        return m_media.value(uMediumID);
+    /* Return NULL UIMedium otherwise: */
+    return UIMedium();
+}
+
+void UIMediumEnumerator::createMediumSub(const UIMedium &guiMedium)
+{
+    /* Get UIMedium ID: */
+    const QUuid uMediumID = guiMedium.id();
+
+    /* Do not create UIMedium(s) with incorrect ID: */
+    AssertReturnVoid(!uMediumID.isNull());
+    /* Make sure UIMedium doesn't exist already: */
+    if (m_media.contains(uMediumID))
+        return;
+
+    /* Insert UIMedium: */
+    m_media[uMediumID] = guiMedium;
+    LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} created\n", uMediumID.toString().toUtf8().constData()));
+
+    /* Notify listener: */
+    emit sigMediumCreated(uMediumID);
+}
+
+void UIMediumEnumerator::enumerateMediaSub(const CMediumVector &comMedia /* = CMediumVector() */)
+{
+    /* Compose new map of currently cached media & their children.
+     * While composing we are using data from already cached media. */
+    UIMediumMap guiMedia;
+    addNullMediumToMap(guiMedia);
+    if (comMedia.isEmpty())
+    {
+        /* Compose new map of all known media & their children: */
+        addMediaToMap(gpGlobalSession->virtualBox().GetHardDisks(), guiMedia);
+        addMediaToMap(gpGlobalSession->host().GetDVDDrives(), guiMedia);
+        addMediaToMap(gpGlobalSession->virtualBox().GetDVDImages(), guiMedia);
+        addMediaToMap(gpGlobalSession->host().GetFloppyDrives(), guiMedia);
+        addMediaToMap(gpGlobalSession->virtualBox().GetFloppyImages(), guiMedia);
+    }
+    else
+    {
+        /* Compose new map of passed media & their children: */
+        addMediaToMap(comMedia, guiMedia);
+    }
+
+    /* UICommon is cleaning up, abort immediately: */
+    if (uiCommon().isCleaningUp())
+        return;
+
+    if (comMedia.isEmpty())
+    {
+        /* Replace existing media map since
+         * we have full medium enumeration: */
+        m_fFullMediumEnumerationRequested = true;
+        m_media = guiMedia;
+    }
+    else
+    {
+        /* Throw the media to existing map: */
+        foreach (const QUuid &uMediumId, guiMedia.keys())
+            m_media[uMediumId] = guiMedia.value(uMediumId);
+    }
+
+    /* If enumeration hasn't yet started: */
+    if (!m_fMediumEnumerationInProgress)
+    {
+        /* Notify listener about enumeration started: */
+        LogRel(("GUI: UIMediumEnumerator: Medium-enumeration started...\n"));
+        m_fMediumEnumerationInProgress = true;
+        emit sigMediumEnumerationStarted();
+
+        /* Make sure we really have more than one UIMedium (which is NULL): */
+        if (   guiMedia.size() == 1
+            && guiMedia.first().id() == UIMedium::nullID())
+        {
+            /* Notify listener about enumeration finished instantly: */
+            LogRel(("GUI: UIMediumEnumerator: Medium-enumeration finished!\n"));
+            m_fMediumEnumerationInProgress = false;
+            emit sigMediumEnumerationFinished();
+        }
+    }
+
+    /* Start enumeration for media with non-NULL ID: */
+    foreach (const QUuid &uMediumID, guiMedia.keys())
+        if (!uMediumID.isNull())
+            createMediumEnumerationTask(guiMedia[uMediumID]);
+}
+
+void UIMediumEnumerator::refreshMediaSub()
+{
+    /* Make sure we are not already in progress: */
+    AssertReturnVoid(!m_fMediumEnumerationInProgress);
+
+    /* Refresh all cached media we have: */
+    foreach (const QUuid &uMediumID, m_media.keys())
+        m_media[uMediumID].refresh();
 }
 
 void UIMediumEnumerator::createMediumEnumerationTask(const UIMedium &guiMedium)
@@ -631,7 +656,7 @@ void UIMediumEnumerator::parseMedium(CMedium comMedium, QList<QUuid> &result)
             //printf(" Medium to recache: %s\n", uMediumId.toString().toUtf8().constData());
 
             /* Make sure this medium is already cached: */
-            if (medium(uMediumId).isNull())
+            if (mediumSub(uMediumId).isNull())
             {
                 /* This medium isn't cached by some reason, which can be different.
                  * One of such reasons is when config-changed event comes earlier than
@@ -654,11 +679,11 @@ void UIMediumEnumerator::parseMedium(CMedium comMedium, QList<QUuid> &result)
 void UIMediumEnumerator::enumerateAllMediaOfMachineWithId(const QUuid &uMachineId, QList<QUuid> &result)
 {
     /* For each the cached UIMedium we have: */
-    foreach (const QUuid &uMediumId, mediumIDs())
+    foreach (const QUuid &uMediumId, mediumIDsSub())
     {
         /* Check if medium isn't NULL, used by our
          * machine and wasn't already enumerated. */
-        const UIMedium guiMedium = medium(uMediumId);
+        const UIMedium guiMedium = mediumSub(uMediumId);
         if (   !guiMedium.isNull()
             && guiMedium.machineIds().contains(uMachineId)
             && !result.contains(uMediumId))
@@ -678,11 +703,11 @@ void UIMediumEnumerator::enumerateAllMediaOfMachineWithId(const QUuid &uMachineI
 void UIMediumEnumerator::enumerateAllMediaOfMediumWithId(const QUuid &uParentMediumId, QList<QUuid> &result)
 {
     /* For each the cached UIMedium we have: */
-    foreach (const QUuid &uMediumId, mediumIDs())
+    foreach (const QUuid &uMediumId, mediumIDsSub())
     {
         /* Check if medium isn't NULL, and is
          * a child of specified parent medium. */
-        const UIMedium guiMedium = medium(uMediumId);
+        const UIMedium guiMedium = mediumSub(uMediumId);
         if (   !guiMedium.isNull()
             && guiMedium.parentID() == uParentMediumId)
         {
