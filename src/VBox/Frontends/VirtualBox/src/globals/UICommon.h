@@ -118,8 +118,6 @@ signals:
         void sigMediumEnumerated(const QUuid &uMediumID);
         /** Notifies listeners about medium-enumeration finished. */
         void sigMediumEnumerationFinished();
-        /** Notifies listeners about update of recently media list. */
-        void sigRecentMediaListUpdated(UIMediumDeviceType enmMediumType);
     /** @} */
 
 public:
@@ -348,16 +346,6 @@ public:
           * @param  fPredictDiff  Brings whether medium will be marked differencing on attaching.
           * @param  fUseHtml      Brings whether HTML subsets should be used in the generated output. */
         QString storageDetails(const CMedium &comMedium, bool fPredictDiff, bool fUseHtml = true);
-
-        /** Update extra data related to recently used/referred media.
-          * @param  enmMediumType       Passes the medium type.
-          * @param  strMediumLocation   Passes the medium location. */
-        void updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMediumType, QString strMediumLocation);
-
-        /** Searches extra data for the recently used folder path which corresponds to @a enmMediumType. When that search fails
-            it looks for recent folder extra data for other medium types. As the last resort returns default vm folder path.
-          * @param  enmMediumType       Passes the medium type. */
-        QString defaultFolderPathForType(UIMediumDeviceType enmMediumType);
 
         /** Calculates @a cAmount of immutable images used by @a comMachine specified. */
         static bool acquireAmountOfImmutableImages(const CMachine &comMachine, ulong &cAmount);
@@ -644,12 +632,6 @@ private:
         UIThreadPool *m_pThreadPool;
         /** Holds the thread-pool instance for cloud needs. */
         UIThreadPool *m_pThreadPoolCloud;
-    /** @} */
-
-    /** @name Media related stuff.
-     * @{ */
-        /** List of medium names that should not appears in the recently used media extra data. */
-        QStringList  m_recentMediaExcludeList;
     /** @} */
 
     /** @name Font scaling related variables.

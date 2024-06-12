@@ -26,11 +26,13 @@
  */
 
 /* Qt includes: */
+#include <QFileInfo>
 #include <QSet>
 
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIErrorString.h"
+#include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UILoggingDefs.h"
 #include "UIMediumEnumerator.h"
@@ -44,6 +46,7 @@
 #include "CMachine.h"
 #include "CMediumAttachment.h"
 #include "CSnapshot.h"
+#include "CSystemProperties.h"
 
 
 /** Template function to convert a list of
@@ -186,6 +189,50 @@ UIMediumEnumerator::UIMediumEnumerator()
     LogRel(("GUI: UIMediumEnumerator: Initial medium-enumeration finished!\n"));
     emit sigMediumEnumerationStarted();
     emit sigMediumEnumerationFinished();
+
+    /* Populate the list of medium names to be excluded from the recently used media extra data: */
+#if 0 /* bird: This is counter productive as it is _frequently_ necessary to re-insert the
+               viso to refresh the files (like after you rebuilt them on the host).
+               The guest caches ISOs aggressively and files sizes may change. */
+    m_recentMediaExcludeList << "ad-hoc.viso";
+#endif
+}
+
+/* static */
+QString UIMediumEnumerator::defaultFolderPathForType(UIMediumDeviceType enmMediumType)
+{
+    QString strLastFolder;
+    switch (enmMediumType)
+    {
+        case UIMediumDeviceType_HardDisk:
+            strLastFolder = gEDataManager->recentFolderForHardDrives();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
+            break;
+        case UIMediumDeviceType_DVD:
+            strLastFolder = gEDataManager->recentFolderForOpticalDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForHardDrives();
+            break;
+        case UIMediumDeviceType_Floppy:
+            strLastFolder = gEDataManager->recentFolderForFloppyDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForHardDrives();
+            break;
+        default:
+            break;
+    }
+
+    if (strLastFolder.isEmpty())
+        return gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+
+    return strLastFolder;
 }
 
 QList<QUuid> UIMediumEnumerator::mediumIDs() const
@@ -259,6 +306,53 @@ void UIMediumEnumerator::refreshMedia()
     /* We assume it's safe to call it without locking,
      * since we are performing blocking operation here. */
     gpMediumEnumerator->refreshMediaSub();
+}
+
+void UIMediumEnumerator::updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMediumType, QString strMediumLocation)
+{
+    /* Don't add the medium to extra data if its name is in exclude list, m_recentMediaExcludeList: */
+    foreach (const QString &strExcludeName, m_recentMediaExcludeList)
+        if (strMediumLocation.contains(strExcludeName))
+            return;
+
+    /* Remember the path of the last chosen medium: */
+    switch (enmMediumType)
+    {
+        case UIMediumDeviceType_HardDisk:
+            gEDataManager->setRecentFolderForHardDrives(QFileInfo(strMediumLocation).absolutePath());
+            break;
+        case UIMediumDeviceType_DVD:
+            gEDataManager->setRecentFolderForOpticalDisks(QFileInfo(strMediumLocation).absolutePath());
+            break;
+        case UIMediumDeviceType_Floppy:
+            gEDataManager->setRecentFolderForFloppyDisks(QFileInfo(strMediumLocation).absolutePath());
+            break;
+        default:
+            break;
+    }
+
+    /* Update recently used list: */
+    QStringList recentMediumList;
+    switch (enmMediumType)
+    {
+        case UIMediumDeviceType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
+        case UIMediumDeviceType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
+        case UIMediumDeviceType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
+        default: break;
+    }
+    if (recentMediumList.contains(strMediumLocation))
+        recentMediumList.removeAll(strMediumLocation);
+    recentMediumList.prepend(strMediumLocation);
+    while(recentMediumList.size() > 5)
+        recentMediumList.removeLast();
+    switch (enmMediumType)
+    {
+        case UIMediumDeviceType_HardDisk: gEDataManager->setRecentListOfHardDrives(recentMediumList); break;
+        case UIMediumDeviceType_DVD:      gEDataManager->setRecentListOfOpticalDisks(recentMediumList); break;
+        case UIMediumDeviceType_Floppy:   gEDataManager->setRecentListOfFloppyDisks(recentMediumList); break;
+        default: break;
+    }
+    emit sigRecentMediaListUpdated(enmMediumType);
 }
 
 void UIMediumEnumerator::sltRetranslateUI()

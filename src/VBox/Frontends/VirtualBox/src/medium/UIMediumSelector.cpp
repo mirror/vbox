@@ -164,7 +164,8 @@ int UIMediumSelector::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceT
         else
         {
             uSelectedMediumUuid = selectedMediumIds[0];
-            uiCommon().updateRecentlyUsedMediumListAndFolder(enmMediumType, gpMediumEnumerator->medium(uSelectedMediumUuid).location());
+            gpMediumEnumerator->updateRecentlyUsedMediumListAndFolder(enmMediumType,
+                                                                      gpMediumEnumerator->medium(uSelectedMediumUuid).location());
         }
     }
     delete pSelector;

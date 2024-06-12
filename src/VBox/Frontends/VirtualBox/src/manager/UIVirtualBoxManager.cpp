@@ -1263,7 +1263,7 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
                 break;
             case WizardType_NewVD:
             {
-                const QString strFolder = uiCommon().defaultFolderPathForType(UIMediumDeviceType_HardDisk);
+                const QString strFolder = UIMediumEnumerator::defaultFolderPathForType(UIMediumDeviceType_HardDisk);
                 const QString strDiskName = uiCommon().findUniqueFileName(strFolder, "NewVirtualDisk");
                 const CGuestOSType comGuestOSType = gpGlobalSession->virtualBox().GetGuestOSType("Other");
                 const qulonglong uDiskSize = comGuestOSType.GetRecommendedHDD();

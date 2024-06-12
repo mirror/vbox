@@ -734,15 +734,6 @@ void UICommon::prepare()
     checkForWrongUSBMounted();
 #endif /* RT_OS_LINUX */
 
-    /* Populate the list of medium names to be excluded from the
-       recently used media extra data: */
-#if 0 /* bird: This is counter productive as it is _frequently_ necessary to re-insert the
-               viso to refresh the files (like after you rebuilt them on the host).
-               The guest caches ISOs aggressively and files sizes may change. */
-    m_recentMediaExcludeList << "ad-hoc.viso";
-#endif
-
-
     iOriginalFontPixelSize = qApp->font().pixelSize();
     iOriginalFontPointSize = qApp->font().pointSize();
     sltHandleFontScaleFactorChanged(gEDataManager->fontScaleFactor());
@@ -1518,7 +1509,7 @@ QUuid UICommon::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, Q
     QString strFilter;
     QString strTitle;
     QString allType;
-    QString strLastFolder = defaultFolderPathForType(enmMediumType);
+    QString strLastFolder = UIMediumEnumerator::defaultFolderPathForType(enmMediumType);
 
     /* For DVDs and Floppies always check first the last recently used medium folder. For hard disk use
        the caller's setting: */
@@ -1577,7 +1568,7 @@ QUuid UICommon::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, Q
         QUuid uMediumId = openMedium(enmMediumType, files[0], pParent);
         if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy ||
             (enmMediumType == UIMediumDeviceType_HardDisk && fUseLastFolder))
-            updateRecentlyUsedMediumListAndFolder(enmMediumType, gpMediumEnumerator->medium(uMediumId).location());
+            gpMediumEnumerator->updateRecentlyUsedMediumListAndFolder(enmMediumType, gpMediumEnumerator->medium(uMediumId).location());
         return uMediumId;
     }
     return QUuid();
@@ -1609,7 +1600,7 @@ QUuid UICommon::openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pPar
 
     /* Update the recent medium list only if the medium type is floppy since updating when a VISO is created is not optimal: */
     if (enmMediumType == UIMediumDeviceType_Floppy)
-        updateRecentlyUsedMediumListAndFolder(enmMediumType, gpMediumEnumerator->medium(uMediumId).location());
+        gpMediumEnumerator->updateRecentlyUsedMediumListAndFolder(enmMediumType, gpMediumEnumerator->medium(uMediumId).location());
     return uMediumId;
 }
 
@@ -1987,84 +1978,6 @@ QString UICommon::storageDetails(const CMedium &comMedium, bool fPredictDiff, bo
     /* Return UI medium details: */
     return fUseHtml ? guiMedium.detailsHTML(true /* no diffs? */, fPredictDiff) :
                       guiMedium.details(true /* no diffs? */, fPredictDiff);
-}
-
-void UICommon::updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMediumType, QString strMediumLocation)
-{
-    /** Don't add the medium to extra data if its name is in exclude list, m_recentMediaExcludeList: */
-    foreach (QString strExcludeName, m_recentMediaExcludeList)
-    {
-        if (strMediumLocation.contains(strExcludeName))
-            return;
-    }
-
-    /* Remember the path of the last chosen medium: */
-    switch (enmMediumType)
-    {
-        case UIMediumDeviceType_HardDisk: gEDataManager->setRecentFolderForHardDrives(QFileInfo(strMediumLocation).absolutePath()); break;
-        case UIMediumDeviceType_DVD:      gEDataManager->setRecentFolderForOpticalDisks(QFileInfo(strMediumLocation).absolutePath()); break;
-        case UIMediumDeviceType_Floppy:   gEDataManager->setRecentFolderForFloppyDisks(QFileInfo(strMediumLocation).absolutePath()); break;
-        default: break;
-    }
-
-    /* Update recently used list: */
-    QStringList recentMediumList;
-    switch (enmMediumType)
-    {
-        case UIMediumDeviceType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
-        case UIMediumDeviceType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
-        case UIMediumDeviceType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
-        default: break;
-    }
-    if (recentMediumList.contains(strMediumLocation))
-        recentMediumList.removeAll(strMediumLocation);
-    recentMediumList.prepend(strMediumLocation);
-    while(recentMediumList.size() > 5)
-        recentMediumList.removeLast();
-    switch (enmMediumType)
-    {
-        case UIMediumDeviceType_HardDisk: gEDataManager->setRecentListOfHardDrives(recentMediumList); break;
-        case UIMediumDeviceType_DVD:      gEDataManager->setRecentListOfOpticalDisks(recentMediumList); break;
-        case UIMediumDeviceType_Floppy:   gEDataManager->setRecentListOfFloppyDisks(recentMediumList); break;
-        default: break;
-    }
-    emit sigRecentMediaListUpdated(enmMediumType);
-}
-
-QString UICommon::defaultFolderPathForType(UIMediumDeviceType enmMediumType)
-{
-    QString strLastFolder;
-    switch (enmMediumType)
-    {
-        case UIMediumDeviceType_HardDisk:
-            strLastFolder = gEDataManager->recentFolderForHardDrives();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
-            break;
-        case UIMediumDeviceType_DVD:
-            strLastFolder = gEDataManager->recentFolderForOpticalDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForHardDrives();
-            break;
-        case UIMediumDeviceType_Floppy:
-            strLastFolder = gEDataManager->recentFolderForFloppyDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForHardDrives();
-            break;
-        default:
-            break;
-    }
-
-    if (strLastFolder.isEmpty())
-        return gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-
-    return strLastFolder;
 }
 
 /* static */

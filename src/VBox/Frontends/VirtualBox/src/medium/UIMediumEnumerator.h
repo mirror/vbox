@@ -41,8 +41,8 @@
 #include "UIMedium.h"
 
 /* COM includes: */
-# include "CMedium.h"
-# include "CMediumAttachment.h"
+#include "CMedium.h"
+#include "CMediumAttachment.h"
 
 /* Forward declarations: */
 class UITask;
@@ -72,6 +72,9 @@ signals:
     /** Notifies listeners about consolidated medium-enumeration process has finished. */
     void sigMediumEnumerationFinished();
 
+    /** Notifies listeners about update of recently media list. */
+    void sigRecentMediaListUpdated(UIMediumDeviceType enmMediumType);
+
 public:
 
     /** Creates singleton instance. */
@@ -82,6 +85,12 @@ public:
     static UIMediumEnumerator *instance();
     /** Returns whether singleton intance really exists. */
     static bool exists();
+
+    /** Searches extra data for the recently used folder path which corresponds to @a enmMediumType.
+      * When that search fails it looks for recent folder extra data for other medium types.
+      * As the last resort returns default vm folder path.
+      * @param  enmMediumType  Passes the medium type. */
+    static QString defaultFolderPathForType(UIMediumDeviceType enmMediumType);
 
     /** Returns cached UIMedium ID list. */
     QList<QUuid> mediumIDs() const;
@@ -108,6 +117,11 @@ public:
       *        heavy state/accessibility checks thus doesn't require to be performed
       *        by a worker COM-aware thread. */
     void refreshMedia();
+
+    /** Update extra data related to recently used/referred media.
+      * @param  enmMediumType       Passes the medium type.
+      * @param  strMediumLocation   Passes the medium location. */
+    void updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMediumType, QString strMediumLocation);
 
 private slots:
 
@@ -199,6 +213,9 @@ private:
     UIMediumMap  m_media;
     /** Holds a set of currently registered media IDs. */
     QSet<QUuid>  m_registeredMediaIds;
+
+    /** Holds the list of medium names to be excluded from recently used media extra data. */
+    QStringList  m_recentMediaExcludeList;
 };
 
 /** Singleton Medium Enumerator 'official' name. */

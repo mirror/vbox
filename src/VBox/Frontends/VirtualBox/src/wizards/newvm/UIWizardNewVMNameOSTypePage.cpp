@@ -35,10 +35,10 @@
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
-#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
+#include "UIMediumEnumerator.h"
 #include "UINameAndSystemEditor.h"
 #include "UINotificationCenter.h"
 #include "UIWizardNewVMNameOSTypePage.h"
@@ -629,7 +629,7 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
     /* Update the global recent ISO path: */
     QFileInfo fileInfo(strPath);
     if (fileInfo.exists() && fileInfo.isReadable())
-        uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
+        gpMediumEnumerator->updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
 
     /* Populate the editions selector: */
     if (m_pNameAndSystemEditor)
