@@ -1492,13 +1492,13 @@ void UICommon::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector()
         return;
 
     /* Make sure medium-enumerator is already created: */
-    if (!gpMediumEnumerator)
+    if (!UIMediumEnumerator::exists())
         return;
 
     /* Redirect request to medium-enumerator under proper lock: */
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
-        if (gpMediumEnumerator)
+        if (UIMediumEnumerator::exists())
             gpMediumEnumerator->enumerateMedia(comMedia);
         m_meCleanupProtectionToken.unlock();
     }
@@ -1516,7 +1516,7 @@ void UICommon::refreshMedia()
         return;
 
     /* Make sure medium-enumerator is already created: */
-    if (!gpMediumEnumerator)
+    if (!UIMediumEnumerator::exists())
         return;
     /* Make sure enumeration is not already started: */
     if (gpMediumEnumerator->isMediumEnumerationInProgress())
@@ -1530,14 +1530,14 @@ void UICommon::refreshMedia()
 bool UICommon::isFullMediumEnumerationRequested() const
 {
     /* Redirect request to medium-enumerator: */
-    return    gpMediumEnumerator
+    return    UIMediumEnumerator::exists()
            && gpMediumEnumerator->isFullMediumEnumerationRequested();
 }
 
 bool UICommon::isMediumEnumerationInProgress() const
 {
     /* Redirect request to medium-enumerator: */
-    return    gpMediumEnumerator
+    return    UIMediumEnumerator::exists()
            && gpMediumEnumerator->isMediumEnumerationInProgress();
 }
 
@@ -1547,7 +1547,7 @@ UIMedium UICommon::medium(const QUuid &uMediumID) const
     {
         /* Redirect call to medium-enumerator: */
         UIMedium guiMedium;
-        if (gpMediumEnumerator)
+        if (UIMediumEnumerator::exists())
             guiMedium = gpMediumEnumerator->medium(uMediumID);
         m_meCleanupProtectionToken.unlock();
         return guiMedium;
@@ -1561,7 +1561,7 @@ QList<QUuid> UICommon::mediumIDs() const
     {
         /* Redirect call to medium-enumerator: */
         QList<QUuid> listOfMedia;
-        if (gpMediumEnumerator)
+        if (UIMediumEnumerator::exists())
             listOfMedia = gpMediumEnumerator->mediumIDs();
         m_meCleanupProtectionToken.unlock();
         return listOfMedia;
@@ -1574,7 +1574,7 @@ void UICommon::createMedium(const UIMedium &guiMedium)
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         /* Create medium in medium-enumerator: */
-        if (gpMediumEnumerator)
+        if (UIMediumEnumerator::exists())
             gpMediumEnumerator->createMedium(guiMedium);
         m_meCleanupProtectionToken.unlock();
     }

@@ -79,6 +79,8 @@ public:
     static void destroy();
     /** Returns singleton instance. */
     static UIMediumEnumerator *instance();
+    /** Returns whether singleton intance really exists. */
+    static bool exists();
 
     /** Returns cached UIMedium ID list. */
     QList<QUuid> mediumIDs() const;

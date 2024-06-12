@@ -130,7 +130,18 @@ void UIMediumEnumerator::destroy()
 /* static */
 UIMediumEnumerator *UIMediumEnumerator::instance()
 {
+    /* This is the fallback behavior, we need the lazy-init here
+     * only to make sure gpMediumEnumerator is never NULL. */
+    AssertPtr(s_pInstance);
+    if (!s_pInstance)
+        create();
     return s_pInstance;
+}
+
+/* static */
+bool UIMediumEnumerator::exists()
+{
+    return !!s_pInstance;
 }
 
 UIMediumEnumerator::UIMediumEnumerator()
