@@ -55,6 +55,7 @@
 #include "UIMediumEnumerator.h"
 #include "UIMediumManager.h"
 #include "UIMediumSearchWidget.h"
+#include "UIMediumTools.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIShortcutPool.h"
@@ -459,8 +460,8 @@ void UIMediumManagerWidget::sltHandleMachineStateChange(const QUuid &uId, const 
 void UIMediumManagerWidget::sltAddMedium()
 {
     QString strDefaultMachineFolder = gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-    uiCommon().openMediumWithFileOpenDialog(currentMediumType(), this,
-                                              strDefaultMachineFolder, true /* use most recent medium folder */);
+    UIMediumTools::openMediumWithFileOpenDialog(currentMediumType(), this,
+                                                strDefaultMachineFolder, true /* use most recent medium folder */);
 }
 
 void UIMediumManagerWidget::sltCreateMedium()
@@ -472,7 +473,7 @@ void UIMediumManagerWidget::sltCreateMedium()
     if (enmMediumType == UIMediumDeviceType_HardDisk)
         emit sigCreateMedium();
     else
-        uiCommon().openMediumCreatorDialog(m_pActionPool, this, currentMediumType());
+        UIMediumTools::openMediumCreatorDialog(m_pActionPool, this, currentMediumType());
 }
 
 void UIMediumManagerWidget::sltCopyMedium()

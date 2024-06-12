@@ -58,6 +58,7 @@
 #include "UIGraphicsTextPane.h"
 #include "UIIconPool.h"
 #include "UIMachineAttributeSetter.h"
+#include "UIMediumTools.h"
 #include "UINameAndSystemEditor.h"
 #include "UINetworkAttachmentEditor.h"
 #include "UITaskCloudGetSettingsForm.h"
@@ -695,7 +696,7 @@ void UIDetailsElement::sltMountStorageMedium()
     const UIMediumTarget target = pAction->data().value<UIMediumTarget>();
 
     /* Update current machine mount-target: */
-    uiCommon().updateMachineStorage(machine(), target, gpManager->actionPool());
+    UIMediumTools::updateMachineStorage(machine(), target, gpManager->actionPool());
 }
 
 void UIDetailsElement::prepareElement()
@@ -1076,8 +1077,8 @@ void UIDetailsElement::popupStorageEditor(const QString &strValue)
     StorageSlot storageSlot = gpConverter->fromString<StorageSlot>(strValue.section(',', 1));
 
     /* Fill storage-menu: */
-    uiCommon().prepareStorageMenu(&menu, this, SLOT(sltMountStorageMedium()),
-                                  machine(), strControllerName, storageSlot);
+    UIMediumTools::prepareStorageMenu(&menu, this, SLOT(sltMountStorageMedium()),
+                                      machine(), strControllerName, storageSlot);
 
     /* Exec menu: */
     menu.exec(QCursor::pos());

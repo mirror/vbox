@@ -43,21 +43,18 @@
 #endif
 
 /* COM includes: */
-#include "CMedium.h"
 #include "CSession.h"
 #include "KGraphicsControllerType.h"
 #include "KLockType.h"
 
 /* Forward declarations: */
-class QMenu;
 class QSessionManager;
 class QSpinBox;
 class CCloudMachine;
 class CHostVideoInputDevice;
 class CMachine;
+class CMedium;
 class CUSBDevice;
-class UIActionPool;
-class UIMedium;
 class UIThreadPool;
 class UITranslationEventListener;
 
@@ -302,46 +299,6 @@ public:
 
     /** @name COM: Virtual Media stuff.
      * @{ */
-        /** Opens external medium by passed @a strMediumLocation.
-          * @param  enmMediumType      Brings the medium type.
-          * @param  pParent            Brings the dialog parent.
-          * @param  strMediumLocation  Brings the file path to load medium from.
-          * @param  pParent            Brings the dialog parent. */
-        QUuid openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent = 0);
-
-        /** Opens external medium using file-open dialog.
-          * @param  enmMediumType     Brings the medium type.
-          * @param  pParent           Brings the dialog parent.
-          * @param  strDefaultFolder  Brings the folder to browse for medium.
-          * @param  fUseLastFolder    Brings whether we should propose to use last used folder. */
-        QUuid openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent = 0,
-                                           const QString &strDefaultFolder = QString(), bool fUseLastFolder = false);
-
-        /** Creates and shows a dialog (wizard) to create a medium of type @a enmMediumType.
-          * @param  pParent                  Passes the parent of the dialog,
-          * @param  enmMediumType            Passes the medium type,
-          * @param  strMachineName           Passes the name of the machine,
-          * @param  strMachineFolder         Passes the machine folder,
-          * @param  strMachineGuestOSTypeId  Passes the type ID of machine's guest os,
-          * @param  fEnableCreate            Passes whether to show/enable create action in the medium selector dialog,
-          * returns QUuid of the new medium */
-        QUuid openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pParent, UIMediumDeviceType  enmMediumType,
-                                      const QString &strMachineFolder = QString(), const QString &strMachineName = QString(),
-                                      const QString &strMachineGuestOSTypeId = QString());
-
-        /** Prepares storage menu according passed parameters.
-          * @param  menu               Brings the #QMenu to be prepared.
-          * @param  pListener          Brings the listener #QObject, this @a menu being prepared for.
-          * @param  pszSlotName        Brings the name of the SLOT in the @a pListener above, this menu will be handled with.
-          * @param  comMachine         Brings the #CMachine object, this @a menu being prepared for.
-          * @param  strControllerName  Brings the name of the #CStorageController in the @a machine above.
-          * @param  storageSlot        Brings the #StorageSlot of the storage controller with @a strControllerName above. */
-        void prepareStorageMenu(QMenu *pMenu,
-                                QObject *pListener, const char *pszSlotName,
-                                const CMachine &comMachine, const QString &strControllerName, const StorageSlot &storageSlot);
-        /** Updates @a comConstMachine storage with data described by @a target. */
-        void updateMachineStorage(const CMachine &comConstMachine, const UIMediumTarget &target, UIActionPool *pActionPool);
-
         /** Generates details for passed @a comMedium.
           * @param  fPredictDiff  Brings whether medium will be marked differencing on attaching.
           * @param  fUseHtml      Brings whether HTML subsets should be used in the generated output. */

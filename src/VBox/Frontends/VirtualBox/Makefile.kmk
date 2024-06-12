@@ -1448,6 +1448,7 @@ UICommon_SOURCES = \
 	src/medium/UIMediumItem.cpp \
 	src/medium/UIMediumSearchWidget.cpp \
 	src/medium/UIMediumSelector.cpp \
+	src/medium/UIMediumTools.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoCreator.cpp \
 	src/notificationcenter/UINotificationCenter.cpp \

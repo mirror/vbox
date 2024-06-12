@@ -49,6 +49,7 @@
 #include "UIIconPool.h"
 #include "UILoggingDefs.h"
 #include "UIMediumEnumerator.h"
+#include "UIMediumTools.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UIPaneContainer.h"
@@ -961,7 +962,7 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
         {
             QString strFilePath = pVisoCreator->visoFileFullPath();
             gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
-            mediumId = uiCommon().openMedium(UIMediumDeviceType_DVD, strFilePath);
+            mediumId = UIMediumTools::openMedium(UIMediumDeviceType_DVD, strFilePath);
         }
     }
 

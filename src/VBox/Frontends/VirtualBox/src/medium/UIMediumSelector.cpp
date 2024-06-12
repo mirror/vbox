@@ -48,6 +48,7 @@
 #include "UIMediumEnumerator.h"
 #include "UIMediumSearchWidget.h"
 #include "UIMediumSelector.h"
+#include "UIMediumTools.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UIIconPool.h"
@@ -493,7 +494,8 @@ void UIMediumSelector::sltButtonLeaveEmpty()
 
 void UIMediumSelector::sltAddMedium()
 {
-    QUuid uMediumID = uiCommon().openMediumWithFileOpenDialog(m_enmMediumType, this, m_strMachineFolder, true /* fUseLastFolder */);
+    QUuid uMediumID = UIMediumTools::openMediumWithFileOpenDialog(m_enmMediumType, this, m_strMachineFolder,
+                                                                  true /* fUseLastFolder */);
     if (uMediumID.isNull())
         return;
     repopulateTreeWidget();
@@ -502,8 +504,8 @@ void UIMediumSelector::sltAddMedium()
 
 void UIMediumSelector::sltCreateMedium()
 {
-    QUuid uMediumId = uiCommon().openMediumCreatorDialog(m_pActionPool, this, m_enmMediumType, m_strMachineFolder,
-                                                         m_strMachineName, m_strMachineGuestOSTypeId);
+    QUuid uMediumId = UIMediumTools::openMediumCreatorDialog(m_pActionPool, this, m_enmMediumType, m_strMachineFolder,
+                                                             m_strMachineName, m_strMachineGuestOSTypeId);
     /* Make sure that the data structure is updated and newly created medium is selected and visible: */
     sltHandleMediumCreated(uMediumId);
 }

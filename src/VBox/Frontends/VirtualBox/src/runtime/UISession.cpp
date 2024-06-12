@@ -49,6 +49,7 @@
 #include "UIMedium.h"
 #include "UIMediumEnumerator.h"
 #include "UIMessageCenter.h"
+#include "UIMediumTools.h"
 #include "UIModalWindowManager.h"
 #include "UIMousePointerShapeData.h"
 #include "UINotificationCenter.h"
@@ -1019,15 +1020,15 @@ void UISession::prepareStorageMenu(QMenu *pMenu,
                                    const QString &strControllerName, const StorageSlot &storageSlot)
 {
     CMachine comMachine = machine();
-    uiCommon().prepareStorageMenu(pMenu,
-                                  pListener, pszSlotName,
-                                  comMachine, strControllerName, storageSlot);
+    UIMediumTools::prepareStorageMenu(pMenu,
+                                      pListener, pszSlotName,
+                                      comMachine, strControllerName, storageSlot);
 }
 
 void UISession::updateMachineStorage(const UIMediumTarget &target, UIActionPool *pActionPool)
 {
     CMachine comMachine = machine();
-    uiCommon().updateMachineStorage(comMachine, target, pActionPool);
+    UIMediumTools::updateMachineStorage(comMachine, target, pActionPool);
 }
 
 void UISession::acquireWhetherUSBControllerEnabled(bool &fEnabled)
