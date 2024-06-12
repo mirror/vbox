@@ -101,10 +101,276 @@ typedef const TPMREQHDR *PCTPMREQHDR;
 /** @} */
 
 
+/** @name TPM 2.0 Algorithm ID codes.
+ * @{ */
+/** Invalid algorithm ID - should not occur. */
+#define TPM2_ALG_ERROR                      UINT16_C(0x0000)
+/** RSA algorithm ID. */
+#define TPM2_ALG_RSA                        UINT16_C(0x0001)
+/** TDES (Triple Data Encryption Standard) algorithm ID. */
+#define TPM2_ALG_TDES                       UINT16_C(0x0003)
+/** SHA1 algorithm ID. */
+#define TPM2_ALG_SHA1                       UINT16_C(0x0004)
+/** HMAC (Hash Message Authentication Code) algorithm ID. */
+#define TPM2_ALG_HMAC                       UINT16_C(0x0005)
+/** AES algorithm ID. */
+#define TPM2_ALG_AES                        UINT16_C(0x0006)
+/** Hash-based mask-generation function algorithm ID. */
+#define TPM2_ALG_MGF1                       UINT16_C(0x0007)
+/** Object type that may use XOR for encryption or an HMAC for signing. */
+#define TPM2_ALG_KEYEDHASH                  UINT16_C(0x0008)
+/** XOR algorithm ID. */
+#define TPM2_ALG_XOR                        UINT16_C(0x000a)
+/** SHA256 algorithm ID. */
+#define TPM2_ALG_SHA256                     UINT16_C(0x000b)
+/** SHA384 algorithm ID. */
+#define TPM2_ALG_SHA384                     UINT16_C(0x000c)
+/** SHA512 algorithm ID. */
+#define TPM2_ALG_SHA512                     UINT16_C(0x000d)
+/** SHA256 with only 192 most significant bits algorithm ID. */
+#define TPM2_ALG_SHA256_192                 UINT16_C(0x000e)
+/** Null algorithm ID. */
+#define TPM2_ALG_NULL                       UINT16_C(0x0010)
+/** SM3 hash algorithm ID. */
+#define TPM2_ALG_SM3_256                    UINT16_C(0x0012)
+/** SM4 symmetric block cipher algorithm ID. */
+#define TPM2_ALG_SM4                        UINT16_C(0x0013)
+/** RSASSA-PKCS1-v1_5 signature algorithm ID. */
+#define TPM2_ALG_RSASSA                     UINT16_C(0x0014)
+/** RSAES-PKCS1-v1_5 padding algorithm ID. */
+#define TPM2_ALG_RSAES                      UINT16_C(0x0015)
+/** RSASSA-PSS signature algorithm ID. */
+#define TPM2_ALG_RSAPSS                     UINT16_C(0x0016)
+/** RSAES_OAEP padding algorithm ID. */
+#define TPM2_ALG_OAEP                       UINT16_C(0x0017)
+/** Elliptic curve cryptography signature algorithm ID. */
+#define TPM2_ALG_ECDSA                      UINT16_C(0x0018)
+/** Secret sharing using ECC algorithm ID. */
+#define TPM2_ALG_ECDH                       UINT16_C(0x0019)
+/** Elliptic curve based anonymous signing scheme algorithm ID. */
+#define TPM2_ALG_ECDAA                      UINT16_C(0x001a)
+/** SM2 algorithm ID. */
+#define TPM2_ALG_SM2                        UINT16_C(0x001b)
+/** Elliptic-curve based Schnorr signature algorithm ID. */
+#define TPM2_ALG_ECSCHNORR                  UINT16_C(0x001c)
+/** Two phase elliptic curve key exchange algorithm ID. */
+#define TPM2_ALG_ECMQV                      UINT16_C(0x001d)
+/** NIST SP800-56A Concatenation key derivation function algorithm ID. */
+#define TPM2_ALG_KDF1_SP800_56A             UINT16_C(0x0020)
+/** Key derivation function KDF2 algorithm ID. */
+#define TPM2_ALG_KDF2                       UINT16_C(0x0021)
+/** NIST SP800-108 key derivation function algorithm ID. */
+#define TPM2_ALG_KDF1_SP800_108             UINT16_C(0x0022)
+/** Prime field ECC algorithm ID. */
+#define TPM2_ALG_ECC                        UINT16_C(0x0023)
+/** Object type for a symmetric block cipher algorithm ID. */
+#define TPM2_ALG_SYMCIPHER                  UINT16_C(0x0025)
+/** Camellia symmetric block cipher algorithm ID. */
+#define TPM2_ALG_CAMELLIA                   UINT16_C(0x0026)
+/** SHA3 hash algorithm ID - produces 256-bit digest. */
+#define TPM2_ALG_SHA3_256                   UINT16_C(0x0027)
+/** SHA3 hash algorithm ID - produces 384-bit digest. */
+#define TPM2_ALG_SHA3_384                   UINT16_C(0x0028)
+/** SHA3 hash algorithm ID - produces 512-bit digest. */
+#define TPM2_ALG_SHA3_512                   UINT16_C(0x0029)
+/** ISO/IEC 10118-3 extendable output function algorithm ID - provides 128-bits of collision and preimage resistance. */
+#define TPM2_ALG_SHAKE128                   UINT16_C(0x002a)
+/** ISO/IEC 10118-3 extendable output function algorithm ID - provides 256-bits of collision and preimage resistance. */
+#define TPM2_ALG_SHAKE256                   UINT16_C(0x002b)
+/** ISO/IEC 10118-3 extendable output function algorithm ID - the first 192 bits of SHAKE256 output. */
+#define TPM2_ALG_SHAKE256_192               UINT16_C(0x002c)
+/** ISO/IEC 10118-3 extendable output function algorithm ID - the first 256 bits of SHAKE256 output. */
+#define TPM2_ALG_SHAKE256_256               UINT16_C(0x002d)
+/** ISO/IEC 10118-3 extendable output function algorithm ID - the first 512 bits of SHAKE256 output. */
+#define TPM2_ALG_SHAKE256_512               UINT16_C(0x002e)
+/** ISO/IEC 9797-1:2011 Block Cipher based Message Authentication Code algorithm ID. */
+#define TPM2_ALG_CMAC                       UINT16_C(0x003f)
+/** ISO/IEC 10116 Counter mode for symmetric block ciphers algorithm ID. */
+#define TPM2_ALG_CTR                        UINT16_C(0x0040)
+/** ISO/IEC 10116 Output feedback mode for symmetric block ciphers algorithm ID. */
+#define TPM2_ALG_OFB                        UINT16_C(0x0041)
+/** ISO/IEC 10116 Cipher Block Chaining mode for symmetric block ciphers algorithm ID. */
+#define TPM2_ALG_CBC                        UINT16_C(0x0042)
+/** ISO/IEC 10116 Cipher Feedback mode for symmetric block ciphers algorithm ID. */
+#define TPM2_ALG_CFB                        UINT16_C(0x0043)
+/** ISO/IEC 10116 Electronic codebook mode for symmetric block ciphers algorithm ID. */
+#define TPM2_ALG_ECB                        UINT16_C(0x0044)
+/** NIST SP800-38C Counter with Cipher Block Chaining Message Authentication Code algorithm ID. */
+#define TPM2_ALG_CCM                        UINT16_C(0x0050)
+/** NIST SP800-38D Galois/Counter Mode algorithm ID. */
+#define TPM2_ALG_GCM                        UINT16_C(0x0051)
+/** NIST SP800-38F AES Key Wrap (KW) algorithm ID. */
+#define TPM2_ALG_KW                         UINT16_C(0x0052)
+/** NIST SP800-38F AES Key Wrap with Padding (KWP) algorithm ID. */
+#define TPM2_ALG_KWP                        UINT16_C(0x0053)
+/** ISO/IEC 19772 Authentication Encryption Mode algorithm ID. */
+#define TPM2_ALG_EAX                        UINT16_C(0x0054)
+/** IETF RFC 8083 Edwards curve Digital Signature Algorithm (PureEdDSA) algorithm ID. */
+#define TPM2_ALG_EDDSA                      UINT16_C(0x0060)
+/** IETF RFC 8082 Edwards curve Digital Signature Algorithm (HashEdDSA) algorithm ID. */
+#define TPM2_ALG_EDDSA_PH                   UINT16_C(0x0061)
+/** NIST SP800-208 Leighton-Micali Signatures algorithm ID. */
+#define TPM2_ALG_LMS                        UINT16_C(0x0070)
+/** NIST SP800-208 eXtended Merkle Signature Scheme algorithm ID. */
+#define TPM2_ALG_XMSS                       UINT16_C(0x0071)
+/** Keyed XOF algorithm ID. */
+#define TPM2_ALG_KEYEDXOF                   UINT16_C(0x0080)
+/** NIST SP800-185 Keyed XOF providing 128-bit security strength algorithm ID. */
+#define TPM2_ALG_KMACXOF128                 UINT16_C(0x0081)
+/** NIST SP800-185 Keyed XOF providing 256-bit security strength algorithm ID. */
+#define TPM2_ALG_KMACXOF256                 UINT16_C(0x0082)
+/** NIST SP800-185 Variable length MAC providing 128-bit security strength algorithm ID. */
+#define TPM2_ALG_KMAC128                    UINT16_C(0x0090)
+/** NIST SP800-185 Variable length MAC providing 256-bit security strength algorithm ID. */
+#define TPM2_ALG_KMAC256                    UINT16_C(0x0091)
+/** @} */
+
+
+/** @name TPM 2.0 ECC Curve codes.
+ * @{ */
+#define TPM2_ECC_NONE                       UINT16_C(0x0000)
+#define TPM2_ECC_NIST_P192                  UINT16_C(0x0001)
+#define TPM2_ECC_NIST_P224                  UINT16_C(0x0002)
+#define TPM2_ECC_NIST_P256                  UINT16_C(0x0003)
+#define TPM2_ECC_NIST_P384                  UINT16_C(0x0004)
+#define TPM2_ECC_NIST_P521                  UINT16_C(0x0005)
+#define TPM2_ECC_BN_P256                    UINT16_C(0x0010)
+#define TPM2_ECC_BN_P638                    UINT16_C(0x0011)
+#define TPM2_ECC_SM2_P256                   UINT16_C(0x0020)
+#define TPM2_ECC_BP_P256_R1                 UINT16_C(0x0030)
+#define TPM2_ECC_BP_P384_R1                 UINT16_C(0x0031)
+#define TPM2_ECC_BP_P512_R1                 UINT16_C(0x0032)
+#define TPM2_ECC_CURVE_25519                UINT16_C(0x0040)
+#define TPM2_ECC_CURVE_448                  UINT16_C(0x0041)
+/** @} */
+
+
 /** @name TPM 2.0 command codes.
  * @{ */
-/** Get a capability. */
-#define TPM2_CC_GET_CAPABILITY              UINT32_C(378)
+#define TPM2_CC_NV_UNDEFINE_SPACE_SPECIAL       UINT32_C(0x11f)
+#define TPM2_CC_EVICT_CONTROL                   UINT32_C(0x120)
+#define TPM2_CC_HIERARCHY_CONTROL               UINT32_C(0x121)
+#define TPM2_CC_NV_UNDEFINE_SPACE               UINT32_C(0x122)
+#define TPM2_CC_CHANGE_EPS                      UINT32_C(0x124)
+#define TPM2_CC_CHANGE_PPS                      UINT32_C(0x125)
+#define TPM2_CC_CLEAR                           UINT32_C(0x126)
+#define TPM2_CC_CLEAR_CONTROL                   UINT32_C(0x127)
+#define TPM2_CC_CLOCK_SET                       UINT32_C(0x128)
+#define TPM2_CC_HIERARCHY_CHANGE_AUTH           UINT32_C(0x129)
+#define TPM2_CC_NV_DEFINE_SPACE                 UINT32_C(0x12a)
+#define TPM2_CC_PCR_ALLOCATE                    UINT32_C(0x12b)
+#define TPM2_CC_PCR_SET_AUTH_POLICY             UINT32_C(0x12c)
+#define TPM2_CC_PP_COMMANDS                     UINT32_C(0x12d)
+#define TPM2_CC_SET_PRIMARY_POLICY              UINT32_C(0x12e)
+#define TPM2_CC_FIELD_UPGRADE_START             UINT32_C(0x12f)
+#define TPM2_CC_CLOCK_RATE_ADJUST               UINT32_C(0x130)
+#define TPM2_CC_CREATE_PRIMARY                  UINT32_C(0x131)
+#define TPM2_CC_NV_GLOBAL_WRITE_LOCK            UINT32_C(0x132)
+#define TPM2_CC_GET_COMMAND_AUDIT_DIGEST        UINT32_C(0x133)
+#define TPM2_CC_NV_INCREMENT                    UINT32_C(0x134)
+#define TPM2_CC_NV_SET_BITS                     UINT32_C(0x135)
+#define TPM2_CC_NV_EXTEND                       UINT32_C(0x136)
+#define TPM2_CC_NV_WRITE                        UINT32_C(0x137)
+#define TPM2_CC_NV_WRITE_LOCK                   UINT32_C(0x138)
+#define TPM2_CC_DICTIONARY_ATTACK_LOCK_RESET    UINT32_C(0x139)
+#define TPM2_CC_DICTIONARY_ATTACK_PARAMETERS    UINT32_C(0x13a)
+#define TPM2_CC_NV_CHANGE_AUTH                  UINT32_C(0x13b)
+#define TPM2_CC_PCR_EVENT                       UINT32_C(0x13c)
+#define TPM2_CC_PCR_RESET                       UINT32_C(0x13d)
+#define TPM2_CC_SEQUENCE_COMPLETE               UINT32_C(0x13e)
+#define TPM2_CC_SET_ALGORITHM_SET               UINT32_C(0x13f)
+#define TPM2_CC_SET_COMMAND_CODE_AUDIT_STATUS   UINT32_C(0x140)
+#define TPM2_CC_FIELD_UPGRADE_DATA              UINT32_C(0x141)
+#define TPM2_CC_INCREMENTAL_SELF_TEST           UINT32_C(0x142)
+#define TPM2_CC_SELF_TEST                       UINT32_C(0x143)
+#define TPM2_CC_STARTUP                         UINT32_C(0x144)
+#define TPM2_CC_SHUTDOWN                        UINT32_C(0x145)
+#define TPM2_CC_STIR_RANDOM                     UINT32_C(0x146)
+#define TPM2_CC_ACTIVATE_CREDENTIAL             UINT32_C(0x147)
+#define TPM2_CC_CERTIFY                         UINT32_C(0x148)
+#define TPM2_CC_POLICY_NV                       UINT32_C(0x149)
+#define TPM2_CC_CERTIFY_CREATION                UINT32_C(0x14a)
+#define TPM2_CC_DUPLICATE                       UINT32_C(0x14b)
+#define TPM2_CC_GET_TIME                        UINT32_C(0x14c)
+#define TPM2_CC_GET_SESSION_AUDIT_DIGEST        UINT32_C(0x14d)
+#define TPM2_CC_NV_READ                         UINT32_C(0x14e)
+#define TPM2_CC_NV_READ_LOCK                    UINT32_C(0x14f)
+#define TPM2_CC_OBJECT_CHANGE_AUTH              UINT32_C(0x150)
+#define TPM2_CC_POLICY_SECRET                   UINT32_C(0x151)
+#define TPM2_CC_REWRAP                          UINT32_C(0x152)
+#define TPM2_CC_CREATE                          UINT32_C(0x153)
+#define TPM2_CC_ECDH_ZGEN                       UINT32_C(0x154)
+#define TPM2_CC_HMAC_MAC                        UINT32_C(0x155)
+#define TPM2_CC_IMPORT                          UINT32_C(0x156)
+#define TPM2_CC_LOAD                            UINT32_C(0x157)
+#define TPM2_CC_QUOTE                           UINT32_C(0x158)
+#define TPM2_CC_RSA_DECRYPT                     UINT32_C(0x159)
+#define TPM2_CC_HMAC_MAC_START                  UINT32_C(0x15b)
+#define TPM2_CC_SEQUENCE_UPDATE                 UINT32_C(0x15c)
+#define TPM2_CC_SIGN                            UINT32_C(0x15d)
+#define TPM2_CC_UNSEAL                          UINT32_C(0x15e)
+#define TPM2_CC_POLICY_SIGNED                   UINT32_C(0x160)
+#define TPM2_CC_CONTEXT_LOAD                    UINT32_C(0x161)
+#define TPM2_CC_CONTEXT_SAVE                    UINT32_C(0x162)
+#define TPM2_CC_ECDH_KEY_GEN                    UINT32_C(0x163)
+#define TPM2_CC_ENCRYPT_DECRYPT                 UINT32_C(0x164)
+#define TPM2_CC_FLUSH_CONTEXT                   UINT32_C(0x165)
+#define TPM2_CC_LOAD_EXTERNAL                   UINT32_C(0x167)
+#define TPM2_CC_MAKE_CREDENTIAL                 UINT32_C(0x168)
+#define TPM2_CC_NV_READ_PUBLIC                  UINT32_C(0x169)
+#define TPM2_CC_POLICY_AUTHORIZE                UINT32_C(0x16a)
+#define TPM2_CC_POLICY_AUTH_VALUE               UINT32_C(0x16b)
+#define TPM2_CC_POLICY_COMMAND_CODE             UINT32_C(0x16c)
+#define TPM2_CC_POLICY_COUNTER_TIMER            UINT32_C(0x16d)
+#define TPM2_CC_POLICY_CP_HASH                  UINT32_C(0x16e)
+#define TPM2_CC_POLICY_LOCALITY                 UINT32_C(0x16f)
+#define TPM2_CC_POLICY_NAME_HASH                UINT32_C(0x170)
+#define TPM2_CC_POLICY_OR                       UINT32_C(0x171)
+#define TPM2_CC_POLICY_TICKET                   UINT32_C(0x172)
+#define TPM2_CC_READ_PUBLIC                     UINT32_C(0x173)
+#define TPM2_CC_RSA_ENCRYPT                     UINT32_C(0x174)
+#define TPM2_CC_START_AUTH_SESSION              UINT32_C(0x176)
+#define TPM2_CC_VERIFY_SIGNATURE                UINT32_C(0x177)
+#define TPM2_CC_ECC_PARAMETERS                  UINT32_C(0x178)
+#define TPM2_CC_FIRMWARE_READ                   UINT32_C(0x179)
+#define TPM2_CC_GET_CAPABILITY                  UINT32_C(0x17a)
+#define TPM2_CC_GET_RANDOM                      UINT32_C(0x17b)
+#define TPM2_CC_GET_TEST_RESULT                 UINT32_C(0x17c)
+#define TPM2_CC_GET_HASH                        UINT32_C(0x17d)
+#define TPM2_CC_PCR_READ                        UINT32_C(0x17e)
+#define TPM2_CC_POLICY_PCR                      UINT32_C(0x17f)
+#define TPM2_CC_POLICY_RESTART                  UINT32_C(0x180)
+#define TPM2_CC_READ_CLOCK                      UINT32_C(0x181)
+#define TPM2_CC_PCR_EXTEND                      UINT32_C(0x182)
+#define TPM2_CC_PCR_SET_AUTH_VALUE              UINT32_C(0x183)
+#define TPM2_CC_NV_CERTIFY                      UINT32_C(0x184)
+#define TPM2_CC_EVENT_SEQUENCE_COMPLETE         UINT32_C(0x185)
+#define TPM2_CC_HASH_SEQUENCE_START             UINT32_C(0x186)
+#define TPM2_CC_POLICY_PHYSICAL_PRESENCE        UINT32_C(0x187)
+#define TPM2_CC_POLICY_DUPLICATION_SELECT       UINT32_C(0x188)
+#define TPM2_CC_POLICY_GET_DIGEST               UINT32_C(0x189)
+#define TPM2_CC_TEST_PARMS                      UINT32_C(0x18a)
+#define TPM2_CC_COMMIT                          UINT32_C(0x18b)
+#define TPM2_CC_POLICY_PASSWORD                 UINT32_C(0x18c)
+#define TPM2_CC_ZGEN_2PHASE                     UINT32_C(0x18d)
+#define TPM2_CC_EC_EPHEMERAL                    UINT32_C(0x18e)
+#define TPM2_CC_POLICY_NV_WRITTEN               UINT32_C(0x18f)
+#define TPM2_CC_POLICY_TEMPLATE                 UINT32_C(0x190)
+#define TPM2_CC_CREATE_LOADED                   UINT32_C(0x191)
+#define TPM2_CC_POLICY_AUTHORIZE_NV             UINT32_C(0x192)
+#define TPM2_CC_ENCRYPT_DECRYPT_2               UINT32_C(0x193)
+#define TPM2_CC_AC_GET_CAPABILITY               UINT32_C(0x194)
+#define TPM2_CC_AC_SEND                         UINT32_C(0x195)
+#define TPM2_CC_POLICY_AC_SEND_SELECT           UINT32_C(0x196)
+#define TPM2_CC_CERTIFY_X509                    UINT32_C(0x197)
+#define TPM2_CC_ACT_SET_TIMEOUT                 UINT32_C(0x198)
+#define TPM2_CC_ECC_ENCRYPT                     UINT32_C(0x199)
+#define TPM2_CC_ECC_DECRYPT                     UINT32_C(0x19a)
+#define TPM2_CC_POLICY_CAPABILITY               UINT32_C(0x19b)
+#define TPM2_CC_POLICY_PARAMETERS               UINT32_C(0x19c)
+#define TPM2_CC_NV_DEFINE_SPACE_2               UINT32_C(0x19d)
+#define TPM2_CC_NV_READ_PUBLIC_2                UINT32_C(0x19e)
+#define TPM2_CC_SET_CAPABILITY                  UINT32_C(0x19f)
 /** @} */
 
 
