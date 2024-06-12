@@ -43,6 +43,12 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 
+/**
+ */
+typedef DECLCALLBACKTYPE(void, FNDECODETPM2CC, (PCTPMREQHDR pHdr, size_t cb));
+/** Pointer to an event decode callback. */
+typedef FNDECODETPM2CC *PFNFNDECODETPM2CC;
+
 
 /*********************************************************************************************************************************
 *   Static Variables                                                                                                             *
@@ -53,52 +59,88 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeStartupShutdown(PCTPMREQHDR pHdr, size_t cb)
+{
+    if (cb >= sizeof(uint16_t))
+    {
+        uint16_t u16TpmSu = RT_BE2H_U16(*(const uint16_t *)(pHdr + 1));
+        if (u16TpmSu == TPM2_SU_CLEAR)
+            RTMsgInfo("        TPM2_SU_CLEAR\n");
+        else if (u16TpmSu == TPM2_SU_STATE)
+            RTMsgInfo("        TPM2_SU_STATE\n");
+        else
+            RTMsgInfo("        Unknown: %#x\n", u16TpmSu);
+        return;
+    }
+
+    RTMsgError("Malformed TPM2_CC_STARTUP/TPM2_CC_SHUTDOWN command, not enough room for TPM_SU constant\n");
+}
+
+
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeGetCapability(PCTPMREQHDR pHdr, size_t cb)
+{
+    if (cb >= sizeof(TPM2REQGETCAPABILITY))
+    {
+        PCTPM2REQGETCAPABILITY pReq = (PCTPM2REQGETCAPABILITY)pHdr;
+        RTMsgInfo("        u32Cap:      %#x\n"
+                  "        u32Property: %#x\n"
+                  "        u32Count:    %#x\n",
+                  RT_BE2H_U32(pReq->u32Cap),
+                  RT_BE2H_U32(pReq->u32Property),
+                  RT_BE2H_U32(pReq->u32Count));
+        return;
+    }
+
+    RTMsgError("Malformed TPM2_CC_GET_CAPABILITY command, not enough room for the input\n");
+}
+
+
 static struct
 {
-    uint32_t u32CmdCode;
-    const char *pszCmdCode;
-    const char *pszCmdDesc;
+    uint32_t          u32CmdCode;
+    const char        *pszCmdCode;
+    PFNFNDECODETPM2CC pfnDecode;
 } s_aTpmCmdCodes[] =
 {
 #define TPM_CMD_CODE_INIT(a_CmdCode, a_Desc) { a_CmdCode, #a_CmdCode, a_Desc }
-    TPM_CMD_CODE_INIT(TPM2_CC_NV_UNDEFINE_SPACE_SPECIAL,    NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_EVICT_CONTROL,                NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_HIERARCHY_CONTROL,            NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_NV_UNDEFINE_SPACE,            NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_CHANGE_EPS,                   NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_CHANGE_PPS,                   NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_CLEAR,                        NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_CLEAR_CONTROL,                NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_CLOCK_SET,                    NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_HIERARCHY_CHANGE_AUTH,        NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_NV_DEFINE_SPACE,              NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_PCR_ALLOCATE,                 NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_PCR_SET_AUTH_POLICY,          NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_PP_COMMANDS,                  NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_SET_PRIMARY_POLICY,           NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_FIELD_UPGRADE_START,          NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_CLOCK_RATE_ADJUST,            NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_CREATE_PRIMARY,               NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_NV_GLOBAL_WRITE_LOCK,         NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_GET_COMMAND_AUDIT_DIGEST,     NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_NV_INCREMENT,                 NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_NV_SET_BITS,                  NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_NV_EXTEND,                    NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_NV_WRITE,                     NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_NV_WRITE_LOCK,                NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_DICTIONARY_ATTACK_LOCK_RESET, NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_DICTIONARY_ATTACK_PARAMETERS, NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_NV_CHANGE_AUTH,               NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_PCR_EVENT,                    NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_PCR_RESET,                    NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_SEQUENCE_COMPLETE,            NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_NV_UNDEFINE_SPACE_SPECIAL,        NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_EVICT_CONTROL,                    NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_HIERARCHY_CONTROL,                NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_NV_UNDEFINE_SPACE,                NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_CHANGE_EPS,                       NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_CHANGE_PPS,                       NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_CLEAR,                            NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_CLEAR_CONTROL,                    NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_CLOCK_SET,                        NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_HIERARCHY_CHANGE_AUTH,            NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_NV_DEFINE_SPACE,                  NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_PCR_ALLOCATE,                     NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_PCR_SET_AUTH_POLICY,              NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_PP_COMMANDS,                      NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_SET_PRIMARY_POLICY,               NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_FIELD_UPGRADE_START,              NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_CLOCK_RATE_ADJUST,                NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_CREATE_PRIMARY,                   NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_NV_GLOBAL_WRITE_LOCK,             NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_GET_COMMAND_AUDIT_DIGEST,         NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_NV_INCREMENT,                     NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_NV_SET_BITS,                      NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_NV_EXTEND,                        NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_NV_WRITE,                         NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_NV_WRITE_LOCK,                    NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_DICTIONARY_ATTACK_LOCK_RESET,     NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_DICTIONARY_ATTACK_PARAMETERS,     NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_NV_CHANGE_AUTH,                   NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_PCR_EVENT,                        NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_PCR_RESET,                        NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_SEQUENCE_COMPLETE,                NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_SET_ALGORITHM_SET,                NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_SET_COMMAND_CODE_AUDIT_STATUS,    NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_FIELD_UPGRADE_DATA,               NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_INCREMENTAL_SELF_TEST,            NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_SELF_TEST,                        NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_STARTUP,                          NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_SHUTDOWN,                         NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_STARTUP,                          vboxTraceLogDecodeEvtTpmDecodeStartupShutdown),
+    TPM_CMD_CODE_INIT(TPM2_CC_SHUTDOWN,                         vboxTraceLogDecodeEvtTpmDecodeStartupShutdown),
     TPM_CMD_CODE_INIT(TPM2_CC_STIR_RANDOM,                      NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_ACTIVATE_CREDENTIAL,              NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_CERTIFY,                          NULL),
@@ -147,7 +189,7 @@ static struct
     TPM_CMD_CODE_INIT(TPM2_CC_VERIFY_SIGNATURE,                 NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_ECC_PARAMETERS,                   NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_FIRMWARE_READ,                    NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_GET_CAPABILITY,                   NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_GET_CAPABILITY,                   vboxTraceLogDecodeEvtTpmDecodeGetCapability),
     TPM_CMD_CODE_INIT(TPM2_CC_GET_RANDOM,                       NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_GET_TEST_RESULT,                  NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_GET_HASH,                         NULL),
@@ -199,6 +241,8 @@ static void vboxTraceLogDecodeEvtTpmDecodeCmdBuffer(const uint8_t *pbCmd, size_t
             if (s_aTpmCmdCodes[i].u32CmdCode == u32CmdCode)
             {
                 RTMsgInfo("    %s:\n", s_aTpmCmdCodes[i].pszCmdCode);
+                if (s_aTpmCmdCodes[i].pfnDecode)
+                    s_aTpmCmdCodes[i].pfnDecode(pHdr, RT_BE2H_U32(pHdr->cbReq));
                 return;
             }
         }
