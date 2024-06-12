@@ -47,7 +47,6 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "QIFlowLayout.h"
-#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIDetailsGenerator.h"
@@ -55,6 +54,7 @@
 #include "UIGuestOSType.h"
 #include "UIIconPool.h"
 #include "UISnapshotDetailsWidget.h"
+#include "UIMediumTools.h"
 #include "UIMessageCenter.h"
 #include "UITranslator.h"
 #include "UITranslationEventListener.h"
@@ -1916,7 +1916,7 @@ QPair<QStringList, QList<QMap<QString, QString> > > UISnapshotDetailsWidget::sto
 
             /* Prepare current medium information: */
             const QString strMediumInfo = comAttachment.isOk()
-                                        ? wipeHtmlStuff(uiCommon().storageDetails(comAttachment.GetMedium(), false))
+                                        ? wipeHtmlStuff(UIMediumTools::storageDetails(comAttachment.GetMedium(), false))
                                         : QString();
 
             /* Cache current slot/medium information: */

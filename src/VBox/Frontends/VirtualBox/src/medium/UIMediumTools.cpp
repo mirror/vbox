@@ -42,6 +42,7 @@
 #include "UIMediumTools.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
+#include "UINotificationCenter.h"
 #include "UIVisoCreator.h"
 #include "UIWizardNewVD.h"
 
@@ -50,6 +51,105 @@
 #include "CMedium.h"
 #include "CSession.h"
 #include "CStorageController.h"
+
+
+QString UIMediumTools::storageDetails(const CMedium &comMedium, bool fPredictDiff, bool fUseHtml /* = true */)
+{
+    /* Search for corresponding UI medium: */
+    const QUuid uMediumID = comMedium.isNull() ? UIMedium::nullID() : comMedium.GetId();
+    UIMedium guiMedium = gpMediumEnumerator->medium(uMediumID);
+    if (!comMedium.isNull() && guiMedium.isNull())
+    {
+        /* UI medium may be new and not among cached media, request enumeration: */
+        gpMediumEnumerator->enumerateMedia(CMediumVector() << comMedium);
+
+        /* Search for corresponding UI medium again: */
+        guiMedium = gpMediumEnumerator->medium(uMediumID);
+        if (guiMedium.isNull())
+        {
+            /* Medium might be deleted already, return null string: */
+            return QString();
+        }
+    }
+
+    /* For differencing hard-disk we have to request
+     * enumeration of whole tree based in it's root item: */
+    if (   comMedium.isNotNull()
+        && comMedium.GetDeviceType() == KDeviceType_HardDisk)
+    {
+        /* Traverse through parents to root to catch it: */
+        CMedium comRootMedium;
+        CMedium comParentMedium = comMedium.GetParent();
+        while (comParentMedium.isNotNull())
+        {
+            comRootMedium = comParentMedium;
+            comParentMedium = comParentMedium.GetParent();
+        }
+        /* Enumerate root if it's found and wasn't cached: */
+        if (comRootMedium.isNotNull())
+        {
+            const QUuid uRootId = comRootMedium.GetId();
+            if (gpMediumEnumerator->medium(uRootId).isNull())
+                gpMediumEnumerator->enumerateMedia(CMediumVector() << comRootMedium);
+        }
+    }
+
+    /* Return UI medium details: */
+    return fUseHtml ? guiMedium.detailsHTML(true /* no diffs? */, fPredictDiff) :
+                      guiMedium.details(true /* no diffs? */, fPredictDiff);
+}
+
+bool UIMediumTools::acquireAmountOfImmutableImages(const CMachine &comMachine, ulong &cAmount)
+{
+    /* Acquire state: */
+    ulong cAmountOfImmutableImages = 0;
+    const KMachineState enmState = comMachine.GetState();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        /// @todo Who knows why 13 years ago this condition was added ..
+        if (enmState == KMachineState_Paused)
+        {
+            const CMediumAttachmentVector comAttachments = comMachine.GetMediumAttachments();
+            fSuccess = comMachine.isOk();
+            if (!fSuccess)
+                UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+            else
+            {
+                /* Calculate the amount of immutable attachments: */
+                foreach (const CMediumAttachment &comAttachment, comAttachments)
+                {
+                    /* Get the medium: */
+                    const CMedium comMedium = comAttachment.GetMedium();
+                    if (   comMedium.isNull() /* Null medium is valid case as well */
+                        || comMedium.GetParent().isNull() /* Null parent is valid case as well */)
+                        continue;
+                    /* Get the base medium: */
+                    const CMedium comBaseMedium = comMedium.GetBase();
+                    fSuccess = comMedium.isOk();
+                    if (!fSuccess)
+                        UINotificationMessage::cannotAcquireMediumParameter(comMedium);
+                    else
+                    {
+                        const KMediumType enmType = comBaseMedium.GetType();
+                        fSuccess = comBaseMedium.isOk();
+                        if (!fSuccess)
+                            UINotificationMessage::cannotAcquireMediumParameter(comBaseMedium);
+                        else if (enmType == KMediumType_Immutable)
+                            ++cAmountOfImmutableImages;
+                    }
+                    if (!fSuccess)
+                        break;
+                }
+            }
+        }
+    }
+    if (fSuccess)
+        cAmount = cAmountOfImmutableImages;
+    return fSuccess;
+}
 
 QUuid UIMediumTools::openMedium(UIMediumDeviceType enmMediumType,
                                 const QString &strMediumLocation,

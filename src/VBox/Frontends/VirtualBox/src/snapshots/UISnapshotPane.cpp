@@ -50,6 +50,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UILoggingDefs.h"
+#include "UIMediumTools.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINotificationCenter.h"
@@ -1685,7 +1686,7 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
     {
         /* First of all, we should calculate amount of immutable images: */
         ulong cAmountOfImmutableMediums = 0;
-        UICommon::acquireAmountOfImmutableImages(comMachine, cAmountOfImmutableMediums);
+        UIMediumTools::acquireAmountOfImmutableImages(comMachine, cAmountOfImmutableMediums);
 
         /* Create take-snapshot dialog: */
         QWidget *pDlgParent = windowManager().realParentWindow(this);

@@ -39,6 +39,7 @@
 #include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
 #include "UIMedium.h"
+#include "UIMediumTools.h"
 #include "UITranslator.h"
 
 /* COM includes: */
@@ -602,7 +603,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
                 continue;
 
             /* Prepare attachment information: */
-            QString strAttachmentInfo = uiCommon().storageDetails(attachment.GetMedium(), false, false);
+            QString strAttachmentInfo = UIMediumTools::storageDetails(attachment.GetMedium(), false, false);
             /* That hack makes sure 'Inaccessible' word is always bold: */
             { // hack
                 const QString strInaccessibleString(UICommon::tr("Inaccessible", "medium"));

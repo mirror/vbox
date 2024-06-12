@@ -297,17 +297,6 @@ public:
                                           const CCloudMachine &comMachine);
     /** @} */
 
-    /** @name COM: Virtual Media stuff.
-     * @{ */
-        /** Generates details for passed @a comMedium.
-          * @param  fPredictDiff  Brings whether medium will be marked differencing on attaching.
-          * @param  fUseHtml      Brings whether HTML subsets should be used in the generated output. */
-        QString storageDetails(const CMedium &comMedium, bool fPredictDiff, bool fUseHtml = true);
-
-        /** Calculates @a cAmount of immutable images used by @a comMachine specified. */
-        static bool acquireAmountOfImmutableImages(const CMachine &comMachine, ulong &cAmount);
-    /** @} */
-
     /** @name COM: USB stuff.
      * @{ */
 #ifdef RT_OS_LINUX

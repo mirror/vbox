@@ -887,7 +887,7 @@ bool UISession::addEncryptionPassword(const QString &strId, const QString &strPa
 bool UISession::acquireAmountOfImmutableImages(ulong &cAmount)
 {
     CMachine comMachine = machine();
-    return UICommon::acquireAmountOfImmutableImages(comMachine, cAmount);
+    return UIMediumTools::acquireAmountOfImmutableImages(comMachine, cAmount);
 }
 
 bool UISession::mountBootMedium(const QUuid &uMediumId)
