@@ -39,17 +39,34 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/tracelog.h>
+#include <iprt/tracelog-decoder-plugin.h>
 
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
+#include <iprt/ldr.h>
 #include <iprt/message.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/tcp.h>
+
+
+/**
+ * Loaded tracelog decoders.
+ */
+typedef struct RTTRACELOGDECODERS
+{
+    /** Pointer to the array of registered decoders. */
+    PRTTRACELOGDECODERDECODEEVENT paDecodeEvts;
+    /** Number of entries in the decoder array. */
+    uint32_t                      cDecoders;
+    /** Allocation size of the decoder array. */
+    uint32_t                      cDecodersAlloc;
+} RTTRACELOGDECODERS;
+typedef RTTRACELOGDECODERS *PRTTRACELOGDECODERS;
 
 
 /**
@@ -173,6 +190,27 @@ static int rtTraceLogToolReaderCreate(PRTTRACELOGRDR phTraceLogRdr, const char *
 }
 
 
+static DECLCALLBACK(int) rtTraceLogToolRegisterDecoders(void *pvUser, PCRTTRACELOGDECODERDECODEEVENT paDecoders, uint32_t cDecoders)
+{
+    PRTTRACELOGDECODERS pDecoderState = (PRTTRACELOGDECODERS)pvUser;
+
+    if (pDecoderState->cDecodersAlloc - pDecoderState->cDecoders <= cDecoders)
+    {
+        PRTTRACELOGDECODERDECODEEVENT paNew = (PRTTRACELOGDECODERDECODEEVENT)RTMemRealloc(pDecoderState->paDecodeEvts,
+                                                                                          (pDecoderState->cDecodersAlloc + cDecoders) * sizeof(*paDecoders));
+        if (!paNew)
+            return VERR_NO_MEMORY;
+
+        pDecoderState->paDecodeEvts    = paNew;
+        pDecoderState->cDecodersAlloc += cDecoders;
+    }
+
+    memcpy(&pDecoderState->paDecodeEvts[pDecoderState->cDecoders], paDecoders, cDecoders * sizeof(*paDecoders));
+    pDecoderState->cDecoders += cDecoders;
+    return VINF_SUCCESS;
+}
+
+
 int main(int argc, char **argv)
 {
     int rc = RTR3InitExe(argc, &argv, 0);
@@ -184,15 +222,17 @@ int main(int argc, char **argv)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--input",    'i', RTGETOPT_REQ_STRING },
-        { "--save",     's', RTGETOPT_REQ_STRING },
-        { "--help",     'h', RTGETOPT_REQ_NOTHING },
-        { "--version",  'V', RTGETOPT_REQ_NOTHING },
+        { "--input",        'i', RTGETOPT_REQ_STRING },
+        { "--save",         's', RTGETOPT_REQ_STRING },
+        { "--load-decoder", 'l', RTGETOPT_REQ_STRING },
+        { "--help",         'h', RTGETOPT_REQ_NOTHING },
+        { "--version",      'V', RTGETOPT_REQ_NOTHING },
     };
 
-    RTEXITCODE      rcExit   = RTEXITCODE_SUCCESS;
-    const char     *pszInput = NULL;
-    const char     *pszSave  = NULL;
+    RTEXITCODE          rcExit   = RTEXITCODE_SUCCESS;
+    const char         *pszInput = NULL;
+    const char         *pszSave  = NULL;
+    RTTRACELOGDECODERS  Decoders; RT_ZERO(Decoders);
 
     RTGETOPTUNION   ValueUnion;
     RTGETOPTSTATE   GetState;
@@ -209,6 +249,8 @@ int main(int argc, char **argv)
                          "      Input path, can be a file a port to start listening on for incoming connections or an address:port to connect to\n"
                          "  -s,--save=file\n"
                          "      Save the input to a file for later use\n"
+                         "  -l,--load-decoder=<plugin path>\n"
+                         "      Loads the given decoder library used for decoding events\n"
                          "  -h, -?, --help\n"
                          "      Display this help text and exit successfully.\n"
                          "  -V, --version\n"
@@ -225,6 +267,35 @@ int main(int argc, char **argv)
             case 's':
                 pszSave = ValueUnion.psz;
                 break;
+            case 'l':
+            {
+                RTLDRMOD hLdrMod;
+                rc = RTLdrLoadEx(ValueUnion.psz, &hLdrMod, RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    PFNTRACELOGDECODERPLUGINLOAD pfnLoad = NULL;
+                    rc = RTLdrGetSymbol(hLdrMod, RT_TRACELOG_DECODER_PLUGIN_LOAD, (void **)&pfnLoad);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTTRACELOGDECODERREGISTER RegCb;
+
+                        RegCb.u32Version          = RT_TRACELOG_DECODERREG_CB_VERSION;
+                        RegCb.pfnRegisterDecoders = rtTraceLogToolRegisterDecoders;
+
+                        rc = pfnLoad(&Decoders, &RegCb);
+                        if (RT_FAILURE(rc))
+                            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to register decoders %Rrc\n", rc);
+                    }
+                    else
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to lretrieve entry point '%s' %Rrc\n",
+                                              RT_TRACELOG_DECODER_PLUGIN_LOAD, rc);
+
+                    RTLdrClose(hLdrMod);
+                }
+                else
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to load decoder library %Rrc\n", rc);
+                break;
+            }
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
         }
@@ -265,63 +336,95 @@ int main(int argc, char **argv)
                                       RTTraceLogRdrEvtGetSeqNo(hTraceLogEvt),
                                       RTTraceLogRdrEvtGetTs(hTraceLogEvt),
                                       pEvtDesc->pszId);
-                            for (unsigned i = 0; i < pEvtDesc->cEvtItems; i++)
-                            {
-                                RTTRACELOGEVTVAL Val;
-                                unsigned cVals = 0;
-                                rc = RTTraceLogRdrEvtFillVals(hTraceLogEvt, i, &Val, 1, &cVals);
-                                if (RT_SUCCESS(rc))
+
+                            /*
+                             * Look through our registered decoders and pass the decoding on to it.
+                             * If there is no decoder registered just dump the raw values.
+                             */
+                            PCRTTRACELOGDECODERDECODEEVENT pDecodeEvt = NULL;
+                            for (uint32_t i = 0; i < Decoders.cDecoders; i++)
+                                if (!strcmp(Decoders.paDecodeEvts[i].pszId, pEvtDesc->pszId))
                                 {
-                                    switch (Val.pItemDesc->enmType)
-                                    {
-                                        case RTTRACELOGTYPE_BOOL:
-                                            RTMsgInfo("    %s: %s\n", Val.pItemDesc->pszName, Val.u.f ? "true" : "false");
-                                            break;
-                                        case RTTRACELOGTYPE_UINT8:
-                                            RTMsgInfo("    %s: %u\n", Val.pItemDesc->pszName, Val.u.u8);
-                                            break;
-                                        case RTTRACELOGTYPE_INT8:
-                                            RTMsgInfo("    %s: %d\n", Val.pItemDesc->pszName, Val.u.i8);
-                                            break;
-                                        case RTTRACELOGTYPE_UINT16:
-                                            RTMsgInfo("    %s: %u\n", Val.pItemDesc->pszName, Val.u.u16);
-                                            break;
-                                        case RTTRACELOGTYPE_INT16:
-                                            RTMsgInfo("    %s: %d\n", Val.pItemDesc->pszName, Val.u.i16);
-                                            break;
-                                        case RTTRACELOGTYPE_UINT32:
-                                            RTMsgInfo("    %s: %u\n", Val.pItemDesc->pszName, Val.u.u32);
-                                            break;
-                                        case RTTRACELOGTYPE_INT32:
-                                            RTMsgInfo("    %s: %d\n", Val.pItemDesc->pszName, Val.u.i32);
-                                            break;
-                                        case RTTRACELOGTYPE_UINT64:
-                                            RTMsgInfo("    %s: %llu\n", Val.pItemDesc->pszName, Val.u.u64);
-                                            break;
-                                        case RTTRACELOGTYPE_INT64:
-                                            RTMsgInfo("    %s: %lld\n", Val.pItemDesc->pszName, Val.u.i64);
-                                            break;
-                                        case RTTRACELOGTYPE_RAWDATA:
-                                            RTMsgInfo("    %s:\n"
-                                                      "%.*Rhxd\n", Val.pItemDesc->pszName, Val.u.RawData.cb, Val.u.RawData.pb);
-                                            break;
-                                        case RTTRACELOGTYPE_FLOAT32:
-                                        case RTTRACELOGTYPE_FLOAT64:
-                                            RTMsgInfo("    %s: Float32 and Float64 data not supported yet\n", Val.pItemDesc->pszName);
-                                            break;
-                                        case RTTRACELOGTYPE_POINTER:
-                                            RTMsgInfo("    %s: %#llx\n", Val.pItemDesc->pszName, Val.u.uPtr);
-                                            break;
-                                        case RTTRACELOGTYPE_SIZE:
-                                            RTMsgInfo("    %s: %llu\n", Val.pItemDesc->pszName, Val.u.sz);
-                                            break;
-                                        default:
-                                            RTMsgError("    %s: Invalid type given %d\n", Val.pItemDesc->pszName, Val.pItemDesc->enmType);
-                                    }
+                                    pDecodeEvt = &Decoders.paDecodeEvts[i];
+                                    break;
+                                }
+
+                            if (pDecodeEvt)
+                            {
+                                /** @todo Dynamic value allocation (too lazy right now). */
+                                RTTRACELOGEVTVAL aVals[32];
+                                uint32_t cVals = 0;
+                                rc = RTTraceLogRdrEvtFillVals(hTraceLogEvt, 0, &aVals[0], RT_ELEMENTS(aVals),
+                                                              &cVals);
+                                if (   RT_SUCCESS(rc)
+                                    || cVals != pEvtDesc->cEvtItems)
+                                {
+                                    rc = pDecodeEvt->pfnDecode(hTraceLogEvt, pEvtDesc, &aVals[0], cVals);
+                                    if (RT_FAILURE(rc))
+                                        RTMsgError("Failed to decode event with ID '%s' -> %Rrc\n", pEvtDesc->pszId, rc);
                                 }
                                 else
-                                    RTMsgInfo("    Failed to retrieve event data with %Rrc\n", rc);
+                                    RTMsgError("Failed to fill values for event with ID '%s' -> %Rrc (cVals=%u vs. cEvtItems=%u)\n",
+                                               pEvtDesc->pszId, rc, cVals, pEvtDesc->cEvtItems);
                             }
+                            else
+                                for (unsigned i = 0; i < pEvtDesc->cEvtItems; i++)
+                                {
+                                    RTTRACELOGEVTVAL Val;
+                                    unsigned cVals = 0;
+                                    rc = RTTraceLogRdrEvtFillVals(hTraceLogEvt, i, &Val, 1, &cVals);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        switch (Val.pItemDesc->enmType)
+                                        {
+                                            case RTTRACELOGTYPE_BOOL:
+                                                RTMsgInfo("    %s: %s\n", Val.pItemDesc->pszName, Val.u.f ? "true" : "false");
+                                                break;
+                                            case RTTRACELOGTYPE_UINT8:
+                                                RTMsgInfo("    %s: %u\n", Val.pItemDesc->pszName, Val.u.u8);
+                                                break;
+                                            case RTTRACELOGTYPE_INT8:
+                                                RTMsgInfo("    %s: %d\n", Val.pItemDesc->pszName, Val.u.i8);
+                                                break;
+                                            case RTTRACELOGTYPE_UINT16:
+                                                RTMsgInfo("    %s: %u\n", Val.pItemDesc->pszName, Val.u.u16);
+                                                break;
+                                            case RTTRACELOGTYPE_INT16:
+                                                RTMsgInfo("    %s: %d\n", Val.pItemDesc->pszName, Val.u.i16);
+                                                break;
+                                            case RTTRACELOGTYPE_UINT32:
+                                                RTMsgInfo("    %s: %u\n", Val.pItemDesc->pszName, Val.u.u32);
+                                                break;
+                                            case RTTRACELOGTYPE_INT32:
+                                                RTMsgInfo("    %s: %d\n", Val.pItemDesc->pszName, Val.u.i32);
+                                                break;
+                                            case RTTRACELOGTYPE_UINT64:
+                                                RTMsgInfo("    %s: %llu\n", Val.pItemDesc->pszName, Val.u.u64);
+                                                break;
+                                            case RTTRACELOGTYPE_INT64:
+                                                RTMsgInfo("    %s: %lld\n", Val.pItemDesc->pszName, Val.u.i64);
+                                                break;
+                                            case RTTRACELOGTYPE_RAWDATA:
+                                                RTMsgInfo("    %s:\n"
+                                                          "%.*Rhxd\n", Val.pItemDesc->pszName, Val.u.RawData.cb, Val.u.RawData.pb);
+                                                break;
+                                            case RTTRACELOGTYPE_FLOAT32:
+                                            case RTTRACELOGTYPE_FLOAT64:
+                                                RTMsgInfo("    %s: Float32 and Float64 data not supported yet\n", Val.pItemDesc->pszName);
+                                                break;
+                                            case RTTRACELOGTYPE_POINTER:
+                                                RTMsgInfo("    %s: %#llx\n", Val.pItemDesc->pszName, Val.u.uPtr);
+                                                break;
+                                            case RTTRACELOGTYPE_SIZE:
+                                                RTMsgInfo("    %s: %llu\n", Val.pItemDesc->pszName, Val.u.sz);
+                                                break;
+                                            default:
+                                                RTMsgError("    %s: Invalid type given %d\n", Val.pItemDesc->pszName, Val.pItemDesc->enmType);
+                                        }
+                                    }
+                                    else
+                                        RTMsgInfo("    Failed to retrieve event data with %Rrc\n", rc);
+                                }
                         }
                         break;
                     }
