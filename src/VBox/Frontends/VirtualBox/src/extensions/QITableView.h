@@ -50,9 +50,9 @@ class SHARED_LIBRARY_STUFF QITableViewCell : public QObject
 
 public:
 
-    /** Constructs table-view cell for passed @a pParent. */
-    QITableViewCell(QITableViewRow *pParent)
-        : m_pRow(pParent)
+    /** Constructs table-view cell for passed @a pParentRow. */
+    QITableViewCell(QITableViewRow *pParentRow)
+        : m_pRow(pParentRow)
     {}
 
     /** Defines the parent @a pRow reference. */
@@ -77,9 +77,9 @@ class SHARED_LIBRARY_STUFF QITableViewRow : public QObject
 
 public:
 
-    /** Constructs table-view row for passed @a pParent. */
-    QITableViewRow(QITableView *pParent)
-        : m_pTable(pParent)
+    /** Constructs table-view row for passed @a pParentTable. */
+    QITableViewRow(QITableView *pParentTable)
+        : m_pTable(pParentTable)
     {}
 
     /** Defines the parent @a pTable reference. */
