@@ -60,6 +60,11 @@ static DECLCALLBACK(void *) drvIfTraceIBase_QueryInterface(PPDMIBASE pInterface,
     if (pThis->pISerialPortAbove)
         PDMIBASE_RETURN_INTERFACE(pszIID, PDMISERIALPORT, &pThis->ISerialPort);
 
+    if (pThis->pITpmConBelow)
+        PDMIBASE_RETURN_INTERFACE(pszIID, PDMITPMCONNECTOR, &pThis->ITpmConnector);
+    if (pThis->pITpmPortAbove)
+        PDMIBASE_RETURN_INTERFACE(pszIID, PDMITPMPORT, &pThis->ITpmPort);
+
     return NULL;
 }
 
@@ -115,6 +120,7 @@ static DECLCALLBACK(int) drvIfTrace_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pDrvIns->IBase.pfnQueryInterface             = drvIfTraceIBase_QueryInterface;
 
     drvIfsTrace_SerialIfInit(pThis);
+    drvIfsTrace_TpmIfInit(pThis);
 
     /*
      * Validate and read config.
@@ -132,6 +138,7 @@ static DECLCALLBACK(int) drvIfTrace_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Query interfaces from the driver/device above us.
      */
     pThis->pISerialPortAbove = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISERIALPORT);
+    pThis->pITpmPortAbove    = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMITPMPORT);
 
     /*
      * Attach driver below us.
@@ -141,6 +148,7 @@ static DECLCALLBACK(int) drvIfTrace_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     AssertLogRelRCReturn(rc, rc);
 
     pThis->pISerialConBelow = PDMIBASE_QUERY_INTERFACE(pIBaseBelow, PDMISERIALCONNECTOR);
+    pThis->pITpmConBelow    = PDMIBASE_QUERY_INTERFACE(pIBaseBelow, PDMITPMCONNECTOR);
 
     return VINF_SUCCESS;
 }
