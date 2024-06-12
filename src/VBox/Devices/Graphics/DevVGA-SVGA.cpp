@@ -6767,13 +6767,13 @@ static void vmsvgaR3InitFIFO(PVGASTATE pThis, PVGASTATECC pThisCC)
 
 # ifdef VBOX_WITH_VMSVGA3D
 /**
- * Initializes the host 3D capabilities and writes them to FIFO memory.
+ * Initializes the host 3D capabilities (pThis->svga.au32DevCaps).
  *
  * @returns VBox status code.
  * @param   pThis     The shared VGA/VMSVGA instance data.
  * @param   pThisCC   The VGA/VMSVGA state for ring-3.
  */
-static void vmsvgaR3InitFifo3DCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
+static void vmsvgaR3Init3DCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     /* Query the capabilities and store them in the pThis->svga.au32DevCaps array. */
     bool const fSavedBuffering = RTLogRelSetBuffering(true);
@@ -6819,7 +6819,19 @@ static void vmsvgaR3InitFifo3DCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
     }
 
     RTLogRelSetBuffering(fSavedBuffering);
+}
 
+
+/**
+ * Write the host 3D capabilities to FIFO memory.
+ * Must be called after vmsvgaR3Init3DCaps.
+ *
+ * @returns VBox status code.
+ * @param   pThis     The shared VGA/VMSVGA instance data.
+ * @param   pThisCC   The VGA/VMSVGA state for ring-3.
+ */
+static void vmsvgaR3InitFIFO3D(PVGASTATE pThis, PVGASTATECC pThisCC)
+{
     /* 3d hardware version; latest and greatest */
     pThisCC->svga.pau32FIFO[SVGA_FIFO_3D_HWVERSION_REVISED] = SVGA3D_HWVERSION_CURRENT;
     pThisCC->svga.pau32FIFO[SVGA_FIFO_3D_HWVERSION]         = SVGA3D_HWVERSION_CURRENT;
@@ -6848,8 +6860,7 @@ static void vmsvgaR3InitFifo3DCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
     /* Mark end of record array (a zero word). */
     pCaps->header.length = 0;
 }
-
-# endif
+# endif /* VBOX_WITH_VMSVGA3D */
 
 /**
  * Resets the SVGA hardware state
@@ -6901,9 +6912,12 @@ int vmsvgaR3Reset(PPDMDEVINS pDevIns)
     vmsvgaR3GetCaps(pThis, pThisCC, &pThis->svga.u32DeviceCaps, &pThis->svga.u32DeviceCaps2, &pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
 
 # ifdef VBOX_WITH_VMSVGA3D
-    if (   pThis->svga.f3DEnabled
-        && !pThis->fVmSvga3)
-        vmsvgaR3InitFifo3DCaps(pThis, pThisCC);
+    if (pThis->svga.f3DEnabled)
+    {
+        vmsvgaR3Init3DCaps(pThis, pThisCC);
+        if (!pThis->fVmSvga3)
+            vmsvgaR3InitFIFO3D(pThis, pThisCC);
+    }
 # endif
 
     /* VRAM tracking is enabled by default during bootup. */
@@ -7377,15 +7391,16 @@ static void vmsvgaR3PowerOnDevice(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATE
 #endif
 
 # ifdef VBOX_WITH_VMSVGA3D
-    if (   pThis->svga.f3DEnabled
-        && !pThis->fVmSvga3)
+    if (pThis->svga.f3DEnabled)
     {
         PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
         int rc = pSVGAState->pFuncs3D->pfnPowerOn(pDevIns, pThis, pThisCC);
         if (RT_SUCCESS(rc))
         {
-            /* Initialize FIFO 3D capabilities. */
-            vmsvgaR3InitFifo3DCaps(pThis, pThisCC);
+            /* Initialize 3D capabilities. */
+            vmsvgaR3Init3DCaps(pThis, pThisCC);
+            if (!pThis->fVmSvga3)
+                vmsvgaR3InitFIFO3D(pThis, pThisCC);
         }
         else
         {
