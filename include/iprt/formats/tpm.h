@@ -405,6 +405,12 @@ typedef const TPMREQGETCAPABILITY *PCTPMREQGETCAPABILITY;
 /** @} */
 
 
+/** @name Defines related to TPM2_CC_STARTUP
+ * @{ */
+#define TPM2_SU_CLEAR                       UINT16_C(0x0000)
+#define TPM2_SU_STATE                       UINT16_C(0x0001)
+/** @} */
+
 /** @name Defines related to TPM2_CC_GET_CAPABILITY.
  * @{ */
 /** Return a TPM related property. */
