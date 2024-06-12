@@ -113,6 +113,9 @@ private:
 UIMediumEnumerator *UIMediumEnumerator::s_pInstance = 0;
 
 /* static */
+QReadWriteLock UIMediumEnumerator::s_guiCleanupProtectionToken = QReadWriteLock();
+
+/* static */
 void UIMediumEnumerator::create()
 {
     AssertReturnVoid(!s_pInstance);
@@ -123,8 +126,11 @@ void UIMediumEnumerator::create()
 void UIMediumEnumerator::destroy()
 {
     AssertPtrReturnVoid(s_pInstance);
+
+    s_guiCleanupProtectionToken.lockForWrite();
     delete s_pInstance;
     s_pInstance = 0;
+    s_guiCleanupProtectionToken.unlock();
 }
 
 /* static */
@@ -184,27 +190,75 @@ UIMediumEnumerator::UIMediumEnumerator()
 
 QList<QUuid> UIMediumEnumerator::mediumIDs() const
 {
-    return mediumIDsSub();
+    /* Redirect request to subroutine under proper lock: */
+    if (s_guiCleanupProtectionToken.tryLockForRead())
+    {
+        const QList<QUuid> mediaList = mediumIDsSub();
+        s_guiCleanupProtectionToken.unlock();
+        return mediaList;
+    }
+    return QList<QUuid>();
 }
 
 UIMedium UIMediumEnumerator::medium(const QUuid &uMediumID) const
 {
-    return mediumSub(uMediumID);
+    /* Redirect request to subroutine under proper lock: */
+    if (s_guiCleanupProtectionToken.tryLockForRead())
+    {
+        const UIMedium guiMedium = mediumSub(uMediumID);
+        s_guiCleanupProtectionToken.unlock();
+        return guiMedium;
+    }
+    return UIMedium();
 }
 
 void UIMediumEnumerator::createMedium(const UIMedium &guiMedium)
 {
-    createMediumSub(guiMedium);
+    /* Redirect request to subroutine under proper lock: */
+    if (s_guiCleanupProtectionToken.tryLockForRead())
+    {
+        createMediumSub(guiMedium);
+        s_guiCleanupProtectionToken.unlock();
+    }
 }
 
 void UIMediumEnumerator::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)
 {
-    enumerateMediaSub(comMedia);
+    /* Make sure UICommon is already valid: */
+    AssertReturnVoid(uiCommon().isValid());
+    /* Ignore the request during UICommon cleanup: */
+    if (uiCommon().isCleaningUp())
+        return;
+    /* Ignore the request during startup snapshot restoring: */
+    if (uiCommon().shouldRestoreCurrentSnapshot())
+        return;
+
+    /* Redirect request to subroutine under proper lock: */
+    if (s_guiCleanupProtectionToken.tryLockForRead())
+    {
+        enumerateMediaSub(comMedia);
+        s_guiCleanupProtectionToken.unlock();
+    }
 }
 
 void UIMediumEnumerator::refreshMedia()
 {
-    refreshMediaSub();
+    /* Make sure UICommon is already valid: */
+    AssertReturnVoid(uiCommon().isValid());
+    /* Ignore the request during UICommon cleanup: */
+    if (uiCommon().isCleaningUp())
+        return;
+    /* Ignore the request during startup snapshot restoring: */
+    if (uiCommon().shouldRestoreCurrentSnapshot())
+        return;
+
+    /* Make sure enumeration is not already started: */
+    if (isMediumEnumerationInProgress())
+        return;
+
+    /* We assume it's safe to call it without locking,
+     * since we are performing blocking operation here. */
+    gpMediumEnumerator->refreshMediaSub();
 }
 
 void UIMediumEnumerator::sltRetranslateUI()

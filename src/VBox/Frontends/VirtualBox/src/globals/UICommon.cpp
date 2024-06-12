@@ -794,14 +794,8 @@ void UICommon::cleanup()
     deletePidfile();
 #endif /* VBOX_GUI_WITH_PIDFILE */
 
-    /* Starting medium-enumerator cleanup: */
-    m_meCleanupProtectionToken.lockForWrite();
-    {
-        /* Destroy medium-enumerator: */
-        UIMediumEnumerator::destroy();
-    }
-    /* Finishing medium-enumerator cleanup: */
-    m_meCleanupProtectionToken.unlock();
+    /* Destroy medium-enumerator: */
+    UIMediumEnumerator::destroy();
 
     /* Destroy the global (VirtualBox and VirtualBoxClient) Main event
      * handlers which are used in both Manager and Runtime UIs. */
@@ -1482,49 +1476,16 @@ void UICommon::notifyCloudMachineRegistered(const QString &strProviderShortName,
 
 void UICommon::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)
 {
-    /* Make sure UICommon is already valid: */
-    AssertReturnVoid(m_fValid);
-    /* Ignore the request during UICommon cleanup: */
-    if (m_fCleaningUp)
-        return;
-    /* Ignore the request during startup snapshot restoring: */
-    if (shouldRestoreCurrentSnapshot())
-        return;
-
-    /* Make sure medium-enumerator is already created: */
-    if (!UIMediumEnumerator::exists())
-        return;
-
-    /* Redirect request to medium-enumerator under proper lock: */
-    if (m_meCleanupProtectionToken.tryLockForRead())
-    {
-        if (UIMediumEnumerator::exists())
-            gpMediumEnumerator->enumerateMedia(comMedia);
-        m_meCleanupProtectionToken.unlock();
-    }
+    /* Redirect request to medium-enumerator: */
+    if (UIMediumEnumerator::exists())
+        gpMediumEnumerator->enumerateMedia(comMedia);
 }
 
 void UICommon::refreshMedia()
 {
-    /* Make sure UICommon is already valid: */
-    AssertReturnVoid(m_fValid);
-    /* Ignore the request during UICommon cleanup: */
-    if (m_fCleaningUp)
-        return;
-    /* Ignore the request during startup snapshot restoring: */
-    if (shouldRestoreCurrentSnapshot())
-        return;
-
-    /* Make sure medium-enumerator is already created: */
-    if (!UIMediumEnumerator::exists())
-        return;
-    /* Make sure enumeration is not already started: */
-    if (gpMediumEnumerator->isMediumEnumerationInProgress())
-        return;
-
-    /* We assume it's safe to call it without locking,
-     * since we are performing blocking operation here. */
-    gpMediumEnumerator->refreshMedia();
+    /* Redirect request to medium-enumerator: */
+    if (UIMediumEnumerator::exists())
+        gpMediumEnumerator->refreshMedia();
 }
 
 bool UICommon::isFullMediumEnumerationRequested() const
@@ -1543,41 +1504,25 @@ bool UICommon::isMediumEnumerationInProgress() const
 
 UIMedium UICommon::medium(const QUuid &uMediumID) const
 {
-    if (m_meCleanupProtectionToken.tryLockForRead())
-    {
-        /* Redirect call to medium-enumerator: */
-        UIMedium guiMedium;
-        if (UIMediumEnumerator::exists())
-            guiMedium = gpMediumEnumerator->medium(uMediumID);
-        m_meCleanupProtectionToken.unlock();
-        return guiMedium;
-    }
-    return UIMedium();
+    /* Redirect request to medium-enumerator: */
+    return   UIMediumEnumerator::exists()
+           ? gpMediumEnumerator->medium(uMediumID)
+           : UIMedium();
 }
 
 QList<QUuid> UICommon::mediumIDs() const
 {
-    if (m_meCleanupProtectionToken.tryLockForRead())
-    {
-        /* Redirect call to medium-enumerator: */
-        QList<QUuid> listOfMedia;
-        if (UIMediumEnumerator::exists())
-            listOfMedia = gpMediumEnumerator->mediumIDs();
-        m_meCleanupProtectionToken.unlock();
-        return listOfMedia;
-    }
-    return QList<QUuid>();
+    /* Redirect request to medium-enumerator: */
+    return   UIMediumEnumerator::exists()
+           ? gpMediumEnumerator->mediumIDs()
+           : QList<QUuid>();
 }
 
 void UICommon::createMedium(const UIMedium &guiMedium)
 {
-    if (m_meCleanupProtectionToken.tryLockForRead())
-    {
-        /* Create medium in medium-enumerator: */
-        if (UIMediumEnumerator::exists())
-            gpMediumEnumerator->createMedium(guiMedium);
-        m_meCleanupProtectionToken.unlock();
-    }
+    /* Redirect request to medium-enumerator: */
+    if (UIMediumEnumerator::exists())
+        gpMediumEnumerator->createMedium(guiMedium);
 }
 
 QUuid UICommon::openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent /* = 0 */)

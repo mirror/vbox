@@ -33,7 +33,6 @@
 
 /* Qt includes: */
 #include <QObject>
-#include <QReadWriteLock>
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -664,9 +663,6 @@ private:
 
     /** @name Media related stuff.
      * @{ */
-        /** Holds the medium enumerator cleanup protection token. */
-        mutable QReadWriteLock  m_meCleanupProtectionToken;
-
         /** List of medium names that should not appears in the recently used media extra data. */
         QStringList  m_recentMediaExcludeList;
     /** @} */

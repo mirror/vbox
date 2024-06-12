@@ -33,6 +33,7 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QReadWriteLock>
 #include <QSet>
 
 /* GUI includes: */
@@ -183,6 +184,8 @@ private:
 
     /** Returns singleton instance. */
     static UIMediumEnumerator *s_pInstance;
+    /** Holds the cleanup protection token. */
+    static QReadWriteLock      s_guiCleanupProtectionToken;
 
     /** Holds whether full consolidated medium-enumeration process is requested. */
     bool  m_fFullMediumEnumerationRequested;
