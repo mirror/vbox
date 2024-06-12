@@ -160,5 +160,11 @@ echo *** Running: "@@VBOX_INSERT_POST_INSTALL_COMMAND@@" >> %MY_LOG_FILE%
 @@VBOX_INSERT_POST_INSTALL_COMMAND@@
 @@VBOX_COND_END@@
 
+rem
+rem Eject/rename no longer needed unattended install configuration and media.
+rem
+if exist a:\autounattend.xml ren a:\autounattend.xml autounattend-disabled.xml
+rem rem @todo eject DVD install media
+
 echo *** done >> %MY_LOG_FILE%
 
