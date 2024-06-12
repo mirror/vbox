@@ -38,6 +38,7 @@
 #include "UIGlobalSession.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
+#include "UIMediumEnumerator.h"
 #include "UINameAndSystemEditor.h"
 #include "UINotificationCenter.h"
 #include "UIToolBox.h"
@@ -629,7 +630,7 @@ bool UIWizardNewVMExpertPage::isComplete() const
         }
     }
 
-    if (pWizard->diskSource() == SelectedDiskSource_Existing && uiCommon().medium(m_pDiskSelector->id()).isNull())
+    if (pWizard->diskSource() == SelectedDiskSource_Existing && gpMediumEnumerator->medium(m_pDiskSelector->id()).isNull())
     {
         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
                                      UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));

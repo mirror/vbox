@@ -29,11 +29,11 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIMachineSettingsStorage.h"
 #include "UIMedium.h"
+#include "UIMediumEnumerator.h"
 #include "UIStorageSettingsEditor.h"
 
 /* COM includes: */
@@ -397,14 +397,14 @@ bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
             const QString strKey = attachment.m_uMediumId.toString();
             const QString strValue = QString("%1 (%2)").arg(strControllerName, gpConverter->toString(guiAttachmentSlot));
             /* Check for emptiness: */
-            if (uiCommon().medium(QUuid(strKey)).isNull() && enmDeviceType == KDeviceType_HardDisk)
+            if (gpMediumEnumerator->medium(QUuid(strKey)).isNull() && enmDeviceType == KDeviceType_HardDisk)
             {
                 message.second << tr("No hard disk is selected for <i>%1</i>.")
                                      .arg(strValue);
                 fPass = false;
             }
             /* Check for coincidence: */
-            if (!uiCommon().medium(QUuid(strKey)).isNull() && config.contains(strKey) && enmDeviceType != KDeviceType_DVD)
+            if (!gpMediumEnumerator->medium(QUuid(strKey)).isNull() && config.contains(strKey) && enmDeviceType != KDeviceType_DVD)
             {
                 message.second << tr("<i>%1</i> is using a disk that is already attached to <i>%2</i>.")
                                      .arg(strValue).arg(config[strKey]);
@@ -473,8 +473,8 @@ void UIMachineSettingsStorage::prepare()
     AssertPtrReturnVoid(m_pCache);
 
     /* Start full medium-enumeration (if necessary): */
-    if (!uiCommon().isFullMediumEnumerationRequested())
-        uiCommon().enumerateMedia();
+    if (!gpMediumEnumerator->isFullMediumEnumerationRequested())
+        gpMediumEnumerator->enumerateMedia();
 
     /* Prepare everything: */
     prepareWidgets();
@@ -862,7 +862,7 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UISettingsCacheMach
         if (fSuccess)
         {
             /* Create attachment: */
-            const UIMedium vboxMedium = uiCommon().medium(newAttachmentData.m_guiValue.m_uMediumId);
+            const UIMedium vboxMedium = gpMediumEnumerator->medium(newAttachmentData.m_guiValue.m_uMediumId);
             const CMedium comMedium = vboxMedium.medium();
             m_machine.AttachDevice(newControllerData.m_guiValue.m_strName,
                                    newAttachmentData.m_guiValue.m_iPort,
@@ -950,7 +950,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UISettingsCacheMach
         if (fSuccess)
         {
             /* Remount attachment: */
-            const UIMedium vboxMedium = uiCommon().medium(newAttachmentData.m_guiValue.m_uMediumId);
+            const UIMedium vboxMedium = gpMediumEnumerator->medium(newAttachmentData.m_guiValue.m_uMediumId);
             const CMedium comMedium = vboxMedium.medium();
             m_machine.MountMedium(newControllerData.m_guiValue.m_strName,
                                   newAttachmentData.m_guiValue.m_iPort,

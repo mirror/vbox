@@ -52,6 +52,7 @@
 #include "UIMedium.h"
 #include "UIMediumDetailsWidget.h"
 #include "UIMediumItem.h"
+#include "UIMediumEnumerator.h"
 #include "UIMediumManager.h"
 #include "UIMediumSearchWidget.h"
 #include "UIMessageCenter.h"
@@ -275,7 +276,7 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
     UIDataMedium newData = m_pDetailsWidget->data();
 
     /* Search for corresponding medium: */
-    CMedium comMedium = uiCommon().medium(pMediumItem->id()).medium();
+    CMedium comMedium = gpMediumEnumerator->medium(pMediumItem->id()).medium();
 
     /* Try to assign new medium type: */
     if (   comMedium.isOk()
@@ -327,7 +328,7 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
 void UIMediumManagerWidget::sltHandleMediumCreated(const QUuid &uMediumID)
 {
     /* Search for corresponding medium: */
-    UIMedium medium = uiCommon().medium(uMediumID);
+    UIMedium medium = gpMediumEnumerator->medium(uMediumID);
 
     /* Ignore non-interesting media: */
     if (medium.isNull() || medium.isHostDrive())
@@ -350,7 +351,7 @@ void UIMediumManagerWidget::sltHandleMediumCreated(const QUuid &uMediumID)
      * 2. if there is no currently medium-item selected
      * we have to choose newly added medium-item as current one: */
     if (   !m_fPreventChangeCurrentItem
-        && (   !uiCommon().isMediumEnumerationInProgress()
+        && (   !gpMediumEnumerator->isMediumEnumerationInProgress()
             || !mediumItem(medium.type())))
         setCurrentItem(treeWidget(medium.type()), pMediumItem);
 }
@@ -374,7 +375,7 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
     /* Reset and show progress-bar: */
     if (m_pProgressBar)
     {
-        m_pProgressBar->setMaximum(uiCommon().mediumIDs().size());
+        m_pProgressBar->setMaximum(gpMediumEnumerator->mediumIDs().size());
         m_pProgressBar->setValue(0);
         m_pProgressBar->show();
     }
@@ -403,7 +404,7 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
 void UIMediumManagerWidget::sltHandleMediumEnumerated(const QUuid &uMediumID)
 {
     /* Search for corresponding medium: */
-    UIMedium medium = uiCommon().medium(uMediumID);
+    UIMedium medium = gpMediumEnumerator->medium(uMediumID);
 
     /* Ignore non-interesting media: */
     if (medium.isNull() || medium.isHostDrive())
@@ -580,7 +581,7 @@ void UIMediumManagerWidget::sltToggleMediumSearchVisibility(bool fVisible)
 void UIMediumManagerWidget::sltRefreshAll()
 {
     /* Restart full medium-enumeration: */
-    uiCommon().enumerateMedia();
+    gpMediumEnumerator->enumerateMedia();
 }
 
 void UIMediumManagerWidget::sltHandleMoveProgressFinished()
@@ -743,8 +744,8 @@ void UIMediumManagerWidget::prepare()
             this, &UIMediumManagerWidget::sltRetranslateUI);
 
     /* Start full medium-enumeration (if necessary): */
-    if (!uiCommon().isFullMediumEnumerationRequested())
-        uiCommon().enumerateMedia();
+    if (!gpMediumEnumerator->isFullMediumEnumerationRequested())
+        gpMediumEnumerator->enumerateMedia();
     /* Emulate medium-enumeration otherwise: */
     else
     {
@@ -752,7 +753,7 @@ void UIMediumManagerWidget::prepare()
         sltHandleMediumEnumerationStart();
 
         /* Emulate medium-enumeration finish (if necessary): */
-        if (!uiCommon().isMediumEnumerationInProgress())
+        if (!gpMediumEnumerator->isMediumEnumerationInProgress())
             sltHandleMediumEnumerationFinish();
     }
     uiCommon().setHelpKeyword(this,"virtual-media-manager");
@@ -1055,7 +1056,7 @@ void UIMediumManagerWidget::repopulateTreeWidgets()
 
     /* Create medium-items (do not change current one): */
     m_fPreventChangeCurrentItem = true;
-    foreach (const QUuid &uMediumID, uiCommon().mediumIDs())
+    foreach (const QUuid &uMediumID, gpMediumEnumerator->mediumIDs())
         sltHandleMediumCreated(uMediumID);
     m_fPreventChangeCurrentItem = false;
 
@@ -1118,18 +1119,18 @@ void UIMediumManagerWidget::updateActions()
     UIMediumItem *pMediumItem = currentMediumItem();
 
     /* Calculate actions accessibility: */
-    bool fNotInEnumeration = !uiCommon().isMediumEnumerationInProgress();
+    const bool fNotInEnumeration = !UIMediumEnumerator::exists() || !gpMediumEnumerator->isMediumEnumerationInProgress();
 
     /* Apply actions accessibility: */
-    bool fActionEnabledCopy = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
+    const bool fActionEnabledCopy = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
     m_pActionPool->action(UIActionIndexMN_M_Medium_S_Copy)->setEnabled(fActionEnabledCopy);
-    bool fActionEnabledMove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Edit);
+    const bool fActionEnabledMove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Edit);
     m_pActionPool->action(UIActionIndexMN_M_Medium_S_Move)->setEnabled(fActionEnabledMove);
-    bool fActionEnabledRemove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Remove);
+    const bool fActionEnabledRemove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Remove);
     m_pActionPool->action(UIActionIndexMN_M_Medium_S_Remove)->setEnabled(fActionEnabledRemove);
-    bool fActionEnabledRelease = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Release);
+    const bool fActionEnabledRelease = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Release);
     m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release)->setEnabled(fActionEnabledRelease);
-    bool fActionEnabledDetails = true;
+    const bool fActionEnabledDetails = true;
     m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details)->setEnabled(fActionEnabledDetails);
 }
 
@@ -1358,7 +1359,7 @@ UIMediumItem* UIMediumManagerWidget::createHardDiskItem(const UIMedium &medium)
                 if (!pParentMediumItem)
                 {
                     /* Make sure corresponding parent medium is already cached! */
-                    UIMedium parentMedium = uiCommon().medium(medium.parentID());
+                    UIMedium parentMedium = gpMediumEnumerator->medium(medium.parentID());
                     if (parentMedium.isNull())
                         AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toString().toUtf8().constData()));
                     /* Try to create parent medium-item: */
@@ -1419,9 +1420,9 @@ void UIMediumManagerWidget::updateMediumItem(const UIMedium &medium)
         refetchCurrentMediumItem(type);
 
     /* Update all the children recursively as well: */
-    foreach(const QUuid &uMediumId, uiCommon().mediumIDs())
+    foreach(const QUuid &uMediumId, gpMediumEnumerator->mediumIDs())
     {
-        UIMedium guiMedium = uiCommon().medium(uMediumId);
+        UIMedium guiMedium = gpMediumEnumerator->medium(uMediumId);
         if (   !guiMedium.isNull()
             && guiMedium.parentID() == medium.id())
             updateMediumItem(guiMedium);

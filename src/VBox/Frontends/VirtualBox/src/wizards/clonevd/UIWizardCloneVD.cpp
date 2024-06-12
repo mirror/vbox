@@ -29,6 +29,7 @@
 #include "UICommon.h"
 #include "UIGlobalSession.h"
 #include "UIMedium.h"
+#include "UIMediumEnumerator.h"
 #include "UINotificationCenter.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVDFormatPage.h"
@@ -53,7 +54,7 @@ UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const QUuid &uMediumId)
 #endif /* VBOX_WS_MAC */
 
     /* Init medium to be cloned: */
-    UIMedium uiMedium = uiCommon().medium(uMediumId);
+    UIMedium uiMedium = gpMediumEnumerator->medium(uMediumId);
     m_comSourceVirtualDisk = uiMedium.medium();
 
     /* Init device type: */

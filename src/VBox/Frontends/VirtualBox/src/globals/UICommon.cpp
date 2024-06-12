@@ -1474,57 +1474,6 @@ void UICommon::notifyCloudMachineRegistered(const QString &strProviderShortName,
     emit sigCloudMachineRegistered(strProviderShortName, strProfileName, comMachine);
 }
 
-void UICommon::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)
-{
-    /* Redirect request to medium-enumerator: */
-    if (UIMediumEnumerator::exists())
-        gpMediumEnumerator->enumerateMedia(comMedia);
-}
-
-void UICommon::refreshMedia()
-{
-    /* Redirect request to medium-enumerator: */
-    if (UIMediumEnumerator::exists())
-        gpMediumEnumerator->refreshMedia();
-}
-
-bool UICommon::isFullMediumEnumerationRequested() const
-{
-    /* Redirect request to medium-enumerator: */
-    return    UIMediumEnumerator::exists()
-           && gpMediumEnumerator->isFullMediumEnumerationRequested();
-}
-
-bool UICommon::isMediumEnumerationInProgress() const
-{
-    /* Redirect request to medium-enumerator: */
-    return    UIMediumEnumerator::exists()
-           && gpMediumEnumerator->isMediumEnumerationInProgress();
-}
-
-UIMedium UICommon::medium(const QUuid &uMediumID) const
-{
-    /* Redirect request to medium-enumerator: */
-    return   UIMediumEnumerator::exists()
-           ? gpMediumEnumerator->medium(uMediumID)
-           : UIMedium();
-}
-
-QList<QUuid> UICommon::mediumIDs() const
-{
-    /* Redirect request to medium-enumerator: */
-    return   UIMediumEnumerator::exists()
-           ? gpMediumEnumerator->mediumIDs()
-           : QList<QUuid>();
-}
-
-void UICommon::createMedium(const UIMedium &guiMedium)
-{
-    /* Redirect request to medium-enumerator: */
-    if (UIMediumEnumerator::exists())
-        gpMediumEnumerator->createMedium(guiMedium);
-}
-
 QUuid UICommon::openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent /* = 0 */)
 {
     /* Convert to native separators: */
@@ -1539,14 +1488,14 @@ QUuid UICommon::openMedium(UIMediumDeviceType enmMediumType, QString strMediumLo
     if (comVBox.isOk())
     {
         /* Prepare vbox medium wrapper: */
-        UIMedium guiMedium = medium(comMedium.GetId());
+        UIMedium guiMedium = gpMediumEnumerator->medium(comMedium.GetId());
 
         /* First of all we should test if that medium already opened: */
         if (guiMedium.isNull())
         {
             /* And create new otherwise: */
             guiMedium = UIMedium(comMedium, enmMediumType, KMediumState_Created);
-            createMedium(guiMedium);
+            gpMediumEnumerator->createMedium(guiMedium);
         }
 
         /* Return guiMedium id: */
@@ -1628,7 +1577,7 @@ QUuid UICommon::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, Q
         QUuid uMediumId = openMedium(enmMediumType, files[0], pParent);
         if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy ||
             (enmMediumType == UIMediumDeviceType_HardDisk && fUseLastFolder))
-            updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
+            updateRecentlyUsedMediumListAndFolder(enmMediumType, gpMediumEnumerator->medium(uMediumId).location());
         return uMediumId;
     }
     return QUuid();
@@ -1660,7 +1609,7 @@ QUuid UICommon::openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pPar
 
     /* Update the recent medium list only if the medium type is floppy since updating when a VISO is created is not optimal: */
     if (enmMediumType == UIMediumDeviceType_Floppy)
-        updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
+        updateRecentlyUsedMediumListAndFolder(enmMediumType, gpMediumEnumerator->medium(uMediumId).location());
     return uMediumId;
 }
 
@@ -1905,7 +1854,7 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
             fMount = !uNewID.isNull();
 
             /* Prepare target medium: */
-            const UIMedium guiMedium = medium(uNewID);
+            const UIMedium guiMedium = gpMediumEnumerator->medium(uNewID);
             comMedium = guiMedium.medium();
             uActualID = fMount ? uNewID : uCurrentID;
             break;
@@ -1923,7 +1872,7 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
             fMount = uNewID != uCurrentID;
 
             /* Prepare target medium: */
-            const UIMedium guiMedium = fMount ? medium(uNewID) : UIMedium();
+            const UIMedium guiMedium = fMount ? gpMediumEnumerator->medium(uNewID) : UIMedium();
             comMedium = fMount ? guiMedium.medium() : CMedium();
             uActualID = fMount ? uNewID : uCurrentID;
             break;
@@ -1968,14 +1917,14 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
         if (!fWasMounted)
         {
             /* Ask for force remounting: */
-            if (msgCenter().cannotRemountMedium(comMachine, medium(uActualID),
+            if (msgCenter().cannotRemountMedium(comMachine, gpMediumEnumerator->medium(uActualID),
                                                 fMount, true /* retry? */))
             {
                 /* Force remounting: */
                 comMachine.MountMedium(target.name, target.port, target.device, comMedium, true /* force? */);
                 fWasMounted = comMachine.isOk();
                 if (!fWasMounted)
-                    msgCenter().cannotRemountMedium(comMachine, medium(uActualID),
+                    msgCenter().cannotRemountMedium(comMachine, gpMediumEnumerator->medium(uActualID),
                                                     fMount, false /* retry? */);
             }
         }
@@ -1998,14 +1947,14 @@ QString UICommon::storageDetails(const CMedium &comMedium, bool fPredictDiff, bo
 {
     /* Search for corresponding UI medium: */
     const QUuid uMediumID = comMedium.isNull() ? UIMedium::nullID() : comMedium.GetId();
-    UIMedium guiMedium = medium(uMediumID);
+    UIMedium guiMedium = gpMediumEnumerator->medium(uMediumID);
     if (!comMedium.isNull() && guiMedium.isNull())
     {
         /* UI medium may be new and not among cached media, request enumeration: */
-        enumerateMedia(CMediumVector() << comMedium);
+        gpMediumEnumerator->enumerateMedia(CMediumVector() << comMedium);
 
         /* Search for corresponding UI medium again: */
-        guiMedium = medium(uMediumID);
+        guiMedium = gpMediumEnumerator->medium(uMediumID);
         if (guiMedium.isNull())
         {
             /* Medium might be deleted already, return null string: */
@@ -2030,8 +1979,8 @@ QString UICommon::storageDetails(const CMedium &comMedium, bool fPredictDiff, bo
         if (comRootMedium.isNotNull())
         {
             const QUuid uRootId = comRootMedium.GetId();
-            if (medium(uRootId).isNull())
-                enumerateMedia(CMediumVector() << comRootMedium);
+            if (gpMediumEnumerator->medium(uRootId).isNull())
+                gpMediumEnumerator->enumerateMedia(CMediumVector() << comRootMedium);
         }
     }
 
@@ -2649,7 +2598,7 @@ bool UICommon::openURL(const QString &strUrl) const
 void UICommon::sltGUILanguageChange(QString strLanguage)
 {
     /* Make sure medium-enumeration is not in progress! */
-    AssertReturnVoid(!isMediumEnumerationInProgress());
+    AssertReturnVoid(!gpMediumEnumerator->isMediumEnumerationInProgress());
     /* Load passed language: */
     UITranslator::loadLanguage(strLanguage);
 }
@@ -2666,7 +2615,7 @@ void UICommon::sltHandleMediumCreated(const CMedium &comMedium)
         const UIMediumDeviceType enmMediumType = mediumTypeToLocal(enmDeviceType);
 
         /* Make sure we cached created medium in GUI: */
-        createMedium(UIMedium(comMedium, enmMediumType, KMediumState_Created));
+        gpMediumEnumerator->createMedium(UIMedium(comMedium, enmMediumType, KMediumState_Created));
     }
 }
 
@@ -2756,8 +2705,8 @@ void UICommon::sltHandleFontScaleFactorChanged(int iFontScaleFactor)
 void UICommon::retranslateUi()
 {
     /* Re-enumerate uimedium since they contain some translations too: */
-    if (m_fValid)
-        refreshMedia();
+    if (isValid())
+        gpMediumEnumerator->refreshMedia();
 
 #ifdef VBOX_WS_NIX
     // WORKAROUND:

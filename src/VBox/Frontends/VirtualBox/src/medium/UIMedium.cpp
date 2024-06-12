@@ -30,13 +30,13 @@
 #include <QDir>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
+#include "UIMediumEnumerator.h"
 #include "UITranslator.h"
 
 /* COM includes: */
@@ -620,13 +620,13 @@ bool UIMedium::isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium)
 UIMedium UIMedium::root() const
 {
     /* Redirect call to UICommon: */
-    return uiCommon().medium(m_uRootId);
+    return gpMediumEnumerator->medium(m_uRootId);
 }
 
 UIMedium UIMedium::parent() const
 {
     /* Redirect call to UICommon: */
-    return uiCommon().medium(m_uParentId);
+    return gpMediumEnumerator->medium(m_uParentId);
 }
 
 void UIMedium::checkNoDiffs(bool fNoDiffs)

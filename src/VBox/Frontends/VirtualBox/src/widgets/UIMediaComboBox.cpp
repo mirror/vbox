@@ -34,6 +34,7 @@
 #include "UICommon.h"
 #include "UIGlobalSession.h"
 #include "UIMediaComboBox.h"
+#include "UIMediumEnumerator.h"
 #include "UIMedium.h"
 
 
@@ -53,7 +54,7 @@ void UIMediaComboBox::refresh()
     clear(), m_media.clear();
 
     /* Use the medium creation handler to add all the items:  */
-    foreach (const QUuid &uMediumId, uiCommon().mediumIDs())
+    foreach (const QUuid &uMediumId, gpMediumEnumerator->mediumIDs())
         sltHandleMediumCreated(uMediumId);
 
     /* If at least one real medium present,
@@ -72,12 +73,12 @@ void UIMediaComboBox::repopulate()
 {
     /* Start medium-enumeration for optical drives/images (if necessary): */
     if (   m_enmMediaType == UIMediumDeviceType_DVD
-        && !uiCommon().isFullMediumEnumerationRequested())
+        && !gpMediumEnumerator->isFullMediumEnumerationRequested())
     {
         CMediumVector comMedia;
         comMedia << gpGlobalSession->host().GetDVDDrives();
         comMedia << gpGlobalSession->virtualBox().GetDVDImages();
-        uiCommon().enumerateMedia(comMedia);
+        gpMediumEnumerator->enumerateMedia(comMedia);
     }
     refresh();
 }
@@ -122,7 +123,7 @@ QString UIMediaComboBox::location(int iIndex /* = -1 */) const
 void UIMediaComboBox::sltHandleMediumCreated(const QUuid &uMediumId)
 {
     /* Search for corresponding medium: */
-    UIMedium guiMedium = uiCommon().medium(uMediumId);
+    UIMedium guiMedium = gpMediumEnumerator->medium(uMediumId);
 
     /* Ignore media (and their children) which are
      * marked as hidden or attached to hidden machines only: */
@@ -151,7 +152,7 @@ void UIMediaComboBox::sltHandleMediumCreated(const QUuid &uMediumId)
 void UIMediaComboBox::sltHandleMediumEnumerated(const QUuid &uMediumId)
 {
     /* Search for corresponding medium: */
-    UIMedium guiMedium = uiCommon().medium(uMediumId);
+    UIMedium guiMedium = gpMediumEnumerator->medium(uMediumId);
 
     /* Add only 1. NULL medium and 2. media of required type: */
     if (!guiMedium.isNull() && guiMedium.type() != m_enmMediaType)

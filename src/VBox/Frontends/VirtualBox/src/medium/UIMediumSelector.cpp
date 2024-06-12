@@ -45,6 +45,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UILoggingDefs.h"
+#include "UIMediumEnumerator.h"
 #include "UIMediumSearchWidget.h"
 #include "UIMediumSelector.h"
 #include "UIMessageCenter.h"
@@ -96,8 +97,8 @@ UIMediumSelector::UIMediumSelector(const QUuid &uCurrentMediumId, UIMediumDevice
     , m_iGeometrySaveTimerId(-1)
 {
     /* Start full medium-enumeration (if necessary): */
-    if (!uiCommon().isFullMediumEnumerationRequested())
-        uiCommon().enumerateMedia();
+    if (!gpMediumEnumerator->isFullMediumEnumerationRequested())
+        gpMediumEnumerator->enumerateMedia();
     configure();
     finalize();
     selectMedium(uCurrentMediumId);
@@ -163,7 +164,7 @@ int UIMediumSelector::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceT
         else
         {
             uSelectedMediumUuid = selectedMediumIds[0];
-            uiCommon().updateRecentlyUsedMediumListAndFolder(enmMediumType, uiCommon().medium(uSelectedMediumUuid).location());
+            uiCommon().updateRecentlyUsedMediumListAndFolder(enmMediumType, gpMediumEnumerator->medium(uSelectedMediumUuid).location());
         }
     }
     delete pSelector;
@@ -355,7 +356,7 @@ UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium, QITre
         if (!pParentMediumItem)
         {
             /* Make sure corresponding parent medium is already cached! */
-            UIMedium parentMedium = uiCommon().medium(medium.parentID());
+            UIMedium parentMedium = gpMediumEnumerator->medium(medium.parentID());
             if (parentMedium.isNull())
                 AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toString().toUtf8().constData()));
             /* Try to create parent medium-item: */
@@ -552,7 +553,7 @@ void UIMediumSelector::sltHandleMediumEnumerationFinish()
 void UIMediumSelector::sltHandleRefresh()
 {
     /* Restart full medium-enumeration: */
-    uiCommon().enumerateMedia();
+    gpMediumEnumerator->enumerateMedia();
     /* Update the search: */
     m_pSearchWidget->search(m_pTreeWidget);
 }
@@ -670,9 +671,9 @@ void UIMediumSelector::repopulateTreeWidget()
     m_pAttachedSubTreeRoot = 0;
     m_pNotAttachedSubTreeRoot = 0;
     QVector<UIMediumItem*> menuItemVector;
-    foreach (const QUuid &uMediumID, uiCommon().mediumIDs())
+    foreach (const QUuid &uMediumID, gpMediumEnumerator->mediumIDs())
     {
-        UIMedium medium = uiCommon().medium(uMediumID);
+        UIMedium medium = gpMediumEnumerator->medium(uMediumID);
         if (medium.type() == m_enmMediumType)
         {
             bool isMediumAttached = !(medium.medium().GetMachineIds().isEmpty());

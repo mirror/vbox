@@ -34,6 +34,7 @@
 #include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
 #include "UIMedium.h"
+#include "UIMediumEnumerator.h"
 #include "UINotificationCenter.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMNameOSTypePage.h"
@@ -240,7 +241,7 @@ bool UIWizardNewVM::createVirtualDisk()
         return fResult;
 
     /* Inform UICommon about it: */
-    uiCommon().createMedium(UIMedium(newVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
+    gpMediumEnumerator->createMedium(UIMedium(newVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
 
     /* Remember created virtual-disk: */
     m_virtualDisk = newVirtualDisk;
@@ -451,7 +452,7 @@ void UIWizardNewVM::setVirtualDisk(const QUuid &mediumId)
 {
     if (m_virtualDisk.isOk() && m_virtualDisk.GetId() == mediumId)
         return;
-    CMedium medium = uiCommon().medium(mediumId).medium();
+    CMedium medium = gpMediumEnumerator->medium(mediumId).medium();
     setVirtualDisk(medium);
 }
 

@@ -60,6 +60,7 @@
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
+#include "UIMediumEnumerator.h"
 #include "UIMediumSelector.h"
 #include "UIMessageCenter.h"
 #include "UIStorageSettingsEditor.h"
@@ -1503,7 +1504,7 @@ void AttachmentItem::setMediumId(const QUuid &uMediumId)
 {
     /// @todo is this required?
     //AssertMsg(!aAttMediumId.isNull(), ("Medium ID value can't be null!\n"));
-    m_uMediumId = uiCommon().medium(uMediumId).id();
+    m_uMediumId = gpMediumEnumerator->medium(uMediumId).id();
     cache();
 }
 
@@ -1594,7 +1595,7 @@ QString AttachmentItem::encryptionPasswordId() const
 
 void AttachmentItem::cache()
 {
-    UIMedium guiMedium = uiCommon().medium(m_uMediumId);
+    UIMedium guiMedium = gpMediumEnumerator->medium(m_uMediumId);
 
     /* Cache medium information: */
     m_strName = guiMedium.name(true);
@@ -3342,7 +3343,7 @@ void UIStorageSettingsEditor::handleFilterChange()
 void UIStorageSettingsEditor::sltHandleMediumEnumerated(const QUuid &uMediumId)
 {
     /* Acquire newly recached medium: */
-    const UIMedium medium = uiCommon().medium(uMediumId);
+    const UIMedium medium = gpMediumEnumerator->medium(uMediumId);
 
     /* Search for corresponding medium: */
     AssertPtrReturnVoid(m_pModelStorage);
@@ -5380,9 +5381,9 @@ void UIStorageSettingsEditor::addChooseDiskFileAction(QMenu *pOpenMediumMenu, co
 
 void UIStorageSettingsEditor::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
 {
-    foreach (const QUuid &uMediumId, uiCommon().mediumIDs())
+    foreach (const QUuid &uMediumId, gpMediumEnumerator->mediumIDs())
     {
-        const UIMedium guiMedium = uiCommon().medium(uMediumId);
+        const UIMedium guiMedium = gpMediumEnumerator->medium(uMediumId);
         if (guiMedium.isHostDrive() && m_pMediumIdHolder->type() == guiMedium.type())
         {
             QAction *pHostDriveAction = pOpenMediumMenu->addAction(guiMedium.name());
