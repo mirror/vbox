@@ -598,12 +598,6 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                 painter.drawPoint(fX, height() - (fHeight + m_iMarginBottom));
             }
         }
-        if (m_fUseAreaChart && m_fIsAreaChartAllowed)
-        {
-            // painter.setOpacity(0.5);
-            // painter.drawImage(rect(), areaPixmap.toImage());
-            // painter.setOpacity(1.0);
-        }
         /* Draw a horizontal and vertical line on data point under the mouse cursor
          * and draw the value on the left hand side of the chart: */
         if (m_fDrawCurenValueIndicators && m_iDataIndexUnderCursor >= 0 && m_iDataIndexUnderCursor < data->size())
