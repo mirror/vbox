@@ -1209,7 +1209,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationDescription(CMachine &
 }
 
 void UIDetailsGenerator::acquireHardDiskStatusInfo(CMachine &comMachine, QString &strInfo,
-                                                   bool &fAttachmentsPresent)
+                                                   uint &cAttachmentsCount)
 {
     /* Enumerate all the controllers: */
     foreach (const CStorageController &comController, comMachine.GetStorageControllers())
@@ -1225,7 +1225,7 @@ void UIDetailsGenerator::acquireHardDiskStatusInfo(CMachine &comMachine, QString
             strAttData += e_strTableRow3
                 .arg(gpConverter->toString(StorageSlot(comController.GetBus(), comAttachment.GetPort(), comAttachment.GetDevice())))
                 .arg(UIMedium(comAttachment.GetMedium(), UIMediumDeviceType_HardDisk).location());
-            fAttachmentsPresent = true;
+            ++cAttachmentsCount;
         }
         /* Append controller data: */
         if (!strAttData.isNull())
@@ -1234,7 +1234,7 @@ void UIDetailsGenerator::acquireHardDiskStatusInfo(CMachine &comMachine, QString
 }
 
 void UIDetailsGenerator::acquireOpticalDiskStatusInfo(CMachine &comMachine, QString &strInfo,
-                                                      bool &fAttachmentsPresent, bool &fAttachmentsMounted)
+                                                      uint &cAttachmentsCount, uint &cAttachmentsMountedCount)
 {
     /* Enumerate all the controllers: */
     foreach (const CStorageController &comController, comMachine.GetStorageControllers())
@@ -1251,9 +1251,9 @@ void UIDetailsGenerator::acquireOpticalDiskStatusInfo(CMachine &comMachine, QStr
             strAttData += e_strTableRow3
                 .arg(gpConverter->toString(StorageSlot(comController.GetBus(), comAttachment.GetPort(), comAttachment.GetDevice())))
                 .arg(vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
-            fAttachmentsPresent = true;
+            ++cAttachmentsCount;
             if (!vboxMedium.isNull())
-                fAttachmentsMounted = true;
+                ++cAttachmentsMountedCount;
         }
         /* Append controller data: */
         if (!strAttData.isNull())
@@ -1262,7 +1262,7 @@ void UIDetailsGenerator::acquireOpticalDiskStatusInfo(CMachine &comMachine, QStr
 }
 
 void UIDetailsGenerator::acquireFloppyDiskStatusInfo(CMachine &comMachine, QString &strInfo,
-                                                     bool &fAttachmentsPresent, bool &fAttachmentsMounted)
+                                                     uint &cAttachmentsCount, uint &cAttachmentsMountedCount)
 {
     /* Enumerate all the controllers: */
     foreach (const CStorageController &comController, comMachine.GetStorageControllers())
@@ -1279,9 +1279,9 @@ void UIDetailsGenerator::acquireFloppyDiskStatusInfo(CMachine &comMachine, QStri
             strAttData += e_strTableRow3
                 .arg(gpConverter->toString(StorageSlot(comController.GetBus(), comAttachment.GetPort(), comAttachment.GetDevice())))
                 .arg(vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
-            fAttachmentsPresent = true;
+            ++cAttachmentsCount;
             if (!vboxMedium.isNull())
-                fAttachmentsMounted = true;
+                ++cAttachmentsMountedCount;
         }
         /* Append controller data: */
         if (!strAttData.isNull())

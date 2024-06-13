@@ -70,7 +70,7 @@ public slots:
 protected slots:
 
     /** Handles translation event. */
-    void sltRetranslateUI();
+    virtual void sltRetranslateUI();
 
 protected:
 
@@ -177,6 +177,7 @@ public:
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorHardDrive(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_HardDisks, pMachine)
+        , m_cAttachmentsCount(0)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/hd_16px.png"));
@@ -201,21 +202,37 @@ protected slots:
     {
         /* Acquire data: */
         QString strFullData;
-        bool fAttachmentsPresent = false;
-        m_pMachine->acquireHardDiskStatusInfo(strFullData, fAttachmentsPresent);
+        m_cAttachmentsCount = 0;
+        m_pMachine->acquireHardDiskStatusInfo(strFullData, m_cAttachmentsCount);
 
         /* Show/hide indicator if there are no attachments
          * and parent is visible already: */
         if (   parentWidget()
             && parentWidget()->isVisible())
-            setVisible(fAttachmentsPresent);
+            setVisible(m_cAttachmentsCount);
 
         /* Update tool-tip: */
         if (!strFullData.isEmpty())
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
-        setState(fAttachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        setState(m_cAttachmentsCount ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        m_strDescription = tr("%1, %2 disks attached.", "%Name, %Description")
+                              .arg(m_strDescription).arg(m_cAttachmentsCount);
+    }
+
+private:
+
+    /** Holds the last cached attachment count. */
+    uint m_cAttachmentsCount;
 };
 
 
@@ -229,6 +246,8 @@ public:
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorOpticalDisks(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_OpticalDisks, pMachine)
+        , m_cAttachmentsCount(0)
+        , m_cAttachmentsMountedCount(0)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/cd_16px.png"));
@@ -252,22 +271,40 @@ protected slots:
     virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
-        bool fAttachmentsPresent = false;
-        bool fAttachmentsMounted = false;
-        m_pMachine->acquireOpticalDiskStatusInfo(strFullData, fAttachmentsPresent, fAttachmentsMounted);
+        m_cAttachmentsCount = 0;
+        m_cAttachmentsMountedCount = 0;
+        m_pMachine->acquireOpticalDiskStatusInfo(strFullData, m_cAttachmentsCount, m_cAttachmentsMountedCount);
 
         /* Show/hide indicator if there are no attachments
          * and parent is visible already: */
         if (   parentWidget()
             && parentWidget()->isVisible())
-            setVisible(fAttachmentsPresent);
+            setVisible(m_cAttachmentsCount);
 
         /* Update tool-tip: */
         if (!strFullData.isEmpty())
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
-        setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        setState(m_cAttachmentsMountedCount ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        m_strDescription = tr("%1, %2 drives attached, %3 images mounted.", "%Name, %Description")
+                              .arg(m_strDescription).arg(m_cAttachmentsCount).arg(m_cAttachmentsMountedCount);
+    }
+
+private:
+
+    /** Holds the last cached attachment count. */
+    uint m_cAttachmentsCount;
+    /** Holds the last cached mounted attachment count. */
+    uint m_cAttachmentsMountedCount;
 };
 
 
@@ -281,6 +318,8 @@ public:
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorFloppyDisks(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_FloppyDisks, pMachine)
+        , m_cAttachmentsCount(0)
+        , m_cAttachmentsMountedCount(0)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/fd_16px.png"));
@@ -304,22 +343,40 @@ protected slots:
     virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
-        bool fAttachmentsPresent = false;
-        bool fAttachmentsMounted = false;
-        m_pMachine->acquireFloppyDiskStatusInfo(strFullData, fAttachmentsPresent, fAttachmentsMounted);
+        m_cAttachmentsCount = 0;
+        m_cAttachmentsMountedCount = 0;
+        m_pMachine->acquireFloppyDiskStatusInfo(strFullData, m_cAttachmentsCount, m_cAttachmentsMountedCount);
 
         /* Show/hide indicator if there are no attachments
          * and parent is visible already: */
         if (   parentWidget()
             && parentWidget()->isVisible())
-            setVisible(fAttachmentsPresent);
+            setVisible(m_cAttachmentsCount);
 
         /* Update tool-tip: */
         if (!strFullData.isEmpty())
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
-        setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        setState(m_cAttachmentsMountedCount ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        m_strDescription = tr("%1, %2 drives attached, %3 images mounted.", "%Name, %Description")
+                              .arg(m_strDescription).arg(m_cAttachmentsCount).arg(m_cAttachmentsMountedCount);
+    }
+
+private:
+
+    /** Holds the last cached attachment count. */
+    uint m_cAttachmentsCount;
+    /** Holds the last cached mounted attachment count. */
+    uint m_cAttachmentsMountedCount;
 };
 
 

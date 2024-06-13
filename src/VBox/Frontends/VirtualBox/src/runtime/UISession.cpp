@@ -1975,28 +1975,28 @@ bool UISession::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, Q
     return fSuccess;
 }
 
-void UISession::acquireHardDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent)
+void UISession::acquireHardDiskStatusInfo(QString &strInfo, uint &cAttachmentsCount)
 {
     CMachine comMachine = machine();
     if (comMachine.isNull())
         return;
-    UIDetailsGenerator::acquireHardDiskStatusInfo(comMachine, strInfo, fAttachmentsPresent);
+    UIDetailsGenerator::acquireHardDiskStatusInfo(comMachine, strInfo, cAttachmentsCount);
 }
 
-void UISession::acquireOpticalDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent, bool &fAttachmentsMounted)
+void UISession::acquireOpticalDiskStatusInfo(QString &strInfo, uint &cAttachmentsCount, uint &cAttachmentsMountedCount)
 {
     CMachine comMachine = machine();
     if (comMachine.isNull())
         return;
-    UIDetailsGenerator::acquireOpticalDiskStatusInfo(comMachine, strInfo, fAttachmentsPresent, fAttachmentsMounted);
+    UIDetailsGenerator::acquireOpticalDiskStatusInfo(comMachine, strInfo, cAttachmentsCount, cAttachmentsMountedCount);
 }
 
-void UISession::acquireFloppyDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent, bool &fAttachmentsMounted)
+void UISession::acquireFloppyDiskStatusInfo(QString &strInfo, uint &cAttachmentsCount, uint &cAttachmentsMountedCount)
 {
     CMachine comMachine = machine();
     if (comMachine.isNull())
         return;
-    UIDetailsGenerator::acquireFloppyDiskStatusInfo(comMachine, strInfo, fAttachmentsPresent, fAttachmentsMounted);
+    UIDetailsGenerator::acquireFloppyDiskStatusInfo(comMachine, strInfo, cAttachmentsCount, cAttachmentsMountedCount);
 }
 
 void UISession::acquireAudioStatusInfo(QString &strInfo, bool &fAudioEnabled, bool &fEnabledOutput, bool &fEnabledInput)

@@ -89,13 +89,13 @@ namespace UIDetailsGenerator
                                                                            const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &fOptions);
 
     SHARED_LIBRARY_STUFF void acquireHardDiskStatusInfo(CMachine &comMachine, QString &strInfo,
-                                                        bool &fAttachmentsPresent);
+                                                        uint &cAttachmentsCount);
 
     SHARED_LIBRARY_STUFF void acquireOpticalDiskStatusInfo(CMachine &comMachine, QString &strInfo,
-                                                           bool &fAttachmentsPresent, bool &fAttachmentsMounted);
+                                                           uint &cAttachmentsCount, uint &cAttachmentsMountedCount);
 
     SHARED_LIBRARY_STUFF void acquireFloppyDiskStatusInfo(CMachine &comMachine, QString &strInfo,
-                                                          bool &fAttachmentsPresent, bool &fAttachmentsMounted);
+                                                          uint &cAttachmentsCount, uint &cAttachmentsMountedCount);
 
     SHARED_LIBRARY_STUFF void acquireAudioStatusInfo(CMachine &comMachine, QString &strInfo,
                                                      bool &fAudioEnabled, bool &fEnabledOutput, bool &fEnabledInput);
