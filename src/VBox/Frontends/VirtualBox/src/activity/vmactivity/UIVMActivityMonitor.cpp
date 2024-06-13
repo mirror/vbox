@@ -793,16 +793,10 @@ void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
         /* Draw a doughnut chart where data series are stacked on to of each other: */
         if (m_pMetric->data(0) && !m_pMetric->data(0)->isEmpty() &&
             m_pMetric->data(1) && !m_pMetric->data(1)->isEmpty())
-            UIMonitorCommon::drawCombinedDoughnutChart(m_pMetric->data(1)->back(), dataSeriesColor(1, 50),
-                                                       m_pMetric->data(0)->back(), dataSeriesColor(0, 50),
+            UIMonitorCommon::drawCombinedDoughnutChart(m_pMetric->data(1)->back(), dataSeriesColor(1, 0),
+                                                       m_pMetric->data(0)->back(), dataSeriesColor(0, 0),
                                                        painter, iMaximum, chartRect,
                                                        UIMonitorCommon::getScaledRect(chartRect, 0.5f, 0.5f), m_iOverlayAlpha);
-#if 0
-        /* Draw a doughnut shaped chart and then pie chart inside it: */
-        UIMonitorCommon::drawDoughnutChart(painter, iMaximum, m_pMetric->data(0)->back(),
-                                           chartRect, innerRect, m_iOverlayAlpha, dataSeriesColor(0));
-        drawPieChart(painter, iMaximum, 1 /* iDataIndex */, innerRect, false);
-#endif
     }
     else if (fData0 && !fData1)
         drawPieChart(painter, iMaximum, 0 /* iDataIndex */, chartRect);
