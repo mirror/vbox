@@ -2232,69 +2232,42 @@ VMMR3_INT_DECL(int) gimR3HvHypercallExtGetBootZeroedMem(PVM pVM, int *prcHv)
     /*
      * Perform the hypercall.
      */
-/** @todo r=bird: This is *nothing* like the microsoft description (2024-05-28).
- * https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/tlfs/hypercalls/hvextcallgetbootzeroedmemory
- *
- * It describes this as returning pages known to be all zeros at the time this
- * hypercall is made.  What we return instead is a is a single entry:
- *      GIMHVEXTGETBOOTZEROMEM::GCPhysStart = 0;
- *      GIMHVEXTGETBOOTZEROMEM::cPages      = SUM(PGMRAMRANGE.cb) >> GIM_HV_PAGE_SHIFT;
- *
- * This isn't right for any VM configuration, given that VGA & MMIO & ROM memory
- * starts at 0xa0000 and contains pages that aren't zero.  For VM configurations
- * with more than 3GB (or 2) of memory, it doesn't take into account the RAM hole
- * below 4G.
- *
- * A much better approach for VMs with large configs, but still not really correct,
- * would be to find the highest RAM address (non-MMIO, non-MMIO2, non-ROM) and
- * convert it to a page count and assign that to cPages.
- *
- * A slight improvement would be to report two or three ranges:
- *      [0] = 0x00000-0xa0000,
- *      [1] = 1MB - RamHole,
- *      [2] = 4GB - EndOfRam;
- *
- * The best would be to implement this directly PGM, as the number of mapped RAM
- * ranges doesn't need to be constant during the call if other VCPUs are
- * enabling/disabling devices and such.
- */
-    uint32_t const cRanges = PGMR3PhysGetRamRangeCount(pVM);
-    pOut->cPages = 0;
-    for (uint32_t iRange = 0; iRange < cRanges; iRange++)
-    {
-        RTGCPHYS GCPhysStart;
-        RTGCPHYS GCPhysEnd;
-        int rc = PGMR3PhysGetRange(pVM, iRange, &GCPhysStart, &GCPhysEnd, NULL /* pszDesc */, NULL /* fIsMmio */);
-        if (RT_FAILURE(rc))
-        {
-            LogRelMax(10, ("GIM: HyperV: HvHypercallExtGetBootZeroedMem: PGMR3PhysGetRange failed for iRange(%u) rc=%Rrc\n",
-                           iRange, rc));
-            *prcHv = GIM_HV_STATUS_OPERATION_DENIED;
-            return rc;
-        }
+    AssertCompileMembersSameSizeAndOffset(PGMPHYSRANGES, cRanges, GIMHVEXTGETBOOTZEROMEM, cRanges);
+    AssertCompileMembersAtSameOffset(PGMPHYSRANGES,      aRanges, GIMHVEXTGETBOOTZEROMEM, aRanges);
+    AssertCompileMembersSameSizeAndOffset(PGMPHYSRANGE, GCPhysStart, GIMHVEXTMEMRANGE, GCPhysStart);
+    AssertCompileMembersSameSizeAndOffset(PGMPHYSRANGE, cPages,      GIMHVEXTMEMRANGE, cPages);
+    AssertCompile(RT_ELEMENTS(pOut->aRanges) == GIM_HV_MAX_BOOT_ZEROED_MEM_RANGES);
 
-        RTGCPHYS const cbRange = RT_ALIGN(GCPhysEnd - GCPhysStart + 1, GUEST_PAGE_SIZE);
-        pOut->cPages += cbRange >> GIM_HV_PAGE_SHIFT;
-        if (iRange == 0)
-            pOut->GCPhysStart = GCPhysStart;
-    }
-
-    /*
-     * Update the guest memory with result.
-     */
     int rcHv;
-    int rc = PGMPhysSimpleWriteGCPhys(pVM, pHv->GCPhysHypercallOut, pHv->pbHypercallOut, sizeof(GIMHVEXTGETBOOTZEROMEM));
-    if (RT_SUCCESS(rc))
+    int rc = PGMR3PhysGetRamBootZeroedRanges(pVM, (PPGMPHYSRANGES)pOut, RT_ELEMENTS(pOut->aRanges));
+    if (   RT_SUCCESS(rc)
+        || rc == VERR_BUFFER_OVERFLOW)
     {
-        LogRel(("GIM: HyperV: Queried boot zeroed guest memory range (starting at %#RGp spanning %u pages) at %#RGp\n",
-                pOut->GCPhysStart, pOut->cPages, pHv->GCPhysHypercallOut));
-        rcHv = GIM_HV_STATUS_SUCCESS;
+        /*
+         * Update the guest memory with result.
+         */
+        rc = PGMPhysSimpleWriteGCPhys(pVM, pHv->GCPhysHypercallOut, pHv->pbHypercallOut, sizeof(GIMHVEXTGETBOOTZEROMEM));
+        if (RT_SUCCESS(rc))
+        {
+            LogRel(("GIM: HyperV: Queried boot zeroed guest memory as %u ranges\n", pOut->cRanges));
+            for (uint32_t i = 0; i < pOut->cRanges; i++)
+                LogRel(("GIM: HyperV: RAM range [%u] from %#RGp to %#RGp (%u pages, %' Rhcb)\n", i, pOut->aRanges[i].GCPhysStart,
+                        pOut->aRanges[i].GCPhysStart + pOut->aRanges[i].cPages * GUEST_PAGE_SIZE - 1, pOut->aRanges[i].cPages,
+                        pOut->aRanges[i].cPages * GUEST_PAGE_SIZE));
+            rcHv = GIM_HV_STATUS_SUCCESS;
+        }
+        else
+        {
+            LogRelMax(10, ("GIM: HyperV: HvHypercallExtGetBootZeroedMem hypercall failed to update guest memory. rc=%Rrc\n", rc));
+            rcHv = GIM_HV_STATUS_OPERATION_DENIED;
+            rc   = VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED;
+        }
     }
     else
     {
+        LogRelMax(10, ("GIM: HyperV: HvHypercallExtGetBootZeroedMem failed. rc=%Rrc\n", rc));
         rcHv = GIM_HV_STATUS_OPERATION_DENIED;
-        LogRelMax(10, ("GIM: HyperV: HvHypercallExtGetBootZeroedMem failed to update guest memory. rc=%Rrc\n", rc));
-        rc = VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED;
+        rc   = VERR_GIM_HYPERCALL_FAILED;
     }
 
     *prcHv = rcHv;

@@ -562,6 +562,15 @@ AssertCompile(MSR_GIM_HV_RANGE11_FIRST <= MSR_GIM_HV_RANGE11_LAST);
                                                    | MSR_GIM_HV_STIMER_SINTX)
 /** @} */
 
+
+/** Hyper-V page size.  */
+#define GIM_HV_PAGE_SIZE                          4096
+/** Hyper-V page shift. */
+#define GIM_HV_PAGE_SHIFT                         12
+
+/** Microsoft Hyper-V vendor signature. */
+#define GIM_HV_VENDOR_MICROSOFT                   "Microsoft Hv"
+
 /**
  * Hyper-V APIC-assist (HV_REFERENCE_TSC_PAGE) structure placed in the TSC
  * reference page.
@@ -1080,26 +1089,33 @@ typedef GIMHVEXTQUERYCAP *PGIMHVEXTQUERYCAP;
 AssertCompileSize(GIMHVEXTQUERYCAP, 8);
 
 /**
+ * Hyper-V memory range for HvExtCallGetBootZeroedMemory.
+ */
+typedef struct GIMHVEXTMEMRANGE
+{
+    RTGCPHYS GCPhysStart;
+    uint64_t cPages;
+} GIMHVEXTMEMRANGE;
+
+/** Maximum number of zeroed memory ranges supported by Hyper-V. */
+#define GIM_HV_MAX_BOOT_ZEROED_MEM_RANGES         255
+
+/**
  * HvExtCallGetBootZeroedMemory hypercall output.
  */
 typedef struct GIMHVEXTGETBOOTZEROMEM
 {
-    RTGCPHYS GCPhysStart;
-    uint64_t cPages;
+    uint64_t            cRanges;
+    GIMHVEXTMEMRANGE    aRanges[GIM_HV_MAX_BOOT_ZEROED_MEM_RANGES];
 } GIMHVEXTGETBOOTZEROMEM;
 /** Pointer to a HvExtCallGetBootZeroedMemory output struct. */
 typedef GIMHVEXTGETBOOTZEROMEM *PGIMHVEXTGETBOOTZEROMEM;
-AssertCompileSize(GIMHVEXTGETBOOTZEROMEM, 16);
+/** Pointer to a const HvExtCallGetBootZeroedMemory output struct. */
+typedef GIMHVEXTGETBOOTZEROMEM const *PCGIMHVEXTGETBOOTZEROMEM;
+AssertCompileSize(GIMHVEXTGETBOOTZEROMEM, 4088);
+AssertCompile(sizeof(GIMHVEXTGETBOOTZEROMEM) <= GIM_HV_PAGE_SIZE);
 /** @} */
 
-
-/** Hyper-V page size.  */
-#define GIM_HV_PAGE_SIZE                          4096
-/** Hyper-V page shift. */
-#define GIM_HV_PAGE_SHIFT                         12
-
-/** Microsoft Hyper-V vendor signature. */
-#define GIM_HV_VENDOR_MICROSOFT                   "Microsoft Hv"
 
 /**
  * MMIO2 region indices.
