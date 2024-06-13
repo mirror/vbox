@@ -1503,6 +1503,72 @@ VMMR3DECL(int) PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStar
 }
 
 
+/**
+ * Gets RAM ranges that are supposed to be zero'ed at boot.
+ *
+ * This function gets all RAM ranges that are not ad hoc (ROM, MMIO, MMIO2) memory.
+ * The RAM hole (if any) is -NOT- included because we don't return 0s when it is
+ * read anyway.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pRanges         Where to store the physical RAM ranges.
+ * @param   cMaxRanges      The maximum ranges that can be stored.
+ */
+VMMR3_INT_DECL(int) PGMR3PhysGetRamBootZeroedRanges(PVM pVM, PPGMPHYSRANGES pRanges, uint32_t cMaxRanges)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(pRanges, VERR_INVALID_PARAMETER);
+    AssertReturn(cMaxRanges > 0, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+    uint32_t idxRange = 0;
+    PGM_LOCK_VOID(pVM);
+
+    /*
+     * The primary purpose of this API is the GIM Hyper-V hypercall which recommends (not
+     * requires) that the largest ranges are reported earlier. Therefore, here we iterate
+     * the ranges in reverse because in PGM the largest range is generally at the end.
+     */
+    uint32_t const cLookupEntries = RT_MIN(pVM->pgm.s.RamRangeUnion.cLookupEntries, RT_ELEMENTS(pVM->pgm.s.aRamRangeLookup));
+    for (int32_t idxLookup = cLookupEntries - 1; idxLookup >= 0; idxLookup--)
+    {
+        uint32_t const idRamRange = PGMRAMRANGELOOKUPENTRY_GET_ID(pVM->pgm.s.aRamRangeLookup[idxLookup]);
+        Assert(idRamRange < RT_ELEMENTS(pVM->pgm.s.apRamRanges));
+        PPGMRAMRANGE const pCur = pVM->pgm.s.apRamRanges[idRamRange];
+        AssertContinue(pCur);
+
+        if (!PGM_RAM_RANGE_IS_AD_HOC(pCur))
+        {
+            if (idxRange < cMaxRanges)
+            {
+                /* Combine with previous range if it is contiguous, otherwise add it as a new range. */
+                if (   idxRange > 0
+                    && pRanges->aRanges[idxRange - 1].GCPhysStart == pCur->GCPhysLast + 1U)
+                {
+                    pRanges->aRanges[idxRange - 1].GCPhysStart = pCur->GCPhys;
+                    pRanges->aRanges[idxRange - 1].cPages     += (pCur->cb >> GUEST_PAGE_SHIFT);
+                }
+                else
+                {
+                    pRanges->aRanges[idxRange].GCPhysStart = pCur->GCPhys;
+                    pRanges->aRanges[idxRange].cPages      = pCur->cb >> GUEST_PAGE_SHIFT;
+                    ++idxRange;
+                }
+            }
+            else
+            {
+                rc = VERR_BUFFER_OVERFLOW;
+                break;
+            }
+        }
+    }
+    pRanges->cRanges = idxRange;
+    PGM_UNLOCK(pVM);
+    return rc;
+}
+
+
 /*********************************************************************************************************************************
 *   RAM                                                                                                                          *
 *********************************************************************************************************************************/

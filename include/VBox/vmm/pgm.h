@@ -742,6 +742,40 @@ AssertCompile(PGMPAGETYPE_END == 8);
 #define PGMPAGETYPE_IS_NP(a_enmType)        ( (a_enmType) == PGMPAGETYPE_MMIO )
 /** @} */
 
+/**
+ * A physical memory range.
+ *
+ * @note This layout adheres to to GIM Hyper-V specs (asserted while compiling
+ * GIM Hyper-V that uses the PGM API).
+ */
+typedef struct PGMPHYSRANGE
+{
+    /** The first address in the range. */
+    RTGCPHYS        GCPhysStart;
+    /** The number of pages in the range. */
+    uint64_t        cPages;
+} PGMPHYSRANGE;
+AssertCompileSize(PGMPHYSRANGE, 16);
+
+/**
+ * A list of physical memory ranges.
+ *
+ * @note This layout adheres to to GIM Hyper-V specs (asserted while compiling
+ * GIM Hyper-V that uses the PGM API).
+ */
+typedef struct PGMPHYSRANGES
+{
+    /** The number of ranges in the list. */
+    uint64_t        cRanges;
+    /** Array of physical memory ranges. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    PGMPHYSRANGE    aRanges[RT_FLEXIBLE_ARRAY];
+} PGMPHYSRANGES;
+/** Pointer to a list of physical memory ranges. */
+typedef PGMPHYSRANGES *PPGMPHYSRANGES;
+/** Pointer to a const list of physical memory ranges. */
+typedef PGMPHYSRANGES const *PCPGMPHYSRANGES;
+
 
 VMM_INT_DECL(PGMPAGETYPE) PGMPhysGetPageType(PVMCC pVM, RTGCPHYS GCPhys);
 
@@ -1111,6 +1145,7 @@ VMMR3DECL(int)      PGMR3PhysWriteProtectRAM(PVM pVM);
 VMMR3DECL(uint32_t) PGMR3PhysGetRamRangeCount(PVM pVM);
 VMMR3DECL(int)      PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStart, PRTGCPHYS pGCPhysLast,
                                       const char **ppszDesc, bool *pfIsMmio);
+VMMR3_INT_DECL(int) PGMR3PhysGetRamBootZeroedRanges(PVM pVM, PPGMPHYSRANGES pRanges, uint32_t cMaxRanges);
 VMMR3DECL(int)      PGMR3QueryMemoryStats(PUVM pUVM, uint64_t *pcbTotalMem, uint64_t *pcbPrivateMem, uint64_t *pcbSharedMem, uint64_t *pcbZeroMem);
 VMMR3DECL(int)      PGMR3QueryGlobalMemoryStats(PUVM pUVM, uint64_t *pcbAllocMem, uint64_t *pcbFreeMem, uint64_t *pcbBallonedMem, uint64_t *pcbSharedMem);
 
