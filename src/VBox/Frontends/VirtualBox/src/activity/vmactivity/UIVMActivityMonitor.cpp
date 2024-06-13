@@ -516,9 +516,6 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     float fH = iMaximum == 0 ? 0 : m_lineChartRect.height() / (float)iMaximum;
     const float fPenWidth = 1.5f;
     const float fPointSize = 3.5f;
-    QPixmap areaPixmap(width(), height());
-    if (m_fUseAreaChart && m_fIsAreaChartAllowed)
-        areaPixmap.fill(QColor(0, 0, 0, 0));
     for (int k = 0; k < DATA_SERIES_SIZE; ++k)
     {
         if (m_fUseGradientLineColor)
@@ -533,28 +530,46 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             painter.setPen(QPen(m_dataSeriesColor[k], fPenWidth));
         if (m_fUseAreaChart && m_fIsAreaChartAllowed)
         {
-            QPainter pixmapPainter(&areaPixmap);
             QVector<QPointF> points;
-            for (int i = 0; i < data->size(); ++i)
+            /* Create two polygons. Polygon of data series 0 is on top of the one of 1st data series: */
+            /* We add the points to vector in counter clockwise fashion: */
+            if (k == 0)
             {
-                float fHeight = fH * data->at(i);
-                /* Stack 0th data series on top of the 1st data series: */
-                if (k == 0)
+                for (int i = 0; i < data->size(); ++i)
                 {
+                    float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
+                    float fHeight = fH * data->at(i);
                     if (m_pMetric->data(1) && m_pMetric->data(1)->size() > i)
                         fHeight += fH * m_pMetric->data(1)->at(i);
+                    points << QPointF(fX, height() - (fHeight + m_iMarginBottom));
                 }
-                float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
-                if (i == 0)
-                    points << QPointF(fX, height() - m_iMarginBottom);
-                points << QPointF(fX, height() - (fHeight + m_iMarginBottom));
-                if (i == data->size() - 1)
-                    points << QPointF(fX, height() - + m_iMarginBottom);
+                for (int i = data->size() - 1; i >= 0; --i)
+                {
+                    float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
+                    float fHeight = 0;
+                    if (m_pMetric->data(1) && m_pMetric->data(1)->size() > i)
+                        fHeight = fH * m_pMetric->data(1)->at(i);
+                    points << QPointF(fX, height() - (fHeight + m_iMarginBottom));
+                }
             }
-            pixmapPainter.setPen(Qt::NoPen);
-            QColor fillColor(m_dataSeriesColor[k]);
-            pixmapPainter.setBrush(fillColor);
-            pixmapPainter.drawPolygon(points, Qt::WindingFill);
+            else if (k == 1)
+            {
+                for (int i = 0; i < data->size(); ++i)
+                {
+                    float fHeight = fH * data->at(i);
+                    float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
+                    if (i == 0)
+                        points << QPointF(fX, height() - m_iMarginBottom);
+                    points << QPointF(fX, height() - (fHeight + m_iMarginBottom));
+                    if (i == data->size() - 1)
+                        points << QPointF(fX, height() - + m_iMarginBottom);
+                }
+            }
+            painter.setOpacity(0.6);
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(m_dataSeriesColor[k]);
+            painter.drawPolygon(points, Qt::WindingFill);
+            painter.setOpacity(1.0);
         }
         else
         {
@@ -585,9 +600,9 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         }
         if (m_fUseAreaChart && m_fIsAreaChartAllowed)
         {
-            painter.setOpacity(0.5);
-            painter.drawImage(rect(), areaPixmap.toImage());
-            painter.setOpacity(1.0);
+            // painter.setOpacity(0.5);
+            // painter.drawImage(rect(), areaPixmap.toImage());
+            // painter.setOpacity(1.0);
         }
         /* Draw a horizontal and vertical line on data point under the mouse cursor
          * and draw the value on the left hand side of the chart: */
