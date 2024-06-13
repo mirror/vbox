@@ -42,6 +42,7 @@
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
+#include "QITableView.h"
 #include "QIToolBar.h"
 #include "UIActionPoolManager.h"
 #include "UICloudEntityKey.h"
@@ -59,6 +60,7 @@
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVMActivityOverviewWidget.h"
+#include "UIVMActivityOverviewModelView.h"
 
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
@@ -76,6 +78,7 @@ struct ResourceColumn
     QString m_strName;
     bool    m_fEnabled;
 };
+
 
 /** Draws a doughnut shaped chart for the passed data values and can have a text drawn in the center. */
 
@@ -365,7 +368,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverviewModel definition.                                                                                    *
+*   UIActivityOverviewModel definition.                                                                                    *
 *********************************************************************************************************************************/
 class UIActivityOverviewModel : public QAbstractTableModel
 {
@@ -982,7 +985,8 @@ void UIActivityOverviewItemCloud::sltMetricDataReceived(KMetricType enmMetricTyp
                                                         const QVector<QString> &data, const QVector<QString> &timeStamps)
 {
     Q_UNUSED(timeStamps);
-    AssertReturnVoid(!data.isEmpty());
+    if (data.isEmpty())
+        return;
 
     if (data[0].toFloat() < 0)
         return;
@@ -1741,8 +1745,11 @@ UIVMActivityOverviewWidget::UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIA
     , m_fShowToolbar(fShowToolbar)
     , m_pToolBar(0)
     , m_pTableView(0)
+    , m_pAccessibleTableView(0)
     , m_pProxyModel(0)
+    , m_pAccessibleProxyModel(0)
     , m_pModel(0)
+    , m_pAccessibleModel(0)
     , m_pColumnVisibilityToggleMenu(0)
     , m_pHostStatsWidget(0)
     , m_fIsCurrentTool(true)
@@ -1802,6 +1809,9 @@ void UIVMActivityOverviewWidget::sltRetranslateUI()
 
     if (m_pModel)
         m_pModel->setColumnCaptions(m_columnTitles);
+
+    if (m_pAccessibleModel)
+        m_pAccessibleModel->setColumnCaptions(m_columnTitles);
 
     computeMinimumColumnWidths();
 }
@@ -1897,6 +1907,30 @@ void UIVMActivityOverviewWidget::prepareWidgets()
                 this, &UIVMActivityOverviewWidget::sltHandleTableSelectionChanged);
         updateModelColumVisibilityCache();
     }
+
+
+    m_pAccessibleProxyModel = new UIActivityOverviewAccessibleProxyModel(this);
+    m_pAccessibleTableView = new UIVMActivityOverviewAccessibleTableView(this);
+    m_pAccessibleModel = new UIActivityOverviewAccessibleModel(this, m_pAccessibleTableView);
+    m_pAccessibleProxyModel->setSourceModel(m_pAccessibleModel);
+    m_pAccessibleTableView->setModel(m_pAccessibleProxyModel);
+
+    m_pAccessibleTableView->setItemDelegate(new UIVMActivityOverviewDelegate(this));
+    m_pAccessibleTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_pAccessibleTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_pAccessibleTableView->setShowGrid(false);
+    m_pAccessibleTableView->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_pAccessibleTableView->horizontalHeader()->setHighlightSections(false);
+    m_pAccessibleTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    m_pAccessibleTableView->verticalHeader()->setVisible(false);
+    m_pAccessibleTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    /* Minimize the row height: */
+    m_pAccessibleTableView->verticalHeader()->setDefaultSectionSize(m_pAccessibleTableView->verticalHeader()->minimumSectionSize());
+    m_pAccessibleTableView->setAlternatingRowColors(true);
+    m_pAccessibleTableView->setSortingEnabled(true);
+    m_pAccessibleTableView->sortByColumn(0, Qt::AscendingOrder);
+    m_pAccessibleTableView->hide();
+    layout()->addWidget(m_pAccessibleTableView);
 }
 
 void UIVMActivityOverviewWidget::updateColumnsMenu()
@@ -2118,6 +2152,7 @@ void UIVMActivityOverviewWidget::computeMinimumColumnWidths()
                                 + m_iSortIndicatorWidth;
     }
     m_pTableView->setMinimumColumnWidths(columnWidthsInPixels);
+    m_pAccessibleTableView->setMinimumColumnWidths(columnWidthsInPixels);
 }
 
 bool UIVMActivityOverviewWidget::columnVisible(int iColumnId) const
