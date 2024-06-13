@@ -46,7 +46,6 @@
 #include "CMachine.h"
 #include "CMediumAttachment.h"
 #include "CSnapshot.h"
-#include "CSystemProperties.h"
 
 
 /** Template function to convert a list of
@@ -196,43 +195,6 @@ UIMediumEnumerator::UIMediumEnumerator()
                The guest caches ISOs aggressively and files sizes may change. */
     m_recentMediaExcludeList << "ad-hoc.viso";
 #endif
-}
-
-/* static */
-QString UIMediumEnumerator::defaultFolderPathForType(UIMediumDeviceType enmMediumType)
-{
-    QString strLastFolder;
-    switch (enmMediumType)
-    {
-        case UIMediumDeviceType_HardDisk:
-            strLastFolder = gEDataManager->recentFolderForHardDrives();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
-            break;
-        case UIMediumDeviceType_DVD:
-            strLastFolder = gEDataManager->recentFolderForOpticalDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForHardDrives();
-            break;
-        case UIMediumDeviceType_Floppy:
-            strLastFolder = gEDataManager->recentFolderForFloppyDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForHardDrives();
-            break;
-        default:
-            break;
-    }
-
-    if (strLastFolder.isEmpty())
-        return gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-
-    return strLastFolder;
 }
 
 QList<QUuid> UIMediumEnumerator::mediumIDs() const

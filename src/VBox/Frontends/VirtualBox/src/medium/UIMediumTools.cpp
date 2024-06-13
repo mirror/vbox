@@ -51,6 +51,7 @@
 #include "CMedium.h"
 #include "CSession.h"
 #include "CStorageController.h"
+#include "CSystemProperties.h"
 
 
 QString UIMediumTools::storageDetails(const CMedium &comMedium, bool fPredictDiff, bool fUseHtml /* = true */)
@@ -151,6 +152,42 @@ bool UIMediumTools::acquireAmountOfImmutableImages(const CMachine &comMachine, u
     return fSuccess;
 }
 
+QString UIMediumTools::defaultFolderPathForType(UIMediumDeviceType enmMediumType)
+{
+    QString strLastFolder;
+    switch (enmMediumType)
+    {
+        case UIMediumDeviceType_HardDisk:
+            strLastFolder = gEDataManager->recentFolderForHardDrives();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
+            break;
+        case UIMediumDeviceType_DVD:
+            strLastFolder = gEDataManager->recentFolderForOpticalDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForHardDrives();
+            break;
+        case UIMediumDeviceType_Floppy:
+            strLastFolder = gEDataManager->recentFolderForFloppyDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForHardDrives();
+            break;
+        default:
+            break;
+    }
+
+    if (strLastFolder.isEmpty())
+        return gpGlobalSession->virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+
+    return strLastFolder;
+}
+
 QUuid UIMediumTools::openMedium(UIMediumDeviceType enmMediumType,
                                 const QString &strMediumLocation,
                                 QWidget *pParent /* = 0 */)
@@ -198,7 +235,7 @@ QUuid UIMediumTools::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumTy
     QString strFilter;
     QString strTitle;
     QString allType;
-    QString strLastFolder = UIMediumEnumerator::defaultFolderPathForType(enmMediumType);
+    QString strLastFolder = defaultFolderPathForType(enmMediumType);
 
     /* For DVDs and Floppies always check first the last recently used medium folder.
      * For hard disk use the caller's setting: */

@@ -29,6 +29,7 @@
 #include "UICommon.h"
 #include "UIGlobalSession.h"
 #include "UIMediumEnumerator.h"
+#include "UIMediumTools.h"
 #include "UIModalWindowManager.h"
 #include "UINotificationCenter.h"
 #include "UIWizardNewVD.h"
@@ -179,7 +180,7 @@ QUuid UIWizardNewVD::createVDWithWizard(QWidget *pParent,
     /* Default path: */
     const QString strDefaultPath = !strMachineFolder.isEmpty()
                                  ? strMachineFolder
-                                 : UIMediumEnumerator::defaultFolderPathForType(UIMediumDeviceType_HardDisk);
+                                 : UIMediumTools::defaultFolderPathForType(UIMediumDeviceType_HardDisk);
 
     /* Default name: */
     const QString strDiskName = uiCommon().findUniqueFileName(strDefaultPath,

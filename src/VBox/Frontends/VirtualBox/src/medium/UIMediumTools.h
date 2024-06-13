@@ -61,6 +61,12 @@ namespace UIMediumTools
     SHARED_LIBRARY_STUFF bool acquireAmountOfImmutableImages(const CMachine &comMachine,
                                                              ulong &cAmount);
 
+    /** Searches extra data for the recently used folder path which corresponds to @a enmMediumType.
+      * When that search fails it looks for recent folder extra data for other medium types.
+      * As the last resort returns default vm folder path.
+      * @param  enmMediumType  Passes the medium type. */
+    SHARED_LIBRARY_STUFF QString defaultFolderPathForType(UIMediumDeviceType enmMediumType);
+
     /** Opens external medium from passed @a strMediumLocation.
       * @param  enmMediumType      Brings the medium type.
       * @param  strMediumLocation  Brings the file path to load medium from.

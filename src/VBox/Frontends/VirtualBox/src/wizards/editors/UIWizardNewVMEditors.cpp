@@ -35,7 +35,7 @@
 #include "UIBaseMemoryEditor.h"
 #include "UIFilePathSelector.h"
 #include "UIHostnameDomainNameEditor.h"
-#include "UIMediumEnumerator.h"
+#include "UIMediumTools.h"
 #include "UITranslationEventListener.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIVirtualCPUEditor.h"
@@ -154,7 +154,7 @@ void UIGAInstallationGroupBox::prepare()
     m_pGAISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
     m_pGAISOFilePathSelector->setFileDialogFilters("ISO Images(*.iso *.ISO)");
     m_pGAISOFilePathSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-    m_pGAISOFilePathSelector->setInitialPath(UIMediumEnumerator::defaultFolderPathForType(UIMediumDeviceType_DVD));
+    m_pGAISOFilePathSelector->setInitialPath(UIMediumTools::defaultFolderPathForType(UIMediumDeviceType_DVD));
     m_pGAISOFilePathSelector->setRecentMediaListType(UIMediumDeviceType_DVD);
     if (m_pGAISOPathLabel)
         m_pGAISOPathLabel->setBuddy(m_pGAISOFilePathSelector);

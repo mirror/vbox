@@ -86,12 +86,6 @@ public:
     /** Returns whether singleton intance really exists. */
     static bool exists();
 
-    /** Searches extra data for the recently used folder path which corresponds to @a enmMediumType.
-      * When that search fails it looks for recent folder extra data for other medium types.
-      * As the last resort returns default vm folder path.
-      * @param  enmMediumType  Passes the medium type. */
-    static QString defaultFolderPathForType(UIMediumDeviceType enmMediumType);
-
     /** Returns cached UIMedium ID list. */
     QList<QUuid> mediumIDs() const;
     /** Returns a wrapper of cached UIMedium with specified @a uMediumID. */

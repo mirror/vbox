@@ -41,6 +41,7 @@
 #include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UIMediumEnumerator.h"
+#include "UIMediumTools.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIModalWindowManager.h"
@@ -79,7 +80,7 @@ QUuid UIFDCreationDialog::createFloppyDisk(QWidget *pParent, const QString &strD
     QString strStartPath(strDefaultFolder);
 
     if (strStartPath.isEmpty())
-        strStartPath = UIMediumEnumerator::defaultFolderPathForType(UIMediumDeviceType_Floppy);
+        strStartPath = UIMediumTools::defaultFolderPathForType(UIMediumDeviceType_Floppy);
 
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
 

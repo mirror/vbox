@@ -68,6 +68,7 @@
 #include "UILoggingDefs.h"
 #include "UIMedium.h"
 #include "UIMediumEnumerator.h"
+#include "UIMediumTools.h"
 #include "UIMediumManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
@@ -1263,7 +1264,7 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
                 break;
             case WizardType_NewVD:
             {
-                const QString strFolder = UIMediumEnumerator::defaultFolderPathForType(UIMediumDeviceType_HardDisk);
+                const QString strFolder = UIMediumTools::defaultFolderPathForType(UIMediumDeviceType_HardDisk);
                 const QString strDiskName = uiCommon().findUniqueFileName(strFolder, "NewVirtualDisk");
                 const CGuestOSType comGuestOSType = gpGlobalSession->virtualBox().GetGuestOSType("Other");
                 const qulonglong uDiskSize = comGuestOSType.GetRecommendedHDD();
