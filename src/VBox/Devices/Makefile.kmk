@@ -1803,16 +1803,18 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS) && "$(intersects 
 endif # defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
 
 
-#
-# The decoder library for the tracing driver.
-#
-DLLS += VBoxTraceLogDecoders
-VBoxTraceLogDecoders_TEMPLATE      = VBoxR3Dll
-VBoxTraceLogDecoders_LDFLAGS.linux = $(VBOX_GCC_NO_UNDEFINED)
-VBoxTraceLogDecoders_SOURCES       = \
-	Trace/VBoxTraceLogDecoders.cpp
-VBoxTraceLogDecoders_SOURCES.win   = \
-	Trace/VBoxTraceLogDecoders.rc
-VBoxTraceLogDecoders_LIBS          = $(LIB_RUNTIME)
+if !defined(VBOX_ONLY_BUILD)
+ #
+ # The decoder library for the tracing driver.
+ #
+ DLLS += VBoxTraceLogDecoders
+ VBoxTraceLogDecoders_TEMPLATE      = VBoxR3Dll
+ VBoxTraceLogDecoders_LDFLAGS.linux = $(VBOX_GCC_NO_UNDEFINED)
+ VBoxTraceLogDecoders_SOURCES       = \
+ 	Trace/VBoxTraceLogDecoders.cpp
+ VBoxTraceLogDecoders_SOURCES.win   = \
+ 	Trace/VBoxTraceLogDecoders.rc
+ VBoxTraceLogDecoders_LIBS          = $(LIB_RUNTIME)
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
