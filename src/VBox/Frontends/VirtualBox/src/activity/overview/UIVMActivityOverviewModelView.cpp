@@ -419,7 +419,7 @@ QString UIActivityOverviewAccessibleCell::text() const
     return m_strText;
 }
 
-int UIActivityOverviewAccessibleCell::columnLength(int iColumnIndex) const
+int UIActivityOverviewAccessibleCell::columnLength(int /*iColumnIndex*/) const
 {
     return 0;
     //return m_columnData.value(iColumnIndex, QString()).length();
