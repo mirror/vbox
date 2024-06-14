@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -69,6 +69,7 @@ private slots:
 
     /** Handles translation event. */
     void sltRetranslateUI();
+
     /** Handles size slider change. */
     void sltSizeSliderChanged(int iValue);
     /** Handles size editor text edit finished signal. */
@@ -89,12 +90,13 @@ private:
     static qulonglong sliderToSizeMB(int uValue, int iSliderScale);
     /** Updates slider/editor tool-tips. */
     void updateSizeToolTips(qulonglong uSize);
-    /** Checks if the uSize is divisible by m_uSectorSize */
+    /** Checks if the uSize is divisible by s_uSectorSize */
     qulonglong checkSectorSizeAlignment(qulonglong uSize);
+    /** Ensures there is only proper size-suffix available. */
     QString ensureSizeSuffix(const QString &strSizeString);
 
     /* Holds the block size. We force m_uSize to be multiple of this number. */
-    static const qulonglong m_uSectorSize;
+    static const qulonglong  s_uSectorSize;
     /** Holds the minimum medium size. */
     const qulonglong  m_uSizeMin;
     /** Holds the maximum medium size. */

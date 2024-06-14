@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -43,7 +43,8 @@
 #include "CSystemProperties.h"
 
 
-const qulonglong UIMediumSizeEditor::m_uSectorSize = 512;
+/* static */
+const qulonglong UIMediumSizeEditor::s_uSectorSize = 512;
 
 UIMediumSizeEditor::UIMediumSizeEditor(QWidget *pParent, qulonglong uMinimumSize /* = _4M */)
     : QWidget(pParent)
@@ -56,10 +57,7 @@ UIMediumSizeEditor::UIMediumSizeEditor(QWidget *pParent, qulonglong uMinimumSize
     , m_pLabelMaxSize(0)
     , m_pEditor(0)
 {
-    /* Prepare: */
     prepare();
-    QString strRegEx = QString("[^\\d%1]").arg(UITranslator::decimalSep());
-    m_regExNonDigitOrSeparator = QRegularExpression(strRegEx);
 }
 
 void UIMediumSizeEditor::setMediumSize(qulonglong uSize)
@@ -109,7 +107,6 @@ void UIMediumSizeEditor::sltSizeEditorTextChanged()
 {
     QString strSizeString = ensureSizeSuffix(m_pEditor->text());
 
-
     m_pEditor->blockSignals(true);
     int iCursorPosition = m_pEditor->cursorPosition();
     m_pEditor->setText(strSizeString);
@@ -128,19 +125,11 @@ void UIMediumSizeEditor::sltSizeEditorTextChanged()
     emit sigSizeChanged(m_uSize);
 }
 
-QString UIMediumSizeEditor::ensureSizeSuffix(const QString &strSizeString)
-{
-    /* Try to update the m_strSizeSuffix: */
-    if (UITranslator::hasSizeSuffix(strSizeString))
-        m_strSizeSuffix = gpConverter->toString(UITranslator::parseSizeSuffix(strSizeString));
-
-    QString strOnlyDigits(strSizeString);
-    /* Remove any chars from the string except digits and decimal separator and then add a space and size suffix: */
-    return QString("%1 %2").arg(strOnlyDigits.remove(m_regExNonDigitOrSeparator)).arg(m_strSizeSuffix);
-}
-
 void UIMediumSizeEditor::prepare()
 {
+    /* Configure reg-exp: */
+    m_regExNonDigitOrSeparator = QRegularExpression(QString("[^\\d%1]").arg(UITranslator::decimalSep()));
+
     /* Create layout: */
     QGridLayout *pLayout = new QGridLayout(this);
     if (pLayout)
@@ -152,7 +141,7 @@ void UIMediumSizeEditor::prepare()
         pLayout->setColumnStretch(2, 0);
 
         /* Create size slider: */
-        m_pSlider = new QSlider;
+        m_pSlider = new QSlider(this);
         if (m_pSlider)
         {
             /* Configure slider: */
@@ -261,8 +250,8 @@ int UIMediumSizeEditor::log2i(qulonglong uValue)
 /* static */
 int UIMediumSizeEditor::sizeMBToSlider(qulonglong uValue, int iSliderScale)
 {
-    /* Make sure *any* slider value is multiple of m_uSectorSize: */
-    uValue /= m_uSectorSize;
+    /* Make sure *any* slider value is multiple of s_uSectorSize: */
+    uValue /= s_uSectorSize;
 
     /* Calculate result: */
     int iPower = log2i(uValue);
@@ -285,8 +274,8 @@ qulonglong UIMediumSizeEditor::sliderToSizeMB(int uValue, int iSliderScale)
     qulonglong uTickMBNext = qulonglong (1) << (iPower + 1);
     qulonglong uResult = uTickMB + (uTickMBNext - uTickMB) * iStep / iSliderScale;
 
-    /* Make sure *any* slider value is multiple of m_uSectorSize: */
-    uResult *= m_uSectorSize;
+    /* Make sure *any* slider value is multiple of s_uSectorSize: */
+    uResult *= s_uSectorSize;
 
     /* Return result: */
     return uResult;
@@ -301,8 +290,18 @@ void UIMediumSizeEditor::updateSizeToolTips(qulonglong uSize)
 
 qulonglong UIMediumSizeEditor::checkSectorSizeAlignment(qulonglong uSize)
 {
-    if (m_uSectorSize == 0 || uSize % m_uSectorSize == 0)
+    if (s_uSectorSize == 0 || uSize % s_uSectorSize == 0)
         return uSize;
-    qulonglong uNewSize = (uSize / m_uSectorSize) * m_uSectorSize;
-    return uNewSize;
+    return (uSize / s_uSectorSize) * s_uSectorSize;
+}
+
+QString UIMediumSizeEditor::ensureSizeSuffix(const QString &strSizeString)
+{
+    /* Try to update the m_strSizeSuffix: */
+    if (UITranslator::hasSizeSuffix(strSizeString))
+        m_strSizeSuffix = gpConverter->toString(UITranslator::parseSizeSuffix(strSizeString));
+
+    /* Remove any chars from the string except digits and decimal separator and then add a space and size suffix: */
+    QString strOnlyDigits(strSizeString);
+    return QString("%1 %2").arg(strOnlyDigits.remove(m_regExNonDigitOrSeparator)).arg(m_strSizeSuffix);
 }
