@@ -151,7 +151,10 @@ static decltype(LogonUserW)            *g_pfnLogonUserW                 = NULL;
 static decltype(CreateProcessAsUserW)  *g_pfnCreateProcessAsUserW       = NULL;
 /* user32.dll: */
 static decltype(OpenWindowStationW)    *g_pfnOpenWindowStationW         = NULL;
-static decltype(CloseWindowStation)    *g_pfnCloseWindowStation        = NULL;
+static decltype(CloseWindowStation)    *g_pfnCloseWindowStation         = NULL;
+/* user32.dll: (for reasons of bad AV heuristics) */
+static decltype(GetUserObjectSecurity) *g_pfnGetUserObjectSecurity     = NULL;
+static decltype(SetUserObjectSecurity) *g_pfnSetUserObjectSecurity     = NULL;
 /* userenv.dll: */
 static PFNCREATEENVIRONMENTBLOCK        g_pfnCreateEnvironmentBlock     = NULL;
 static PFNPFNDESTROYENVIRONMENTBLOCK    g_pfnDestroyEnvironmentBlock    = NULL;
@@ -376,6 +379,13 @@ static DECLCALLBACK(int) rtProcWinResolveOnce(void *pvUser)
 
         rc = RTLdrGetSymbol(hMod, "CloseWindowStation", (void **)&g_pfnCloseWindowStation);
         if (RT_FAILURE(rc)) { g_pfnCloseWindowStation = NULL; Assert(g_enmWinVer <= kRTWinOSType_NT310); }
+
+        /* These are only imported to workaround bad AV detection heuristics. */
+        rc = RTLdrGetSymbol(hMod, "GetUserObjectSecurity", (void **)&g_pfnGetUserObjectSecurity);
+        AssertRC(rc);
+
+        rc = RTLdrGetSymbol(hMod, "SetUserObjectSecurity", (void **)&g_pfnSetUserObjectSecurity);
+        AssertRC(rc);
 
         RTLdrClose(hMod);
     }
@@ -994,14 +1004,15 @@ static bool rtProcWinLogSecAttr(HANDLE hUserObj)
     SECURITY_INFORMATION SecInfo   = DACL_SECURITY_INFORMATION;
     DWORD                cbNeeded;
     AssertReturn(pSecDesc, false);
-    if (!GetUserObjectSecurity(hUserObj, &SecInfo, pSecDesc, cbSecDesc, &cbNeeded))
+    AssertReturn(g_pfnGetUserObjectSecurity, false);
+    if (!g_pfnGetUserObjectSecurity(hUserObj, &SecInfo, pSecDesc, cbSecDesc, &cbNeeded))
     {
         RTMemTmpFree(pSecDesc);
         AssertReturn(GetLastError() == ERROR_INSUFFICIENT_BUFFER, false);
         cbSecDesc = cbNeeded + 128;
         pSecDesc  = (PSECURITY_DESCRIPTOR)RTMemTmpAlloc(cbSecDesc);
         AssertReturn(pSecDesc, false);
-        if (!GetUserObjectSecurity(hUserObj, &SecInfo, pSecDesc, cbSecDesc, &cbNeeded))
+        if (!g_pfnGetUserObjectSecurity(hUserObj, &SecInfo, pSecDesc, cbSecDesc, &cbNeeded))
         {
             RTMemTmpFree(pSecDesc);
             AssertFailedReturn(false);
@@ -1147,14 +1158,15 @@ static PSECURITY_DESCRIPTOR rtProcWinGetUserObjDacl(HANDLE hUserObj, uint32_t *p
     SECURITY_INFORMATION SecInfo   = DACL_SECURITY_INFORMATION;
     DWORD                cbNeeded;
     AssertReturn(pSecDesc, NULL);
-    if (!GetUserObjectSecurity(hUserObj, &SecInfo, pSecDesc, cbSecDesc, &cbNeeded))
+    AssertReturn(g_pfnGetUserObjectSecurity, NULL);
+    if (!g_pfnGetUserObjectSecurity(hUserObj, &SecInfo, pSecDesc, cbSecDesc, &cbNeeded))
     {
         RTMemTmpFree(pSecDesc);
         AssertReturn(GetLastError() == ERROR_INSUFFICIENT_BUFFER, NULL);
         cbSecDesc = cbNeeded + 128;
         pSecDesc  = (PSECURITY_DESCRIPTOR)RTMemTmpAlloc(cbSecDesc);
         AssertReturn(pSecDesc, NULL);
-        if (!GetUserObjectSecurity(hUserObj, &SecInfo, pSecDesc, cbSecDesc, &cbNeeded))
+        if (!g_pfnGetUserObjectSecurity(hUserObj, &SecInfo, pSecDesc, cbSecDesc, &cbNeeded))
         {
             RTMemTmpFree(pSecDesc);
             AssertFailedReturn(NULL);
@@ -1267,6 +1279,7 @@ static bool rtProcWinAddAccessAllowedAce(PACL pDstAcl, uint32_t fAceFlags, uint3
 static bool rtProcWinAddSidToWinStation(HWINSTA hWinStation, PSID pSid)
 {
     bool fRet = false;
+    AssertReturn(g_pfnSetUserObjectSecurity, fRet);
 
     /*
      * Get the current DACL.
@@ -1305,7 +1318,7 @@ static bool rtProcWinAddSidToWinStation(HWINSTA hWinStation, PSID pSid)
                     if (SetSecurityDescriptorDacl(pNewSecDesc, TRUE /*fDaclPresent*/, pNewDacl, FALSE /*fDaclDefaulted*/))
                     {
                         SECURITY_INFORMATION SecInfo = DACL_SECURITY_INFORMATION;
-                        if (SetUserObjectSecurity(hWinStation, &SecInfo, pNewSecDesc))
+                        if (g_pfnSetUserObjectSecurity(hWinStation, &SecInfo, pNewSecDesc))
                             fRet = true;
                         else
                             AssertFailed();
@@ -1339,6 +1352,7 @@ static bool rtProcWinAddSidToWinStation(HWINSTA hWinStation, PSID pSid)
 static bool rtProcWinAddSidToDesktop(HDESK hDesktop, PSID pSid)
 {
     bool fRet = false;
+    AssertReturn(g_pfnSetUserObjectSecurity, fRet);
 
     /*
      * Get the current DACL.
@@ -1375,7 +1389,7 @@ static bool rtProcWinAddSidToDesktop(HDESK hDesktop, PSID pSid)
                     if (SetSecurityDescriptorDacl(pNewSecDesc, TRUE /*fDaclPresent*/, pNewDacl, FALSE /*fDaclDefaulted*/))
                     {
                         SECURITY_INFORMATION SecInfo = DACL_SECURITY_INFORMATION;
-                        if (SetUserObjectSecurity(hDesktop, &SecInfo, pNewSecDesc))
+                        if (g_pfnSetUserObjectSecurity(hDesktop, &SecInfo, pNewSecDesc))
                             fRet = true;
                         else
                             AssertFailed();
