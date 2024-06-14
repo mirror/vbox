@@ -76,7 +76,7 @@ typedef struct RTTRACELOGDECODERHLP
      *                      well as the debugger ones.
      * @param   ...         Arguments specified in the format string.
      */
-    DECLCALLBACKMEMBER(int, pfnPrintf, (PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(3, 4);
+    DECLCALLBACKMEMBER(int, pfnPrintf, (PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(2, 3);
 
 
     /**
@@ -88,7 +88,7 @@ typedef struct RTTRACELOGDECODERHLP
      *                      well as the debugger ones.
      * @param   ...         Arguments specified in the format string.
      */
-    DECLCALLBACKMEMBER(int, pfnErrorMsg, (PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(3, 4);
+    DECLCALLBACKMEMBER(int, pfnErrorMsg, (PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(2, 3);
 
 
     /**

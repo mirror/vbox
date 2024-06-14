@@ -206,7 +206,6 @@ static int rtTraceLogToolReaderCreate(PRTTRACELOGRDR phTraceLogRdr, const char *
 
 
 static DECLCALLBACK(int) rtTraceLogToolDecoderHlpPrintf(PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)
-                                                       RT_IPRT_FORMAT_ATTR(3, 4)
 {
     RT_NOREF(pHlp);
     va_list Args;
@@ -218,7 +217,6 @@ static DECLCALLBACK(int) rtTraceLogToolDecoderHlpPrintf(PRTTRACELOGDECODERHLP pH
 
 
 static DECLCALLBACK(int) rtTraceLogToolDecoderHlpErrorMsg(PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)
-                                                         RT_IPRT_FORMAT_ATTR(3, 4)
 {
     RT_NOREF(pHlp);
     va_list Args;
