@@ -68,6 +68,9 @@ public:
     /** Defines scaled @a uValue. */
     void setScaledValue(qulonglong uValue);
 
+    /** Returns scaled value in readable format. */
+    QString scaledValueToString();
+
 private slots:
 
     /** Handles the signal about @a iValue change. */

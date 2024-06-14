@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QAccessibleWidget>
 #include <QGridLayout>
 #include <QLabel>
 #include <QRegularExpressionValidator>
@@ -42,6 +43,51 @@
 #include "CSystemProperties.h"
 
 
+/** QAccessibleWidget extension used as an accessibility interface for UIMediumSizeSlider. */
+class UIAccessibilityInterfaceForUIMediumSizeSlider : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating QIRichTextLabel accessibility interface: */
+        if (pObject && strClassname == QLatin1String("UIMediumSizeSlider"))
+            return new UIAccessibilityInterfaceForUIMediumSizeSlider(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    UIAccessibilityInterfaceForUIMediumSizeSlider(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::Slider)
+    {}
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
+    {
+        /* Make sure label still alive: */
+        AssertPtrReturn(slider(), QString());
+
+        /* Non-macOS screen-readers using QAccessible::Value for slider: */
+        if (enmTextRole == QAccessible::Value)
+            return slider()->scaledValueToString();
+
+        /* Call to base-class: */
+        return QAccessibleWidget::text(enmTextRole);
+    }
+
+private:
+
+    /** Returns corresponding UIMediumSizeSlider. */
+    UIMediumSizeSlider *slider() const
+    {
+        return qobject_cast<UIMediumSizeSlider*>(widget());
+    }
+};
+
+
 /*********************************************************************************************************************************
 *   Class UIMediumSizeSlider implementation.                                                                                     *
 *********************************************************************************************************************************/
@@ -53,6 +99,9 @@ UIMediumSizeSlider::UIMediumSizeSlider(qulonglong uSizeMax, QWidget *pParent /* 
     , m_uScaledMaximum(100)
     , m_uScaledValue(0)
 {
+    /* Install UIMediumSizeSlider accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUIMediumSizeSlider::pFactory);
+
     /* Configure basic properties: */
     setFocusPolicy(Qt::StrongFocus);
     setOrientation(Qt::Horizontal);
@@ -99,6 +148,11 @@ void UIMediumSizeSlider::setScaledValue(qulonglong uValue)
     m_uScaledValue = uValue;
     /* Call to base-class: */
     QSlider::setValue(sizeMBToSlider(m_uScaledValue, m_iSliderScale));
+}
+
+QString UIMediumSizeSlider::scaledValueToString()
+{
+    return UITranslator::formatSize(m_uScaledValue);
 }
 
 void UIMediumSizeSlider::sltValueChanged(int iValue)
@@ -344,7 +398,7 @@ void UIMediumSizeEditor::prepare()
 
 void UIMediumSizeEditor::updateSizeToolTips(qulonglong uSize)
 {
-    const QString strToolTip = tr("<nobr>%1 (%2 B)</nobr>").arg(UITranslator::formatSize(uSize)).arg(uSize);
+    const QString strToolTip = tr("%1 (%2 B)").arg(UITranslator::formatSize(uSize)).arg(uSize);
     m_pSlider->setToolTip(strToolTip);
     m_pEditor->setToolTip(strToolTip);
 }
