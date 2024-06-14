@@ -210,7 +210,7 @@ static DECLCALLBACK(int) rtTraceLogToolDecoderHlpPrintf(PRTTRACELOGDECODERHLP pH
     RT_NOREF(pHlp);
     va_list Args;
     va_start(Args, pszFormat);
-    int rc = RTMsgInfoV(pszFormat, Args);
+    int rc = RTPrintfV(pszFormat, Args);
     va_end(Args);
     return rc;
 }

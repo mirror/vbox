@@ -52,6 +52,35 @@ typedef uint32_t TPMHANDLE;
 /** TPM interface object handle. */
 typedef TPMHANDLE TPMIDHOBJECT;
 
+/** A TPM boolean value (TPMI_YES_NO). */
+typedef uint8_t  TPMYESNO;
+/** A No aka False value for TPMYESNO. */
+#define TPMYESNO_NO         0
+/** A Yes aka True value for TPMYESNO. */
+#define TPMYESNO_YES        1
+
+/** A TPM capability value (TPM_CAP). */
+typedef uint32_t TPMCAP;
+
+
+/**
+ * TPM sized buffer.
+ */
+#pragma pack(1)
+typedef struct TPMBUF
+{
+    /** Size of the buffer in bytes - can be 0. */
+    uint16_t            u16Size;
+    /** Buffer area. */
+    uint8_t             abBuf[RT_FLEXIBLE_ARRAY_NESTED];
+} TPMBUF;
+#pragma pack()
+/** Pointer to a TPM buffer. */
+typedef TPMBUF *PTPMBUF;
+/** Pointer to a const TPM buffer. */
+typedef const TPMBUF *PCTPMBUF;
+
+
 
 /**
  * TPM request header (everything big endian).
@@ -72,6 +101,27 @@ AssertCompileSize(TPMREQHDR, 2 + 4 + 4);
 typedef TPMREQHDR *PTPMREQHDR;
 /** Pointer to a const TPM request header. */
 typedef const TPMREQHDR *PCTPMREQHDR;
+
+
+/**
+ * TPM response header (everything big endian).
+ */
+#pragma pack(1)
+typedef struct TPMRESPHDR
+{
+    /** The tag for this request. */
+    uint16_t            u16Tag;
+    /** Size of the response in bytes. */
+    uint32_t            cbResp;
+    /** The error code for the response. */
+    uint32_t            u32ErrCode;
+} TPMRESPHDR;
+#pragma pack()
+AssertCompileSize(TPMRESPHDR, 2 + 4 + 4);
+/** Pointer to a TPM response header. */
+typedef TPMRESPHDR *PTPMRESPHDR;
+/** Pointer to a const TPM response header. */
+typedef const TPMRESPHDR *PCTPMRESPHDR;
 
 
 /** @name TPM 1.2 request tags
@@ -506,6 +556,27 @@ typedef struct TPM2REQGETCAPABILITY
 typedef TPM2REQGETCAPABILITY *PTPM2REQGETCAPABILITY;
 /** Pointer to a const TPM2_CC_GET_CAPABILITY request. */
 typedef const TPM2REQGETCAPABILITY *PCTPM2REQGETCAPABILITY;
+
+/**
+ * TPM2_CC_GET_CAPABILITY response.
+ */
+#pragma pack(1)
+typedef struct TPM2RESPGETCAPABILITY
+{
+    /** Request header. */
+    TPMREQHDR                   Hdr;
+    /** The capability group to query. */
+    TPMYESNO                    fMoreData;
+    /** The capability being returned (part of TPMS_CAPABILITY_DATA). */
+    TPMCAP                      u32Cap;
+    /** Capability data. */
+    uint8_t                     abCap[RT_FLEXIBLE_ARRAY_NESTED];
+} TPM2RESPGETCAPABILITY;
+#pragma pack()
+/** Pointer to a TPM2_CC_GET_CAPABILITY request. */
+typedef TPM2RESPGETCAPABILITY *PTPM2RESPGETCAPABILITY;
+/** Pointer to a const TPM2_CC_GET_CAPABILITY request. */
+typedef const TPM2RESPGETCAPABILITY *PCTPM2RESPGETCAPABILITY;
 /** @} */
 
 
@@ -530,25 +601,42 @@ typedef const TPM2REQREADPUBLIC *PCTPM2REQREADPUBLIC;
 /** @} */
 
 
+/** @name Defines related to TPM2_CC_GET_RANDOM.
+ * @{ */
 /**
- * TPM response header (everything big endian).
+ * TPM2_CC_GET_RANDOM request.
  */
 #pragma pack(1)
-typedef struct TPMRESPHDR
+typedef struct TPM2REQGETRANDOM
 {
-    /** The tag for this request. */
-    uint16_t            u16Tag;
-    /** Size of the response in bytes. */
-    uint32_t            cbResp;
-    /** The error code for the response. */
-    uint32_t            u32ErrCode;
-} TPMRESPHDR;
+    /** Request header. */
+    TPMREQHDR                   Hdr;
+    /** The number of random bytes requested. */
+    uint16_t                    u16RandomBytes;
+} TPM2REQGETRANDOM;
 #pragma pack()
-AssertCompileSize(TPMRESPHDR, 2 + 4 + 4);
-/** Pointer to a TPM response header. */
-typedef TPMRESPHDR *PTPMRESPHDR;
-/** Pointer to a const TPM response header. */
-typedef const TPMRESPHDR *PCTPMRESPHDR;
+/** Pointer to a TPM2_CC_GET_RANDOM request. */
+typedef TPM2REQGETRANDOM *PTPM2REQGETRANDOM;
+/** Pointer to a const TPM2_CC_GET_RANDOM request. */
+typedef const TPM2REQGETRANDOM *PCTPM2REQGETRANDOM;
+
+/**
+ * TPM2_CC_GET_RANDOM response.
+ */
+#pragma pack(1)
+typedef struct TPM2RESPGETRANDOM
+{
+    /** Request header. */
+    TPMRESPHDR                  Hdr;
+    /** The buffer holding the response data. */
+    TPMBUF                      Buf;
+} TPM2RESPGETRANDOM;
+#pragma pack()
+/** Pointer to a TPM2_CC_GET_RANDOM response. */
+typedef TPM2RESPGETRANDOM *PTPM2RESPGETRANDOM;
+/** Pointer to a const TPM2_CC_GET_RANDOM response. */
+typedef const TPM2RESPGETRANDOM *PCTPM2RESPGETRANDOM;
+/** @} */
 
 
 /** @name TPM 1.2 response tags
