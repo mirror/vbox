@@ -80,7 +80,7 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeStartupShutdown(PCTPMREQ
 static struct
 {
     const char     *pszCap;
-    const uint32_t *paProperties;   
+    const uint32_t *paProperties;
 } s_aTpm2Caps[] =
 {
     { RT_STR(TPM2_CAP_ALGS),            NULL },
