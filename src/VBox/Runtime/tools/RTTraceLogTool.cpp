@@ -54,19 +54,34 @@
 #include <iprt/tcp.h>
 
 
+typedef struct RTTRACELOGDECODER
+{
+    /** The tracelog decoder registration structure. */
+    PCRTTRACELOGDECODERREG      pReg;
+    /** The helper structure for this decoder. */
+    RTTRACELOGDECODERHLP        Hlp;
+    /** The decoder state if created. */
+    void                        *pvDecoderState;
+    /** The free callback of any attached decoder state. */
+    PFNTRACELOGDECODERSTATEFREE pfnDecoderStateFree;
+} RTTRACELOGDECODER;
+typedef RTTRACELOGDECODER *PRTTRACELOGDECODER;
+typedef const RTTRACELOGDECODER *PCRTTRACELOGDECODER;
+
+
 /**
  * Loaded tracelog decoders.
  */
-typedef struct RTTRACELOGDECODERS
+typedef struct RTTRACELOGDECODERSTATE
 {
     /** Pointer to the array of registered decoders. */
-    PRTTRACELOGDECODERDECODEEVENT paDecodeEvts;
+    PRTTRACELOGDECODER            paDecoders;
     /** Number of entries in the decoder array. */
     uint32_t                      cDecoders;
     /** Allocation size of the decoder array. */
     uint32_t                      cDecodersAlloc;
-} RTTRACELOGDECODERS;
-typedef RTTRACELOGDECODERS *PRTTRACELOGDECODERS;
+} RTTRACELOGDECODERSTATE;
+typedef RTTRACELOGDECODERSTATE *PRTTRACELOGDECODERSTATE;
 
 
 /**
@@ -190,22 +205,108 @@ static int rtTraceLogToolReaderCreate(PRTTRACELOGRDR phTraceLogRdr, const char *
 }
 
 
-static DECLCALLBACK(int) rtTraceLogToolRegisterDecoders(void *pvUser, PCRTTRACELOGDECODERDECODEEVENT paDecoders, uint32_t cDecoders)
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpPrintf(PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)
+                                                       RT_IPRT_FORMAT_ATTR(3, 4)
 {
-    PRTTRACELOGDECODERS pDecoderState = (PRTTRACELOGDECODERS)pvUser;
+    RT_NOREF(pHlp);
+    va_list Args;
+    va_start(Args, pszFormat);
+    int rc = RTMsgInfoV(pszFormat, Args);
+    va_end(Args);
+    return rc;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpErrorMsg(PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)
+                                                         RT_IPRT_FORMAT_ATTR(3, 4)
+{
+    RT_NOREF(pHlp);
+    va_list Args;
+    va_start(Args, pszFormat);
+    int rc = RTMsgErrorV(pszFormat, Args);
+    va_end(Args);
+    return rc;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStateCreate(PRTTRACELOGDECODERHLP pHlp, size_t cbState, PFNTRACELOGDECODERSTATEFREE pfnFree,
+                                                          void **ppvState)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (pDecoder->pvDecoderState)
+    {
+        if (pDecoder->pfnDecoderStateFree)
+            pDecoder->pfnDecoderStateFree(pHlp, pDecoder->pvDecoderState);
+        RTMemFree(pDecoder->pvDecoderState);
+        pDecoder->pvDecoderState      = NULL;
+        pDecoder->pfnDecoderStateFree = NULL;
+    }
+
+    pDecoder->pvDecoderState = RTMemAllocZ(cbState);
+    if (pDecoder->pvDecoderState)
+    {
+        pDecoder->pfnDecoderStateFree = pfnFree;
+        *ppvState = pDecoder->pvDecoderState;
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NO_MEMORY;
+}
+
+
+static DECLCALLBACK(void) rtTraceLogToolDecoderHlpStateDestroy(PRTTRACELOGDECODERHLP pHlp)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (pDecoder->pvDecoderState)
+    {
+        if (pDecoder->pfnDecoderStateFree)
+            pDecoder->pfnDecoderStateFree(pHlp, pDecoder->pvDecoderState);
+        RTMemFree(pDecoder->pvDecoderState);
+        pDecoder->pvDecoderState      = NULL;
+        pDecoder->pfnDecoderStateFree = NULL;
+    }
+}
+
+
+static DECLCALLBACK(void*) rtTraceLogToolDecoderHlpStateGet(PRTTRACELOGDECODERHLP pHlp)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    return pDecoder->pvDecoderState;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolRegisterDecoders(void *pvUser, PCRTTRACELOGDECODERREG paDecoders, uint32_t cDecoders)
+{
+    PRTTRACELOGDECODERSTATE pDecoderState = (PRTTRACELOGDECODERSTATE)pvUser;
 
     if (pDecoderState->cDecodersAlloc - pDecoderState->cDecoders <= cDecoders)
     {
-        PRTTRACELOGDECODERDECODEEVENT paNew = (PRTTRACELOGDECODERDECODEEVENT)RTMemRealloc(pDecoderState->paDecodeEvts,
-                                                                                          (pDecoderState->cDecodersAlloc + cDecoders) * sizeof(*paDecoders));
+        PRTTRACELOGDECODER paNew = (PRTTRACELOGDECODER)RTMemRealloc(pDecoderState->paDecoders,
+                                                                    (pDecoderState->cDecodersAlloc + cDecoders) * sizeof(*paNew));
         if (!paNew)
             return VERR_NO_MEMORY;
 
-        pDecoderState->paDecodeEvts    = paNew;
+        pDecoderState->paDecoders      = paNew;
         pDecoderState->cDecodersAlloc += cDecoders;
     }
 
-    memcpy(&pDecoderState->paDecodeEvts[pDecoderState->cDecoders], paDecoders, cDecoders * sizeof(*paDecoders));
+    for (uint32_t i = 0; i < cDecoders; i++)
+    {
+        PRTTRACELOGDECODER pDecoder = &pDecoderState->paDecoders[i];
+
+        pDecoder->pReg                       = &paDecoders[i];
+        pDecoder->pvDecoderState             = NULL;
+        pDecoder->pfnDecoderStateFree        = NULL;
+        pDecoder->Hlp.pfnPrintf              = rtTraceLogToolDecoderHlpPrintf;
+        pDecoder->Hlp.pfnErrorMsg            = rtTraceLogToolDecoderHlpErrorMsg;
+        pDecoder->Hlp.pfnDecoderStateCreate  = rtTraceLogToolDecoderHlpStateCreate;
+        pDecoder->Hlp.pfnDecoderStateDestroy = rtTraceLogToolDecoderHlpStateDestroy;
+        pDecoder->Hlp.pfnDecoderStateGet     = rtTraceLogToolDecoderHlpStateGet;
+    }
+
     pDecoderState->cDecoders += cDecoders;
     return VINF_SUCCESS;
 }
@@ -229,10 +330,10 @@ int main(int argc, char **argv)
         { "--version",      'V', RTGETOPT_REQ_NOTHING },
     };
 
-    RTEXITCODE          rcExit   = RTEXITCODE_SUCCESS;
-    const char         *pszInput = NULL;
-    const char         *pszSave  = NULL;
-    RTTRACELOGDECODERS  Decoders; RT_ZERO(Decoders);
+    RTEXITCODE              rcExit   = RTEXITCODE_SUCCESS;
+    const char             *pszInput = NULL;
+    const char             *pszSave  = NULL;
+    RTTRACELOGDECODERSTATE  DecoderState; RT_ZERO(DecoderState);
 
     RTGETOPTUNION   ValueUnion;
     RTGETOPTSTATE   GetState;
@@ -282,7 +383,7 @@ int main(int argc, char **argv)
                         RegCb.u32Version          = RT_TRACELOG_DECODERREG_CB_VERSION;
                         RegCb.pfnRegisterDecoders = rtTraceLogToolRegisterDecoders;
 
-                        rc = pfnLoad(&Decoders, &RegCb);
+                        rc = pfnLoad(&DecoderState, &RegCb);
                         if (RT_FAILURE(rc))
                             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to register decoders %Rrc\n", rc);
                     }
@@ -341,16 +442,27 @@ int main(int argc, char **argv)
                              * Look through our registered decoders and pass the decoding on to it.
                              * If there is no decoder registered just dump the raw values.
                              */
-                            PCRTTRACELOGDECODERDECODEEVENT pDecodeEvt = NULL;
-                            for (uint32_t i = 0; i < Decoders.cDecoders; i++)
-                                if (!strcmp(Decoders.paDecodeEvts[i].pszId, pEvtDesc->pszId))
-                                {
-                                    pDecodeEvt = &Decoders.paDecodeEvts[i];
-                                    break;
-                                }
-
-                            if (pDecodeEvt)
+                            PRTTRACELOGDECODER    pDecoder = NULL;
+                            PCRTTRACELOGDECODEEVT pDecodeEvt  = NULL;
+                            for (uint32_t i = 0; (i < DecoderState.cDecoders) && !pDecoder; i++)
                             {
+                                PCRTTRACELOGDECODEEVT pTmp = DecoderState.paDecoders[i].pReg->paEvtIds;
+                                while (pTmp->pszEvtId)
+                                {
+                                    if (!strcmp(pTmp->pszEvtId, pEvtDesc->pszId))
+                                    {
+                                        pDecoder   = &DecoderState.paDecoders[i];
+                                        pDecodeEvt = pTmp;
+                                        break;
+                                    }
+                                    pTmp++;
+                                }
+                            }
+
+                            if (pDecoder)
+                            {
+                                Assert(pDecodeEvt);
+
                                 /** @todo Dynamic value allocation (too lazy right now). */
                                 RTTRACELOGEVTVAL aVals[32];
                                 uint32_t cVals = 0;
@@ -359,7 +471,8 @@ int main(int argc, char **argv)
                                 if (   RT_SUCCESS(rc)
                                     || cVals != pEvtDesc->cEvtItems)
                                 {
-                                    rc = pDecodeEvt->pfnDecode(hTraceLogEvt, pEvtDesc, &aVals[0], cVals);
+                                    rc = pDecoder->pReg->pfnDecode(&pDecoder->Hlp, pDecodeEvt->idDecodeEvt, hTraceLogEvt,
+                                                                   pEvtDesc, &aVals[0], cVals);
                                     if (RT_FAILURE(rc))
                                         RTMsgError("Failed to decode event with ID '%s' -> %Rrc\n", pEvtDesc->pszId, rc);
                                 }

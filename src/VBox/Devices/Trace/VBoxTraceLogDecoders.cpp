@@ -45,7 +45,7 @@
 
 /**
  */
-typedef DECLCALLBACKTYPE(void, FNDECODETPM2CC, (PCTPMREQHDR pHdr, size_t cb));
+typedef DECLCALLBACKTYPE(void, FNDECODETPM2CC, (PRTTRACELOGDECODERHLP pHlp, PCTPMREQHDR pHdr, size_t cb));
 /** Pointer to an event decode callback. */
 typedef FNDECODETPM2CC *PFNFNDECODETPM2CC;
 
@@ -59,7 +59,7 @@ typedef FNDECODETPM2CC *PFNFNDECODETPM2CC;
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
-static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeStartupShutdown(PCTPMREQHDR pHdr, size_t cb)
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeStartupShutdown(PRTTRACELOGDECODERHLP pHlp, PCTPMREQHDR pHdr, size_t cb)
 {
     if (cb >= sizeof(uint16_t))
     {
@@ -73,7 +73,7 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeStartupShutdown(PCTPMREQ
         return;
     }
 
-    RTMsgError("Malformed TPM2_CC_STARTUP/TPM2_CC_SHUTDOWN command, not enough room for TPM_SU constant\n");
+    pHlp->pfnErrorMsg(pHlp, "Malformed TPM2_CC_STARTUP/TPM2_CC_SHUTDOWN command, not enough room for TPM_SU constant\n");
 }
 
 
@@ -96,7 +96,7 @@ static struct
     { RT_STR(TPM2_CAP_ACT),             NULL },
 };
 
-static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeGetCapability(PCTPMREQHDR pHdr, size_t cb)
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeGetCapability(PRTTRACELOGDECODERHLP pHlp, PCTPMREQHDR pHdr, size_t cb)
 {
     if (cb >= sizeof(TPM2REQGETCAPABILITY))
     {
@@ -117,11 +117,11 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeGetCapability(PCTPMREQHD
         return;
     }
 
-    RTMsgError("Malformed TPM2_CC_GET_CAPABILITY command, not enough room for the input\n");
+    pHlp->pfnErrorMsg(pHlp, "Malformed TPM2_CC_GET_CAPABILITY command, not enough room for the input\n");
 }
 
 
-static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeReadPublic(PCTPMREQHDR pHdr, size_t cb)
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeReadPublic(PRTTRACELOGDECODERHLP pHlp, PCTPMREQHDR pHdr, size_t cb)
 {
     if (cb >= sizeof(TPM2REQREADPUBLIC))
     {
@@ -131,7 +131,7 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeReadPublic(PCTPMREQHDR p
         return;
     }
 
-    RTMsgError("Malformed TPM2_CC_READ_PUBLIC command, not enough room for the input\n");
+    pHlp->pfnErrorMsg(pHlp, "Malformed TPM2_CC_READ_PUBLIC command, not enough room for the input\n");
 }
 
 
@@ -270,7 +270,7 @@ static struct
 #undef TPM_CMD_CODE_INIT
 };
 
-static void vboxTraceLogDecodeEvtTpmDecodeCmdBuffer(const uint8_t *pbCmd, size_t cbCmd)
+static void vboxTraceLogDecodeEvtTpmDecodeCmdBuffer(PRTTRACELOGDECODERHLP pHlp, const uint8_t *pbCmd, size_t cbCmd)
 {
     PCTPMREQHDR pHdr = (PCTPMREQHDR)pbCmd;
     if (cbCmd >= sizeof(*pHdr))
@@ -282,7 +282,7 @@ static void vboxTraceLogDecodeEvtTpmDecodeCmdBuffer(const uint8_t *pbCmd, size_t
             {
                 RTMsgInfo("    %s:\n", s_aTpmCmdCodes[i].pszCmdCode);
                 if (s_aTpmCmdCodes[i].pfnDecode)
-                    s_aTpmCmdCodes[i].pfnDecode(pHdr, RT_BE2H_U32(pHdr->cbReq));
+                    s_aTpmCmdCodes[i].pfnDecode(pHlp, pHdr, RT_BE2H_U32(pHdr->cbReq));
                 return;
             }
         }
@@ -293,8 +293,10 @@ static void vboxTraceLogDecodeEvtTpmDecodeCmdBuffer(const uint8_t *pbCmd, size_t
 }
 
 
-static void vboxTraceLogDecodeEvtTpmDecodeRespBuffer(const uint8_t *pbResp, size_t cbResp)
+static void vboxTraceLogDecodeEvtTpmDecodeRespBuffer(PRTTRACELOGDECODERHLP pHlp, const uint8_t *pbResp, size_t cbResp)
 {
+    RT_NOREF(pHlp);
+
     PCTPMRESPHDR pHdr = (PCTPMRESPHDR)pbResp;
     if (cbResp >= sizeof(*pHdr))
     {
@@ -305,51 +307,69 @@ static void vboxTraceLogDecodeEvtTpmDecodeRespBuffer(const uint8_t *pbResp, size
 }
 
 
-static DECLCALLBACK(int) vboxTraceLogDecodeEvtTpmCmdExecReq(RTTRACELOGRDREVT hTraceLogEvt, PCRTTRACELOGEVTDESC pEvtDesc,
-                                                            PRTTRACELOGEVTVAL paVals, uint32_t cVals)
+static DECLCALLBACK(int) vboxTraceLogDecodeEvtTpm(PRTTRACELOGDECODERHLP pHlp, uint32_t idDecodeEvt, RTTRACELOGRDREVT hTraceLogEvt,
+                                                  PCRTTRACELOGEVTDESC pEvtDesc, PRTTRACELOGEVTVAL paVals, uint32_t cVals)
 {
     RT_NOREF(hTraceLogEvt, pEvtDesc);
-    for (uint32_t i = 0; i < cVals; i++)
+    if (idDecodeEvt == 0)
     {
-        /* Look for the pvCmd item which stores the command buffer. */
-        if (   !strcmp(paVals[i].pItemDesc->pszName, "pvCmd")
-            && paVals[i].pItemDesc->enmType == RTTRACELOGTYPE_RAWDATA)
+        for (uint32_t i = 0; i < cVals; i++)
         {
-            vboxTraceLogDecodeEvtTpmDecodeCmdBuffer(paVals[i].u.RawData.pb, paVals[i].u.RawData.cb);
-            return VINF_SUCCESS;
+            /* Look for the pvCmd item which stores the command buffer. */
+            if (   !strcmp(paVals[i].pItemDesc->pszName, "pvCmd")
+                && paVals[i].pItemDesc->enmType == RTTRACELOGTYPE_RAWDATA)
+            {
+                vboxTraceLogDecodeEvtTpmDecodeCmdBuffer(pHlp, paVals[i].u.RawData.pb, paVals[i].u.RawData.cb);
+                return VINF_SUCCESS;
+            }
         }
+
+        pHlp->pfnErrorMsg(pHlp, "Failed to find the TPM command data buffer for the given event\n");
     }
-    RTMsgError("Failed to find the TPM command data buffer for the given event\n");
-    return VERR_NOT_FOUND;
-}
-
-
-static DECLCALLBACK(int) vboxTraceLogDecodeEvtTpmCmdExecResp(RTTRACELOGRDREVT hTraceLogEvt, PCRTTRACELOGEVTDESC pEvtDesc,
-                                                             PRTTRACELOGEVTVAL paVals, uint32_t cVals)
-{
-    RT_NOREF(hTraceLogEvt, pEvtDesc);
-    for (uint32_t i = 0; i < cVals; i++)
+    else if (idDecodeEvt == 1)
     {
-        /* Look for the pvCmd item which stores the response buffer. */
-        if (   !strcmp(paVals[i].pItemDesc->pszName, "pvResp")
-            && paVals[i].pItemDesc->enmType == RTTRACELOGTYPE_RAWDATA)
+        for (uint32_t i = 0; i < cVals; i++)
         {
-            vboxTraceLogDecodeEvtTpmDecodeRespBuffer(paVals[i].u.RawData.pb, paVals[i].u.RawData.cb);
-            return VINF_SUCCESS;
+            /* Look for the pvCmd item which stores the response buffer. */
+            if (   !strcmp(paVals[i].pItemDesc->pszName, "pvResp")
+                && paVals[i].pItemDesc->enmType == RTTRACELOGTYPE_RAWDATA)
+            {
+                vboxTraceLogDecodeEvtTpmDecodeRespBuffer(pHlp, paVals[i].u.RawData.pb, paVals[i].u.RawData.cb);
+                return VINF_SUCCESS;
+            }
         }
+        pHlp->pfnErrorMsg(pHlp, "Failed to find the TPM command response buffer for the given event\n");
     }
-    RTMsgError("Failed to find the TPM command data buffer for the given event\n");
+
+    pHlp->pfnErrorMsg(pHlp, "Decode event ID %u is not known to this decoder\n", idDecodeEvt);
     return VERR_NOT_FOUND;
 }
 
 
 /**
- * Filter plugin interface.
+ * TPM decoder event IDs.
  */
-const RTTRACELOGDECODERDECODEEVENT g_aTraceLogDecode[] =
+static const RTTRACELOGDECODEEVT s_aDecodeEvtTpm[] =
 {
-    { "ITpmConnector.CmdExecReq",  vboxTraceLogDecodeEvtTpmCmdExecReq  },
-    { "ITpmConnector.CmdExecResp", vboxTraceLogDecodeEvtTpmCmdExecResp },
+    { "ITpmConnector.CmdExecReq",  0          },
+    { "ITpmConnector.CmdExecResp", 1          },
+    { NULL,                        UINT32_MAX }
+};
+
+
+/**
+ * Decoder plugin interface.
+ */
+static const RTTRACELOGDECODERREG g_TraceLogDecoderTpm =
+{
+    /** pszName */
+    "TPM",
+    /** pszDesc */
+    "Decodes events from the ITpmConnector interface generated with the IfTrace driver.",
+    /** paEvtIds */
+    s_aDecodeEvtTpm,
+    /** pfnDecode */
+    vboxTraceLogDecodeEvtTpm,
 };
 
 
@@ -363,6 +383,6 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) RTTraceLogDecoderLoad(void *pvUser, PRT
                           pRegisterCallbacks->u32Version, RT_TRACELOG_DECODERREG_CB_VERSION),
                           VERR_VERSION_MISMATCH);
 
-    return pRegisterCallbacks->pfnRegisterDecoders(pvUser, &g_aTraceLogDecode[0], RT_ELEMENTS(g_aTraceLogDecode));
+    return pRegisterCallbacks->pfnRegisterDecoders(pvUser, &g_TraceLogDecoderTpm, 1);
 }
 

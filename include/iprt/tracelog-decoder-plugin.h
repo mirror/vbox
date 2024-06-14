@@ -1,5 +1,5 @@
 /** @file
- * VD: Plugin support API.
+ * IPRT: Tracelog decoder plugin API for RTTraceLogTool.
  */
 
 /*
@@ -44,6 +44,95 @@
 #include <iprt/types.h>
 
 
+/** Pointer to helper functions for decoders. */
+typedef struct RTTRACELOGDECODERHLP *PRTTRACELOGDECODERHLP;
+
+
+/**
+ * Decoder state free callback.
+ *
+ * @param   pHlp        Pointer to the callback structure.
+ * @param   pvState     Pointer to the decoder state.
+ */
+typedef DECLCALLBACKTYPE(void, FNTRACELOGDECODERSTATEFREE,(PRTTRACELOGDECODERHLP pHlp, void *pvState));
+/** Pointer to an event decode callback. */
+typedef FNTRACELOGDECODERSTATEFREE *PFNTRACELOGDECODERSTATEFREE;
+
+
+/**
+ * Helper functions for decoders.
+ */
+typedef struct RTTRACELOGDECODERHLP
+{
+    /** Magic value (RTTRACELOGDECODERHLP_MAGIC). */
+    uint32_t                u32Magic;
+
+    /**
+     * Helper for writing formatted text to the output.
+     *
+     * @returns IPRT status.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszFormat   The format string.  This may use all IPRT extensions as
+     *                      well as the debugger ones.
+     * @param   ...         Arguments specified in the format string.
+     */
+    DECLCALLBACKMEMBER(int, pfnPrintf, (PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(3, 4);
+
+
+    /**
+     * Helper for writing formatted error message to the output.
+     *
+     * @returns IPRT status.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszFormat   The format string.  This may use all IPRT extensions as
+     *                      well as the debugger ones.
+     * @param   ...         Arguments specified in the format string.
+     */
+    DECLCALLBACKMEMBER(int, pfnErrorMsg, (PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(3, 4);
+
+
+    /**
+     * Creates a new decoder state and associates it with the given helper structure.
+     *
+     * @returns IPRT status.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   cbState     Size of the state in bytes.
+     * @param   pfnFree     Callback which is called before the decoder state is freed to give the decoder
+     *                      a chance to do some necessary cleanup, optional.
+     * @param   ppvState    Where to return the pointer to the state on success.
+     *
+     * @note This will destroy and free any previously created decoder state as there can be only one currently for
+     *       a decoder.
+     */
+    DECLCALLBACKMEMBER(int, pfnDecoderStateCreate, (PRTTRACELOGDECODERHLP pHlp, size_t cbState, PFNTRACELOGDECODERSTATEFREE pfnFree,
+                                                    void **ppvState));
+
+
+    /**
+     * Destroys any currently attached decoder state.
+     *
+     * @param   pHlp        Pointer to the callback structure.
+     */
+    DECLCALLBACKMEMBER(void, pfnDecoderStateDestroy, (PRTTRACELOGDECODERHLP pHlp));
+
+
+    /**
+     * Returns any decoder state created previously with RTTRACELOGDECODERHLP::pfnDecoderStateCreate().
+     *
+     * @returns Pointer to the decoder state or NULL if none was created yet.
+     * @param   pHlp        Pointer to the callback structure.
+     */
+    DECLCALLBACKMEMBER(void*, pfnDecoderStateGet, (PRTTRACELOGDECODERHLP pHlp));
+
+
+    /** End marker (DBGCCMDHLP_MAGIC). */
+    uint32_t                u32EndMarker;
+} RTTRACELOGDECODERHLP;
+
+/** Magic value for RTTRACELOGDECODERHLP::u32Magic and RTTRACELOGDECODERHLP::u32EndMarker. (Bernhard-Viktor Christoph-Carl von Buelow) */
+#define DBGCCMDHLP_MAGIC    UINT32_C(0x19231112)
+
+
 /** Makes a IPRT tracelog decoder structure version out of an unique magic value and major &
  * minor version numbers.
  *
@@ -81,26 +170,55 @@
  * Decoder callback for an event.
  *
  * @returns IPRT status code.
+ * @param   pHlp                The decoder helper callback table.
+ * @param   idDecodeEvt         Event decoder ID given in RTTRACELOGDECODEEVT::idDecodeEvt for the particular event ID.
  * @param   hTraceLogEvt        The tracelog event handle called for decoding.
  * @param   pEvtDesc            The event descriptor.
  * @param   paVals              Pointer to the array of values.
  * @param   cVals               Number of values in the array.
  */
-typedef DECLCALLBACKTYPE(int, FNTRACELOGDECODEREVENTDECODE,(RTTRACELOGRDREVT hTraceLogEvt, PCRTTRACELOGEVTDESC pEvtDesc,
+typedef DECLCALLBACKTYPE(int, FNTRACELOGDECODEREVENTDECODE,(PRTTRACELOGDECODERHLP pHlp, uint32_t idDecodeEvt,
+                                                            RTTRACELOGRDREVT hTraceLogEvt, PCRTTRACELOGEVTDESC pEvtDesc,
                                                             PRTTRACELOGEVTVAL paVals, uint32_t cVals));
 /** Pointer to an event decode callback. */
 typedef FNTRACELOGDECODEREVENTDECODE *PFNTRACELOGDECODEREVENTDECODE;
 
 
-typedef struct RTTRACELOGDECODERDECODEEVENT
+/**
+ * Event decoder entry.
+ */
+typedef struct RTTRACELOGDECODEEVT
 {
-    /** The event ID to register the decoder for. */
-    const char                    *pszId;
+    /** The event ID name. */
+    const char *pszEvtId;
+    /** The decoder event ID ordinal to pass to in the decode callback for
+     * faster lookup. */
+    uint32_t   idDecodeEvt;
+} RTTRACELOGDECODEEVT;
+/** Pointer to an event decoder entry. */
+typedef RTTRACELOGDECODEEVT *PRTTRACELOGDECODEEVT;
+/** Pointer to a const event decoder entry. */
+typedef const RTTRACELOGDECODEEVT *PCRTTRACELOGDECODEEVT;
+
+
+/**
+ * A decoder registration structure.
+ */
+typedef struct RTTRACELOGDECODERREG
+{
+    /** Decoder name. */
+    const char                    *pszName;
+    /** Decoder description. */
+    const char                    *pszDesc;
+    /** The event IDs to register the decoder for. */
+    PCRTTRACELOGDECODEEVT         paEvtIds;
     /** The decode callback. */
     PFNTRACELOGDECODEREVENTDECODE pfnDecode;
-} RTTRACELOGDECODERDECODEEVENT;
-typedef RTTRACELOGDECODERDECODEEVENT *PRTTRACELOGDECODERDECODEEVENT;
-typedef const RTTRACELOGDECODERDECODEEVENT *PCRTTRACELOGDECODERDECODEEVENT;
+} RTTRACELOGDECODERREG;
+/** Pointer to a decoder registration structure. */
+typedef RTTRACELOGDECODERREG *PRTTRACELOGDECODERREG;
+/** Pointer to a const decoder registration structure. */
+typedef const RTTRACELOGDECODERREG *PCRTTRACELOGDECODERREG;
 
 
 /**
@@ -120,7 +238,7 @@ typedef struct RTTRACELOGDECODERREGISTER
      * @param   paDecoders  Pointer to an array of decoders to register.
      * @param   cDecoders   Number of entries in the array.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRegisterDecoders, (void *pvUser, PCRTTRACELOGDECODERDECODEEVENT paDecoders, uint32_t cDecoders));
+    DECLR3CALLBACKMEMBER(int, pfnRegisterDecoders, (void *pvUser, PCRTTRACELOGDECODERREG paDecoders, uint32_t cDecoders));
 
 } RTTRACELOGDECODERREGISTER;
 /** Pointer to a backend register callbacks structure. */
