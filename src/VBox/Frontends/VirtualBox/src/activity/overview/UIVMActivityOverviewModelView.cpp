@@ -27,11 +27,13 @@
 
 /* Qt includes: */
 #include <QHeaderView>
-
+#include <QTimer>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIExtraDataDefs.h"
 #include "UIGlobalSession.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "UIVMActivityOverviewModelView.h"
 
 
@@ -40,7 +42,96 @@
 #endif /* VBOX_WS_MAC */
 
 /* COM includes: */
+#include "CConsole.h"
+#include "CGuest.h"
 #include "CMachine.h"
+#include "CMachineDebugger.h"
+#include "CSession.h"
+
+class UIActivityOverviewAccessibleRowLocal : public UIActivityOverviewAccessibleRow
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIActivityOverviewAccessibleRowLocal(QITableView *pTableView, const QUuid &uMachineId,
+                                         const QString &strMachineName, KMachineState enmMachineState);
+    ~UIActivityOverviewAccessibleRowLocal();
+    virtual void setMachineState(int iState) RT_OVERRIDE RT_FINAL;
+
+    virtual bool isRunning() const RT_OVERRIDE RT_FINAL;
+    virtual bool isCloudVM() const RT_OVERRIDE RT_FINAL;
+    void resetDebugger();
+    void updateCells();
+
+private:
+
+    KMachineState    m_enmMachineState;
+    CMachineDebugger m_comDebugger;
+    CSession         m_comSession;
+    CGuest           m_comGuest;
+};
+
+UIActivityOverviewAccessibleRowLocal::UIActivityOverviewAccessibleRowLocal(QITableView *pTableView, const QUuid &uMachineId,
+                                                                           const QString &strMachineName, KMachineState enmMachineState)
+    : UIActivityOverviewAccessibleRow(pTableView, uMachineId, strMachineName)
+    , m_enmMachineState(enmMachineState)
+{
+    if (m_enmMachineState == KMachineState_Running)
+        resetDebugger();
+
+}
+
+void UIActivityOverviewAccessibleRowLocal::updateCells()
+{
+    // if (m_cells.contains((int) VMActivityOverviewColumn_Name))
+    // {
+    //     m_cells[(int)VMActivityOverviewColumn_Name]->setText(m_strMachineName);
+    // }
+}
+
+UIActivityOverviewAccessibleRowLocal::~UIActivityOverviewAccessibleRowLocal()
+{
+    if (!m_comSession.isNull())
+        m_comSession.UnlockMachine();
+}
+
+void UIActivityOverviewAccessibleRowLocal::resetDebugger()
+{
+    m_comSession = uiCommon().openSession(m_uMachineId, KLockType_Shared);
+    if (!m_comSession.isNull())
+    {
+        CConsole comConsole = m_comSession.GetConsole();
+        if (!comConsole.isNull())
+        {
+            m_comGuest = comConsole.GetGuest();
+            m_comDebugger = comConsole.GetDebugger();
+        }
+    }
+}
+
+void UIActivityOverviewAccessibleRowLocal::setMachineState(int iState)
+{
+    if (iState <= KMachineState_Null || iState >= KMachineState_Max)
+        return;
+    KMachineState enmState = static_cast<KMachineState>(iState);
+    if (m_enmMachineState == enmState)
+        return;
+    m_enmMachineState = enmState;
+    if (m_enmMachineState == KMachineState_Running)
+        resetDebugger();
+}
+
+bool UIActivityOverviewAccessibleRowLocal::isRunning() const
+{
+    return m_enmMachineState == KMachineState_Running;
+}
+
+bool UIActivityOverviewAccessibleRowLocal::isCloudVM() const
+{
+    return false;
+}
 
 
 /*********************************************************************************************************************************
@@ -83,6 +174,7 @@ void UIVMActivityOverviewAccessibleTableView::resizeHeaders()
 UIActivityOverviewAccessibleModel::UIActivityOverviewAccessibleModel(QObject *pParent, QITableView *pView)
     :QAbstractTableModel(pParent)
     , m_pTableView(pView)
+    , m_pLocalVMUpdateTimer(new QTimer(this))
 {
     initialize();
 }
@@ -90,6 +182,17 @@ UIActivityOverviewAccessibleModel::UIActivityOverviewAccessibleModel(QObject *pP
 UIActivityOverviewAccessibleModel::~UIActivityOverviewAccessibleModel()
 {
     qDeleteAll(m_rows);
+}
+
+void UIActivityOverviewAccessibleModel::setShouldUpdate(bool fShouldUpdate)
+{
+    if (m_pLocalVMUpdateTimer)
+    {
+        if (fShouldUpdate)
+            m_pLocalVMUpdateTimer->start();
+        else
+            m_pLocalVMUpdateTimer->stop();
+    }
 }
 
 int UIActivityOverviewAccessibleModel::rowCount(const QModelIndex &parent) const
@@ -108,15 +211,37 @@ int UIActivityOverviewAccessibleModel::columnCount(const QModelIndex &parent) co
     return 0;
 }
 
-QVariant UIActivityOverviewAccessibleModel::data(const QModelIndex &/*index*/, int role) const
+QVariant UIActivityOverviewAccessibleModel::data(const QModelIndex &index, int role) const
 {
+    int iRow = index.row();
+    if (iRow < 0 || iRow >= m_rows.size())
+        return QVariant();
+    if (!m_rows[iRow])
+        return QVariant();
+
     if (role == Qt::DisplayRole)
-        return "Foo";
+    {
+        return m_rows[iRow]->cellText(index.column());
+
+    }
     return QVariant();
 }
 
 void UIActivityOverviewAccessibleModel::initialize()
 {
+    for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)
+        m_columnDataMaxLength[i] = 0;
+
+    if (m_pLocalVMUpdateTimer)
+    {
+        connect(m_pLocalVMUpdateTimer, &QTimer::timeout, this, &UIActivityOverviewAccessibleModel::sltLocalVMUpdateTimeout);
+        m_pLocalVMUpdateTimer->start(1000);
+    }
+
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UIActivityOverviewAccessibleModel::sltMachineStateChanged);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
+            this, &UIActivityOverviewAccessibleModel::sltMachineRegistered);
     foreach (const CMachine &comMachine, gpGlobalSession->virtualBox().GetMachines())
     {
         if (!comMachine.isNull())
@@ -127,7 +252,7 @@ void UIActivityOverviewAccessibleModel::initialize()
 void UIActivityOverviewAccessibleModel::addRow(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState)
 {
     //QVector<UIActivityOverviewAccessibleRow*> m_rows;
-    m_rows << new UIActivityOverviewAccessibleRow(m_pTableView, uMachineId, strMachineName, enmState);
+    m_rows << new UIActivityOverviewAccessibleRowLocal(m_pTableView, uMachineId, strMachineName, enmState);
 }
 
 QVariant UIActivityOverviewAccessibleModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -140,6 +265,83 @@ QVariant UIActivityOverviewAccessibleModel::headerData(int section, Qt::Orientat
 void UIActivityOverviewAccessibleModel::setColumnCaptions(const QMap<int, QString>& captions)
 {
     m_columnTitles = captions;
+}
+
+
+void UIActivityOverviewAccessibleModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
+{
+    int iIndex = itemIndex(uId);
+    if (iIndex != -1 && iIndex < m_rows.size())
+    {
+        UIActivityOverviewAccessibleRowLocal *pItem = qobject_cast<UIActivityOverviewAccessibleRowLocal*>(m_rows[iIndex]);
+        if (pItem)
+        {
+            pItem->setMachineState(state);
+            if (state == KMachineState_Running)
+                pItem->resetDebugger();
+        }
+    }
+}
+
+void UIActivityOverviewAccessibleModel::sltMachineRegistered(const QUuid &uId, bool fRegistered)
+{
+    if (fRegistered)
+    {
+        CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(uId.toString());
+        if (!comMachine.isNull())
+            addRow(uId, comMachine.GetName(), comMachine.GetState());
+    }
+    else
+        removeRow(uId);
+    emit sigDataUpdate();
+}
+
+void UIActivityOverviewAccessibleModel::sltLocalVMUpdateTimeout()
+{
+    /* Host's RAM usage is obtained from IHost not from IPerformanceCollector: */
+    //getHostRAMStats();
+
+    /* Use IPerformanceCollector to update VM RAM usage and Host CPU and file IO stats: */
+    //queryPerformanceCollector();
+
+    for (int i = 0; i < m_rows.size(); ++i)
+    {
+        UIActivityOverviewAccessibleRowLocal *pItem = qobject_cast<UIActivityOverviewAccessibleRowLocal*>(m_rows[i]);
+        if (!pItem || !pItem->isRunning())
+            continue;
+        pItem->updateCells();
+    }
+
+    // for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)
+    // {
+    //     for (int j = 0; j < m_rows.size(); ++j)
+    //         if (m_columnDataMaxLength.value(i, 0) < m_rows[j]->columnLength(i))
+    //             m_columnDataMaxLength[i] = m_rows[j]->columnLength(i);
+    // }
+
+    emit sigDataUpdate();
+    //emit sigHostStatsUpdate(m_hostStats);
+}
+
+int UIActivityOverviewAccessibleModel::itemIndex(const QUuid &uid)
+{
+    for (int i = 0; i < m_rows.size(); ++i)
+    {
+        if (!m_rows[i])
+            continue;
+        if (m_rows[i]->machineId() == uid)
+            return i;
+    }
+    return -1;
+}
+
+void UIActivityOverviewAccessibleModel::removeRow(const QUuid& uMachineId)
+{
+    int iIndex = itemIndex(uMachineId);
+    if (iIndex == -1)
+        return;
+    delete m_rows[iIndex];
+    m_rows.remove(iIndex);
 }
 
 
@@ -156,13 +358,11 @@ UIActivityOverviewAccessibleProxyModel::UIActivityOverviewAccessibleProxyModel(Q
 *   UIActivityOverviewAccessibleRow implementation.                                                                              *
 *********************************************************************************************************************************/
 
-UIActivityOverviewAccessibleRow::UIActivityOverviewAccessibleRow(QITableView *pTableView, const QUuid &machineId,
-                                                                 const QString &strMachineName, KMachineState enmMachineState)
+UIActivityOverviewAccessibleRow::UIActivityOverviewAccessibleRow(QITableView *pTableView, const QUuid &uMachineId,
+                                                                 const QString &strMachineName)
     : QITableViewRow(pTableView)
-    , m_machineId(machineId)
+    , m_uMachineId(uMachineId)
     , m_strMachineName(strMachineName)
-    , m_enmMachineState(enmMachineState)
-
 {
     initCells();
 }
@@ -174,9 +374,16 @@ int UIActivityOverviewAccessibleRow::childCount() const
 
 QITableViewCell *UIActivityOverviewAccessibleRow::childItem(int iIndex) const
 {
-    if (iIndex < 0 || iIndex >= m_cells.size())
-        return 0;
-    return m_cells[iIndex];
+    return m_cells.value(iIndex, 0);
+}
+
+QString UIActivityOverviewAccessibleRow::cellText(int iColumn) const
+{
+    if (!m_cells.contains(iColumn))
+        return QString();
+    if (!m_cells[iColumn])
+        return QString();
+    return m_cells[iColumn]->text();
 }
 
 UIActivityOverviewAccessibleRow::~UIActivityOverviewAccessibleRow()
@@ -187,9 +394,13 @@ UIActivityOverviewAccessibleRow::~UIActivityOverviewAccessibleRow()
 void UIActivityOverviewAccessibleRow::initCells()
 {
     for (int i = (int) VMActivityOverviewColumn_Name; i < (int) VMActivityOverviewColumn_Max; ++i)
-    {
-        m_cells << new UIActivityOverviewAccessibleCell(this, i);
-    }
+        m_cells[i] = new UIActivityOverviewAccessibleCell(this, i);
+    m_cells[VMActivityOverviewColumn_Name]->setText(m_strMachineName);
+}
+
+const QUuid &UIActivityOverviewAccessibleRow::machineId() const
+{
+    return m_uMachineId;
 }
 
 
@@ -205,5 +416,19 @@ UIActivityOverviewAccessibleCell::UIActivityOverviewAccessibleCell(QITableViewRo
 
 QString UIActivityOverviewAccessibleCell::text() const
 {
-    return "Foo";
+    return m_strText;
 }
+
+int UIActivityOverviewAccessibleCell::columnLength(int iColumnIndex) const
+{
+    return 0;
+    //return m_columnData.value(iColumnIndex, QString()).length();
+}
+
+void UIActivityOverviewAccessibleCell::setText(const QString &strText)
+{
+    printf("%s\n", qPrintable(strText));
+    m_strText = strText;
+}
+
+#include "UIVMActivityOverviewModelView.moc"

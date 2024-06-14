@@ -1780,6 +1780,8 @@ void UIVMActivityOverviewWidget::setIsCurrentTool(bool fIsCurrentTool)
     m_fIsCurrentTool = fIsCurrentTool;
     if (m_pModel)
         m_pModel->setShouldUpdate(fIsCurrentTool);
+    if (m_pAccessibleModel)
+        m_pAccessibleModel->setShouldUpdate(fIsCurrentTool);
 }
 
 void UIVMActivityOverviewWidget::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
@@ -1930,6 +1932,7 @@ void UIVMActivityOverviewWidget::prepareWidgets()
     m_pAccessibleTableView->setSortingEnabled(true);
     m_pAccessibleTableView->sortByColumn(0, Qt::AscendingOrder);
     m_pAccessibleTableView->hide();
+
     layout()->addWidget(m_pAccessibleTableView);
 }
 

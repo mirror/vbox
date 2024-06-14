@@ -41,6 +41,8 @@
 
 /* COM includes: */
 #include "KMachineState.h"
+
+class QTimer;
 class UIActivityOverviewAccessibleCell;
 class UIActivityOverviewAccessibleRow;
 
@@ -89,12 +91,14 @@ public:
 
     UIActivityOverviewAccessibleCell(QITableViewRow *pRow, int iColumnIndex);
     virtual QString text() const RT_OVERRIDE RT_FINAL;
+    int columnLength(int iColumnIndex) const;
+    void setText(const QString &strText);
 
 private:
 
     /* VMActivityOverviewColumn enum: */
     int m_iColumnIndex;
-
+    QString m_strText;
 };
 
 class UIActivityOverviewAccessibleRow : public QITableViewRow
@@ -104,24 +108,34 @@ class UIActivityOverviewAccessibleRow : public QITableViewRow
 
 public:
 
-    UIActivityOverviewAccessibleRow(QITableView *pTableView, const QUuid &machineId,
-                                    const QString &strMachineName, KMachineState enmMachineState);
+    UIActivityOverviewAccessibleRow(QITableView *pTableView, const QUuid &uMachineId,
+                                    const QString &strMachineName);
 
+    const QUuid &machineId() const;
 
+    virtual void setMachineState(int iState) = 0;
+    virtual bool isRunning() const = 0;
+    virtual bool isCloudVM() const = 0;
 
-    ~UIActivityOverviewAccessibleRow();
+    virtual ~UIActivityOverviewAccessibleRow();
     virtual int childCount() const RT_OVERRIDE RT_FINAL;
 
     virtual QITableViewCell *childItem(int iIndex) const RT_OVERRIDE RT_FINAL;
 
+    QString cellText(int iColumn) const;
+
+protected:
+
+    QUuid m_uMachineId;
+    /* Key is VMActivityOverviewColumn enum item. */
+    QMap<int, UIActivityOverviewAccessibleCell*> m_cells;
+
+    QString m_strMachineName;
 private:
 
     void initCells();
-        //const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState)
-    QVector<UIActivityOverviewAccessibleCell*> m_cells;
-    QUuid m_machineId;
-    QString m_strMachineName;
-    KMachineState m_enmMachineState;
+
+
 };
 
 
@@ -129,6 +143,10 @@ private:
 class UIActivityOverviewAccessibleModel : public QAbstractTableModel
 {
     Q_OBJECT;
+
+signals:
+
+    void sigDataUpdate();
 
 public:
 
@@ -139,14 +157,27 @@ public:
     QVariant data(const QModelIndex &index, int role) const RT_OVERRIDE RT_FINAL;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const RT_OVERRIDE  RT_FINAL;
     void setColumnCaptions(const QMap<int, QString>& captions);
+    int itemIndex(const QUuid &uid);
+    void setShouldUpdate(bool fShouldUpdate);
+
+private slots:
+
+    void sltMachineStateChanged(const QUuid &uId, const KMachineState state);
+    void sltMachineRegistered(const QUuid &uId, bool fRegistered);
+    void sltLocalVMUpdateTimeout();
 
 private:
 
     void initialize();
     void addRow(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState);
+    void removeRow(const QUuid& uMachineId);
     QVector<UIActivityOverviewAccessibleRow*> m_rows;
     QITableView *m_pTableView;
     QMap<int, QString> m_columnTitles;
+    QTimer *m_pLocalVMUpdateTimer;
+    /** Maximum length of string length of data displayed in column. Updated in UIActivityOverviewModel::data(..). */
+    mutable QMap<int, int> m_columnDataMaxLength;
+
 };
 
 
