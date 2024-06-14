@@ -395,7 +395,7 @@ static struct drm_driver driver = {
 #endif
 	.gem_prime_import = drm_gem_prime_import,
 	.gem_prime_import_sg_table = vbox_gem_prime_import_sg_table,
-#if RTLNX_VER_MAX(6,6,0) && !RTLNX_RHEL_RANGE(9,4, 9,99)
+#if RTLNX_VER_MAX(6,6,0) && !RTLNX_RHEL_RANGE(9,4, 9,99) && !RTLNX_SUSE_MAJ_PREREQ(15, 6)
 	.gem_prime_mmap = vbox_gem_prime_mmap,
 #endif
 

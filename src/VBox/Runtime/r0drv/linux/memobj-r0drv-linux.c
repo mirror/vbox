@@ -1420,7 +1420,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
                                 fWrite,                 /* force write access. */
 # endif
                                 &pMemLnx->apPages[0]    /* Page array. */
-# if GET_USER_PAGES_API < KERNEL_VERSION(6, 5, 0)
+# if GET_USER_PAGES_API < KERNEL_VERSION(6, 5, 0) && !RTLNX_SUSE_MAJ_PREREQ(15, 6)
                                 , papVMAs               /* vmas */
 # endif
                                 );
@@ -1467,7 +1467,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
                                 fWrite,                 /* force write access. */
 # endif
                                 &pMemLnx->apPages[0]    /* Page array. */
-# if GET_USER_PAGES_API < KERNEL_VERSION(6, 5, 0)
+# if GET_USER_PAGES_API < KERNEL_VERSION(6, 5, 0) && !RTLNX_SUSE_MAJ_PREREQ(15, 6)
                                 , papVMAs               /* vmas */
 # endif
                                 );
