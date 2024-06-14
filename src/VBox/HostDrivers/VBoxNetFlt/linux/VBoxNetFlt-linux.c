@@ -47,7 +47,7 @@
 #if RTLNX_VER_MIN(2,6,24)
 # include <linux/nsproxy.h>
 #endif
-#if RTLNX_VER_MIN(6,4,10) || RTLNX_RHEL_RANGE(9,4, 9,99)
+#if RTLNX_VER_MIN(6,4,10) || RTLNX_RHEL_RANGE(9,4, 9,99) || RTLNX_SUSE_MAJ_PREREQ(15, 6)
 # include <net/gso.h>
 #endif
 #include <linux/netdevice.h>
