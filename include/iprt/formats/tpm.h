@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2021-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2021-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -45,6 +45,12 @@
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>
 #include <iprt/string.h>
+
+
+/** A TPM generic handle (TPM_HANDLE). */
+typedef uint32_t TPMHANDLE;
+/** TPM interface object handle. */
+typedef TPMHANDLE TPMIDHOBJECT;
 
 
 /**
@@ -413,11 +419,72 @@ typedef const TPMREQGETCAPABILITY *PCTPMREQGETCAPABILITY;
 
 /** @name Defines related to TPM2_CC_GET_CAPABILITY.
  * @{ */
+#define TPM2_CAP_ALGS                       UINT32_C(0x00000000)
+#define TPM2_CAP_HANDLES                    UINT32_C(0x00000001)
+#define TPM2_CAP_COMMANDS                   UINT32_C(0x00000002)
+#define TPM2_CAP_PP_COMMANDS                UINT32_C(0x00000003)
+#define TPM2_CAP_AUDIT_COMMANDS             UINT32_C(0x00000004)
+#define TPM2_CAP_PCRS                       UINT32_C(0x00000005)
+#define TPM2_CAP_ALGS                       UINT32_C(0x00000000)
 /** Return a TPM related property. */
-#define TPM2_CAP_TPM_PROPERTIES             UINT32_C(6)
+#define TPM2_CAP_TPM_PROPERTIES             UINT32_C(0x00000006)
+#define TPM2_CAP_PCR_PROPERTIES             UINT32_C(0x00000007)
+#define TPM2_CAP_ECC_CURVES                 UINT32_C(0x00000008)
+#define TPM2_CAP_AUTH_POLICIES              UINT32_C(0x00000009)
+#define TPM2_CAP_ACT                        UINT32_C(0x0000000a)
 
+
+#define TPM2_PT_FAMILY_INDICATOR            UINT32_C(0x00000100)
+#define TPM2_PT_LEVEL                       UINT32_C(0x00000101)
+#define TPM2_PT_REVISION                    UINT32_C(0x00000102)
+#define TPM2_PT_DAY_OF_YEAR                 UINT32_C(0x00000103)
+#define TPM2_PT_YEAR                        UINT32_C(0x00000104)
+#define TPM2_PT_MANUFACTURER                UINT32_C(0x00000105)
+#define TPM2_PT_VENDOR_STRING_1             UINT32_C(0x00000106)
+#define TPM2_PT_VENDOR_STRING_2             UINT32_C(0x00000107)
+#define TPM2_PT_VENDOR_STRING_3             UINT32_C(0x00000108)
+#define TPM2_PT_VENDOR_STRING_4             UINT32_C(0x00000109)
+#define TPM2_PT_VENDOR_TPM_TYPE             UINT32_C(0x0000010a)
+#define TPM2_PT_FIRMWARE_VERSION_1          UINT32_C(0x0000010b)
+#define TPM2_PT_FIRMWARE_VERSION_2          UINT32_C(0x0000010c)
 /** Returns the size of the input buffer. */
-#define TPM2_PT_INPUT_BUFFER                UINT32_C(0x10d)
+#define TPM2_PT_INPUT_BUFFER                UINT32_C(0x0000010d)
+#define TPM2_PT_HR_TRANSIENT_MIN            UINT32_C(0x0000010e)
+#define TPM2_PT_HR_PERSISTENT_MIN           UINT32_C(0x0000010f)
+#define TPM2_PT_HR_LOADED_MIN               UINT32_C(0x00000110)
+#define TPM2_PT_ACTIVE_SESSIONS_MAX         UINT32_C(0x00000111)
+#define TPM2_PT_PCR_COUNT                   UINT32_C(0x00000112)
+#define TPM2_PT_PCR_SELECT_MIN              UINT32_C(0x00000113)
+#define TPM2_PT_CONTEXT_GAP_MAX             UINT32_C(0x00000114)
+#define TPM2_PT_RESERVED                    UINT32_C(0x00000115)
+#define TPM2_PT_NV_COUNTERS_MAX             UINT32_C(0x00000116)
+#define TPM2_PT_NV_INDEX                    UINT32_C(0x00000117)
+#define TPM2_PT_MEMORY                      UINT32_C(0x00000118)
+#define TPM2_PT_CLOCK_UPDATE                UINT32_C(0x00000119)
+#define TPM2_PT_CONTEXT_HASH                UINT32_C(0x0000011a)
+#define TPM2_PT_CONTEXT_SYM                 UINT32_C(0x0000011b)
+#define TPM2_PT_CONTEXT_SYM_SIZE            UINT32_C(0x0000011c)
+#define TPM2_PT_ORDERLY_COUNT               UINT32_C(0x0000011d)
+#define TPM2_PT_MAX_COMMAND_SIZE            UINT32_C(0x0000011e)
+#define TPM2_PT_MAX_RESPONSE_SIZE           UINT32_C(0x0000011f)
+#define TPM2_PT_MAX_DIGEST                  UINT32_C(0x00000120)
+#define TPM2_PT_MAX_OBJECT_CONTEXT          UINT32_C(0x00000121)
+#define TPM2_PT_MAX_SESSION_CONTEXT         UINT32_C(0x00000122)
+#define TPM2_PT_PS_FAMILY_INDICATOR         UINT32_C(0x00000123)
+#define TPM2_PT_PS_LEVEL                    UINT32_C(0x00000124)
+#define TPM2_PT_PS_REVISION                 UINT32_C(0x00000125)
+#define TPM2_PT_PS_DAY_OF_YEAR              UINT32_C(0x00000126)
+#define TPM2_PT_PS_YEAR                     UINT32_C(0x00000127)
+#define TPM2_PT_SPLIT_MAX                   UINT32_C(0x00000128)
+#define TPM2_PT_TOTAL_COMMANDS              UINT32_C(0x00000129)
+#define TPM2_PT_LIBRARY_COMMANDS            UINT32_C(0x0000012a)
+#define TPM2_PT_VENDOR_COMMANDS             UINT32_C(0x0000012b)
+#define TPM2_PT_NV_BUFFER_MAX               UINT32_C(0x0000012c)
+#define TPM2_PT_MODES                       UINT32_C(0x0000012d)
+#define TPM2_PT_MAX_CAP_BUFFER              UINT32_C(0x0000012e)
+#define TPM2_PT_FIRMWARE_SVN                UINT32_C(0x0000012f)
+#define TPM2_PT_FIRMWARE_MAX_SVN            UINT32_C(0x00000130)
+
 
 /**
  * TPM2_CC_GET_CAPABILITY request.
@@ -439,6 +506,27 @@ typedef struct TPM2REQGETCAPABILITY
 typedef TPM2REQGETCAPABILITY *PTPM2REQGETCAPABILITY;
 /** Pointer to a const TPM2_CC_GET_CAPABILITY request. */
 typedef const TPM2REQGETCAPABILITY *PCTPM2REQGETCAPABILITY;
+/** @} */
+
+
+/** @name Defines related to TPM2_CC_READ_PUBLIC.
+ * @{ */
+/**
+ * TPM2_CC_READ_PUBLIC request.
+ */
+#pragma pack(1)
+typedef struct TPM2REQREADPUBLIC
+{
+    /** Request header. */
+    TPMREQHDR                   Hdr;
+    /** The object handle to query. */
+    TPMIDHOBJECT                hObj;
+} TPM2REQREADPUBLIC;
+#pragma pack()
+/** Pointer to a TPM2_CC_READ_PUBLIC request. */
+typedef TPM2REQREADPUBLIC *PTPM2REQREADPUBLIC;
+/** Pointer to a const TPM2_CC_READ_PUBLIC request. */
+typedef const TPM2REQREADPUBLIC *PCTPM2REQREADPUBLIC;
 /** @} */
 
 

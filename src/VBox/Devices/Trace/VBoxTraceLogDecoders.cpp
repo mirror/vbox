@@ -77,21 +77,61 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeStartupShutdown(PCTPMREQ
 }
 
 
+static struct
+{
+    const char     *pszCap;
+    const uint32_t *paProperties;   
+} s_aTpm2Caps[] =
+{
+    { RT_STR(TPM2_CAP_ALGS),            NULL },
+    { RT_STR(TPM2_CAP_HANDLES),         NULL },
+    { RT_STR(TPM2_CAP_COMMANDS),        NULL },
+    { RT_STR(TPM2_CAP_PP_COMMANDS),     NULL },
+    { RT_STR(TPM2_CAP_AUDIT_COMMANDS),  NULL },
+    { RT_STR(TPM2_CAP_PCRS),            NULL },
+    { RT_STR(TPM2_CAP_TPM_PROPERTIES),  NULL },
+    { RT_STR(TPM2_CAP_PCR_PROPERTIES),  NULL },
+    { RT_STR(TPM2_CAP_ECC_CURVES),      NULL },
+    { RT_STR(TPM2_CAP_AUTH_POLICIES),   NULL },
+    { RT_STR(TPM2_CAP_ACT),             NULL },
+};
+
 static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeGetCapability(PCTPMREQHDR pHdr, size_t cb)
 {
     if (cb >= sizeof(TPM2REQGETCAPABILITY))
     {
         PCTPM2REQGETCAPABILITY pReq = (PCTPM2REQGETCAPABILITY)pHdr;
-        RTMsgInfo("        u32Cap:      %#x\n"
-                  "        u32Property: %#x\n"
-                  "        u32Count:    %#x\n",
-                  RT_BE2H_U32(pReq->u32Cap),
-                  RT_BE2H_U32(pReq->u32Property),
-                  RT_BE2H_U32(pReq->u32Count));
+        uint32_t u32Cap      = RT_BE2H_U32(pReq->u32Cap);
+        uint32_t u32Property = RT_BE2H_U32(pReq->u32Property);
+        uint32_t u32Count    = RT_BE2H_U32(pReq->u32Count);
+        if (u32Cap < RT_ELEMENTS(s_aTpm2Caps))
+            RTMsgInfo("        u32Cap:      %s\n"
+                      "        u32Property: %#x\n"
+                      "        u32Count:    %#x\n",
+                      s_aTpm2Caps[u32Cap], u32Property, u32Count);
+        else
+            RTMsgInfo("        u32Cap:      %#x (UNKNOWN)\n"
+                      "        u32Property: %#x\n"
+                      "        u32Count:    %#x\n",
+                      u32Cap, u32Property, u32Count);
         return;
     }
 
     RTMsgError("Malformed TPM2_CC_GET_CAPABILITY command, not enough room for the input\n");
+}
+
+
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeReadPublic(PCTPMREQHDR pHdr, size_t cb)
+{
+    if (cb >= sizeof(TPM2REQREADPUBLIC))
+    {
+        PCTPM2REQREADPUBLIC pReq = (PCTPM2REQREADPUBLIC)pHdr;
+        TPMIDHOBJECT hObj = RT_BE2H_U32(pReq->hObj);
+        RTMsgInfo("        hObj:      %#x\n", hObj);
+        return;
+    }
+
+    RTMsgError("Malformed TPM2_CC_READ_PUBLIC command, not enough room for the input\n");
 }
 
 
@@ -183,7 +223,7 @@ static struct
     TPM_CMD_CODE_INIT(TPM2_CC_POLICY_NAME_HASH,                 NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_POLICY_OR,                        NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_POLICY_TICKET,                    NULL),
-    TPM_CMD_CODE_INIT(TPM2_CC_READ_PUBLIC,                      NULL),
+    TPM_CMD_CODE_INIT(TPM2_CC_READ_PUBLIC,                      vboxTraceLogDecodeEvtTpmDecodeReadPublic),
     TPM_CMD_CODE_INIT(TPM2_CC_RSA_ENCRYPT,                      NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_START_AUTH_SESSION,               NULL),
     TPM_CMD_CODE_INIT(TPM2_CC_VERIFY_SIGNATURE,                 NULL),
