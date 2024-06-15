@@ -454,16 +454,15 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
 
 #if defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) || defined(VBOX_WITH_NESTED_HWVIRT_SVM_XXX) || defined(DOXYGEN_RUNNING)
 /** Converts regular style walk info to fast style. */
-DECL_FORCE_INLINE(void) PGM_GST_NAME(ConvertPtWalkToFast)(PGMPTWALK const *pSrc, PPGMPTWALKFAST *pDst)
+DECL_FORCE_INLINE(void) PGM_GST_NAME(ConvertPtWalkToFast)(PGMPTWALK const *pSrc, PPGMPTWALKFAST pDst)
 {
     pDst->GCPtr              = pSrc->GCPtr;
     pDst->GCPhys             = pSrc->GCPhys;
     pDst->GCPhysNested       = pSrc->GCPhysNested;
     pDst->fInfo              = (pSrc->fSucceeded         ? PGM_WALKINFO_SUCCEEDED            : 0)
                              | (pSrc->fIsSlat            ? PGM_WALKINFO_IS_SLAT              : 0)
-                             | (pSrc->fIsLinearAddrValid ? PGM_WALKINFO_IS_LINEAR_ADDR_VALID : 0)
-                             | ((uint32_t)pSrc->uLevel << PGM_WALKINFO_LEVEL_SHIFT);
-    pDst->fFailed            = pSrc->fFailed;
+                             | (pSrc->fIsLinearAddrValid ? PGM_WALKINFO_IS_LINEAR_ADDR_VALID : 0);
+    pDst->fFailed            = pSrc->fFailed | ((uint32_t)pSrc->uLevel << PGM_WALKFAIL_LEVEL_SHIFT);
     pDst->fEffective         = pSrc->fEffective;
 }
 #endif
@@ -552,7 +551,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
                 (a_GCPhysOut) = WalkSlat.GCPhys; \
             else \
             { \
-                PGM_NAME(ConvertPtWalkToFast)(&WalkSlat, pWalk); \
+                PGM_GST_NAME(ConvertPtWalkToFast)(&WalkSlat, pWalk); \
                 return rcX; \
             } \
             if (a_fFinal) \
@@ -906,12 +905,12 @@ PGM_GST_DECL(int, QueryPageFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fFlags,
             pWalk->GCPtr        = GCPtr;
             pWalk->GCPhys       = WalkSlat.GCPhys;
             pWalk->GCPhysNested = 0;
-            pWalk->u64Union     = 0;
-            pWalk->fSucceeded   = true;
+            pWalk->fInfo        = PGM_WALKINFO_SUCCEEDED;
+            pWalk->fFailed      = PGM_WALKFAIL_SUCCESS;
             pWalk->fEffective   = X86_PTE_P | X86_PTE_RW | X86_PTE_US | X86_PTE_A | X86_PTE_D;
         }
         else
-            PGM_NAME(ConvertPtWalkToFast)(&WalkSlat, pWalk);
+            PGM_GST_NAME(ConvertPtWalkToFast)(&WalkSlat, pWalk);
         return rc;
     }
 # endif

@@ -553,13 +553,10 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, uint32_t fE
         return iemRaisePageFault(pVCpu, GCPtrPC, 1, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
 #else
-    Assert((WalkFast.fEffective & X86_PTE_US) || IEM_GET_CPL(pVCpu) != 3));
+    Assert((WalkFast.fEffective & X86_PTE_US) || IEM_GET_CPL(pVCpu) != 3);
     Assert(!(WalkFast.fEffective & X86_PTE_PAE_NX) || !(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_NXE));
 #endif
-    RTGCPHYS const GCPhys = Walk.GCPhys;
-    /** @todo Check reserved bits and such stuff. PGM is better at doing
-     *        that, so do it when implementing the guest virtual address
-     *        TLB... */
+    RTGCPHYS const GCPhys = WalkFast.GCPhys;
 
     /*
      * Read the bytes at this address.
@@ -1249,40 +1246,26 @@ VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin) RT_NOEXCEPT
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
-    PGMPTWALK Walk;
-    int rc = PGMGstGetPage(pVCpu, GCPtrNext, &Walk);
-    if (RT_FAILURE(rc))
+    PGMPTWALKFAST WalkFast;
+    int rc = PGMGstQueryPageFast(pVCpu, GCPtrNext,
+                                 IEM_GET_CPL(pVCpu) == 3 ? PGMQPAGE_F_EXECUTE | PGMQPAGE_F_USER_MODE : PGMQPAGE_F_EXECUTE,
+                                 &WalkFast);
+    if (RT_SUCCESS(rc))
+        Assert((WalkFast.fInfo & PGM_WALKINFO_SUCCEEDED) && WalkFast.fFailed == PGM_WALKFAIL_SUCCESS);
+    else
     {
         Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrNext, rc));
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        if (Walk.fFailed & PGM_WALKFAIL_EPT)
-            IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, IEM_ACCESS_INSTRUCTION, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
+        if (WalkFast.fFailed & PGM_WALKFAIL_EPT)
+            IEM_VMX_VMEXIT_EPT_RET(pVCpu, &WalkFast, IEM_ACCESS_INSTRUCTION, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
 #endif
         return iemRaisePageFault(pVCpu, GCPtrNext, 1, IEM_ACCESS_INSTRUCTION, rc);
     }
-    if (!(Walk.fEffective & X86_PTE_US) && IEM_GET_CPL(pVCpu) == 3)
-    {
-        Log(("iemOpcodeFetchMoreBytes: %RGv - supervisor page\n", GCPtrNext));
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        if (Walk.fFailed & PGM_WALKFAIL_EPT)
-            IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, IEM_ACCESS_INSTRUCTION, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
-#endif
-        return iemRaisePageFault(pVCpu, GCPtrNext, 1, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
-    }
-    if ((Walk.fEffective & X86_PTE_PAE_NX) && (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_NXE))
-    {
-        Log(("iemOpcodeFetchMoreBytes: %RGv - NX\n", GCPtrNext));
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        if (Walk.fFailed & PGM_WALKFAIL_EPT)
-            IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, IEM_ACCESS_INSTRUCTION, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
-#endif
-        return iemRaisePageFault(pVCpu, GCPtrNext, 1, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
-    }
-    RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrNext & GUEST_PAGE_OFFSET_MASK);
-    Log5(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys,  cbOpcode));
-    /** @todo Check reserved bits and such stuff. PGM is better at doing
-     *        that, so do it when implementing the guest virtual address
-     *        TLB... */
+    Assert((WalkFast.fEffective & X86_PTE_US) || IEM_GET_CPL(pVCpu) != 3);
+    Assert(!(WalkFast.fEffective & X86_PTE_PAE_NX) || !(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_NXE));
+
+    RTGCPHYS const GCPhys = WalkFast.GCPhys;
+    Log5(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys, cbOpcode));
 
     /*
      * Read the bytes at this address.
@@ -5709,7 +5692,7 @@ VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
     /** @todo Check unassigned memory in unpaged mode. */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
     if (WalkFast.fFailed & PGM_WALKFAIL_EPT)
-        IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
+        IEM_VMX_VMEXIT_EPT_RET(pVCpu, &WalkFast, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
 #endif
     *pGCPhysMem = NIL_RTGCPHYS;
     return iemRaisePageFault(pVCpu, GCPtrMem, cbAccess, fAccess, rc);
