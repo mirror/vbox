@@ -519,7 +519,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
     int rc;
 
 # if defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) || defined(VBOX_WITH_NESTED_HWVIRT_SVM_XXX) || defined(DOXYGEN_RUNNING)
-/** @def PGM_GST_SLAT_WALK
+/** @def PGM_GST_SLAT_WALK_FAST
  * Macro to perform guest second-level address translation (EPT or Nested).
  *
  * @param   a_pVCpu         The cross context virtual CPU structure of the calling
