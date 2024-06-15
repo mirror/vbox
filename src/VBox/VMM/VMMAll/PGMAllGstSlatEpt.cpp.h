@@ -101,7 +101,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(PCVMCPUCC pVCpu, PPG
 
     pWalk->fNotPresent = true;
     pWalk->uLevel      = uLevel;
-    pWalk->fFailed     = s_afEptViolations[idxViolationType];
+    pWalk->fFailed     = s_afEptViolations[idxViolationType] | ((uint32_t)uLevel << PGM_WALKFAIL_LEVEL_SHIFT);
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
@@ -120,7 +120,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(PCVMCPUCC pVCpu, PP
     AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc); NOREF(pVCpu);
     pWalk->fBadPhysAddr = true;
     pWalk->uLevel       = uLevel;
-    pWalk->fFailed      = PGM_WALKFAIL_EPT_VIOLATION;
+    pWalk->fFailed      = PGM_WALKFAIL_EPT_VIOLATION         | ((uint32_t)uLevel << PGM_WALKFAIL_LEVEL_SHIFT);
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
@@ -138,7 +138,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMP
     NOREF(pVCpu);
     pWalk->fRsvdError = true;
     pWalk->uLevel     = uLevel;
-    pWalk->fFailed    = PGM_WALKFAIL_EPT_MISCONFIG;
+    pWalk->fFailed    = PGM_WALKFAIL_EPT_MISCONFIG           | ((uint32_t)uLevel << PGM_WALKFAIL_LEVEL_SHIFT);
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 

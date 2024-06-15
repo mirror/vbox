@@ -109,6 +109,8 @@
 #define VERR_VM_RESTORED                    (-1025)
 /** The requested feature is not supported by NEM. */
 #define VERR_NOT_SUP_BY_NEM                 (-1026)
+/** Reserved page table bits set. */
+#define VERR_RESERVED_PAGE_TABLE_BITS       (-1027)
 /** @} */
 
 

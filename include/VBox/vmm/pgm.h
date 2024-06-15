@@ -315,23 +315,45 @@ typedef enum PGMSLAT
  * @{
  */
 typedef uint32_t PGMWALKFAIL;
-/** Regular page fault (MBZ since guest Walk code don't set these explicitly). */
-#define PGM_WALKFAIL_PAGE_FAULT                     UINT32_C(0)
-/** EPT violation - Intel. */
-#define PGM_WALKFAIL_EPT_VIOLATION                  RT_BIT_32(0)
-/** EPT violation, convertible to \#VE exception - Intel. */
-#define PGM_WALKFAIL_EPT_VIOLATION_CONVERTIBLE      RT_BIT_32(1)
-/** EPT misconfiguration - Intel. */
-#define PGM_WALKFAIL_EPT_MISCONFIG                  RT_BIT_32(2)
+/** No fault. */
+#define PGM_WALKFAIL_SUCCESS                        UINT32_C(0)
 
+/** Not present (X86_TRAP_PF_P). */
+#define PGM_WALKFAIL_NOT_PRESENT                    RT_BIT_32(0)
+/** Reserved bit set in table entry (X86_TRAP_PF_RSVD). */
+#define PGM_WALKFAIL_RESERVED_BITS                  RT_BIT_32(1)
+/** Bad physical address (VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS). */
+#define PGM_WALKFAIL_BAD_PHYSICAL_ADDRESS           RT_BIT_32(2)
+
+/** EPT violation - Intel. */
+#define PGM_WALKFAIL_EPT_VIOLATION                  RT_BIT_32(3)
+/** EPT violation, convertible to \#VE exception - Intel. */
+#define PGM_WALKFAIL_EPT_VIOLATION_CONVERTIBLE      RT_BIT_32(4)
+/** EPT misconfiguration - Intel. */
+#define PGM_WALKFAIL_EPT_MISCONFIG                  RT_BIT_32(5)
 /** Mask of all EPT induced page-walk failures - Intel. */
 #define PGM_WALKFAIL_EPT                            (  PGM_WALKFAIL_EPT_VIOLATION \
                                                      | PGM_WALKFAIL_EPT_VIOLATION_CONVERTIBLE \
                                                      | PGM_WALKFAIL_EPT_MISCONFIG)
+
+/** Access denied: Not writable (VERR_ACCESS_DENIED). */
+#define PGM_WALKFAIL_NOT_WRITABLE                   RT_BIT_32(6)
+/** Access denied: Not executable (VERR_ACCESS_DENIED). */
+#define PGM_WALKFAIL_NOT_EXECUTABLE                 RT_BIT_32(7)
+/** Access denied: Not user/supervisor mode accessible (VERR_ACCESS_DENIED). */
+#define PGM_WALKFAIL_NOT_ACCESSIBLE_BY_MODE         RT_BIT_32(8)
+
+/** The level the problem arrised at.
+ * PTE is level 1, PDE is level 2, PDPE is level 3, PML4 is level 4, CR3 is
+ * level 8.  This is 0 on success. */
+#define PGM_WALKFAIL_LEVEL_MASK                     UINT32_C(0x0000f100)
+/** Level shift (see PGM_WALKINFO_LEVEL_MASK).   */
+#define PGM_WALKFAIL_LEVEL_SHIFT                    11
+
 /** @} */
 
 
-/** @name PGMPTATTRS - PGM page-table attributes.
+/** @name PGM_PTATTRS_XXX - PGM page-table attributes.
  *
  * This is VirtualBox's combined page table attributes. It combines regular page
  * table and Intel EPT attributes. It's 64-bit in size so there's ample room for
@@ -577,6 +599,64 @@ typedef PGMPTWALK *PPGMPTWALK;
 typedef PGMPTWALK const *PCPGMPTWALK;
 
 
+/** @name PGM_WALKINFO_XXX - flag based PGM page table walk info.
+ * @{ */
+/** Set if the walk succeeded. */
+#define PGM_WALKINFO_SUCCEEDED                  RT_BIT_32(0)
+/** Whether this is a second-level address translation. */
+#define PGM_WALKINFO_IS_SLAT                    RT_BIT_32(1)
+/** Set if it involves a big page (2/4 MB). */
+#define PGM_WALKINFO_BIG_PAGE                   RT_BIT_32(2)
+/** Set if it involves a gigantic page (1 GB). */
+#define PGM_WALKINFO_GIGANTIC_PAGE              RT_BIT_32(3)
+
+/** Whether the linear address (GCPtr) caused the second-level
+ * address translation - read the code to figure this one.
+ * @todo for PGMPTWALKFAST::fFailed?  */
+#define PGM_WALKINFO_IS_LINEAR_ADDR_VALID       RT_BIT_32(7)
+/** @} */
+
+/**
+ * Fast page table walk information.
+ *
+ * This is a slimmed down version of PGMPTWALK for use by IEM.
+ */
+typedef struct PGMPTWALKFAST
+{
+    /** The linear address that is being resolved (input). */
+    RTGCPTR         GCPtr;
+
+    /** The physical address that is the result of the walk (output).
+     * This includes the offset mask from the GCPtr input value.  */
+    RTGCPHYS        GCPhys;
+
+    /** The second-level physical address (input/output).
+     *  @remarks only valid if fIsSlat is set. */
+    RTGCPHYS        GCPhysNested;
+
+    /** Walk information PGM_WALKINFO_XXX (output). */
+    uint32_t        fInfo;
+    /** Page-walk failure type, PGM_WALKFAIL_XXX (output). */
+    PGMWALKFAIL     fFailed;
+
+    /** The effective page-table attributes, PGM_PTATTRS_XXX (output). */
+    PGMPTATTRS      fEffective;
+} PGMPTWALKFAST;
+/** Pointer to fast page walk information. */
+typedef PGMPTWALKFAST *PPGMPTWALKFAST;
+/** Pointer to const fast page walk information. */
+typedef PGMPTWALKFAST const *PCPGMPTWALKFAST;
+
+#define PGMPTWALKFAST_ZERO(a_pWalkFast) do { \
+        (a_pWalkFast)->GCPtr        = 0; \
+        (a_pWalkFast)->GCPhys       = 0; \
+        (a_pWalkFast)->GCPhysNested = 0; \
+        (a_pWalkFast)->fInfo        = 0; \
+        (a_pWalkFast)->fFailed      = 0; \
+        (a_pWalkFast)->fEffective   = 0; \
+    } while (0)
+
+
 /** Macro for checking if the guest is using paging.
  * @param enmMode   PGMMODE_*.
  * @remark  ASSUMES certain order of the PGMMODE_* values.
@@ -634,6 +714,26 @@ VMMDECL(int)            PGMShwMakePageNotPresent(PVMCPUCC pVCpu, RTGCPTR GCPtr, 
 #define PGM_MK_PG_IS_MMIO2           RT_BIT(1)
 /** @}*/
 VMMDECL(int)        PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk);
+/** @name PGMQPAGE_F_XXX - Flags for PGMGstQueryPageFast
+ * @{ */
+/** Querying for read access, set A bits accordingly. */
+#define PGMQPAGE_F_READ         RT_BIT_32(0)
+/** Querying for write access, set A bits and D bit accordingly.
+ * Don't set leaf entry bits if is read-only.  */
+#define PGMQPAGE_F_WRITE        RT_BIT_32(1)
+/** Querying for execute access, set A bits accordingly. */
+#define PGMQPAGE_F_EXECUTE      RT_BIT_32(2)
+/** The query is for a user mode access, so don't set leaf A or D bits
+ * unless the effective access allows usermode access.
+ * Assume supervisor access when not set. */
+#define PGMQPAGE_F_USER_MODE    RT_BIT_32(3)
+/** Treat CR0.WP as zero when evalutating the access.
+ * @note Same value as X86_CR0_WP.  */
+#define PGMQPAGE_F_CR0_WP0      RT_BIT_32(16)
+/** The valid flag mask.   */
+#define PGMQPAGE_F_VALID_MASK   UINT32_C(0x0001000f)
+/** @} */
+VMM_INT_DECL(int)   PGMGstQueryPageFast(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fFlags, PPGMPTWALKFAST pWalkFast);
 VMMDECL(int)        PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 VMM_INT_DECL(bool)  PGMGstArePaePdpesValid(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes);
 VMM_INT_DECL(int)   PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes);

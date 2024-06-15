@@ -503,6 +503,18 @@ typedef IEMTLBENTRY *PIEMTLBENTRY;
 #define IEMTLBE_F_PG_CODE_PAGE      RT_BIT_64(9) /**< Phys page:   Code page. */
 #define IEMTLBE_F_PHYS_REV          UINT64_C(0xfffffffffffffc00) /**< Physical revision mask. @sa IEMTLB_PHYS_REV_INCR */
 /** @} */
+AssertCompile(PGMIEMGCPHYS2PTR_F_NO_WRITE     == IEMTLBE_F_PG_NO_WRITE);
+AssertCompile(PGMIEMGCPHYS2PTR_F_NO_READ      == IEMTLBE_F_PG_NO_READ);
+AssertCompile(PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 == IEMTLBE_F_NO_MAPPINGR3);
+AssertCompile(PGMIEMGCPHYS2PTR_F_UNASSIGNED   == IEMTLBE_F_PG_UNASSIGNED);
+AssertCompile(PGMIEMGCPHYS2PTR_F_CODE_PAGE    == IEMTLBE_F_PG_CODE_PAGE);
+/** The bits set by PGMPhysIemGCPhys2PtrNoLock. */
+#define IEMTLBE_GCPHYS2PTR_MASK     (  PGMIEMGCPHYS2PTR_F_NO_WRITE \
+                                     | PGMIEMGCPHYS2PTR_F_NO_READ \
+                                     | PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 \
+                                     | PGMIEMGCPHYS2PTR_F_UNASSIGNED \
+                                     | PGMIEMGCPHYS2PTR_F_CODE_PAGE \
+                                     | IEMTLBE_F_PHYS_REV )
 
 
 /**
@@ -6099,7 +6111,7 @@ VBOXSTRICTRC    iemVmxVmexitInstrNeedsInfo(PVMCPUCC pVCpu, uint32_t uExitReason,
 VBOXSTRICTRC    iemVmxVmexitTaskSwitch(PVMCPUCC pVCpu, IEMTASKSWITCH enmTaskSwitch, RTSEL SelNewTss, uint8_t cbInstr) RT_NOEXCEPT;
 VBOXSTRICTRC    iemVmxVmexitEvent(PVMCPUCC pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2, uint8_t cbInstr)  RT_NOEXCEPT;
 VBOXSTRICTRC    iemVmxVmexitEventDoubleFault(PVMCPUCC pVCpu) RT_NOEXCEPT;
-VBOXSTRICTRC    iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32_t fAccess, uint32_t fSlatFail, uint8_t cbInstr) RT_NOEXCEPT;
+VBOXSTRICTRC    iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALKFAST pWalk, uint32_t fAccess, uint32_t fSlatFail, uint8_t cbInstr) RT_NOEXCEPT;
 VBOXSTRICTRC    iemVmxVmexitPreemptTimer(PVMCPUCC pVCpu) RT_NOEXCEPT;
 VBOXSTRICTRC    iemVmxVmexitInstrMwait(PVMCPUCC pVCpu, bool fMonitorHwArmed, uint8_t cbInstr) RT_NOEXCEPT;
 VBOXSTRICTRC    iemVmxVmexitInstrIo(PVMCPUCC pVCpu, VMXINSTRID uInstrId, uint16_t u16Port,

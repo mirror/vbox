@@ -599,6 +599,7 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
     {
         PGM_TYPE_REAL,
         PGM_GST_NAME_REAL(GetPage),
+        PGM_GST_NAME_REAL(QueryPageFast),
         PGM_GST_NAME_REAL(ModifyPage),
         PGM_GST_NAME_REAL(Enter),
         PGM_GST_NAME_REAL(Exit),
@@ -609,6 +610,7 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
     {
         PGM_TYPE_PROT,
         PGM_GST_NAME_PROT(GetPage),
+        PGM_GST_NAME_PROT(QueryPageFast),
         PGM_GST_NAME_PROT(ModifyPage),
         PGM_GST_NAME_PROT(Enter),
         PGM_GST_NAME_PROT(Exit),
@@ -619,6 +621,7 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
     {
         PGM_TYPE_32BIT,
         PGM_GST_NAME_32BIT(GetPage),
+        PGM_GST_NAME_32BIT(QueryPageFast),
         PGM_GST_NAME_32BIT(ModifyPage),
         PGM_GST_NAME_32BIT(Enter),
         PGM_GST_NAME_32BIT(Exit),
@@ -629,6 +632,7 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
     {
         PGM_TYPE_PAE,
         PGM_GST_NAME_PAE(GetPage),
+        PGM_GST_NAME_PAE(QueryPageFast),
         PGM_GST_NAME_PAE(ModifyPage),
         PGM_GST_NAME_PAE(Enter),
         PGM_GST_NAME_PAE(Exit),
@@ -640,6 +644,7 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
     {
         PGM_TYPE_AMD64,
         PGM_GST_NAME_AMD64(GetPage),
+        PGM_GST_NAME_AMD64(QueryPageFast),
         PGM_GST_NAME_AMD64(ModifyPage),
         PGM_GST_NAME_AMD64(Enter),
         PGM_GST_NAME_AMD64(Exit),
@@ -1920,6 +1925,30 @@ VMMDECL(int) PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
     AssertReturn(idx < RT_ELEMENTS(g_aPgmGuestModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmGuestModeData[idx].pfnGetPage, VERR_PGM_MODE_IPE);
     return g_aPgmGuestModeData[idx].pfnGetPage(pVCpu, GCPtr, pWalk);
+}
+
+
+/**
+ * Gets effective Guest OS page information.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPtr       Guest Context virtual address of the page.
+ * @param   fFlags      PGMQPAGE_F_XXX. If zero, no accessed or dirty bits will
+ *                      be set.
+ * @param   pWalk       Where to store the page walk information.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(int) PGMGstQueryPageFast(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fFlags, PPGMPTWALKFAST pWalk)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+    Assert(pWalk);
+    Assert(!(fFlags & ~(PGMQPAGE_F_VALID_MASK)));
+    Assert(!(fFlags & PGMQPAGE_F_EXECUTE) || !(fFlags & PGMQPAGE_F_WRITE));
+    uintptr_t idx = pVCpu->pgm.s.idxGuestModeData;
+    AssertReturn(idx < RT_ELEMENTS(g_aPgmGuestModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmGuestModeData[idx].pfnGetPage, VERR_PGM_MODE_IPE);
+    return g_aPgmGuestModeData[idx].pfnQueryPageFast(pVCpu, GCPtr, fFlags, pWalk);
 }
 
 

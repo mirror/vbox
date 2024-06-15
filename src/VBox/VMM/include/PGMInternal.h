@@ -2809,6 +2809,7 @@ typedef struct PGMMODEDATAGST
     /** The guest mode type. */
     uint32_t                        uType;
     DECLCALLBACKMEMBER(int, pfnGetPage,(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk));
+    DECLCALLBACKMEMBER(int, pfnQueryPageFast,(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fFlags, PPGMPTWALKFAST pWalk));
     DECLCALLBACKMEMBER(int, pfnModifyPage,(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     DECLCALLBACKMEMBER(int, pfnEnter,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3));
     DECLCALLBACKMEMBER(int, pfnExit,(PVMCPUCC pVCpu));

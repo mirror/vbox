@@ -4135,9 +4135,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitEptViolation(PVMCPUCC pVCpu, PCVMXVEX
  * @param   cbInstr     The VM-exit instruction length if applicable. Pass 0 if not
  *                      applicable.
  */
-VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32_t fAccess, uint32_t fSlatFail, uint8_t cbInstr) RT_NOEXCEPT
+VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALKFAST pWalk, uint32_t fAccess, uint32_t fSlatFail, uint8_t cbInstr) RT_NOEXCEPT
 {
-    Assert(pWalk->fIsSlat);
+    Assert(pWalk->fInfo & PGM_WALKINFO_IS_SLAT);
     Assert(pWalk->fFailed & PGM_WALKFAIL_EPT);
     Assert(!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxEptXcptVe);          /* #VE exceptions not supported. */
     Assert(!(pWalk->fFailed & PGM_WALKFAIL_EPT_VIOLATION_CONVERTIBLE)); /* Without #VE, convertible violations not possible. */
@@ -4146,7 +4146,8 @@ VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32_t fAccess,
     {
         LogFlow(("EptViolation: cs:rip=%04x:%08RX64 fAccess=%#RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fAccess));
         uint64_t const fEptAccess = (pWalk->fEffective & PGM_PTATTRS_EPT_MASK) >> PGM_PTATTRS_EPT_SHIFT;
-        return iemVmxVmexitEptViolation(pVCpu, fAccess, fSlatFail, fEptAccess, pWalk->GCPhysNested, pWalk->fIsLinearAddrValid,
+        return iemVmxVmexitEptViolation(pVCpu, fAccess, fSlatFail, fEptAccess, pWalk->GCPhysNested,
+                                        RT_BOOL(pWalk->fInfo & PGM_WALKINFO_IS_LINEAR_ADDR_VALID),
                                         pWalk->GCPtr, cbInstr);
     }
 
