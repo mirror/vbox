@@ -642,7 +642,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
          */
         RTGCPHYS GCPhysPdpt = Pml4e.u & X86_PML4E_PG_MASK;
         PGM_GST_SLAT_WALK_FAST(pVCpu, GCPtr, GCPhysPdpt, false /*a_fFinal*/, GCPhysPdpt, pWalk);
-        rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhysPdpt, &pGstWalk->pPdpt);
+        rc = pgmPhysGCPhys2CCPtrLockless(pVCpu, GCPhysPdpt, (void **)&pGstWalk->pPdpt);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnBadPhysAddr)(pVCpu, pWalk, 3, rc);
 
@@ -686,7 +686,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
          */
         RTGCPHYS GCPhysPd = Pdpe.u & X86_PDPE_PG_MASK;
         PGM_GST_SLAT_WALK_FAST(pVCpu, GCPtr, GCPhysPd, false /*a_fFinal*/, GCPhysPd, pWalk);
-        rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhysPd, &pGstWalk->pPd);
+        rc = pgmPhysGCPhys2CCPtrLockless(pVCpu, GCPhysPd, (void **)&pGstWalk->pPd);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnBadPhysAddr)(pVCpu, pWalk, 2, rc);
 
@@ -790,7 +790,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
          */
         RTGCPHYS GCPhysPt = GST_GET_PDE_GCPHYS(Pde);
         PGM_GST_SLAT_WALK_FAST(pVCpu, GCPtr, GCPhysPt, false /*a_fFinal*/, GCPhysPt, pWalk);
-        rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhysPt, &pGstWalk->pPt);
+        rc = pgmPhysGCPhys2CCPtrLockless(pVCpu, GCPhysPt, (void **)&pGstWalk->pPt);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnBadPhysAddr)(pVCpu, pWalk, 1, rc);
     }

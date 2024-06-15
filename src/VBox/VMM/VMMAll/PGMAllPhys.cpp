@@ -3696,6 +3696,76 @@ int pgmPhysGCPhys2R3Ptr(PVMCC pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
 
 
 /**
+ * Special lockless guest physical to current context pointer convertor.
+ *
+ * This is mainly for the page table walking and such.
+ */
+int pgmPhysGCPhys2CCPtrLockless(PVMCPUCC pVCpu, RTGCPHYS GCPhys, void **ppv)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    /*
+     * Get the RAM range and page structure.
+     */
+    PVMCC const           pVM = pVCpu->CTX_SUFF(pVM);
+    PGMRAMRANGE volatile *pRam;
+    PGMPAGE volatile     *pPage;
+    int rc = pgmPhysGetPageAndRangeExLockless(pVM, pVCpu, GCPhys, &pPage, &pRam);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Now, make sure it's writable (typically it is).
+         */
+        if (RT_LIKELY(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED))
+        { /* likely, typically */ }
+        else
+        {
+            PGM_LOCK_VOID(pVM);
+            rc = pgmPhysPageMakeWritable(pVM, (PPGMPAGE)pPage, GCPhys);
+            if (RT_SUCCESS(rc))
+                rc = pgmPhysGetPageAndRangeExLockless(pVM, pVCpu, GCPhys, &pPage, &pRam);
+            PGM_UNLOCK(pVM);
+            if (RT_FAILURE(rc))
+                return rc;
+            AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* not returned */, ("%Rrc\n", rc));
+        }
+        Assert(PGM_PAGE_GET_HCPHYS(pPage) != 0);
+
+        /*
+         * Get the mapping address.
+         */
+        uint8_t *pb;
+#ifdef IN_RING3
+        if (PGM_IS_IN_NEM_MODE(pVM))
+            pb = &pRam->pbR3[(RTGCPHYS)(uintptr_t)(pPage - &pRam->aPages[0]) << GUEST_PAGE_SHIFT];
+        else
+#endif
+        {
+#ifdef IN_RING3
+            PPGMPAGEMAPTLBE pTlbe;
+            rc = pgmPhysPageQueryLocklessTlbeWithPage(pVCpu, (PPGMPAGE)pPage, GCPhys, &pTlbe);
+            AssertLogRelRCReturn(rc, rc);
+            pb = (uint8_t *)pTlbe->pv;
+            RT_NOREF(pVM);
+#else /** @todo a safe lockless page TLB in ring-0 needs the to ensure it gets the right invalidations. later. */
+            PGM_LOCK(pVM);
+            PPGMPAGEMAPTLBE pTlbe;
+            rc = pgmPhysPageQueryTlbeWithPage(pVM, (PPGMPAGE)pPage, GCPhys, &pTlbe);
+            AssertLogRelRCReturnStmt(rc, PGM_UNLOCK(pVM), rc);
+            pb = (uint8_t *)pTlbe->pv;
+            PGM_UNLOCK(pVM);
+            RT_NOREF(pVCpu);
+#endif
+        }
+        *ppv = (void *)((uintptr_t)pb | (uintptr_t)(GCPhys & GUEST_PAGE_OFFSET_MASK));
+        return VINF_SUCCESS;
+    }
+    Assert(rc <= VINF_SUCCESS);
+    return rc;
+}
+
+
+/**
  * Converts a guest pointer to a GC physical address.
  *
  * This uses the current CR3/CR0/CR4 of the guest.
@@ -5434,8 +5504,8 @@ VMM_INT_DECL(int) PGMPhysIemQueryAccess(PVMCC pVM, RTGCPHYS GCPhys, bool fWritab
  * @param   pfnChecker      Page in-sync checker callback.  Optional.
  * @param   pvUser          User argument to pass to pfnChecker.
  */
-VMM_INT_DECL(int) PGMPhysNemPageInfoChecker(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, bool fMakeWritable, PPGMPHYSNEMPAGEINFO pInfo,
-                                            PFNPGMPHYSNEMCHECKPAGE pfnChecker, void *pvUser)
+VMM_INT_DECL(int) PGMPhysNemPageInfoChecker(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, bool fMakeWritable,
+                                            PPGMPHYSNEMPAGEINFO pInfo, PFNPGMPHYSNEMCHECKPAGE pfnChecker, void *pvUser)
 {
     PGM_LOCK_VOID(pVM);
 
