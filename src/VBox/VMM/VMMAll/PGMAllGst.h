@@ -608,21 +608,24 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
         return PGM_GST_NAME(WalkFastReturnNotPresent)(pVCpu, pWalk, 8);
 # endif
 
-    GSTPTWALK GstWalk = {0};
+# if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
+    PX86PDPT  pPdpt;
+# endif
     uint64_t fEffective;
     {
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
         /*
          * The PML4 table.
          */
-        rc = pgmGstGetLongModePML4PtrEx(pVCpu, &GstWalk.pPml4);
+        PX86PML4 pPml4;
+        rc = pgmGstGetLongModePML4PtrEx(pVCpu, &pPml4);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnBadPhysAddr)(pVCpu, pWalk, 4, rc);
 
         PX86PML4E pPml4e;
-        GstWalk.pPml4e  = pPml4e  = &GstWalk.pPml4->a[(GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK];
+        pPml4e  = &pPml4->a[(GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK];
         X86PML4E  Pml4e;
-        GstWalk.Pml4e.u = Pml4e.u = ASMAtomicUoReadU64(&pPml4e->u);
+        Pml4e.u = ASMAtomicUoReadU64(&pPml4e->u);
 
         if (GST_IS_PGENTRY_PRESENT(pVCpu, Pml4e)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnNotPresent)(pVCpu, pWalk, 4);
@@ -640,22 +643,23 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
          */
         RTGCPHYS GCPhysPdpt = Pml4e.u & X86_PML4E_PG_MASK;
         PGM_GST_SLAT_WALK_FAST(pVCpu, GCPtr, GCPhysPdpt, false /*a_fFinal*/, GCPhysPdpt, pWalk);
-        rc = pgmPhysGCPhys2CCPtrLockless(pVCpu, GCPhysPdpt, (void **)&GstWalk.pPdpt);
+        rc = pgmPhysGCPhys2CCPtrLockless(pVCpu, GCPhysPdpt, (void **)&pPdpt);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnBadPhysAddr)(pVCpu, pWalk, 3, rc);
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
-        rc = pgmGstGetPaePDPTPtrEx(pVCpu, &GstWalk.pPdpt);
+        rc = pgmGstGetPaePDPTPtrEx(pVCpu, &pPdpt);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnBadPhysAddr)(pVCpu, pWalk, 8, rc);
 # endif
     }
+    PGSTPD pPd;
     {
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
         PX86PDPE pPdpe;
-        GstWalk.pPdpe  = pPdpe  = &GstWalk.pPdpt->a[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK];
+        pPdpe  = &pPdpt->a[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK];
         X86PDPE  Pdpe;
-        GstWalk.Pdpe.u = Pdpe.u = ASMAtomicUoReadU64(&pPdpe->u);
+        Pdpe.u = ASMAtomicUoReadU64(&pPdpe->u);
 
         if (GST_IS_PGENTRY_PRESENT(pVCpu, Pdpe)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnNotPresent)(pVCpu, pWalk, 3);
@@ -684,24 +688,25 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
          */
         RTGCPHYS GCPhysPd = Pdpe.u & X86_PDPE_PG_MASK;
         PGM_GST_SLAT_WALK_FAST(pVCpu, GCPtr, GCPhysPd, false /*a_fFinal*/, GCPhysPd, pWalk);
-        rc = pgmPhysGCPhys2CCPtrLockless(pVCpu, GCPhysPd, (void **)&GstWalk.pPd);
+        rc = pgmPhysGCPhys2CCPtrLockless(pVCpu, GCPhysPd, (void **)&pPd);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnBadPhysAddr)(pVCpu, pWalk, 2, rc);
 
 # elif PGM_GST_TYPE == PGM_TYPE_32BIT
-        rc = pgmGstGet32bitPDPtrEx(pVCpu, &GstWalk.pPd);
+        rc = pgmGstGet32bitPDPtrEx(pVCpu, &pPd);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnBadPhysAddr)(pVCpu, pWalk, 8, rc);
 # endif
     }
+    PGSTPT pPt;
     {
         PGSTPDE pPde;
-        GstWalk.pPde  = pPde  = &GstWalk.pPd->a[(GCPtr >> GST_PD_SHIFT) & GST_PD_MASK];
+        pPde  = &pPd->a[(GCPtr >> GST_PD_SHIFT) & GST_PD_MASK];
         GSTPDE  Pde;
 # if PGM_GST_TYPE != PGM_TYPE_32BIT
-        GstWalk.Pde.u = Pde.u = ASMAtomicUoReadU64(&pPde->u);
+        Pde.u = ASMAtomicUoReadU64(&pPde->u);
 # else
-        GstWalk.Pde.u = Pde.u = ASMAtomicUoReadU32(&pPde->u);
+        Pde.u = ASMAtomicUoReadU32(&pPde->u);
 # endif
         if (GST_IS_PGENTRY_PRESENT(pVCpu, Pde)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnNotPresent)(pVCpu, pWalk, 2);
@@ -788,18 +793,18 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
          */
         RTGCPHYS GCPhysPt = GST_GET_PDE_GCPHYS(Pde);
         PGM_GST_SLAT_WALK_FAST(pVCpu, GCPtr, GCPhysPt, false /*a_fFinal*/, GCPhysPt, pWalk);
-        rc = pgmPhysGCPhys2CCPtrLockless(pVCpu, GCPhysPt, (void **)&GstWalk.pPt);
+        rc = pgmPhysGCPhys2CCPtrLockless(pVCpu, GCPhysPt, (void **)&pPt);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkFastReturnBadPhysAddr)(pVCpu, pWalk, 1, rc);
     }
     {
         PGSTPTE pPte;
-        GstWalk.pPte  = pPte  = &GstWalk.pPt->a[(GCPtr >> GST_PT_SHIFT) & GST_PT_MASK];
+        pPte  = &pPt->a[(GCPtr >> GST_PT_SHIFT) & GST_PT_MASK];
         GSTPTE  Pte;
 # if PGM_GST_TYPE != PGM_TYPE_32BIT
-        GstWalk.Pte.u = Pte.u = ASMAtomicUoReadU64(&pPte->u);
+        Pte.u = ASMAtomicUoReadU64(&pPte->u);
 # else
-        GstWalk.Pte.u = Pte.u = ASMAtomicUoReadU32(&pPte->u);
+        Pte.u = ASMAtomicUoReadU32(&pPte->u);
 # endif
 
         if (GST_IS_PGENTRY_PRESENT(pVCpu, Pte)) { /* probable */ }
