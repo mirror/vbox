@@ -493,31 +493,6 @@ DECLINLINE(int) PGM_GST_NAME(WalkFastReturnRsvdError)(PVMCPUCC pVCpu, PPGMPTWALK
     return VERR_RESERVED_PAGE_TABLE_BITS;
 }
 
-/**
- * Performs a guest page table walk.
- *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_PAGE_TABLE_NOT_PRESENT, VERR_RESERVED_PAGE_TABLE_BITS or
- *          VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS on normal failure.
- *          The failure reason is also recorded in PGMPTWALKFAST::fFailed.
- *
- * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
- * @param   GCPtr               The guest virtual address to walk by.
- * @param   fFlags              PGMQPAGE_F_XXX.
- *                              This is ignored when @a a_fSetFlags is @c false.
- * @param   pWalk               The page walk info.
- * @param   pGstWalk            The guest mode specific page walk info.
- * @tparam  a_enmGuestSlatMode  The SLAT mode of the function.
- * @tparam  a_fSetFlags         Whether to process @a fFlags and set accessed
- *                              and dirty flags accordingly.
- * @thread  EMT(pVCpu)
- */
-template<PGMSLAT const a_enmGuestSlatMode = PGMSLAT_DIRECT, bool const a_fSetFlags = false>
-DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fFlags, PPGMPTWALKFAST pWalk, PGSTPTWALK pGstWalk)
-{
-    int rc;
-
 # if defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) || defined(VBOX_WITH_NESTED_HWVIRT_SVM_XXX) || defined(DOXYGEN_RUNNING)
 /** @def PGM_GST_SLAT_WALK_FAST
  * Macro to perform guest second-level address translation (EPT or Nested).
@@ -588,6 +563,30 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
     } while (0)
 # endif
 
+/**
+ * Performs a guest page table walk.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PAGE_TABLE_NOT_PRESENT, VERR_RESERVED_PAGE_TABLE_BITS or
+ *          VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS on normal failure.
+ *          The failure reason is also recorded in PGMPTWALKFAST::fFailed.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPtr               The guest virtual address to walk by.
+ * @param   fFlags              PGMQPAGE_F_XXX.
+ *                              This is ignored when @a a_fSetFlags is @c false.
+ * @param   pWalk               The page walk info.
+ * @param   pGstWalk            The guest mode specific page walk info.
+ * @tparam  a_enmGuestSlatMode  The SLAT mode of the function.
+ * @tparam  a_fSetFlags         Whether to process @a fFlags and set accessed
+ *                              and dirty flags accordingly.
+ * @thread  EMT(pVCpu)
+ */
+template<PGMSLAT const a_enmGuestSlatMode = PGMSLAT_DIRECT, bool const a_fSetFlags = false>
+DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fFlags, PPGMPTWALKFAST pWalk, PGSTPTWALK pGstWalk)
+{
+    int rc;
 
     /*
      * Init the walking structures.
@@ -867,9 +866,10 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
         pWalk->GCPhys     = GCPhysPte;
         return rc;
     }
+}
+
 # undef PGM_GST_SLAT_WALK_FAST
 # undef PGM_GST_ENSURE_ENTRY_FLAGS_SET
-}
 
 #endif /* 32BIT, PAE, AMD64 */
 
