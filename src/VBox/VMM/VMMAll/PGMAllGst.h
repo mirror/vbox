@@ -558,7 +558,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkFast)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t f
             {   /* Merge in the nested paging flags for the final GCPhys. */ \
                 if (a_enmGuestSlatMode == PGMSLAT_EPT) \
                     (a_pWalk)->fEffective = ((a_pWalk)->fEffective & ~PGM_PTATTRS_EPT_MASK) \
-                                          | WalkSlat.fEffective & PGM_PTATTRS_EPT_MASK; \
+                                          | (WalkSlat.fEffective & PGM_PTATTRS_EPT_MASK); \
                 else AssertFailedReturn(VERR_NOT_IMPLEMENTED); \
             } \
         } \
