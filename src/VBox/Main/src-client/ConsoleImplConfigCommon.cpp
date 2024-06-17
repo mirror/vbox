@@ -1184,7 +1184,7 @@ int Console::i_unmountMediumFromGuest(PUVM pUVM, PCVMMR3VTABLE pVMM, StorageBus_
     else
     {
         PPDMIMOUNT pIMount = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMOUNT);
-        AssertReturn(pIMount, VERR_INVALID_POINTER);
+        AssertPtrReturn(pIMount, VERR_INVALID_POINTER);
 
         /* Unmount the media (but do not eject the medium!) */
         vrc = pIMount->pfnUnmount(pIMount, fForceUnmount, false /*=fEject*/);
