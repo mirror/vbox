@@ -1901,6 +1901,8 @@ void UIVMActivityOverviewWidget::prepareWidgets()
 
         connect(m_pModel, &UIActivityOverviewModel::sigDataUpdate,
                 this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
+        connect(m_pAccessibleModel, &UIActivityOverviewAccessibleModel::sigDataUpdate,
+                this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
         connect(m_pModel, &UIActivityOverviewModel::sigHostStatsUpdate,
                 this, &UIVMActivityOverviewWidget::sltHandleHostStatsUpdate);
         connect(m_pTableView, &UIVMActivityOverviewTableView::customContextMenuRequested,
@@ -1931,7 +1933,6 @@ void UIVMActivityOverviewWidget::prepareWidgets()
     m_pAccessibleTableView->setAlternatingRowColors(true);
     m_pAccessibleTableView->setSortingEnabled(true);
     m_pAccessibleTableView->sortByColumn(0, Qt::AscendingOrder);
-    m_pAccessibleTableView->hide();
 
     layout()->addWidget(m_pAccessibleTableView);
 }
@@ -2018,6 +2019,8 @@ void UIVMActivityOverviewWidget::sltClearCOMData()
 {
     if (m_pModel)
         m_pModel->clearData();
+    if (m_pAccessibleModel)
+        m_pAccessibleModel->clearData();
 }
 
 void UIVMActivityOverviewWidget::sltToggleColumnSelectionMenu(bool fChecked)
@@ -2047,6 +2050,8 @@ void UIVMActivityOverviewWidget::sltHandleDataUpdate()
     computeMinimumColumnWidths();
     if (m_pProxyModel)
         m_pProxyModel->dataUpdate();
+    if (m_pAccessibleProxyModel)
+        m_pAccessibleProxyModel->dataUpdate();
 }
 
 void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &pos)

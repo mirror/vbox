@@ -40,7 +40,10 @@
 #include "QITableView.h"
 
 /* COM includes: */
+#include "CPerformanceMetric.h"
+#include "CPerformanceCollector.h"
 #include "KMachineState.h"
+
 
 class QTimer;
 class UIActivityOverviewAccessibleCell;
@@ -71,6 +74,7 @@ class UIActivityOverviewAccessibleProxyModel : public QSortFilterProxyModel
 public:
 
     UIActivityOverviewAccessibleProxyModel(QObject *parent = 0);
+    void dataUpdate();
 
 protected:
 
@@ -159,6 +163,7 @@ public:
     void setColumnCaptions(const QMap<int, QString>& captions);
     int itemIndex(const QUuid &uid);
     void setShouldUpdate(bool fShouldUpdate);
+    void clearData();
 
 private slots:
 
@@ -171,12 +176,20 @@ private:
     void initialize();
     void addRow(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState);
     void removeRow(const QUuid& uMachineId);
+    void setupPerformanceCollector();
+    void queryPerformanceCollector();
     QVector<UIActivityOverviewAccessibleRow*> m_rows;
     QITableView *m_pTableView;
     QMap<int, QString> m_columnTitles;
     QTimer *m_pLocalVMUpdateTimer;
     /** Maximum length of string length of data displayed in column. Updated in UIActivityOverviewModel::data(..). */
     mutable QMap<int, int> m_columnDataMaxLength;
+    CPerformanceCollector m_performanceCollector;
+    /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
+     * @{ */
+       QVector<QString> m_nameList;
+       QVector<CUnknown> m_objectList;
+    /** @} */
 
 };
 

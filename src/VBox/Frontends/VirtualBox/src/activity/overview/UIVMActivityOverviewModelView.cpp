@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QHeaderView>
 #include <QTimer>
 
@@ -33,6 +34,7 @@
 #include "UICommon.h"
 #include "UIExtraDataDefs.h"
 #include "UIGlobalSession.h"
+#include "UITranslator.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVMActivityOverviewModelView.h"
 
@@ -64,6 +66,9 @@ public:
     virtual bool isCloudVM() const RT_OVERRIDE RT_FINAL;
     void resetDebugger();
     void updateCells();
+    bool isWithGuestAdditions();
+    void setTotalRAM(quint64 uTotalRAM);
+    void setFreeRAM(quint64 uFreeRAM);
 
 private:
 
@@ -71,12 +76,17 @@ private:
     CMachineDebugger m_comDebugger;
     CSession         m_comSession;
     CGuest           m_comGuest;
+
+    quint64  m_uTotalRAM;
+    quint64  m_uFreeRAM;
 };
 
 UIActivityOverviewAccessibleRowLocal::UIActivityOverviewAccessibleRowLocal(QITableView *pTableView, const QUuid &uMachineId,
                                                                            const QString &strMachineName, KMachineState enmMachineState)
     : UIActivityOverviewAccessibleRow(pTableView, uMachineId, strMachineName)
     , m_enmMachineState(enmMachineState)
+    , m_uTotalRAM(0)
+    , m_uFreeRAM(0)
 {
     if (m_enmMachineState == KMachineState_Running)
         resetDebugger();
@@ -85,10 +95,45 @@ UIActivityOverviewAccessibleRowLocal::UIActivityOverviewAccessibleRowLocal(QITab
 
 void UIActivityOverviewAccessibleRowLocal::updateCells()
 {
-    // if (m_cells.contains((int) VMActivityOverviewColumn_Name))
-    // {
-    //     m_cells[(int)VMActivityOverviewColumn_Name]->setText(m_strMachineName);
-    // }
+    /* CPU Load: */
+    ULONG aPctHalted;
+    ULONG  uCPUGuestLoad;
+    ULONG uCPUVMMLoad;
+    m_comDebugger.GetCPULoad(0x7fffffff, uCPUGuestLoad, aPctHalted, uCPUVMMLoad);
+
+    if (m_cells.value(VMActivityOverviewColumn_CPUVMMLoad, 0))
+        m_cells[VMActivityOverviewColumn_CPUVMMLoad]->setText(QString("%1%").arg(QString::number(uCPUVMMLoad)));
+    if (m_cells.value(VMActivityOverviewColumn_CPUGuestLoad, 0))
+        m_cells[VMActivityOverviewColumn_CPUGuestLoad]->setText(QString("%1%").arg(QString::number(uCPUGuestLoad)));
+
+    /* RAM Utilization: */
+    QString strRAMUsage;
+    QString strRAMPercentage;
+    int iDecimalCount = 2;
+    quint64 uUsedRAM = m_uTotalRAM - m_uFreeRAM;
+    float m_fRAMUsagePercentage = 0;
+
+    if (m_uTotalRAM != 0)
+        m_fRAMUsagePercentage = 100.f * (uUsedRAM / (float)m_uTotalRAM);
+
+    if (isWithGuestAdditions())
+    {
+        strRAMUsage =
+            QString("%1/%2").arg(UITranslator::formatSize(_1K * uUsedRAM, iDecimalCount)).
+            arg(UITranslator::formatSize(_1K * m_uTotalRAM, iDecimalCount));
+        strRAMPercentage =
+            QString("%1%").arg(QString::number(m_fRAMUsagePercentage, 'f', 2));
+    }
+    else
+    {
+        strRAMPercentage = QApplication::translate("UIVMActivityOverviewWidget", "N/A");
+        strRAMUsage = QApplication::translate("UIVMActivityOverviewWidget", "N/A");
+    }
+
+    if (m_cells.value(VMActivityOverviewColumn_RAMUsedAndTotal, 0))
+        m_cells[VMActivityOverviewColumn_RAMUsedAndTotal]->setText(strRAMUsage);
+    if (m_cells.value(VMActivityOverviewColumn_RAMUsedPercentage, 0))
+        m_cells[VMActivityOverviewColumn_RAMUsedPercentage]->setText(strRAMPercentage);
 }
 
 UIActivityOverviewAccessibleRowLocal::~UIActivityOverviewAccessibleRowLocal()
@@ -133,6 +178,22 @@ bool UIActivityOverviewAccessibleRowLocal::isCloudVM() const
     return false;
 }
 
+bool UIActivityOverviewAccessibleRowLocal::isWithGuestAdditions()
+{
+    if (m_comGuest.isNull())
+        return false;
+    return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
+}
+
+void UIActivityOverviewAccessibleRowLocal::setTotalRAM(quint64 uTotalRAM)
+{
+    m_uTotalRAM = uTotalRAM;
+}
+
+void UIActivityOverviewAccessibleRowLocal::setFreeRAM(quint64 uFreeRAM)
+{
+    m_uFreeRAM = uFreeRAM;
+}
 
 /*********************************************************************************************************************************
 *   UIVMActivityOverviewAccessibleTableView implementation.                                                                      *
@@ -179,9 +240,39 @@ UIActivityOverviewAccessibleModel::UIActivityOverviewAccessibleModel(QObject *pP
     initialize();
 }
 
+void UIActivityOverviewAccessibleModel::setupPerformanceCollector()
+{
+    m_nameList.clear();
+    m_objectList.clear();
+    /* Initialize and configure CPerformanceCollector: */
+    const ULONG iPeriod = 1;
+    const int iMetricSetupCount = 1;
+    if (m_performanceCollector.isNull())
+        m_performanceCollector = gpGlobalSession->virtualBox().GetPerformanceCollector();
+    for (int i = 0; i < m_rows.size(); ++i)
+        m_nameList << "Guest/RAM/Usage*";
+    /* This is for the host: */
+    m_nameList << "CPU*";
+    m_nameList << "FS*";
+    m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
+    m_performanceCollector.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
+}
+
+void UIActivityOverviewAccessibleModel::clearData()
+{
+    /* We have a request to detach COM stuff,
+     * first of all we are removing all the items,
+     * this will detach COM wrappers implicitly: */
+    qDeleteAll(m_rows);
+    m_rows.clear();
+    /* Detaching perf. collector finally,
+     * please do not use it after all: */
+    m_performanceCollector.detach();
+}
+
 UIActivityOverviewAccessibleModel::~UIActivityOverviewAccessibleModel()
 {
-    qDeleteAll(m_rows);
+    clearData();
 }
 
 void UIActivityOverviewAccessibleModel::setShouldUpdate(bool fShouldUpdate)
@@ -247,6 +338,7 @@ void UIActivityOverviewAccessibleModel::initialize()
         if (!comMachine.isNull())
             addRow(comMachine.GetId(), comMachine.GetName(), comMachine.GetState());
     }
+    setupPerformanceCollector();
 }
 
 void UIActivityOverviewAccessibleModel::addRow(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState)
@@ -302,7 +394,7 @@ void UIActivityOverviewAccessibleModel::sltLocalVMUpdateTimeout()
     //getHostRAMStats();
 
     /* Use IPerformanceCollector to update VM RAM usage and Host CPU and file IO stats: */
-    //queryPerformanceCollector();
+    queryPerformanceCollector();
 
     for (int i = 0; i < m_rows.size(); ++i)
     {
@@ -344,6 +436,91 @@ void UIActivityOverviewAccessibleModel::removeRow(const QUuid& uMachineId)
     m_rows.remove(iIndex);
 }
 
+void UIActivityOverviewAccessibleModel::queryPerformanceCollector()
+{
+    QVector<QString>  aReturnNames;
+    QVector<CUnknown>  aReturnObjects;
+    QVector<QString>  aReturnUnits;
+    QVector<ULONG>  aReturnScales;
+    QVector<ULONG>  aReturnSequenceNumbers;
+    QVector<ULONG>  aReturnDataIndices;
+    QVector<ULONG>  aReturnDataLengths;
+
+    QVector<LONG> returnData = m_performanceCollector.QueryMetricsData(m_nameList,
+                                                                       m_objectList,
+                                                                       aReturnNames,
+                                                                       aReturnObjects,
+                                                                       aReturnUnits,
+                                                                       aReturnScales,
+                                                                       aReturnSequenceNumbers,
+                                                                       aReturnDataIndices,
+                                                                       aReturnDataLengths);
+    /* Parse the result we get from CPerformanceCollector to get respective values: */
+    for (int i = 0; i < aReturnNames.size(); ++i)
+    {
+        if (aReturnDataLengths[i] == 0)
+            continue;
+        /* Read the last of the return data disregarding the rest since we are caching the data in GUI side: */
+        float fData = returnData[aReturnDataIndices[i] + aReturnDataLengths[i] - 1] / (float)aReturnScales[i];
+        if (aReturnNames[i].contains("RAM", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+        {
+            if (aReturnNames[i].contains("Total", Qt::CaseInsensitive) || aReturnNames[i].contains("Free", Qt::CaseInsensitive))
+            {
+                {
+                    CMachine comMachine = (CMachine)aReturnObjects[i];
+                    if (comMachine.isNull())
+                        continue;
+                    int iIndex = itemIndex(comMachine.GetId());
+                    if (iIndex == -1 || iIndex >= m_rows.size() || !m_rows[iIndex])
+                        continue;
+
+                    UIActivityOverviewAccessibleRowLocal *pItem = qobject_cast<UIActivityOverviewAccessibleRowLocal*>(m_rows[iIndex]);
+                    if (!pItem)
+                        continue;
+                    if (aReturnNames[i].contains("Total", Qt::CaseInsensitive))
+                        pItem->setTotalRAM((quint64)fData);
+                    else
+                        pItem->setFreeRAM((quint64)fData);
+                }
+            }
+        }
+    //     else if (aReturnNames[i].contains("CPU/Load/User", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+    //     {
+    //         CHost comHost = (CHost)aReturnObjects[i];
+    //         if (!comHost.isNull())
+    //             m_hostStats.m_iCPUUserLoad = fData;
+    //     }
+    //     else if (aReturnNames[i].contains("CPU/Load/Kernel", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+    //     {
+    //         CHost comHost = (CHost)aReturnObjects[i];
+    //         if (!comHost.isNull())
+    //             m_hostStats.m_iCPUKernelLoad = fData;
+    //     }
+    //     else if (aReturnNames[i].contains("CPU/MHz", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+    //     {
+    //         CHost comHost = (CHost)aReturnObjects[i];
+    //         if (!comHost.isNull())
+    //             m_hostStats.m_iCPUFreq = fData;
+    //     }
+    //    else if (aReturnNames[i].contains("FS", Qt::CaseInsensitive) &&
+    //             aReturnNames[i].contains("Total", Qt::CaseInsensitive) &&
+    //             !aReturnNames[i].contains(":"))
+    //    {
+    //         CHost comHost = (CHost)aReturnObjects[i];
+    //         if (!comHost.isNull())
+    //             m_hostStats.m_iFSTotal = _1M * fData;
+    //    }
+    //    else if (aReturnNames[i].contains("FS", Qt::CaseInsensitive) &&
+    //             aReturnNames[i].contains("Free", Qt::CaseInsensitive) &&
+    //             !aReturnNames[i].contains(":"))
+    //    {
+    //         CHost comHost = (CHost)aReturnObjects[i];
+    //         if (!comHost.isNull())
+    //             m_hostStats.m_iFSFree = _1M * fData;
+    //    }
+    }
+}
+
 
 /*********************************************************************************************************************************
 *   UIActivityOverviewAccessibleProxyModel implementation.                                                                       *
@@ -351,6 +528,13 @@ void UIActivityOverviewAccessibleModel::removeRow(const QUuid& uMachineId)
 UIActivityOverviewAccessibleProxyModel::UIActivityOverviewAccessibleProxyModel(QObject *pParent /* = 0 */)
     :  QSortFilterProxyModel(pParent)
 {
+}
+
+void UIActivityOverviewAccessibleProxyModel::dataUpdate()
+{
+    if (sourceModel())
+        emit dataChanged(index(0,0), index(sourceModel()->rowCount(), sourceModel()->columnCount()));
+    invalidate();
 }
 
 
@@ -427,7 +611,6 @@ int UIActivityOverviewAccessibleCell::columnLength(int /*iColumnIndex*/) const
 
 void UIActivityOverviewAccessibleCell::setText(const QString &strText)
 {
-    printf("%s\n", qPrintable(strText));
     m_strText = strText;
 }
 
