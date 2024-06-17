@@ -730,6 +730,19 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
 # endif /* VBOX_WITH_IEM_NATIVE_RECOMPILER */
 
+
+# ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatMemMapJmp,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "iemMemMapJmp calls",                   "/IEM/CPU%u/iemMemMapJmp", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatMemMapNoJmp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "iemMemMap calls",                      "/IEM/CPU%u/iemMemMapNoJmp", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatMemBounceBufferCrossPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "iemMemBounceBufferMapCrossPage calls", "/IEM/CPU%u/iemMemMapBounceBufferCrossPage", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatMemBounceBufferMapPhys, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "iemMemBounceBufferMapPhys calls",      "/IEM/CPU%u/iemMemMapBounceBufferMapPhys", idCpu);
+# endif
+
+
 #endif /* VBOX_WITH_IEM_RECOMPILER */
 
         for (uint32_t i = 0; i < RT_ELEMENTS(pVCpu->iem.s.aStatXcpts); i++)

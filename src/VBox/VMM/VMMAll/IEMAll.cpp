@@ -5974,6 +5974,7 @@ static VBOXSTRICTRC
 iemMemBounceBufferMapCrossPage(PVMCPUCC pVCpu, int iMemMap, void **ppvMem, uint8_t *pbUnmapInfo,
                                size_t cbMem, RTGCPTR GCPtrFirst, uint32_t fAccess)
 {
+    STAM_COUNTER_INC(&pVCpu->iem.s.StatMemBounceBufferCrossPage);
     Assert(cbMem <= GUEST_PAGE_SIZE);
 
     /*
@@ -6110,6 +6111,8 @@ iemMemBounceBufferMapCrossPage(PVMCPUCC pVCpu, int iMemMap, void **ppvMem, uint8
 static VBOXSTRICTRC iemMemBounceBufferMapPhys(PVMCPUCC pVCpu, unsigned iMemMap, void **ppvMem, uint8_t *pbUnmapInfo, size_t cbMem,
                                               RTGCPHYS GCPhysFirst, uint32_t fAccess, VBOXSTRICTRC rcMap)
 {
+    STAM_COUNTER_INC(&pVCpu->iem.s.StatMemBounceBufferMapPhys);
+
     /*
      * Filter out conditions we can handle and the ones which shouldn't happen.
      */
@@ -6233,6 +6236,8 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PVMCPUCC pVCpu, unsigned iMemMap, 
 VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrMem,
                        uint32_t fAccess, uint32_t uAlignCtl) RT_NOEXCEPT
 {
+    STAM_COUNTER_INC(&pVCpu->iem.s.StatMemMapNoJmp);
+
     /*
      * Check the input and figure out which mapping entry to use.
      */
@@ -6616,6 +6621,8 @@ void iemMemRollbackAndUnmap(PVMCPUCC pVCpu, uint8_t bUnmapInfo) RT_NOEXCEPT
 void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrMem, uint32_t fAccess,
                    uint32_t uAlignCtl) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    STAM_COUNTER_INC(&pVCpu->iem.s.StatMemMapJmp);
+
     /*
      * Check the input, check segment access and adjust address
      * with segment base.

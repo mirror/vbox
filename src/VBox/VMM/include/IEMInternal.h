@@ -2140,7 +2140,15 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativeTbExitDirectLinking2PendingIrq;
     /** @} */
 
-    uint64_t                au64Padding[5];
+    /** iemMemMap and iemMemMapJmp statistics.
+     *  @{ */
+    STAMCOUNTER             StatMemMapJmp;
+    STAMCOUNTER             StatMemMapNoJmp;
+    STAMCOUNTER             StatMemBounceBufferCrossPage;
+    STAMCOUNTER             StatMemBounceBufferMapPhys;
+    /** @} */
+
+    uint64_t                au64Padding[1];
     /** @} */
 
     /** Data TLB.
