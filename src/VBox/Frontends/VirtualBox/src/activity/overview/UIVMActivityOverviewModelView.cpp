@@ -34,6 +34,7 @@
 #include "UICommon.h"
 #include "UIExtraDataDefs.h"
 #include "UIGlobalSession.h"
+#include "UIMonitorCommon.h"
 #include "UITranslator.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVMActivityOverviewModelView.h"
@@ -72,6 +73,8 @@ public:
 
 private:
 
+    void updateCellText(VMActivityOverviewColumn enmColumnIndex, const QString &strText);
+
     KMachineState    m_enmMachineState;
     CMachineDebugger m_comDebugger;
     CSession         m_comSession;
@@ -79,6 +82,9 @@ private:
 
     quint64  m_uTotalRAM;
     quint64  m_uFreeRAM;
+
+    quint64  m_uNetworkDownTotal;
+    quint64  m_uNetworkUpTotal;
 };
 
 UIActivityOverviewAccessibleRowLocal::UIActivityOverviewAccessibleRowLocal(QITableView *pTableView, const QUuid &uMachineId,
@@ -87,6 +93,8 @@ UIActivityOverviewAccessibleRowLocal::UIActivityOverviewAccessibleRowLocal(QITab
     , m_enmMachineState(enmMachineState)
     , m_uTotalRAM(0)
     , m_uFreeRAM(0)
+    , m_uNetworkDownTotal(0)
+    , m_uNetworkUpTotal(0)
 {
     if (m_enmMachineState == KMachineState_Running)
         resetDebugger();
@@ -100,11 +108,8 @@ void UIActivityOverviewAccessibleRowLocal::updateCells()
     ULONG  uCPUGuestLoad;
     ULONG uCPUVMMLoad;
     m_comDebugger.GetCPULoad(0x7fffffff, uCPUGuestLoad, aPctHalted, uCPUVMMLoad);
-
-    if (m_cells.value(VMActivityOverviewColumn_CPUVMMLoad, 0))
-        m_cells[VMActivityOverviewColumn_CPUVMMLoad]->setText(QString("%1%").arg(QString::number(uCPUVMMLoad)));
-    if (m_cells.value(VMActivityOverviewColumn_CPUGuestLoad, 0))
-        m_cells[VMActivityOverviewColumn_CPUGuestLoad]->setText(QString("%1%").arg(QString::number(uCPUGuestLoad)));
+    updateCellText(VMActivityOverviewColumn_CPUVMMLoad, QString("%1%").arg(QString::number(uCPUVMMLoad)));
+    updateCellText(VMActivityOverviewColumn_CPUGuestLoad, QString("%1%").arg(QString::number(uCPUGuestLoad)));
 
     /* RAM Utilization: */
     QString strRAMUsage;
@@ -130,10 +135,21 @@ void UIActivityOverviewAccessibleRowLocal::updateCells()
         strRAMUsage = QApplication::translate("UIVMActivityOverviewWidget", "N/A");
     }
 
-    if (m_cells.value(VMActivityOverviewColumn_RAMUsedAndTotal, 0))
-        m_cells[VMActivityOverviewColumn_RAMUsedAndTotal]->setText(strRAMUsage);
-    if (m_cells.value(VMActivityOverviewColumn_RAMUsedPercentage, 0))
-        m_cells[VMActivityOverviewColumn_RAMUsedPercentage]->setText(strRAMPercentage);
+    updateCellText(VMActivityOverviewColumn_RAMUsedAndTotal, strRAMUsage);
+    updateCellText(VMActivityOverviewColumn_RAMUsedPercentage, strRAMPercentage);
+
+    /* Network rate: */
+    quint64 uPrevDownTotal = m_uNetworkDownTotal;
+    quint64 uPrevUpTotal = m_uNetworkUpTotal;
+    UIMonitorCommon::getNetworkLoad(m_comDebugger, m_uNetworkDownTotal, m_uNetworkUpTotal);
+    quint64 uNetworkDownRate = m_uNetworkDownTotal - uPrevDownTotal;
+    quint64 uNetworkUpRate = m_uNetworkUpTotal - uPrevUpTotal;
+
+    updateCellText(VMActivityOverviewColumn_NetworkUpRate, QString("%1").arg(UITranslator::formatSize(uNetworkUpRate, iDecimalCount)));
+    updateCellText(VMActivityOverviewColumn_NetworkDownRate,QString("%1").arg(UITranslator::formatSize(uNetworkDownRate, iDecimalCount)));
+    updateCellText(VMActivityOverviewColumn_NetworkUpTotal, QString("%1").arg(UITranslator::formatSize(m_uNetworkUpTotal, iDecimalCount)));
+    updateCellText(VMActivityOverviewColumn_NetworkDownTotal, QString("%1").arg(UITranslator::formatSize(m_uNetworkDownTotal, iDecimalCount)));
+
 }
 
 UIActivityOverviewAccessibleRowLocal::~UIActivityOverviewAccessibleRowLocal()
@@ -193,6 +209,12 @@ void UIActivityOverviewAccessibleRowLocal::setTotalRAM(quint64 uTotalRAM)
 void UIActivityOverviewAccessibleRowLocal::setFreeRAM(quint64 uFreeRAM)
 {
     m_uFreeRAM = uFreeRAM;
+}
+
+void UIActivityOverviewAccessibleRowLocal::updateCellText(VMActivityOverviewColumn enmColumnIndex, const QString &strText)
+{
+    if (m_cells.value(enmColumnIndex, 0))
+        m_cells[enmColumnIndex]->setText(strText);
 }
 
 
