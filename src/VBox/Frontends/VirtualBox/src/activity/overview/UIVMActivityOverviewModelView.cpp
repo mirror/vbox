@@ -195,6 +195,7 @@ void UIActivityOverviewAccessibleRowLocal::setFreeRAM(quint64 uFreeRAM)
     m_uFreeRAM = uFreeRAM;
 }
 
+
 /*********************************************************************************************************************************
 *   UIVMActivityOverviewAccessibleTableView implementation.                                                                      *
 *********************************************************************************************************************************/
