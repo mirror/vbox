@@ -174,7 +174,7 @@ ifdef VBOX_WITH_RAW_MODE
 endif
 tstVMStructSize_INCS    = \
 	$(VBOX_PATH_VMM_SRC)/include \
-	$(VBOX_PATH_VMM_SRC)/PATM \
+	$(tstVMStructSize_0_OUTDIR) \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)
 tstVMStructSize_SOURCES = tstVMStructSize.cpp
 ifdef VBOX_WITH_RAW_MODE
@@ -183,6 +183,8 @@ endif
 ifdef VBOX_WITH_R0_LOGGING
  tstVMStructSize_DEFS  += VBOX_WITH_R0_LOGGING
 endif
+$(call KB_FN_DO_PASS0_ON_TARGET,tstVMStructSize)
+$(evalcall2 def_VBoxGenIEMInstructionStatisticsTmpl_Header,tstVMStructSize,$(tstVMStructSize_0_OUTDIR))
 
 tstAsmStructs_TEMPLATE  = VBoxR3AutoTest
 ifneq ($(KBUILD_TARGET),win)
@@ -238,8 +240,6 @@ tstGlobalConfig_LIBS     = $(LIB_RUNTIME)
 #
 # Testcase for checking the C (IEMAllAImplC.cpp) and assembly (IEMAllAImpl.asm)
 # instruction emulation helpers.
-#
-# Note! The IN_TSTVMSTRUCT define is for avoiding IEMInstructionStatisticsTmpl.h.
 #
 TSTIEMAIMPL_TEST_DATA_DEPS := \
 	tstIEMAImplDataInt-adcx_u32.bin.gz \
@@ -653,7 +653,7 @@ TSTIEMAIMPL_TEST_DATA_DEPS := \
 	tstIEMAImplDataSsePcmpxstrx-pcmpestrm_u128.bin.gz
 
 tstIEMAImpl_TEMPLATE  = VBoxR3TstExe
-tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT
+tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IEM_WITHOUT_INSTRUCTION_STATS
 tstIEMAImpl_SDKS      = VBoxSoftFloatR3Shared
 tstIEMAImpl_INCS      = ../include .
 tstIEMAImpl_SOURCES   = \
@@ -675,7 +675,7 @@ $(call KB_FN_DO_PASS0_ON_TARGET,tstIEMAImpl)
 # This variant mainly for generating data.
 tstIEMAImplAsm_TEMPLATE      := VBoxR3TstExe
 tstIEMAImplAsm_SDKS          := VBoxSoftFloatR3Shared
-tstIEMAImplAsm_DEFS           = $(VMM_COMMON_DEFS) IEM_WITH_ASSEMBLY IN_TSTVMSTRUCT TSTIEMAIMPL_WITH_GENERATOR
+tstIEMAImplAsm_DEFS           = $(VMM_COMMON_DEFS) IEM_WITH_ASSEMBLY IEM_WITHOUT_INSTRUCTION_STATS TSTIEMAIMPL_WITH_GENERATOR
 tstIEMAImplAsm_ASFLAGS.amd64 := -Werror
 tstIEMAImplAsm_ASFLAGS.x86   := -Werror
 tstIEMAImplAsm_INCS          := ../include .
@@ -699,7 +699,7 @@ tstIEMAImplDataSseBinary.S_DEPS   = \
 #
 tstIEMCheckMc_TEMPLATE  = VBoxR3TstExe
 tstIEMCheckMc_SOURCES   = tstIEMCheckMc.cpp
-tstIEMCheckMc_DEFS      = $(VMM_COMMON_DEFS)
+tstIEMCheckMc_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_INSTRUCTION_STATS
 tstIEMCheckMc_LIBS      = $(LIB_RUNTIME)
 ifeq ($(KBUILD_TARGET),win)
  tstIEMCheckMc_CXXFLAGS = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS) -wd4189 # local variable is initialized but not used.
@@ -973,7 +973,7 @@ if   !defined(VBOX_ONLY_EXTPACKS) \
       || defined(VBOX_WITH_DTRACE_R0) \
   || defined(VBOX_WITH_DTRACE_RC))
  tstVMStructDTrace_TEMPLATE = VBoxR3AutoTest
- tstVMStructDTrace_DEFS    = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
+ tstVMStructDTrace_DEFS    = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS) IEM_WITHOUT_INSTRUCTION_STATS
  ifdef VBOX_WITH_RAW_MODE
   tstVMStructDTrace_DEFS  += VBOX_WITH_RAW_MODE
  endif

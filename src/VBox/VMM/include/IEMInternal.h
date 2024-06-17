@@ -260,7 +260,7 @@ RT_C_DECLS_BEGIN
 
 #ifndef RT_IN_ASSEMBLER /* ASM-NOINC-START - the rest of the file */
 
-# if !defined(IN_TSTVMSTRUCT) && !defined(DOXYGEN_RUNNING)
+# if !defined(IEM_WITHOUT_INSTRUCTION_STATS) && !defined(DOXYGEN_RUNNING)
 /** Instruction statistics.   */
 typedef struct IEMINSTRSTATS
 {
@@ -516,6 +516,13 @@ AssertCompile(PGMIEMGCPHYS2PTR_F_CODE_PAGE    == IEMTLBE_F_PG_CODE_PAGE);
                                      | PGMIEMGCPHYS2PTR_F_CODE_PAGE \
                                      | IEMTLBE_F_PHYS_REV )
 
+/** The TLB size (power of two).
+ * We initially chose 256 because that way we can obtain the result directly
+ * from a 8-bit register without an additional AND instruction.
+ * See also @bugref{10687}. */
+#define IEMTLB_ENTRY_COUNT                      256
+#define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      8
+AssertCompile(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) == IEMTLB_ENTRY_COUNT);
 
 /**
  * An IEM TLB.
@@ -571,10 +578,8 @@ typedef struct IEMTLB
     /** Alignment padding. */
     uint32_t            au32Padding[6];
 
-    /** The TLB entries.
-     * We've choosen 256 because that way we can obtain the result directly from a
-     * 8-bit register without an additional AND instruction. */
-    IEMTLBENTRY         aEntries[256];
+    /** The TLB entries. */
+    IEMTLBENTRY         aEntries[IEMTLB_ENTRY_COUNT];
 } IEMTLB;
 AssertCompileSizeAlignment(IEMTLB, 64);
 /** IEMTLB::uTlbRevision increment.  */
@@ -606,7 +611,12 @@ AssertCompileSizeAlignment(IEMTLB, 64);
  * @returns Index into IEMTLB::aEntries.
  * @param   a_uTag      Value returned by IEMTLB_CALC_TAG.
  */
-#define IEMTLB_TAG_TO_INDEX(a_uTag)         ( (uint8_t)(a_uTag) )
+#if IEMTLB_ENTRY_COUNT == 256
+# define IEMTLB_TAG_TO_INDEX(a_uTag)        ( (uint8_t)(a_uTag) )
+#else
+# define IEMTLB_TAG_TO_INDEX(a_uTag)        ( (a_uTag) & (IEMTLB_ENTRY_COUNT - 1U) )
+AssertCompile(RT_IS_POWER_OF_TWO(IEMTLB_ENTRY_COUNT));
+#endif
 /**
  * Converts a TLB tag value into a TLB index.
  * @returns Index into IEMTLB::aEntries.
@@ -2163,7 +2173,7 @@ typedef struct IEMCPU
     /** Interrupt statistics. */
     uint32_t                aStatInts[256];
 
-#if defined(VBOX_WITH_STATISTICS) && !defined(IN_TSTVMSTRUCT) && !defined(DOXYGEN_RUNNING)
+#if defined(VBOX_WITH_STATISTICS) && !defined(DOXYGEN_RUNNING) && !defined(IEM_WITHOUT_INSTRUCTION_STATS)
     /** Instruction statistics for ring-0/raw-mode. */
     IEMINSTRSTATS           StatsRZ;
     /** Instruction statistics for ring-3. */

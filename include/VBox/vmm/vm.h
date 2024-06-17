@@ -355,8 +355,10 @@ typedef struct VMCPU
 
 
 #ifndef VBOX_FOR_DTRACE_LIB
+# ifndef IN_TSTVMSTRUCT
 /* Make sure the structure size is aligned on a 16384 boundary for arm64 purposes. */
 AssertCompileSizeAlignment(VMCPU, 16384);
+# endif
 
 /** @name Operations on VMCPU::enmState
  * @{ */

@@ -147,20 +147,22 @@ typedef struct GVMCPU
     uint8_t                 abPadding3[16384 - 64*2 - 256 - 1024      - 896 - 576];
 #endif
 } GVMCPU;
-#if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
-# pragma GCC diagnostic push
-#endif
-#if RT_GNUC_PREREQ(4, 3) && defined(__cplusplus)
-# pragma GCC diagnostic ignored "-Winvalid-offsetof"
-#endif
+#ifndef IN_TSTVMSTRUCT
+# if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
+#  pragma GCC diagnostic push
+# endif
+# if RT_GNUC_PREREQ(4, 3) && defined(__cplusplus)
+#  pragma GCC diagnostic ignored "-Winvalid-offsetof"
+# endif
 AssertCompileMemberAlignment(GVMCPU, idCpu,  16384);
 AssertCompileMemberAlignment(GVMCPU, gvmm,   64);
-#ifdef VBOX_WITH_NEM_R0
+# ifdef VBOX_WITH_NEM_R0
 AssertCompileMemberAlignment(GVMCPU, nemr0,  64);
-#endif
+# endif
 AssertCompileSizeAlignment(GVMCPU,           16384);
-#if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
-# pragma GCC diagnostic pop
+# if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
+#  pragma GCC diagnostic pop
+# endif
 #endif
 
 /** @} */

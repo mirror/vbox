@@ -630,9 +630,20 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     AssertCompileAdjacentMembers(IEMTLB, uTlbRevision, uTlbPhysRev);
     AssertCompile(RTASSERT_OFFSET_OF(IEMTLB, uTlbPhysRev) < RTASSERT_OFFSET_OF(IEMTLB, aEntries));
     AssertCompile(RTASSERT_OFFSET_OF(VMCPUCC, iem.s.DataTlb.aEntries) < _64K);
-    AssertCompile(RTASSERT_OFFSET_OF(VMCPUCC, iem.s.CodeTlb.aEntries) < _64K); /* if larger do: ADD x3, x27, x3, LSL #y */
-    pCodeBuf[off++] = Armv8A64MkInstrMovZ(pTlbState->idxReg4, offVCpuTlb + RT_UOFFSETOF(IEMTLB, aEntries));
-    pCodeBuf[off++] = Armv8A64MkInstrAddReg(pTlbState->idxReg4, IEMNATIVE_REG_FIXED_PVMCPU, pTlbState->idxReg4);
+    if (offVCpuTlb + RT_UOFFSETOF(IEMTLB, aEntries) < _64K)
+    {
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(pTlbState->idxReg4, offVCpuTlb + RT_UOFFSETOF(IEMTLB, aEntries));
+        pCodeBuf[off++] = Armv8A64MkInstrAddReg(pTlbState->idxReg4, IEMNATIVE_REG_FIXED_PVMCPU, pTlbState->idxReg4);
+    }
+    else
+    {
+        AssertCompileMemberAlignment(VMCPUCC, iem.s.CodeTlb.aEntries, 64);
+        AssertCompileMemberAlignment(IEMTLB, aEntries, 64);
+        AssertCompile(RTASSERT_OFFSET_OF(VMCPUCC, iem.s.CodeTlb.aEntries) < _64K*64U);
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(pTlbState->idxReg4, (offVCpuTlb + RT_UOFFSETOF(IEMTLB, aEntries)) >> 6);
+        pCodeBuf[off++] = Armv8A64MkInstrAddReg(pTlbState->idxReg4, IEMNATIVE_REG_FIXED_PVMCPU, pTlbState->idxReg4,
+                                                true /*64Bit*/, false /*fSetFlags*/, 6 /*cShift*/, kArmv8A64InstrShift_Lsl);
+    }
     pCodeBuf[off++] = Armv8A64MkInstrLdPairGpr(pTlbState->idxReg3, pTlbState->idxReg5, pTlbState->idxReg4,
                                                (RT_OFFSETOF(IEMTLB, uTlbRevision) - RT_OFFSETOF(IEMTLB, aEntries)) / 8);
 #  else
@@ -648,8 +659,15 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     uint32_t const offTlbEntries = offVCpuTlb + RT_UOFFSETOF(IEMTLB, aEntries);
 # endif
 # if defined(RT_ARCH_AMD64)
+#  if IEMTLB_ENTRY_COUNT == 256
     /* movzx reg2, byte reg1 */
     off = iemNativeEmitLoadGprFromGpr8Ex(pCodeBuf, off, pTlbState->idxReg2, pTlbState->idxReg1);
+#  else
+    /* mov   reg2, reg1 */
+    off = iemNativeEmitLoadGprFromGpr32Ex(pCodeBuf, off, pTlbState->idxReg2, pTlbState->idxReg1);
+    /* and   reg2, IEMTLB_ENTRY_COUNT - 1U */
+    off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, pTlbState->idxReg2, IEMTLB_ENTRY_COUNT - 1U);
+#  endif
     /* shl   reg2, 5 ; reg2 *= sizeof(IEMTLBENTRY) */
     AssertCompileSize(IEMTLBENTRY, 32);
     off = iemNativeEmitShiftGprLeftEx(pCodeBuf, off, pTlbState->idxReg2, 5);
@@ -665,8 +683,8 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     pCodeBuf[off++] = RT_BYTE4(offTlbEntries);
 
 # elif defined(RT_ARCH_ARM64)
-    /* reg2 = (reg1 & 0xff) << 5 */
-    pCodeBuf[off++] = Armv8A64MkInstrUbfiz(pTlbState->idxReg2, pTlbState->idxReg1, 5, 8);
+    /* reg2 = (reg1 & tlbmask) << 5 */
+    pCodeBuf[off++] = Armv8A64MkInstrUbfiz(pTlbState->idxReg2, pTlbState->idxReg1, 5, IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO);
 #  ifdef IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR
     /* reg2 += &pVCpu->iem.s.DataTlb.aEntries / CodeTlb.aEntries */
     pCodeBuf[off++] = Armv8A64MkInstrAddReg(pTlbState->idxReg2, pTlbState->idxReg2, pTlbState->idxReg4);
