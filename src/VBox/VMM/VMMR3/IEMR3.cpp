@@ -344,6 +344,10 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, szPat, "Code TLB hits",
                           "/IEM/CPU%u/Tlb/Code/Hits", idCpu);
 
+        RTStrPrintf(szVal, sizeof(szVal), "/IEM/CPU%u/Tlb/Code/Hits|/IEM/CPU%u/Tlb/Code/Misses", idCpu, idCpu);
+        STAMR3RegisterSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, szPat, "Code TLB lookups (sum of hits and misses)",
+                          "/IEM/CPU%u/Tlb/Code/AllLookups", idCpu);
+
         RTStrPrintf(szVal, sizeof(szVal), "/IEM/CPU%u/Tlb/Code/Misses", idCpu);
         RTStrPrintf(szPat, sizeof(szPat), "/IEM/CPU%u/Tlb/Code/Hits", idCpu);
         STAMR3RegisterPctOfSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, STAMUNIT_PPM, szVal, true, szPat,
@@ -457,7 +461,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
         RTStrPrintf(szVal, sizeof(szVal), "/IEM/CPU%u/Tlb/Data/Hits|/IEM/CPU%u/Tlb/Data/Misses", idCpu, idCpu);
         STAMR3RegisterSum(pVM->pUVM, STAMVISIBILITY_ALWAYS, szPat, "Data TLB lookups (sum of hits and misses)",
-                          "/IEM/CPU%u/Tlb/Data/Hits/AllLookups", idCpu);
+                          "/IEM/CPU%u/Tlb/Data/AllLookups", idCpu);
 
         RTStrPrintf(szVal, sizeof(szVal), "/IEM/CPU%u/Tlb/Data/Misses", idCpu);
         RTStrPrintf(szPat, sizeof(szPat), "/IEM/CPU%u/Tlb/Data/Hits", idCpu);
