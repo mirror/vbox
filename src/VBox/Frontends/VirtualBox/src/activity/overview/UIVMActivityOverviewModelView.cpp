@@ -28,6 +28,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QHeaderView>
+#include <QMouseEvent>
 #include <QTimer>
 
 /* GUI includes: */
@@ -85,6 +86,11 @@ private:
 
     quint64  m_uNetworkDownTotal;
     quint64  m_uNetworkUpTotal;
+
+    quint64          m_uVMExitTotal;
+    quint64          m_uDiskWriteTotal;
+    quint64          m_uDiskReadTotal;
+
 };
 
 UIActivityOverviewAccessibleRowLocal::UIActivityOverviewAccessibleRowLocal(QITableView *pTableView, const QUuid &uMachineId,
@@ -95,6 +101,9 @@ UIActivityOverviewAccessibleRowLocal::UIActivityOverviewAccessibleRowLocal(QITab
     , m_uFreeRAM(0)
     , m_uNetworkDownTotal(0)
     , m_uNetworkUpTotal(0)
+    , m_uVMExitTotal(0)
+    , m_uDiskWriteTotal(0)
+    , m_uDiskReadTotal(0)
 {
     if (m_enmMachineState == KMachineState_Running)
         resetDebugger();
@@ -149,6 +158,25 @@ void UIActivityOverviewAccessibleRowLocal::updateCells()
     updateCellText(VMActivityOverviewColumn_NetworkDownRate,QString("%1").arg(UITranslator::formatSize(uNetworkDownRate, iDecimalCount)));
     updateCellText(VMActivityOverviewColumn_NetworkUpTotal, QString("%1").arg(UITranslator::formatSize(m_uNetworkUpTotal, iDecimalCount)));
     updateCellText(VMActivityOverviewColumn_NetworkDownTotal, QString("%1").arg(UITranslator::formatSize(m_uNetworkDownTotal, iDecimalCount)));
+
+    /* IO rate: */
+    quint64 uPrevWriteTotal = m_uDiskWriteTotal;
+    quint64 uPrevReadTotal = m_uDiskReadTotal;
+    UIMonitorCommon::getDiskLoad(m_comDebugger, m_uDiskWriteTotal, m_uDiskReadTotal);
+    quint64 uDiskWriteRate = m_uDiskWriteTotal - uPrevWriteTotal;
+    quint64 uDiskReadRate = m_uDiskReadTotal - uPrevReadTotal;
+    updateCellText(VMActivityOverviewColumn_DiskIOReadRate,QString("%1").arg(UITranslator::formatSize(uDiskReadRate, iDecimalCount)));
+    updateCellText(VMActivityOverviewColumn_DiskIOWriteRate,QString("%1").arg(UITranslator::formatSize(uDiskWriteRate, iDecimalCount)));
+    updateCellText(VMActivityOverviewColumn_DiskIOReadTotal,  QString("%1").arg(UITranslator::formatSize(m_uDiskReadTotal, iDecimalCount)));
+    updateCellText(VMActivityOverviewColumn_DiskIOWriteTotal, QString("%1").arg(UITranslator::formatSize(m_uDiskWriteTotal, iDecimalCount)));
+
+    /* VM Exits: */
+    quint64 uPrevVMExitsTotal = m_uVMExitTotal;
+    UIMonitorCommon::getVMMExitCount(m_comDebugger, m_uVMExitTotal);
+    quint64 uVMExitRate = m_uVMExitTotal - uPrevVMExitsTotal;
+    updateCellText(VMActivityOverviewColumn_VMExits, QString("%1/%2").arg(UITranslator::addMetricSuffixToNumber(uVMExitRate)).
+                   arg(UITranslator::addMetricSuffixToNumber(m_uVMExitTotal)));
+
 
 }
 
@@ -227,10 +255,77 @@ UIVMActivityOverviewAccessibleTableView::UIVMActivityOverviewAccessibleTableView
 {
 }
 
+void UIVMActivityOverviewAccessibleTableView::updateColumVisibility()
+{
+    UIActivityOverviewAccessibleProxyModel *pProxyModel = qobject_cast<UIActivityOverviewAccessibleProxyModel*>(model());
+    if (!pProxyModel)
+        return;
+    UIActivityOverviewAccessibleModel *pModel = qobject_cast<UIActivityOverviewAccessibleModel*>(pProxyModel->sourceModel());
+    QHeaderView *pHeader = horizontalHeader();
+
+    if (!pModel || !pHeader)
+        return;
+    for (int i = (int)VMActivityOverviewColumn_Name; i < (int)VMActivityOverviewColumn_Max; ++i)
+    {
+        if (!pModel->columnVisible(i))
+            pHeader->hideSection(i);
+        else
+            pHeader->showSection(i);
+    }
+    resizeHeaders();
+}
+
+int UIVMActivityOverviewAccessibleTableView::selectedItemIndex() const
+{
+    UIActivityOverviewAccessibleProxyModel *pModel = qobject_cast<UIActivityOverviewAccessibleProxyModel*>(model());
+    if (!pModel)
+        return -1;
+
+    QItemSelectionModel *pSelectionModel =  selectionModel();
+    if (!pSelectionModel)
+        return -1;
+    QModelIndexList selectedItemIndices = pSelectionModel->selectedRows();
+    if (selectedItemIndices.isEmpty())
+        return -1;
+
+    /* just use the the 1st index: */
+    QModelIndex modelIndex = pModel->mapToSource(selectedItemIndices[0]);
+
+    if (!modelIndex.isValid())
+        return -1;
+    return modelIndex.row();
+}
+
+bool UIVMActivityOverviewAccessibleTableView::hasSelection() const
+{
+    if (!selectionModel())
+        return false;
+    return selectionModel()->hasSelection();
+}
+
 void UIVMActivityOverviewAccessibleTableView::setMinimumColumnWidths(const QMap<int, int>& widths)
 {
     m_minimumColumnWidths = widths;
     resizeHeaders();
+}
+
+void UIVMActivityOverviewAccessibleTableView::resizeEvent(QResizeEvent *pEvent)
+{
+    resizeHeaders();
+    QTableView::resizeEvent(pEvent);
+}
+
+void UIVMActivityOverviewAccessibleTableView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+    emit sigSelectionChanged(selected, deselected);
+    QTableView::selectionChanged(selected, deselected);
+}
+
+void UIVMActivityOverviewAccessibleTableView::mousePressEvent(QMouseEvent *pEvent)
+{
+    if (!indexAt(pEvent->position().toPoint()).isValid())
+        clearSelection();
+    QTableView::mousePressEvent(pEvent);
 }
 
 void UIVMActivityOverviewAccessibleTableView::resizeHeaders()
@@ -261,6 +356,31 @@ UIActivityOverviewAccessibleModel::UIActivityOverviewAccessibleModel(QObject *pP
     , m_pLocalVMUpdateTimer(new QTimer(this))
 {
     initialize();
+}
+
+void UIActivityOverviewAccessibleModel::setColumnVisible(const QMap<int, bool>& columnVisible)
+{
+    m_columnVisible = columnVisible;
+}
+
+bool UIActivityOverviewAccessibleModel::columnVisible(int iColumnId) const
+{
+    return m_columnVisible.value(iColumnId, true);
+}
+
+
+bool UIActivityOverviewAccessibleModel::isVMRunning(int rowIndex) const
+{
+    if (rowIndex >= m_rows.size() || rowIndex < 0 || !m_rows[rowIndex])
+        return false;
+    return m_rows[rowIndex]->isRunning();
+}
+
+bool UIActivityOverviewAccessibleModel::isCloudVM(int rowIndex) const
+{
+    if (rowIndex >= m_rows.size() || rowIndex < 0 || !m_rows[rowIndex])
+        return false;
+    return m_rows[rowIndex]->isCloudVM();
 }
 
 void UIActivityOverviewAccessibleModel::setupPerformanceCollector()
@@ -559,6 +679,40 @@ void UIActivityOverviewAccessibleProxyModel::dataUpdate()
         emit dataChanged(index(0,0), index(sourceModel()->rowCount(), sourceModel()->columnCount()));
     invalidate();
 }
+
+void UIActivityOverviewAccessibleProxyModel::setNotRunningVMVisibility(bool fShow)
+{
+    if (m_fShowNotRunningVMs == fShow)
+        return;
+    m_fShowNotRunningVMs = fShow;
+    invalidateFilter();
+}
+
+
+void UIActivityOverviewAccessibleProxyModel::setCloudVMVisibility(bool fShow)
+{
+    if (m_fShowCloudVMs == fShow)
+        return;
+    m_fShowCloudVMs = fShow;
+    invalidateFilter();
+}
+
+bool UIActivityOverviewAccessibleProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const
+{
+    Q_UNUSED(sourceParent);
+    if (m_fShowNotRunningVMs && m_fShowCloudVMs)
+        return true;
+    UIActivityOverviewAccessibleModel *pModel = qobject_cast<UIActivityOverviewAccessibleModel*>(sourceModel());
+    if (!pModel)
+        return true;
+
+    if (!m_fShowNotRunningVMs && !pModel->isVMRunning(iSourceRow))
+        return false;
+    if (!m_fShowCloudVMs && pModel->isCloudVM(iSourceRow))
+        return false;
+    return true;
+}
+
 
 
 /*********************************************************************************************************************************

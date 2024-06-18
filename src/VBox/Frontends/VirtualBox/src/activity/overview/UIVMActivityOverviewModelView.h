@@ -53,10 +53,24 @@ class UIVMActivityOverviewAccessibleTableView : public QITableView
 {
     Q_OBJECT;
 
+signals:
+
+    void sigSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+
 public:
 
     UIVMActivityOverviewAccessibleTableView(QWidget *pParent);
     void setMinimumColumnWidths(const QMap<int, int>& widths);
+    void updateColumVisibility();
+    int selectedItemIndex() const;
+    bool hasSelection() const;
+
+private:
+
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
+    virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) RT_OVERRIDE;
+    virtual void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+
     /** Resizes all the columns in response to resizeEvent. Columns cannot be narrower than m_minimumColumnWidths values. */
     void resizeHeaders();
     /** Value is in pixels. Columns cannot be narrower than this width. */
@@ -75,14 +89,18 @@ public:
 
     UIActivityOverviewAccessibleProxyModel(QObject *parent = 0);
     void dataUpdate();
+    void setNotRunningVMVisibility(bool fShow);
+    void setCloudVMVisibility(bool fShow);
 
 protected:
 
     // virtual bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const RT_OVERRIDE;
-    // bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const RT_OVERRIDE;
+    bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const RT_OVERRIDE RT_FINAL;
 
 private:
 
+    bool m_fShowNotRunningVMs;
+    bool m_fShowCloudVMs;
 
 };
 
@@ -164,6 +182,10 @@ public:
     int itemIndex(const QUuid &uid);
     void setShouldUpdate(bool fShouldUpdate);
     void clearData();
+    bool isVMRunning(int rowIndex) const;
+    bool isCloudVM(int rowIndex) const;
+    void setColumnVisible(const QMap<int, bool>& columnVisible);
+    bool columnVisible(int iColumnId) const;
 
 private slots:
 
@@ -181,6 +203,7 @@ private:
     QVector<UIActivityOverviewAccessibleRow*> m_rows;
     QITableView *m_pTableView;
     QMap<int, QString> m_columnTitles;
+    QMap<int, bool> m_columnVisible;
     QTimer *m_pLocalVMUpdateTimer;
     /** Maximum length of string length of data displayed in column. Updated in UIActivityOverviewModel::data(..). */
     mutable QMap<int, int> m_columnDataMaxLength;

@@ -1905,8 +1905,6 @@ void UIVMActivityOverviewWidget::prepareWidgets()
                 this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
         connect(m_pModel, &UIActivityOverviewModel::sigHostStatsUpdate,
                 this, &UIVMActivityOverviewWidget::sltHandleHostStatsUpdate);
-        connect(m_pTableView, &UIVMActivityOverviewTableView::customContextMenuRequested,
-                this, &UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest);
         connect(m_pTableView, &UIVMActivityOverviewTableView::sigSelectionChanged,
                 this, &UIVMActivityOverviewWidget::sltHandleTableSelectionChanged);
         updateModelColumVisibilityCache();
@@ -1917,6 +1915,8 @@ void UIVMActivityOverviewWidget::prepareWidgets()
     m_pAccessibleTableView = new UIVMActivityOverviewAccessibleTableView(this);
     m_pAccessibleModel = new UIActivityOverviewAccessibleModel(this, m_pAccessibleTableView);
     m_pAccessibleProxyModel->setSourceModel(m_pAccessibleModel);
+    m_pAccessibleProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
+    m_pAccessibleProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
     m_pAccessibleTableView->setModel(m_pAccessibleProxyModel);
 
     m_pAccessibleTableView->setItemDelegate(new UIVMActivityOverviewDelegate(this));
@@ -1933,6 +1933,11 @@ void UIVMActivityOverviewWidget::prepareWidgets()
     m_pAccessibleTableView->setAlternatingRowColors(true);
     m_pAccessibleTableView->setSortingEnabled(true);
     m_pAccessibleTableView->sortByColumn(0, Qt::AscendingOrder);
+
+    connect(m_pAccessibleTableView, &UIVMActivityOverviewAccessibleTableView::customContextMenuRequested,
+            this, &UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest);
+    connect(m_pAccessibleTableView, &UIVMActivityOverviewAccessibleTableView::sigSelectionChanged,
+            this, &UIVMActivityOverviewWidget::sltHandleTableSelectionChanged);
 
     layout()->addWidget(m_pAccessibleTableView);
 }
@@ -2056,7 +2061,7 @@ void UIVMActivityOverviewWidget::sltHandleDataUpdate()
 
 void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &pos)
 {
-    if (!m_pTableView)
+    if (!m_pAccessibleTableView)
         return;
 
     QMenu menu;
@@ -2078,7 +2083,7 @@ void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &
     connect(pShowCloudVMsAction, &QAction::triggered,
             this, &UIVMActivityOverviewWidget::sltCloudVMVisibility);
 
-    menu.exec(m_pTableView->mapToGlobal(pos));
+    menu.exec(m_pAccessibleTableView->mapToGlobal(pos));
 }
 
 void UIVMActivityOverviewWidget::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
@@ -2116,6 +2121,9 @@ void UIVMActivityOverviewWidget::sltNotRunningVMVisibility(bool fShow)
     m_fShowNotRunningVMs = fShow;
     if (m_pProxyModel)
         m_pProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
+    if (m_pAccessibleProxyModel)
+        m_pAccessibleProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
+
 }
 
 void UIVMActivityOverviewWidget::sltCloudVMVisibility(bool fShow)
@@ -2123,6 +2131,8 @@ void UIVMActivityOverviewWidget::sltCloudVMVisibility(bool fShow)
     m_fShowCloudVMs = fShow;
     if (m_pProxyModel)
         m_pProxyModel->setCloudVMVisibility(m_fShowCloudVMs);
+    if (m_pAccessibleProxyModel)
+        m_pAccessibleProxyModel->setCloudVMVisibility(m_fShowCloudVMs);
 }
 
 void UIVMActivityOverviewWidget::setColumnVisible(int iColumnId, bool fVisible)
