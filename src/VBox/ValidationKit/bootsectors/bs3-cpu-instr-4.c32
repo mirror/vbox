@@ -289,6 +289,46 @@ typedef X86YMMFLOATPDREG BS3_FAR *PX86YMMFLOATPDREG;
 typedef X86YMMFLOATPDREG const BS3_FAR *PCX86YMMFLOATPDREG;
 
 /**
+ * YMM scalar single-precision floating-point register.
+ * @todo move to x86.h?
+ */
+typedef union X86YMMFLOATSSREG
+{
+    /** Scalar single-precision floating-point view. */
+    RTFLOAT32U  ar32[8];
+    /** 256-bit integer view. */
+    RTUINT256U  ymm;
+} X86YMMFLOATSSREG;
+# ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86YMMFLOATSSREG, 32);
+AssertCompileSize(X86YMMFLOATSSREG, sizeof(X86YMMREG));
+# endif
+/** Pointer to a YMM scalar single-precision floating-point register. */
+typedef X86YMMFLOATSSREG BS3_FAR *PX86YMMFLOATSSREG;
+/** Pointer to a const YMM scalar single-precision floating-point register. */
+typedef X86YMMFLOATSSREG const BS3_FAR *PCX86YMMFLOATSSREG;
+
+/**
+ * YMM scalar double-precision floating-point register.
+ * @todo move to x86.h?
+ */
+typedef union X86YMMFLOATSDREG
+{
+    /** Scalar double-precision floating-point view. */
+    RTFLOAT64U  ar64[3];
+    /** 256-bit integer view. */
+    RTUINT256U  ymm;
+} X86YMMFLOATSDREG;
+# ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86YMMFLOATSDREG, 32);
+AssertCompileSize(X86YMMFLOATSDREG, sizeof(X86YMMREG));
+# endif
+/** Pointer to a YMM scalar double-precision floating-point register. */
+typedef X86YMMFLOATSDREG BS3_FAR *PX86YMMFLOATSDREG;
+/** Pointer to a const YMM scalar double-precision floating-point register. */
+typedef X86YMMFLOATSDREG const BS3_FAR *PCX86YMMFLOATSDREG;
+
+/**
  * YMM scalar quadruple-precision floating-point register.
  * @todo move to x86.h?
  */
@@ -344,8 +384,8 @@ static uint8_t BS3_FAR *g_pbBufAlias;
 /** RW alias for the memory at g_pbBuf. */
 static uint8_t BS3_FAR *g_pbBufAliasAlloc;
 
-/** Exception type \#1 test configurations, 16 & 32 bytes strictly aligned. */
-static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig1[] =
+/** Exception type \#2 test configurations, 16 & 32 bytes strictly aligned. */
+static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig2[] =
 {
 /*
  *   X87 SSE SSE SSE     AVX      SSE        AVX  AVX      SSE       AVX     AMD/SSE <-- applies to
@@ -371,6 +411,32 @@ static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig1[] =
     { 0, 0,  0,  1,      1,       1,         1,   1,       0,        1,      1,      X86_XCPT_AC, X86_XCPT_GP }, /* #14 */
 };
 
+/** Exception type \#3 test configurations (< 16-byte memory argument). */
+static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig3[] =
+{
+/*
+ *   X87 SSE SSE SSE     AVX      SSE        AVX  AVX      SSE       AVX     AMD/SSE <-- applies to
+ *                               +AVX       +AVX +AMD/SSE           +AMD/SSE
+ *   CR0 CR0 CR0 CR4     CR4      CR4        XCR0 XCR0                       MXCSR
+ *   MP, EM, TS, OSFXSR, OSXSAVE, OSXMMEXCPT SSE, AVX,     fAligned, AC/AM,  MM,     bXcptSse,    bXcptAvx */
+    { 0, 0,  0,  1,      1,       1,         1,   1,       1,        0,      0,      X86_XCPT_DB, X86_XCPT_DB }, /* #0 */
+    { 0, 0,  0,  1,      1,       0,         1,   1,       1,        0,      0,      X86_XCPT_DB, X86_XCPT_DB }, /* #1 */
+    { 1, 0,  0,  1,      1,       1,         1,   1,       1,        0,      0,      X86_XCPT_DB, X86_XCPT_DB }, /* #2 */
+    { 0, 1,  0,  1,      1,       1,         1,   1,       1,        0,      0,      X86_XCPT_UD, X86_XCPT_DB }, /* #3 */
+    { 0, 0,  1,  1,      1,       1,         1,   1,       1,        0,      0,      X86_XCPT_NM, X86_XCPT_NM }, /* #4 */
+    { 0, 1,  1,  1,      1,       1,         1,   1,       1,        0,      0,      X86_XCPT_UD, X86_XCPT_NM }, /* #5 */
+    { 0, 0,  0,  0,      1,       1,         1,   1,       1,        0,      0,      X86_XCPT_UD, X86_XCPT_DB }, /* #6 */
+    { 0, 0,  0,  1,      0,       1,         1,   1,       1,        0,      0,      X86_XCPT_DB, X86_XCPT_UD }, /* #7 */
+    { 0, 0,  0,  1,      1,       1,         1,   0,       1,        0,      0,      X86_XCPT_DB, X86_XCPT_UD }, /* #8 */
+    { 0, 0,  0,  1,      1,       1,         0,   0,       1,        0,      0,      X86_XCPT_DB, X86_XCPT_UD }, /* #9 */
+    /* Memory misalignment and alignment checks: */
+    { 0, 0,  0,  1,      1,       1,         1,   1,       0,        0,      0,      X86_XCPT_DB, X86_XCPT_DB }, /* #10 */  /* [Avx]:DB */
+    { 0, 0,  0,  1,      1,       1,         1,   1,       0,        1,      0,      X86_XCPT_AC, X86_XCPT_AC }, /* #11 */  /* [Avx]:AC */
+    { 0, 0,  0,  1,      1,       1,         1,   1,       1,        1,      0,      X86_XCPT_DB, X86_XCPT_DB }, /* #12 */
+    /* AMD only: */
+    { 0, 0,  0,  1,      1,       1,         1,   1,       0,        0,      1,      X86_XCPT_DB, X86_XCPT_GP }, /* #13 */
+    { 0, 0,  0,  1,      1,       1,         1,   1,       0,        1,      1,      X86_XCPT_AC, X86_XCPT_GP }, /* #14 */
+};
 
 
 /**
@@ -889,6 +955,33 @@ AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, f256Expect
 
 /*
  * Test type #1.
+ * Scalar single-precision.
+ */
+typedef struct BS3CPUINSTR4_TEST1_VALUES_SS_T
+{
+    X86YMMFLOATSSREG    uSrc2;                  /**< Second source operand. */
+    X86YMMFLOATSSREG    uSrc1;                  /**< uDstIn for SSE */
+    X86YMMFLOATSSREG    uDstOut;                /**< Destination output. */
+    uint32_t            fMxCsrMask;             /**< MXCSR exception mask. */
+    uint32_t            fDenormalsAreZero;      /**< DAZ (Denormals-Are-Zero) exception mask. */
+    uint32_t            fFlushToZero;           /**< Flush-To-Zero (FZ) exception mask. */
+    uint32_t            fRoundingCtlMask;       /**< Rounding control mask (X86_MXCSR_RC_MASK) to use. */
+    uint32_t            f128ExpectedMxCsrFlags; /**< Expected MXCSR exception flags for 128-bit instruction. */
+    uint32_t            f256ExpectedMxCsrFlags; /**< Expected MXCSR exception flags for 256-bit instructions. */
+} BS3CPUINSTR4_TEST1_VALUES_SS_T;
+AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_SS_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uSrc2,                  BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uSrc1,                  BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uDstOut,                BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, fMxCsrMask,             BS3CPUINSTR4_TEST1_VALUES_T, fMxCsrMask);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, fDenormalsAreZero,      BS3CPUINSTR4_TEST1_VALUES_T, fDenormalsAreZero);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, fFlushToZero,           BS3CPUINSTR4_TEST1_VALUES_T, fFlushToZero);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, fRoundingCtlMask,       BS3CPUINSTR4_TEST1_VALUES_T, fRoundingCtlMask);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, f128ExpectedMxCsrFlags, BS3CPUINSTR4_TEST1_VALUES_T, f128ExpectedMxCsrFlags);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, f256ExpectedMxCsrFlags, BS3CPUINSTR4_TEST1_VALUES_T, f256ExpectedMxCsrFlags);
+
+/*
+ * Test type #1.
  * Scalar quadruple-precision.
  */
 typedef struct BS3CPUINSTR4_TEST1_VALUES_SQ_T
@@ -1295,10 +1388,10 @@ static uint8_t bs3CpuInstr4_WorkerTestType1(uint8_t bMode, BS3CPUINSTR4_TEST1_T 
                                                    Bs3GetModeName(bMode), bRing, iCfg, iTest, iVal,
                                                    bXcptExpect, bs3CpuInstr4XcptName(bXcptExpect), fSseInstr ? "SSE" : "AVX", cbOperand * 8);
                                 else
-                                    Bs3TestFailedF("%s: ring-%d/cfg#%u/test#%u/value#%u failed (bXcptExpect=%u %s, puMemOp=%p, EFLAGS=%#RX32, CR0=%#RX32, %s %u-bit)",
+                                    Bs3TestFailedF("%s: ring-%d/cfg#%u/test#%u/value#%u failed (bXcptExpect=%u %s, puMemOp=%p, EFLAGS=%#RX32, %s %u-bit)",
                                                    Bs3GetModeName(bMode), bRing, iCfg, iTest, iVal,
                                                    bXcptExpect, bs3CpuInstr4XcptName(bXcptExpect), puMemOp,
-                                                   TrapFrame.Ctx.rflags.u32, TrapFrame.Ctx.cr0, fSseInstr ? "SSE" : "AVX", cbOperand * 8);
+                                                   TrapFrame.Ctx.rflags.u32, fSseInstr ? "SSE" : "AVX", cbOperand * 8);
                                 Bs3TestPrintf("\n");
                             }
                         }
@@ -1565,7 +1658,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
     static BS3CPUINSTR4_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR4_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
     unsigned const                         iTest       = BS3CPUINSTR4_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr4_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
-                                        g_aXcptConfig1, RT_ELEMENTS(g_aXcptConfig1));
+                                        g_aXcptConfig2, RT_ELEMENTS(g_aXcptConfig2));
 }
 
 
@@ -1800,7 +1893,56 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
     static BS3CPUINSTR4_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR4_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
     unsigned const                         iTest       = BS3CPUINSTR4_TEST_MODES_INDEX(bMode);
     return bs3CpuInstr4_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
-                                        g_aXcptConfig1, RT_ELEMENTS(g_aXcptConfig1));
+                                        g_aXcptConfig2, RT_ELEMENTS(g_aXcptConfig2));
+}
+
+/*
+ * [V]ADDSS.
+ */
+BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addss(uint8_t bMode)
+{
+    static BS3CPUINSTR4_TEST1_VALUES_SS_T const s_aValues[] =
+    {
+    /* 0*/{ { /*src2     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+            { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+            { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ 0, 0 },
+    };
+
+    static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
+    {
+        { bs3CpuInstr4_addss_XMM1_XMM2_icebp_c16,  255, RM_REG, T_SSE, 1, 1, 2,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstr4_addss_XMM1_FSxBX_icebp_c16, 255, RM_MEM, T_SSE, 1, 1, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+
+        { bs3CpuInstr4_vaddss_XMM1_XMM2_XMM3_icebp_c16,  255,         RM_REG, T_AVX_128, 1, 2, 3,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstr4_vaddss_XMM1_XMM2_FSxBX_icebp_c16, X86_XCPT_AC, RM_MEM, T_AVX_128, 1, 2, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+    };
+    static BS3CPUINSTR4_TEST1_T const s_aTests32[] =
+    {
+        { bs3CpuInstr4_addss_XMM1_XMM2_icebp_c32,  255, RM_REG, T_SSE, 1, 1, 2,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstr4_addss_XMM1_FSxBX_icebp_c32, 255, RM_MEM, T_SSE, 1, 1, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+
+        { bs3CpuInstr4_vaddss_XMM1_XMM2_XMM3_icebp_c32,  255,         RM_REG, T_AVX_128, 1, 2, 3,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstr4_vaddss_XMM1_XMM2_FSxBX_icebp_c32, X86_XCPT_AC, RM_MEM, T_AVX_128, 1, 2, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+    };
+    static BS3CPUINSTR4_TEST1_T const s_aTests64[] =
+    {
+        { bs3CpuInstr4_addss_XMM1_XMM2_icebp_c64,  255, RM_REG, T_SSE, 1, 1, 2,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstr4_addss_XMM1_FSxBX_icebp_c64, 255, RM_MEM, T_SSE, 1, 1, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+
+        { bs3CpuInstr4_vaddss_XMM1_XMM2_XMM3_icebp_c64,  255,         RM_REG, T_AVX_128, 1, 2, 3,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstr4_vaddss_XMM1_XMM2_FSxBX_icebp_c64, X86_XCPT_AC, RM_MEM, T_AVX_128, 1, 2, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+
+        { bs3CpuInstr4_addss_XMM8_XMM9_icebp_c64,  255,         RM_REG, T_SSE, 8, 8, 9,   RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+        { bs3CpuInstr4_addss_XMM8_FSxBX_icebp_c64, X86_XCPT_AC, RM_MEM, T_SSE, 8, 8, 255, RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues },
+    };
+
+    static BS3CPUINSTR4_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR4_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
+    unsigned const                         iTest       = BS3CPUINSTR4_TEST_MODES_INDEX(bMode);
+    return bs3CpuInstr4_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
+                                        g_aXcptConfig3, RT_ELEMENTS(g_aXcptConfig3));
 }
 
 
@@ -1825,6 +1967,7 @@ BS3_DECL(void) Main_pe32()
 #if defined(ALL_TESTS)
         { "[v]addps",       bs3CpuInstr4_v_addps, 0 },
         { "[v]addpd",       bs3CpuInstr4_v_addpd, 0 },
+        { "[v]addss",       bs3CpuInstr4_v_addss, 0 },
 #endif
     };
     Bs3TestInit("bs3-cpu-instr-4");
