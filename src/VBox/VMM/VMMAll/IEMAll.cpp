@@ -935,8 +935,8 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
         if (pTlbe->uTag == uTag)
         {
             /* likely when executing lots of code, otherwise unlikely */
-# ifdef VBOX_WITH_STATISTICS
-            pVCpu->iem.s.CodeTlb.cTlbHits++;
+# ifdef IEM_WITH_TLB_STATISTICS
+            pVCpu->iem.s.CodeTlb.cTlbCoreHits++;
 # endif
             Assert(!(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_ACCESSED));
 
@@ -972,7 +972,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
         }
         else
         {
-            pVCpu->iem.s.CodeTlb.cTlbMisses++;
+            pVCpu->iem.s.CodeTlb.cTlbCoreMisses++;
 
             /* This page table walking will set A bits as required by the access while performing the walk.
                ASSUMES these are set when the address is translated rather than on commit... */
@@ -1104,7 +1104,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
          */
         else
         {
-            pVCpu->iem.s.CodeTlb.cTlbSlowReadPath++;
+            pVCpu->iem.s.CodeTlb.cTlbSlowCodeReadPath++;
 
             /* Check instruction length. */
             uint32_t const cbInstr = offBuf - (uint32_t)(int32_t)pVCpu->iem.s.offCurInstrStart;
@@ -6341,7 +6341,9 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
     if (   pTlbe->uTag == uTag
         && !(pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PT_NO_ACCESSED | (fAccess & IEM_ACCESS_TYPE_WRITE ? IEMTLBE_F_PT_NO_DIRTY : 0))) )
     {
-        STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+# ifdef IEM_WITH_TLB_STATISTICS
+        pVCpu->iem.s.DataTlb.cTlbCoreHits++;
+#endif
 
         /* If the page is either supervisor only or non-writable, we need to do
            more careful access checks. */
@@ -6393,7 +6395,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
     }
     else
     {
-        pVCpu->iem.s.DataTlb.cTlbMisses++;
+        pVCpu->iem.s.DataTlb.cTlbCoreMisses++;
 
         /* This page table walking will set A bits as required by the access while performing the walk.
            ASSUMES these are set when the address is translated rather than on commit... */
@@ -6617,9 +6619,13 @@ void iemMemRollbackAndUnmap(PVMCPUCC pVCpu, uint8_t bUnmapInfo) RT_NOEXCEPT
  *                            IEM_MEMMAP_F_ALIGN_SSE, and
  *                            IEM_MEMMAP_F_ALIGN_GP_OR_AC.
  *                      Pass zero to skip alignment.
+ * @tparam  a_fSafe     Whether this is a call from "safe" fallback function in
+ *                      IEMAllMemRWTmpl.cpp.h (@c true) or a generic one that
+ *                      needs counting as such in the statistics.
  */
-void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrMem, uint32_t fAccess,
-                   uint32_t uAlignCtl) IEM_NOEXCEPT_MAY_LONGJMP
+template<bool a_fSafeCall = false>
+static void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrMem,
+                          uint32_t fAccess, uint32_t uAlignCtl) IEM_NOEXCEPT_MAY_LONGJMP
 {
     STAM_COUNTER_INC(&pVCpu->iem.s.StatMemMapJmp);
 
@@ -6738,10 +6744,20 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, uint8_t i
     PIEMTLBENTRY const pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
     if (   pTlbe->uTag == uTag
         && !(pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PT_NO_ACCESSED | (fNoWriteNoDirty & IEMTLBE_F_PT_NO_DIRTY))) )
-        STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+    {
+# ifdef IEM_WITH_TLB_STATISTICS
+        if (a_fSafeCall)
+            pVCpu->iem.s.DataTlb.cTlbSafeHits++;
+        else
+            pVCpu->iem.s.DataTlb.cTlbCoreHits++;
+# endif
+    }
     else
     {
-        pVCpu->iem.s.DataTlb.cTlbMisses++;
+        if (a_fSafeCall)
+            pVCpu->iem.s.DataTlb.cTlbSafeMisses++;
+        else
+            pVCpu->iem.s.DataTlb.cTlbCoreMisses++;
 
         /* This page table walking will set A and D bits as required by the
            access while performing the walk.
@@ -6940,6 +6956,14 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, uint8_t i
 
     *pbUnmapInfo = iMemMap | 0x08 | ((fAccess & IEM_ACCESS_TYPE_MASK) << 4);
     return pvMem;
+}
+
+
+/** @see iemMemMapJmp */
+static void *iemMemMapSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrMem,
+                              uint32_t fAccess, uint32_t uAlignCtl) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    return iemMemMapJmp<true /*a_fSafeCall*/>(pVCpu, pbUnmapInfo, cbMem, iSegReg, GCPtrMem, fAccess, uAlignCtl);
 }
 
 

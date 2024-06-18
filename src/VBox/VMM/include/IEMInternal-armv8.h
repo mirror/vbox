@@ -335,7 +335,7 @@ typedef struct IEMTLB
     /** TLB misses. */
     uint32_t            cTlbMisses;
     /** Slow read path.  */
-    uint32_t            cTlbSlowReadPath;
+    uint32_t            cTlbSlowCodeReadPath;
 #if 0
     /** TLB misses because of tag mismatch. */
     uint32_t            cTlbMissesTag;

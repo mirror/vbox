@@ -126,7 +126,9 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
                 /*
                  * Fetch and return the data.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#  ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#  endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
 #  ifdef TMPL_MEM_BY_REF
@@ -197,7 +199,9 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
                 /*
                  * Fetch and return the dword
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#  ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#  endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
 #  ifdef TMPL_MEM_BY_REF
@@ -273,7 +277,9 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
                 /*
                  * Store the value and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
 #   ifdef TMPL_MEM_BY_REF
@@ -344,7 +350,9 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
                 /*
                  * Store the value and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
 #   ifdef TMPL_MEM_BY_REF
@@ -418,7 +426,9 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                 /*
                  * Return the address.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
@@ -475,7 +485,9 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pb
                 /*
                  * Return the address.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
@@ -534,7 +546,9 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,AtJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                 /*
                  * Return the address.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
@@ -591,7 +605,9 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,AtJmp)(PVMCPUCC pVCpu, uint8_t *pb
                 /*
                  * Return the address.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
@@ -648,7 +664,9 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                 /*
                  * Return the address.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
@@ -703,7 +721,9 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pb
                 /*
                  * Return the address.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
@@ -758,7 +778,9 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                 /*
                  * Return the address.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
@@ -812,7 +834,9 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pb
                 /*
                  * Return the address.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#  ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#  endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
@@ -881,7 +905,9 @@ RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrM
                 /*
                  * Do the store and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrEff, uValue));
@@ -942,7 +968,9 @@ RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, RTGCPTR GC
                 /*
                  * Do the push and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#      ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#      endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv: " TMPL_MEM_FMT_TYPE " [sreg]\n", GCPtrEff, uValue));
@@ -1003,7 +1031,9 @@ RT_CONCAT3(iemMemFlatStoreStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GC
                 /*
                  * Do the push and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#    ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#    endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (<-%RX64): " TMPL_MEM_FMT_TYPE "\n",
@@ -1060,7 +1090,9 @@ RT_CONCAT3(iemMemFlatStoreStack,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, RTGCPT
                 /*
                  * Do the push and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#     ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#     endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (<-%RX64): " TMPL_MEM_FMT_TYPE " [sreg]\n",
@@ -1116,7 +1148,9 @@ RT_CONCAT3(iemMemFetchStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrM
                 /*
                  * Do the pop.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uValue = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
@@ -1168,7 +1202,9 @@ RT_CONCAT3(iemMemFlatFetchStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GC
                 /*
                  * Do the pop.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#    ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#    endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uValue = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
@@ -1225,7 +1261,9 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE u
                 /*
                  * Do the push and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#   ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#   endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE "\n",
@@ -1285,7 +1323,9 @@ RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iGRe
                 /*
                  * Do the pop.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#  ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#  endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uValue = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
@@ -1321,7 +1361,7 @@ RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iGRe
 DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
-#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+#    if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /* See fallback for details on this weirdness: */
     bool const    fIsIntel = IEM_IS_GUEST_CPU_INTEL(pVCpu);
     uint8_t const cbAccess = fIsIntel && !IEM_IS_REAL_MODE(pVCpu) ? sizeof(uint16_t) : sizeof(TMPL_MEM_TYPE);
@@ -1333,12 +1373,12 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TY
     uint64_t      uNewRsp;
     RTGCPTR const GCPtrTop = iemRegGetRspForPush(pVCpu, sizeof(TMPL_MEM_TYPE), &uNewRsp);
     RTGCPTR const GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, X86_SREG_SS, cbAccess, GCPtrTop);
-#  if TMPL_MEM_TYPE_SIZE > 1
+#     if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY(   !(GCPtrEff & (cbAccess - 1U))
                   || (   cbAccess == sizeof(uint16_t)
                       ? TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, uint16_t)
                       : TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, TMPL_MEM_TYPE) ) ))
-#  endif
+#    endif
     {
         /*
          * TLB lookup.
@@ -1361,7 +1401,9 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TY
                 /*
                  * Do the push and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#    ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#    endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 if (cbAccess == sizeof(uint16_t))
@@ -1394,7 +1436,7 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TY
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrEff));
-#  endif
+#    endif
     RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegSafeJmp)(pVCpu, uValue);
 }
 #   endif /* TMPL_WITH_PUSH_SREG */
@@ -1411,14 +1453,14 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
            && pVCpu->cpum.GstCtx.ss.Attr.n.u4Type == X86_SEL_TYPE_RW_ACC
            && pVCpu->cpum.GstCtx.ss.u32Limit == UINT32_MAX
            && pVCpu->cpum.GstCtx.ss.u64Base == 0);
-#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+#    if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Calculate the new stack pointer and check that the item doesn't cross a page boundrary.
      */
     uint32_t const uNewEsp = pVCpu->cpum.GstCtx.esp - sizeof(TMPL_MEM_TYPE);
-#  if TMPL_MEM_TYPE_SIZE > 1
+#     if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY(TMPL_MEM_ALIGN_CHECK(uNewEsp)))
-#  endif
+#     endif
     {
         /*
          * TLB lookup.
@@ -1441,7 +1483,9 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
                 /*
                  * Do the push and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#     ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#     endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX32 (<-%RX32): " TMPL_MEM_FMT_TYPE "\n",
@@ -1456,7 +1500,7 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX32 falling back\n", LOG_FN_NAME, uNewEsp));
-#  endif
+#    endif
     RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, uValue);
 }
 
@@ -1468,14 +1512,14 @@ DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemFlat32StackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iGReg) IEM_NOEXCEPT_MAY_LONGJMP
 {
     Assert(iGReg < 16);
-#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+#    if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Calculate the new stack pointer and check that the item doesn't cross a page boundrary.
      */
     uint32_t const uOldEsp = pVCpu->cpum.GstCtx.esp;
-#   if TMPL_MEM_TYPE_SIZE > 1
+#     if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY(TMPL_MEM_ALIGN_CHECK(uOldEsp)))
-#   endif
+#     endif
     {
         /*
          * TLB lookup.
@@ -1497,18 +1541,20 @@ RT_CONCAT3(iemMemFlat32StackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_
                 /*
                  * Do the pop and update the register values.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#     ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#     endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uValue = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[uOldEsp & GUEST_PAGE_OFFSET_MASK];
                 pVCpu->cpum.GstCtx.rsp = uOldEsp + sizeof(TMPL_MEM_TYPE); /* must be first for 16-bit */
-#   if TMPL_MEM_TYPE_SIZE == 2
+#     if TMPL_MEM_TYPE_SIZE == 2
                 pVCpu->cpum.GstCtx.aGRegs[iGReg].u16 = uValue;
-#   elif TMPL_MEM_TYPE_SIZE == 4
+#     elif TMPL_MEM_TYPE_SIZE == 4
                 pVCpu->cpum.GstCtx.aGRegs[iGReg].u   = uValue;
-#   else
-#    error "TMPL_MEM_TYPE_SIZE"
-#   endif
+#     else
+#      error "TMPL_MEM_TYPE_SIZE"
+#     endif
                 Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RX32 (->%RX32): " TMPL_MEM_FMT_TYPE " (r%u)\n",
                                           uOldEsp, uOldEsp + sizeof(TMPL_MEM_TYPE), uValue, iGReg));
                 return;
@@ -1519,7 +1565,7 @@ RT_CONCAT3(iemMemFlat32StackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log10Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX32 falling back\n", LOG_FN_NAME, uOldEsp));
-#  endif
+#    endif
     RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, iGReg);
 }
 
@@ -1535,7 +1581,7 @@ RT_CONCAT3(iemMemFlat32StackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_
 DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
-#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+#    if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /* See fallback for details on this weirdness: */
     bool const    fIsIntel = IEM_IS_GUEST_CPU_INTEL(pVCpu);
     uint8_t const cbAccess = fIsIntel && !IEM_IS_REAL_MODE(pVCpu) ? sizeof(uint16_t) : sizeof(TMPL_MEM_TYPE);
@@ -1570,7 +1616,9 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_
                 /*
                  * Do the push and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#     ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#     endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 if (cbAccess == sizeof(uint16_t))
@@ -1603,7 +1651,7 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
     Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX32 falling back\n", LOG_FN_NAME, uNewEsp));
-#  endif
+#    endif
     RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegSafeJmp)(pVCpu, uValue);
 }
 #   endif /* TMPL_WITH_PUSH_SREG */
@@ -1646,7 +1694,9 @@ RT_CONCAT3(iemMemFlat64StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
                 /*
                  * Do the push and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#     ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#     endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX64 (<-%RX64): " TMPL_MEM_FMT_TYPE "\n",
@@ -1702,7 +1752,9 @@ RT_CONCAT3(iemMemFlat64StackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_
                 /*
                  * Do the push and return.
                  */
-                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+#     ifdef IEM_WITH_TLB_STATISTICS
+                pVCpu->iem.s.DataTlb.cTlbInlineCodeHits++;
+#     endif
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uValue = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[uOldRsp & GUEST_PAGE_OFFSET_MASK];

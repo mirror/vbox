@@ -1163,7 +1163,7 @@ iemNativeEmitStackPushRip(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t c
          * Emit code to do the actual storing / fetching.
          */
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 64);
-# ifdef VBOX_WITH_STATISTICS
+# ifdef IEM_WITH_TLB_STATISTICS
         off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, TlbState.idxReg1, TlbState.idxReg2,
                                                   RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTlbHitsForStack));
 # endif
@@ -1846,7 +1846,7 @@ iemNativeEmitRetn(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, 
          * Emit code to load the value (from idxRegMemResult into idxRegMemResult).
          */
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
-# ifdef VBOX_WITH_STATISTICS
+# ifdef IEM_WITH_TLB_STATISTICS
         off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, TlbState.idxReg1, TlbState.idxReg2,
                                                   RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTlbHitsForStack));
 # endif
@@ -6677,7 +6677,7 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
          * Emit code to do the actual storing / fetching.
          */
         PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 64);
-# ifdef VBOX_WITH_STATISTICS
+# ifdef IEM_WITH_TLB_STATISTICS
         off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, TlbState.idxReg1, TlbState.idxReg2,
                                                   enmOp == kIemNativeEmitMemOp_Store
                                                   ? RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTlbHitsForFetch)
@@ -7564,7 +7564,7 @@ iemNativeEmitStackPush(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
          * Emit code to do the actual storing / fetching.
          */
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 64);
-# ifdef VBOX_WITH_STATISTICS
+# ifdef IEM_WITH_TLB_STATISTICS
         off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, TlbState.idxReg1, TlbState.idxReg2,
                                                   RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTlbHitsForStack));
 # endif
@@ -7911,7 +7911,7 @@ iemNativeEmitStackPopGReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
          * Emit code to load the value (from idxRegMemResult into idxRegMemResult).
          */
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
-# ifdef VBOX_WITH_STATISTICS
+# ifdef IEM_WITH_TLB_STATISTICS
         off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, TlbState.idxReg1, TlbState.idxReg2,
                                                   RT_UOFFSETOF(VMCPUCC, iem.s.StatNativeTlbHitsForStack));
 # endif
@@ -8496,7 +8496,7 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
          */
         off = iemNativeEmitTlbLookup<true>(pReNative, off, &TlbState, iSegReg, cbMem, fAlignMask, fAccess,
                                            idxLabelTlbLookup, idxLabelTlbMiss, idxRegMemResult);
-# ifdef VBOX_WITH_STATISTICS
+# ifdef IEM_WITH_TLB_STATISTICS
         off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, TlbState.idxReg1, TlbState.idxReg2,
                                                 RT_UOFFSETOF(VMCPUCC,  iem.s.StatNativeTlbHitsForMapped));
 # endif

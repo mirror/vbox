@@ -544,8 +544,18 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
         Assert(fAlignMask < 128);
         /* test regflat, fAlignMask */
         off = iemNativeEmitTestAnyBitsInGpr8Ex(pCodeBuf, off, idxRegFlatPtr, fAlignMask);
+#ifndef IEM_WITH_TLB_STATISTICS
         /* jnz tlbmiss */
         off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
+#else
+        /* jz  1F; inc stat; jmp tlbmiss */
+        uint32_t const offFixup1 = off;
+        off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 16, kIemNativeInstrCond_e);
+        off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+                                                  offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissAlignment));
+        off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
+        iemNativeFixupFixedJump(pReNative, offFixup1, off);
+#endif
     }
 
     /*
@@ -558,8 +568,18 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
         off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, pTlbState->idxReg1,/*=*/ idxRegFlatPtr,/*&*/ GUEST_PAGE_OFFSET_MASK);
         /* cmp reg1, GUEST_PAGE_SIZE - cbMem */
         off = iemNativeEmitCmpGpr32WithImmEx(pCodeBuf, off, pTlbState->idxReg1, GUEST_PAGE_SIZE);
+#ifndef IEM_WITH_TLB_STATISTICS
         /* ja  tlbmiss */
         off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
+#else
+        /* jbe 1F; inc stat; jmp tlbmiss */
+        uint32_t const offFixup1 = off;
+        off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 16, kIemNativeInstrCond_be);
+        off = iemNativeEmitIncU32CounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+                                                 offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissCrossPage));
+        off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
+        iemNativeFixupFixedJump(pReNative, offFixup1, off);
+#endif
     }
 
     /*
@@ -589,8 +609,18 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
         pCodeBuf[off++] = 0x83;
         pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, pTlbState->idxReg1 & 7);
         pCodeBuf[off++] = 1;
+#  ifndef IEM_WITH_TLB_STATISTICS
         /* ja  tlbmiss */
         off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
+#  else
+        /* jbe 1F; inc stat; jmp tlbmiss */
+        uint32_t const offFixup1 = off;
+        off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 16, kIemNativeInstrCond_be);
+        off = iemNativeEmitIncU32CounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+                                                 offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissNonCanonical));
+        off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
+        iemNativeFixupFixedJump(pReNative, offFixup1, off);
+#  endif
         /* shr reg1, 16 + GUEST_PAGE_SHIFT */
         off = iemNativeEmitShiftGprRightEx(pCodeBuf, off, pTlbState->idxReg1, 16 + GUEST_PAGE_SHIFT);
 
@@ -602,8 +632,18 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
         /* tst  reg1, #0xfffe */
         Assert(Armv8A64ConvertImmRImmS2Mask32(14, 31) == 0xfffe);
         pCodeBuf[off++] = Armv8A64MkInstrTstImm(pTlbState->idxReg1, 14, 31, false /*f64Bit*/);
-        /* b.nq tlbmiss */
+#  ifndef IEM_WITH_TLB_STATISTICS
+        /* b.ne tlbmiss */
         off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
+#  else
+        /* b.eq 1F; inc stat; jmp tlbmiss */
+        uint32_t const offFixup1 = off;
+        off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 16, kIemNativeInstrCond_e);
+        off = iemNativeEmitIncU32CounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+                                                 offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissNonCanonical));
+        off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
+        iemNativeFixupFixedJump(pReNative, offFixup1, off);
+#  endif
 
         /* ubfx reg1, regflat, #12, #36 */
         pCodeBuf[off++] = Armv8A64MkInstrUbfx(pTlbState->idxReg1, idxRegFlatPtr, GUEST_PAGE_SHIFT, 48 - GUEST_PAGE_SHIFT);
@@ -719,8 +759,18 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
 # else
 #  error "Port me"
 # endif
+# ifndef IEM_WITH_TLB_STATISTICS
     /* jne tlbmiss */
     off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
+# else
+    /* je  1F; inc stat; jmp tlbmiss */
+    uint32_t const offFixup1 = off;
+    off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 16, kIemNativeInstrCond_e);
+    off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+                                              offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissTag));
+    off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
+    iemNativeFixupFixedJump(pReNative, offFixup1, off);
+# endif
 
     /*
      * 4. Check TLB page table level access flags and physical page revision #.
@@ -763,8 +813,18 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
 # else
 #  error "Port me"
 # endif
+# ifndef IEM_WITH_TLB_STATISTICS
     /* jne tlbmiss */
     off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
+# else
+    /* je  2F; inc stat; jmp tlbmiss */
+    uint32_t const offFixup2 = off;
+    off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 16, kIemNativeInstrCond_e);
+    off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+                                              offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissFlagsAndPhysRev));
+    off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
+    iemNativeFixupFixedJump(pReNative, offFixup2, off);
+# endif
 
     /*
      * 5. Check that pbMappingR3 isn't NULL (paranoia) and calculate the

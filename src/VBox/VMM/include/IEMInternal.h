@@ -112,6 +112,12 @@ RT_C_DECLS_BEGIN
 # define IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
 #endif
 
+/** @def IEM_WITH_TLB_STATISTICS
+ * Enables all TLB statistics. */
+#if defined(VBOX_WITH_STATISTICS) || defined(DOXYGEN_RUNNING)
+# define IEM_WITH_TLB_STATISTICS
+#endif
+
 /** @def VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
  * Enables a quicker alternative to throw/longjmp for IEM_DO_LONGJMP when
  * executing native translation blocks.
@@ -551,32 +557,50 @@ typedef struct IEMTLB
 
     /* Statistics: */
 
-    /** TLB hits (VBOX_WITH_STATISTICS only). */
-    uint64_t            cTlbHits;
-    /** TLB misses. */
-    uint32_t            cTlbMisses;
-    /** Slow read path.  */
-    uint32_t            cTlbSlowReadPath;
-    /** Safe read path.  */
-    uint32_t            cTlbSafeReadPath;
-    /** Safe write path.  */
-    uint32_t            cTlbSafeWritePath;
-#if 0
-    /** TLB misses because of tag mismatch. */
-    uint32_t            cTlbMissesTag;
-    /** TLB misses because of virtual access violation. */
-    uint32_t            cTlbMissesVirtAccess;
-    /** TLB misses because of dirty bit. */
-    uint32_t            cTlbMissesDirty;
-    /** TLB misses because of MMIO */
-    uint32_t            cTlbMissesMmio;
-    /** TLB misses because of write access handlers. */
-    uint32_t            cTlbMissesWriteHandler;
-    /** TLB misses because no r3(/r0) mapping. */
-    uint32_t            cTlbMissesMapping;
-#endif
+    /** TLB hits in IEMAll.cpp code (IEM_WITH_TLB_STATISTICS only; both).
+     * @note For the data TLB this is only used in iemMemMap and and for direct (i.e.
+     *       not via safe read/write path) calls to iemMemMapJmp. */
+    uint64_t            cTlbCoreHits;
+    /** Safe read/write TLB hits in iemMemMapJmp (IEM_WITH_TLB_STATISTICS
+     *  only; data tlb only). */
+    uint64_t            cTlbSafeHits;
+    /** TLB hits in IEMAllMemRWTmplInline.cpp.h (data + IEM_WITH_TLB_STATISTICS only). */
+    uint64_t            cTlbInlineCodeHits;
+
+    /** TLB misses in IEMAll.cpp code (both).
+     * @note For the data TLB this is only used in iemMemMap and for direct (i.e.
+     *       not via safe read/write path) calls to iemMemMapJmp. So,
+     *       for the data TLB this more like 'other misses', while for the code
+     *       TLB is all misses. */
+    uint64_t            cTlbCoreMisses;
+    /** Safe read/write TLB misses in iemMemMapJmp (so data only). */
+    uint64_t            cTlbSafeMisses;
+    /** Safe read path taken (data only).  */
+    uint64_t            cTlbSafeReadPath;
+    /** Safe write path taken (data only).  */
+    uint64_t            cTlbSafeWritePath;
+
+    /** @name Details for native code TLB misses.
+     * @note These counts are included in the above counters (cTlbSafeReadPath,
+     *       cTlbSafeWritePath, cTlbInlineCodeHits).
+     * @{ */
+    /** TLB misses in native code due to tag mismatch.   */
+    STAMCOUNTER         cTlbNativeMissTag;
+    /** TLB misses in native code due to flags or physical revision mismatch. */
+    STAMCOUNTER         cTlbNativeMissFlagsAndPhysRev;
+    /** TLB misses in native code due to misaligned access. */
+    STAMCOUNTER         cTlbNativeMissAlignment;
+    /** TLB misses in native code due to cross page access. */
+    uint32_t            cTlbNativeMissCrossPage;
+    /** TLB misses in native code due to non-canonical address. */
+    uint32_t            cTlbNativeMissNonCanonical;
+    /** @} */
+
+    /** Slow read path (code only).  */
+    uint32_t            cTlbSlowCodeReadPath;
+
     /** Alignment padding. */
-    uint32_t            au32Padding[6];
+    uint32_t            au32Padding[5];
 
     /** The TLB entries. */
     IEMTLBENTRY         aEntries[IEMTLB_ENTRY_COUNT];
