@@ -143,8 +143,9 @@ public:
     virtual int childCount() const RT_OVERRIDE RT_FINAL;
 
     virtual QITableViewCell *childItem(int iIndex) const RT_OVERRIDE RT_FINAL;
-
+    int columnLength(int iColumnIndex) const;
     QString cellText(int iColumn) const;
+    virtual QString machineStateString() const = 0;
 
 protected:
 
@@ -153,6 +154,7 @@ protected:
     QMap<int, UIActivityOverviewAccessibleCell*> m_cells;
 
     QString m_strMachineName;
+    quint64  m_uTotalRAM;
 private:
 
     void initCells();
