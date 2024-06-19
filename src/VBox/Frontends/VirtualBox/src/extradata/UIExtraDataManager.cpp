@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2010-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -53,7 +53,6 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIActionPool.h"
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
@@ -2017,27 +2016,30 @@ UIExtraDataManager *UIExtraDataManager::s_pInstance = 0;
 const QUuid UIExtraDataManager::GlobalID;
 
 /* static */
-UIExtraDataManager* UIExtraDataManager::instance()
+void UIExtraDataManager::create()
 {
-    /* Create/prepare instance if not yet exists: */
-    if (!s_pInstance)
-    {
-        new UIExtraDataManager;
-        s_pInstance->prepare();
-    }
-    /* Return instance: */
-    return s_pInstance;
+    AssertReturnVoid(!s_pInstance);
+    new UIExtraDataManager;
+    s_pInstance->prepare();
 }
 
 /* static */
 void UIExtraDataManager::destroy()
 {
-    /* Destroy/cleanup instance if still exists: */
-    if (s_pInstance)
-    {
-        s_pInstance->cleanup();
-        delete s_pInstance;
-    }
+    AssertPtrReturnVoid(s_pInstance);
+    s_pInstance->cleanup();
+    delete s_pInstance;
+}
+
+/* static */
+UIExtraDataManager *UIExtraDataManager::instance()
+{
+    /* This is the fallback behavior, we need the lazy-init here
+     * only to make sure gEDataManager is never NULL. */
+    AssertPtr(s_pInstance);
+    if (!s_pInstance)
+        create();
+    return s_pInstance;
 }
 
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI

@@ -251,6 +251,9 @@ void UICommon::prepare()
     connect(gpGlobalSession, &UIGlobalSession::sigVBoxSVCAvailabilityChange,
             this, &UICommon::sltHandleVBoxSVCAvailabilityChange);
 
+    /* Create extra-data manager right after COM init: */
+    UIExtraDataManager::create();
+
     /* Prepare thread-pool instances: */
     m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
     m_pThreadPoolCloud = new UIThreadPool(2 /* worker count */, 1000 /* worker timeout */);
