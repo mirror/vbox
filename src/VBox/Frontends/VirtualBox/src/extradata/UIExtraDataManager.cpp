@@ -4969,6 +4969,8 @@ void UIExtraDataManager::prepare()
     prepareGlobalExtraDataMap();
     /* Prepare extra-data event-handler: */
     prepareExtraDataEventHandler();
+    /* Prepare extra-data settings: */
+    prepareExtraDataSettings();
 }
 
 void UIExtraDataManager::prepareGlobalExtraDataMap()
@@ -4995,6 +4997,18 @@ void UIExtraDataManager::prepareExtraDataEventHandler()
         connect(m_pHandler, &UIExtraDataEventHandler::sigExtraDataChange,
                 this, &UIExtraDataManager::sltExtraDataChange,
                 Qt::QueuedConnection);
+    }
+}
+
+void UIExtraDataManager::prepareExtraDataSettings()
+{
+    /* For the case when Expert mode is undecided yet: */
+    if (extraDataString(UIExtraDataDefs::GUI_Settings_ExpertMode).isNull())
+    {
+        /* If there are VMs already, mark the mode as Expert one, we've decided
+         * that forcing all users to Basic mode by default is overkill a bit. */
+        if (!gpGlobalSession->virtualBox().GetMachines().isEmpty())
+            setSettingsInExpertMode(true);
     }
 }
 

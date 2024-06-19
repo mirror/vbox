@@ -901,6 +901,8 @@ private:
     void prepareGlobalExtraDataMap();
     /** Prepare extra-data event-handler. */
     void prepareExtraDataEventHandler();
+    /** Prepare extra-data settings. */
+    void prepareExtraDataSettings();
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     // /** Prepare window. */
     // void prepareWindow();
