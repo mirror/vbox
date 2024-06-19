@@ -732,6 +732,11 @@ QVariant UIActivityOverviewAccessibleModel::data(const QModelIndex &index, int r
     return QVariant();
 }
 
+const QMap<int, int> UIActivityOverviewAccessibleModel::dataLengths() const
+{
+    return m_columnDataMaxLength;
+}
+
 void UIActivityOverviewAccessibleModel::initialize()
 {
     for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)
@@ -802,10 +807,17 @@ void UIActivityOverviewAccessibleModel::sltMachineRegistered(const QUuid &uId, b
     emit sigDataUpdate();
 }
 
+void UIActivityOverviewAccessibleModel::getHostRAMStats()
+{
+    CHost comHost = gpGlobalSession->host();
+    m_hostStats.m_iRAMTotal = _1M * (quint64)comHost.GetMemorySize();
+    m_hostStats.m_iRAMFree = _1M * (quint64)comHost.GetMemoryAvailable();
+}
+
 void UIActivityOverviewAccessibleModel::sltLocalVMUpdateTimeout()
 {
     /* Host's RAM usage is obtained from IHost not from IPerformanceCollector: */
-    //getHostRAMStats();
+    getHostRAMStats();
 
     /* Use IPerformanceCollector to update VM RAM usage and Host CPU and file IO stats: */
     queryPerformanceCollector();
@@ -826,7 +838,7 @@ void UIActivityOverviewAccessibleModel::sltLocalVMUpdateTimeout()
     }
 
     emit sigDataUpdate();
-    //emit sigHostStatsUpdate(m_hostStats);
+    emit sigHostStatsUpdate(m_hostStats);
 }
 
 int UIActivityOverviewAccessibleModel::itemIndex(const QUuid &uid)
@@ -839,6 +851,13 @@ int UIActivityOverviewAccessibleModel::itemIndex(const QUuid &uid)
             return i;
     }
     return -1;
+}
+
+QUuid UIActivityOverviewAccessibleModel::itemUid(int iIndex)
+{
+    if (iIndex >= m_rows.size() || !m_rows[iIndex])
+        return QUuid();
+    return m_rows[iIndex]->machineId();
 }
 
 void UIActivityOverviewAccessibleModel::removeRow(const QUuid& uMachineId)
@@ -898,40 +917,40 @@ void UIActivityOverviewAccessibleModel::queryPerformanceCollector()
                 }
             }
         }
-    //     else if (aReturnNames[i].contains("CPU/Load/User", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
-    //     {
-    //         CHost comHost = (CHost)aReturnObjects[i];
-    //         if (!comHost.isNull())
-    //             m_hostStats.m_iCPUUserLoad = fData;
-    //     }
-    //     else if (aReturnNames[i].contains("CPU/Load/Kernel", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
-    //     {
-    //         CHost comHost = (CHost)aReturnObjects[i];
-    //         if (!comHost.isNull())
-    //             m_hostStats.m_iCPUKernelLoad = fData;
-    //     }
-    //     else if (aReturnNames[i].contains("CPU/MHz", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
-    //     {
-    //         CHost comHost = (CHost)aReturnObjects[i];
-    //         if (!comHost.isNull())
-    //             m_hostStats.m_iCPUFreq = fData;
-    //     }
-    //    else if (aReturnNames[i].contains("FS", Qt::CaseInsensitive) &&
-    //             aReturnNames[i].contains("Total", Qt::CaseInsensitive) &&
-    //             !aReturnNames[i].contains(":"))
-    //    {
-    //         CHost comHost = (CHost)aReturnObjects[i];
-    //         if (!comHost.isNull())
-    //             m_hostStats.m_iFSTotal = _1M * fData;
-    //    }
-    //    else if (aReturnNames[i].contains("FS", Qt::CaseInsensitive) &&
-    //             aReturnNames[i].contains("Free", Qt::CaseInsensitive) &&
-    //             !aReturnNames[i].contains(":"))
-    //    {
-    //         CHost comHost = (CHost)aReturnObjects[i];
-    //         if (!comHost.isNull())
-    //             m_hostStats.m_iFSFree = _1M * fData;
-    //    }
+        else if (aReturnNames[i].contains("CPU/Load/User", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+        {
+            CHost comHost = (CHost)aReturnObjects[i];
+            if (!comHost.isNull())
+                m_hostStats.m_iCPUUserLoad = fData;
+        }
+        else if (aReturnNames[i].contains("CPU/Load/Kernel", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+        {
+            CHost comHost = (CHost)aReturnObjects[i];
+            if (!comHost.isNull())
+                m_hostStats.m_iCPUKernelLoad = fData;
+        }
+        else if (aReturnNames[i].contains("CPU/MHz", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+        {
+            CHost comHost = (CHost)aReturnObjects[i];
+            if (!comHost.isNull())
+                m_hostStats.m_iCPUFreq = fData;
+        }
+       else if (aReturnNames[i].contains("FS", Qt::CaseInsensitive) &&
+                aReturnNames[i].contains("Total", Qt::CaseInsensitive) &&
+                !aReturnNames[i].contains(":"))
+       {
+            CHost comHost = (CHost)aReturnObjects[i];
+            if (!comHost.isNull())
+                m_hostStats.m_iFSTotal = _1M * fData;
+       }
+       else if (aReturnNames[i].contains("FS", Qt::CaseInsensitive) &&
+                aReturnNames[i].contains("Free", Qt::CaseInsensitive) &&
+                !aReturnNames[i].contains(":"))
+       {
+            CHost comHost = (CHost)aReturnObjects[i];
+            if (!comHost.isNull())
+                m_hostStats.m_iFSFree = _1M * fData;
+       }
     }
 }
 

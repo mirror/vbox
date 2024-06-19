@@ -131,12 +131,8 @@ private:
     /** @name Misc members.
       * @{ */
         QIToolBar *m_pToolBar;
-        UIVMActivityOverviewTableView       *m_pTableView;
         UIVMActivityOverviewAccessibleTableView    *m_pAccessibleTableView;
-
-        UIActivityOverviewProxyModel        *m_pProxyModel;
         UIActivityOverviewAccessibleProxyModel *m_pAccessibleProxyModel;
-        UIActivityOverviewModel             *m_pModel;
         UIActivityOverviewAccessibleModel   *m_pAccessibleModel;
         QMenu                              *m_pColumnVisibilityToggleMenu;
         /* The key is the column id (VMActivityOverviewColumn) and value is column title. */

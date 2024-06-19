@@ -118,26 +118,6 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewHostStats definition.                                                                              *
-*********************************************************************************************************************************/
-/** A simple container to store host related performance values. */
-class UIVMActivityOverviewHostStats
-{
-
-public:
-
-    UIVMActivityOverviewHostStats();
-    quint64 m_iCPUUserLoad;
-    quint64 m_iCPUKernelLoad;
-    quint64 m_iCPUFreq;
-    quint64 m_iRAMTotal;
-    quint64 m_iRAMFree;
-    quint64 m_iFSTotal;
-    quint64 m_iFSFree;
-};
-
-
-/*********************************************************************************************************************************
 *   Class UIVMActivityOverviewHostStatsWidget definition.                                                                        *
 *********************************************************************************************************************************/
 /** A container QWidget to layout host stats. related widgets. */
@@ -1744,11 +1724,8 @@ UIVMActivityOverviewWidget::UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIA
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
     , m_pToolBar(0)
-    , m_pTableView(0)
     , m_pAccessibleTableView(0)
-    , m_pProxyModel(0)
     , m_pAccessibleProxyModel(0)
-    , m_pModel(0)
     , m_pAccessibleModel(0)
     , m_pColumnVisibilityToggleMenu(0)
     , m_pHostStatsWidget(0)
@@ -1778,16 +1755,12 @@ bool UIVMActivityOverviewWidget::isCurrentTool() const
 void UIVMActivityOverviewWidget::setIsCurrentTool(bool fIsCurrentTool)
 {
     m_fIsCurrentTool = fIsCurrentTool;
-    if (m_pModel)
-        m_pModel->setShouldUpdate(fIsCurrentTool);
     if (m_pAccessibleModel)
         m_pAccessibleModel->setShouldUpdate(fIsCurrentTool);
 }
 
 void UIVMActivityOverviewWidget::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
 {
-    if (m_pModel)
-        m_pModel->setCloudMachineItems(cloudItems);
     if (m_pAccessibleModel)
         m_pAccessibleModel->setCloudMachineItems(cloudItems);
 }
@@ -1811,9 +1784,6 @@ void UIVMActivityOverviewWidget::sltRetranslateUI()
 
     updateColumnsMenu();
 
-    if (m_pModel)
-        m_pModel->setColumnCaptions(m_columnTitles);
-
     if (m_pAccessibleModel)
         m_pAccessibleModel->setColumnCaptions(m_columnTitles);
 
@@ -1822,8 +1792,8 @@ void UIVMActivityOverviewWidget::sltRetranslateUI()
 
 void UIVMActivityOverviewWidget::showEvent(QShowEvent *pEvent)
 {
-    if (m_pVMActivityMonitorAction && m_pTableView)
-        m_pVMActivityMonitorAction->setEnabled(m_pTableView->hasSelection());
+    if (m_pVMActivityMonitorAction && m_pAccessibleTableView)
+        m_pVMActivityMonitorAction->setEnabled(m_pAccessibleTableView->hasSelection());
 
     QWidget::showEvent(pEvent);
 }
@@ -1876,43 +1846,6 @@ void UIVMActivityOverviewWidget::prepareWidgets()
     if (m_pHostStatsWidget)
         layout()->addWidget(m_pHostStatsWidget);
 
-    m_pModel = new UIActivityOverviewModel(this);
-    m_pProxyModel = new UIActivityOverviewProxyModel(this);
-    m_pTableView = new UIVMActivityOverviewTableView();
-    if (m_pTableView && m_pModel && m_pProxyModel)
-    {
-        layout()->addWidget(m_pTableView);
-        m_pProxyModel->setSourceModel(m_pModel);
-        m_pProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
-        m_pProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
-        m_pTableView->setModel(m_pProxyModel);
-        m_pTableView->setItemDelegate(new UIVMActivityOverviewDelegate(this));
-        m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
-        m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-        m_pTableView->setShowGrid(false);
-        m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
-        m_pTableView->horizontalHeader()->setHighlightSections(false);
-        m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
-        m_pTableView->verticalHeader()->setVisible(false);
-        m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        /* Minimize the row height: */
-        m_pTableView->verticalHeader()->setDefaultSectionSize(m_pTableView->verticalHeader()->minimumSectionSize());
-        m_pTableView->setAlternatingRowColors(true);
-        m_pTableView->setSortingEnabled(true);
-        m_pTableView->sortByColumn(0, Qt::AscendingOrder);
-
-        connect(m_pModel, &UIActivityOverviewModel::sigDataUpdate,
-                this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
-        connect(m_pAccessibleModel, &UIActivityOverviewAccessibleModel::sigDataUpdate,
-                this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
-        connect(m_pModel, &UIActivityOverviewModel::sigHostStatsUpdate,
-                this, &UIVMActivityOverviewWidget::sltHandleHostStatsUpdate);
-        connect(m_pTableView, &UIVMActivityOverviewTableView::sigSelectionChanged,
-                this, &UIVMActivityOverviewWidget::sltHandleTableSelectionChanged);
-        updateModelColumVisibilityCache();
-    }
-
-
     m_pAccessibleProxyModel = new UIActivityOverviewAccessibleProxyModel(this);
     m_pAccessibleTableView = new UIVMActivityOverviewAccessibleTableView(this);
     m_pAccessibleModel = new UIActivityOverviewAccessibleModel(this, m_pAccessibleTableView);
@@ -1940,7 +1873,12 @@ void UIVMActivityOverviewWidget::prepareWidgets()
             this, &UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest);
     connect(m_pAccessibleTableView, &UIVMActivityOverviewAccessibleTableView::sigSelectionChanged,
             this, &UIVMActivityOverviewWidget::sltHandleTableSelectionChanged);
+    connect(m_pAccessibleModel, &UIActivityOverviewAccessibleModel::sigDataUpdate,
+            this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
+    connect(m_pAccessibleModel, &UIActivityOverviewAccessibleModel::sigHostStatsUpdate,
+            this, &UIVMActivityOverviewWidget::sltHandleHostStatsUpdate);
 
+    updateModelColumVisibilityCache();
     layout()->addWidget(m_pAccessibleTableView);
 }
 
@@ -2024,8 +1962,6 @@ void UIVMActivityOverviewWidget::sltSaveSettings()
 
 void UIVMActivityOverviewWidget::sltClearCOMData()
 {
-    if (m_pModel)
-        m_pModel->clearData();
     if (m_pAccessibleModel)
         m_pAccessibleModel->clearData();
 }
@@ -2055,8 +1991,6 @@ void UIVMActivityOverviewWidget::sltHandleHostStatsUpdate(const UIVMActivityOver
 void UIVMActivityOverviewWidget::sltHandleDataUpdate()
 {
     computeMinimumColumnWidths();
-    if (m_pProxyModel)
-        m_pProxyModel->dataUpdate();
     if (m_pAccessibleProxyModel)
         m_pAccessibleProxyModel->dataUpdate();
 }
@@ -2091,7 +2025,7 @@ void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &
 void UIVMActivityOverviewWidget::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
-    if (!m_pVMActivityMonitorAction || !m_pModel || !m_pProxyModel)
+    if (!m_pVMActivityMonitorAction || !m_pAccessibleModel || !m_pAccessibleProxyModel)
         return;
 
     if (selected.indexes().empty())
@@ -2099,8 +2033,8 @@ void UIVMActivityOverviewWidget::sltHandleTableSelectionChanged(const QItemSelec
         m_pVMActivityMonitorAction->setEnabled(false);
         return;
     }
-    int iMachineIndex = m_pProxyModel->mapToSource(selected.indexes()[0]).row();
-    if (!m_pModel->isVMRunning(iMachineIndex))
+    int iMachineIndex = m_pAccessibleProxyModel->mapToSource(selected.indexes()[0]).row();
+    if (!m_pAccessibleModel->isVMRunning(iMachineIndex))
     {
         m_pVMActivityMonitorAction->setEnabled(false);
         return;
@@ -2110,9 +2044,9 @@ void UIVMActivityOverviewWidget::sltHandleTableSelectionChanged(const QItemSelec
 
 void UIVMActivityOverviewWidget::sltHandleShowVMActivityMonitor()
 {
-    if (!m_pTableView || !m_pModel)
+    if (!m_pAccessibleTableView || !m_pAccessibleModel)
         return;
-    const QUuid uMachineId = m_pModel->itemUid(m_pTableView->selectedItemIndex());
+    const QUuid uMachineId = m_pAccessibleModel->itemUid(m_pAccessibleTableView->selectedItemIndex());
     if (uMachineId.isNull())
         return;
     emit sigSwitchToMachineActivityPane(uMachineId);
@@ -2121,18 +2055,13 @@ void UIVMActivityOverviewWidget::sltHandleShowVMActivityMonitor()
 void UIVMActivityOverviewWidget::sltNotRunningVMVisibility(bool fShow)
 {
     m_fShowNotRunningVMs = fShow;
-    if (m_pProxyModel)
-        m_pProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
     if (m_pAccessibleProxyModel)
         m_pAccessibleProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
-
 }
 
 void UIVMActivityOverviewWidget::sltCloudVMVisibility(bool fShow)
 {
     m_fShowCloudVMs = fShow;
-    if (m_pProxyModel)
-        m_pProxyModel->setCloudVMVisibility(m_fShowCloudVMs);
     if (m_pAccessibleProxyModel)
         m_pAccessibleProxyModel->setCloudVMVisibility(m_fShowCloudVMs);
 }
@@ -2147,23 +2076,19 @@ void UIVMActivityOverviewWidget::setColumnVisible(int iColumnId, bool fVisible)
 
 void UIVMActivityOverviewWidget::updateModelColumVisibilityCache()
 {
-    if (m_pModel)
-        m_pModel->setColumnVisible(m_columnVisible);
     if (m_pAccessibleModel)
         m_pAccessibleModel->setColumnVisible(m_columnVisible);
     /* Notify the table view for the changed column visibility: */
-    if (m_pTableView)
-        m_pTableView->updateColumVisibility();
     if (m_pAccessibleTableView)
         m_pAccessibleTableView->updateColumVisibility();
 }
 
 void UIVMActivityOverviewWidget::computeMinimumColumnWidths()
 {
-    if (!m_pTableView || !m_pModel)
+    if (!m_pAccessibleTableView || !m_pAccessibleModel)
         return;
-    QFontMetrics fontMetrics(m_pTableView->font());
-    const QMap<int, int> &columnDataStringLengths = m_pModel->dataLengths();
+    QFontMetrics fontMetrics(m_pAccessibleTableView->font());
+    const QMap<int, int> &columnDataStringLengths = m_pAccessibleModel->dataLengths();
     QMap<int, int> columnWidthsInPixels;
     for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)
     {
@@ -2175,7 +2100,6 @@ void UIVMActivityOverviewWidget::computeMinimumColumnWidths()
                                 + QApplication::style()->pixelMetric(QStyle::PM_LayoutRightMargin)
                                 + m_iSortIndicatorWidth;
     }
-    m_pTableView->setMinimumColumnWidths(columnWidthsInPixels);
     m_pAccessibleTableView->setMinimumColumnWidths(columnWidthsInPixels);
 }
 
