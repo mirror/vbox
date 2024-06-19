@@ -2149,9 +2149,13 @@ void UIVMActivityOverviewWidget::updateModelColumVisibilityCache()
 {
     if (m_pModel)
         m_pModel->setColumnVisible(m_columnVisible);
+    if (m_pAccessibleModel)
+        m_pAccessibleModel->setColumnVisible(m_columnVisible);
     /* Notify the table view for the changed column visibility: */
     if (m_pTableView)
         m_pTableView->updateColumVisibility();
+    if (m_pAccessibleTableView)
+        m_pAccessibleTableView->updateColumVisibility();
 }
 
 void UIVMActivityOverviewWidget::computeMinimumColumnWidths()
