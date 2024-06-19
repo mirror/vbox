@@ -1788,6 +1788,8 @@ void UIVMActivityOverviewWidget::setCloudMachineItems(const QList<UIVirtualMachi
 {
     if (m_pModel)
         m_pModel->setCloudMachineItems(cloudItems);
+    if (m_pAccessibleModel)
+        m_pAccessibleModel->setCloudMachineItems(cloudItems);
 }
 
 void UIVMActivityOverviewWidget::sltRetranslateUI()

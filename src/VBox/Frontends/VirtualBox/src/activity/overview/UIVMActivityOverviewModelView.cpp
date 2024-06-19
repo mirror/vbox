@@ -39,6 +39,7 @@
 #include "UIMonitorCommon.h"
 #include "UITranslator.h"
 #include "UIVirtualBoxEventHandler.h"
+#include "UIVirtualMachineItemCloud.h"
 #include "UIVMActivityOverviewModelView.h"
 
 
@@ -52,6 +53,7 @@
 #include "CMachine.h"
 #include "CMachineDebugger.h"
 #include "CSession.h"
+#include "KMetricType.h"
 
 
 /*********************************************************************************************************************************
@@ -81,7 +83,7 @@ public:
 
 private:
 
-    void updateCellText(VMActivityOverviewColumn enmColumnIndex, const QString &strText);
+
 
     KMachineState    m_enmMachineState;
     CMachineDebugger m_comDebugger;
@@ -288,12 +290,6 @@ void UIActivityOverviewAccessibleRowLocal::setFreeRAM(quint64 uFreeRAM)
     m_uFreeRAM = uFreeRAM;
 }
 
-void UIActivityOverviewAccessibleRowLocal::updateCellText(VMActivityOverviewColumn enmColumnIndex, const QString &strText)
-{
-    if (m_cells.value(enmColumnIndex, 0))
-        m_cells[enmColumnIndex]->setText(strText);
-}
-
 QString UIActivityOverviewAccessibleRowLocal::machineStateString() const
 {
     return gpConverter->toString(m_enmMachineState);
@@ -355,7 +351,7 @@ void UIActivityOverviewAccessibleRowCloud::sltTimeout()
     }
 }
 
-void UIActivityOverviewAccessibleRowCloud::sltMetricDataReceived(KMetricType /*enmMetricType*/,
+void UIActivityOverviewAccessibleRowCloud::sltMetricDataReceived(KMetricType enmMetricType,
                                                         const QVector<QString> &data, const QVector<QString> &timeStamps)
 {
     Q_UNUSED(timeStamps);
@@ -365,42 +361,36 @@ void UIActivityOverviewAccessibleRowCloud::sltMetricDataReceived(KMetricType /*e
     if (data[0].toFloat() < 0)
         return;
 
-    // int iDecimalCount = 2;
-    // QLocale locale;
-    // if (enmMetricType == KMetricType_CpuUtilization)
-    // {
-    //     //QString QLocale::toString(double i, char f = 'g', int prec = 6) const
-
-    //     // m_columnData[VMActivityOverviewColumn_CPUGuestLoad] =
-    //     //     QString("%1%").arg(QString::number(data[0].toFloat(), 'f', iDecimalCount));
-
-    //     m_columnData[VMActivityOverviewColumn_CPUGuestLoad] =
-    //         QString("%1%").arg(locale.toString(data[0].toFloat(), 'f', iDecimalCount));
-    // }
-    // else if (enmMetricType == KMetricType_MemoryUtilization)
-    // {
-    //      if (m_uTotalRAM != 0)
-    //      {
-    //          quint64 uUsedRAM = (quint64)data[0].toFloat() * (m_uTotalRAM / 100.f);
-    //          m_columnData[VMActivityOverviewColumn_RAMUsedAndTotal] =
-    //              QString("%1/%2").arg(UITranslator::formatSize(_1K * uUsedRAM, iDecimalCount)).
-    //              arg(UITranslator::formatSize(_1K * m_uTotalRAM, iDecimalCount));
-    //      }
-    //      m_columnData[VMActivityOverviewColumn_RAMUsedPercentage] =
-    //          QString("%1%").arg(QString::number(data[0].toFloat(), 'f', iDecimalCount));
-    // }
-    // else if (enmMetricType == KMetricType_NetworksBytesOut)
-    //     m_columnData[VMActivityOverviewColumn_NetworkUpRate] =
-    //         UITranslator::formatSize((quint64)data[0].toFloat(), iDecimalCount);
-    // else if (enmMetricType == KMetricType_NetworksBytesIn)
-    //     m_columnData[VMActivityOverviewColumn_NetworkDownRate] =
-    //         UITranslator::formatSize((quint64)data[0].toFloat(), iDecimalCount);
-    // else if (enmMetricType == KMetricType_DiskBytesRead)
-    //     m_columnData[VMActivityOverviewColumn_DiskIOReadRate] =
-    //         UITranslator::formatSize((quint64)data[0].toFloat(), iDecimalCount);
-    // else if (enmMetricType == KMetricType_DiskBytesWritten)
-    //     m_columnData[VMActivityOverviewColumn_DiskIOWriteRate] =
-    //         UITranslator::formatSize((quint64)data[0].toFloat(), iDecimalCount);
+    int iDecimalCount = 2;
+    QLocale locale;
+    if (enmMetricType == KMetricType_CpuUtilization)
+    {
+        updateCellText(VMActivityOverviewColumn_CPUGuestLoad, QString("%1%").arg(locale.toString(data[0].toFloat(), 'f', iDecimalCount)));
+    }
+    else if (enmMetricType == KMetricType_MemoryUtilization)
+    {
+         if (m_uTotalRAM != 0)
+         {
+             quint64 uUsedRAM = (quint64)data[0].toFloat() * (m_uTotalRAM / 100.f);
+             updateCellText(VMActivityOverviewColumn_RAMUsedAndTotal,
+                            QString("%1/%2").arg(UITranslator::formatSize(_1K * uUsedRAM, iDecimalCount)).
+                            arg(UITranslator::formatSize(_1K * m_uTotalRAM, iDecimalCount)));
+         }
+         updateCellText(VMActivityOverviewColumn_RAMUsedPercentage,
+                        QString("%1%").arg(QString::number(data[0].toFloat(), 'f', iDecimalCount)));
+    }
+    else if (enmMetricType == KMetricType_NetworksBytesOut)
+        updateCellText(VMActivityOverviewColumn_NetworkUpRate,
+                       UITranslator::formatSize((quint64)data[0].toFloat(), iDecimalCount));
+    else if (enmMetricType == KMetricType_NetworksBytesIn)
+        updateCellText(VMActivityOverviewColumn_NetworkDownRate,
+                       UITranslator::formatSize((quint64)data[0].toFloat(), iDecimalCount));
+    else if (enmMetricType == KMetricType_DiskBytesRead)
+        updateCellText(VMActivityOverviewColumn_DiskIOReadRate,
+                       UITranslator::formatSize((quint64)data[0].toFloat(), iDecimalCount));
+    else if (enmMetricType == KMetricType_DiskBytesWritten)
+        updateCellText(VMActivityOverviewColumn_DiskIOWriteRate,
+                       UITranslator::formatSize((quint64)data[0].toFloat(), iDecimalCount));
 
     sender()->deleteLater();
 }
@@ -428,9 +418,9 @@ void UIActivityOverviewAccessibleRowCloud::setMachineState(int iState)
 
 void UIActivityOverviewAccessibleRowCloud::resetColumData()
 {
-    // for (int i = (int) VMActivityOverviewColumn_CPUGuestLoad;
-    //      i < (int)VMActivityOverviewColumn_Max; ++i)
-    //     m_columnData[i] = UIVMActivityOverviewWidget::tr("N/A");
+    for (int i = (int) VMActivityOverviewColumn_CPUGuestLoad;
+         i < (int)VMActivityOverviewColumn_Max; ++i)
+        updateCellText(i,  QApplication::translate("UIVMActivityOverviewWidget", "N/A"));
 }
 
 void UIActivityOverviewAccessibleRowCloud::getMetricList()
@@ -580,6 +570,63 @@ UIActivityOverviewAccessibleModel::UIActivityOverviewAccessibleModel(QObject *pP
     , m_pLocalVMUpdateTimer(new QTimer(this))
 {
     initialize();
+}
+
+void UIActivityOverviewAccessibleModel::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
+{
+    QVector<QUuid> newIds;
+    foreach (const UIVirtualMachineItemCloud* pItem, cloudItems)
+    {
+        if (!pItem)
+            continue;
+        QUuid id = pItem->machineId();
+        if (id.isNull())
+            continue;
+        newIds << id;
+    }
+    QVector<UIActivityOverviewAccessibleRow*> originalItemList = m_rows;
+
+    /* Remove m_rows items that are not in @cloudItems: */
+    QMutableVectorIterator<UIActivityOverviewAccessibleRow*> iterator(m_rows);
+    while (iterator.hasNext())
+    {
+        UIActivityOverviewAccessibleRow *pItem = iterator.next();
+        if (!pItem->isCloudVM())
+            continue;
+        if (pItem && !newIds.contains(pItem->machineId()))
+            iterator.remove();
+    }
+
+    /* Add items that are not in m_rows: */
+    foreach (const UIVirtualMachineItemCloud* pItem, cloudItems)
+    {
+        if (!pItem)
+            continue;
+        CCloudMachine comMachine = pItem->machine();
+        if (!comMachine.isOk())
+            continue;
+        QUuid id = comMachine.GetId();
+        /* Linearly search for the vm with th same id. I cannot make QVector::contain work since we store pointers: */
+        bool fFound = false;
+        for (int i = 0; i < m_rows.size() && !fFound; ++i)
+        {
+            if (m_rows[i] && m_rows[i]->machineId() == id)
+                fFound = true;
+        }
+        if (!fFound)
+            m_rows.append(new UIActivityOverviewAccessibleRowCloud(m_pTableView, id, comMachine.GetName(), comMachine));
+    }
+
+    /* Update cloud machine states: */
+    for (int i = 0; i < m_rows.size(); ++i)
+    {
+        if (!m_rows[i] || !m_rows[i]->isCloudVM())
+            continue;
+        UIActivityOverviewAccessibleRowCloud *pItem = qobject_cast<UIActivityOverviewAccessibleRowCloud*>(m_rows[i]);
+        if (!pItem)
+            continue;
+        pItem->updateMachineState();
+    }
 }
 
 void UIActivityOverviewAccessibleModel::setColumnVisible(const QMap<int, bool>& columnVisible)
@@ -995,6 +1042,12 @@ void UIActivityOverviewAccessibleRow::initCells()
 const QUuid &UIActivityOverviewAccessibleRow::machineId() const
 {
     return m_uMachineId;
+}
+
+void UIActivityOverviewAccessibleRow::updateCellText(int /*VMActivityOverviewColumn*/ enmColumnIndex, const QString &strText)
+{
+    if (m_cells.value(enmColumnIndex, 0))
+        m_cells[enmColumnIndex]->setText(strText);
 }
 
 
