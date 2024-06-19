@@ -122,7 +122,7 @@ typedef FNDECODETPM2CCRESP *PFNFNDECODETPM2CCRESP;
 /**
  * Algorithm ID to string mapping array.
  */
-static const TPMALGID2STR g_aAlgId2Str[] =
+static const RTTRACELOGDECODERSTRUCTBLDENUM g_aAlgId2Str[] =
 {
 #define TPM_ALGID_2_STR(a_AlgId) { a_AlgId, #a_AlgId, 0 }
 #define TPM_ALGID_2_STR_DIGEST(a_AlgId, a_cbDigest) { a_AlgId, #a_AlgId, a_cbDigest }
@@ -186,7 +186,8 @@ static const TPMALGID2STR g_aAlgId2Str[] =
     TPM_ALGID_2_STR(TPM2_ALG_KMACXOF128),
     TPM_ALGID_2_STR(TPM2_ALG_KMACXOF256),
     TPM_ALGID_2_STR(TPM2_ALG_KMAC128),
-    TPM_ALGID_2_STR(TPM2_ALG_KMAC256)
+    TPM_ALGID_2_STR(TPM2_ALG_KMAC256),
+    { 0, NULL, 0 }
 #undef TPM_ALGID_2_STR
 };
 
@@ -319,8 +320,8 @@ static const uint8_t *vboxTraceLogDecodeEvtTpmDecodeCtxGetBuf(PTPMDECODECTX pCtx
 static const char *vboxTraceLogDecodeEvtTpmAlgId2Str(uint16_t u16AlgId)
 {
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aAlgId2Str); i++)
-        if (g_aAlgId2Str[i].u16AlgId == u16AlgId)
-            return g_aAlgId2Str[i].pszAlgId;
+        if (g_aAlgId2Str[i].u64EnumVal == u16AlgId)
+            return g_aAlgId2Str[i].pszString;
 
     return "<UNKNOWN>";
 }
@@ -329,8 +330,8 @@ static const char *vboxTraceLogDecodeEvtTpmAlgId2Str(uint16_t u16AlgId)
 static size_t vboxTraceLogDecodeEvtTpmAlgId2DigestSize(uint16_t u16AlgId)
 {
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aAlgId2Str); i++)
-        if (g_aAlgId2Str[i].u16AlgId == u16AlgId)
-            return g_aAlgId2Str[i].cbDigest;
+        if (g_aAlgId2Str[i].u64EnumVal == u16AlgId)
+            return g_aAlgId2Str[i].uPtrUser;
 
     return 0;
 }
@@ -342,33 +343,97 @@ static size_t vboxTraceLogDecodeEvtTpmAlgId2DigestSize(uint16_t u16AlgId)
     } while (0); \
     if (pCtx->fError) return
 
+#define TPM_DECODE_BOOL(a_Var, a_Name) \
+    uint8_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU8(pCtx, pHlp, #a_Name); \
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddBool(pHlp, #a_Name, 0 /*fFlags*/, RT_BOOL(a_Var))
+
 #define TPM_DECODE_U8(a_Var, a_Name) \
     uint8_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU8(pCtx, pHlp, #a_Name); \
-    if (pCtx->fError) break
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddU8(pHlp, #a_Name, 0 /*fFlags*/, a_Var)
 
 #define TPM_DECODE_U16(a_Var, a_Name) \
     uint16_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU16(pCtx, pHlp, #a_Name); \
-    if (pCtx->fError) break
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddU16(pHlp, #a_Name, 0 /*fFlags*/, a_Var)
 
 #define TPM_DECODE_U32(a_Var, a_Name) \
     uint32_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU32(pCtx, pHlp, #a_Name); \
-    if (pCtx->fError) break
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddU32(pHlp, #a_Name, 0 /*fFlags*/, a_Var)
 
 #define TPM_DECODE_U64(a_Var, a_Name) \
     uint64_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU64(pCtx, pHlp, #a_Name); \
-    if (pCtx->fError) break
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddU64(pHlp, #a_Name, 0 /*fFlags*/, a_Var)
 
 #define TPM_DECODE_I32(a_Var, a_Name) \
     int32_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetI32(pCtx, pHlp, #a_Name); \
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddS32(pHlp, #a_Name, 0 /*fFlags*/, a_Var)
+
+#define TPM_DECODE_U8_HEX(a_Var, a_Name) \
+    uint8_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU8(pCtx, pHlp, #a_Name); \
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddU8(pHlp, #a_Name, RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX, a_Var)
+
+#define TPM_DECODE_U16_HEX(a_Var, a_Name) \
+    uint16_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU16(pCtx, pHlp, #a_Name); \
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddU16(pHlp, #a_Name, RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX, a_Var)
+
+#define TPM_DECODE_U32_HEX(a_Var, a_Name) \
+    uint32_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU32(pCtx, pHlp, #a_Name); \
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddU32(pHlp, #a_Name, RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX, a_Var)
+
+#define TPM_DECODE_U32_HEX_STR(a_Var, a_pszName) \
+    uint32_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU32(pCtx, pHlp, a_pszName); \
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddU32(pHlp, a_pszName, RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX, a_Var)
+
+#define TPM_DECODE_U64_HEX(a_Var, a_Name) \
+    uint64_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU64(pCtx, pHlp, #a_Name); \
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddU64(pHlp, #a_Name, RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX, a_Var)
+
+#define TPM_DECODE_I32_HEX(a_Var, a_Name) \
+    int32_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetI32(pCtx, pHlp, #a_Name); \
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddS32(pHlp, #a_Name, 0 /*fFlags*/, a_Var)
+
+#define TPM_DECODE_BUF_EX(a_Var, a_Name, a_cb) \
+    const uint8_t *a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetBuf(pCtx, pHlp, #a_Name, a_cb); \
     if (pCtx->fError) break
 
 #define TPM_DECODE_BUF(a_Var, a_Name, a_cb) \
     const uint8_t *a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetBuf(pCtx, pHlp, #a_Name, a_cb); \
-    if (pCtx->fError) break
+    if (pCtx->fError) break; \
+    if (a_Var) \
+        pHlp->pfnStructBldAddBuf(pHlp, #a_Name, 0 /*fFlags*/, a_Var, a_cb);
+
+#define TPM_DECODE_BUF_HEX_STRING(a_Var, a_Name, a_cb) \
+    const uint8_t *a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetBuf(pCtx, pHlp, #a_Name, a_cb); \
+    if (pCtx->fError) break; \
+    if (a_Var) \
+        pHlp->pfnStructBldAddBuf(pHlp, #a_Name, RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX_DUMP_STR, a_Var, a_cb);
+
+#define TPM_DECODE_U16_ENUM(a_Var, a_Name, a_aEnums) \
+    uint16_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU16(pCtx, pHlp, #a_Name); \
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddEnum(pHlp, #a_Name, RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX, 16, a_aEnums, a_Var)
+
+#define TPM_DECODE_U32_ENUM(a_Var, a_Name, a_aEnums) \
+    uint32_t a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetU32(pCtx, pHlp, #a_Name); \
+    if (pCtx->fError) break; \
+    pHlp->pfnStructBldAddEnum(pHlp, #a_Name, RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX, 32, a_aEnums, a_Var)
 
 #define TPM_DECODE_BUF_STR(a_Var, a_pszName, a_cb) \
     const uint8_t *a_Var = vboxTraceLogDecodeEvtTpmDecodeCtxGetBuf(pCtx, pHlp, a_pszName, a_cb); \
-    if (pCtx->fError) break
+    if (pCtx->fError) break; \
+    if (a_Var) \
+        pHlp->pfnStructBldAddBuf(pHlp, a_pszName, RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX_DUMP_STR, a_Var, a_cb);
 
 #define TPM_DECODE_END_IF_ERROR() \
     if (pCtx->fError) return
@@ -376,19 +441,18 @@ static size_t vboxTraceLogDecodeEvtTpmAlgId2DigestSize(uint16_t u16AlgId)
 static void vboxTraceLogDecodePcrSelection(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx)
 {
     TPM_DECODE_INIT();
-        TPM_DECODE_U16(u16AlgId,      u16AlgId);
-        TPM_DECODE_U8(cbPcrSelection, u8SizeOfSelect);
-        TPM_DECODE_BUF(pb,            PCRs,           cbPcrSelection);
+        TPM_DECODE_U16_ENUM(u16AlgId,       u16AlgId,        g_aAlgId2Str  );
+        TPM_DECODE_U8(      cbPcrSelection, u8SizeOfSelect                 );
+        TPM_DECODE_BUF_EX(  pb,             PCRs,            cbPcrSelection);
 
-        pHlp->pfnPrintf(pHlp, "            u16AlgId:      %s\n", vboxTraceLogDecodeEvtTpmAlgId2Str(u16AlgId));
-        pHlp->pfnPrintf(pHlp, "            u8SizeOfSlect: %u\n", cbPcrSelection);
-        pHlp->pfnPrintf(pHlp, "            PCRs:          ");
+        pHlp->pfnStructBldArrayBegin(pHlp, "PCRs");
 
         for (uint8_t idxPcr = 0; idxPcr < cbPcrSelection * 8; idxPcr++)
             if (RT_BOOL(*(pb + (idxPcr / 8)) & RT_BIT(idxPcr % 8)))
-                pHlp->pfnPrintf(pHlp, "%u ", idxPcr);
+                pHlp->pfnStructBldAddU8(pHlp, NULL, 0 /*fFlags*/, idxPcr);
 
-        pHlp->pfnPrintf(pHlp, "\n");
+        pHlp->pfnStructBldArrayEnd(pHlp);
+
     TPM_DECODE_END();
 }
 
@@ -397,7 +461,8 @@ static void vboxTraceLogDecodePcrSelectionList(PRTTRACELOGDECODERHLP pHlp, PTPMD
 {
     TPM_DECODE_INIT();
         TPM_DECODE_U32(u32Count, u32Count);
-        pHlp->pfnPrintf(pHlp, "        u32Count:  %u\n", u32Count);
+
+        pHlp->pfnStructBldBegin(pHlp, "aPcrSelection");
 
         /* Walk the list of PCR selection entries. */
         for (uint32_t i = 0; i < u32Count; i++)
@@ -405,6 +470,9 @@ static void vboxTraceLogDecodePcrSelectionList(PRTTRACELOGDECODERHLP pHlp, PTPMD
             vboxTraceLogDecodePcrSelection(pHlp, pCtx);
             TPM_DECODE_END_IF_ERROR();
         }
+
+        pHlp->pfnStructBldEnd(pHlp);
+
     TPM_DECODE_END();
 }
 
@@ -413,14 +481,17 @@ static void vboxTraceLogDecodeEvtTpmDigestList(PRTTRACELOGDECODERHLP pHlp, PTPMD
 {
     TPM_DECODE_INIT();
         TPM_DECODE_U32(u32DigestCount, u32DigestCount);
-        pHlp->pfnPrintf(pHlp, "        u32DigestCount:      %u\n", u32DigestCount);
+
+        pHlp->pfnStructBldBegin(pHlp, "aDigests");
+
         for (uint32_t i = 0; i < u32DigestCount; i++)
         {
             TPM_DECODE_U16(u16DigestSize, u16DigestSize);
-            TPM_DECODE_BUF(pbDigest, abDigest, u16DigestSize);
-            pHlp->pfnPrintf(pHlp, "            u16DigestSize:      %u\n", u16DigestSize);
-            pHlp->pfnPrintf(pHlp, "            abDigest:           %.*Rhxs\n", u16DigestSize, pbDigest);
+            TPM_DECODE_BUF_HEX_STRING(pbDigest, abDigest, u16DigestSize);
         }
+
+        pHlp->pfnStructBldEnd(pHlp);
+
     TPM_DECODE_END();
 }
 
@@ -429,195 +500,154 @@ static void vboxTraceLogDecodeEvtTpmDigestValuesList(PRTTRACELOGDECODERHLP pHlp,
 {
     TPM_DECODE_INIT();
         TPM_DECODE_U32(u32DigestCount, u32DigestCount);
-        pHlp->pfnPrintf(pHlp, "        u32DigestCount:      %u\n", u32DigestCount);
+
+        pHlp->pfnStructBldBegin(pHlp, "aDigests");
+
         for (uint32_t i = 0; i < u32DigestCount; i++)
         {
-            TPM_DECODE_U16(u16HashAlg, u16HashAlg);
+            TPM_DECODE_U16_ENUM(u16HashAlg, u16HashAlg, g_aAlgId2Str);
 
             size_t cbDigest = vboxTraceLogDecodeEvtTpmAlgId2DigestSize(u16HashAlg);
-            TPM_DECODE_BUF(pb, abDigest, cbDigest);
-
-            pHlp->pfnPrintf(pHlp, "            u16HashAlg:         %s\n", vboxTraceLogDecodeEvtTpmAlgId2Str(u16HashAlg));
-            pHlp->pfnPrintf(pHlp, "            abDigest:           %.*Rhxs\n", cbDigest, pb);
+            TPM_DECODE_BUF_HEX_STRING(pb, abDigest, cbDigest);
         }
+
+        pHlp->pfnStructBldEnd(pHlp);
+
     TPM_DECODE_END();
 }
 
 
 static void vboxTraceLogDecodeEvtTpmAuthSessionReq(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx)
 {
+    pHlp->pfnStructBldBegin(pHlp, "AuthArea");
     TPM_DECODE_INIT();
-        TPM_DECODE_U32(u32Size,          u32Size);
-        TPM_DECODE_U32(u32SessionHandle, u32SessionHandle);
-        TPM_DECODE_U16(u16NonceSize,     u16NonceSize);
-        TPM_DECODE_BUF(pbNonce,          abNonce, u16NonceSize);
-        TPM_DECODE_U8( u8Attr,           u8Attr);
-        TPM_DECODE_U16(u16HmacSize,      u16HmacSize);
-        TPM_DECODE_BUF(pbHmac,           abHmac,  u16HmacSize);
-
-        pHlp->pfnPrintf(pHlp, "        u32AuthSize:      %u\n", u32Size);
-        pHlp->pfnPrintf(pHlp, "        u32SessionHandle: %#x\n", u32SessionHandle);
-        pHlp->pfnPrintf(pHlp, "        u16NonceSize:     %u\n", u16NonceSize);
-        if (u16NonceSize)
-            pHlp->pfnPrintf(pHlp, "        abNonce:          %.*Rhxs\n", u16NonceSize, pbNonce);
-        pHlp->pfnPrintf(pHlp, "        u8Attr:           %u\n", u8Attr);
-        pHlp->pfnPrintf(pHlp, "        u16HmacSize:      %u\n", u16HmacSize);
-        if (u16HmacSize)
-            pHlp->pfnPrintf(pHlp, "        abHmac:           %.*Rhxs\n", u16HmacSize, pbHmac);
+        TPM_DECODE_U32(    u32Size,          u32Size);
+        TPM_DECODE_U32_HEX(u32SessionHandle, u32SessionHandle);
+        TPM_DECODE_U16(    u16NonceSize,     u16NonceSize);
+        TPM_DECODE_BUF(    pbNonce,          abNonce, u16NonceSize);
+        TPM_DECODE_U8(     u8Attr,           u8Attr);
+        TPM_DECODE_U16(    u16HmacSize,      u16HmacSize);
+        TPM_DECODE_BUF(    pbHmac,           abHmac,  u16HmacSize);
     TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
 }
 
 
 static void vboxTraceLogDecodeEvtTpmAuthSessionResp(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx)
 {
+    pHlp->pfnStructBldBegin(pHlp, "AuthArea");
     TPM_DECODE_INIT();
         TPM_DECODE_U16(u16NonceSize,     u16NonceSize);
         TPM_DECODE_BUF(pbNonce,          abNonce, u16NonceSize);
         TPM_DECODE_U8( u8Attr,           u8Attr);
         TPM_DECODE_U16(u16AckSize,       u16AckSize);
         TPM_DECODE_BUF(pbAck,            abAck,  u16AckSize);
-
-        pHlp->pfnPrintf(pHlp, "        u16NonceSize:     %u\n", u16NonceSize);
-        if (u16NonceSize)
-            pHlp->pfnPrintf(pHlp, "        abNonce:          %.*Rhxs\n", u16NonceSize, pbNonce);
-        pHlp->pfnPrintf(pHlp, "        u8Attr:           %u\n", u8Attr);
-        pHlp->pfnPrintf(pHlp, "        u16AckSize:       %u\n", u16AckSize);
-        if (u16AckSize)
-            pHlp->pfnPrintf(pHlp, "        abAck:            %.*Rhxs\n", u16AckSize, pbAck);
     TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
 }
 
 
 static void vboxTraceLogDecodeSizedBufU16(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx, const char *pszName)
 {
+    pHlp->pfnStructBldBegin(pHlp, pszName);
     TPM_DECODE_INIT();
-        pHlp->pfnPrintf(pHlp, "        %s:\n", pszName);
         TPM_DECODE_U16(u16Size, u16Size);
-        pHlp->pfnPrintf(pHlp, "            u16Size:  %u\n", u16Size);
         if (u16Size)
         {
             TPM_DECODE_BUF_STR(pb, pszName, u16Size);
-            pHlp->pfnPrintf(pHlp, "            %s:\n"
-                                  "%.*Rhxd\n", pszName, u16Size, pb);
         }
     TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
 }
 
 
 static void vboxTraceLogDecodeSymEncDef(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx, const char *pszName)
 {
-    RT_NOREF(pszName);
-
+    pHlp->pfnStructBldBegin(pHlp, pszName);
     TPM_DECODE_INIT();
-        pHlp->pfnPrintf(pHlp, "        %s:\n", pszName);
-        TPM_DECODE_U16(u16HashAlg, u16HashAlg);
-        pHlp->pfnPrintf(pHlp, "            u16Alg:             %s\n", vboxTraceLogDecodeEvtTpmAlgId2Str(u16HashAlg));
+        TPM_DECODE_U16_ENUM(u16HashAlg, u16HashAlg, g_aAlgId2Str);
         if (u16HashAlg != TPM2_ALG_NULL)
         {
             TPM_DECODE_U16(u16KeyBits, u16KeyBits);
-            pHlp->pfnPrintf(pHlp, "            u16KeyBits:         %u\n", u16KeyBits);
-            TPM_DECODE_U16(u16SymMode, u16SymMode);
-            pHlp->pfnPrintf(pHlp, "            u16SymMode:         %s\n", vboxTraceLogDecodeEvtTpmAlgId2Str(u16SymMode));
+            TPM_DECODE_U16_ENUM(u16SymMode, u16SymMode, g_aAlgId2Str);
             /* Symmetric details are not required as of now. */
         }
     TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
 }
 
 
 static void vboxTraceLogDecodeNvPublic(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx, const char *pszName)
 {
+    pHlp->pfnStructBldBegin(pHlp, pszName);
     TPM_DECODE_INIT();
-        pHlp->pfnPrintf(pHlp, "        %s:\n", pszName);
         TPM_DECODE_U16(u16Size, u16Size);
-        pHlp->pfnPrintf(pHlp, "            u16Size:  %u\n", u16Size);
         if (u16Size)
         {
-            TPM_DECODE_U32(hNvIndex,        hNvIndex);
+            TPM_DECODE_U32_HEX(hNvIndex,    hNvIndex);
             TPM_DECODE_U16(u16HashAlgName,  u16HashAlgName);
             TPM_DECODE_U32(u32Attr,         fAttr);
-
-            pHlp->pfnPrintf(pHlp, "            hNvIndex:         %#x\n", hNvIndex);
-            pHlp->pfnPrintf(pHlp, "            u16HashAlgName:   %u\n",  u16HashAlgName);
-            pHlp->pfnPrintf(pHlp, "            u32Attr:          %#x\n", u32Attr);
-
             vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "AuthPolicy");
             TPM_DECODE_U16(u16DataSize, u16DataSize);
-            pHlp->pfnPrintf(pHlp, "            u16DataSize:      %u\n",  u16DataSize);
         }
     TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
 }
 
 
 static void vboxTraceLogDecodeTicket(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx, const char *pszName)
 {
+    pHlp->pfnStructBldBegin(pHlp, pszName);
     TPM_DECODE_INIT();
-        pHlp->pfnPrintf(pHlp, "        %s:\n", pszName);
-
-        TPM_DECODE_U16(u16Tag,      u16Tag);
-        TPM_DECODE_U32(hHierarchy,  hHierarchy);
-        pHlp->pfnPrintf(pHlp, "            u16Tag:       %#x\n", u16Tag);
-        pHlp->pfnPrintf(pHlp, "            hHierarchy:   %#x\n", hHierarchy);
+        TPM_DECODE_U16_HEX(u16Tag,      u16Tag);
+        TPM_DECODE_U32_HEX(hHierarchy,  hHierarchy);
         vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "Digest");
     TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
 }
+
+
+static RTTRACELOGDECODERSTRUCTBLDENUM g_aStartupShutdownParam[] =
+{
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_SU_CLEAR),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_SU_STATE)
+};
 
 static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeStartupShutdownReq(PRTTRACELOGDECODERHLP pHlp, PTPMSTATE pThis, PTPMDECODECTX pCtx)
 {
     RT_NOREF(pThis);
 
     TPM_DECODE_INIT();
-        TPM_DECODE_U16(u16TpmSu, u16State);
-
-        if (u16TpmSu == TPM2_SU_CLEAR)
-            pHlp->pfnPrintf(pHlp, "        TPM2_SU_CLEAR\n");
-        else if (u16TpmSu == TPM2_SU_STATE)
-            pHlp->pfnPrintf(pHlp, "        TPM2_SU_STATE\n");
-        else
-            pHlp->pfnPrintf(pHlp, "        Unknown: %#x\n", u16TpmSu);
+        TPM_DECODE_U16_ENUM(u16TpmSu, u16State, g_aStartupShutdownParam);
     TPM_DECODE_END();
 }
 
 
-static struct
+static RTTRACELOGDECODERSTRUCTBLDENUM g_aTpm2Caps[] =
 {
-    const char     *pszCap;
-    const uint32_t *paProperties;
-} s_aTpm2Caps[] =
-{
-    { RT_STR(TPM2_CAP_ALGS),            NULL },
-    { RT_STR(TPM2_CAP_HANDLES),         NULL },
-    { RT_STR(TPM2_CAP_COMMANDS),        NULL },
-    { RT_STR(TPM2_CAP_PP_COMMANDS),     NULL },
-    { RT_STR(TPM2_CAP_AUDIT_COMMANDS),  NULL },
-    { RT_STR(TPM2_CAP_PCRS),            NULL },
-    { RT_STR(TPM2_CAP_TPM_PROPERTIES),  NULL },
-    { RT_STR(TPM2_CAP_PCR_PROPERTIES),  NULL },
-    { RT_STR(TPM2_CAP_ECC_CURVES),      NULL },
-    { RT_STR(TPM2_CAP_AUTH_POLICIES),   NULL },
-    { RT_STR(TPM2_CAP_ACT),             NULL },
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_ALGS),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_HANDLES),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_COMMANDS),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_PP_COMMANDS),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_AUDIT_COMMANDS),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_PCRS),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_TPM_PROPERTIES),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_PCR_PROPERTIES),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_ECC_CURVES),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_AUTH_POLICIES),
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(TPM2_CAP_ACT)
 };
 
 static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeGetCapabilityReq(PRTTRACELOGDECODERHLP pHlp, PTPMSTATE pThis, PTPMDECODECTX pCtx)
 {
     TPM_DECODE_INIT();
-        TPM_DECODE_U32(u32Cap,      u32Cap);
-        TPM_DECODE_U32(u32Property, u32Property);
-        TPM_DECODE_U32(u32Count,    u32Count);
+        TPM_DECODE_U32_ENUM(u32Cap,      u32Cap,      g_aTpm2Caps);
+        TPM_DECODE_U32_HEX( u32Property, u32Property             );
+        TPM_DECODE_U32(     u32Count,    u32Count                );
 
         pThis->u.GetCapability.u32Cap      = u32Cap;
         pThis->u.GetCapability.u32Property = u32Property;
         pThis->u.GetCapability.u32Count    = u32Count;
-
-        if (u32Cap < RT_ELEMENTS(s_aTpm2Caps))
-            pHlp->pfnPrintf(pHlp, "        u32Cap:      %s\n"
-                                  "        u32Property: %#x\n"
-                                  "        u32Count:    %#x\n",
-                            s_aTpm2Caps[u32Cap].pszCap, u32Property, u32Count);
-        else
-            pHlp->pfnPrintf(pHlp, "        u32Cap:      %#x (UNKNOWN)\n"
-                                  "        u32Property: %#x\n"
-                                  "        u32Count:    %#x\n",
-                            u32Cap, u32Property, u32Count);
     TPM_DECODE_END();
 }
 
@@ -627,26 +657,19 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeGetCapabilityResp(PRTTRA
     RT_NOREF(pThis);
 
     TPM_DECODE_INIT();
-        TPM_DECODE_U8( fMoreData,   fMoreData);
-        TPM_DECODE_U32(u32Cap,      u32Cap);
+        TPM_DECODE_BOOL(    fMoreData,   fMoreData);
+        TPM_DECODE_U32_ENUM(u32Cap,      u32Cap,      g_aTpm2Caps);
 
-        pHlp->pfnPrintf(pHlp, "        fMoreData: %RTbool\n", fMoreData);
-        if (u32Cap < RT_ELEMENTS(s_aTpm2Caps))
+        switch (u32Cap)
         {
-            pHlp->pfnPrintf(pHlp, "        u32Cap:    %s\n", s_aTpm2Caps[u32Cap]);
-            switch (u32Cap)
+            case TPM2_CAP_PCRS:
             {
-                case TPM2_CAP_PCRS:
-                {
-                    vboxTraceLogDecodePcrSelectionList(pHlp, pCtx);
-                    break;
-                }
-                default:
-                    break;
+                vboxTraceLogDecodePcrSelectionList(pHlp, pCtx);
+                break;
             }
+            default:
+                break;
         }
-        else
-            pHlp->pfnPrintf(pHlp, "        u32Cap:    %#x (UNKNOWN)\n", u32Cap);
     TPM_DECODE_END();
 }
 
@@ -678,7 +701,6 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeGetRandomReq(PRTTRACELOG
     TPM_DECODE_INIT();
         TPM_DECODE_U16(u16RandomBytes, u16RandomBytes);
         pThis->u.GetRandom.cbRnd = u16RandomBytes;
-        pHlp->pfnPrintf(pHlp, "        u16RandomBytes: %u\n", pThis->u.GetRandom.cbRnd);
     TPM_DECODE_END();
 }
 
@@ -695,7 +717,6 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeGetRandomResp(PRTTRACELO
         }
 
         TPM_DECODE_BUF(pb, RndBuf, cbBuf);
-        pHlp->pfnPrintf(pHlp, "%.*Rhxd\n", cbBuf, pb);
     TPM_DECODE_END();
 }
 
@@ -716,8 +737,6 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodePcrReadResp(PRTTRACELOGD
 
     TPM_DECODE_INIT();
         TPM_DECODE_U32(u32PcrUpdateCounter, u32PcrUpdateCounter);
-        pHlp->pfnPrintf(pHlp, "        u32PcrUpdateCounter: %u\n", u32PcrUpdateCounter);
-
         vboxTraceLogDecodePcrSelectionList(pHlp, pCtx);
         TPM_DECODE_END_IF_ERROR();
         vboxTraceLogDecodeEvtTpmDigestList(pHlp, pCtx);
@@ -748,18 +767,12 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeReadClockResp(PRTTRACELO
 
     TPM_DECODE_INIT();
         TPM_DECODE_U64(u64Time, u64Time);
-        pHlp->pfnPrintf(pHlp, "        u64Time: %RX64\n", u64Time);
 
         /* Decode TPMS_CLOCK_INFO. */
-        TPM_DECODE_U64(u64Clock,        u64Clock);
-        TPM_DECODE_U32(u32ResetCount,   u32ResetCount);
-        TPM_DECODE_U32(u32RestartCount, u32RestartCount);
-        TPM_DECODE_U8( fSafe,           fSafe);
-        pHlp->pfnPrintf(pHlp, "        u64Clock:         %RX64\n",   u64Clock);
-        pHlp->pfnPrintf(pHlp, "        u32ResetCount:    %u\n",      u32ResetCount);
-        pHlp->pfnPrintf(pHlp, "        u32RestartCount:  %u\n",      u32RestartCount);
-        pHlp->pfnPrintf(pHlp, "        fSafe:            %RTbool\n", fSafe);
-
+        TPM_DECODE_U64( u64Clock,        u64Clock);
+        TPM_DECODE_U32( u32ResetCount,   u32ResetCount);
+        TPM_DECODE_U32( u32RestartCount, u32RestartCount);
+        TPM_DECODE_BOOL(fSafe,           fSafe);
     TPM_DECODE_END();
 }
 
@@ -799,14 +812,12 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeStartAuthSessionReq(PRTT
         vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "EncryptedSalt");
         TPM_DECODE_END_IF_ERROR();
 
-        TPM_DECODE_U8(u8SessionType, u8SessionType);
-        pHlp->pfnPrintf(pHlp, "        u8SessionType:  %#x\n", u8SessionType);
+        TPM_DECODE_U8_HEX(u8SessionType, u8SessionType);
 
         vboxTraceLogDecodeSymEncDef(pHlp, pCtx, "Symmetric");
         TPM_DECODE_END_IF_ERROR();
 
-        TPM_DECODE_U16(u16HashAlg, u16HashAlg);
-        pHlp->pfnPrintf(pHlp, "        u16HashAlg: %s\n", vboxTraceLogDecodeEvtTpmAlgId2Str(u16HashAlg));
+        TPM_DECODE_U16_ENUM(u16HashAlg, u16HashAlg, g_aAlgId2Str);
     TPM_DECODE_END();
 }
 
@@ -960,8 +971,7 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeNvSetBitsReq(PRTTRACELOG
     RT_NOREF(pThis);
 
     TPM_DECODE_INIT();
-        TPM_DECODE_U64(u64BitsOr, u64BitsOr);
-        pHlp->pfnPrintf(pHlp, "        u64BitsOr:  %#RX64\n", u64BitsOr);
+        TPM_DECODE_U64_HEX(u64BitsOr, u64BitsOr);
     TPM_DECODE_END();
 }
 
@@ -982,7 +992,6 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeNvWriteReq(PRTTRACELOGDE
         TPM_DECODE_END_IF_ERROR();
 
         TPM_DECODE_U16(u16Offset, u16Offset);
-        pHlp->pfnPrintf(pHlp, "        u16Offset:  %u\n", u16Offset);
     TPM_DECODE_END();
 }
 
@@ -1001,10 +1010,6 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeDictionaryAttackParamete
         TPM_DECODE_U32(u32NewMaxTries,      u32NewMaxTries);
         TPM_DECODE_U32(u32NewRecoveryTime,  u32NewRecoveryTime);
         TPM_DECODE_U32(u32LockoutRecovery,  u32LockoutRecovery);
-
-        pHlp->pfnPrintf(pHlp, "        u32NewMaxTries:      %u\n", u32NewMaxTries);
-        pHlp->pfnPrintf(pHlp, "        u32NewRecoveryTime:  %u\n", u32NewRecoveryTime);
-        pHlp->pfnPrintf(pHlp, "        u32LockoutRecovery:  %u\n", u32LockoutRecovery);
     TPM_DECODE_END();
 }
 
@@ -1026,9 +1031,7 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeCertifyCreationReq(PRTTR
         vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "CreationHash");
         TPM_DECODE_END_IF_ERROR();
 
-        TPM_DECODE_U16(u16SigningScheme, u16SigningScheme);
-        pHlp->pfnPrintf(pHlp, "        u16SigningScheme: %s\n", vboxTraceLogDecodeEvtTpmAlgId2Str(u16SigningScheme));
-
+        TPM_DECODE_U16_ENUM(u16SigningScheme, u16SigningScheme, g_aAlgId2Str);
         vboxTraceLogDecodeTicket(pHlp, pCtx, "CreationTicket");
     TPM_DECODE_END();
 }
@@ -1042,11 +1045,8 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeCertifyCreationResp(PRTT
         vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "CertifyInfo");
 
         /* Decode TPMT_SIGNATURE */
-        TPM_DECODE_U16(u16SigningAlg, u16SigningAlg);
-        pHlp->pfnPrintf(pHlp, "        u16SigningAlg: %s\n", vboxTraceLogDecodeEvtTpmAlgId2Str(u16SigningAlg));
-        TPM_DECODE_U16(u16HashAlg, u16HashAlg);
-        pHlp->pfnPrintf(pHlp, "        u16HashAlg:    %s\n", vboxTraceLogDecodeEvtTpmAlgId2Str(u16HashAlg));
-
+        TPM_DECODE_U16_ENUM(u16SigningAlg, u16SigningAlg, g_aAlgId2Str);
+        TPM_DECODE_U16_ENUM(u16HashAlg, u16HashAlg, g_aAlgId2Str);
     TPM_DECODE_END();
 }
 
@@ -1064,9 +1064,7 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeNvReadReq(PRTTRACELOGDEC
 
     TPM_DECODE_INIT();
         TPM_DECODE_U16(u16Size,   u16Size);
-        pHlp->pfnPrintf(pHlp, "        u16Size:   %u\n", u16Size);
         TPM_DECODE_U16(u16Offset, u16Offset);
-        pHlp->pfnPrintf(pHlp, "        u16Offset: %u\n", u16Offset);
     TPM_DECODE_END();
 }
 
@@ -1101,7 +1099,6 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodePolicySecretReq(PRTTRACE
         TPM_DECODE_END_IF_ERROR();
 
         TPM_DECODE_I32(i32Expiration,   i32Expiration);
-        pHlp->pfnPrintf(pHlp, "        i32Expiration: %u\n", i32Expiration);
     TPM_DECODE_END();
 }
 
@@ -1174,7 +1171,6 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeEccParametersReq(PRTTRAC
 
     TPM_DECODE_INIT();
         TPM_DECODE_U16(u16CurveId, u16CurveId);
-        pHlp->pfnPrintf(pHlp, "        u16CurveId:   %#x\n", u16CurveId);
     TPM_DECODE_END();
 }
 
@@ -1184,21 +1180,14 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeEccParametersResp(PRTTRA
     RT_NOREF(pThis);
 
     TPM_DECODE_INIT();
-        TPM_DECODE_U16(u16CurveId,       u16CurveId);
-        TPM_DECODE_U16(u16KeySize,       u16KeySize);
-        TPM_DECODE_U16(u16KdfScheme,     u16KdfScheme);
-        TPM_DECODE_U16(u16KdfSchemeHash, u16KdfSchemeHash);
-        TPM_DECODE_U16(u16EccScheme,     u16EccScheme);
-
-        pHlp->pfnPrintf(pHlp, "        u16CurveId:       %#x\n", u16CurveId);
-        pHlp->pfnPrintf(pHlp, "        u16KeySize:       %u\n",  u16KeySize);
-        pHlp->pfnPrintf(pHlp, "        u16KdfScheme:     %s\n",  vboxTraceLogDecodeEvtTpmAlgId2Str(u16KdfScheme));
-        pHlp->pfnPrintf(pHlp, "        u16KdfSchemeHash: %s\n",  vboxTraceLogDecodeEvtTpmAlgId2Str(u16KdfSchemeHash));
-        pHlp->pfnPrintf(pHlp, "        u16EccScheme:     %s\n",  vboxTraceLogDecodeEvtTpmAlgId2Str(u16EccScheme));
+        TPM_DECODE_U16_HEX( u16CurveId,       u16CurveId);
+        TPM_DECODE_U16(     u16KeySize,       u16KeySize);
+        TPM_DECODE_U16_ENUM(u16KdfScheme,     u16KdfScheme,     g_aAlgId2Str);
+        TPM_DECODE_U16_ENUM(u16KdfSchemeHash, u16KdfSchemeHash, g_aAlgId2Str);
+        TPM_DECODE_U16_ENUM(u16EccScheme,     u16EccScheme,     g_aAlgId2Str);
         if (u16EccScheme != TPM2_ALG_NULL)
         {
-            TPM_DECODE_U16(u16EccSchemeHash, u16EccSchemeHash);
-            pHlp->pfnPrintf(pHlp, "        u16EccSchemeHash: %s\n",  vboxTraceLogDecodeEvtTpmAlgId2Str(u16EccSchemeHash));
+            TPM_DECODE_U16_ENUM(u16EccSchemeHash, u16EccSchemeHash, g_aAlgId2Str);
         }
         vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "p");
         TPM_DECODE_END_IF_ERROR();
@@ -1233,12 +1222,10 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeQuoteReq(PRTTRACELOGDECO
         vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "QualifyingData");
         TPM_DECODE_END_IF_ERROR();
 
-        TPM_DECODE_U16(u16SigScheme,     u16SigScheme);
-        pHlp->pfnPrintf(pHlp, "        u16SigScheme:     %s\n",  vboxTraceLogDecodeEvtTpmAlgId2Str(u16SigScheme));
+        TPM_DECODE_U16_ENUM(u16SigScheme, u16SigScheme, g_aAlgId2Str);
         if (u16SigScheme != TPM2_ALG_NULL)
         {
-            TPM_DECODE_U16(u16SigSchemeHash, u16SigSchemeHash);
-            pHlp->pfnPrintf(pHlp, "        u16SigSchemeHash: %s\n",  vboxTraceLogDecodeEvtTpmAlgId2Str(u16SigSchemeHash));
+            TPM_DECODE_U16_ENUM(u16SigSchemeHash, u16SigSchemeHash, g_aAlgId2Str);
         }
 
         vboxTraceLogDecodePcrSelectionList(pHlp, pCtx);
@@ -1254,12 +1241,10 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeQuoteResp(PRTTRACELOGDEC
         vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "Quoted");
         TPM_DECODE_END_IF_ERROR();
 
-        TPM_DECODE_U16(u16SigAlg,     u16SigAlg);
-        pHlp->pfnPrintf(pHlp, "        u16SigAlg:        %s\n",  vboxTraceLogDecodeEvtTpmAlgId2Str(u16SigAlg));
+        TPM_DECODE_U16_ENUM(u16SigAlg, u16SigAlg, g_aAlgId2Str);
         if (u16SigAlg != TPM2_ALG_NULL)
         {
-            TPM_DECODE_U16(u16SigAlgHash, u16SigAlgHash);
-            pHlp->pfnPrintf(pHlp, "        u16SigAlgHash:    %s\n",  vboxTraceLogDecodeEvtTpmAlgId2Str(u16SigAlgHash));
+            TPM_DECODE_U16_ENUM(u16SigAlgHash, u16SigAlgHash, g_aAlgId2Str);
         }
     TPM_DECODE_END();
 }
@@ -1280,8 +1265,7 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeHmacMacReq(PRTTRACELOGDE
         vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "Buffer");
         TPM_DECODE_END_IF_ERROR();
 
-        TPM_DECODE_U16(u16HashAlg,     u16HashAlg);
-        pHlp->pfnPrintf(pHlp, "        u16HashAlg:     %s\n",  vboxTraceLogDecodeEvtTpmAlgId2Str(u16HashAlg));
+        TPM_DECODE_U16_ENUM(u16HashAlg, u16HashAlg, g_aAlgId2Str);
     TPM_DECODE_END();
 }
 
@@ -1507,9 +1491,10 @@ static void vboxTraceLogDecodeEvtTpmDecodeCmdBuffer(PRTTRACELOGDECODERHLP pHlp, 
         {
             if (s_aTpmCmdCodes[i].u32CmdCode == u32CmdCode)
             {
-                pHlp->pfnPrintf(pHlp, "    %s (%u bytes):\n", s_aTpmCmdCodes[i].pszCmdCode, cbReqPayload);
-                pHlp->pfnPrintf(pHlp, "    u16Tag:      %#x\n", u16Tag);
-
+                pHlp->pfnStructBldBegin(pHlp, "Command");
+                pHlp->pfnStructBldAddStr(pHlp, "CmdCode",     0 /*fFlags*/, s_aTpmCmdCodes[i].pszCmdCode);
+                pHlp->pfnStructBldAddU32(pHlp, "PayloadSize", 0 /*fFlags*/, cbReqPayload);
+                pHlp->pfnStructBldAddU16(pHlp, "u16Tag",      RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX, u16Tag);
 
                 TPMDECODECTX Ctx;
                 PTPMDECODECTX pCtx = &Ctx;
@@ -1518,34 +1503,35 @@ static void vboxTraceLogDecodeEvtTpmDecodeCmdBuffer(PRTTRACELOGDECODERHLP pHlp, 
                 /* Decode the handle area. */
                 if (s_aTpmCmdCodes[i].papszHandlesReq)
                 {
-                    pHlp->pfnPrintf(pHlp, "    Handles:\n");
+                    pHlp->pfnStructBldBegin(pHlp, "Handles");
 
                     const char **papszHnd = s_aTpmCmdCodes[i].papszHandlesReq;
                     while (*papszHnd)
                     {
-                        TPM_DECODE_U32(u32Hnd, u32Hnd);
-                        pHlp->pfnPrintf(pHlp, "       %s: %#x\n", *papszHnd, u32Hnd);
+                        TPM_DECODE_U32_HEX_STR(u32Hnd, *papszHnd);
                         papszHnd++;
                     }
+
+                    pHlp->pfnStructBldEnd(pHlp);
                 }
 
                 /* Decode authorization area if available. */
                 if (u16Tag == TPM2_ST_SESSIONS)
-                {
-                    pHlp->pfnPrintf(pHlp, "    Authorization Area:\n");
                     vboxTraceLogDecodeEvtTpmAuthSessionReq(pHlp, pCtx);
-                }
 
                 /* Decode parameters. */
                 if (s_aTpmCmdCodes[i].pfnDecodeReq)
                 {
-                    pHlp->pfnPrintf(pHlp, "    Parameters:\n");
+                    pHlp->pfnStructBldBegin(pHlp, "Parameters");
                     s_aTpmCmdCodes[i].pfnDecodeReq(pHlp, pTpmState, &Ctx);
+                    pHlp->pfnStructBldEnd(pHlp);
                 }
 
                 if (pCtx->cbLeft)
                     pHlp->pfnPrintf(pHlp, "    Leftover undecoded data:\n"
                                           "%.*Rhxd\n", pCtx->cbLeft, pCtx->pbBuf);
+
+                pHlp->pfnStructBldEnd(pHlp);
                 return;
             }
         }
@@ -1570,8 +1556,12 @@ static void vboxTraceLogDecodeEvtTpmDecodeRespBuffer(PRTTRACELOGDECODERHLP pHlp,
         uint32_t u32ErrCode    = RT_BE2H_U32(pHdr->u32ErrCode);
         uint16_t u16Tag        = RT_BE2H_U16(pHdr->u16Tag);
 
-        pHlp->pfnPrintf(pHlp, "    Status code: %#x (%u bytes)\n", u32ErrCode, cbRespPayload);
-        pHlp->pfnPrintf(pHlp, "    u16Tag:      %#x\n", u16Tag);
+        pHlp->pfnStructBldBegin(pHlp, "Response");
+
+        pHlp->pfnStructBldAddU16(pHlp, "u16Tag", RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX, u16Tag);
+        pHlp->pfnStructBldAddU32(pHlp, "u32ErrCode", 0 /*fFlags*/, u32ErrCode);
+        pHlp->pfnStructBldAddU32(pHlp, "cbResponse", 0 /*fFlags*/, cbRespPayload);
+
         PTPMSTATE pTpmState = (PTPMSTATE)pHlp->pfnDecoderStateGet(pHlp);
 
         /* Can only decode the response buffer if we know the command code. */
@@ -1589,47 +1579,49 @@ static void vboxTraceLogDecodeEvtTpmDecodeRespBuffer(PRTTRACELOGDECODERHLP pHlp,
                     /* Decode the handle area. */
                     if (s_aTpmCmdCodes[i].papszHandlesResp)
                     {
-                        pHlp->pfnPrintf(pHlp, "    Handles:\n");
+                        pHlp->pfnStructBldBegin(pHlp, "Handles");
 
                         const char **papszHnd = s_aTpmCmdCodes[i].papszHandlesResp;
                         while (*papszHnd)
                         {
-                            TPM_DECODE_U32(u32Hnd, u32Hnd);
-                            pHlp->pfnPrintf(pHlp, "       %s: %#x\n", *papszHnd, u32Hnd);
+                            TPM_DECODE_U32_HEX_STR(u32Hnd, *papszHnd);
                             papszHnd++;
                         }
+
+                        pHlp->pfnStructBldEnd(pHlp);
                     }
 
                     if (u16Tag == TPM2_ST_SESSIONS)
                     {
                         TPM_DECODE_INIT();
                             TPM_DECODE_U32(u32ParamSz, u32ParamSize);
-                            pHlp->pfnPrintf(pHlp, "    u32ParamSize: %#x\n", u32ParamSz);
                         TPM_DECODE_END();
                     }
 
                     /* Decode parameters. */
                     if (s_aTpmCmdCodes[i].pfnDecodeResp)
+                    {
+                        pHlp->pfnStructBldBegin(pHlp, "Parameters");
                         s_aTpmCmdCodes[i].pfnDecodeResp(pHlp, pTpmState, pCtx);
+                        pHlp->pfnStructBldEnd(pHlp);
+                    }
 
                     /* Decode authorization area if available. */
                     if (u16Tag == TPM2_ST_SESSIONS)
-                    {
-                        pHlp->pfnPrintf(pHlp, "    Authorization Area:\n");
                         vboxTraceLogDecodeEvtTpmAuthSessionResp(pHlp, pCtx);
-                    }
 
                     if (pCtx->cbLeft)
-                        pHlp->pfnPrintf(pHlp, "    Leftover undecoded data:\n"
-                                              "%.*Rhxd\n", pCtx->cbLeft, pCtx->pbBuf);
-
+                        pHlp->pfnStructBldAddBuf(pHlp, "Leftover undecoded data", 0 /*fFlags*/, pCtx->pbBuf, pCtx->cbLeft);
+                    pHlp->pfnStructBldEnd(pHlp);
                     return;
                 }
             }
         }
 
         if (cbRespPayload)
-            pHlp->pfnPrintf(pHlp, "%.*Rhxd\n", cbRespPayload, pHdr + 1);
+            pHlp->pfnStructBldAddBuf(pHlp, "Data", 0 /*fFlags*/, (const uint8_t *)(pHdr + 1), cbRespPayload);
+
+        pHlp->pfnStructBldEnd(pHlp);
     }
     else
         pHlp->pfnErrorMsg(pHlp, "Response buffer is smaller than the request header (required %u, given %zu\n", sizeof(*pHdr), cbResp);

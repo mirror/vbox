@@ -64,6 +64,10 @@ typedef struct RTTRACELOGDECODER
     void                        *pvDecoderState;
     /** The free callback of any attached decoder state. */
     PFNTRACELOGDECODERSTATEFREE pfnDecoderStateFree;
+    /** Current struct nesting level. */
+    uint32_t                    cStructNesting;
+    /** Current array level nesting. */
+    uint32_t                    cArrayNesting;
 } RTTRACELOGDECODER;
 typedef RTTRACELOGDECODER *PRTTRACELOGDECODER;
 typedef const RTTRACELOGDECODER *PCRTTRACELOGDECODER;
@@ -276,6 +280,211 @@ static DECLCALLBACK(void*) rtTraceLogToolDecoderHlpStateGet(PRTTRACELOGDECODERHL
 }
 
 
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldBegin(PRTTRACELOGDECODERHLP pHlp, const char *pszName)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    RTPrintf("%*s%s:\n", pDecoder->cStructNesting * 4, "", pszName);
+    pDecoder->cStructNesting++;
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldEnd(PRTTRACELOGDECODERHLP pHlp)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    pDecoder->cStructNesting--;
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddBool(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, bool f)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    RT_NOREF(fFlags);
+    RTPrintf("%*s%-16s %32RTbool\n", pDecoder->cStructNesting * 4, "", pszName, f);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddU8(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, uint8_t u8)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (pszName)
+    {
+        if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX)
+            RTPrintf("%*s%-16s %#32RX8\n", pDecoder->cStructNesting * 4, "", pszName, u8);
+        else
+            RTPrintf("%*s%-16s %32RU8\n", pDecoder->cStructNesting * 4, "", pszName, u8);
+    }
+    else
+    {
+        Assert(pDecoder->cArrayNesting > 0);
+        if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX)
+            RTPrintf(" %#02RX8", u8);
+        else
+            RTPrintf(" %02RU8", u8);
+    }
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddU16(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, uint16_t u16)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX)
+        RTPrintf("%*s%-16s %#32RX16\n", pDecoder->cStructNesting * 4, "", pszName, u16);
+    else
+        RTPrintf("%*s%-16s %32RU16\n", pDecoder->cStructNesting * 4, "", pszName, u16);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddU32(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, uint32_t u32)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX)
+        RTPrintf("%*s%-16s %#32RX32\n", pDecoder->cStructNesting * 4, "", pszName, u32);
+    else
+        RTPrintf("%*s%-16s %32RU32\n", pDecoder->cStructNesting * 4, "", pszName, u32);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddU64(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, uint64_t u64)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX)
+        RTPrintf("%*s%-16s %#32RX64\n", pDecoder->cStructNesting * 4, "", pszName, u64);
+    else
+        RTPrintf("%*s%-16s %32RU64\n", pDecoder->cStructNesting * 4, "", pszName, u64);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddS8(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, int8_t i8)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX)
+        RTPrintf("%*s%-16s %#32RX8\n", pDecoder->cStructNesting * 4, "", pszName, i8);
+    else
+        RTPrintf("%*s%-16s %32RI8\n", pDecoder->cStructNesting * 4, "", pszName, i8);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddS16(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, int16_t i16)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX)
+        RTPrintf("%*s%-16s %#32RX16\n", pDecoder->cStructNesting * 4, "", pszName, i16);
+    else
+        RTPrintf("%*s%-16s %32RI16\n", pDecoder->cStructNesting * 4, "", pszName, i16);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddS32(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, int32_t i32)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX)
+        RTPrintf("%*s%-16s %#RX32\n", pDecoder->cStructNesting * 4, "", pszName, i32);
+    else
+        RTPrintf("%*s%-16s %RI32\n", pDecoder->cStructNesting * 4, "", pszName, i32);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddS64(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, int64_t i64)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX)
+        RTPrintf("%*s%-16s %#RX64\n", pDecoder->cStructNesting * 4, "", pszName, i64);
+    else
+        RTPrintf("%*s%-16s %RI64\n", pDecoder->cStructNesting * 4, "", pszName, i64);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddStr(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, const char *pszStr)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    RT_NOREF(fFlags);
+    RTPrintf("%*s%-16s %32s\n", pDecoder->cStructNesting * 4, "", pszName, pszStr);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddBuf(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, const uint8_t *pb, size_t cb)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX_DUMP_STR)
+        RTPrintf("%*s%-16s %.*Rhxs\n", pDecoder->cStructNesting * 4, "", pszName, cb, pb);
+    else
+        RTPrintf("%*s%-16s\n"
+                 "%.*Rhxd\n", pDecoder->cStructNesting * 4, "", pszName, cb, pb);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldAddEnum(PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, uint8_t cBits,
+                                                                  PCRTTRACELOGDECODERSTRUCTBLDENUM paEnums, uint64_t u64Val)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    const char *pszEnum = "<UNKNOWN>";
+    while (paEnums->pszString)
+    {
+        if (paEnums->u64EnumVal == u64Val)
+        {
+            pszEnum = paEnums->pszString;
+            break;
+        }
+        paEnums++;
+    }
+
+    RT_NOREF(cBits);
+    if (fFlags & RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX)
+        RTPrintf("%*s%-16s 0x%0*RX64 (%s)\n", pDecoder->cStructNesting * 4, "", pszName, cBits / 4, u64Val, pszEnum);
+    else
+        RTPrintf("%*s%-16s %RU64 (%s)\n", pDecoder->cStructNesting * 4, "", pszName, u64Val, pszEnum);
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldArrayBegin(PRTTRACELOGDECODERHLP pHlp, const char *pszName)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+
+    RTPrintf("%*s%-16s [", pDecoder->cStructNesting * 4, "", pszName);
+    Assert(!pDecoder->cArrayNesting);
+    pDecoder->cArrayNesting++;
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) rtTraceLogToolDecoderHlpStructBldArrayEnd(PRTTRACELOGDECODERHLP pHlp)
+{
+    PRTTRACELOGDECODER pDecoder = RT_FROM_MEMBER(pHlp, RTTRACELOGDECODER, Hlp);
+    RTPrintf(" ]\n");
+    Assert(pDecoder->cArrayNesting > 0);
+    pDecoder->cArrayNesting--;
+    return VINF_SUCCESS;
+}
+
+
 static DECLCALLBACK(int) rtTraceLogToolRegisterDecoders(void *pvUser, PCRTTRACELOGDECODERREG paDecoders, uint32_t cDecoders)
 {
     PRTTRACELOGDECODERSTATE pDecoderState = (PRTTRACELOGDECODERSTATE)pvUser;
@@ -298,11 +507,29 @@ static DECLCALLBACK(int) rtTraceLogToolRegisterDecoders(void *pvUser, PCRTTRACEL
         pDecoder->pReg                       = &paDecoders[i];
         pDecoder->pvDecoderState             = NULL;
         pDecoder->pfnDecoderStateFree        = NULL;
+        pDecoder->cStructNesting             = 0;
+        pDecoder->cArrayNesting              = 0;
         pDecoder->Hlp.pfnPrintf              = rtTraceLogToolDecoderHlpPrintf;
         pDecoder->Hlp.pfnErrorMsg            = rtTraceLogToolDecoderHlpErrorMsg;
         pDecoder->Hlp.pfnDecoderStateCreate  = rtTraceLogToolDecoderHlpStateCreate;
         pDecoder->Hlp.pfnDecoderStateDestroy = rtTraceLogToolDecoderHlpStateDestroy;
         pDecoder->Hlp.pfnDecoderStateGet     = rtTraceLogToolDecoderHlpStateGet;
+        pDecoder->Hlp.pfnStructBldBegin      = rtTraceLogToolDecoderHlpStructBldBegin;
+        pDecoder->Hlp.pfnStructBldEnd        = rtTraceLogToolDecoderHlpStructBldEnd;
+        pDecoder->Hlp.pfnStructBldAddBool    = rtTraceLogToolDecoderHlpStructBldAddBool;
+        pDecoder->Hlp.pfnStructBldAddU8      = rtTraceLogToolDecoderHlpStructBldAddU8;
+        pDecoder->Hlp.pfnStructBldAddU16     = rtTraceLogToolDecoderHlpStructBldAddU16;
+        pDecoder->Hlp.pfnStructBldAddU32     = rtTraceLogToolDecoderHlpStructBldAddU32;
+        pDecoder->Hlp.pfnStructBldAddU64     = rtTraceLogToolDecoderHlpStructBldAddU64;
+        pDecoder->Hlp.pfnStructBldAddS8      = rtTraceLogToolDecoderHlpStructBldAddS8;
+        pDecoder->Hlp.pfnStructBldAddS16     = rtTraceLogToolDecoderHlpStructBldAddS16;
+        pDecoder->Hlp.pfnStructBldAddS32     = rtTraceLogToolDecoderHlpStructBldAddS32;
+        pDecoder->Hlp.pfnStructBldAddS64     = rtTraceLogToolDecoderHlpStructBldAddS64;
+        pDecoder->Hlp.pfnStructBldAddStr     = rtTraceLogToolDecoderHlpStructBldAddStr;
+        pDecoder->Hlp.pfnStructBldAddBuf     = rtTraceLogToolDecoderHlpStructBldAddBuf;
+        pDecoder->Hlp.pfnStructBldAddEnum    = rtTraceLogToolDecoderHlpStructBldAddEnum;
+        pDecoder->Hlp.pfnStructBldArrayBegin = rtTraceLogToolDecoderHlpStructBldArrayBegin;
+        pDecoder->Hlp.pfnStructBldArrayEnd   = rtTraceLogToolDecoderHlpStructBldArrayEnd;
     }
 
     pDecoderState->cDecoders += cDecoders;
@@ -469,6 +696,8 @@ int main(int argc, char **argv)
                                 if (   RT_SUCCESS(rc)
                                     || cVals != pEvtDesc->cEvtItems)
                                 {
+                                    pDecoder->cStructNesting = 0;
+                                    pDecoder->cArrayNesting  = 0;
                                     rc = pDecoder->pReg->pfnDecode(&pDecoder->Hlp, pDecodeEvt->idDecodeEvt, hTraceLogEvt,
                                                                    pEvtDesc, &aVals[0], cVals);
                                     if (RT_FAILURE(rc))

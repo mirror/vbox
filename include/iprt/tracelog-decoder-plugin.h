@@ -59,6 +59,38 @@ typedef DECLCALLBACKTYPE(void, FNTRACELOGDECODERSTATEFREE,(PRTTRACELOGDECODERHLP
 typedef FNTRACELOGDECODERSTATEFREE *PFNTRACELOGDECODERSTATEFREE;
 
 
+/** The integer value should be dumped as a hex number instead. */
+#define RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX             RT_BIT_32(0)
+/** The hexdump should be dumped as an inline string (Rhxs). */
+#define RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_HEX_DUMP_STR    RT_BIT_32(1)
+
+
+/**
+ * An enum entry for the struct builder.
+ */
+typedef struct RTTRACELOGDECODERSTRUCTBLDENUM
+{
+    /** The raw enum value. */
+    uint64_t        u64EnumVal;
+    /** String version of the enum value. */
+    const char      *pszString;
+    /** Some opaque user data not used by RTTRACELOGDECODERHLP::pfnStructBldAddEnum. */
+    uintptr_t       uPtrUser;
+} RTTRACELOGDECODERSTRUCTBLDENUM;
+/** Pointer to a struct build enum entry. */
+typedef RTTRACELOGDECODERSTRUCTBLDENUM *PRTTRACELOGDECODERSTRUCTBLDENUM;
+/** Pointer to a const struct build enum entry. */
+typedef const RTTRACELOGDECODERSTRUCTBLDENUM *PCRTTRACELOGDECODERSTRUCTBLDENUM;
+
+
+/** Initializes a enum entry, extended version. */
+#define RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT_EX(a_enmVal, a_uPtrUser) \
+    { a_enmVal, #a_enmVal, a_uPtrUser }
+/** Initializes a enum entry, extended version. */
+#define RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(a_enmVal) \
+    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT_EX(a_enmVal, 0)
+
+
 /**
  * Helper functions for decoders.
  */
@@ -90,6 +122,9 @@ typedef struct RTTRACELOGDECODERHLP
      */
     DECLCALLBACKMEMBER(int, pfnErrorMsg, (PRTTRACELOGDECODERHLP pHlp, const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(2, 3);
 
+
+    /** @name Decoder state related callbacks.
+     * @{ */
 
     /**
      * Creates a new decoder state and associates it with the given helper structure.
@@ -124,6 +159,195 @@ typedef struct RTTRACELOGDECODERHLP
      */
     DECLCALLBACKMEMBER(void*, pfnDecoderStateGet, (PRTTRACELOGDECODERHLP pHlp));
 
+    /** @} */
+
+    /** @name Structure builder callbacks.
+     * @{ */
+
+    /**
+     * Begins a new (sub-)structure with the given name.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the structure.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldBegin,      (PRTTRACELOGDECODERHLP pHlp, const char *pszName));
+
+
+    /**
+     * Ends the current (sub-)structure and returns to the parent.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldEnd,        (PRTTRACELOGDECODERHLP pHlp));
+
+
+    /**
+     * Adds a boolean member to the current (sub-)structure with the given name and value.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   f           The boolean value to record.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddBool,    (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, bool f));
+
+
+    /**
+     * Adds an unsigned byte (uint8_t) member to the current (sub-)structure with the given name and value.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   u8          The value to record.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddU8,      (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, uint8_t u8));
+
+
+    /**
+     * Adds an unsigned 16-bit (uint16_t) member to the current (sub-)structure with the given name and value.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   u16         The value to record.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddU16,     (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, uint16_t u16));
+
+
+    /**
+     * Adds an unsigned 32-bit (uint32_t) member to the current (sub-)structure with the given name and value.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   u32         The value to record.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddU32,     (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, uint32_t u32));
+
+
+    /**
+     * Adds an unsigned 64-bit (uint64_t) member to the current (sub-)structure with the given name and value.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   u64         The value to record.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddU64,     (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, uint64_t u64));
+
+
+    /**
+     * Adds a signed byte (int8_t) member to the current (sub-)structure with the given name and value.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   i8          The value to record.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddS8,      (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, int8_t i8));
+
+
+    /**
+     * Adds a signed 16-bit (int16_t) member to the current (sub-)structure with the given name and value.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   i16          The value to record.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddS16,     (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, int16_t i16));
+
+
+    /**
+     * Adds a signed 32-bit (int32_t) member to the current (sub-)structure with the given name and value.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   i32          The value to record.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddS32,     (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, int32_t i32));
+
+
+    /**
+     * Adds a signed 64-bit (int64_t) member to the current (sub-)structure with the given name and value.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   i32          The value to record.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddS64,     (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, int64_t i64));
+
+
+    /**
+     * Adds a string member to the current (sub-)structure with the given name and string.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   pszStr      The string to add.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddStr,     (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, const char *pszStr));
+
+
+    /**
+     * Adds a data buffer member to the current (sub-)structure with the given name and content.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   pb          The buffer to add.
+     * @param   cb          Size of the buffer in bytes.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddBuf,     (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, const uint8_t *pb, size_t cb));
+
+
+    /**
+     * Adds a enum member to the current (sub-)structure with the given name and value.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the member.
+     * @param   fFlags      Combination of RTTRACELOG_DECODER_HLP_STRUCT_BLD_F_XXX.
+     * @param   cBits       Size of the enum data type in bits.
+     * @param   paEnums     Pointer to an erray of enum entries mapping a value to the description.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldAddEnum,    (PRTTRACELOGDECODERHLP pHlp, const char *pszName, uint32_t fFlags, uint8_t cBits,
+                                                     PCRTTRACELOGDECODERSTRUCTBLDENUM paEnums, uint64_t u64Val));
+
+    /**
+     * Begins a new array member in the current (sub-)structure with the given name.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     * @param   pszName     Name of the array member.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldArrayBegin, (PRTTRACELOGDECODERHLP pHlp, const char *pszName));
+
+
+    /**
+     * Ends the current array member in the current (sub-)structure.
+     *
+     * @returns IPRT status code.
+     * @param   pHlp        Pointer to the callback structure.
+     */
+    DECLCALLBACKMEMBER(int, pfnStructBldArrayEnd,   (PRTTRACELOGDECODERHLP pHlp));
+
+    /** @} */
 
     /** End marker (DBGCCMDHLP_MAGIC). */
     uint32_t                u32EndMarker;
