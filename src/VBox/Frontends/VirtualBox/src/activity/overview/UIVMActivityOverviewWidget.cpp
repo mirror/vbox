@@ -203,9 +203,10 @@ protected:
 
 Q_DECLARE_METATYPE(UIVMActivityOverviewItem);
 
+
 /*********************************************************************************************************************************
- *   Class UIVMActivityOverviewItemLocal definition.                                                                           *
- *********************************************************************************************************************************/
+*   Class UIVMActivityOverviewItemLocal definition.                                                                              *
+*********************************************************************************************************************************/
 /* A UIVMActivityOverviewItem derivation to show local vms in the table view: */
 class UIVMActivityOverviewItemLocal : public UIVMActivityOverviewItem
 {
@@ -238,9 +239,10 @@ private:
     CMachineDebugger m_comDebugger;
 };
 
+
 /*********************************************************************************************************************************
- *   Class UIVMActivityOverviewItemCloud definition.                                                                           *
- *********************************************************************************************************************************/
+*   Class UIVMActivityOverviewItemCloud definition.                                                                              *
+*********************************************************************************************************************************/
 /* A UIVMActivityOverviewItem derivation to show cloud vms in the table view: */
 class UIVMActivityOverviewItemCloud : public UIVMActivityOverviewItem
 {
@@ -597,7 +599,7 @@ void UIVMActivityOverviewHostStatsWidget::updateLabels()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewItem implementation.                                                                                 *
+*   Class UIVMActivityOverviewItem implementation.                                                                               *
 *********************************************************************************************************************************/
 UIVMActivityOverviewItem::UIVMActivityOverviewItem(QObject *pParent, const QUuid &uid, const QString &strVMName)
     : QObject(pParent)
@@ -665,7 +667,7 @@ UIVMActivityOverviewHostStats::UIVMActivityOverviewHostStats()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewItemCloud implementation.                                                                            *
+*   Class UIVMActivityOverviewItemCloud implementation.                                                                          *
 *********************************************************************************************************************************/
 
 UIVMActivityOverviewItemCloud::UIVMActivityOverviewItemCloud(QObject *pParent, const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine)
@@ -842,7 +844,7 @@ void UIVMActivityOverviewItemCloud::sltMetricNameListingComplete(QVector<QString
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewItemLocal implementation.                                                                            *
+*   Class UIVMActivityOverviewItemLocal implementation.                                                                          *
 *********************************************************************************************************************************/
 UIVMActivityOverviewItemLocal::UIVMActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName)
     : UIVMActivityOverviewItem(pParent, uid, strVMName)
