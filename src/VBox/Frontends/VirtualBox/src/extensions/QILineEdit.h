@@ -32,12 +32,12 @@
 #endif
 
 /* Qt includes */
-#include <QIcon>
 #include <QLineEdit>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
+/* Forward declarations: */
 class QLabel;
 
 /** QLineEdit extension with advanced functionality. */
@@ -103,7 +103,7 @@ private:
     /** Holds whether line-edit is marked for error. */
     bool     m_fMarkForError;
     /** Holds the icon label instance. */
-    QLabel  *m_pIconLabel;
+    QLabel  *m_pLabelIcon;
     /** Holds last error message. */
     QString  m_strErrorMessage;
     /** Holds cached icon margin. */

@@ -29,7 +29,6 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QContextMenuEvent>
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QMenu>
 #include <QStyleOptionFrame>
@@ -39,9 +38,6 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIIconPool.h"
 
-/* Other VBox includes: */
-#include "iprt/assert.h"
-
 
 QILineEdit::QILineEdit(QWidget *pParent /* = 0 */)
     : QLineEdit(pParent)
@@ -49,7 +45,7 @@ QILineEdit::QILineEdit(QWidget *pParent /* = 0 */)
     , m_pCopyAction(0)
     , m_fMarkable(false)
     , m_fMarkForError(false)
-    , m_pIconLabel(0)
+    , m_pLabelIcon(0)
     , m_iIconMargin(0)
 {
     prepare();
@@ -61,7 +57,7 @@ QILineEdit::QILineEdit(const QString &strText, QWidget *pParent /* = 0 */)
     , m_pCopyAction(0)
     , m_fMarkable(false)
     , m_fMarkForError(false)
-    , m_pIconLabel(0)
+    , m_pLabelIcon(0)
     , m_iIconMargin(0)
 {
     prepare();
@@ -84,32 +80,38 @@ void QILineEdit::setFixedWidthByText(const QString &strText)
 
 void QILineEdit::setMarkable(bool fMarkable)
 {
+    /* Sanity check: */
     if (m_fMarkable == fMarkable)
         return;
+
+    /* Save new value, show/hide label accordingly: */
     m_fMarkable = fMarkable;
     update();
 }
 
 void QILineEdit::mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage)
 {
-    AssertPtrReturnVoid(m_pIconLabel);
-    if (!m_fMarkable)
+    /* Sanity check: */
+    if (   !m_pLabelIcon
+        || !m_fMarkable)
         return;
 
+    /* Assign corresponding icon: */
     const QIcon icon = fError ? UIIconPool::iconSet(":/status_error_16px.png") : UIIconPool::iconSet(":/status_check_16px.png");
     const int iIconMetric = qMin((int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * .625), height());
-    const qreal fDevicePixelRatio = gpDesktop->devicePixelRatio(m_pIconLabel);
+    const qreal fDevicePixelRatio = gpDesktop->devicePixelRatio(m_pLabelIcon);
     const QString strToolTip = fError ? strErrorMessage : strNoErrorMessage;
     const QPixmap iconPixmap = icon.pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio);
-    m_pIconLabel->setPixmap(iconPixmap);
-    m_pIconLabel->resize(m_pIconLabel->minimumSizeHint());
-    m_pIconLabel->setToolTip(strToolTip);
-    m_iIconMargin = (height() - m_pIconLabel->height()) / 2;
+    m_pLabelIcon->setPixmap(iconPixmap);
+    m_pLabelIcon->resize(m_pLabelIcon->minimumSizeHint());
+    m_pLabelIcon->setToolTip(strToolTip);
+    m_iIconMargin = (height() - m_pLabelIcon->height()) / 2;
     update();
 }
 
 bool QILineEdit::event(QEvent *pEvent)
 {
+    /* Depending on event type: */
     switch (pEvent->type())
     {
         case QEvent::ContextMenu:
@@ -130,6 +132,8 @@ bool QILineEdit::event(QEvent *pEvent)
         default:
             break;
     }
+
+    /* Call to base-class: */
     return QLineEdit::event(pEvent);
 }
 
@@ -139,8 +143,8 @@ void QILineEdit::resizeEvent(QResizeEvent *pResizeEvent)
     QLineEdit::resizeEvent(pResizeEvent);
     if (m_fMarkable)
     {
-        m_pIconLabel->resize(m_pIconLabel->minimumSizeHint());
-        m_iIconMargin = (height() - m_pIconLabel->height()) / 2;
+        m_pLabelIcon->resize(m_pLabelIcon->minimumSizeHint());
+        m_iIconMargin = (height() - m_pLabelIcon->height()) / 2;
         moveIconLabel();
     }
 }
@@ -173,7 +177,7 @@ void QILineEdit::prepare()
     }
 
     /* Prepare icon label: */
-    m_pIconLabel = new QLabel(this);
+    m_pLabelIcon = new QLabel(this);
 }
 
 QSize QILineEdit::fitTextWidth(const QString &strText) const
@@ -198,6 +202,11 @@ QSize QILineEdit::fitTextWidth(const QString &strText) const
 
 void QILineEdit::moveIconLabel()
 {
-    AssertPtrReturnVoid(m_pIconLabel);
-    m_pIconLabel->move(width() - m_pIconLabel->width() - m_iIconMargin, m_iIconMargin);
+    /* Sanity check: */
+    if (   !m_pLabelIcon
+        || !m_fMarkable)
+        return;
+
+    /* We do it cause we have manual layout for the label: */
+    m_pLabelIcon->move(width() - m_pLabelIcon->width() - m_iIconMargin, m_iIconMargin);
 }
