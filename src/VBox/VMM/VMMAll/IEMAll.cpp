@@ -6290,7 +6290,9 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
             {
                 AssertCompile(X86_CR0_AM == X86_EFL_AC);
 
-                if (iemMemAreAlignmentChecksEnabled(pVCpu))
+                if (!iemMemAreAlignmentChecksEnabled(pVCpu))
+                { /* likely */ }
+                else
                     return iemRaiseAlignmentCheckException(pVCpu);
             }
             else if (   (uAlignCtl & IEM_MEMMAP_F_ALIGN_GP_OR_AC)
