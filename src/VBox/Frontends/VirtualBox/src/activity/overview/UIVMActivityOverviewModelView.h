@@ -51,9 +51,6 @@ class UIVMActivityOverviewRow;
 class UIVMActivityOverviewRowCloud;
 class UIVirtualMachineItemCloud;
 
-/*********************************************************************************************************************************
-*   Class UIVMActivityOverviewHostStats definition.                                                                              *
-*********************************************************************************************************************************/
 /** A simple container to store host related performance values. */
 class UIVMActivityOverviewHostStats
 {
@@ -92,15 +89,11 @@ private:
     virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
     virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) RT_OVERRIDE;
     virtual void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE;
-
     /** Resizes all the columns in response to resizeEvent. Columns cannot be narrower than m_minimumColumnWidths values. */
     void resizeHeaders();
     /** Value is in pixels. Columns cannot be narrower than this width. */
     QMap<int, int> m_minimumColumnWidths;
-
 };
-
-
 
 class UIVMActivityOverviewProxyModel : public QSortFilterProxyModel
 {
@@ -123,7 +116,6 @@ private:
 
     bool m_fShowNotRunningVMs;
     bool m_fShowCloudVMs;
-
 };
 
 class UIVMActivityOverviewModel : public QAbstractTableModel
@@ -170,16 +162,16 @@ private:
     void queryPerformanceCollector();
     void getHostRAMStats();
     QVector<UIVMActivityOverviewRow*> m_rows;
-    QITableView *m_pTableView;
+    QITableView       *m_pTableView;
     QMap<int, QString> m_columnTitles;
-    QMap<int, bool> m_columnVisible;
-    QTimer *m_pLocalVMUpdateTimer;
+    QMap<int, bool>    m_columnVisible;
+    QTimer            *m_pLocalVMUpdateTimer;
     /** Maximum length of string length of data displayed in column. Updated in UIVMActivityOverviewModel::data(..). */
     mutable QMap<int, int> m_columnDataMaxLength;
     CPerformanceCollector m_performanceCollector;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
      * @{ */
-       QVector<QString> m_nameList;
+       QVector<QString>  m_nameList;
        QVector<CUnknown> m_objectList;
     /** @} */
     UIVMActivityOverviewHostStats m_hostStats;

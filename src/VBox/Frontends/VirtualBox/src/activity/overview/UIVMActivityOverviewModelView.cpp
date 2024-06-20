@@ -115,6 +115,7 @@ protected:
 
     QString m_strMachineName;
     quint64  m_uTotalRAM;
+
 private:
 
     void initCells();
@@ -147,23 +148,16 @@ public:
 
 private:
 
-
-
     KMachineState    m_enmMachineState;
     CMachineDebugger m_comDebugger;
     CSession         m_comSession;
     CGuest           m_comGuest;
-
-
     quint64  m_uFreeRAM;
-
     quint64  m_uNetworkDownTotal;
     quint64  m_uNetworkUpTotal;
-
     quint64          m_uVMExitTotal;
     quint64          m_uDiskWriteTotal;
     quint64          m_uDiskReadTotal;
-
 };
 
 
@@ -175,7 +169,9 @@ private:
 class UIVMActivityOverviewRowCloud : public UIVMActivityOverviewRow
 {
     Q_OBJECT;
+
 public:
+
     UIVMActivityOverviewRowCloud(QITableView *pTableView, const QUuid &uMachineId,
                                          const QString &strMachineName, CCloudMachine &comCloudMachine);
     void updateMachineState();
@@ -183,9 +179,6 @@ public:
     virtual bool isCloudVM() const RT_OVERRIDE RT_FINAL;
     virtual QString machineStateString() const RT_OVERRIDE RT_FINAL;
     virtual void setMachineState(int iState) RT_OVERRIDE RT_FINAL;
-
-
-protected:
 
 private slots:
 
@@ -206,6 +199,96 @@ private:
 
 
 /*********************************************************************************************************************************
+*   UIVMActivityOverviewCell implementation.                                                                             *
+*********************************************************************************************************************************/
+
+UIVMActivityOverviewCell::UIVMActivityOverviewCell(QITableViewRow *pRow, int iColumnIndex)
+    :QITableViewCell(pRow)
+    , m_iColumnIndex(iColumnIndex)
+{
+}
+
+QString UIVMActivityOverviewCell::text() const
+{
+    return m_strText;
+}
+
+int UIVMActivityOverviewCell::columnLength(int /*iColumnIndex*/) const
+{
+    return 0;
+    //return m_columnData.value(iColumnIndex, QString()).length();
+}
+
+void UIVMActivityOverviewCell::setText(const QString &strText)
+{
+    m_strText = strText;
+}
+
+/*********************************************************************************************************************************
+*   UIVMActivityOverviewRow implementation.                                                                              *
+*********************************************************************************************************************************/
+
+UIVMActivityOverviewRow::UIVMActivityOverviewRow(QITableView *pTableView, const QUuid &uMachineId,
+                                                                 const QString &strMachineName)
+    : QITableViewRow(pTableView)
+    , m_uMachineId(uMachineId)
+    , m_strMachineName(strMachineName)
+    , m_uTotalRAM(0)
+{
+    initCells();
+}
+
+int UIVMActivityOverviewRow::childCount() const
+{
+    return m_cells.size();
+}
+
+QITableViewCell *UIVMActivityOverviewRow::childItem(int iIndex) const
+{
+    return m_cells.value(iIndex, 0);
+}
+
+QString UIVMActivityOverviewRow::cellText(int iColumn) const
+{
+    if (!m_cells.contains(iColumn))
+        return QString();
+    if (!m_cells[iColumn])
+        return QString();
+    return m_cells[iColumn]->text();
+}
+
+int UIVMActivityOverviewRow::columnLength(int iColumnIndex) const
+{
+    UIVMActivityOverviewCell *pCell = m_cells.value(iColumnIndex, 0);
+    if (!pCell)
+        return 0;
+    return pCell->text().length();
+}
+
+UIVMActivityOverviewRow::~UIVMActivityOverviewRow()
+{
+    qDeleteAll(m_cells);
+}
+
+void UIVMActivityOverviewRow::initCells()
+{
+    for (int i = (int) VMActivityOverviewColumn_Name; i < (int) VMActivityOverviewColumn_Max; ++i)
+        m_cells[i] = new UIVMActivityOverviewCell(this, i);
+    m_cells[VMActivityOverviewColumn_Name]->setText(m_strMachineName);
+}
+
+const QUuid &UIVMActivityOverviewRow::machineId() const
+{
+    return m_uMachineId;
+}
+
+void UIVMActivityOverviewRow::updateCellText(int /*VMActivityOverviewColumn*/ enmColumnIndex, const QString &strText)
+{
+    if (m_cells.value(enmColumnIndex, 0))
+        m_cells[enmColumnIndex]->setText(strText);
+}
+
+/*********************************************************************************************************************************
 * UIVMActivityOverviewRowLocal implementation.                                                                   *
 *********************************************************************************************************************************/
 
@@ -222,7 +305,6 @@ UIVMActivityOverviewRowLocal::UIVMActivityOverviewRowLocal(QITableView *pTableVi
 {
     if (m_enmMachineState == KMachineState_Running)
         resetDebugger();
-
 }
 
 void UIVMActivityOverviewRowLocal::updateCells()
@@ -291,8 +373,6 @@ void UIVMActivityOverviewRowLocal::updateCells()
     quint64 uVMExitRate = m_uVMExitTotal - uPrevVMExitsTotal;
     updateCellText(VMActivityOverviewColumn_VMExits, QString("%1/%2").arg(UITranslator::addMetricSuffixToNumber(uVMExitRate)).
                    arg(UITranslator::addMetricSuffixToNumber(m_uVMExitTotal)));
-
-
 }
 
 UIVMActivityOverviewRowLocal::~UIVMActivityOverviewRowLocal()
@@ -358,7 +438,6 @@ QString UIVMActivityOverviewRowLocal::machineStateString() const
 {
     return gpConverter->toString(m_enmMachineState);
 }
-
 
 /*********************************************************************************************************************************
 *   UIVMActivityOverviewRowCloud implementation.                                                                   *
@@ -622,7 +701,6 @@ void UIVMActivityOverviewTableView::resizeHeaders()
         pHeader->resizeSection(i, iWidth < iMinWidth ? iMinWidth : iWidth);
     }
 }
-
 
 /*********************************************************************************************************************************
 *   UIVMActivityOverviewModel implementation.                                                                            *
@@ -1018,10 +1096,10 @@ void UIVMActivityOverviewModel::queryPerformanceCollector()
     }
 }
 
-
 /*********************************************************************************************************************************
 *   UIVMActivityOverviewProxyModel implementation.                                                                       *
 *********************************************************************************************************************************/
+
 UIVMActivityOverviewProxyModel::UIVMActivityOverviewProxyModel(QObject *pParent /* = 0 */)
     :  QSortFilterProxyModel(pParent)
 {
@@ -1093,97 +1171,5 @@ bool UIVMActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex
     return QSortFilterProxyModel::lessThan(sourceLeftIndex, sourceRightIndex);
 }
 
-
-
-/*********************************************************************************************************************************
-*   UIVMActivityOverviewRow implementation.                                                                              *
-*********************************************************************************************************************************/
-
-UIVMActivityOverviewRow::UIVMActivityOverviewRow(QITableView *pTableView, const QUuid &uMachineId,
-                                                                 const QString &strMachineName)
-    : QITableViewRow(pTableView)
-    , m_uMachineId(uMachineId)
-    , m_strMachineName(strMachineName)
-    , m_uTotalRAM(0)
-{
-    initCells();
-}
-
-int UIVMActivityOverviewRow::childCount() const
-{
-    return m_cells.size();
-}
-
-QITableViewCell *UIVMActivityOverviewRow::childItem(int iIndex) const
-{
-    return m_cells.value(iIndex, 0);
-}
-
-QString UIVMActivityOverviewRow::cellText(int iColumn) const
-{
-    if (!m_cells.contains(iColumn))
-        return QString();
-    if (!m_cells[iColumn])
-        return QString();
-    return m_cells[iColumn]->text();
-}
-
-int UIVMActivityOverviewRow::columnLength(int iColumnIndex) const
-{
-    UIVMActivityOverviewCell *pCell = m_cells.value(iColumnIndex, 0);
-    if (!pCell)
-        return 0;
-    return pCell->text().length();
-}
-
-UIVMActivityOverviewRow::~UIVMActivityOverviewRow()
-{
-    qDeleteAll(m_cells);
-}
-
-void UIVMActivityOverviewRow::initCells()
-{
-    for (int i = (int) VMActivityOverviewColumn_Name; i < (int) VMActivityOverviewColumn_Max; ++i)
-        m_cells[i] = new UIVMActivityOverviewCell(this, i);
-    m_cells[VMActivityOverviewColumn_Name]->setText(m_strMachineName);
-}
-
-const QUuid &UIVMActivityOverviewRow::machineId() const
-{
-    return m_uMachineId;
-}
-
-void UIVMActivityOverviewRow::updateCellText(int /*VMActivityOverviewColumn*/ enmColumnIndex, const QString &strText)
-{
-    if (m_cells.value(enmColumnIndex, 0))
-        m_cells[enmColumnIndex]->setText(strText);
-}
-
-
-/*********************************************************************************************************************************
-*   UIVMActivityOverviewCell implementation.                                                                             *
-*********************************************************************************************************************************/
-
-UIVMActivityOverviewCell::UIVMActivityOverviewCell(QITableViewRow *pRow, int iColumnIndex)
-    :QITableViewCell(pRow)
-    , m_iColumnIndex(iColumnIndex)
-{
-}
-
-QString UIVMActivityOverviewCell::text() const
-{
-    return m_strText;
-}
-
-int UIVMActivityOverviewCell::columnLength(int /*iColumnIndex*/) const
-{
-    return 0;
-    //return m_columnData.value(iColumnIndex, QString()).length();
-}
-
-void UIVMActivityOverviewCell::setText(const QString &strText)
-{
-    m_strText = strText;
-}
 
 #include "UIVMActivityOverviewModelView.moc"
