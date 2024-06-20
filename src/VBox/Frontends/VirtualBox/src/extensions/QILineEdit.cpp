@@ -129,32 +129,20 @@ bool QILineEdit::event(QEvent *pEvent)
             }
             break;
         }
+        case QEvent::Move:
+        case QEvent::Resize:
+        {
+            /* Update label position on each move/resize: */
+            if (m_fMarkable)
+                moveIconLabel();
+            break;
+        }
         default:
             break;
     }
 
     /* Call to base-class: */
     return QLineEdit::event(pEvent);
-}
-
-void QILineEdit::resizeEvent(QResizeEvent *pResizeEvent)
-{
-    /* Call to base-class: */
-    QLineEdit::resizeEvent(pResizeEvent);
-    if (m_fMarkable)
-    {
-        m_pLabelIcon->resize(m_pLabelIcon->minimumSizeHint());
-        m_iIconMargin = (height() - m_pLabelIcon->height()) / 2;
-        moveIconLabel();
-    }
-}
-
-void QILineEdit::showEvent(QShowEvent *pShowEvent)
-{
-    /* Call to base-class: */
-    QLineEdit::showEvent(pShowEvent);
-    if (m_fMarkable)
-        moveIconLabel();
 }
 
 void QILineEdit::copy()
