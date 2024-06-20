@@ -2681,7 +2681,10 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
             pgmGstFlushPaePdpes(pVCpu);
     }
 
-    IEMTlbInvalidateAll(pVCpu);
+    if (!fGlobal)
+        IEMTlbInvalidateAll(pVCpu);
+    else
+        IEMTlbInvalidateAllGlobal(pVCpu);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLB), a);
     return rc;
 }

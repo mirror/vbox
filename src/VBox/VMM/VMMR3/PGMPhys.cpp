@@ -6296,7 +6296,7 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
 #if 0 /* PGMGetPage will apply the A20 mask to the GCPhys it returns, so we must invalid both sides of the TLB. */
         IEMTlbInvalidateAllPhysical(pVCpu);
 #else
-        IEMTlbInvalidateAll(pVCpu);
+        IEMTlbInvalidateAllGlobal(pVCpu);
 #endif
         STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cA20Changes);
     }

@@ -606,25 +606,26 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, uint32_t fE
 
 
 /**
- * Invalidates the IEM TLBs.
- *
- * This is called internally as well as by PGM when moving GC mappings.
- *
- * @param   pVCpu       The cross context virtual CPU structure of the calling
- *                      thread.
+ * Worker for IEMTlbInvalidateAll and IEMTlbInvalidateAllGlobal.
  */
-VMM_INT_DECL(void) IEMTlbInvalidateAll(PVMCPUCC pVCpu)
+template<bool a_fGlobal>
+DECL_FORCE_INLINE(void) iemTlbInvalidateAll(PVMCPUCC pVCpu)
 {
 #if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
     Log10(("IEMTlbInvalidateAll\n"));
 # ifdef IEM_WITH_CODE_TLB
     pVCpu->iem.s.cbInstrBufTotal = 0;
+    if (!a_fGlobal)
+        pVCpu->iem.s.CodeTlb.cTlsFlushes++;
+    else
+        pVCpu->iem.s.CodeTlb.cTlsGlobalFlushes++;
     pVCpu->iem.s.CodeTlb.uTlbRevision += IEMTLB_REVISION_INCR;
-    if (pVCpu->iem.s.CodeTlb.uTlbRevision != 0)
+    if (RT_LIKELY(pVCpu->iem.s.CodeTlb.uTlbRevision != 0))
     { /* very likely */ }
     else
     {
         pVCpu->iem.s.CodeTlb.uTlbRevision = IEMTLB_REVISION_INCR;
+        pVCpu->iem.s.CodeTlb.cTlbRevisionRollovers++;
         unsigned i = RT_ELEMENTS(pVCpu->iem.s.CodeTlb.aEntries);
         while (i-- > 0)
             pVCpu->iem.s.CodeTlb.aEntries[i].uTag = 0;
@@ -632,12 +633,17 @@ VMM_INT_DECL(void) IEMTlbInvalidateAll(PVMCPUCC pVCpu)
 # endif
 
 # ifdef IEM_WITH_DATA_TLB
+    if (!a_fGlobal)
+        pVCpu->iem.s.DataTlb.cTlsFlushes++;
+    else
+        pVCpu->iem.s.DataTlb.cTlsGlobalFlushes++;
     pVCpu->iem.s.DataTlb.uTlbRevision += IEMTLB_REVISION_INCR;
     if (pVCpu->iem.s.DataTlb.uTlbRevision != 0)
     { /* very likely */ }
     else
     {
         pVCpu->iem.s.DataTlb.uTlbRevision = IEMTLB_REVISION_INCR;
+        pVCpu->iem.s.DataTlb.cTlbRevisionRollovers++;
         unsigned i = RT_ELEMENTS(pVCpu->iem.s.DataTlb.aEntries);
         while (i-- > 0)
             pVCpu->iem.s.DataTlb.aEntries[i].uTag = 0;
@@ -646,6 +652,34 @@ VMM_INT_DECL(void) IEMTlbInvalidateAll(PVMCPUCC pVCpu)
 #else
     RT_NOREF(pVCpu);
 #endif
+}
+
+
+/**
+ * Invalidates non-global the IEM TLB entries.
+ *
+ * This is called internally as well as by PGM when moving GC mappings.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ */
+VMM_INT_DECL(void) IEMTlbInvalidateAll(PVMCPUCC pVCpu)
+{
+    iemTlbInvalidateAll<false>(pVCpu);
+}
+
+
+/**
+ * Invalidates all the IEM TLB entries.
+ *
+ * This is called internally as well as by PGM when moving GC mappings.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ */
+VMM_INT_DECL(void) IEMTlbInvalidateAllGlobal(PVMCPUCC pVCpu)
+{
+    iemTlbInvalidateAll<true>(pVCpu);
 }
 
 
@@ -709,6 +743,8 @@ static void IEMTlbInvalidateAllPhysicalSlow(PVMCPUCC pVCpu)
         pVCpu->iem.s.CodeTlb.aEntries[i].fFlagsAndPhysRev &= ~(  IEMTLBE_F_PG_NO_WRITE   | IEMTLBE_F_PG_NO_READ
                                                                | IEMTLBE_F_PG_UNASSIGNED | IEMTLBE_F_PHYS_REV);
     }
+    pVCpu->iem.s.CodeTlb.cTlbPhysRevRollovers++;
+    pVCpu->iem.s.CodeTlb.cTlbPhysRevFlushes++;
 # endif
 # ifdef IEM_WITH_DATA_TLB
     i = RT_ELEMENTS(pVCpu->iem.s.DataTlb.aEntries);
@@ -718,6 +754,8 @@ static void IEMTlbInvalidateAllPhysicalSlow(PVMCPUCC pVCpu)
         pVCpu->iem.s.DataTlb.aEntries[i].fFlagsAndPhysRev &= ~(  IEMTLBE_F_PG_NO_WRITE   | IEMTLBE_F_PG_NO_READ
                                                                | IEMTLBE_F_PG_UNASSIGNED | IEMTLBE_F_PHYS_REV);
     }
+    pVCpu->iem.s.DataTlb.cTlbPhysRevRollovers++;
+    pVCpu->iem.s.DataTlb.cTlbPhysRevFlushes++;
 # endif
 
 }
@@ -746,7 +784,9 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllPhysical(PVMCPUCC pVCpu)
     if (RT_LIKELY(uTlbPhysRev > IEMTLB_PHYS_REV_INCR * 2))
     {
         pVCpu->iem.s.CodeTlb.uTlbPhysRev = uTlbPhysRev;
+        pVCpu->iem.s.CodeTlb.cTlbPhysRevFlushes++;
         pVCpu->iem.s.DataTlb.uTlbPhysRev = uTlbPhysRev;
+        pVCpu->iem.s.DataTlb.cTlbPhysRevFlushes++;
     }
     else
         IEMTlbInvalidateAllPhysicalSlow(pVCpu);
@@ -794,8 +834,11 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCa
             IEMTlbInvalidateAllPhysicalSlow(pVCpu);
             continue;
         }
-        ASMAtomicCmpXchgU64(&pVCpu->iem.s.CodeTlb.uTlbPhysRev, uTlbPhysRevNew, uTlbPhysRevPrev);
-        ASMAtomicCmpXchgU64(&pVCpu->iem.s.DataTlb.uTlbPhysRev, uTlbPhysRevNew, uTlbPhysRevPrev);
+        if (ASMAtomicCmpXchgU64(&pVCpu->iem.s.CodeTlb.uTlbPhysRev, uTlbPhysRevNew, uTlbPhysRevPrev))
+            pVCpu->iem.s.CodeTlb.cTlbPhysRevFlushes++;
+
+        if (ASMAtomicCmpXchgU64(&pVCpu->iem.s.DataTlb.uTlbPhysRev, uTlbPhysRevNew, uTlbPhysRevPrev))
+            pVCpu->iem.s.DataTlb.cTlbPhysRevFlushes++;
     }
     VMCC_FOR_EACH_VMCPU_END(pVM);
 

@@ -599,8 +599,16 @@ typedef struct IEMTLB
     /** Slow read path (code only).  */
     uint32_t            cTlbSlowCodeReadPath;
 
-    /** Alignment padding. */
-    uint32_t            au32Padding[5];
+    /** Regular TLB flush count. */
+    uint32_t            cTlsFlushes;
+    /** Global TLB flush count. */
+    uint32_t            cTlsGlobalFlushes;
+    /** Revision rollovers. */
+    uint32_t            cTlbRevisionRollovers;
+    /** Physical revision flushes. */
+    uint32_t            cTlbPhysRevFlushes;
+    /** Physical revision rollovers. */
+    uint32_t            cTlbPhysRevRollovers;
 
     /** The TLB entries. */
     IEMTLBENTRY         aEntries[IEMTLB_ENTRY_COUNT];

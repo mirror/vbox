@@ -323,8 +323,19 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         /* Code TLB: */
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Code TLB revision",                            "/IEM/CPU%u/Tlb/Code/Revision", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlsFlushes,         STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB non-global flushes",                  "/IEM/CPU%u/Tlb/Code/RevisionNonGlobalFlushes", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlsGlobalFlushes,   STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB global flushes",                      "/IEM/CPU%u/Tlb/Code/RevisionGlobalFlushes", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbRevisionRollovers, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB revision rollovers",                  "/IEM/CPU%u/Tlb/Code/RevisionRollovers", idCpu);
+
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.CodeTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Code TLB physical revision",                   "/IEM/CPU%u/Tlb/Code/RevisionPhysical", idCpu);
+                        "Code TLB physical revision",                   "/IEM/CPU%u/Tlb/Code/PhysicalRevision", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbPhysRevFlushes,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB revision flushes",                    "/IEM/CPU%u/Tlb/Code/PhysicalRevisionFlushes", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbPhysRevRollovers, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB revision rollovers",                  "/IEM/CPU%u/Tlb/Code/PhysicalRevisionRollovers", idCpu);
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbCoreMisses,      STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Code TLB misses",                              "/IEM/CPU%u/Tlb/Code/Misses", idCpu);
@@ -382,8 +393,19 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         /* Data TLB organized as best we can... */
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Data TLB revision",                            "/IEM/CPU%u/Tlb/Data/Revision", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlsFlushes,         STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB non-global flushes",                  "/IEM/CPU%u/Tlb/Data/RevisionNonGlobalFlushes", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlsGlobalFlushes,   STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB global flushes",                      "/IEM/CPU%u/Tlb/Data/RevisionGlobalFlushes", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbRevisionRollovers, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB revision rollovers",                  "/IEM/CPU%u/Tlb/Data/RevisionRollovers", idCpu);
+
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.DataTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Data TLB physical revision",                   "/IEM/CPU%u/Tlb/Data/RevisionPhysical", idCpu);
+                        "Data TLB physical revision",                   "/IEM/CPU%u/Tlb/Data/PhysicalRevision", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbPhysRevFlushes,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB revision flushes",                    "/IEM/CPU%u/Tlb/Data/PhysicalRevisionFlushes", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbPhysRevRollovers, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB revision rollovers",                  "/IEM/CPU%u/Tlb/Data/PhysicalRevisionRollovers", idCpu);
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbCoreMisses,      STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB core misses (iemMemMap, direct iemMemMapJmp (not safe path))",
@@ -1394,7 +1416,7 @@ static DECLCALLBACK(int) iemR3DbgFlushTlbs(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, idCpu);
     if (pVCpu)
     {
-        VMR3ReqPriorityCallVoidWaitU(pUVM, idCpu, (PFNRT)IEMTlbInvalidateAll, 1, pVCpu);
+        VMR3ReqPriorityCallVoidWaitU(pUVM, idCpu, (PFNRT)IEMTlbInvalidateAllGlobal, 1, pVCpu);
         return VINF_SUCCESS;
     }
     RT_NOREF(paArgs, cArgs);
