@@ -91,12 +91,6 @@ static DECLCALLBACK(void) drvIfTrace_Destruct(PPDMDRVINS pDrvIns)
         RTTraceLogWrDestroy(pThis->hTraceLog);
         pThis->hTraceLog = NIL_RTTRACELOGWR;
     }
-
-    if (pThis->pszTraceFilePath)
-    {
-        PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszTraceFilePath);
-        pThis->pszTraceFilePath = NULL;
-    }
 }
 
 
@@ -125,14 +119,50 @@ static DECLCALLBACK(int) drvIfTrace_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Validate and read config.
      */
-    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "TraceFilePath|", "");
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "TraceFilePath|TraceLocation", "");
 
-    int rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "TraceFilePath", &pThis->pszTraceFilePath);
-    AssertLogRelRCReturn(rc, rc);
+    char *pszLocation = NULL;
+    int rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "TraceFilePath", &pszLocation);
+    if (RT_SUCCESS(rc))
+    {
+        /* Try to create a file based trace log. */
+        rc = RTTraceLogWrCreateFile(&pThis->hTraceLog, RTBldCfgVersion(), pszLocation);
+        PDMDrvHlpMMHeapFree(pDrvIns, pszLocation);
 
-    /* Try to create a file based trace log. */
-    rc = RTTraceLogWrCreateFile(&pThis->hTraceLog, RTBldCfgVersion(), pThis->pszTraceFilePath);
-    AssertLogRelRCReturn(rc, rc);
+        AssertLogRelRCReturn(rc, rc);
+    }
+    else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        /* Try to connect to an external server. */
+        rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "TraceLocation", &pszLocation);
+        if (RT_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("Configuration error: querying \"TraceLocation\" resulted in %Rrc"), rc);
+
+        char *pszPort = strchr(pszLocation, ':');
+        if (!pszPort)
+            return PDMDrvHlpVMSetError(pDrvIns, VERR_NOT_FOUND, RT_SRC_POS,
+                                       N_("IfTrace#%d: The location misses the port to connect to"),
+                                       pDrvIns->iInstance);
+
+        *pszPort = '\0'; /* Overwrite temporarily to avoid copying the hostname into a temporary buffer. */
+        uint32_t uPort = 0;
+        rc = RTStrToUInt32Ex(pszPort + 1, NULL, 10, &uPort);
+        if (RT_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("IfTrace#%d: The port part of the location is not a numerical value"),
+                                       pDrvIns->iInstance);
+
+        rc = RTTraceLogWrCreateTcpClient(&pThis->hTraceLog, RTBldCfgVersion(), pszLocation, uPort);
+        *pszPort = ':'; /* Restore delimiter before checking the status. */
+        if (RT_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("IfTrace#%d: Failed to connect to socket %s"),
+                                       pDrvIns->iInstance, pszLocation);
+
+        PDMDrvHlpMMHeapFree(pDrvIns, pszLocation);
+    }
+
 
     /*
      * Query interfaces from the driver/device above us.

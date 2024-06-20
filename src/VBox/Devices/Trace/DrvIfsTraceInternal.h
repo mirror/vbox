@@ -68,8 +68,6 @@ typedef struct DRVIFTRACE
     PPDMDRVINS           pDrvIns;
     /** The trace log writer handle. */
     RTTRACELOGWR         hTraceLog;
-    /** Path of the trace log file. */
-    char                 *pszTraceFilePath;
 
 } DRVIFTRACE;
 /** Pointer to a interface tracing driver instance. */
