@@ -4198,9 +4198,13 @@ DECLINLINE(uint16_t) iemFpuCompressFtw(uint16_t u16FullFtw) RT_NOEXCEPT
  */
 DECLINLINE(bool) iemMemAreAlignmentChecksEnabled(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
+#if 0
     AssertCompile(X86_CR0_AM == X86_EFL_AC);
     return IEM_GET_CPL(pVCpu) == 3
         && (((uint32_t)pVCpu->cpum.GstCtx.cr0 & pVCpu->cpum.GstCtx.eflags.u) & X86_CR0_AM);
+#else
+    return RT_BOOL(pVCpu->iem.s.fExec & IEM_F_X86_AC);
+#endif
 }
 
 /**
@@ -4561,18 +4565,13 @@ DECLINLINE(void) iemMemRollbackAndUnmapWo(PVMCPUCC pVCpu, uint8_t bMapInfo) RT_N
  * Used to check if an unaligned access is if within the page and won't
  * trigger an \#AC.
  *
- * This can be used to deal with misaligned accesses on platforms that are
+ * This can also be used to deal with misaligned accesses on platforms that are
  * senstive to such if desires.
  */
-AssertCompile(X86_CR0_AM == X86_EFL_AC);
-AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #if 1
 # define TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(a_pVCpu, a_GCPtrEff, a_TmplMemType) \
     (   ((a_GCPtrEff) & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(a_TmplMemType) \
-     && !(  (uint32_t)(a_pVCpu)->cpum.GstCtx.cr0 \
-          & (a_pVCpu)->cpum.GstCtx.eflags.u \
-          & ((IEM_GET_CPL((a_pVCpu)) + 1U) << 16) /* IEM_GET_CPL(a_pVCpu) == 3 ? X86_CR0_AM : 0 */ \
-          & X86_CR0_AM) )
+     && !((a_pVCpu)->iem.s.fExec & IEM_F_X86_AC) )
 #else
 # define TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(a_pVCpu, a_GCPtrEff, a_TmplMemType) 0
 #endif
