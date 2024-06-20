@@ -86,7 +86,8 @@ void QILineEdit::setMarkable(bool fMarkable)
 
     /* Save new value, show/hide label accordingly: */
     m_fMarkable = fMarkable;
-    update();
+    if (m_pLabelIcon)
+        m_pLabelIcon->setVisible(fMarkable);
 }
 
 void QILineEdit::mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage)
@@ -166,6 +167,8 @@ void QILineEdit::prepare()
 
     /* Prepare icon label: */
     m_pLabelIcon = new QLabel(this);
+    if (m_pLabelIcon)
+        m_pLabelIcon->hide();
 }
 
 QSize QILineEdit::fitTextWidth(const QString &strText) const
