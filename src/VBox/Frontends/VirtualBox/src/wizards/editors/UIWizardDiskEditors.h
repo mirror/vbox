@@ -32,12 +32,10 @@
 #endif
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QIcon>
 #include <QGroupBox>
 #include <QVector>
-
-/* Local includes: */
-#include "QIComboBox.h"
 
 /* Forward declarations: */
 class CMediumFormat;
@@ -224,7 +222,7 @@ private:
     QVBoxLayout *m_pMainLayout;
 };
 
-class SHARED_LIBRARY_STUFF UIDiskFormatsComboBox : public QIComboBox, public UIDiskFormatBase
+class SHARED_LIBRARY_STUFF UIDiskFormatsComboBox : public QComboBox, public UIDiskFormatBase
 {
     Q_OBJECT;
 

@@ -31,6 +31,7 @@
 #include <QCheckBox>
 #include <QDir>
 #include <QFileInfo>
+#include <QGridLayout>
 #include <QLabel>
 #include <QRadioButton>
 #include <QVBoxLayout>
@@ -196,15 +197,16 @@ UIDiskVariantWidget::UIDiskVariantWidget(QWidget *pParent /* = 0 */)
 
 void UIDiskVariantWidget::prepare()
 {
-    QVBoxLayout *pVariantLayout = new QVBoxLayout(this);
+    QGridLayout *pVariantLayout = new QGridLayout(this);
     AssertReturnVoid(pVariantLayout);
+    pVariantLayout->setContentsMargins(0, 0, 0, 0);
+    pVariantLayout->setRowStretch(2, 1);
     m_pFixedCheckBox = new QCheckBox;
     m_pSplitBox = new QCheckBox;
     connect(m_pFixedCheckBox, &QCheckBox::toggled, this, &UIDiskVariantWidget::sltVariantChanged);
     connect(m_pSplitBox, &QCheckBox::toggled, this, &UIDiskVariantWidget::sltVariantChanged);
-    pVariantLayout->addWidget(m_pFixedCheckBox);
-    pVariantLayout->addWidget(m_pSplitBox);
-    pVariantLayout->addStretch();
+    pVariantLayout->addWidget(m_pFixedCheckBox, 0, 0);
+    pVariantLayout->addWidget(m_pSplitBox, 1, 0);
     sltRetranslateUI();
     connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
             this, &UIDiskVariantWidget::sltRetranslateUI);
@@ -604,6 +606,7 @@ void UIDiskFormatsGroupBox::setMediumFormat(const CMediumFormat &mediumFormat)
 void UIDiskFormatsGroupBox::prepare()
 {
     m_pMainLayout = new QVBoxLayout(this);
+    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
     populateFormats();
     createFormatWidgets();
     sltRetranslateUI();
@@ -660,7 +663,7 @@ void UIDiskFormatsGroupBox::createFormatWidgets()
 *********************************************************************************************************************************/
 
 UIDiskFormatsComboBox::UIDiskFormatsComboBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent /* = 0 */)
-    : QIComboBox(pParent)
+    : QComboBox(pParent)
     , UIDiskFormatBase(enmDeviceType, fExpertMode)
 {
     prepare();
@@ -674,7 +677,7 @@ void UIDiskFormatsComboBox::prepare()
         addItem(format.m_comFormat.GetName());
     }
 
-    connect(this, &QIComboBox::currentIndexChanged,
+    connect(this, &QComboBox::currentIndexChanged,
             this, &UIDiskFormatsComboBox::sigMediumFormatChanged);
 
     sltRetranslateUI();

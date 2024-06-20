@@ -26,8 +26,10 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QDir>
 #include <QGridLayout>
+#include <QStyle>
 
 /* GUI includes: */
 #include "UIWizardDiskEditors.h"
@@ -62,9 +64,16 @@ void UIWizardNewVDExpertPage::prepare()
     m_pVariantWidget = new UIDiskVariantWidget(0);
 
     m_pFormatVariantGroupBox = new QGroupBox;
-    QHBoxLayout *pFormatVariantLayout = new QHBoxLayout(m_pFormatVariantGroupBox);
-    pFormatVariantLayout->addWidget(m_pFormatComboBox, 0, Qt::AlignTop);
-    pFormatVariantLayout->addWidget(m_pVariantWidget);
+    QGridLayout *pFormatVariantLayout = new QGridLayout(m_pFormatVariantGroupBox);
+#ifdef VBOX_WS_MAC
+    pFormatVariantLayout->setSpacing(2 * 5);
+#else
+    pFormatVariantLayout->setSpacing(2 * qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing));
+#endif
+    pFormatVariantLayout->setRowStretch(2, 1);
+    pFormatVariantLayout->setColumnStretch(0, 1);
+    pFormatVariantLayout->addWidget(m_pFormatComboBox, 0, 0);
+    pFormatVariantLayout->addWidget(m_pVariantWidget, 0, 1, 2, 1);
 
     pMainLayout->addWidget(m_pSizeAndPathGroup);
     pMainLayout->addWidget(m_pFormatVariantGroupBox);
