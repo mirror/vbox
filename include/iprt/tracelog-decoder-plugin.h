@@ -88,7 +88,10 @@ typedef const RTTRACELOGDECODERSTRUCTBLDENUM *PCRTTRACELOGDECODERSTRUCTBLDENUM;
     { a_enmVal, #a_enmVal, a_uPtrUser }
 /** Initializes a enum entry, extended version. */
 #define RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT(a_enmVal) \
-    RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_INIT_EX(a_enmVal, 0)
+    { a_enmVal, #a_enmVal, 0 }
+/** Terminates an enum value to descriptor table. */
+#define RT_TRACELOG_DECODER_STRUCT_BLD_ENUM_TERM \
+    { 0, NULL, 0 }
 
 
 /**

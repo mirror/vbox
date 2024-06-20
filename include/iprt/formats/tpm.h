@@ -475,7 +475,6 @@ typedef const TPMREQGETCAPABILITY *PCTPMREQGETCAPABILITY;
 #define TPM2_CAP_PP_COMMANDS                UINT32_C(0x00000003)
 #define TPM2_CAP_AUDIT_COMMANDS             UINT32_C(0x00000004)
 #define TPM2_CAP_PCRS                       UINT32_C(0x00000005)
-#define TPM2_CAP_ALGS                       UINT32_C(0x00000000)
 /** Return a TPM related property. */
 #define TPM2_CAP_TPM_PROPERTIES             UINT32_C(0x00000006)
 #define TPM2_CAP_PCR_PROPERTIES             UINT32_C(0x00000007)
