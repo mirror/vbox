@@ -57,7 +57,48 @@
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverviewAccessibleRowLocal definition.                                                                       *
+*   UIActivityOverviewAccessibleRow definition.                                                                       *
+*********************************************************************************************************************************/
+
+class UIActivityOverviewAccessibleRow : public QITableViewRow
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIActivityOverviewAccessibleRow(QITableView *pTableView, const QUuid &uMachineId,
+                                    const QString &strMachineName);
+
+    const QUuid &machineId() const;
+
+    virtual void setMachineState(int iState) = 0;
+    virtual bool isRunning() const = 0;
+    virtual bool isCloudVM() const = 0;
+
+    virtual ~UIActivityOverviewAccessibleRow();
+    virtual int childCount() const RT_OVERRIDE RT_FINAL;
+
+    virtual QITableViewCell *childItem(int iIndex) const RT_OVERRIDE RT_FINAL;
+    int columnLength(int iColumnIndex) const;
+    QString cellText(int iColumn) const;
+    virtual QString machineStateString() const = 0;
+
+protected:
+    void updateCellText(int /*VMActivityOverviewColumn*/ iColumnIndex, const QString &strText);
+    QUuid m_uMachineId;
+    /* Key is VMActivityOverviewColumn enum item. */
+    QMap<int, UIActivityOverviewAccessibleCell*> m_cells;
+
+    QString m_strMachineName;
+    quint64  m_uTotalRAM;
+private:
+
+    void initCells();
+};
+
+/*********************************************************************************************************************************
+* UIActivityOverviewAccessibleRowLocal definition.                                                                       *
 *********************************************************************************************************************************/
 
 class UIActivityOverviewAccessibleRowLocal : public UIActivityOverviewAccessibleRow
@@ -104,7 +145,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverviewAccessibleRowCloud definition.                                                                       *
+* UIActivityOverviewAccessibleRowCloud definition.                                                                       *
 *********************************************************************************************************************************/
 
 /* A UIActivityOverviewItem derivation to show cloud vms in the table view: */
@@ -142,7 +183,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverviewAccessibleRowLocal implementation.                                                                   *
+* UIActivityOverviewAccessibleRowLocal implementation.                                                                   *
 *********************************************************************************************************************************/
 
 UIActivityOverviewAccessibleRowLocal::UIActivityOverviewAccessibleRowLocal(QITableView *pTableView, const QUuid &uMachineId,
@@ -297,7 +338,7 @@ QString UIActivityOverviewAccessibleRowLocal::machineStateString() const
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverviewAccessibleRowCloud implementation.                                                                   *
+*   UIActivityOverviewAccessibleRowCloud implementation.                                                                   *
 *********************************************************************************************************************************/
 
 UIActivityOverviewAccessibleRowCloud::UIActivityOverviewAccessibleRowCloud(QITableView *pTableView, const QUuid &uMachineId,
@@ -1001,6 +1042,32 @@ bool UIActivityOverviewAccessibleProxyModel::filterAcceptsRow(int iSourceRow, co
     if (!m_fShowCloudVMs && pModel->isCloudVM(iSourceRow))
         return false;
     return true;
+}
+
+bool UIActivityOverviewAccessibleProxyModel::lessThan(const QModelIndex &sourceLeftIndex, const QModelIndex &sourceRightIndex) const
+{
+    UIActivityOverviewAccessibleModel *pModel = qobject_cast<UIActivityOverviewAccessibleModel*>(sourceModel());
+    if (pModel)
+    {
+        /* Keep running vm always on top of the list: */
+        bool fLeftRunning = pModel->isVMRunning(sourceLeftIndex.row());
+        bool fRightRunning = pModel->isVMRunning(sourceRightIndex.row());
+        if (fLeftRunning && !fRightRunning)
+        {
+            if (sortOrder() == Qt::AscendingOrder)
+                return true;
+            else
+                return false;
+        }
+        if (!fLeftRunning && fRightRunning)
+        {
+            if (sortOrder() == Qt::AscendingOrder)
+                return false;
+            else
+                return true;
+        }
+    }
+    return QSortFilterProxyModel::lessThan(sourceLeftIndex, sourceRightIndex);
 }
 
 

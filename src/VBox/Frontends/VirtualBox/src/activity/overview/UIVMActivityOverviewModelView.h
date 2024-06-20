@@ -116,8 +116,8 @@ public:
 
 protected:
 
-    // virtual bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const RT_OVERRIDE;
-    bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const RT_OVERRIDE RT_FINAL;
+    virtual bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const RT_OVERRIDE;
+    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -145,44 +145,6 @@ private:
     QString m_strText;
 };
 
-class UIActivityOverviewAccessibleRow : public QITableViewRow
-{
-
-    Q_OBJECT;
-
-public:
-
-    UIActivityOverviewAccessibleRow(QITableView *pTableView, const QUuid &uMachineId,
-                                    const QString &strMachineName);
-
-    const QUuid &machineId() const;
-
-    virtual void setMachineState(int iState) = 0;
-    virtual bool isRunning() const = 0;
-    virtual bool isCloudVM() const = 0;
-
-    virtual ~UIActivityOverviewAccessibleRow();
-    virtual int childCount() const RT_OVERRIDE RT_FINAL;
-
-    virtual QITableViewCell *childItem(int iIndex) const RT_OVERRIDE RT_FINAL;
-    int columnLength(int iColumnIndex) const;
-    QString cellText(int iColumn) const;
-    virtual QString machineStateString() const = 0;
-
-protected:
-    void updateCellText(int /*VMActivityOverviewColumn*/ iColumnIndex, const QString &strText);
-    QUuid m_uMachineId;
-    /* Key is VMActivityOverviewColumn enum item. */
-    QMap<int, UIActivityOverviewAccessibleCell*> m_cells;
-
-    QString m_strMachineName;
-    quint64  m_uTotalRAM;
-private:
-
-    void initCells();
-
-
-};
 
 
 
