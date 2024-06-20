@@ -139,8 +139,7 @@ bool QILineEdit::event(QEvent *pEvent)
         case QEvent::Resize:
         {
             /* Update label position on each move/resize: */
-            if (m_fMarkable)
-                moveIconLabel();
+            moveIconLabel();
             break;
         }
         default:
