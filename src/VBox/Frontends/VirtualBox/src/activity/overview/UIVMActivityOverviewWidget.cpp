@@ -161,21 +161,21 @@ private:
 
 
 /*********************************************************************************************************************************
- *   Class UIActivityOverviewItem definition.                                                                           *
+ *   Class UIVMActivityOverviewItem definition.                                                                           *
  *********************************************************************************************************************************/
-/** Each instance of UIActivityOverviewItem corresponds to a vm. they are owned my the model. */
-class UIActivityOverviewItem : public QObject
+/** Each instance of UIVMActivityOverviewItem corresponds to a vm. they are owned my the model. */
+class UIVMActivityOverviewItem : public QObject
 {
 
     Q_OBJECT;
 
 public:
 
-    UIActivityOverviewItem(QObject *pParent, const QUuid &uid, const QString &strVMName);
+    UIVMActivityOverviewItem(QObject *pParent, const QUuid &uid, const QString &strVMName);
 
-    UIActivityOverviewItem();
-    virtual ~UIActivityOverviewItem();
-    bool operator==(const UIActivityOverviewItem& other) const;
+    UIVMActivityOverviewItem();
+    virtual ~UIVMActivityOverviewItem();
+    bool operator==(const UIVMActivityOverviewItem& other) const;
     int columnLength(int iColumnIndex) const;
     const QUuid &machineId() const;
 
@@ -201,20 +201,20 @@ protected:
     QMap<int, QString> m_columnData;
 };
 
-Q_DECLARE_METATYPE(UIActivityOverviewItem);
+Q_DECLARE_METATYPE(UIVMActivityOverviewItem);
 
 /*********************************************************************************************************************************
- *   Class UIActivityOverviewItemLocal definition.                                                                           *
+ *   Class UIVMActivityOverviewItemLocal definition.                                                                           *
  *********************************************************************************************************************************/
-/* A UIActivityOverviewItem derivation to show local vms in the table view: */
-class UIActivityOverviewItemLocal : public UIActivityOverviewItem
+/* A UIVMActivityOverviewItem derivation to show local vms in the table view: */
+class UIVMActivityOverviewItemLocal : public UIVMActivityOverviewItem
 {
     Q_OBJECT;
 public:
 
-    UIActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName);
-    UIActivityOverviewItemLocal();
-    ~UIActivityOverviewItemLocal();
+    UIVMActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName);
+    UIVMActivityOverviewItemLocal();
+    ~UIVMActivityOverviewItemLocal();
 
     bool isWithGuestAdditions();
     void resetDebugger();
@@ -239,18 +239,18 @@ private:
 };
 
 /*********************************************************************************************************************************
- *   Class UIActivityOverviewItemCloud definition.                                                                           *
+ *   Class UIVMActivityOverviewItemCloud definition.                                                                           *
  *********************************************************************************************************************************/
-/* A UIActivityOverviewItem derivation to show cloud vms in the table view: */
-class UIActivityOverviewItemCloud : public UIActivityOverviewItem
+/* A UIVMActivityOverviewItem derivation to show cloud vms in the table view: */
+class UIVMActivityOverviewItemCloud : public UIVMActivityOverviewItem
 {
     Q_OBJECT;
 public:
 
-    UIActivityOverviewItemCloud(QObject *pParent, const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine);
+    UIVMActivityOverviewItemCloud(QObject *pParent, const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine);
 
-    UIActivityOverviewItemCloud();
-    ~UIActivityOverviewItemCloud();
+    UIVMActivityOverviewItemCloud();
+    ~UIVMActivityOverviewItemCloud();
     void updateMachineState();
     virtual bool isRunning() const RT_OVERRIDE;
     virtual bool isCloudVM() const RT_OVERRIDE;
@@ -597,9 +597,9 @@ void UIVMActivityOverviewHostStatsWidget::updateLabels()
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverviewItem implementation.                                                                                 *
+*   Class UIVMActivityOverviewItem implementation.                                                                                 *
 *********************************************************************************************************************************/
-UIActivityOverviewItem::UIActivityOverviewItem(QObject *pParent, const QUuid &uid, const QString &strVMName)
+UIVMActivityOverviewItem::UIVMActivityOverviewItem(QObject *pParent, const QUuid &uid, const QString &strVMName)
     : QObject(pParent)
     , m_uTotalRAM(0)
     , m_uFreeRAM(0)
@@ -611,7 +611,7 @@ UIActivityOverviewItem::UIActivityOverviewItem(QObject *pParent, const QUuid &ui
     m_columnData[VMActivityOverviewColumn_Name] = m_strVMName;
 }
 
-UIActivityOverviewItem::UIActivityOverviewItem()
+UIVMActivityOverviewItem::UIVMActivityOverviewItem()
     : QObject()
     , m_uTotalRAM(0)
     , m_uFreeRAM(0)
@@ -621,28 +621,28 @@ UIActivityOverviewItem::UIActivityOverviewItem()
 {
 }
 
-UIActivityOverviewItem::~UIActivityOverviewItem()
+UIVMActivityOverviewItem::~UIVMActivityOverviewItem()
 {
 }
 
-bool UIActivityOverviewItem::operator==(const UIActivityOverviewItem& other) const
+bool UIVMActivityOverviewItem::operator==(const UIVMActivityOverviewItem& other) const
 {
     if (m_VMuid == other.m_VMuid)
         return true;
     return false;
 }
 
-QString UIActivityOverviewItem::columnData(int iColumnIndex) const
+QString UIVMActivityOverviewItem::columnData(int iColumnIndex) const
 {
     return m_columnData.value(iColumnIndex, QString());
 }
 
-int UIActivityOverviewItem::columnLength(int iColumnIndex) const
+int UIVMActivityOverviewItem::columnLength(int iColumnIndex) const
 {
     return m_columnData.value(iColumnIndex, QString()).length();
 }
 
-const QUuid &UIActivityOverviewItem::machineId() const
+const QUuid &UIVMActivityOverviewItem::machineId() const
 {
     return m_VMuid;
 }
@@ -665,55 +665,55 @@ UIVMActivityOverviewHostStats::UIVMActivityOverviewHostStats()
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverviewItemCloud implementation.                                                                            *
+*   Class UIVMActivityOverviewItemCloud implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIActivityOverviewItemCloud::UIActivityOverviewItemCloud(QObject *pParent, const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine)
-    : UIActivityOverviewItem(pParent, uid, strVMName)
+UIVMActivityOverviewItemCloud::UIVMActivityOverviewItemCloud(QObject *pParent, const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine)
+    : UIVMActivityOverviewItem(pParent, uid, strVMName)
     , m_comCloudMachine(comCloudMachine)
 {
     updateMachineState();
     m_pTimer = new QTimer(this);
     if (m_pTimer)
     {
-        connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewItemCloud::sltTimeout);
+        connect(m_pTimer, &QTimer::timeout, this, &UIVMActivityOverviewItemCloud::sltTimeout);
         m_pTimer->setInterval(60 * 1000);
     }
     resetColumData();
 }
 
-UIActivityOverviewItemCloud::UIActivityOverviewItemCloud()
+UIVMActivityOverviewItemCloud::UIVMActivityOverviewItemCloud()
 {
 }
 
-UIActivityOverviewItemCloud::~UIActivityOverviewItemCloud()
+UIVMActivityOverviewItemCloud::~UIVMActivityOverviewItemCloud()
 {
 }
 
-void UIActivityOverviewItemCloud::updateMachineState()
+void UIVMActivityOverviewItemCloud::updateMachineState()
 {
     if (m_comCloudMachine.isOk())
         setMachineState(m_comCloudMachine.GetState());
 }
 
-bool UIActivityOverviewItemCloud::isRunning() const
+bool UIVMActivityOverviewItemCloud::isRunning() const
 {
     return m_enmMachineState == KCloudMachineState_Running;
 }
 
-bool UIActivityOverviewItemCloud::isCloudVM() const
+bool UIVMActivityOverviewItemCloud::isCloudVM() const
 {
     return true;
 }
 
-QString UIActivityOverviewItemCloud::machineStateString() const
+QString UIVMActivityOverviewItemCloud::machineStateString() const
 {
     if (!m_comCloudMachine.isOk())
         return QString();
     return gpConverter->toString(m_comCloudMachine.GetState());
 }
 
-void UIActivityOverviewItemCloud::sltTimeout()
+void UIVMActivityOverviewItemCloud::sltTimeout()
 {
     int iDataSize = 1;
     foreach (const KMetricType &enmMetricType, m_availableMetricTypes)
@@ -721,12 +721,12 @@ void UIActivityOverviewItemCloud::sltTimeout()
         UIProgressTaskReadCloudMachineMetricData *pTask = new UIProgressTaskReadCloudMachineMetricData(this, m_comCloudMachine,
                                                                                                        enmMetricType, iDataSize);
         connect(pTask, &UIProgressTaskReadCloudMachineMetricData::sigMetricDataReceived,
-                this, &UIActivityOverviewItemCloud::sltMetricDataReceived);
+                this, &UIVMActivityOverviewItemCloud::sltMetricDataReceived);
         pTask->start();
     }
 }
 
-void UIActivityOverviewItemCloud::sltMetricDataReceived(KMetricType enmMetricType,
+void UIVMActivityOverviewItemCloud::sltMetricDataReceived(KMetricType enmMetricType,
                                                         const QVector<QString> &data, const QVector<QString> &timeStamps)
 {
     Q_UNUSED(timeStamps);
@@ -776,7 +776,7 @@ void UIActivityOverviewItemCloud::sltMetricDataReceived(KMetricType enmMetricTyp
     sender()->deleteLater();
 }
 
-void UIActivityOverviewItemCloud::setMachineState(int iState)
+void UIVMActivityOverviewItemCloud::setMachineState(int iState)
 {
     if (iState <= KCloudMachineState_Invalid || iState >= KCloudMachineState_Max)
         return;
@@ -797,14 +797,14 @@ void UIActivityOverviewItemCloud::setMachineState(int iState)
     }
 }
 
-void UIActivityOverviewItemCloud::resetColumData()
+void UIVMActivityOverviewItemCloud::resetColumData()
 {
     for (int i = (int) VMActivityOverviewColumn_CPUGuestLoad;
          i < (int)VMActivityOverviewColumn_Max; ++i)
         m_columnData[i] = UIVMActivityOverviewWidget::tr("N/A");
 }
 
-void UIActivityOverviewItemCloud::getMetricList()
+void UIVMActivityOverviewItemCloud::getMetricList()
 {
     if (!isRunning())
         return;
@@ -812,11 +812,11 @@ void UIActivityOverviewItemCloud::getMetricList()
         new UIProgressTaskReadCloudMachineMetricList(this, m_comCloudMachine);
     AssertPtrReturnVoid(pReadListProgressTask);
     connect(pReadListProgressTask, &UIProgressTaskReadCloudMachineMetricList::sigMetricListReceived,
-            this, &UIActivityOverviewItemCloud::sltMetricNameListingComplete);
+            this, &UIVMActivityOverviewItemCloud::sltMetricNameListingComplete);
     pReadListProgressTask->start();
 }
 
-void UIActivityOverviewItemCloud::sltMetricNameListingComplete(QVector<QString> metricNameList)
+void UIVMActivityOverviewItemCloud::sltMetricNameListingComplete(QVector<QString> metricNameList)
 {
     AssertReturnVoid(m_pTimer);
     m_availableMetricTypes.clear();
@@ -842,10 +842,10 @@ void UIActivityOverviewItemCloud::sltMetricNameListingComplete(QVector<QString> 
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverviewItemLocal implementation.                                                                            *
+*   Class UIVMActivityOverviewItemLocal implementation.                                                                            *
 *********************************************************************************************************************************/
-UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName)
-    : UIActivityOverviewItem(pParent, uid, strVMName)
+UIVMActivityOverviewItemLocal::UIVMActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName)
+    : UIVMActivityOverviewItem(pParent, uid, strVMName)
     , m_enmMachineState(KMachineState_Null)
     , m_uVMExitTotal(0)
     , m_uDiskWriteTotal(0)
@@ -857,7 +857,7 @@ UIActivityOverviewItemLocal::UIActivityOverviewItemLocal(QObject *pParent, const
         resetDebugger();
 }
 
-UIActivityOverviewItemLocal::UIActivityOverviewItemLocal()
+UIVMActivityOverviewItemLocal::UIVMActivityOverviewItemLocal()
     : m_enmMachineState(KMachineState_Null)
     , m_uVMExitTotal(0)
     , m_uDiskWriteTotal(0)
@@ -867,20 +867,20 @@ UIActivityOverviewItemLocal::UIActivityOverviewItemLocal()
 {
 }
 
-UIActivityOverviewItemLocal::~UIActivityOverviewItemLocal()
+UIVMActivityOverviewItemLocal::~UIVMActivityOverviewItemLocal()
 {
     if (!m_comSession.isNull())
         m_comSession.UnlockMachine();
 }
 
-bool UIActivityOverviewItemLocal::isWithGuestAdditions()
+bool UIVMActivityOverviewItemLocal::isWithGuestAdditions()
 {
     if (m_comGuest.isNull())
         return false;
     return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
 }
 
-void UIActivityOverviewItemLocal::resetDebugger()
+void UIVMActivityOverviewItemLocal::resetDebugger()
 {
     m_comSession = uiCommon().openSession(m_VMuid, KLockType_Shared);
     if (!m_comSession.isNull())
@@ -894,17 +894,17 @@ void UIActivityOverviewItemLocal::resetDebugger()
     }
 }
 
-bool UIActivityOverviewItemLocal::isRunning() const
+bool UIVMActivityOverviewItemLocal::isRunning() const
 {
     return m_enmMachineState == KMachineState_Running;
 }
 
-bool UIActivityOverviewItemLocal::isCloudVM() const
+bool UIVMActivityOverviewItemLocal::isCloudVM() const
 {
     return false;
 }
 
-void UIActivityOverviewItemLocal::setMachineState(int iState)
+void UIVMActivityOverviewItemLocal::setMachineState(int iState)
 {
     if (iState <= KMachineState_Null || iState >= KMachineState_Max)
         return;
@@ -916,7 +916,7 @@ void UIActivityOverviewItemLocal::setMachineState(int iState)
         resetDebugger();
 }
 
-void UIActivityOverviewItemLocal::updateColumnData()
+void UIVMActivityOverviewItemLocal::updateColumnData()
 {
     AssertReturnVoid(m_comDebugger.isOk());
 
@@ -987,7 +987,7 @@ void UIActivityOverviewItemLocal::updateColumnData()
         arg(UITranslator::addMetricSuffixToNumber(m_uVMExitTotal));
 }
 
-QString UIActivityOverviewItemLocal::machineStateString() const
+QString UIVMActivityOverviewItemLocal::machineStateString() const
 {
     return gpConverter->toString(m_enmMachineState);
 }
@@ -1004,9 +1004,9 @@ UIVMActivityOverviewWidget::UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIA
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
     , m_pToolBar(0)
-    , m_pAccessibleTableView(0)
-    , m_pAccessibleProxyModel(0)
-    , m_pAccessibleModel(0)
+    , m_pTableView(0)
+    , m_pProxyModel(0)
+    , m_pModel(0)
     , m_pColumnVisibilityToggleMenu(0)
     , m_pHostStatsWidget(0)
     , m_fIsCurrentTool(true)
@@ -1035,14 +1035,14 @@ bool UIVMActivityOverviewWidget::isCurrentTool() const
 void UIVMActivityOverviewWidget::setIsCurrentTool(bool fIsCurrentTool)
 {
     m_fIsCurrentTool = fIsCurrentTool;
-    if (m_pAccessibleModel)
-        m_pAccessibleModel->setShouldUpdate(fIsCurrentTool);
+    if (m_pModel)
+        m_pModel->setShouldUpdate(fIsCurrentTool);
 }
 
 void UIVMActivityOverviewWidget::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
 {
-    if (m_pAccessibleModel)
-        m_pAccessibleModel->setCloudMachineItems(cloudItems);
+    if (m_pModel)
+        m_pModel->setCloudMachineItems(cloudItems);
 }
 
 void UIVMActivityOverviewWidget::sltRetranslateUI()
@@ -1064,16 +1064,16 @@ void UIVMActivityOverviewWidget::sltRetranslateUI()
 
     updateColumnsMenu();
 
-    if (m_pAccessibleModel)
-        m_pAccessibleModel->setColumnCaptions(m_columnTitles);
+    if (m_pModel)
+        m_pModel->setColumnCaptions(m_columnTitles);
 
     computeMinimumColumnWidths();
 }
 
 void UIVMActivityOverviewWidget::showEvent(QShowEvent *pEvent)
 {
-    if (m_pVMActivityMonitorAction && m_pAccessibleTableView)
-        m_pVMActivityMonitorAction->setEnabled(m_pAccessibleTableView->hasSelection());
+    if (m_pVMActivityMonitorAction && m_pTableView)
+        m_pVMActivityMonitorAction->setEnabled(m_pTableView->hasSelection());
 
     QWidget::showEvent(pEvent);
 }
@@ -1126,40 +1126,40 @@ void UIVMActivityOverviewWidget::prepareWidgets()
     if (m_pHostStatsWidget)
         layout()->addWidget(m_pHostStatsWidget);
 
-    m_pAccessibleProxyModel = new UIActivityOverviewAccessibleProxyModel(this);
-    m_pAccessibleTableView = new UIVMActivityOverviewAccessibleTableView(this);
-    m_pAccessibleModel = new UIActivityOverviewAccessibleModel(this, m_pAccessibleTableView);
-    m_pAccessibleProxyModel->setSourceModel(m_pAccessibleModel);
-    m_pAccessibleProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
-    m_pAccessibleProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
-    m_pAccessibleTableView->setModel(m_pAccessibleProxyModel);
+    m_pProxyModel = new UIVMActivityOverviewProxyModel(this);
+    m_pTableView = new UIVMActivityOverviewTableView(this);
+    m_pModel = new UIVMActivityOverviewModel(this, m_pTableView);
+    m_pProxyModel->setSourceModel(m_pModel);
+    m_pProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
+    m_pProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+    m_pTableView->setModel(m_pProxyModel);
 
-    m_pAccessibleTableView->setItemDelegate(new UIVMActivityOverviewDelegate(this));
-    m_pAccessibleTableView->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_pAccessibleTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_pAccessibleTableView->setShowGrid(false);
-    m_pAccessibleTableView->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_pAccessibleTableView->horizontalHeader()->setHighlightSections(false);
-    m_pAccessibleTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
-    m_pAccessibleTableView->verticalHeader()->setVisible(false);
-    m_pAccessibleTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_pTableView->setItemDelegate(new UIVMActivityOverviewDelegate(this));
+    m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_pTableView->setShowGrid(false);
+    m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_pTableView->horizontalHeader()->setHighlightSections(false);
+    m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    m_pTableView->verticalHeader()->setVisible(false);
+    m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     /* Minimize the row height: */
-    m_pAccessibleTableView->verticalHeader()->setDefaultSectionSize(m_pAccessibleTableView->verticalHeader()->minimumSectionSize());
-    m_pAccessibleTableView->setAlternatingRowColors(true);
-    m_pAccessibleTableView->setSortingEnabled(true);
-    m_pAccessibleTableView->sortByColumn(0, Qt::AscendingOrder);
+    m_pTableView->verticalHeader()->setDefaultSectionSize(m_pTableView->verticalHeader()->minimumSectionSize());
+    m_pTableView->setAlternatingRowColors(true);
+    m_pTableView->setSortingEnabled(true);
+    m_pTableView->sortByColumn(0, Qt::AscendingOrder);
 
-    connect(m_pAccessibleTableView, &UIVMActivityOverviewAccessibleTableView::customContextMenuRequested,
+    connect(m_pTableView, &UIVMActivityOverviewTableView::customContextMenuRequested,
             this, &UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest);
-    connect(m_pAccessibleTableView, &UIVMActivityOverviewAccessibleTableView::sigSelectionChanged,
+    connect(m_pTableView, &UIVMActivityOverviewTableView::sigSelectionChanged,
             this, &UIVMActivityOverviewWidget::sltHandleTableSelectionChanged);
-    connect(m_pAccessibleModel, &UIActivityOverviewAccessibleModel::sigDataUpdate,
+    connect(m_pModel, &UIVMActivityOverviewModel::sigDataUpdate,
             this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
-    connect(m_pAccessibleModel, &UIActivityOverviewAccessibleModel::sigHostStatsUpdate,
+    connect(m_pModel, &UIVMActivityOverviewModel::sigHostStatsUpdate,
             this, &UIVMActivityOverviewWidget::sltHandleHostStatsUpdate);
 
     updateModelColumVisibilityCache();
-    layout()->addWidget(m_pAccessibleTableView);
+    layout()->addWidget(m_pTableView);
 }
 
 void UIVMActivityOverviewWidget::updateColumnsMenu()
@@ -1242,8 +1242,8 @@ void UIVMActivityOverviewWidget::sltSaveSettings()
 
 void UIVMActivityOverviewWidget::sltClearCOMData()
 {
-    if (m_pAccessibleModel)
-        m_pAccessibleModel->clearData();
+    if (m_pModel)
+        m_pModel->clearData();
 }
 
 void UIVMActivityOverviewWidget::sltToggleColumnSelectionMenu(bool fChecked)
@@ -1271,13 +1271,13 @@ void UIVMActivityOverviewWidget::sltHandleHostStatsUpdate(const UIVMActivityOver
 void UIVMActivityOverviewWidget::sltHandleDataUpdate()
 {
     computeMinimumColumnWidths();
-    if (m_pAccessibleProxyModel)
-        m_pAccessibleProxyModel->dataUpdate();
+    if (m_pProxyModel)
+        m_pProxyModel->dataUpdate();
 }
 
 void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &pos)
 {
-    if (!m_pAccessibleTableView)
+    if (!m_pTableView)
         return;
 
     QMenu menu;
@@ -1299,13 +1299,13 @@ void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &
     connect(pShowCloudVMsAction, &QAction::triggered,
             this, &UIVMActivityOverviewWidget::sltCloudVMVisibility);
 
-    menu.exec(m_pAccessibleTableView->mapToGlobal(pos));
+    menu.exec(m_pTableView->mapToGlobal(pos));
 }
 
 void UIVMActivityOverviewWidget::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
-    if (!m_pVMActivityMonitorAction || !m_pAccessibleModel || !m_pAccessibleProxyModel)
+    if (!m_pVMActivityMonitorAction || !m_pModel || !m_pProxyModel)
         return;
 
     if (selected.indexes().empty())
@@ -1313,8 +1313,8 @@ void UIVMActivityOverviewWidget::sltHandleTableSelectionChanged(const QItemSelec
         m_pVMActivityMonitorAction->setEnabled(false);
         return;
     }
-    int iMachineIndex = m_pAccessibleProxyModel->mapToSource(selected.indexes()[0]).row();
-    if (!m_pAccessibleModel->isVMRunning(iMachineIndex))
+    int iMachineIndex = m_pProxyModel->mapToSource(selected.indexes()[0]).row();
+    if (!m_pModel->isVMRunning(iMachineIndex))
     {
         m_pVMActivityMonitorAction->setEnabled(false);
         return;
@@ -1324,9 +1324,9 @@ void UIVMActivityOverviewWidget::sltHandleTableSelectionChanged(const QItemSelec
 
 void UIVMActivityOverviewWidget::sltHandleShowVMActivityMonitor()
 {
-    if (!m_pAccessibleTableView || !m_pAccessibleModel)
+    if (!m_pTableView || !m_pModel)
         return;
-    const QUuid uMachineId = m_pAccessibleModel->itemUid(m_pAccessibleTableView->selectedItemIndex());
+    const QUuid uMachineId = m_pModel->itemUid(m_pTableView->selectedItemIndex());
     if (uMachineId.isNull())
         return;
     emit sigSwitchToMachineActivityPane(uMachineId);
@@ -1335,15 +1335,15 @@ void UIVMActivityOverviewWidget::sltHandleShowVMActivityMonitor()
 void UIVMActivityOverviewWidget::sltNotRunningVMVisibility(bool fShow)
 {
     m_fShowNotRunningVMs = fShow;
-    if (m_pAccessibleProxyModel)
-        m_pAccessibleProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
+    if (m_pProxyModel)
+        m_pProxyModel->setNotRunningVMVisibility(m_fShowNotRunningVMs);
 }
 
 void UIVMActivityOverviewWidget::sltCloudVMVisibility(bool fShow)
 {
     m_fShowCloudVMs = fShow;
-    if (m_pAccessibleProxyModel)
-        m_pAccessibleProxyModel->setCloudVMVisibility(m_fShowCloudVMs);
+    if (m_pProxyModel)
+        m_pProxyModel->setCloudVMVisibility(m_fShowCloudVMs);
 }
 
 void UIVMActivityOverviewWidget::setColumnVisible(int iColumnId, bool fVisible)
@@ -1356,19 +1356,19 @@ void UIVMActivityOverviewWidget::setColumnVisible(int iColumnId, bool fVisible)
 
 void UIVMActivityOverviewWidget::updateModelColumVisibilityCache()
 {
-    if (m_pAccessibleModel)
-        m_pAccessibleModel->setColumnVisible(m_columnVisible);
+    if (m_pModel)
+        m_pModel->setColumnVisible(m_columnVisible);
     /* Notify the table view for the changed column visibility: */
-    if (m_pAccessibleTableView)
-        m_pAccessibleTableView->updateColumVisibility();
+    if (m_pTableView)
+        m_pTableView->updateColumVisibility();
 }
 
 void UIVMActivityOverviewWidget::computeMinimumColumnWidths()
 {
-    if (!m_pAccessibleTableView || !m_pAccessibleModel)
+    if (!m_pTableView || !m_pModel)
         return;
-    QFontMetrics fontMetrics(m_pAccessibleTableView->font());
-    const QMap<int, int> &columnDataStringLengths = m_pAccessibleModel->dataLengths();
+    QFontMetrics fontMetrics(m_pTableView->font());
+    const QMap<int, int> &columnDataStringLengths = m_pModel->dataLengths();
     QMap<int, int> columnWidthsInPixels;
     for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)
     {
@@ -1380,7 +1380,7 @@ void UIVMActivityOverviewWidget::computeMinimumColumnWidths()
                                 + QApplication::style()->pixelMetric(QStyle::PM_LayoutRightMargin)
                                 + m_iSortIndicatorWidth;
     }
-    m_pAccessibleTableView->setMinimumColumnWidths(columnWidthsInPixels);
+    m_pTableView->setMinimumColumnWidths(columnWidthsInPixels);
 }
 
 bool UIVMActivityOverviewWidget::columnVisible(int iColumnId) const

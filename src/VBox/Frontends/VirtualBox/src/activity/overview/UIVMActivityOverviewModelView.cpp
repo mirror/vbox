@@ -55,19 +55,42 @@
 #include "CSession.h"
 #include "KMetricType.h"
 
-
 /*********************************************************************************************************************************
-*   UIActivityOverviewAccessibleRow definition.                                                                       *
+*   UIVMActivityOverviewCell definition.                                                                       *
 *********************************************************************************************************************************/
 
-class UIActivityOverviewAccessibleRow : public QITableViewRow
+class UIVMActivityOverviewCell : public QITableViewCell
 {
 
     Q_OBJECT;
 
 public:
 
-    UIActivityOverviewAccessibleRow(QITableView *pTableView, const QUuid &uMachineId,
+    UIVMActivityOverviewCell(QITableViewRow *pRow, int iColumnIndex);
+    virtual QString text() const RT_OVERRIDE RT_FINAL;
+    int columnLength(int iColumnIndex) const;
+    void setText(const QString &strText);
+
+private:
+
+    /* VMActivityOverviewColumn enum: */
+    int m_iColumnIndex;
+    QString m_strText;
+};
+
+
+/*********************************************************************************************************************************
+*   UIVMActivityOverviewRow definition.                                                                       *
+*********************************************************************************************************************************/
+
+class UIVMActivityOverviewRow : public QITableViewRow
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIVMActivityOverviewRow(QITableView *pTableView, const QUuid &uMachineId,
                                     const QString &strMachineName);
 
     const QUuid &machineId() const;
@@ -76,7 +99,7 @@ public:
     virtual bool isRunning() const = 0;
     virtual bool isCloudVM() const = 0;
 
-    virtual ~UIActivityOverviewAccessibleRow();
+    virtual ~UIVMActivityOverviewRow();
     virtual int childCount() const RT_OVERRIDE RT_FINAL;
 
     virtual QITableViewCell *childItem(int iIndex) const RT_OVERRIDE RT_FINAL;
@@ -88,7 +111,7 @@ protected:
     void updateCellText(int /*VMActivityOverviewColumn*/ iColumnIndex, const QString &strText);
     QUuid m_uMachineId;
     /* Key is VMActivityOverviewColumn enum item. */
-    QMap<int, UIActivityOverviewAccessibleCell*> m_cells;
+    QMap<int, UIVMActivityOverviewCell*> m_cells;
 
     QString m_strMachineName;
     quint64  m_uTotalRAM;
@@ -98,19 +121,19 @@ private:
 };
 
 /*********************************************************************************************************************************
-* UIActivityOverviewAccessibleRowLocal definition.                                                                       *
+* UIVMActivityOverviewRowLocal definition.                                                                       *
 *********************************************************************************************************************************/
 
-class UIActivityOverviewAccessibleRowLocal : public UIActivityOverviewAccessibleRow
+class UIVMActivityOverviewRowLocal : public UIVMActivityOverviewRow
 {
 
     Q_OBJECT;
 
 public:
 
-    UIActivityOverviewAccessibleRowLocal(QITableView *pTableView, const QUuid &uMachineId,
+    UIVMActivityOverviewRowLocal(QITableView *pTableView, const QUuid &uMachineId,
                                          const QString &strMachineName, KMachineState enmMachineState);
-    ~UIActivityOverviewAccessibleRowLocal();
+    ~UIVMActivityOverviewRowLocal();
     virtual void setMachineState(int iState) RT_OVERRIDE RT_FINAL;
 
     virtual bool isRunning() const RT_OVERRIDE RT_FINAL;
@@ -145,15 +168,15 @@ private:
 
 
 /*********************************************************************************************************************************
-* UIActivityOverviewAccessibleRowCloud definition.                                                                       *
+* UIVMActivityOverviewRowCloud definition.                                                                       *
 *********************************************************************************************************************************/
 
-/* A UIActivityOverviewItem derivation to show cloud vms in the table view: */
-class UIActivityOverviewAccessibleRowCloud : public UIActivityOverviewAccessibleRow
+/* A UIVMActivityOverviewItem derivation to show cloud vms in the table view: */
+class UIVMActivityOverviewRowCloud : public UIVMActivityOverviewRow
 {
     Q_OBJECT;
 public:
-    UIActivityOverviewAccessibleRowCloud(QITableView *pTableView, const QUuid &uMachineId,
+    UIVMActivityOverviewRowCloud(QITableView *pTableView, const QUuid &uMachineId,
                                          const QString &strMachineName, CCloudMachine &comCloudMachine);
     void updateMachineState();
     virtual bool isRunning() const RT_OVERRIDE RT_FINAL;
@@ -183,12 +206,12 @@ private:
 
 
 /*********************************************************************************************************************************
-* UIActivityOverviewAccessibleRowLocal implementation.                                                                   *
+* UIVMActivityOverviewRowLocal implementation.                                                                   *
 *********************************************************************************************************************************/
 
-UIActivityOverviewAccessibleRowLocal::UIActivityOverviewAccessibleRowLocal(QITableView *pTableView, const QUuid &uMachineId,
+UIVMActivityOverviewRowLocal::UIVMActivityOverviewRowLocal(QITableView *pTableView, const QUuid &uMachineId,
                                                                            const QString &strMachineName, KMachineState enmMachineState)
-    : UIActivityOverviewAccessibleRow(pTableView, uMachineId, strMachineName)
+    : UIVMActivityOverviewRow(pTableView, uMachineId, strMachineName)
     , m_enmMachineState(enmMachineState)
     , m_uFreeRAM(0)
     , m_uNetworkDownTotal(0)
@@ -202,7 +225,7 @@ UIActivityOverviewAccessibleRowLocal::UIActivityOverviewAccessibleRowLocal(QITab
 
 }
 
-void UIActivityOverviewAccessibleRowLocal::updateCells()
+void UIVMActivityOverviewRowLocal::updateCells()
 {
     /* CPU Load: */
     ULONG aPctHalted;
@@ -272,13 +295,13 @@ void UIActivityOverviewAccessibleRowLocal::updateCells()
 
 }
 
-UIActivityOverviewAccessibleRowLocal::~UIActivityOverviewAccessibleRowLocal()
+UIVMActivityOverviewRowLocal::~UIVMActivityOverviewRowLocal()
 {
     if (!m_comSession.isNull())
         m_comSession.UnlockMachine();
 }
 
-void UIActivityOverviewAccessibleRowLocal::resetDebugger()
+void UIVMActivityOverviewRowLocal::resetDebugger()
 {
     m_comSession = uiCommon().openSession(m_uMachineId, KLockType_Shared);
     if (!m_comSession.isNull())
@@ -292,7 +315,7 @@ void UIActivityOverviewAccessibleRowLocal::resetDebugger()
     }
 }
 
-void UIActivityOverviewAccessibleRowLocal::setMachineState(int iState)
+void UIVMActivityOverviewRowLocal::setMachineState(int iState)
 {
     if (iState <= KMachineState_Null || iState >= KMachineState_Max)
         return;
@@ -304,82 +327,82 @@ void UIActivityOverviewAccessibleRowLocal::setMachineState(int iState)
         resetDebugger();
 }
 
-bool UIActivityOverviewAccessibleRowLocal::isRunning() const
+bool UIVMActivityOverviewRowLocal::isRunning() const
 {
     return m_enmMachineState == KMachineState_Running;
 }
 
-bool UIActivityOverviewAccessibleRowLocal::isCloudVM() const
+bool UIVMActivityOverviewRowLocal::isCloudVM() const
 {
     return false;
 }
 
-bool UIActivityOverviewAccessibleRowLocal::isWithGuestAdditions()
+bool UIVMActivityOverviewRowLocal::isWithGuestAdditions()
 {
     if (m_comGuest.isNull())
         return false;
     return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
 }
 
-void UIActivityOverviewAccessibleRowLocal::setTotalRAM(quint64 uTotalRAM)
+void UIVMActivityOverviewRowLocal::setTotalRAM(quint64 uTotalRAM)
 {
     m_uTotalRAM = uTotalRAM;
 }
 
-void UIActivityOverviewAccessibleRowLocal::setFreeRAM(quint64 uFreeRAM)
+void UIVMActivityOverviewRowLocal::setFreeRAM(quint64 uFreeRAM)
 {
     m_uFreeRAM = uFreeRAM;
 }
 
-QString UIActivityOverviewAccessibleRowLocal::machineStateString() const
+QString UIVMActivityOverviewRowLocal::machineStateString() const
 {
     return gpConverter->toString(m_enmMachineState);
 }
 
 
 /*********************************************************************************************************************************
-*   UIActivityOverviewAccessibleRowCloud implementation.                                                                   *
+*   UIVMActivityOverviewRowCloud implementation.                                                                   *
 *********************************************************************************************************************************/
 
-UIActivityOverviewAccessibleRowCloud::UIActivityOverviewAccessibleRowCloud(QITableView *pTableView, const QUuid &uMachineId,
+UIVMActivityOverviewRowCloud::UIVMActivityOverviewRowCloud(QITableView *pTableView, const QUuid &uMachineId,
                                                                            const QString &strMachineName, CCloudMachine &comCloudMachine)
-    : UIActivityOverviewAccessibleRow(pTableView, uMachineId, strMachineName)
+    : UIVMActivityOverviewRow(pTableView, uMachineId, strMachineName)
     , m_comCloudMachine(comCloudMachine)
 {
     updateMachineState();
     m_pTimer = new QTimer(this);
     if (m_pTimer)
     {
-        connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewAccessibleRowCloud::sltTimeout);
+        connect(m_pTimer, &QTimer::timeout, this, &UIVMActivityOverviewRowCloud::sltTimeout);
         m_pTimer->setInterval(60 * 1000);
     }
     resetColumData();
 }
 
-void UIActivityOverviewAccessibleRowCloud::updateMachineState()
+void UIVMActivityOverviewRowCloud::updateMachineState()
 {
     if (m_comCloudMachine.isOk())
         setMachineState(m_comCloudMachine.GetState());
 }
 
-bool UIActivityOverviewAccessibleRowCloud::isRunning() const
+bool UIVMActivityOverviewRowCloud::isRunning() const
 {
     return m_enmMachineState == KCloudMachineState_Running;
 }
 
-bool UIActivityOverviewAccessibleRowCloud::isCloudVM() const
+bool UIVMActivityOverviewRowCloud::isCloudVM() const
 {
     return true;
 }
 
-QString UIActivityOverviewAccessibleRowCloud::machineStateString() const
+QString UIVMActivityOverviewRowCloud::machineStateString() const
 {
     if (!m_comCloudMachine.isOk())
         return QString();
     return gpConverter->toString(m_comCloudMachine.GetState());
 }
 
-void UIActivityOverviewAccessibleRowCloud::sltTimeout()
+void UIVMActivityOverviewRowCloud::sltTimeout()
 {
     int iDataSize = 1;
     foreach (const KMetricType &enmMetricType, m_availableMetricTypes)
@@ -387,12 +410,12 @@ void UIActivityOverviewAccessibleRowCloud::sltTimeout()
         UIProgressTaskReadCloudMachineMetricData *pTask = new UIProgressTaskReadCloudMachineMetricData(this, m_comCloudMachine,
                                                                                                        enmMetricType, iDataSize);
         connect(pTask, &UIProgressTaskReadCloudMachineMetricData::sigMetricDataReceived,
-                this, &UIActivityOverviewAccessibleRowCloud::sltMetricDataReceived);
+                this, &UIVMActivityOverviewRowCloud::sltMetricDataReceived);
         pTask->start();
     }
 }
 
-void UIActivityOverviewAccessibleRowCloud::sltMetricDataReceived(KMetricType enmMetricType,
+void UIVMActivityOverviewRowCloud::sltMetricDataReceived(KMetricType enmMetricType,
                                                         const QVector<QString> &data, const QVector<QString> &timeStamps)
 {
     Q_UNUSED(timeStamps);
@@ -436,7 +459,7 @@ void UIActivityOverviewAccessibleRowCloud::sltMetricDataReceived(KMetricType enm
     sender()->deleteLater();
 }
 
-void UIActivityOverviewAccessibleRowCloud::setMachineState(int iState)
+void UIVMActivityOverviewRowCloud::setMachineState(int iState)
 {
     if (iState <= KCloudMachineState_Invalid || iState >= KCloudMachineState_Max)
         return;
@@ -457,14 +480,14 @@ void UIActivityOverviewAccessibleRowCloud::setMachineState(int iState)
     }
 }
 
-void UIActivityOverviewAccessibleRowCloud::resetColumData()
+void UIVMActivityOverviewRowCloud::resetColumData()
 {
     for (int i = (int) VMActivityOverviewColumn_CPUGuestLoad;
          i < (int)VMActivityOverviewColumn_Max; ++i)
         updateCellText(i,  QApplication::translate("UIVMActivityOverviewWidget", "N/A"));
 }
 
-void UIActivityOverviewAccessibleRowCloud::getMetricList()
+void UIVMActivityOverviewRowCloud::getMetricList()
 {
     if (!isRunning())
         return;
@@ -472,11 +495,11 @@ void UIActivityOverviewAccessibleRowCloud::getMetricList()
         new UIProgressTaskReadCloudMachineMetricList(this, m_comCloudMachine);
     AssertPtrReturnVoid(pReadListProgressTask);
     connect(pReadListProgressTask, &UIProgressTaskReadCloudMachineMetricList::sigMetricListReceived,
-            this, &UIActivityOverviewAccessibleRowCloud::sltMetricNameListingComplete);
+            this, &UIVMActivityOverviewRowCloud::sltMetricNameListingComplete);
     pReadListProgressTask->start();
 }
 
-void UIActivityOverviewAccessibleRowCloud::sltMetricNameListingComplete(QVector<QString> metricNameList)
+void UIVMActivityOverviewRowCloud::sltMetricNameListingComplete(QVector<QString> metricNameList)
 {
     AssertReturnVoid(m_pTimer);
     m_availableMetricTypes.clear();
@@ -502,20 +525,20 @@ void UIActivityOverviewAccessibleRowCloud::sltMetricNameListingComplete(QVector<
 
 
 /*********************************************************************************************************************************
-*   UIVMActivityOverviewAccessibleTableView implementation.                                                                      *
+*   UIVMActivityOverviewTableView implementation.                                                                      *
 *********************************************************************************************************************************/
 
-UIVMActivityOverviewAccessibleTableView::UIVMActivityOverviewAccessibleTableView(QWidget *pParent)
+UIVMActivityOverviewTableView::UIVMActivityOverviewTableView(QWidget *pParent)
     : QITableView(pParent)
 {
 }
 
-void UIVMActivityOverviewAccessibleTableView::updateColumVisibility()
+void UIVMActivityOverviewTableView::updateColumVisibility()
 {
-    UIActivityOverviewAccessibleProxyModel *pProxyModel = qobject_cast<UIActivityOverviewAccessibleProxyModel*>(model());
+    UIVMActivityOverviewProxyModel *pProxyModel = qobject_cast<UIVMActivityOverviewProxyModel*>(model());
     if (!pProxyModel)
         return;
-    UIActivityOverviewAccessibleModel *pModel = qobject_cast<UIActivityOverviewAccessibleModel*>(pProxyModel->sourceModel());
+    UIVMActivityOverviewModel *pModel = qobject_cast<UIVMActivityOverviewModel*>(pProxyModel->sourceModel());
     QHeaderView *pHeader = horizontalHeader();
 
     if (!pModel || !pHeader)
@@ -530,9 +553,9 @@ void UIVMActivityOverviewAccessibleTableView::updateColumVisibility()
     resizeHeaders();
 }
 
-int UIVMActivityOverviewAccessibleTableView::selectedItemIndex() const
+int UIVMActivityOverviewTableView::selectedItemIndex() const
 {
-    UIActivityOverviewAccessibleProxyModel *pModel = qobject_cast<UIActivityOverviewAccessibleProxyModel*>(model());
+    UIVMActivityOverviewProxyModel *pModel = qobject_cast<UIVMActivityOverviewProxyModel*>(model());
     if (!pModel)
         return -1;
 
@@ -551,39 +574,39 @@ int UIVMActivityOverviewAccessibleTableView::selectedItemIndex() const
     return modelIndex.row();
 }
 
-bool UIVMActivityOverviewAccessibleTableView::hasSelection() const
+bool UIVMActivityOverviewTableView::hasSelection() const
 {
     if (!selectionModel())
         return false;
     return selectionModel()->hasSelection();
 }
 
-void UIVMActivityOverviewAccessibleTableView::setMinimumColumnWidths(const QMap<int, int>& widths)
+void UIVMActivityOverviewTableView::setMinimumColumnWidths(const QMap<int, int>& widths)
 {
     m_minimumColumnWidths = widths;
     resizeHeaders();
 }
 
-void UIVMActivityOverviewAccessibleTableView::resizeEvent(QResizeEvent *pEvent)
+void UIVMActivityOverviewTableView::resizeEvent(QResizeEvent *pEvent)
 {
     resizeHeaders();
     QTableView::resizeEvent(pEvent);
 }
 
-void UIVMActivityOverviewAccessibleTableView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+void UIVMActivityOverviewTableView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     emit sigSelectionChanged(selected, deselected);
     QTableView::selectionChanged(selected, deselected);
 }
 
-void UIVMActivityOverviewAccessibleTableView::mousePressEvent(QMouseEvent *pEvent)
+void UIVMActivityOverviewTableView::mousePressEvent(QMouseEvent *pEvent)
 {
     if (!indexAt(pEvent->position().toPoint()).isValid())
         clearSelection();
     QTableView::mousePressEvent(pEvent);
 }
 
-void UIVMActivityOverviewAccessibleTableView::resizeHeaders()
+void UIVMActivityOverviewTableView::resizeHeaders()
 {
     QHeaderView* pHeader = horizontalHeader();
     if (!pHeader)
@@ -602,10 +625,10 @@ void UIVMActivityOverviewAccessibleTableView::resizeHeaders()
 
 
 /*********************************************************************************************************************************
-*   UIActivityOverviewAccessibleModel implementation.                                                                            *
+*   UIVMActivityOverviewModel implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIActivityOverviewAccessibleModel::UIActivityOverviewAccessibleModel(QObject *pParent, QITableView *pView)
+UIVMActivityOverviewModel::UIVMActivityOverviewModel(QObject *pParent, QITableView *pView)
     :QAbstractTableModel(pParent)
     , m_pTableView(pView)
     , m_pLocalVMUpdateTimer(new QTimer(this))
@@ -613,7 +636,7 @@ UIActivityOverviewAccessibleModel::UIActivityOverviewAccessibleModel(QObject *pP
     initialize();
 }
 
-void UIActivityOverviewAccessibleModel::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
+void UIVMActivityOverviewModel::setCloudMachineItems(const QList<UIVirtualMachineItemCloud*> &cloudItems)
 {
     QVector<QUuid> newIds;
     foreach (const UIVirtualMachineItemCloud* pItem, cloudItems)
@@ -625,13 +648,13 @@ void UIActivityOverviewAccessibleModel::setCloudMachineItems(const QList<UIVirtu
             continue;
         newIds << id;
     }
-    QVector<UIActivityOverviewAccessibleRow*> originalItemList = m_rows;
+    QVector<UIVMActivityOverviewRow*> originalItemList = m_rows;
 
     /* Remove m_rows items that are not in @cloudItems: */
-    QMutableVectorIterator<UIActivityOverviewAccessibleRow*> iterator(m_rows);
+    QMutableVectorIterator<UIVMActivityOverviewRow*> iterator(m_rows);
     while (iterator.hasNext())
     {
-        UIActivityOverviewAccessibleRow *pItem = iterator.next();
+        UIVMActivityOverviewRow *pItem = iterator.next();
         if (!pItem->isCloudVM())
             continue;
         if (pItem && !newIds.contains(pItem->machineId()))
@@ -655,7 +678,7 @@ void UIActivityOverviewAccessibleModel::setCloudMachineItems(const QList<UIVirtu
                 fFound = true;
         }
         if (!fFound)
-            m_rows.append(new UIActivityOverviewAccessibleRowCloud(m_pTableView, id, comMachine.GetName(), comMachine));
+            m_rows.append(new UIVMActivityOverviewRowCloud(m_pTableView, id, comMachine.GetName(), comMachine));
     }
 
     /* Update cloud machine states: */
@@ -663,39 +686,39 @@ void UIActivityOverviewAccessibleModel::setCloudMachineItems(const QList<UIVirtu
     {
         if (!m_rows[i] || !m_rows[i]->isCloudVM())
             continue;
-        UIActivityOverviewAccessibleRowCloud *pItem = qobject_cast<UIActivityOverviewAccessibleRowCloud*>(m_rows[i]);
+        UIVMActivityOverviewRowCloud *pItem = qobject_cast<UIVMActivityOverviewRowCloud*>(m_rows[i]);
         if (!pItem)
             continue;
         pItem->updateMachineState();
     }
 }
 
-void UIActivityOverviewAccessibleModel::setColumnVisible(const QMap<int, bool>& columnVisible)
+void UIVMActivityOverviewModel::setColumnVisible(const QMap<int, bool>& columnVisible)
 {
     m_columnVisible = columnVisible;
 }
 
-bool UIActivityOverviewAccessibleModel::columnVisible(int iColumnId) const
+bool UIVMActivityOverviewModel::columnVisible(int iColumnId) const
 {
     return m_columnVisible.value(iColumnId, true);
 }
 
 
-bool UIActivityOverviewAccessibleModel::isVMRunning(int rowIndex) const
+bool UIVMActivityOverviewModel::isVMRunning(int rowIndex) const
 {
     if (rowIndex >= m_rows.size() || rowIndex < 0 || !m_rows[rowIndex])
         return false;
     return m_rows[rowIndex]->isRunning();
 }
 
-bool UIActivityOverviewAccessibleModel::isCloudVM(int rowIndex) const
+bool UIVMActivityOverviewModel::isCloudVM(int rowIndex) const
 {
     if (rowIndex >= m_rows.size() || rowIndex < 0 || !m_rows[rowIndex])
         return false;
     return m_rows[rowIndex]->isCloudVM();
 }
 
-void UIActivityOverviewAccessibleModel::setupPerformanceCollector()
+void UIVMActivityOverviewModel::setupPerformanceCollector()
 {
     m_nameList.clear();
     m_objectList.clear();
@@ -713,7 +736,7 @@ void UIActivityOverviewAccessibleModel::setupPerformanceCollector()
     m_performanceCollector.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
 }
 
-void UIActivityOverviewAccessibleModel::clearData()
+void UIVMActivityOverviewModel::clearData()
 {
     /* We have a request to detach COM stuff,
      * first of all we are removing all the items,
@@ -725,12 +748,12 @@ void UIActivityOverviewAccessibleModel::clearData()
     m_performanceCollector.detach();
 }
 
-UIActivityOverviewAccessibleModel::~UIActivityOverviewAccessibleModel()
+UIVMActivityOverviewModel::~UIVMActivityOverviewModel()
 {
     clearData();
 }
 
-void UIActivityOverviewAccessibleModel::setShouldUpdate(bool fShouldUpdate)
+void UIVMActivityOverviewModel::setShouldUpdate(bool fShouldUpdate)
 {
     if (m_pLocalVMUpdateTimer)
     {
@@ -741,13 +764,13 @@ void UIActivityOverviewAccessibleModel::setShouldUpdate(bool fShouldUpdate)
     }
 }
 
-int UIActivityOverviewAccessibleModel::rowCount(const QModelIndex &parent) const
+int UIVMActivityOverviewModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
     return m_rows.size();
 }
 
-int UIActivityOverviewAccessibleModel::columnCount(const QModelIndex &parent) const
+int UIVMActivityOverviewModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
     if (m_rows.isEmpty())
@@ -757,7 +780,7 @@ int UIActivityOverviewAccessibleModel::columnCount(const QModelIndex &parent) co
     return 0;
 }
 
-QVariant UIActivityOverviewAccessibleModel::data(const QModelIndex &index, int role) const
+QVariant UIVMActivityOverviewModel::data(const QModelIndex &index, int role) const
 {
     int iRow = index.row();
     if (iRow < 0 || iRow >= m_rows.size())
@@ -773,26 +796,26 @@ QVariant UIActivityOverviewAccessibleModel::data(const QModelIndex &index, int r
     return QVariant();
 }
 
-const QMap<int, int> UIActivityOverviewAccessibleModel::dataLengths() const
+const QMap<int, int> UIVMActivityOverviewModel::dataLengths() const
 {
     return m_columnDataMaxLength;
 }
 
-void UIActivityOverviewAccessibleModel::initialize()
+void UIVMActivityOverviewModel::initialize()
 {
     for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)
         m_columnDataMaxLength[i] = 0;
 
     if (m_pLocalVMUpdateTimer)
     {
-        connect(m_pLocalVMUpdateTimer, &QTimer::timeout, this, &UIActivityOverviewAccessibleModel::sltLocalVMUpdateTimeout);
+        connect(m_pLocalVMUpdateTimer, &QTimer::timeout, this, &UIVMActivityOverviewModel::sltLocalVMUpdateTimeout);
         m_pLocalVMUpdateTimer->start(1000);
     }
 
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
-            this, &UIActivityOverviewAccessibleModel::sltMachineStateChanged);
+            this, &UIVMActivityOverviewModel::sltMachineStateChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
-            this, &UIActivityOverviewAccessibleModel::sltMachineRegistered);
+            this, &UIVMActivityOverviewModel::sltMachineRegistered);
     foreach (const CMachine &comMachine, gpGlobalSession->virtualBox().GetMachines())
     {
         if (!comMachine.isNull())
@@ -801,31 +824,31 @@ void UIActivityOverviewAccessibleModel::initialize()
     setupPerformanceCollector();
 }
 
-void UIActivityOverviewAccessibleModel::addRow(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState)
+void UIVMActivityOverviewModel::addRow(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState)
 {
-    //QVector<UIActivityOverviewAccessibleRow*> m_rows;
-    m_rows << new UIActivityOverviewAccessibleRowLocal(m_pTableView, uMachineId, strMachineName, enmState);
+    //QVector<UIVMActivityOverviewRow*> m_rows;
+    m_rows << new UIVMActivityOverviewRowLocal(m_pTableView, uMachineId, strMachineName, enmState);
 }
 
-QVariant UIActivityOverviewAccessibleModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant UIVMActivityOverviewModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
         return m_columnTitles.value((VMActivityOverviewColumn)section, QString());;
     return QVariant();
 }
 
-void UIActivityOverviewAccessibleModel::setColumnCaptions(const QMap<int, QString>& captions)
+void UIVMActivityOverviewModel::setColumnCaptions(const QMap<int, QString>& captions)
 {
     m_columnTitles = captions;
 }
 
 
-void UIActivityOverviewAccessibleModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
+void UIVMActivityOverviewModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
 {
     int iIndex = itemIndex(uId);
     if (iIndex != -1 && iIndex < m_rows.size())
     {
-        UIActivityOverviewAccessibleRowLocal *pItem = qobject_cast<UIActivityOverviewAccessibleRowLocal*>(m_rows[iIndex]);
+        UIVMActivityOverviewRowLocal *pItem = qobject_cast<UIVMActivityOverviewRowLocal*>(m_rows[iIndex]);
         if (pItem)
         {
             pItem->setMachineState(state);
@@ -835,7 +858,7 @@ void UIActivityOverviewAccessibleModel::sltMachineStateChanged(const QUuid &uId,
     }
 }
 
-void UIActivityOverviewAccessibleModel::sltMachineRegistered(const QUuid &uId, bool fRegistered)
+void UIVMActivityOverviewModel::sltMachineRegistered(const QUuid &uId, bool fRegistered)
 {
     if (fRegistered)
     {
@@ -848,14 +871,14 @@ void UIActivityOverviewAccessibleModel::sltMachineRegistered(const QUuid &uId, b
     emit sigDataUpdate();
 }
 
-void UIActivityOverviewAccessibleModel::getHostRAMStats()
+void UIVMActivityOverviewModel::getHostRAMStats()
 {
     CHost comHost = gpGlobalSession->host();
     m_hostStats.m_iRAMTotal = _1M * (quint64)comHost.GetMemorySize();
     m_hostStats.m_iRAMFree = _1M * (quint64)comHost.GetMemoryAvailable();
 }
 
-void UIActivityOverviewAccessibleModel::sltLocalVMUpdateTimeout()
+void UIVMActivityOverviewModel::sltLocalVMUpdateTimeout()
 {
     /* Host's RAM usage is obtained from IHost not from IPerformanceCollector: */
     getHostRAMStats();
@@ -865,7 +888,7 @@ void UIActivityOverviewAccessibleModel::sltLocalVMUpdateTimeout()
 
     for (int i = 0; i < m_rows.size(); ++i)
     {
-        UIActivityOverviewAccessibleRowLocal *pItem = qobject_cast<UIActivityOverviewAccessibleRowLocal*>(m_rows[i]);
+        UIVMActivityOverviewRowLocal *pItem = qobject_cast<UIVMActivityOverviewRowLocal*>(m_rows[i]);
         if (!pItem || !pItem->isRunning())
             continue;
         pItem->updateCells();
@@ -882,7 +905,7 @@ void UIActivityOverviewAccessibleModel::sltLocalVMUpdateTimeout()
     emit sigHostStatsUpdate(m_hostStats);
 }
 
-int UIActivityOverviewAccessibleModel::itemIndex(const QUuid &uid)
+int UIVMActivityOverviewModel::itemIndex(const QUuid &uid)
 {
     for (int i = 0; i < m_rows.size(); ++i)
     {
@@ -894,14 +917,14 @@ int UIActivityOverviewAccessibleModel::itemIndex(const QUuid &uid)
     return -1;
 }
 
-QUuid UIActivityOverviewAccessibleModel::itemUid(int iIndex)
+QUuid UIVMActivityOverviewModel::itemUid(int iIndex)
 {
     if (iIndex >= m_rows.size() || !m_rows[iIndex])
         return QUuid();
     return m_rows[iIndex]->machineId();
 }
 
-void UIActivityOverviewAccessibleModel::removeRow(const QUuid& uMachineId)
+void UIVMActivityOverviewModel::removeRow(const QUuid& uMachineId)
 {
     int iIndex = itemIndex(uMachineId);
     if (iIndex == -1)
@@ -910,7 +933,7 @@ void UIActivityOverviewAccessibleModel::removeRow(const QUuid& uMachineId)
     m_rows.remove(iIndex);
 }
 
-void UIActivityOverviewAccessibleModel::queryPerformanceCollector()
+void UIVMActivityOverviewModel::queryPerformanceCollector()
 {
     QVector<QString>  aReturnNames;
     QVector<CUnknown>  aReturnObjects;
@@ -948,7 +971,7 @@ void UIActivityOverviewAccessibleModel::queryPerformanceCollector()
                     if (iIndex == -1 || iIndex >= m_rows.size() || !m_rows[iIndex])
                         continue;
 
-                    UIActivityOverviewAccessibleRowLocal *pItem = qobject_cast<UIActivityOverviewAccessibleRowLocal*>(m_rows[iIndex]);
+                    UIVMActivityOverviewRowLocal *pItem = qobject_cast<UIVMActivityOverviewRowLocal*>(m_rows[iIndex]);
                     if (!pItem)
                         continue;
                     if (aReturnNames[i].contains("Total", Qt::CaseInsensitive))
@@ -997,21 +1020,21 @@ void UIActivityOverviewAccessibleModel::queryPerformanceCollector()
 
 
 /*********************************************************************************************************************************
-*   UIActivityOverviewAccessibleProxyModel implementation.                                                                       *
+*   UIVMActivityOverviewProxyModel implementation.                                                                       *
 *********************************************************************************************************************************/
-UIActivityOverviewAccessibleProxyModel::UIActivityOverviewAccessibleProxyModel(QObject *pParent /* = 0 */)
+UIVMActivityOverviewProxyModel::UIVMActivityOverviewProxyModel(QObject *pParent /* = 0 */)
     :  QSortFilterProxyModel(pParent)
 {
 }
 
-void UIActivityOverviewAccessibleProxyModel::dataUpdate()
+void UIVMActivityOverviewProxyModel::dataUpdate()
 {
     if (sourceModel())
         emit dataChanged(index(0,0), index(sourceModel()->rowCount(), sourceModel()->columnCount()));
     invalidate();
 }
 
-void UIActivityOverviewAccessibleProxyModel::setNotRunningVMVisibility(bool fShow)
+void UIVMActivityOverviewProxyModel::setNotRunningVMVisibility(bool fShow)
 {
     if (m_fShowNotRunningVMs == fShow)
         return;
@@ -1020,7 +1043,7 @@ void UIActivityOverviewAccessibleProxyModel::setNotRunningVMVisibility(bool fSho
 }
 
 
-void UIActivityOverviewAccessibleProxyModel::setCloudVMVisibility(bool fShow)
+void UIVMActivityOverviewProxyModel::setCloudVMVisibility(bool fShow)
 {
     if (m_fShowCloudVMs == fShow)
         return;
@@ -1028,12 +1051,12 @@ void UIActivityOverviewAccessibleProxyModel::setCloudVMVisibility(bool fShow)
     invalidateFilter();
 }
 
-bool UIActivityOverviewAccessibleProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const
+bool UIVMActivityOverviewProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const
 {
     Q_UNUSED(sourceParent);
     if (m_fShowNotRunningVMs && m_fShowCloudVMs)
         return true;
-    UIActivityOverviewAccessibleModel *pModel = qobject_cast<UIActivityOverviewAccessibleModel*>(sourceModel());
+    UIVMActivityOverviewModel *pModel = qobject_cast<UIVMActivityOverviewModel*>(sourceModel());
     if (!pModel)
         return true;
 
@@ -1044,9 +1067,9 @@ bool UIActivityOverviewAccessibleProxyModel::filterAcceptsRow(int iSourceRow, co
     return true;
 }
 
-bool UIActivityOverviewAccessibleProxyModel::lessThan(const QModelIndex &sourceLeftIndex, const QModelIndex &sourceRightIndex) const
+bool UIVMActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex, const QModelIndex &sourceRightIndex) const
 {
-    UIActivityOverviewAccessibleModel *pModel = qobject_cast<UIActivityOverviewAccessibleModel*>(sourceModel());
+    UIVMActivityOverviewModel *pModel = qobject_cast<UIVMActivityOverviewModel*>(sourceModel());
     if (pModel)
     {
         /* Keep running vm always on top of the list: */
@@ -1073,10 +1096,10 @@ bool UIActivityOverviewAccessibleProxyModel::lessThan(const QModelIndex &sourceL
 
 
 /*********************************************************************************************************************************
-*   UIActivityOverviewAccessibleRow implementation.                                                                              *
+*   UIVMActivityOverviewRow implementation.                                                                              *
 *********************************************************************************************************************************/
 
-UIActivityOverviewAccessibleRow::UIActivityOverviewAccessibleRow(QITableView *pTableView, const QUuid &uMachineId,
+UIVMActivityOverviewRow::UIVMActivityOverviewRow(QITableView *pTableView, const QUuid &uMachineId,
                                                                  const QString &strMachineName)
     : QITableViewRow(pTableView)
     , m_uMachineId(uMachineId)
@@ -1086,17 +1109,17 @@ UIActivityOverviewAccessibleRow::UIActivityOverviewAccessibleRow(QITableView *pT
     initCells();
 }
 
-int UIActivityOverviewAccessibleRow::childCount() const
+int UIVMActivityOverviewRow::childCount() const
 {
     return m_cells.size();
 }
 
-QITableViewCell *UIActivityOverviewAccessibleRow::childItem(int iIndex) const
+QITableViewCell *UIVMActivityOverviewRow::childItem(int iIndex) const
 {
     return m_cells.value(iIndex, 0);
 }
 
-QString UIActivityOverviewAccessibleRow::cellText(int iColumn) const
+QString UIVMActivityOverviewRow::cellText(int iColumn) const
 {
     if (!m_cells.contains(iColumn))
         return QString();
@@ -1105,32 +1128,32 @@ QString UIActivityOverviewAccessibleRow::cellText(int iColumn) const
     return m_cells[iColumn]->text();
 }
 
-int UIActivityOverviewAccessibleRow::columnLength(int iColumnIndex) const
+int UIVMActivityOverviewRow::columnLength(int iColumnIndex) const
 {
-    UIActivityOverviewAccessibleCell *pCell = m_cells.value(iColumnIndex, 0);
+    UIVMActivityOverviewCell *pCell = m_cells.value(iColumnIndex, 0);
     if (!pCell)
         return 0;
     return pCell->text().length();
 }
 
-UIActivityOverviewAccessibleRow::~UIActivityOverviewAccessibleRow()
+UIVMActivityOverviewRow::~UIVMActivityOverviewRow()
 {
     qDeleteAll(m_cells);
 }
 
-void UIActivityOverviewAccessibleRow::initCells()
+void UIVMActivityOverviewRow::initCells()
 {
     for (int i = (int) VMActivityOverviewColumn_Name; i < (int) VMActivityOverviewColumn_Max; ++i)
-        m_cells[i] = new UIActivityOverviewAccessibleCell(this, i);
+        m_cells[i] = new UIVMActivityOverviewCell(this, i);
     m_cells[VMActivityOverviewColumn_Name]->setText(m_strMachineName);
 }
 
-const QUuid &UIActivityOverviewAccessibleRow::machineId() const
+const QUuid &UIVMActivityOverviewRow::machineId() const
 {
     return m_uMachineId;
 }
 
-void UIActivityOverviewAccessibleRow::updateCellText(int /*VMActivityOverviewColumn*/ enmColumnIndex, const QString &strText)
+void UIVMActivityOverviewRow::updateCellText(int /*VMActivityOverviewColumn*/ enmColumnIndex, const QString &strText)
 {
     if (m_cells.value(enmColumnIndex, 0))
         m_cells[enmColumnIndex]->setText(strText);
@@ -1138,27 +1161,27 @@ void UIActivityOverviewAccessibleRow::updateCellText(int /*VMActivityOverviewCol
 
 
 /*********************************************************************************************************************************
-*   UIActivityOverviewAccessibleCell implementation.                                                                             *
+*   UIVMActivityOverviewCell implementation.                                                                             *
 *********************************************************************************************************************************/
 
-UIActivityOverviewAccessibleCell::UIActivityOverviewAccessibleCell(QITableViewRow *pRow, int iColumnIndex)
+UIVMActivityOverviewCell::UIVMActivityOverviewCell(QITableViewRow *pRow, int iColumnIndex)
     :QITableViewCell(pRow)
     , m_iColumnIndex(iColumnIndex)
 {
 }
 
-QString UIActivityOverviewAccessibleCell::text() const
+QString UIVMActivityOverviewCell::text() const
 {
     return m_strText;
 }
 
-int UIActivityOverviewAccessibleCell::columnLength(int /*iColumnIndex*/) const
+int UIVMActivityOverviewCell::columnLength(int /*iColumnIndex*/) const
 {
     return 0;
     //return m_columnData.value(iColumnIndex, QString()).length();
 }
 
-void UIActivityOverviewAccessibleCell::setText(const QString &strText)
+void UIVMActivityOverviewCell::setText(const QString &strText)
 {
     m_strText = strText;
 }

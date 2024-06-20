@@ -46,9 +46,9 @@
 
 
 class QTimer;
-class UIActivityOverviewAccessibleCell;
-class UIActivityOverviewAccessibleRow;
-class UIActivityOverviewAccessibleRowCloud;
+class UIVMActivityOverviewCell;
+class UIVMActivityOverviewRow;
+class UIVMActivityOverviewRowCloud;
 class UIVirtualMachineItemCloud;
 
 /*********************************************************************************************************************************
@@ -71,7 +71,7 @@ public:
 };
 
 
-class UIVMActivityOverviewAccessibleTableView : public QITableView
+class UIVMActivityOverviewTableView : public QITableView
 {
     Q_OBJECT;
 
@@ -81,7 +81,7 @@ signals:
 
 public:
 
-    UIVMActivityOverviewAccessibleTableView(QWidget *pParent);
+    UIVMActivityOverviewTableView(QWidget *pParent);
     void setMinimumColumnWidths(const QMap<int, int>& widths);
     void updateColumVisibility();
     int selectedItemIndex() const;
@@ -102,14 +102,14 @@ private:
 
 
 
-class UIActivityOverviewAccessibleProxyModel : public QSortFilterProxyModel
+class UIVMActivityOverviewProxyModel : public QSortFilterProxyModel
 {
 
     Q_OBJECT;
 
 public:
 
-    UIActivityOverviewAccessibleProxyModel(QObject *parent = 0);
+    UIVMActivityOverviewProxyModel(QObject *parent = 0);
     void dataUpdate();
     void setNotRunningVMVisibility(bool fShow);
     void setCloudVMVisibility(bool fShow);
@@ -126,29 +126,7 @@ private:
 
 };
 
-class UIActivityOverviewAccessibleCell : public QITableViewCell
-{
-
-    Q_OBJECT;
-
-public:
-
-    UIActivityOverviewAccessibleCell(QITableViewRow *pRow, int iColumnIndex);
-    virtual QString text() const RT_OVERRIDE RT_FINAL;
-    int columnLength(int iColumnIndex) const;
-    void setText(const QString &strText);
-
-private:
-
-    /* VMActivityOverviewColumn enum: */
-    int m_iColumnIndex;
-    QString m_strText;
-};
-
-
-
-
-class UIActivityOverviewAccessibleModel : public QAbstractTableModel
+class UIVMActivityOverviewModel : public QAbstractTableModel
 {
     Q_OBJECT;
 
@@ -159,8 +137,8 @@ signals:
 
 public:
 
-    ~UIActivityOverviewAccessibleModel();
-    UIActivityOverviewAccessibleModel(QObject *pParent, QITableView *pView);
+    ~UIVMActivityOverviewModel();
+    UIVMActivityOverviewModel(QObject *pParent, QITableView *pView);
     int      rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
     int      columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
     QVariant data(const QModelIndex &index, int role) const RT_OVERRIDE RT_FINAL;
@@ -191,12 +169,12 @@ private:
     void setupPerformanceCollector();
     void queryPerformanceCollector();
     void getHostRAMStats();
-    QVector<UIActivityOverviewAccessibleRow*> m_rows;
+    QVector<UIVMActivityOverviewRow*> m_rows;
     QITableView *m_pTableView;
     QMap<int, QString> m_columnTitles;
     QMap<int, bool> m_columnVisible;
     QTimer *m_pLocalVMUpdateTimer;
-    /** Maximum length of string length of data displayed in column. Updated in UIActivityOverviewModel::data(..). */
+    /** Maximum length of string length of data displayed in column. Updated in UIVMActivityOverviewModel::data(..). */
     mutable QMap<int, int> m_columnDataMaxLength;
     CPerformanceCollector m_performanceCollector;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
