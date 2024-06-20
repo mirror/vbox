@@ -198,6 +198,7 @@ typedef enum IEMTLBPHYSFLUSHREASON
 } IEMTLBPHYSFLUSHREASON;
 
 VMM_INT_DECL(void)          IEMTlbInvalidateAll(PVMCPUCC pVCpu);
+VMM_INT_DECL(void)          IEMTlbInvalidateAllGlobal(PVMCPUCC pVCpu);
 VMM_INT_DECL(void)          IEMTlbInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtr);
 VMM_INT_DECL(void)          IEMTlbInvalidateAllPhysical(PVMCPUCC pVCpu);
 VMM_INT_DECL(void)          IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCaller, IEMTLBPHYSFLUSHREASON enmReason);
