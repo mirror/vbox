@@ -842,6 +842,9 @@ AssertCompile(RT_IS_POWER_OF_TWO(IEMTLB_ENTRY_COUNT));
 /** X86: The current protection level (CPL) shifted mask. */
 #define IEM_F_X86_CPL_SMASK                 UINT32_C(0x00000003)
 
+/** X86: Alignment checks enabled (CR0.AM=1 & EFLAGS.AC=1). */
+#define IEM_F_X86_AC                        UINT32_C(0x00080000)
+
 /** X86 execution context.
  * The IEM_F_X86_CTX_XXX values are individual flags that can be combined (with
  * the exception of IEM_F_X86_CTX_NORMAL).  This allows running VMs from SMM

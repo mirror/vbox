@@ -3842,7 +3842,7 @@ iemRaiseXcptOrIntInLongMode(PVMCPUCC    pVCpu,
     if (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
         iemRaiseXcptAdjustState(pVCpu, u8Vector);
 
-    iemRecalcExecModeAndCplFlags(pVCpu);
+    iemRecalcExecModeAndCplAndAcFlags(pVCpu);
 
     return fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT ? VINF_IEM_RAISED_XCPT : VINF_SUCCESS;
 }

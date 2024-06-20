@@ -911,6 +911,7 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
      */
     Assert(fEflNew & RT_BIT_32(1));
     IEMMISC_SET_EFL(pVCpu, fEflNew);
+    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~IEM_F_X86_AC) | iemCalcExecAcFlag(pVCpu);
     return iemRegAddToRipAndFinishingClearingRfEx(pVCpu, cbInstr, fEflOld);
 }
 
@@ -1691,7 +1692,7 @@ static VBOXSTRICTRC iemCImpl_BranchCallGate(PVMCPUCC pVCpu, uint8_t cbInstr, uin
     }
     pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
 
-    iemRecalcExecModeAndCplFlags(pVCpu);
+    iemRecalcExecModeAndCplAndAcFlags(pVCpu);
 
 /** @todo single stepping   */
 
@@ -1941,7 +1942,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
 
-    iemRecalcExecModeAndCplFlags(pVCpu);
+    iemRecalcExecModeAndCplAndAcFlags(pVCpu);
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
@@ -2167,7 +2168,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
 
-    iemRecalcExecModeAndCplFlags(pVCpu);
+    iemRecalcExecModeAndCplAndAcFlags(pVCpu);
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
@@ -2498,7 +2499,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         iemHlpAdjustSelectorForNewCpl(pVCpu, uNewCs & X86_SEL_RPL, &pVCpu->cpum.GstCtx.fs);
         iemHlpAdjustSelectorForNewCpl(pVCpu, uNewCs & X86_SEL_RPL, &pVCpu->cpum.GstCtx.gs);
 
-        iemRecalcExecModeAndCplFlags(pVCpu); /* Affects iemRegAddToRspEx and the setting of RSP/SP below.  */
+        iemRecalcExecModeAndCplAndAcFlags(pVCpu); /* Affects iemRegAddToRspEx and the setting of RSP/SP below.  */
 
         if (cbPop)
             iemRegAddToRspEx(pVCpu, &NewOuterRsp, cbPop);
@@ -2509,7 +2510,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         else
             pVCpu->cpum.GstCtx.sp            = (uint16_t)NewOuterRsp.u;
 
-        iemRecalcExecModeAndCplFlags(pVCpu); /* Affects iemRegAddToRspEx and the setting of RSP/SP below.  */
+        iemRecalcExecModeAndCplAndAcFlags(pVCpu); /* Affects iemRegAddToRspEx and the setting of RSP/SP below.  */
 
         /** @todo check if the hidden bits are loaded correctly for 64-bit
          *        mode. */
@@ -2584,7 +2585,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         /** @todo check if the hidden bits are loaded correctly for 64-bit
          *        mode.  */
 
-        iemRecalcExecModeAndCplFlags(pVCpu);
+        iemRecalcExecModeAndCplAndAcFlags(pVCpu);
     }
 
     /* Flush the prefetch buffer. */
@@ -2925,6 +2926,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     /** @todo do we load attribs and limit as well? */
     Assert(uNewFlags & X86_EFL_1);
     IEMMISC_SET_EFL(pVCpu, uNewFlags);
+    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~IEM_F_X86_AC) | iemCalcExecAcFlag(pVCpu);
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo can do light flush in real mode at least */
@@ -3006,9 +3008,10 @@ IEM_CIMPL_DEF_4(iemCImpl_iret_prot_v8086, uint32_t, uNewEip, uint16_t, uNewCs, u
     iemCImplCommonV8086LoadSeg(&pVCpu->cpum.GstCtx.gs, uNewGs);
     pVCpu->cpum.GstCtx.rip      = (uint16_t)uNewEip;
     pVCpu->cpum.GstCtx.rsp      = uNewEsp; /** @todo check this out! */
-    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                        | (3 << IEM_F_X86_CPL_SHIFT)
-                       | IEM_F_MODE_X86_16BIT_PROT_V86;
+                       | IEM_F_MODE_X86_16BIT_PROT_V86
+                       | iemCalcExecAcFlag(pVCpu);
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
@@ -3358,7 +3361,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         iemHlpAdjustSelectorForNewCpl(pVCpu, uNewCs & X86_SEL_RPL, &pVCpu->cpum.GstCtx.fs);
         iemHlpAdjustSelectorForNewCpl(pVCpu, uNewCs & X86_SEL_RPL, &pVCpu->cpum.GstCtx.gs);
 
-        iemRecalcExecModeAndCplFlags(pVCpu);
+        iemRecalcExecModeAndCplAndAcFlags(pVCpu);
 
         /* Done! */
 
@@ -3420,7 +3423,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         else
             pVCpu->cpum.GstCtx.rsp       = uNewRsp;
 
-        iemRecalcExecModeAndCplFlags(pVCpu);
+        iemRecalcExecModeAndCplAndAcFlags(pVCpu);
 
         /* Done! */
     }
@@ -3735,7 +3738,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         iemHlpAdjustSelectorForNewCpl(pVCpu, uNewCpl, &pVCpu->cpum.GstCtx.gs);
     }
 
-    iemRecalcExecModeAndCplFlags(pVCpu);
+    iemRecalcExecModeAndCplAndAcFlags(pVCpu);
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo may light flush if the ring + mode doesn't change */
@@ -3970,7 +3973,7 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
      * from the "DPL fields of the SS and CS descriptor caches" but there is no
      * word as to what happens if those are not identical (probably bad things).
      */
-    iemRecalcExecModeAndCplFlags(pVCpu);
+    iemRecalcExecModeAndCplAndAcFlags(pVCpu);
     Assert(IEM_IS_16BIT_CODE(pVCpu));
 
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_HIDDEN_SEL_REGS | CPUM_CHANGED_IDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_TR | CPUM_CHANGED_LDTR);
@@ -4057,7 +4060,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
         pVCpu->cpum.GstCtx.cs.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_L | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC;
         pVCpu->cpum.GstCtx.ss.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_RW_ACC;
 
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | IEM_F_MODE_X86_64BIT;
     }
     else
@@ -4073,7 +4076,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
         pVCpu->cpum.GstCtx.cs.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC;
         pVCpu->cpum.GstCtx.ss.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_RW_ACC;
 
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | IEM_F_MODE_X86_32BIT_PROT
                            | iemCalc32BitFlatIndicatorEsDs(pVCpu);
     }
@@ -4214,16 +4217,18 @@ IEM_CIMPL_DEF_1(iemCImpl_sysret, IEMMODE, enmEffOpSize)
      *        on sysret on AMD and not on intel. */
 
     if (!f32Bit)
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | (3 << IEM_F_X86_CPL_SHIFT)
-                           | IEM_F_MODE_X86_64BIT;
+                           | IEM_F_MODE_X86_64BIT
+                           | iemCalcExecAcFlag(pVCpu);
     else
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | (3 << IEM_F_X86_CPL_SHIFT)
                            | IEM_F_MODE_X86_32BIT_PROT
                            /** @todo sort out the SS.BASE/LIM/ATTR claim by AMD and maybe we can switch to
                             * iemCalc32BitFlatIndicatorDsEs and move this up into the above branch. */
-                           | iemCalc32BitFlatIndicator(pVCpu);
+                           | iemCalc32BitFlatIndicator(pVCpu)
+                           | iemCalcExecAcFlag(pVCpu);
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
@@ -4297,7 +4302,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
         pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.SysEnter.esp;
         pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_L | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
                                         | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC;
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | IEM_F_MODE_X86_64BIT;
     }
     else
@@ -4308,7 +4313,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
         pVCpu->cpum.GstCtx.rsp          = (uint32_t)pVCpu->cpum.GstCtx.SysEnter.esp;
         pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
                                         | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC;
-        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+        pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                            | IEM_F_MODE_X86_32BIT_PROT
                            | iemCalc32BitFlatIndicatorEsDs(pVCpu);
     }
@@ -4401,7 +4406,8 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
 
         pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
                            | (3 << IEM_F_X86_CPL_SHIFT)
-                           | IEM_F_MODE_X86_64BIT;
+                           | IEM_F_MODE_X86_64BIT
+                           | iemCalcExecAcFlag(pVCpu);
     }
     else
     {
@@ -4419,7 +4425,8 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
         pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
                            | (3 << IEM_F_X86_CPL_SHIFT)
                            | IEM_F_MODE_X86_32BIT_PROT
-                           | iemCalc32BitFlatIndicatorEsDs(pVCpu);
+                           | iemCalc32BitFlatIndicatorEsDs(pVCpu)
+                           | iemCalcExecAcFlag(pVCpu);
     }
     pVCpu->cpum.GstCtx.cs.u64Base       = 0;
     pVCpu->cpum.GstCtx.cs.u32Limit      = UINT32_MAX;
@@ -5990,7 +5997,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
 
             /* Update the fExec flags if PE changed. */
             if ((uNewCrX ^ uOldCrX) & X86_CR0_PE)
-                iemRecalcExecModeAndCplFlags(pVCpu);
+                iemRecalcExecModeAndCplAndAcFlags(pVCpu);
 
             /*
              * Inform PGM some more...

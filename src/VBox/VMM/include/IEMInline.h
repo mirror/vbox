@@ -171,6 +171,27 @@ DECLINLINE(int) iemSetPassUpStatus(PVMCPUCC pVCpu, VBOXSTRICTRC rcPassUp) RT_NOE
 
 
 /**
+ * Calculates the IEM_F_X86_AC flags.
+ *
+ * @returns IEM_F_X86_AC or zero
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ */
+DECL_FORCE_INLINE(uint32_t) iemCalcExecAcFlag(PVMCPUCC pVCpu) RT_NOEXCEPT
+{
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS);
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ss));
+
+    if (   !pVCpu->cpum.GstCtx.eflags.Bits.u1AC
+        || (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_AM | X86_CR0_PE)) != (X86_CR0_AM | X86_CR0_PE)
+        || (   !pVCpu->cpum.GstCtx.eflags.Bits.u1VM
+            && pVCpu->cpum.GstCtx.ss.Attr.n.u2Dpl != 3))
+        return 0;
+    return IEM_F_X86_AC;
+}
+
+
+/**
  * Calculates the IEM_F_MODE_X86_32BIT_FLAT flag.
  *
  * Checks if CS, SS, DS and SS are all wide open flat 32-bit segments. This will
@@ -245,9 +266,9 @@ DECL_FORCE_INLINE(uint32_t) iemCalc32BitFlatIndicatorEsDs(PVMCPUCC pVCpu) RT_NOE
 
 
 /**
- * Calculates the IEM_F_MODE_XXX and CPL flags.
+ * Calculates the IEM_F_MODE_XXX, CPL and AC flags.
  *
- * @returns IEM_F_MODE_XXX
+ * @returns IEM_F_MODE_XXX, IEM_F_X86_CPL_MASK and IEM_F_X86_AC.
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
  */
@@ -265,6 +286,13 @@ DECL_FORCE_INLINE(uint32_t) iemCalcExecModeAndCplFlags(PVMCPUCC pVCpu) RT_NOEXCE
         {
             Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ss));
             uint32_t fExec = ((uint32_t)pVCpu->cpum.GstCtx.ss.Attr.n.u2Dpl << IEM_F_X86_CPL_SHIFT);
+            if (   !pVCpu->cpum.GstCtx.eflags.Bits.u1AC
+                || !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_AM)
+                || fExec != (3U << IEM_F_X86_CPL_SHIFT))
+            { /* likely */ }
+            else
+                fExec |= IEM_F_X86_AC;
+
             if (pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig)
             {
                 Assert(!pVCpu->cpum.GstCtx.cs.Attr.n.u1Long || !(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_LMA));
@@ -279,7 +307,10 @@ DECL_FORCE_INLINE(uint32_t) iemCalcExecModeAndCplFlags(PVMCPUCC pVCpu) RT_NOEXCE
                 fExec |= IEM_F_MODE_X86_16BIT_PROT_PRE_386;
             return fExec;
         }
-        return IEM_F_MODE_X86_16BIT_PROT_V86 | (UINT32_C(3) << IEM_F_X86_CPL_SHIFT);
+        if (   !pVCpu->cpum.GstCtx.eflags.Bits.u1AC
+            || !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_AM))
+            return IEM_F_MODE_X86_16BIT_PROT_V86 | (UINT32_C(3) << IEM_F_X86_CPL_SHIFT);
+        return IEM_F_MODE_X86_16BIT_PROT_V86 | (UINT32_C(3) << IEM_F_X86_CPL_SHIFT) | IEM_F_X86_AC;
     }
 
     /* Real mode is zero; CPL set to 3 for VT-x real-mode emulation. */
@@ -373,9 +404,9 @@ DECL_FORCE_INLINE(uint32_t) iemCalcExecFlags(PVMCPUCC pVCpu) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
  */
-DECL_FORCE_INLINE(void) iemRecalcExecModeAndCplFlags(PVMCPUCC pVCpu)
+DECL_FORCE_INLINE(void) iemRecalcExecModeAndCplAndAcFlags(PVMCPUCC pVCpu)
 {
-    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK | IEM_F_X86_AC))
                        | iemCalcExecModeAndCplFlags(pVCpu);
 }
 
@@ -4637,7 +4668,7 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #undef TMPL_MEM_NO_MAPPING
 
 
-/* Every template reyling on unaligned accesses inside a page not being okay should go below. */
+/* Every template relying on unaligned accesses inside a page not being okay should go below. */
 #undef TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK
 #define TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(a_pVCpu, a_GCPtrEff, a_TmplMemType) 0
 
