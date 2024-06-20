@@ -390,6 +390,51 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     }
 
     /*
+     * Snippet for checking whether misaligned accesses are within the
+     * page (see step 2).
+     *
+     * This sequence is 1 instruction longer than the strict alignment test,
+     * and since most accesses are correctly aligned it is better to do it
+     * this way.  Runs of r163597 seems to indicate there was a regression
+     * when placing this code in the main code flow.
+     */
+    uint8_t const idxRegFlatPtr = iSegReg != UINT8_MAX || pTlbState->idxRegPtr == UINT8_MAX || offDisp != 0
+                                ? idxRegMemResult : pTlbState->idxRegPtr; /* (not immediately ready for tlblookup use) */
+    uint8_t const fAlignMask    = a_fDataTlb ? (uint8_t)fAlignMaskAndCtl : 0;
+    if (a_fDataTlb)
+    {
+        Assert(!(fAlignMaskAndCtl & ~(UINT32_C(0xff) | IEM_MEMMAP_F_ALIGN_SSE | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_GP_OR_AC)));
+        Assert(RT_IS_POWER_OF_TWO(fAlignMask + 1U));
+        Assert(cbMem == fAlignMask + 1U || !(fAccess & IEM_ACCESS_ATOMIC));
+        Assert(cbMem < 128); /* alignment test assumptions */
+    }
+
+    uint32_t offMisalignedAccess             = UINT32_MAX;
+    uint32_t offFixupMisalignedAccessJmpBack = UINT32_MAX;
+    if (   a_fDataTlb
+        && !(fAlignMaskAndCtl & ~UINT32_C(0xff))
+        && !(fAccess & IEM_ACCESS_ATOMIC)
+        && cbMem > 1
+        && RT_IS_POWER_OF_TWO(cbMem)
+        && !(pReNative->fExec & IEM_F_X86_AC))
+    {
+        /* tlbmisaligned: */
+        offMisalignedAccess = off;
+        /* reg1 = regflat & 0xfff */
+        off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, pTlbState->idxReg1,/*=*/ idxRegFlatPtr,/*&*/ GUEST_PAGE_OFFSET_MASK);
+        /* cmp reg1, GUEST_PAGE_SIZE - cbMem */
+        off = iemNativeEmitCmpGpr32WithImmEx(pCodeBuf, off, pTlbState->idxReg1, GUEST_PAGE_SIZE - cbMem);
+        /* jbe short jmpback */
+        offFixupMisalignedAccessJmpBack = off;
+        off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 100, kIemNativeInstrCond_be);
+#ifdef IEM_WITH_TLB_STATISTICS
+        off = iemNativeEmitIncU32CounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+                                                 offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissCrossPage));
+#endif
+        off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
+    }
+
+    /*
      * tlblookup:
      */
     iemNativeLabelDefine(pReNative, idxLabelTlbLookup, off);
@@ -514,8 +559,6 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
     /* 1b. Add the segment base.  We use idxRegMemResult for the ptr register if
            this step is required or if the address is a constant (simplicity) or
            if offDisp is non-zero. */
-    uint8_t const idxRegFlatPtr = iSegReg != UINT8_MAX || pTlbState->idxRegPtr == UINT8_MAX || offDisp != 0
-                                ? idxRegMemResult : pTlbState->idxRegPtr;
     if (iSegReg != UINT8_MAX)
     {
         Assert(idxRegFlatPtr != pTlbState->idxRegPtr);
@@ -574,64 +617,80 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
      */
     if (a_fDataTlb)
     {
-        uint8_t const fAlignMask = (uint8_t)fAlignMaskAndCtl;
-        Assert(!(fAlignMaskAndCtl & ~(UINT32_C(0xff) | IEM_MEMMAP_F_ALIGN_SSE | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_GP_OR_AC)));
-        Assert(RT_IS_POWER_OF_TWO(fAlignMask + 1U));
-        Assert(cbMem == fAlignMask + 1U || !(fAccess & IEM_ACCESS_ATOMIC));
-        Assert(cbMem < 128); /* alignment test assumptions */
-
-        /*
-         * 2a. Strict alignment check using fAlignMask for atomic, strictly
-         *     aligned stuff (SSE & AVX) and AC=1 (ring-3).
-         */
-        bool const fStrictAlignmentCheck = fAlignMask
-                                        && (   (fAlignMaskAndCtl & ~UINT32_C(0xff))
-                                            || (fAccess & IEM_ACCESS_ATOMIC)
-                                            || (pReNative->fExec & IEM_F_X86_AC) );
-        if (fStrictAlignmentCheck)
+        if (offMisalignedAccess != UINT32_MAX)
         {
-            /* test regflat, fAlignMask */
-            off = iemNativeEmitTestAnyBitsInGpr8Ex(pCodeBuf, off, idxRegFlatPtr, fAlignMask);
-
-#ifndef IEM_WITH_TLB_STATISTICS
-            /* jnz tlbmiss */
-            off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
-#else
-            /* jz  1F; inc stat; jmp tlbmiss */
-            uint32_t const offFixup1 = off;
-            off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 16, kIemNativeInstrCond_e);
-            off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
-                                                      offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissAlignment));
-            off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
-            iemNativeFixupFixedJump(pReNative, offFixup1, off);
+#ifdef RT_ARCH_ARM64
+            if (cbMem == 2)
+            {
+                /* tbnz regflatptr, #0, tlbmiss */
+                pCodeBuf[off++] = Armv8A64MkInstrTbnz((int32_t)offMisalignedAccess - (int32_t)off, idxRegFlatPtr, 0);
+            }
+            else
 #endif
+            {
+                /* test regflat, fAlignMask */
+                off = iemNativeEmitTestAnyBitsInGpr8Ex(pCodeBuf, off, idxRegFlatPtr, cbMem - 1);
+                /* jnz tlbmiss */
+                off = iemNativeEmitJccToFixedEx(pCodeBuf, off, offMisalignedAccess, kIemNativeInstrCond_ne);
+            }
+            /** @todo ARM64: two byte access checks can be reduced to single instruction */
+            iemNativeFixupFixedJump(pReNative, offFixupMisalignedAccessJmpBack, off);
         }
-
-        /*
-         * 2b. Check that it's not crossing page a boundrary if the access is
-         *     larger than the aligment mask or if we didn't do the strict
-         *     alignment check above.
-         */
-        if (   cbMem > 1
-            && (   !fStrictAlignmentCheck
-                || cbMem > fAlignMask + 1U))
+        else
         {
-            /* reg1 = regflat & 0xfff */
-            off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, pTlbState->idxReg1,/*=*/ idxRegFlatPtr,/*&*/ GUEST_PAGE_OFFSET_MASK);
-            /* cmp reg1, GUEST_PAGE_SIZE - cbMem */
-            off = iemNativeEmitCmpGpr32WithImmEx(pCodeBuf, off, pTlbState->idxReg1, GUEST_PAGE_SIZE - cbMem);
+            /*
+             * 2a. Strict alignment check using fAlignMask for atomic, strictly
+             *     aligned stuff (SSE & AVX) and AC=1 (ring-3).
+             */
+            bool const fStrictAlignmentCheck = fAlignMask
+                                            && (   (fAlignMaskAndCtl & ~UINT32_C(0xff))
+                                                || (fAccess & IEM_ACCESS_ATOMIC)
+                                                || (pReNative->fExec & IEM_F_X86_AC) );
+            if (fStrictAlignmentCheck)
+            {
+                /* test regflat, fAlignMask */
+                off = iemNativeEmitTestAnyBitsInGpr8Ex(pCodeBuf, off, idxRegFlatPtr, fAlignMask);
+
 #ifndef IEM_WITH_TLB_STATISTICS
-            /* ja  tlbmiss */
-            off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
+                /* jnz tlbmiss */
+                off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_ne);
 #else
-            /* jbe 1F; inc stat; jmp tlbmiss */
-            uint32_t const offFixup1 = off;
-            off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 16, kIemNativeInstrCond_be);
-            off = iemNativeEmitIncU32CounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
-                                                     offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissCrossPage));
-            off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
-            iemNativeFixupFixedJump(pReNative, offFixup1, off);
+                /* jz  1F; inc stat; jmp tlbmiss */
+                uint32_t const offFixup1 = off;
+                off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 16, kIemNativeInstrCond_e);
+                off = iemNativeEmitIncStamCounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+                                                          offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissAlignment));
+                off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
+                iemNativeFixupFixedJump(pReNative, offFixup1, off);
 #endif
+            }
+
+            /*
+             * 2b. Check that it's not crossing page a boundrary if the access is
+             *     larger than the aligment mask or if we didn't do the strict
+             *     alignment check above.
+             */
+            if (   cbMem > 1
+                && (   !fStrictAlignmentCheck
+                    || cbMem > fAlignMask + 1U))
+            {
+                /* reg1 = regflat & 0xfff */
+                off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, pTlbState->idxReg1,/*=*/ idxRegFlatPtr,/*&*/ GUEST_PAGE_OFFSET_MASK);
+                /* cmp reg1, GUEST_PAGE_SIZE - cbMem */
+                off = iemNativeEmitCmpGpr32WithImmEx(pCodeBuf, off, pTlbState->idxReg1, GUEST_PAGE_SIZE - cbMem);
+#ifndef IEM_WITH_TLB_STATISTICS
+                /* ja  tlbmiss */
+                off = iemNativeEmitJccToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss, kIemNativeInstrCond_nbe);
+#else
+                /* jbe 1F; inc stat; jmp tlbmiss */
+                uint32_t const offFixup1 = off;
+                off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 16, kIemNativeInstrCond_be);
+                off = iemNativeEmitIncU32CounterInVCpuEx(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+                                                         offVCpuTlb + RT_UOFFSETOF(IEMTLB, cTlbNativeMissCrossPage));
+                off = iemNativeEmitJmpToLabelEx(pReNative, pCodeBuf, off, idxLabelTlbMiss);
+                iemNativeFixupFixedJump(pReNative, offFixup1, off);
+#endif
+            }
         }
     }
     else
