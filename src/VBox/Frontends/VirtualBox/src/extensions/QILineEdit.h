@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2008-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -61,10 +61,10 @@ public:
     /** Forces line-edit to adjust fixed width acording to passed @a strText. */
     void setFixedWidthByText(const QString &strText);
 
+    /** Defines whether line-edit is @a fMarkable. */
+    void setMarkable(bool fMarkable);
     /** Puts an icon to mark some error on the right hand side of the line edit. @p is used as tooltip of the icon. */
     void mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage);
-
-    void setMarkable(bool fMarkable);
 
 protected:
 
@@ -98,11 +98,16 @@ private:
     /** Holds the copy to clipboard action. */
     QAction *m_pCopyAction;
 
-    QLabel *m_pIconLabel;
-    bool    m_fMarkForError;
-    bool    m_fMarkable;
-    QString m_strErrorMessage;
-    int     m_iIconMargin;
+    /** Holds whether line-edit is markable. */
+    bool     m_fMarkable;
+    /** Holds whether line-edit is marked for error. */
+    bool     m_fMarkForError;
+    /** Holds the icon label instance. */
+    QLabel  *m_pIconLabel;
+    /** Holds last error message. */
+    QString  m_strErrorMessage;
+    /** Holds cached icon margin. */
+    int      m_iIconMargin;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QILineEdit_h */

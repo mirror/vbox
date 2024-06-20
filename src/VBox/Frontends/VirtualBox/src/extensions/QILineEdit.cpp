@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2008-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -47,9 +47,9 @@ QILineEdit::QILineEdit(QWidget *pParent /* = 0 */)
     : QLineEdit(pParent)
     , m_fAllowToCopyContentsWhenDisabled(false)
     , m_pCopyAction(0)
-    , m_pIconLabel(0)
-    , m_fMarkForError(false)
     , m_fMarkable(false)
+    , m_fMarkForError(false)
+    , m_pIconLabel(0)
     , m_iIconMargin(0)
 {
     prepare();
@@ -59,8 +59,10 @@ QILineEdit::QILineEdit(const QString &strText, QWidget *pParent /* = 0 */)
     : QLineEdit(strText, pParent)
     , m_fAllowToCopyContentsWhenDisabled(false)
     , m_pCopyAction(0)
-    , m_pIconLabel(0)
+    , m_fMarkable(false)
     , m_fMarkForError(false)
+    , m_pIconLabel(0)
+    , m_iIconMargin(0)
 {
     prepare();
 }
@@ -80,6 +82,14 @@ void QILineEdit::setFixedWidthByText(const QString &strText)
     setFixedWidth(fitTextWidth(strText).width());
 }
 
+void QILineEdit::setMarkable(bool fMarkable)
+{
+    if (m_fMarkable == fMarkable)
+        return;
+    m_fMarkable = fMarkable;
+    update();
+}
+
 void QILineEdit::mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage)
 {
     AssertPtrReturnVoid(m_pIconLabel);
@@ -95,14 +105,6 @@ void QILineEdit::mark(bool fError, const QString &strErrorMessage, const QString
     m_pIconLabel->resize(m_pIconLabel->minimumSizeHint());
     m_pIconLabel->setToolTip(strToolTip);
     m_iIconMargin = (height() - m_pIconLabel->height()) / 2;
-    update();
-}
-
-void QILineEdit::setMarkable(bool fMarkable)
-{
-    if (m_fMarkable == fMarkable)
-        return;
-    m_fMarkable = fMarkable;
     update();
 }
 
@@ -141,12 +143,6 @@ void QILineEdit::resizeEvent(QResizeEvent *pResizeEvent)
         m_iIconMargin = (height() - m_pIconLabel->height()) / 2;
         moveIconLabel();
     }
-}
-
-void QILineEdit::moveIconLabel()
-{
-    AssertPtrReturnVoid(m_pIconLabel);
-    m_pIconLabel->move(width() - m_pIconLabel->width() - m_iIconMargin, m_iIconMargin);
 }
 
 void QILineEdit::showEvent(QShowEvent *pShowEvent)
@@ -198,4 +194,10 @@ QSize QILineEdit::fitTextWidth(const QString &strText) const
     const QSize sa = style()->sizeFromContents(QStyle::CT_LineEdit, &sof, sc, this);
 
     return sa;
+}
+
+void QILineEdit::moveIconLabel()
+{
+    AssertPtrReturnVoid(m_pIconLabel);
+    m_pIconLabel->move(width() - m_pIconLabel->width() - m_iIconMargin, m_iIconMargin);
 }
