@@ -43,6 +43,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
+#include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/ldr.h>
@@ -99,6 +100,8 @@ typedef struct RTTRACELOGTOOLTCP
     RTSOCKET                    hSock;
     /** The TCP server. */
     PRTTCPSERVER                pTcpSrv;
+    /** File to save the read data to. */
+    RTFILE                      hFile;
 } RTTRACELOGTOOLTCP;
 /** Pointer to the TCP server/client state. */
 typedef RTTRACELOGTOOLTCP *PRTTRACELOGTOOLTCP;
@@ -114,6 +117,11 @@ static void rtTraceLogTcpDestroy(PRTTRACELOGTOOLTCP pTrcLogTcp)
             RTTcpServerDisconnectClient2(pTrcLogTcp->hSock);
         else
             RTTcpClientClose(pTrcLogTcp->hSock);
+    }
+    if (pTrcLogTcp->hFile != NIL_RTFILE)
+    {
+        RTFileClose(pTrcLogTcp->hFile);
+        pTrcLogTcp->hFile = NIL_RTFILE;
     }
     RTMemFree(pTrcLogTcp);
 }
@@ -134,6 +142,14 @@ static DECLCALLBACK(int) rtTraceLogToolTcpInput(void *pvUser, void *pvBuf, size_
     int rc = RTTcpSelectOne(pTrcLogTcp->hSock, cMsTimeout);
     if (RT_SUCCESS(rc))
         rc = RTTcpReadNB(pTrcLogTcp->hSock, pvBuf, cbBuf, pcbRead);
+
+    if (   RT_SUCCESS(rc)
+        && pTrcLogTcp->hFile != NIL_RTFILE)
+    {
+        int rc2 = RTFileWrite(pTrcLogTcp->hFile, pvBuf, *pcbRead, NULL);
+        if (RT_FAILURE(rc2))
+            RTMsgError("Failed to write received data to save file: %Rrc\n", rc2);
+    }
 
     return rc;
 }
@@ -157,8 +173,6 @@ static DECLCALLBACK(int) rtTraceLogToolTcpClose(void *pvUser)
  */
 static int rtTraceLogToolReaderCreate(PRTTRACELOGRDR phTraceLogRdr, const char *pszInput, const char *pszSave)
 {
-    RT_NOREF(pszSave);
-
     /* Try treating the input as a file first. */
     int rc = RTTraceLogRdrCreateFromFile(phTraceLogRdr, pszInput);
     if (RT_FAILURE(rc))
@@ -195,6 +209,13 @@ static int rtTraceLogToolReaderCreate(PRTTRACELOGRDR phTraceLogRdr, const char *
                 rc = RTTraceLogRdrCreate(phTraceLogRdr, rtTraceLogToolTcpInput, rtTraceLogToolTcpClose, pTrcLogTcp);
                 if (RT_FAILURE(rc))
                     rtTraceLogTcpDestroy(pTrcLogTcp);
+
+                if (pszSave)
+                {
+                    rc = RTFileOpen(&pTrcLogTcp->hFile, pszSave, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE);
+                    if (RT_FAILURE(rc))
+                        rtTraceLogTcpDestroy(pTrcLogTcp);
+                }
             }
             else
             {
