@@ -74,6 +74,81 @@ static DECLCALLBACK(void *) drvIfTraceIBase_QueryInterface(PPDMIBASE pInterface,
  * PDMDRVREG Methods
  *
  */
+static const RTTRACELOGEVTDESC g_IfTraceVmResumeEvtDesc =
+{
+    "IfTrace.VmResume",
+    "VM was resumed",
+    RTTRACELOGEVTSEVERITY_DEBUG,
+    0,
+    NULL
+};
+
+
+/**
+ * @callback_method_impl{FNPDMDRVRESUME}
+ */
+static DECLCALLBACK(void) drvIfTrace_Resume(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVIFTRACE pThis = PDMINS_2_DATA(pDrvIns, PDRVIFTRACE);
+    LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
+
+    int rcTraceLog = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_IfTraceVmResumeEvtDesc, 0, 0, 0);
+    if (RT_FAILURE(rcTraceLog))
+        LogRelMax(10, ("DrvIfTrace#%d: Failed to add event to trace log %Rrc\n", pThis->pDrvIns->iInstance, rcTraceLog));
+}
+
+
+
+static const RTTRACELOGEVTDESC g_IfTraceVmSuspendEvtDesc =
+{
+    "IfTrace.VmSuspend",
+    "VM was suspended",
+    RTTRACELOGEVTSEVERITY_DEBUG,
+    0,
+    NULL
+};
+
+
+/**
+ * @callback_method_impl{FNPDMDRVSUSPEND}
+ */
+static DECLCALLBACK(void) drvIfTrace_Suspend(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVIFTRACE pThis = PDMINS_2_DATA(pDrvIns, PDRVIFTRACE);
+    LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
+
+    int rcTraceLog = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_IfTraceVmSuspendEvtDesc, 0, 0, 0);
+    if (RT_FAILURE(rcTraceLog))
+        LogRelMax(10, ("DrvIfTrace#%d: Failed to add event to trace log %Rrc\n", pThis->pDrvIns->iInstance, rcTraceLog));
+}
+
+
+static const RTTRACELOGEVTDESC g_IfTraceVmResetEvtDesc =
+{
+    "IfTrace.VmReset",
+    "VM was reset",
+    RTTRACELOGEVTSEVERITY_DEBUG,
+    0,
+    NULL
+};
+
+/**
+ * @callback_method_impl{FNPDMDRVRESET}
+ */
+static DECLCALLBACK(void) drvIfTrace_Reset(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVIFTRACE pThis = PDMINS_2_DATA(pDrvIns, PDRVIFTRACE);
+    LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
+
+    int rcTraceLog = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_IfTraceVmResetEvtDesc, 0, 0, 0);
+    if (RT_FAILURE(rcTraceLog))
+        LogRelMax(10, ("DrvIfTrace#%d: Failed to add event to trace log %Rrc\n", pThis->pDrvIns->iInstance, rcTraceLog));
+}
+
+
 
 /**
  * Destroys a interface filter driver instance.
@@ -218,11 +293,11 @@ const PDMDRVREG g_DrvIfTrace =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    NULL,
+    drvIfTrace_Reset,
     /* pfnSuspend */
-    NULL,
+    drvIfTrace_Suspend,
     /* pfnResume */
-    NULL,
+    drvIfTrace_Resume,
     /* pfnAttach */
     NULL,
     /* pfnDetach */
