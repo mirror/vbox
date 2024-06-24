@@ -912,11 +912,11 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
 #ifdef VBOX_WITH_RECORDING
                 RECORDINGVIDEOFRAME Frame =
                 {
-                    (uint16_t)w, (uint16_t)h,
-                    (uint8_t )pFBInfo->u16BitsPerPixel, RECORDINGPIXELFMT_BRGA32, pFBInfo->u32LineSize,
+                    { (uint32_t)w, (uint32_t)h,
+                      (uint8_t )pFBInfo->u16BitsPerPixel, RECORDINGPIXELFMT_BRGA32, pFBInfo->u32LineSize },
                     pFBInfo->pu8FramebufferVRAM + (y * pFBInfo->u32LineSize + x * (pFBInfo->u16BitsPerPixel / 8)),
                     pFBInfo->w * pFBInfo->u32LineSize,
-                    (uint16_t)x, (uint16_t)y
+                    { (uint32_t)x, (uint32_t)y }
                 };
                 i_recordingScreenUpdate(uScreenId, &Frame);
 #endif
@@ -957,10 +957,10 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
 #ifdef VBOX_WITH_RECORDING
                             RECORDINGVIDEOFRAME Frame =
                             {
-                                (uint16_t)ulWidth, (uint16_t)ulHeight,
-                                (uint8_t )ulBitsPerPixel, RECORDINGPIXELFMT_BRGA32, ulBytesPerLine,
+                                { (uint32_t)ulWidth, (uint32_t)ulHeight,
+                                  (uint8_t )ulBitsPerPixel, RECORDINGPIXELFMT_BRGA32, ulBytesPerLine },
                                 pAddress, ulHeight * ulBytesPerLine,
-                                0, 0
+                                { 0, 0 }
                             };
 
                             i_recordingScreenUpdate(uScreenId, &Frame);
@@ -1017,10 +1017,10 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
 #ifdef VBOX_WITH_RECORDING
                         RECORDINGVIDEOFRAME Frame =
                         {
-                            (uint16_t)w, (uint16_t)h,
-                            (uint8_t)ulBitsPerPixel, RECORDINGPIXELFMT_BRGA32, ulBytesPerLine,
+                            { (uint32_t)w, (uint32_t)h,
+                              (uint8_t)ulBitsPerPixel, RECORDINGPIXELFMT_BRGA32, ulBytesPerLine },
                             pu8Dst, h * ulBytesPerLine,
-                            (uint16_t)x, (uint16_t)y
+                            { (uint32_t)x, (uint32_t)y }
                         };
 
                         i_recordingScreenUpdate(uScreenId, &Frame);
@@ -2281,9 +2281,10 @@ int Display::i_recordingScreenChanged(unsigned uScreenId, const DISPLAYFBINFO *p
             /* Send the full screen update. */
             RECORDINGVIDEOFRAME Frame =
             {
-                (uint16_t)pFBInfo->w, (uint16_t)pFBInfo->h,
-                (uint8_t)pFBInfo->u16BitsPerPixel, RECORDINGPIXELFMT_BRGA32, pFBInfo->u32LineSize, //pFBInfo->w * (pFBInfo->u16BitsPerPixel / 8),
-                pFBInfo->pu8FramebufferVRAM, pFBInfo->h * pFBInfo->u32LineSize, 0, 0
+                { (uint32_t)pFBInfo->w, (uint32_t)pFBInfo->h,
+                  (uint8_t)pFBInfo->u16BitsPerPixel, RECORDINGPIXELFMT_BRGA32, pFBInfo->u32LineSize },
+                pFBInfo->pu8FramebufferVRAM, pFBInfo->h * pFBInfo->u32LineSize,
+                { 0, 0 }
             };
 
             vrc = i_recordingScreenUpdate(uScreenId, &Frame);

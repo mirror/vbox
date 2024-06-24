@@ -435,7 +435,7 @@ int RecordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, co
         RTFileWrite(fh, &coreHdr, sizeof(coreHdr), NULL);
 
         /* Bitmaps (DIBs) are stored upside-down (thanks, OS/2), so work from the bottom up. */
-        uint32_t offSrc = cbRGBBuf - uBytesPerLine;
+        size_t offSrc = cbRGBBuf - uBytesPerLine;
 
         /* Do the copy. */
         for (unsigned int i = 0; i < uHeight; i++)
