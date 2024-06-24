@@ -842,10 +842,16 @@ UIPortForwardingDataList UIPortForwardingTable::rules() const
 void UIPortForwardingTable::setRules(const UIPortForwardingDataList &newRules,
                                      bool fHoldPosition /* = false */)
 {
-    /* Remember last chosen item: */
+    /* Store last chosen item: */
+    QString strPreviousName;
     const QModelIndex currentIndex = m_pTableView->currentIndex();
-    QITableViewRow *pCurrentItem = currentIndex.isValid() ? m_pTableModel->childItem(currentIndex.row()) : 0;
-    const QString strCurrentName = pCurrentItem ? pCurrentItem->childItem(0)->text() : QString();
+    if (currentIndex.isValid())
+    {
+        const int iCurrentRow = currentIndex.row();
+        const QModelIndex firstCurrentIndex = m_pTableModel->index(iCurrentRow, 0);
+        if (firstCurrentIndex.isValid())
+            strPreviousName = m_pTableModel->data(firstCurrentIndex, Qt::DisplayRole).toString();
+    }
 
     /* Update the list of rules: */
     m_rules = newRules;
@@ -853,14 +859,17 @@ void UIPortForwardingTable::setRules(const UIPortForwardingDataList &newRules,
     sltAdjustTable();
 
     /* Restore last chosen item: */
-    if (fHoldPosition && !strCurrentName.isEmpty())
+    if (fHoldPosition && !strPreviousName.isEmpty())
     {
-        for (int i = 0; i < m_pTableModel->childCount(); ++i)
+        for (int i = 0; i < m_pTableModel->rowCount(); ++i)
         {
-            QITableViewRow *pItem = m_pTableModel->childItem(i);
-            const QString strName = pItem ? pItem->childItem(0)->text() : QString();
-            if (strName == strCurrentName)
-                m_pTableView->setCurrentIndex(m_pTableModel->index(i, 0));
+            const QModelIndex firstIteratedIndex = m_pTableModel->index(i, 0);
+            if (firstIteratedIndex.isValid())
+            {
+                const QString strName = m_pTableModel->data(firstIteratedIndex, Qt::DisplayRole).toString();
+                if (strName == strPreviousName)
+                    m_pTableView->setCurrentIndex(m_pTableModel->index(i, 0));
+            }
         }
     }
 }
