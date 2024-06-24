@@ -44,7 +44,6 @@
 /* Forward declarations: */
 class QAction;
 class QHBoxLayout;
-class QItemEditorFactory;
 class QIDialogButtonBox;
 class QITableView;
 class UIPortForwardingModel;
@@ -219,8 +218,6 @@ public:
       * @param  fIPv6                Brings whether this table contains IPv6 rules, not IPv4.
       * @param  fAllowEmptyGuestIPs  Brings whether this table allows empty guest IPs. */
     UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6, bool fAllowEmptyGuestIPs);
-    /** Destructs Port Forwarding table. */
-    virtual ~UIPortForwardingTable() RT_OVERRIDE;
 
     /** Returns table-view reference. */
     QITableView *view() const;
@@ -281,12 +278,8 @@ private:
     void prepareTableView();
     /** Prepares table-model. */
     void prepareTableModel();
-    /** Prepares table-delegates. */
-    void prepareTableDelegates();
     /** Prepares toolbar. */
     void prepareToolbar();
-    /** Cleanups all. */
-    void cleanup();
 
     /** Holds the list of port forwarding rules. */
     UIPortForwardingDataList  m_rules;
@@ -307,8 +300,6 @@ private:
     QITableView *m_pTableView;
     /** Holds the tool-bar instance. */
     QIToolBar   *m_pToolBar;
-    /** Holds the item editor factory instance. */
-    QItemEditorFactory *m_pItemEditorFactory;
 
     /** Holds the table-model instance. */
     UIPortForwardingModel *m_pTableModel;

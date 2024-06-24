@@ -497,8 +497,24 @@ class UIPortForwardingView : public QITableView
 
 public:
 
-    /** Constructs Port Forwarding table-view passing @a pParent to the base-class. */
-    UIPortForwardingView(QWidget *pParent = 0) : QITableView(pParent) {}
+    /** Constructs Port Forwarding table-view passing @a pParent to the base-class.
+      * @param  fIPv6  Brings whether this table contains IPv6 rules, not IPv4. */
+    UIPortForwardingView(bool fIPv6, QWidget *pParent = 0);
+    /** Destructs Port Forwarding table-view. */
+    virtual ~UIPortForwardingView();
+
+private:
+
+    /** Prepares everything. */
+    void prepare();
+    /** Cleanups everything. */
+    void cleanup();
+
+    /** Holds whether this view contains IPv6 rules, not IPv4. */
+    bool  m_fIPv6;
+
+    /** Holds the item editor factory instance. */
+    QItemEditorFactory *m_pItemEditorFactory;
 };
 
 
@@ -763,6 +779,93 @@ QITableView *UIPortForwardingModel::view() const
 
 
 /*********************************************************************************************************************************
+*   Class UIPortForwardingView implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIPortForwardingView::UIPortForwardingView(bool fIPv6, QWidget *pParent /* = 0 */)
+    : QITableView(pParent)
+    , m_fIPv6(fIPv6)
+    , m_pItemEditorFactory(0)
+{
+    prepare();
+}
+
+UIPortForwardingView::~UIPortForwardingView()
+{
+    cleanup();
+}
+
+void UIPortForwardingView::prepare()
+{
+    // WORAKROUND: Do we still need this?
+    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+
+    /* Disable TAB-key navigation: */
+    setTabKeyNavigation(false);
+    /* Adjust selection mode: */
+    setSelectionMode(QAbstractItemView::SingleSelection);
+    /* Configure context-menu policy: */
+    setContextMenuPolicy(Qt::CustomContextMenu);
+
+    /* Adjust header policy: */
+    verticalHeader()->hide();
+    verticalHeader()->setDefaultSectionSize((int)(verticalHeader()->minimumSectionSize() * 1.33));
+
+    /* We certainly have abstract item delegate: */
+    QAbstractItemDelegate *pAbstractItemDelegate = itemDelegate();
+    if (pAbstractItemDelegate)
+    {
+        /* But is this also styled item delegate? */
+        QStyledItemDelegate *pStyledItemDelegate = qobject_cast<QStyledItemDelegate*>(pAbstractItemDelegate);
+        if (pStyledItemDelegate)
+        {
+            /* Create new item editor factory: */
+            m_pItemEditorFactory = new QItemEditorFactory;
+            if (m_pItemEditorFactory)
+            {
+                /* Register NameEditor as the NameData editor: */
+                int iNameId = qRegisterMetaType<NameData>();
+                QStandardItemEditorCreator<NameEditor> *pNameEditorItemCreator = new QStandardItemEditorCreator<NameEditor>();
+                m_pItemEditorFactory->registerEditor(iNameId, pNameEditorItemCreator);
+
+                /* Register ProtocolEditor as the KNATProtocol editor: */
+                int iProtocolId = qRegisterMetaType<KNATProtocol>();
+                QStandardItemEditorCreator<ProtocolEditor> *pProtocolEditorItemCreator = new QStandardItemEditorCreator<ProtocolEditor>();
+                m_pItemEditorFactory->registerEditor(iProtocolId, pProtocolEditorItemCreator);
+
+                /* Register IPv4Editor/IPv6Editor as the IpData editor: */
+                int iIpId = qRegisterMetaType<IpData>();
+                if (!m_fIPv6)
+                {
+                    QStandardItemEditorCreator<IPv4Editor> *pIPv4EditorItemCreator = new QStandardItemEditorCreator<IPv4Editor>();
+                    m_pItemEditorFactory->registerEditor(iIpId, pIPv4EditorItemCreator);
+                }
+                else
+                {
+                    QStandardItemEditorCreator<IPv6Editor> *pIPv6EditorItemCreator = new QStandardItemEditorCreator<IPv6Editor>();
+                    m_pItemEditorFactory->registerEditor(iIpId, pIPv6EditorItemCreator);
+                }
+
+                /* Register PortEditor as the PortData editor: */
+                int iPortId = qRegisterMetaType<PortData>();
+                QStandardItemEditorCreator<PortEditor> *pPortEditorItemCreator = new QStandardItemEditorCreator<PortEditor>();
+                m_pItemEditorFactory->registerEditor(iPortId, pPortEditorItemCreator);
+
+                /* Set newly created item editor factory for table delegate: */
+                pStyledItemDelegate->setItemEditorFactory(m_pItemEditorFactory);
+            }
+        }
+    }
+}
+
+void UIPortForwardingView::cleanup()
+{
+    /* Cleanup editor factory delegate: */
+    delete m_pItemEditorFactory;
+    m_pItemEditorFactory = 0;
+}
+
+/*********************************************************************************************************************************
 *   Class UIPortForwardingTable implementation.                                                                                  *
 *********************************************************************************************************************************/
 
@@ -774,18 +877,12 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
     , m_pLayout(0)
     , m_pTableView(0)
     , m_pToolBar(0)
-    , m_pItemEditorFactory(0)
     , m_pTableModel(0)
     , m_pActionAdd(0)
     , m_pActionCopy(0)
     , m_pActionRemove(0)
 {
     prepare();
-}
-
-UIPortForwardingTable::~UIPortForwardingTable()
-{
-    cleanup();
 }
 
 QITableView *UIPortForwardingTable::view() const
@@ -1066,16 +1163,10 @@ void UIPortForwardingTable::prepareLayout()
 void UIPortForwardingTable::prepareTableView()
 {
     /* Create table-view: */
-    m_pTableView = new UIPortForwardingView(this);
+    m_pTableView = new UIPortForwardingView(m_fIPv6, this);
     if (m_pTableView)
     {
         /* Configure table-view: */
-        m_pTableView->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-        m_pTableView->setTabKeyNavigation(false);
-        m_pTableView->verticalHeader()->hide();
-        m_pTableView->verticalHeader()->setDefaultSectionSize((int)(m_pTableView->verticalHeader()->minimumSectionSize() * 1.33));
-        m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
-        m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pTableView->installEventFilter(this);
 
         /* Prepare model: */
@@ -1086,9 +1177,6 @@ void UIPortForwardingTable::prepareTableView()
                 this, &UIPortForwardingTable::sltCurrentChanged);
         connect(m_pTableView, &UIPortForwardingView::customContextMenuRequested,
                 this, &UIPortForwardingTable::sltShowTableContexMenu);
-
-        /* Prepare delegates: */
-        prepareTableDelegates();
 
         /* Add into layout: */
         m_pLayout->addWidget(m_pTableView);
@@ -1109,55 +1197,6 @@ void UIPortForwardingTable::prepareTableModel()
                 this, &UIPortForwardingTable::sltTableDataChanged);
         connect(m_pTableModel, &UIPortForwardingModel::rowsRemoved,
                 this, &UIPortForwardingTable::sltTableDataChanged);
-    }
-}
-
-void UIPortForwardingTable::prepareTableDelegates()
-{
-    /* We certainly have abstract item delegate: */
-    QAbstractItemDelegate *pAbstractItemDelegate = m_pTableView->itemDelegate();
-    if (pAbstractItemDelegate)
-    {
-        /* But is this also styled item delegate? */
-        QStyledItemDelegate *pStyledItemDelegate = qobject_cast<QStyledItemDelegate*>(pAbstractItemDelegate);
-        if (pStyledItemDelegate)
-        {
-            /* Create new item editor factory: */
-            m_pItemEditorFactory = new QItemEditorFactory;
-            if (m_pItemEditorFactory)
-            {
-                /* Register NameEditor as the NameData editor: */
-                int iNameId = qRegisterMetaType<NameData>();
-                QStandardItemEditorCreator<NameEditor> *pNameEditorItemCreator = new QStandardItemEditorCreator<NameEditor>();
-                m_pItemEditorFactory->registerEditor(iNameId, pNameEditorItemCreator);
-
-                /* Register ProtocolEditor as the KNATProtocol editor: */
-                int iProtocolId = qRegisterMetaType<KNATProtocol>();
-                QStandardItemEditorCreator<ProtocolEditor> *pProtocolEditorItemCreator = new QStandardItemEditorCreator<ProtocolEditor>();
-                m_pItemEditorFactory->registerEditor(iProtocolId, pProtocolEditorItemCreator);
-
-                /* Register IPv4Editor/IPv6Editor as the IpData editor: */
-                int iIpId = qRegisterMetaType<IpData>();
-                if (!m_fIPv6)
-                {
-                    QStandardItemEditorCreator<IPv4Editor> *pIPv4EditorItemCreator = new QStandardItemEditorCreator<IPv4Editor>();
-                    m_pItemEditorFactory->registerEditor(iIpId, pIPv4EditorItemCreator);
-                }
-                else
-                {
-                    QStandardItemEditorCreator<IPv6Editor> *pIPv6EditorItemCreator = new QStandardItemEditorCreator<IPv6Editor>();
-                    m_pItemEditorFactory->registerEditor(iIpId, pIPv6EditorItemCreator);
-                }
-
-                /* Register PortEditor as the PortData editor: */
-                int iPortId = qRegisterMetaType<PortData>();
-                QStandardItemEditorCreator<PortEditor> *pPortEditorItemCreator = new QStandardItemEditorCreator<PortEditor>();
-                m_pItemEditorFactory->registerEditor(iPortId, pPortEditorItemCreator);
-
-                /* Set newly created item editor factory for table delegate: */
-                pStyledItemDelegate->setItemEditorFactory(m_pItemEditorFactory);
-            }
-        }
     }
 }
 
@@ -1209,12 +1248,6 @@ void UIPortForwardingTable::prepareToolbar()
         /* Add into layout: */
         m_pLayout->addWidget(m_pToolBar);
     }
-}
-
-void UIPortForwardingTable::cleanup()
-{
-    delete m_pItemEditorFactory;
-    m_pItemEditorFactory = 0;
 }
 
 
