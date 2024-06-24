@@ -536,11 +536,6 @@ public:
     /** Defines form @a values. */
     void setFormValues(const CFormValueVector &values);
 
-    /** Returns the number of children. */
-    int childCount() const;
-    /** Returns the child item with @a iIndex. */
-    QITableViewRow *childItem(int iIndex) const;
-
     /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx. */
     virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const RT_OVERRIDE;
 
@@ -598,11 +593,6 @@ public:
     /** Constructs the Form Editor proxy-model passing @a pParent to the base-class. */
     UIFormEditorProxyModel(QObject *pParent = 0);
 
-    /** Returns the number of children. */
-    int childCount() const;
-    /** Returns the child item with @a iIndex. */
-    QITableViewRow *childItem(int iIndex) const;
-
 protected:
 
     /** Returns whether item in the row indicated by the given @a iSourceRow and @a srcParenIdx should be included in the model. */
@@ -619,13 +609,6 @@ public:
 
     /** Constructs Form Editor table-view. */
     UIFormEditorView(QWidget *pParent = 0);
-
-protected:
-
-    /** Returns the number of children. */
-    virtual int childCount() const RT_OVERRIDE;
-    /** Returns the child item with @a iIndex. */
-    virtual QITableViewRow *childItem(int iIndex) const RT_OVERRIDE;
 };
 
 
@@ -1184,19 +1167,6 @@ void UIFormEditorModel::setFormValues(const CFormValueVector &values)
     endInsertRows();
 }
 
-int UIFormEditorModel::childCount() const
-{
-    return rowCount();
-}
-
-QITableViewRow *UIFormEditorModel::childItem(int iIndex) const
-{
-    /* Make sure index within the bounds: */
-    AssertReturn(iIndex >= 0 && iIndex < m_dataList.size(), 0);
-    /* Return corresponding row: */
-    return m_dataList[iIndex];
-}
-
 QModelIndex UIFormEditorModel::index(int iRow, int iColumn, const QModelIndex &parentIdx /* = QModelIndex() */) const
 {
     /* No index for unknown items: */
@@ -1548,24 +1518,6 @@ UIFormEditorProxyModel::UIFormEditorProxyModel(QObject *pParent /* = 0 */)
 {
 }
 
-int UIFormEditorProxyModel::childCount() const
-{
-    return rowCount();
-}
-
-QITableViewRow *UIFormEditorProxyModel::childItem(int iIndex) const
-{
-    /* Make sure iIndex within the bounds: */
-    AssertReturn(iIndex >= 0 && iIndex < rowCount(), 0);
-    /* Acquire actual index of source model: */
-    const QModelIndex i = sourceModel()->index(iIndex, 0);
-    AssertReturn(i.isValid(), 0);
-    /* Get packed item pointer: */
-    UIFormEditorRow *pItem = static_cast<UIFormEditorRow*>(i.internalPointer());
-    AssertReturn(pItem, 0);
-    return pItem;
-}
-
 bool UIFormEditorProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const
 {
     /* Acquire actual index of source model: */
@@ -1590,20 +1542,6 @@ UIFormEditorView::UIFormEditorView(QWidget * /* pParent = 0 */)
 {
     /* Configure widget a bit: */
     setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
-}
-
-int UIFormEditorView::childCount() const
-{
-    /* Redirect request to model: */
-    AssertPtrReturn(model(), 0);
-    return qobject_cast<UIFormEditorProxyModel*>(model())->childCount();
-}
-
-QITableViewRow *UIFormEditorView::childItem(int iIndex) const
-{
-    /* Redirect request to model: */
-    AssertPtrReturn(model(), 0);
-    return qobject_cast<UIFormEditorProxyModel*>(model())->childItem(iIndex);
 }
 
 
