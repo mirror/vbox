@@ -446,11 +446,6 @@ public:
     /** Destructs Port Forwarding model. */
     ~UIPortForwardingModel();
 
-    /** Returns the number of children. */
-    int childCount() const;
-    /** Returns the child item with @a iIndex. */
-    QITableViewRow *childItem(int iIndex) const;
-
     /** Returns the list of port forwarding rules. */
     UIPortForwardingDataList rules() const;
     /** Defines the list of port forwarding @a newRules. */
@@ -505,13 +500,6 @@ public:
 
     /** Constructs Port Forwarding table-view. */
     UIPortForwardingView() {}
-
-protected:
-
-    /** Returns the number of children. */
-    virtual int childCount() const RT_OVERRIDE;
-    /** Returns the child item with @a iIndex. */
-    virtual QITableViewRow *childItem(int iIndex) const RT_OVERRIDE;
 };
 
 
@@ -536,20 +524,6 @@ UIPortForwardingModel::~UIPortForwardingModel()
     /* Delete the cached data: */
     qDeleteAll(m_dataList);
     m_dataList.clear();
-}
-
-int UIPortForwardingModel::childCount() const
-{
-    /* Return row count: */
-    return rowCount();
-}
-
-QITableViewRow *UIPortForwardingModel::childItem(int iIndex) const
-{
-    /* Make sure index within the bounds: */
-    AssertReturn(iIndex >= 0 && iIndex < m_dataList.size(), 0);
-    /* Return corresponding row: */
-    return m_dataList[iIndex];
 }
 
 UIPortForwardingDataList UIPortForwardingModel::rules() const
@@ -788,23 +762,6 @@ QVariant UIPortForwardingModel::data(const QModelIndex &index, int iRole) const
 QITableView *UIPortForwardingModel::parentTable() const
 {
     return qobject_cast<QITableView*>(parent());
-}
-
-
-/*********************************************************************************************************************************
-*   Class UIPortForwardingView implementation.                                                                                   *
-*********************************************************************************************************************************/
-
-int UIPortForwardingView::childCount() const
-{
-    /* Redirect request to table model: */
-    return qobject_cast<UIPortForwardingModel*>(model())->childCount();
-}
-
-QITableViewRow *UIPortForwardingView::childItem(int iIndex) const
-{
-    /* Redirect request to table model: */
-    return qobject_cast<UIPortForwardingModel*>(model())->childItem(iIndex);
 }
 
 
