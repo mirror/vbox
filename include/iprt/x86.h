@@ -1542,9 +1542,38 @@ typedef const X86MTRRVAR *PCX86MTRRVAR;
 #define MSR_IA32_ARCH_CAP_F_RSBO            RT_BIT_32(2)
 /** Virtual machine monitors need not flush the level 1 data cache on VM entry.
  * This is also the case when MSR_IA32_ARCH_CAP_F_RDCL_NO is set. */
-#define MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D RT_BIT_32(3)
-/** CPU does not suffer from MDS issues. */
-#define MSR_IA32_ARCH_CAP_F_MDS_NO          RT_BIT_32(4)
+#define MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D  RT_BIT_32(3)
+/** CPU does not suffer from speculative store bypass (SSB) issues.   */
+#define MSR_IA32_ARCH_CAP_F_SSB_NO          RT_BIT_32(4)
+/** CPU does not suffer from microarchitectural data sampling (MDS) issues. */
+#define MSR_IA32_ARCH_CAP_F_MDS_NO          RT_BIT_32(5)
+/** CPU does not suffer MCE after change code page size w/o invlpg issues. */
+#define MSR_IA32_ARCH_CAP_F_IF_PSCHANGE_MC_NO       RT_BIT_32(6)
+/** CPU has RTM_DISABLE and TXS_CPUID_CLEAR support. */
+#define MSR_IA32_ARCH_CAP_F_TSX_CTRL        RT_BIT_32(7)
+/** CPU does not suffer from transaction synchronization extensions (TSX)
+ *  asyncrhonous abort (TAA) issues. */
+#define MSR_IA32_ARCH_CAP_F_TAA_NO          RT_BIT_32(8)
+/* 9 is 'reserved' */
+#define MSR_IA32_ARCH_CAP_F_MISC_PACKAGE_CTRLS      RT_BIT_32(10)
+#define MSR_IA32_ARCH_CAP_F_ENERGY_FILTERING_CTL    RT_BIT_32(11)
+#define MSR_IA32_ARCH_CAP_F_DOITM                   RT_BIT_32(12)
+#define MSR_IA32_ARCH_CAP_F_SBDR_SSDP_NO            RT_BIT_32(13)
+#define MSR_IA32_ARCH_CAP_F_FBSDP_NO                RT_BIT_32(14)
+#define MSR_IA32_ARCH_CAP_F_PSDP_NO                 RT_BIT_32(15)
+/* 16 is 'reserved' */
+#define MSR_IA32_ARCH_CAP_F_FB_CLEAR                RT_BIT_32(17)
+#define MSR_IA32_ARCH_CAP_F_FB_CLEAR_CTRL           RT_BIT_32(18)
+#define MSR_IA32_ARCH_CAP_F_RRSBA                   RT_BIT_32(19)
+#define MSR_IA32_ARCH_CAP_F_BHI_NO                  RT_BIT_32(20)
+#define MSR_IA32_ARCH_CAP_F_XAPIC_DISABLE_STATUS    RT_BIT_32(21)
+/* 22 is 'reserved' */
+#define MSR_IA32_ARCH_CAP_F_OVERCLOCKING_STATUS     RT_BIT_32(22)
+#define MSR_IA32_ARCH_CAP_F_PBRSB_NO                RT_BIT_32(23)
+#define MSR_IA32_ARCH_CAP_F_GDS_CTRL                RT_BIT_32(24)
+#define MSR_IA32_ARCH_CAP_F_GDS_NO                  RT_BIT_32(25)
+#define MSR_IA32_ARCH_CAP_F_RFDS_NO                 RT_BIT_32(26)
+#define MSR_IA32_ARCH_CAP_F_RFDS_CLEAR              RT_BIT_32(27)
 
 /** Flush command register. */
 #define MSR_IA32_FLUSH_CMD                  UINT32_C(0x10b)
