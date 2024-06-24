@@ -458,6 +458,9 @@ public:
     /** Defines guest address @a strHint. */
     void setGuestAddressHint(const QString &strHint);
 
+    /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx index. */
+    virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const RT_OVERRIDE RT_FINAL;
+
     /** Returns flags for item with certain @a index. */
     virtual Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE RT_FINAL;
 
@@ -621,6 +624,17 @@ void UIPortForwardingModel::removeRule(const QModelIndex &index)
 void UIPortForwardingModel::setGuestAddressHint(const QString &strHint)
 {
     m_strGuestAddressHint = strHint;
+}
+
+QModelIndex UIPortForwardingModel::index(int iRow, int iColumn, const QModelIndex &parentIdx /* = QModelIndex() */) const
+{
+    /* No index for unknown items: */
+    if (!hasIndex(iRow, iColumn, parentIdx))
+        return QModelIndex();
+
+    /* Provide index users with packed item pointer: */
+    UIPortForwardingRow *pItem = iRow >= 0 && iRow < m_dataList.size() ? m_dataList.at(iRow) : 0;
+    return pItem ? createIndex(iRow, iColumn, pItem) : QModelIndex();
 }
 
 Qt::ItemFlags UIPortForwardingModel::flags(const QModelIndex &index) const
