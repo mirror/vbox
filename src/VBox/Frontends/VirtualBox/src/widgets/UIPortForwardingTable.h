@@ -221,6 +221,10 @@ public:
     UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6, bool fAllowEmptyGuestIPs);
     /** Destructs Port Forwarding table. */
     virtual ~UIPortForwardingTable() RT_OVERRIDE;
+
+    /** Returns table-view reference. */
+    QITableView *view() const;
+
     /** Returns the list of port forwarding rules. */
     UIPortForwardingDataList rules() const;
     /** Defines the list of port forwarding @a newRules.

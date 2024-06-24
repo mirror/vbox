@@ -442,9 +442,9 @@ public:
 
     /** Constructs Port Forwarding model passing @a pParent to the base-class.
       * @param  rules  Brings the list of port forwarding rules to load initially. */
-    UIPortForwardingModel(QITableView *pParent, const UIPortForwardingDataList &rules = UIPortForwardingDataList());
+    UIPortForwardingModel(UIPortForwardingTable *pParent, const UIPortForwardingDataList &rules = UIPortForwardingDataList());
     /** Destructs Port Forwarding model. */
-    ~UIPortForwardingModel();
+    virtual ~UIPortForwardingModel();
 
     /** Returns the list of port forwarding rules. */
     UIPortForwardingDataList rules() const;
@@ -459,29 +459,28 @@ public:
     void setGuestAddressHint(const QString &strHint);
 
     /** Returns flags for item with certain @a index. */
-    Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE RT_FINAL;
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE RT_FINAL;
 
     /** Returns row count of certain @a parent. */
-    int rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
-
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
     /** Returns column count of certain @a parent. */
-    int columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
 
-    /** Returns header data.
-      * @param  iSection        Brings the number of section we aquire data for.
-      * @param  enmOrientation  Brings the orientation of header we aquire data for.
-      * @param  iRole           Brings the role we aquire data for. */
-    QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const RT_OVERRIDE RT_FINAL;
+    /** Returns header data for @a iSection, @a enmOrientation and @a iRole specified. */
+    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const RT_OVERRIDE RT_FINAL;
 
     /** Defines the @a iRole data for item with @a index as @a value. */
-    bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) RT_OVERRIDE RT_FINAL;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) RT_OVERRIDE RT_FINAL;
     /** Returns the @a iRole data for item with @a index. */
-    QVariant data(const QModelIndex &index, int iRole) const RT_OVERRIDE RT_FINAL;
+    virtual QVariant data(const QModelIndex &index, int iRole) const RT_OVERRIDE RT_FINAL;
 
 private:
 
     /** Return the parent table-view reference. */
-    QITableView *parentTable() const;
+    QITableView *view() const;
+
+    /** Holds the root port-forwarding table reference. */
+    UIPortForwardingTable *m_pPortForwardingTable;
 
     /** Holds the port forwarding row list.  */
     QList<UIPortForwardingRow*> m_dataList;
@@ -498,8 +497,8 @@ class UIPortForwardingView : public QITableView
 
 public:
 
-    /** Constructs Port Forwarding table-view. */
-    UIPortForwardingView() {}
+    /** Constructs Port Forwarding table-view passing @a pParent to the base-class. */
+    UIPortForwardingView(QWidget *pParent = 0) : QITableView(pParent) {}
 };
 
 
@@ -507,13 +506,14 @@ public:
 *   Class UIPortForwardingModel implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UIPortForwardingModel::UIPortForwardingModel(QITableView *pParent,
+UIPortForwardingModel::UIPortForwardingModel(UIPortForwardingTable *pParent,
                                              const UIPortForwardingDataList &rules /* = UIPortForwardingDataList() */)
     : QAbstractTableModel(pParent)
+    , m_pPortForwardingTable(pParent)
 {
     /* Fetch the incoming data: */
     foreach (const UIDataPortForwardingRule &rule, rules)
-        m_dataList << new UIPortForwardingRow(pParent,
+        m_dataList << new UIPortForwardingRow(view(),
                                               rule.name, rule.protocol,
                                               rule.hostIp, rule.hostPort,
                                               rule.guestIp, rule.guestPort);
@@ -580,13 +580,13 @@ void UIPortForwardingModel::addRule(const QModelIndex &index)
     }
     /* If index is valid => copy data: */
     if (index.isValid())
-        m_dataList << new UIPortForwardingRow(parentTable(),
+        m_dataList << new UIPortForwardingRow(view(),
                                               strTemplate.arg(++uMaxIndex), m_dataList[index.row()]->protocol(),
                                               m_dataList[index.row()]->hostIp(), m_dataList[index.row()]->hostPort(),
                                               m_dataList[index.row()]->guestIp(), m_dataList[index.row()]->guestPort());
     /* If index is NOT valid => use default values: */
     else
-        m_dataList << new UIPortForwardingRow(parentTable(),
+        m_dataList << new UIPortForwardingRow(view(),
                                               strTemplate.arg(++uMaxIndex), KNATProtocol_TCP,
                                               QString(""), 0, m_strGuestAddressHint, 0);
     endInsertRows();
@@ -628,23 +628,20 @@ int UIPortForwardingModel::columnCount(const QModelIndex &) const
 
 QVariant UIPortForwardingModel::headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const
 {
-    /* Display role for horizontal header: */
-    if (iRole == Qt::DisplayRole && enmOrientation == Qt::Horizontal)
+    /* Check argument validness: */
+    if (iRole != Qt::DisplayRole || enmOrientation != Qt::Horizontal)
+        return QVariant();
+    /* Switch for different columns: */
+    switch (iSection)
     {
-        /* Switch for different columns: */
-        switch (iSection)
-        {
-            case UIPortForwardingDataType_Name: return UIPortForwardingTable::tr("Name");
-            case UIPortForwardingDataType_Protocol: return UIPortForwardingTable::tr("Protocol");
-            case UIPortForwardingDataType_HostIp: return UIPortForwardingTable::tr("Host IP");
-            case UIPortForwardingDataType_HostPort: return UIPortForwardingTable::tr("Host Port");
-            case UIPortForwardingDataType_GuestIp: return UIPortForwardingTable::tr("Guest IP");
-            case UIPortForwardingDataType_GuestPort: return UIPortForwardingTable::tr("Guest Port");
-            default: break;
-        }
+        case UIPortForwardingDataType_Name: return UIPortForwardingTable::tr("Name");
+        case UIPortForwardingDataType_Protocol: return UIPortForwardingTable::tr("Protocol");
+        case UIPortForwardingDataType_HostIp: return UIPortForwardingTable::tr("Host IP");
+        case UIPortForwardingDataType_HostPort: return UIPortForwardingTable::tr("Host Port");
+        case UIPortForwardingDataType_GuestIp: return UIPortForwardingTable::tr("Guest IP");
+        case UIPortForwardingDataType_GuestPort: return UIPortForwardingTable::tr("Guest Port");
+        default: return QVariant();
     }
-    /* Return wrong value: */
-    return QVariant();
 }
 
 bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &value, int iRole /* = Qt::EditRole */)
@@ -679,9 +676,9 @@ bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &va
             m_dataList[index.row()]->setGuestPort(value.value<PortData>());
             emit dataChanged(index, index);
             return true;
-        default: return false;
+        default:
+            return false;
     }
-    /* not reached! */
 }
 
 QVariant UIPortForwardingModel::data(const QModelIndex &index, int iRole) const
@@ -759,9 +756,9 @@ QVariant UIPortForwardingModel::data(const QModelIndex &index, int iRole) const
     return QVariant();
 }
 
-QITableView *UIPortForwardingModel::parentTable() const
+QITableView *UIPortForwardingModel::view() const
 {
-    return qobject_cast<QITableView*>(parent());
+    return m_pPortForwardingTable->view();
 }
 
 
@@ -789,6 +786,11 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
 UIPortForwardingTable::~UIPortForwardingTable()
 {
     cleanup();
+}
+
+QITableView *UIPortForwardingTable::view() const
+{
+    return m_pTableView;
 }
 
 UIPortForwardingDataList UIPortForwardingTable::rules() const
@@ -1064,7 +1066,7 @@ void UIPortForwardingTable::prepareLayout()
 void UIPortForwardingTable::prepareTableView()
 {
     /* Create table-view: */
-    m_pTableView = new UIPortForwardingView;
+    m_pTableView = new UIPortForwardingView(this);
     if (m_pTableView)
     {
         /* Configure table-view: */
@@ -1080,9 +1082,10 @@ void UIPortForwardingTable::prepareTableView()
         prepareTableModel();
 
         /* Finish configure table-view (after model is configured): */
-        m_pTableView->setModel(m_pTableModel);
-        connect(m_pTableView, &UIPortForwardingView::sigCurrentChanged, this, &UIPortForwardingTable::sltCurrentChanged);
-        connect(m_pTableView, &UIPortForwardingView::customContextMenuRequested, this, &UIPortForwardingTable::sltShowTableContexMenu);
+        connect(m_pTableView, &UIPortForwardingView::sigCurrentChanged,
+                this, &UIPortForwardingTable::sltCurrentChanged);
+        connect(m_pTableView, &UIPortForwardingView::customContextMenuRequested,
+                this, &UIPortForwardingTable::sltShowTableContexMenu);
 
         /* Prepare delegates: */
         prepareTableDelegates();
@@ -1095,10 +1098,11 @@ void UIPortForwardingTable::prepareTableView()
 void UIPortForwardingTable::prepareTableModel()
 {
     /* Create table-model: */
-    m_pTableModel = new UIPortForwardingModel(m_pTableView, m_rules);
+    m_pTableModel = new UIPortForwardingModel(this, m_rules);
     if (m_pTableModel)
     {
         /* Configure table-model: */
+        m_pTableView->setModel(m_pTableModel);
         connect(m_pTableModel, &UIPortForwardingModel::dataChanged,
                 this, &UIPortForwardingTable::sltTableDataChanged);
         connect(m_pTableModel, &UIPortForwardingModel::rowsInserted,
