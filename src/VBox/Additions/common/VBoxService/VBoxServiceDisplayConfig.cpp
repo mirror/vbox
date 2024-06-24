@@ -24,10 +24,12 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
+
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
