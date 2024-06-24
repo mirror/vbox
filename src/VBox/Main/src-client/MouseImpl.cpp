@@ -322,33 +322,37 @@ void Mouse::uninit()
     unconst(mParent) = NULL;
 }
 
-void Mouse::updateMousePointerShape(bool fVisible, bool fAlpha,
-                                    uint32_t hotX, uint32_t hotY,
-                                    uint32_t width, uint32_t height,
-                                    const uint8_t *pu8Shape, uint32_t cbShape)
+/**
+ * Updates the pointer shape data.
+ *
+ * @returns VBox status code.
+ * @param   fVisible            Whether the mouse cursor actually is visible or not.
+ * @param   fAlpha              Whether the pixel data contains an alpha mask or not.
+ * @param   uHotX               X hot position (in pixel) of the new cursor.
+ * @param   uHotY               Y hot position (in pixel) of the new cursor.
+ * @param   uWidth              Width (in pixel) of the new cursor.
+ * @param   uHeight             Height (in pixel) of the new cursor.
+ * @param   pu8Shape            Pixel data of the new cursor.
+ * @param   cbShape             Size of \a pu8Shape (in bytes).
+ *
+ * @note    Takes the write lock.
+ */
+int Mouse::i_updatePointerShape(bool fVisible, bool fAlpha,
+                                uint32_t uHotX, uint32_t uHotY,
+                                uint32_t uWidth, uint32_t uHeight,
+                                const uint8_t *pu8Shape, uint32_t cbShape)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    RTMemFree(mPointerData.pu8Shape);
-    mPointerData.pu8Shape = NULL;
-    mPointerData.cbShape = 0;
+    mPointerData.Destroy(); /* Destroy old data first. */
 
-    mPointerData.fVisible = fVisible;
-    mPointerData.fAlpha   = fAlpha;
-    mPointerData.hotX     = hotX;
-    mPointerData.hotY     = hotY;
-    mPointerData.width    = width;
-    mPointerData.height   = height;
-    if (cbShape)
+    int vrc = mPointerData.Init(fVisible, fAlpha, uHotX, uHotY, uWidth, uHeight, pu8Shape, cbShape);
+    if (RT_SUCCESS(vrc))
     {
-        mPointerData.pu8Shape = (uint8_t *)RTMemDup(pu8Shape, cbShape);
-        if (mPointerData.pu8Shape)
-        {
-            mPointerData.cbShape = cbShape;
-        }
+        mPointerShape.setNull();
     }
 
-    mPointerShape.setNull();
+    return vrc;
 }
 
 // IMouse properties
@@ -1123,6 +1127,20 @@ HRESULT Mouse::i_putEventMultiTouch(LONG aCount,
 bool Mouse::i_guestNeedsHostCursor(void)
 {
     return RT_BOOL(mfVMMDevGuestCaps & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
+}
+
+
+/**
+ * Returns the current mouse pointer data.
+ *
+ * @returns VBox status code.
+ * @param   aData               Where to return the current mouse pointer data.
+ */
+int Mouse::i_getPointerShape(MousePointerData &aData)
+{
+    AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
+
+    return aData.Init(mPointerData);
 }
 
 

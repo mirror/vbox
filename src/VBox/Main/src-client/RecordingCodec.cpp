@@ -65,11 +65,37 @@
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
 
+#include "Recording.h"
 #include "RecordingInternals.h"
 #include "RecordingUtils.h"
 #include "WebMWriter.h"
 
 #include <math.h>
+
+#include <iprt/formats/bmp.h>
+
+
+/*********************************************************************************************************************************
+*   Prototypes                                                                                                                   *
+*********************************************************************************************************************************/
+static int recordingCodecVPXEncodeWorker(PRECORDINGCODEC pCodec, vpx_image_t *pImage, uint64_t msTimestamp);
+
+
+/*********************************************************************************************************************************
+*   Generic inline functions                                                                                                     *
+*********************************************************************************************************************************/
+
+DECLINLINE(void) recordingCodecLock(PRECORDINGCODEC pCodec)
+{
+    int vrc2 = RTCritSectEnter(&pCodec->CritSect);
+    AssertRC(vrc2);
+}
+
+DECLINLINE(void) recordingCodecUnlock(PRECORDINGCODEC pCodec)
+{
+    int vrc2 = RTCritSectLeave(&pCodec->CritSect);
+    AssertRC(vrc2);
+}
 
 
 /*********************************************************************************************************************************
@@ -77,16 +103,29 @@
 *********************************************************************************************************************************/
 
 #ifdef VBOX_WITH_LIBVPX
+/** Prototypes. */
+static DECLCALLBACK(int) recordingCodecVPXScreenChange(PRECORDINGCODEC pCodec, PRECORDINGSURFACEINFO pInfo);
+
+/**
+ * Clears (zeros) the VPX planes.
+ */
+DECLINLINE(void) recordingCodecVPXClearPlanes(PRECORDINGCODEC pCodec)
+{
+    size_t const cbYPlane  = pCodec->Parms.u.Video.uWidth * pCodec->Parms.u.Video.uHeight;
+    memset(pCodec->Video.VPX.RawImage.planes[VPX_PLANE_Y], 0, cbYPlane);
+    size_t const cbUVPlane = (pCodec->Parms.u.Video.uWidth / 2) * (pCodec->Parms.u.Video.uHeight / 2);
+    memset(pCodec->Video.VPX.RawImage.planes[VPX_PLANE_U], 128, cbUVPlane);
+    memset(pCodec->Video.VPX.RawImage.planes[VPX_PLANE_V], 128, cbUVPlane);
+}
+
 /** @copydoc RECORDINGCODECOPS::pfnInit */
 static DECLCALLBACK(int) recordingCodecVPXInit(PRECORDINGCODEC pCodec)
 {
-    pCodec->cbScratch = _4K;
-    pCodec->pvScratch = RTMemAlloc(pCodec->cbScratch);
-    AssertPtrReturn(pCodec->pvScratch, VERR_NO_MEMORY);
+    const unsigned uBPP = 32;
 
-    pCodec->Parms.csFrame  = 0;
-    pCodec->Parms.cbFrame  = pCodec->Parms.Video.uWidth * pCodec->Parms.Video.uHeight * 4 /* 32-bit */;
-    pCodec->Parms.msFrame  = 1; /* 1ms per frame. */
+    pCodec->Parms.csFrame = 0;
+    pCodec->Parms.cbFrame = pCodec->Parms.u.Video.uWidth * pCodec->Parms.u.Video.uHeight * (uBPP / 8);
+    pCodec->Parms.msFrame = 1; /* 1ms per frame. */
 
 # ifdef VBOX_WITH_LIBVPX_VP9
     vpx_codec_iface_t *pCodecIface = vpx_codec_vp9_cx();
@@ -105,9 +144,9 @@ static DECLCALLBACK(int) recordingCodecVPXInit(PRECORDINGCODEC pCodec)
     /* Target bitrate in kilobits per second. */
     pVPX->Cfg.rc_target_bitrate = pCodec->Parms.uBitrate;
     /* Frame width. */
-    pVPX->Cfg.g_w = pCodec->Parms.Video.uWidth;
+    pVPX->Cfg.g_w = pCodec->Parms.u.Video.uWidth;
     /* Frame height. */
-    pVPX->Cfg.g_h = pCodec->Parms.Video.uHeight;
+    pVPX->Cfg.g_h = pCodec->Parms.u.Video.uHeight;
     /* ms per frame. */
     pVPX->Cfg.g_timebase.num = pCodec->Parms.msFrame;
     pVPX->Cfg.g_timebase.den = 1000;
@@ -123,16 +162,34 @@ static DECLCALLBACK(int) recordingCodecVPXInit(PRECORDINGCODEC pCodec)
     }
 
     if (!vpx_img_alloc(&pVPX->RawImage, VPX_IMG_FMT_I420,
-                       pCodec->Parms.Video.uWidth, pCodec->Parms.Video.uHeight, 1))
+                       pCodec->Parms.u.Video.uWidth, pCodec->Parms.u.Video.uHeight, 1))
     {
-        LogRel(("Recording: Failed to allocate image %RU32x%RU32\n", pCodec->Parms.Video.uWidth, pCodec->Parms.Video.uHeight));
+        LogRel(("Recording: Failed to allocate image %RU32x%RU32\n", pCodec->Parms.u.Video.uWidth, pCodec->Parms.u.Video.uHeight));
         return VERR_RECORDING_CODEC_INIT_FAILED;
     }
 
-    /* Save a pointer to the first raw YUV plane. */
-    pVPX->pu8YuvBuf = pVPX->RawImage.planes[0];
+    /* Save a pointer to the Y (Luminance) plane. */
+    pVPX->pu8YuvBuf = pVPX->RawImage.planes[VPX_PLANE_Y];
 
-    return VINF_SUCCESS;
+    /* Initialize front + back buffers. */
+    RT_ZERO(pCodec->Video.VPX.Front);
+    RT_ZERO(pCodec->Video.VPX.Back);
+
+    pCodec->Video.VPX.pCursorShape = NULL;
+
+    RECORDINGSURFACEINFO ScreenInfo;
+    ScreenInfo.uWidth      = pCodec->Parms.u.Video.uWidth;
+    ScreenInfo.uHeight     = pCodec->Parms.u.Video.uHeight;
+    ScreenInfo.uBPP        = uBPP;
+    ScreenInfo.enmPixelFmt = RECORDINGPIXELFMT_BRGA32;
+
+    RT_ZERO(pCodec->Video.VPX.PosCursorOld);
+
+    int vrc = recordingCodecVPXScreenChange(pCodec, &ScreenInfo);
+    if (RT_FAILURE(vrc))
+        LogRel(("Recording: Failed to initialize codec: %Rrc\n", vrc));
+
+    return vrc;
 }
 
 /** @copydoc RECORDINGCODECOPS::pfnDestroy */
@@ -146,7 +203,25 @@ static DECLCALLBACK(int) recordingCodecVPXDestroy(PRECORDINGCODEC pCodec)
     vpx_codec_err_t rcv = vpx_codec_destroy(&pVPX->Ctx);
     Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
 
+    RecordingVideoFrameDestroy(&pCodec->Video.VPX.Front);
+    RecordingVideoFrameDestroy(&pCodec->Video.VPX.Back);
+
+    RecordingVideoFrameFree(pCodec->Video.VPX.pCursorShape);
+    pCodec->Video.VPX.pCursorShape = NULL;
+
     return VINF_SUCCESS;
+}
+
+/** @copydoc RECORDINGCODECOPS::pfnFinalize */
+static DECLCALLBACK(int) recordingCodecVPXFinalize(PRECORDINGCODEC pCodec)
+{
+    recordingCodecLock(pCodec);
+
+    int vrc = recordingCodecVPXEncodeWorker(pCodec, NULL /* pImage */, pCodec->State.tsLastWrittenMs + 1);
+
+    recordingCodecUnlock(pCodec);
+
+    return vrc;
 }
 
 /** @copydoc RECORDINGCODECOPS::pfnParseOptions */
@@ -164,8 +239,8 @@ static DECLCALLBACK(int) recordingCodecVPXParseOptions(PRECORDINGCODEC pCodec, c
                 pVPX->uEncoderDeadline = VPX_DL_REALTIME;
             else if (value.compare("good", com::Utf8Str::CaseInsensitive) == 0)
             {
-                AssertStmt(pCodec->Parms.Video.uFPS, pCodec->Parms.Video.uFPS = 25);
-                pVPX->uEncoderDeadline = 1000000 / pCodec->Parms.Video.uFPS;
+                AssertStmt(pCodec->Parms.u.Video.uFPS, pCodec->Parms.u.Video.uFPS = 25);
+                pVPX->uEncoderDeadline = 1000000 / pCodec->Parms.u.Video.uFPS;
             }
             else if (value.compare("best", com::Utf8Str::CaseInsensitive) == 0)
                 pVPX->uEncoderDeadline = VPX_DL_BEST_QUALITY;
@@ -179,33 +254,31 @@ static DECLCALLBACK(int) recordingCodecVPXParseOptions(PRECORDINGCODEC pCodec, c
     return VINF_SUCCESS;
 }
 
-/** @copydoc RECORDINGCODECOPS::pfnEncode */
-static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORDINGFRAME pFrame,
-                                                 size_t *pcEncoded, size_t *pcbEncoded)
+/**
+ * Worker for encoding the last composed image.
+ *
+ * @returns VBox status code.
+ * @param   pCodec              Pointer to codec instance.
+ * @param   pImage              VPX image to encode.
+ *                              Set to NULL to signal the encoder that it has to finish up stuff when ending encoding.
+ * @param   msTimestamp         Timestamp (PTS) to use for encoding.
+ *
+ * @note    Caller must take encoder lock.
+ */
+static int recordingCodecVPXEncodeWorker(PRECORDINGCODEC pCodec, vpx_image_t *pImage, uint64_t msTimestamp)
 {
-    RT_NOREF(pcEncoded, pcbEncoded);
-
-    AssertPtrReturn(pFrame, VERR_INVALID_POINTER);
-
-    PRECORDINGVIDEOFRAME pVideoFrame = pFrame->VideoPtr;
-
-    int vrc = RecordingUtilsRGBToYUV(pVideoFrame->enmPixelFmt,
-                                     /* Destination */
-                                     pCodec->Video.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
-                                     /* Source */
-                                     pVideoFrame->pu8RGBBuf, pCodec->Parms.Video.uWidth, pCodec->Parms.Video.uHeight);
-    AssertRCReturn(vrc, vrc);
+    int vrc;
 
     PRECORDINGCODECVPX pVPX = &pCodec->Video.VPX;
 
     /* Presentation TimeStamp (PTS). */
-    vpx_codec_pts_t pts = pFrame->msTimestamp;
-    vpx_codec_err_t rcv = vpx_codec_encode(&pVPX->Ctx,
-                                           &pVPX->RawImage,
-                                           pts                          /* Timestamp */,
-                                           pCodec->Parms.Video.uDelayMs /* How long to show this frame */,
-                                           0                            /* Flags */,
-                                           pVPX->uEncoderDeadline       /* Quality setting */);
+    vpx_codec_pts_t const pts = msTimestamp;
+    vpx_codec_err_t const rcv = vpx_codec_encode(&pVPX->Ctx,
+                                                 pImage,
+                                                 pts                            /* Timestamp */,
+                                                 pCodec->Parms.u.Video.uDelayMs /* How long to show this frame */,
+                                                 0                              /* Flags */,
+                                                 pVPX->uEncoderDeadline         /* Quality setting */);
     if (rcv != VPX_CODEC_OK)
     {
         if (pCodec->State.cEncErrors++ < 64) /** @todo Make this configurable. */
@@ -220,7 +293,7 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
     for (;;)
     {
         const vpx_codec_cx_pkt_t *pPkt = vpx_codec_get_cx_data(&pVPX->Ctx, &iter);
-        if (!pPkt)
+        if (!pPkt) /* End of list */
             break;
 
         switch (pPkt->kind)
@@ -239,6 +312,8 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
                 if (pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
                     fFlags |= RECORDINGCODEC_ENC_F_BLOCK_IS_INVISIBLE;
 
+                Log3Func(("msTimestamp=%RU64, fFlags=%#x\n", msTimestamp, fFlags));
+
                 vrc = pCodec->Callbacks.pfnWriteData(pCodec, pPkt->data.frame.buf, pPkt->data.frame.sz,
                                                      tsAbsPTSMs, fFlags, pCodec->Callbacks.pvUser);
                 break;
@@ -252,6 +327,274 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
     }
 
     return vrc;
+}
+
+/** @copydoc RECORDINGCODECOPS::pfnEncode */
+static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORDINGFRAME pFrame,
+                                                 uint64_t msTimestamp, void *pvUser)
+{
+    recordingCodecLock(pCodec);
+
+    int vrc;
+
+    /* If no frame is given, encode the last composed frame again with the given timestamp. */
+    if (pFrame == NULL)
+    {
+        vrc = recordingCodecVPXEncodeWorker(pCodec, &pCodec->Video.VPX.RawImage, msTimestamp);
+        recordingCodecUnlock(pCodec);
+        return vrc;
+    }
+
+    RecordingContext *pCtx = (RecordingContext *)pvUser;
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    Assert(pFrame->msTimestamp == msTimestamp);
+
+    /* Note: We get BGRA 32 input here. */
+    PRECORDINGVIDEOFRAME pFront = &pCodec->Video.VPX.Front;
+    PRECORDINGVIDEOFRAME pBack  = &pCodec->Video.VPX.Back;
+
+    int32_t sx = 0; /* X origin within the source frame. */
+    int32_t sy = 0; /* Y origin within the source frame. */
+    int32_t sw = 0; /* Width of the source frame (starting at X origin). */
+    int32_t sh = 0; /* Height of the source frame (starting at Y origin). */
+    int32_t dx = 0; /* X destination of the source frame within the destination frame. */
+    int32_t dy = 0; /* Y destination of the source frame within the destination frame. */
+
+    /*
+     * Note!
+     *
+     * We don't implement any rendering graph or some such here, as we only have two things to render here, namely:
+     *
+     * - the actual framebuffer updates
+     * - if available (through mouse integration via Guest Additions): the guest's mouse cursor via a (software) overlay
+     *
+     * So composing is done the folowing way:
+     *
+     *  - always store the plain framebuffer updates in our back buffer first
+     *  - copy the framebuffer updates to our front buffer
+     *  - restore the area of the old mouse cursor position by copying frame buffer area data from back -> front buffer
+     *  - apply the mouse cursor updates to our front buffer
+     */
+
+    switch (pFrame->enmType)
+    {
+        case RECORDINGFRAME_TYPE_VIDEO:
+        {
+            PRECORDINGVIDEOFRAME pSrc = &pFrame->u.Video;
+
+            vrc = RecordingVideoFrameBlitFrame(pFront, pSrc->Pos.x, pSrc->Pos.y,
+                                               pSrc, 0 /* uSrcX */, 0 /* uSrcY */, pSrc->Info.uWidth, pSrc->Info.uHeight);
+#if 0
+            RecordingUtilsDbgDumpVideoFrameEx(pFront, "/tmp/recording", "encode-front");
+            RecordingUtilsDbgDumpVideoFrameEx(pSrc, "/tmp/recording", "encode-src");
+#endif
+            vrc = RecordingVideoFrameBlitFrame(pBack, pSrc->Pos.x, pSrc->Pos.y,
+                                               pSrc,  0 /* uSrcX */, 0 /* uSrcY */, pSrc->Info.uWidth, pSrc->Info.uHeight);
+            pFront = pBack;
+
+            sw = pSrc->Info.uWidth;
+            sh = pSrc->Info.uHeight;
+            sx = pSrc->Pos.x;
+            sy = pSrc->Pos.y;
+
+            Log3Func(("RECORDINGFRAME_TYPE_VIDEO: sx=%d, sy=%d, sw=%d, sh=%d\n", sx, sy, sw, sh));
+
+            dx = pSrc->Pos.x;
+            dy = pSrc->Pos.y;
+            break;
+        }
+
+        case RECORDINGFRAME_TYPE_CURSOR_SHAPE:
+        {
+            pCodec->Video.VPX.pCursorShape = RecordingVideoFrameDup(&pFrame->u.CursorShape);
+            AssertPtr(pCodec->Video.VPX.pCursorShape);
+
+            RT_FALL_THROUGH(); /* Re-render cursor with new shape below. */
+        }
+
+        case RECORDINGFRAME_TYPE_CURSOR_POS:
+        {
+            const PRECORDINGVIDEOFRAME pCursor = pCodec->Video.VPX.pCursorShape;
+            if (!pCursor) /* No cursor shape set yet. */
+                break;
+
+            PRECORDINGPOS pPosOld = &pCodec->Video.VPX.PosCursorOld;
+            PRECORDINGPOS pPosNew = pFrame->enmType == RECORDINGFRAME_TYPE_CURSOR_POS
+                                  ? &pFrame->u.Cursor.Pos
+                                  : pPosOld;
+
+            Log3Func(("RECORDINGFRAME_TYPE_CURSOR_POS: x=%d, y=%d, oldx=%d, oldy=%d, w=%d, h=%d\n",
+                      pPosNew->x, pPosNew->y,
+                      pPosOld->x, pPosOld->y, pCursor->Info.uWidth, pCursor->Info.uHeight));
+
+            /* Calculate the merged area between the old and the new (current) cursor position
+             * so that we update everything to not create any ghosting. */
+            sx = RT_MIN(pPosNew->x, pPosOld->x);
+            sy = RT_MIN(pPosNew->y, pPosOld->y);
+            sw = (  pPosNew->x > pPosOld->x
+                  ? pPosNew->x - pPosOld->x
+                  : pPosOld->x - pPosNew->x) + pCursor->Info.uWidth;
+            sh = (  pPosNew->y > pPosOld->y
+                  ? pPosNew->y - pPosOld->y
+                  : pPosOld->y - pPosNew->y) + pCursor->Info.uHeight;
+
+            /* Limit the width / height to blit to the front buffer's size. */
+            if (sx + sw >= (int32_t)pFront->Info.uWidth)
+                sw = pFront->Info.uWidth - sx;
+            if (sy + sh >= (int32_t)pFront->Info.uHeight)
+                sh = pFront->Info.uHeight - sy;
+
+            /* Save current cursor position for next iteration. */
+            *pPosOld = *pPosNew;
+
+            dx = sx;
+            dy = sy;
+
+            Log3Func(("RECORDINGFRAME_TYPE_CURSOR_POS: sx=%d, sy=%d, sw=%d, sh=%d\n", sx, sy, sw, sh));
+
+            /* Nothing to encode? Bail out. */
+            if (             sw <= 0
+                ||           sh <= 0
+                || (uint32_t)sx >  pBack->Info.uWidth
+                || (uint32_t)sy >  pBack->Info.uHeight)
+                break;
+
+            /* Restore background of front buffer first. */
+            vrc = RecordingVideoFrameBlitFrame(pFront, dx, dy,
+                                               pBack,  sx, sy, sw, sh);
+
+            /* Blit mouse cursor to front buffer. */
+            if (RT_SUCCESS(vrc))
+                vrc = RecordingVideoFrameBlitRawAlpha(pFront, pPosNew->x, pPosNew->y,
+                                                      pCursor->pau8Buf, pCursor->cbBuf,
+                                                      0 /* uSrcX */, 0 /* uSrcY */, pCursor->Info.uWidth, pCursor->Info.uHeight,
+                                                      pCursor->Info.uBytesPerLine, pCursor->Info.uBPP, pCursor->Info.enmPixelFmt);
+#if 0
+            RecordingUtilsDbgDumpVideoFrameEx(pFront, "/tmp/recording", "cursor-alpha-front");
+#endif
+            break;
+        }
+
+        default:
+            AssertFailed();
+            break;
+
+    }
+
+    /* Nothing to encode? Bail out. */
+    if (   sw == 0
+        || sh == 0)
+    {
+        recordingCodecUnlock(pCodec);
+        return VINF_SUCCESS;
+    }
+
+    Log3Func(("Encoding video parameters: %RU16x%RU16 (%RU8 FPS), originX=%RI32, originY=%RI32\n",
+              pCodec->Parms.u.Video.uWidth, pCodec->Parms.u.Video.uHeight, pCodec->Parms.u.Video.uFPS,
+              pCodec->Parms.u.Video.Scaling.u.Crop.m_iOriginX, pCodec->Parms.u.Video.Scaling.u.Crop.m_iOriginY));
+
+    int32_t sx_b = sx; /* X origin within the source frame. */
+    int32_t sy_b = sy; /* Y origin within the source frame. */
+    int32_t sw_b = sw; /* Width of the source frame (starting at X origin). */
+    int32_t sh_b = sh; /* Height of the source frame (starting at Y origin). */
+    int32_t dx_b = dx; /* X destination of the source frame within the destination frame. */
+    int32_t dy_b = dy; /* Y destination of the source frame within the destination frame. */
+
+    RT_NOREF(sx_b);
+    RT_NOREF(sy_b);
+    RT_NOREF(sw_b);
+    RT_NOREF(sh_b);
+    RT_NOREF(dx_b);
+    RT_NOREF(dy_b);
+
+    vrc = RecordingUtilsCoordsCropCenter(&pCodec->Parms, &sx, &sy, &sw, &sh, &dx, &dy);
+    if (vrc == VINF_SUCCESS) /* vrc might be VWRN_RECORDING_ENCODING_SKIPPED to skip encoding. */
+    {
+        Log3Func(("Encoding source %RI32,%RI32 (%RI32x%RI32) to %RI32,%RI32 (%zu bytes)\n",
+                  sx, sy, sw, sh, dx, dy, sw * sh * (pFront->Info.uBPP / 8)));
+#ifdef DEBUG
+        AssertReturn(sw      <= (int32_t)pFront->Info.uWidth,  VERR_INVALID_PARAMETER);
+        AssertReturn(sh      <= (int32_t)pFront->Info.uHeight, VERR_INVALID_PARAMETER);
+        AssertReturn(sx + sw <= (int32_t)pFront->Info.uWidth , VERR_INVALID_PARAMETER);
+        AssertReturn(sy + sh <= (int32_t)pFront->Info.uHeight, VERR_INVALID_PARAMETER);
+#endif
+
+#if 0
+        RecordingUtilsDbgDumpImageData(&pFront->pau8Buf[(sy * pFront->Info.uBytesPerLine) + (sx * (pFront->Info.uBPP / 8))], pFront->cbBuf,
+                                       "/tmp/recording", "cropped", sw, sh, pFront->Info.uBytesPerLine, pFront->Info.uBPP);
+#endif
+        /* Blit (and convert from BGRA 32) the changed parts of the front buffer to the YUV 420 surface of the codec. */
+        RecordingUtilsConvBGRA32ToYUVI420Ex(/* Destination */
+                                            pCodec->Video.VPX.pu8YuvBuf, dx, dy, pCodec->Parms.u.Video.uWidth, pCodec->Parms.u.Video.uHeight,
+                                            /* Source */
+                                            pFront->pau8Buf, sx, sy, sw, sh, pFront->Info.uBytesPerLine, pFront->Info.uBPP);
+
+        vrc = recordingCodecVPXEncodeWorker(pCodec, &pCodec->Video.VPX.RawImage, msTimestamp);
+    }
+
+    recordingCodecUnlock(pCodec);
+
+    return vrc;
+}
+
+/** @copydoc RECORDINGCODECOPS::pfnScreenChange */
+static DECLCALLBACK(int) recordingCodecVPXScreenChange(PRECORDINGCODEC pCodec, PRECORDINGSURFACEINFO pInfo)
+{
+    LogRel2(("Recording: Codec got screen change notification (%RU16x%RU16, %RU8 BPP)\n",
+             pInfo->uWidth, pInfo->uHeight, pInfo->uBPP));
+
+    /* Fend-off bogus reports. */
+    if (   !pInfo->uWidth
+        || !pInfo->uHeight)
+        return VERR_INVALID_PARAMETER;
+
+     /** @todo BUGBUG Not sure why we sometimes get 0 BPP for a display change from Main.
+      *               For now we ASSUME 32 BPP. */
+    if (!pInfo->uBPP)
+        pInfo->uBPP = 32;
+
+    /* The VPX encoder only understands even frame sizes. */
+    if (   (pInfo->uWidth  % 2) != 0
+        || (pInfo->uHeight % 2) != 0)
+        return VERR_INVALID_PARAMETER;
+
+    PRECORDINGCODECVPX pVPX = &pCodec->Video.VPX;
+
+    recordingCodecLock(pCodec);
+
+    /* Tear down old stuff. */
+    RecordingVideoFrameDestroy(&pVPX->Front);
+    RecordingVideoFrameDestroy(&pVPX->Back);
+
+    /* Initialize front + back buffers. */
+    int vrc = RecordingVideoFrameInit(&pVPX->Front, RECORDINGVIDEOFRAME_F_VISIBLE,
+                                      pInfo->uWidth, pInfo->uHeight, 0, 0,
+                                      pInfo->uBPP, pInfo->enmPixelFmt);
+    if (RT_SUCCESS(vrc))
+        vrc = RecordingVideoFrameInit(&pVPX->Back, RECORDINGVIDEOFRAME_F_VISIBLE,
+                                      pInfo->uWidth, pInfo->uHeight, 0, 0,
+                                      pInfo->uBPP, pInfo->enmPixelFmt);
+    if (RT_SUCCESS(vrc))
+    {
+        RecordingVideoFrameClear(&pVPX->Front);
+        RecordingVideoFrameClear(&pVPX->Back);
+
+        recordingCodecVPXClearPlanes(pCodec);
+
+        /* Calculate the X/Y origins for cropping / centering.
+         * This is needed as the codec's video output size not necessarily matches the VM's frame buffer size. */
+        pCodec->Parms.u.Video.Scaling.u.Crop.m_iOriginX = int32_t(pCodec->Parms.u.Video.uWidth  - pInfo->uWidth) / 2;
+        pCodec->Parms.u.Video.Scaling.u.Crop.m_iOriginY = int32_t(pCodec->Parms.u.Video.uHeight - pInfo->uHeight) / 2;
+    }
+
+    recordingCodecUnlock(pCodec);
+
+    if (RT_FAILURE(vrc))
+        LogRel(("Recording: Codec error handling screen change notification: %Rrc\n", vrc));
+
+    return vrc;
+
 }
 #endif /* VBOX_WITH_LIBVPX */
 
@@ -268,7 +611,7 @@ static DECLCALLBACK(int) recordingCodecVorbisInit(PRECORDINGCODEC pCodec)
     pCodec->pvScratch = RTMemAlloc(pCodec->cbScratch);
     AssertPtrReturn(pCodec->pvScratch, VERR_NO_MEMORY);
 
-    const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.Audio.PCMProps;
+    const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.u.Audio.PCMProps;
 
     /** @todo BUGBUG When left out this call, vorbis_block_init() does not find oggpack_writeinit and all goes belly up ... */
     oggpack_buffer b;
@@ -335,24 +678,26 @@ static DECLCALLBACK(int) recordingCodecVorbisDestroy(PRECORDINGCODEC pCodec)
 
 /** @copydoc RECORDINGCODECOPS::pfnEncode */
 static DECLCALLBACK(int) recordingCodecVorbisEncode(PRECORDINGCODEC pCodec,
-                                                    const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded)
+                                                    const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser)
 {
-    const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.Audio.PCMProps;
+    RT_NOREF(msTimestamp, pvUser);
+
+    const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.u.Audio.PCMProps;
 
     Assert      (pCodec->Parms.cbFrame);
-    AssertReturn(pFrame->Audio.cbBuf % pCodec->Parms.cbFrame == 0, VERR_INVALID_PARAMETER);
-    Assert      (pFrame->Audio.cbBuf);
-    AssertReturn(pFrame->Audio.cbBuf % PDMAudioPropsFrameSize(pPCMProps) == 0, VERR_INVALID_PARAMETER);
-    AssertReturn(pCodec->cbScratch >= pFrame->Audio.cbBuf, VERR_INVALID_PARAMETER);
+    AssertReturn(pFrame->u.Audio.cbBuf % pCodec->Parms.cbFrame == 0, VERR_INVALID_PARAMETER);
+    Assert      (pFrame->u.Audio.cbBuf);
+    AssertReturn(pFrame->u.Audio.cbBuf % PDMAudioPropsFrameSize(pPCMProps) == 0, VERR_INVALID_PARAMETER);
+    AssertReturn(pCodec->cbScratch >= pFrame->u.Audio.cbBuf, VERR_INVALID_PARAMETER);
 
     int vrc = VINF_SUCCESS;
 
     int const cbFrame = PDMAudioPropsFrameSize(pPCMProps);
-    int const cFrames = (int)(pFrame->Audio.cbBuf / cbFrame);
+    int const cFrames = (int)(pFrame->u.Audio.cbBuf / cbFrame);
 
     /* Write non-interleaved frames. */
     float  **buffer = vorbis_analysis_buffer(&pCodec->Audio.Vorbis.dsp_state, cFrames);
-    int16_t *puSrc  = (int16_t *)pFrame->Audio.pvBuf; RT_NOREF(puSrc);
+    int16_t *puSrc  = (int16_t *)pFrame->u.Audio.pvBuf; RT_NOREF(puSrc);
 
     /* Convert samples into floating point. */
     /** @todo This is sloooooooooooow! Optimize this! */
@@ -374,11 +719,6 @@ static DECLCALLBACK(int) recordingCodecVorbisEncode(PRECORDINGCODEC pCodec,
         LogRel(("Recording: vorbis_analysis_wrote() failed (%d)\n", vorbis_rc));
         return VERR_RECORDING_ENCODING_FAILED;
     }
-
-    if (pcEncoded)
-        *pcEncoded = 0;
-    if (pcbEncoded)
-        *pcbEncoded = 0;
 
     size_t cBlocksEncoded = 0;
     size_t cBytesEncoded  = 0;
@@ -438,20 +778,16 @@ static DECLCALLBACK(int) recordingCodecVorbisEncode(PRECORDINGCODEC pCodec,
         return VERR_RECORDING_ENCODING_FAILED;
     }
 
-    if (pcbEncoded)
-        *pcbEncoded = 0;
-    if (pcEncoded)
-        *pcEncoded  = 0;
-
     if (RT_FAILURE(vrc))
         LogRel(("Recording: Encoding Vorbis audio data failed, vrc=%Rrc\n", vrc));
 
     Log3Func(("cbSrc=%zu, cbDst=%zu, cEncoded=%zu, cbEncoded=%zu, vrc=%Rrc\n",
-              pFrame->Audio.cbBuf, pCodec->cbScratch, cBlocksEncoded, cBytesEncoded, vrc));
+              pFrame->u.Audio.cbBuf, pCodec->cbScratch, cBlocksEncoded, cBytesEncoded, vrc));
 
     return vrc;
 }
 
+/** @copydoc RECORDINGCODECOPS::pfnFinalize */
 static DECLCALLBACK(int) recordingCodecVorbisFinalize(PRECORDINGCODEC pCodec)
 {
     int vorbis_rc = vorbis_analysis_wrote(&pCodec->Audio.Vorbis.dsp_state, 0 /* Means finalize */);
@@ -487,7 +823,7 @@ static int recordingCodecInitAudio(const PRECORDINGCODEC pCodec,
     settings::RecordingScreenSettings::audioCodecToString(pCodec->Parms.enmAudioCodec, strCodec);
     LogRel(("Recording: Initializing audio codec '%s'\n", strCodec.c_str()));
 
-    const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.Audio.PCMProps;
+    const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.u.Audio.PCMProps;
 
     PDMAudioPropsInit(pPCMProps,
                       Settings.Audio.cBits / 8,
@@ -545,21 +881,21 @@ static int recordingCodecInitVideo(const PRECORDINGCODEC pCodec,
     settings::RecordingScreenSettings::videoCodecToString(pCodec->Parms.enmVideoCodec, strTemp);
     LogRel(("Recording: Initializing video codec '%s'\n", strTemp.c_str()));
 
-    pCodec->Parms.uBitrate       = Settings.Video.ulRate;
-    pCodec->Parms.Video.uFPS     = Settings.Video.ulFPS;
-    pCodec->Parms.Video.uWidth   = Settings.Video.ulWidth;
-    pCodec->Parms.Video.uHeight  = Settings.Video.ulHeight;
-    pCodec->Parms.Video.uDelayMs = RT_MS_1SEC / pCodec->Parms.Video.uFPS;
+    pCodec->Parms.uBitrate         = Settings.Video.ulRate;
+    pCodec->Parms.u.Video.uFPS     = Settings.Video.ulFPS;
+    pCodec->Parms.u.Video.uWidth   = Settings.Video.ulWidth;
+    pCodec->Parms.u.Video.uHeight  = Settings.Video.ulHeight;
+    pCodec->Parms.u.Video.uDelayMs = RT_MS_1SEC / pCodec->Parms.u.Video.uFPS;
 
     if (pCallbacks)
         memcpy(&pCodec->Callbacks, pCallbacks, sizeof(RECORDINGCODECCALLBACKS));
 
     AssertReturn(pCodec->Parms.uBitrate, VERR_INVALID_PARAMETER);        /* Bitrate must be set. */
-    AssertStmt(pCodec->Parms.Video.uFPS, pCodec->Parms.Video.uFPS = 25); /* Prevent division by zero. */
+    AssertStmt(pCodec->Parms.u.Video.uFPS, pCodec->Parms.u.Video.uFPS = 25); /* Prevent division by zero. */
 
-    AssertReturn(pCodec->Parms.Video.uHeight, VERR_INVALID_PARAMETER);
-    AssertReturn(pCodec->Parms.Video.uWidth, VERR_INVALID_PARAMETER);
-    AssertReturn(pCodec->Parms.Video.uDelayMs, VERR_INVALID_PARAMETER);
+    AssertReturn(pCodec->Parms.u.Video.uHeight, VERR_INVALID_PARAMETER);
+    AssertReturn(pCodec->Parms.u.Video.uWidth, VERR_INVALID_PARAMETER);
+    AssertReturn(pCodec->Parms.u.Video.uDelayMs, VERR_INVALID_PARAMETER);
 
     int vrc = VINF_SUCCESS;
 
@@ -601,7 +937,7 @@ static DECLCALLBACK(int) recordingCodecAudioParseOptions(PRECORDINGCODEC pCodec,
         {
             if (value.compare("low", com::Utf8Str::CaseInsensitive) == 0)
             {
-                PDMAudioPropsInit(&pCodec->Parms.Audio.PCMProps, 16, true /* fSigned */, 1 /* Channels */, 8000 /* Hz */);
+                PDMAudioPropsInit(&pCodec->Parms.u.Audio.PCMProps, 16, true /* fSigned */, 1 /* Channels */, 8000 /* Hz */);
             }
             else if (value.startsWith("med" /* "med[ium]" */, com::Utf8Str::CaseInsensitive) == 0)
             {
@@ -609,7 +945,7 @@ static DECLCALLBACK(int) recordingCodecAudioParseOptions(PRECORDINGCODEC pCodec,
             }
             else if (value.compare("high", com::Utf8Str::CaseInsensitive) == 0)
             {
-                PDMAudioPropsInit(&pCodec->Parms.Audio.PCMProps, 16, true /* fSigned */, 2 /* Channels */, 48000 /* Hz */);
+                PDMAudioPropsInit(&pCodec->Parms.u.Audio.PCMProps, 16, true /* fSigned */, 2 /* Channels */, 48000 /* Hz */);
             }
         }
         else
@@ -624,12 +960,7 @@ static DECLCALLBACK(int) recordingCodecAudioParseOptions(PRECORDINGCODEC pCodec,
 static void recordingCodecReset(PRECORDINGCODEC pCodec)
 {
     pCodec->State.tsLastWrittenMs = 0;
-
     pCodec->State.cEncErrors = 0;
-#ifdef VBOX_WITH_STATISTICS
-    pCodec->STAM.cEncBlocks  = 0;
-    pCodec->STAM.msEncTotal  = 0;
-#endif
 }
 
 /**
@@ -707,8 +1038,10 @@ int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmV
         {
             pCodec->Ops.pfnInit         = recordingCodecVPXInit;
             pCodec->Ops.pfnDestroy      = recordingCodecVPXDestroy;
+            pCodec->Ops.pfnFinalize     = recordingCodecVPXFinalize;
             pCodec->Ops.pfnParseOptions = recordingCodecVPXParseOptions;
             pCodec->Ops.pfnEncode       = recordingCodecVPXEncode;
+            pCodec->Ops.pfnScreenChange = recordingCodecVPXScreenChange;
 
             vrc = VINF_SUCCESS;
             break;
@@ -739,9 +1072,14 @@ int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmV
  */
 int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreenSettings &Settings)
 {
+    int vrc = RTCritSectInit(&pCodec->CritSect);
+    AssertRCReturn(vrc, vrc);
+
+    pCodec->cbScratch = 0;
+    pCodec->pvScratch = NULL;
+
     recordingCodecReset(pCodec);
 
-    int vrc;
     if (pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO)
         vrc = recordingCodecInitAudio(pCodec, pCallbacks, Settings);
     else if (pCodec->Parms.enmType == RECORDINGCODECTYPE_VIDEO)
@@ -810,42 +1148,63 @@ int recordingCodecDestroy(PRECORDINGCODEC pCodec)
 
         pCodec->Parms.enmType       = RECORDINGCODECTYPE_INVALID;
         pCodec->Parms.enmVideoCodec = RecordingVideoCodec_None;
+
+        int vrc2 = RTCritSectDelete(&pCodec->CritSect);
+        AssertRC(vrc2);
     }
 
     return vrc;
 }
 
 /**
- * Feeds the codec encoder with data to encode.
+ * Feeds the codec encoder with frame data to encode.
  *
  * @returns VBox status code.
  * @param   pCodec              Codec to use.
  * @param   pFrame              Pointer to frame data to encode.
- * @param   pcEncoded           Where to return the number of encoded blocks in \a pvDst on success. Optional.
- * @param   pcbEncoded          Where to return the number of encoded bytes in \a pvDst on success. Optional.
+ * @param   msTimestamp         Timestamp (PTS) to use for encoding.
+ * @param   pvUser              User data pointer. Optional and can be NULL.
  */
-int recordingCodecEncode(PRECORDINGCODEC pCodec,
-                         const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded)
+int recordingCodecEncodeFrame(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser)
 {
     AssertPtrReturn(pCodec->Ops.pfnEncode, VERR_NOT_SUPPORTED);
 
-    size_t cEncoded, cbEncoded;
-    int vrc = pCodec->Ops.pfnEncode(pCodec, pFrame, &cEncoded, &cbEncoded);
+    int vrc = pCodec->Ops.pfnEncode(pCodec, pFrame, msTimestamp, pvUser);
     if (RT_SUCCESS(vrc))
-    {
         pCodec->State.tsLastWrittenMs = pFrame->msTimestamp;
 
-#ifdef VBOX_WITH_STATISTICS
-        pCodec->STAM.cEncBlocks += cEncoded;
-        pCodec->STAM.msEncTotal += pCodec->Parms.msFrame * cEncoded;
-#endif
-        if (pcEncoded)
-            *pcEncoded = cEncoded;
-        if (pcbEncoded)
-            *pcbEncoded = cbEncoded;
-    }
+    return vrc;
+}
+
+/**
+ * Feeds the codec encoder with the current composed image.
+ *
+ * @returns VBox status code.
+ * @param   pCodec              Codec to use.
+ * @param   msTimestamp         Timestamp (PTS) to use for encoding.
+ */
+int recordingCodecEncodeCurrent(PRECORDINGCODEC pCodec, uint64_t msTimestamp)
+{
+    int vrc = pCodec->Ops.pfnEncode(pCodec, NULL /* pFrame */, msTimestamp, NULL /* pvUser */);
+    if (RT_SUCCESS(vrc))
+        pCodec->State.tsLastWrittenMs = msTimestamp;
 
     return vrc;
+}
+
+/**
+ * Lets the codec know that a screen change has happened.
+ *
+ * @returns VBox status code.
+ * @param   pCodec              Codec to use.
+ * @param   pInfo               Screen info to send.
+ */
+int recordingCodecScreenChange(PRECORDINGCODEC pCodec, PRECORDINGSURFACEINFO pInfo)
+{
+    if (!pCodec->Ops.pfnScreenChange)
+        return VINF_SUCCESS;
+
+    return pCodec->Ops.pfnScreenChange(pCodec, pInfo);
 }
 
 /**
@@ -884,12 +1243,13 @@ bool recordingCodecIsInitialized(const PRECORDINGCODEC pCodec)
 uint32_t recordingCodecGetWritable(const PRECORDINGCODEC pCodec, uint64_t msTimestamp)
 {
     Log3Func(("%RU64 -- tsLastWrittenMs=%RU64 + uDelayMs=%RU32\n",
-              msTimestamp, pCodec->State.tsLastWrittenMs,pCodec->Parms.Video.uDelayMs));
+              msTimestamp, pCodec->State.tsLastWrittenMs,pCodec->Parms.u.Video.uDelayMs));
 
-    if (msTimestamp < pCodec->State.tsLastWrittenMs + pCodec->Parms.Video.uDelayMs)
+    if (msTimestamp < pCodec->State.tsLastWrittenMs + pCodec->Parms.u.Video.uDelayMs)
         return 0; /* Too early for writing (respect set FPS). */
 
     /* For now we just return the complete frame space. */
     AssertMsg(pCodec->Parms.cbFrame, ("Codec not initialized yet\n"));
     return pCodec->Parms.cbFrame;
 }
+

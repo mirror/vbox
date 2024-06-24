@@ -317,7 +317,7 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
 
             /* Make sure to let the driver backend know that we need the audio data in
              * a specific sampling rate the codec is optimized for. */
-            pCfgAcq->Props = pCodec->Parms.Audio.PCMProps;
+            pCfgAcq->Props = pCodec->Parms.u.Audio.PCMProps;
 
             /* Every codec frame marks a period for now. Optimize this later. */
             pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, pCodec->Parms.msFrame);
@@ -490,8 +490,8 @@ static DECLCALLBACK(uint32_t) drvAudioVideoRecHA_StreamGetWritable(PPDMIHOSTAUDI
 static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                        const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    RT_NOREF(pInterface);
-    PAVRECSTREAM pStreamAV = (PAVRECSTREAM)pStream;
+    PDRVAUDIORECORDING pThis = RT_FROM_CPP_MEMBER(pInterface, DRVAUDIORECORDING, IHostAudio);
+    PAVRECSTREAM pStreamAV   = (PAVRECSTREAM)pStream;
     AssertPtrReturn(pStreamAV, VERR_INVALID_POINTER);
     if (cbBuf)
         AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
@@ -560,7 +560,8 @@ static DECLCALLBACK(int) drvAudioVideoRecHA_StreamPlay(PPDMIHOSTAUDIO pInterface
 
             if (cbSrc == cbFrame) /* Only send full codec frames. */
             {
-                vrc = pRecStream->SendAudioFrame(pStreamAV->pvSrcBuf, cbSrc, RTTimeProgramMilliTS());
+                AssertPtr(pThis->pRecCtx);
+                vrc = pRecStream->SendAudioFrame(pStreamAV->pvSrcBuf, cbSrc, pThis->pRecCtx->GetCurrentPTS());
                 if (RT_FAILURE(vrc))
                     break;
             }

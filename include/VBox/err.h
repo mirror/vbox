@@ -3191,6 +3191,10 @@
 #define VERR_RECORDING_THROTTLED                    (-6907)
 /** Encoding data failed. */
 #define VERR_RECORDING_ENCODING_FAILED              (-6908)
+/** Encoding skipped.
+ *  Can happen if e.g. a frame is not visible or does
+ *  not need to be encoded for whatever reason. */
+#define VWRN_RECORDING_ENCODING_SKIPPED             (6908)
 /** @} */
 
 /** @name Shared Clipboard Status Codes

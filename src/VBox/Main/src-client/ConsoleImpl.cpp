@@ -7665,6 +7665,27 @@ int Console::i_recordingStop(util::AutoWriteLock *)
     return vrc;
 }
 
+/**
+ * Sends a cursor shape change to the recording context.
+ *
+ * @returns VBox status code.
+ * @param   fVisible            Whether the mouse cursor actually is visible or not.
+ * @param   fAlpha              Whether the pixel data contains alpha channel information or not.
+ * @param   xHot                X hot position (in pixel) of the new cursor.
+ * @param   yHot                Y hot position (in pixel) of the new cursor.
+ * @param   uWidth              Width (in pixel) of the new cursor.
+ * @param   uHeight             Height (in pixel) of the new cursor.
+ * @param   pu8Shape            Pixel data of the new cursor.
+ * @param   cbShape             Size of \a pu8Shape (in bytes).
+ */
+int Console::i_recordingCursorShapeChange(bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot, uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, uint32_t cbShape)
+{
+    if (!mRecording.mCtx.IsStarted())
+        return VINF_SUCCESS;
+
+    return mRecording.mCtx.SendCursorShapeChange(fVisible, fAlpha, xHot, yHot, uWidth, uHeight, pu8Shape, cbShape,
+                                                 mRecording.mCtx.GetCurrentPTS());
+}
 #endif /* VBOX_WITH_RECORDING */
 
 /**
@@ -7794,12 +7815,16 @@ void Console::i_onMousePointerShapeChange(bool fVisible, bool fAlpha,
     AssertComRCReturnVoid(autoCaller.hrc());
 
     if (!mMouse.isNull())
-       mMouse->updateMousePointerShape(fVisible, fAlpha, xHot, yHot, width, height, pu8Shape, cbShape);
+       mMouse->i_updatePointerShape(fVisible, fAlpha, xHot, yHot, width, height, pu8Shape, cbShape);
 
     com::SafeArray<BYTE> shape(cbShape);
     if (pu8Shape)
         memcpy(shape.raw(), pu8Shape, cbShape);
     ::FireMousePointerShapeChangedEvent(mEventSource, fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shape));
+
+#ifdef VBOX_WITH_RECORDING
+    i_recordingCursorShapeChange(fVisible, fAlpha, xHot, yHot, width, height, pu8Shape, cbShape);
+#endif
 
 #if 0
     LogFlowThisFuncLeave();

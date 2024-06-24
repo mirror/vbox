@@ -128,10 +128,12 @@ public:
     int Init(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings);
     int Uninit(void);
 
-    int Process(RecordingBlockMap &mapBlocksCommon);
+    int ThreadMain(int rcWait, RecordingBlockMap &commonBlocks);
     int SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp);
-    int SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
-                       uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t msTimestamp);
+    int SendCursorPos(uint8_t idCursor, PRECORDINGPOS pPos, uint64_t msTimestamp);
+    int SendCursorShape(uint8_t idCursor, PRECORDINGVIDEOFRAME pShape, uint64_t msTimestamp);
+    int SendVideoFrame(PRECORDINGVIDEOFRAME pFrame, uint64_t msTimestamp);
+    int SendScreenChange(PRECORDINGSURFACEINFO pInfo, uint64_t msTimestamp, bool fForce = false);
 
     const settings::RecordingScreenSettings &GetConfig(void) const;
     uint16_t GetID(void) const { return this->m_uScreenID; };
@@ -162,6 +164,8 @@ protected:
     bool isLimitReachedInternal(uint64_t msTimestamp) const;
     int iterateInternal(uint64_t msTimestamp);
 
+    int addFrame(PRECORDINGFRAME pFrame, uint64_t msTimestamp);
+    int process(const RecordingBlockSet &streamBlocks, RecordingBlockMap &commonBlocks);
     int codecWriteToWebM(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags);
 
     void lock(void);
@@ -222,8 +226,7 @@ protected:
     /** Screen settings to use. */
     settings::RecordingScreenSettings
                         m_ScreenSettings;
-    /** Common set of recording (data) blocks, needed for
-     *  multiplexing to all recording streams. */
+    /** Set of recording (data) blocks for this stream. */
     RecordingBlockSet   m_Blocks;
 };
 

@@ -38,6 +38,37 @@
 
 class Console;
 
+/** No flags specified. */
+#define VBOX_RECORDING_CURSOR_F_NONE       0
+/** Cursor is visible. */
+#define VBOX_RECORDING_CURSOR_F_VISIBLE    RT_BIT(0)
+/** Cursor shape contains an alpha mask. */
+#define VBOX_RECORDING_CURSOR_F_ALPHA      RT_BIT(1)
+/** Cursor state flags valid mask. */
+#define VBOX_RECORDING_CURSOR_F_VALID_MASK 0x3
+
+/**
+ * Class for keeping a recording cursor state.
+ */
+class RecordingCursorState
+{
+public:
+
+    RecordingCursorState();
+    virtual ~RecordingCursorState();
+
+    void Destroy();
+
+    int CreateOrUpdate(bool fAlpha, uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, size_t cbShape);
+
+    int Move(int32_t iX, int32_t iY);
+
+    /** Cursor state flags. */
+    uint32_t            m_fFlags;
+    /** The current cursor shape. */
+    RECORDINGVIDEOFRAME m_Shape;
+};
+
 /**
  * Class for managing a recording context.
  */
@@ -67,12 +98,14 @@ public:
     int Stop(void);
 
     int SendAudioFrame(const void *pvData, size_t cbData, uint64_t uTimestampMs);
-    int SendVideoFrame(uint32_t uScreen,
-                       uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP,
-                       uint32_t uBytesPerLine, uint32_t uSrcWidth, uint32_t uSrcHeight,
-                       uint8_t *puSrcData, uint64_t msTimestamp);
+    int SendVideoFrame(uint32_t uScreen, PRECORDINGVIDEOFRAME pFrame, uint64_t msTimestamp);
+    int SendCursorPositionChange(uint32_t uScreen, int32_t x, int32_t y, uint64_t msTimestamp);
+    int SendCursorShapeChange(bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot, uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, size_t cbShape, uint64_t msTimestamp);
+    int SendScreenChange(uint32_t uScreen, PRECORDINGSURFACEINFO pInfo, uint64_t uTimestampMs);
+
 public:
 
+    uint64_t GetCurrentPTS(void) const;
     bool IsFeatureEnabled(RecordingFeature_T enmFeature);
     bool IsReady(void);
     bool IsReady(uint32_t uScreen, uint64_t msTimestamp);
@@ -82,6 +115,11 @@ public:
     bool NeedsUpdate(uint32_t uScreen, uint64_t msTimestamp);
 
     DECLCALLBACK(int) OnLimitReached(uint32_t uScreen, int vrc);
+
+    /** The state mouse cursor state.
+     *  We currently only support one mouse cursor at a time. */
+    RecordingCursorState         m_Cursor;
+
 
 protected:
 
@@ -145,7 +183,8 @@ protected:
     RecordingStreams             m_vecStreams;
     /** Number of streams in vecStreams which currently are enabled for recording. */
     uint16_t                     m_cStreamsEnabled;
-    /** Timestamp (in ms) of when recording has been started. */
+    /** Timestamp (in ms) of when recording has been started.
+     *  Set to 0 if not started (yet). */
     uint64_t                     m_tsStartMs;
 #ifdef VBOX_WITH_AUDIO_RECORDING
     /** Audio codec to use.

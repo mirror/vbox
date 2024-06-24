@@ -43,6 +43,9 @@
 #include "DisplaySourceBitmapWrap.h"
 #include "GuestScreenInfoWrap.h"
 
+#ifdef VBOX_WITH_RECORDING
+# include "RecordingInternals.h"
+#endif
 
 class Console;
 
@@ -92,13 +95,6 @@ typedef struct _DISPLAYFBINFO
     bool fVBVAForceResize;
     VBVAHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *pVBVAHostFlags;
 #endif /* VBOX_WITH_HGSMI */
-
-#ifdef VBOX_WITH_RECORDING
-    struct
-    {
-        ComPtr<IDisplaySourceBitmap> pSourceBitmap;
-    } Recording;
-#endif /* VBOX_WITH_RECORDING */
 
     /** Description of the currently plugged monitor with preferred mode,
      * a.k.a the last mode hint sent. */
@@ -186,13 +182,15 @@ public:
     int  VideoAccelEnableVMMDev(bool fEnable, VBVAMEMORY *pVbvaMemory);
     void VideoAccelFlushVMMDev(void);
 
-    void i_UpdateDeviceCursorCapabilities(void);
+    void i_updateDeviceCursorCapabilities(void);
 
 #ifdef VBOX_WITH_RECORDING
-    int  i_recordingStart(void);
-    int  i_recordingStop(void);
-    int  i_recordingInvalidate(bool fForce = false);
-    void i_recordingScreenChanged(unsigned uScreenId);
+    int i_recordingStart(void);
+    int i_recordingStop(void);
+    int i_recordingInvalidate(bool fForce = false);
+    int i_recordingScreenChanged(unsigned uScreenId, const DISPLAYFBINFO *pFBInfo);
+    int i_recordingScreenUpdate(unsigned uScreenId, PRECORDINGVIDEOFRAME pFrame);
+    int i_recordingCursorPositionChange(unsigned uScreenId, uint32_t fFlags, int32_t x, int32_t y);
 #endif
 
     void i_notifyPowerDown(void);

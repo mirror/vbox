@@ -41,6 +41,8 @@
 #include <iprt/formats/bmp.h>
 #endif
 
+#include <VBox/log.h>
+
 
 /**
  * Convert an image to YUV420p format.
@@ -59,58 +61,51 @@ inline bool recordingUtilsColorConvWriteYUV420p(uint8_t *aDstBuf, unsigned aDstW
 {
     RT_NOREF(aDstWidth, aDstHeight);
 
-    AssertReturn(!(aSrcWidth & 1),  false);
-    AssertReturn(!(aSrcHeight & 1), false);
+    size_t image_size = aSrcWidth * aSrcHeight;
+    size_t upos = image_size;
+    size_t vpos = upos + upos / 4;
+    size_t i = 0;
 
-    bool fRc = true;
-    T iter1(aSrcWidth, aSrcHeight, aSrcBuf);
-    T iter2 = iter1;
-    iter2.skip(aSrcWidth);
-    unsigned cPixels = aSrcWidth * aSrcHeight;
-    unsigned offY = 0;
-    unsigned offU = cPixels;
-    unsigned offV = cPixels + cPixels / 4;
-    unsigned const cyHalf = aSrcHeight / 2;
-    unsigned const cxHalf = aSrcWidth  / 2;
-    for (unsigned i = 0; i < cyHalf && fRc; ++i)
+#define CALC_Y(r, g, b) \
+    ((66 * r + 129 * g + 25 * b) >> 8) + 16
+#define CALC_U(r, g, b) \
+    ((-38 * r + -74 * g + 112 * b) >> 8) + 128
+#define CALC_V(r, g, b) \
+    ((112 * r + -94 * g + -18 * b) >> 8) + 128
+
+    for (size_t line = 0; line < aSrcHeight; ++line)
     {
-        for (unsigned j = 0; j < cxHalf; ++j)
+        if ((line % 2) == 0)
         {
-            unsigned red, green, blue;
-            fRc = iter1.getRGB(&red, &green, &blue);
-            AssertReturn(fRc, false);
-            aDstBuf[offY] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
-            unsigned u = (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
-            unsigned v = (((112 * red - 94 * green -  18 * blue + 128) >> 8) + 128) / 4;
+            for (size_t x = 0; x < aSrcWidth; x += 2)
+            {
+                uint8_t b = aSrcBuf[4 * i];
+                uint8_t g = aSrcBuf[4 * i + 1];
+                uint8_t r = aSrcBuf[4 * i + 2];
 
-            fRc = iter1.getRGB(&red, &green, &blue);
-            AssertReturn(fRc, false);
-            aDstBuf[offY + 1] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
-            u += (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
-            v += (((112 * red - 94 * green -  18 * blue + 128) >> 8) + 128) / 4;
+                aDstBuf[i++] = CALC_Y(r, g, b);
 
-            fRc = iter2.getRGB(&red, &green, &blue);
-            AssertReturn(fRc, false);
-            aDstBuf[offY + aSrcWidth] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
-            u += (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
-            v += (((112 * red - 94 * green -  18 * blue + 128) >> 8) + 128) / 4;
+                aDstBuf[upos++] = CALC_U(r, g, b);
+                aDstBuf[vpos++] = CALC_V(r, g, b);
 
-            fRc = iter2.getRGB(&red, &green, &blue);
-            AssertReturn(fRc, false);
-            aDstBuf[offY + aSrcWidth + 1] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
-            u += (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
-            v += (((112 * red - 94 * green -  18 * blue + 128) >> 8) + 128) / 4;
+                b = aSrcBuf[4 * i];
+                g = aSrcBuf[4 * i + 1];
+                r = aSrcBuf[4 * i + 2];
 
-            aDstBuf[offU] = u;
-            aDstBuf[offV] = v;
-            offY += 2;
-            ++offU;
-            ++offV;
+                aDstBuf[i++] = CALC_Y(r, g, b);
+            }
         }
+        else
+        {
+            for (size_t x = 0; x < aSrcWidth; x++)
+            {
+                uint8_t b = aSrcBuf[4 * i];
+                uint8_t g = aSrcBuf[4 * i + 1];
+                uint8_t r = aSrcBuf[4 * i + 2];
 
-        iter1.skip(aSrcWidth);
-        iter2.skip(aSrcWidth);
-        offY += aSrcWidth;
+                aDstBuf[i++] = CALC_Y(r, g, b);
+            }
+        }
     }
 
     return true;
@@ -151,62 +146,241 @@ inline bool RecordingUtilsColorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
 }
 
 /**
- * Converts a RGB to YUV buffer.
+ * Converts an entire RGB BGRA32 buffer to a YUV I420 buffer.
  *
- * @returns IPRT status code.
- * @param   enmPixelFormat      Pixel format to use for conversion.
  * @param   paDst               Pointer to destination buffer.
- * @param   uDstWidth           Width (X, in pixels) of destination buffer.
- * @param   uDstHeight          Height (Y, in pixels) of destination buffer.
+ * @param   uDstWidth           Width (X, in pixel) of destination buffer.
+ * @param   uDstHeight          Height (Y, in pixel) of destination buffer.
  * @param   paSrc               Pointer to source buffer.
- * @param   uSrcWidth           Width (X, in pixels) of source buffer.
- * @param   uSrcHeight          Height (Y, in pixels) of source buffer.
+ * @param   uSrcWidth           Width (X, in pixel) of source buffer.
+ * @param   uSrcHeight          Height (Y, in pixel) of source buffer.
  */
-int RecordingUtilsRGBToYUV(RECORDINGPIXELFMT enmPixelFormat,
-                           uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
-                           uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight)
+void RecordingUtilsConvBGRA32ToYUVI420(uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
+                                       uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight)
 {
-    switch (enmPixelFormat)
+    RT_NOREF(uDstWidth, uDstHeight);
+
+    size_t const image_size = uSrcWidth * uSrcHeight;
+    size_t upos = image_size;
+    size_t vpos = upos + upos / 4;
+    size_t i = 0;
+
+#define CALC_Y(r, g, b) \
+    ((66 * r + 129 * g + 25 * b) >> 8) + 16
+#define CALC_U(r, g, b) \
+    ((-38 * r + -74 * g + 112 * b) >> 8) + 128
+#define CALC_V(r, g, b) \
+    ((112 * r + -94 * g + -18 * b) >> 8) + 128
+
+    for (size_t y = 0; y < uSrcHeight; y++)
     {
-        case RECORDINGPIXELFMT_RGB32:
-            if (!recordingUtilsColorConvWriteYUV420p<ColorConvBGRA32Iter>(paDst, uDstWidth, uDstHeight,
-                                                                          paSrc, uSrcWidth, uSrcHeight))
-                return VERR_INVALID_PARAMETER;
-            break;
-        case RECORDINGPIXELFMT_RGB24:
-            if (!recordingUtilsColorConvWriteYUV420p<ColorConvBGR24Iter>(paDst, uDstWidth, uDstHeight,
-                                                                         paSrc, uSrcWidth, uSrcHeight))
-                return VERR_INVALID_PARAMETER;
-            break;
-        case RECORDINGPIXELFMT_RGB565:
-            if (!recordingUtilsColorConvWriteYUV420p<ColorConvBGR565Iter>(paDst, uDstWidth, uDstHeight,
-                                                                          paSrc, uSrcWidth, uSrcHeight))
-                return VERR_INVALID_PARAMETER;
-            break;
-        default:
-            AssertFailed();
-            return VERR_NOT_SUPPORTED;
+        if ((y % 2) == 0)
+        {
+            for (size_t x = 0; x < uSrcWidth; x += 2)
+            {
+                uint8_t b = paSrc[4 * i];
+                uint8_t g = paSrc[4 * i + 1];
+                uint8_t r = paSrc[4 * i + 2];
+
+                paDst[i++] = CALC_Y(r, g, b);
+
+                paDst[upos++] = CALC_U(r, g, b);
+                paDst[vpos++] = CALC_V(r, g, b);
+
+                b = paSrc[4 * i];
+                g = paSrc[4 * i + 1];
+                r = paSrc[4 * i + 2];
+
+                paDst[i++] = CALC_Y(r, g, b);
+            }
+        }
+        else
+        {
+            for (size_t x = 0; x < uSrcWidth; x++)
+            {
+                uint8_t const b = paSrc[4 * i];
+                uint8_t const g = paSrc[4 * i + 1];
+                uint8_t const r = paSrc[4 * i + 2];
+
+                paDst[i++] = CALC_Y(r, g, b);
+            }
+        }
     }
-    return VINF_SUCCESS;
+
+#undef CALC_Y
+#undef CALC_U
+#undef CALC_V
+}
+
+/**
+ * Converts a part of a RGB BGRA32 buffer to a YUV I420 buffer.
+ *
+ * @param   paDst               Pointer to destination buffer.
+ * @param   uDstX               X destination position (in pixel).
+ * @param   uDstY               Y destination position (in pixel).
+ * @param   uDstWidth           Width (X, in pixel) of destination buffer.
+ * @param   uDstHeight          Height (Y, in pixel) of destination buffer.
+ * @param   paSrc               Pointer to source buffer.
+ * @param   uSrcX               X source position (in pixel).
+ * @param   uSrcY               Y source position (in pixel).
+ * @param   uSrcWidth           Width (X, in pixel) of source buffer.
+ * @param   uSrcHeight          Height (Y, in pixel) of source buffer.
+ * @param   uSrcStride          Stride (in bytes) of source buffer.
+ * @param   uSrcBPP             Bits per pixel of source buffer.
+ */
+void RecordingUtilsConvBGRA32ToYUVI420Ex(uint8_t *paDst, uint32_t uDstX, uint32_t uDstY, uint32_t uDstWidth, uint32_t uDstHeight,
+                                         uint8_t *paSrc, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight,
+                                         uint32_t uSrcStride, uint8_t uSrcBPP)
+{
+    Assert(uDstX < uDstWidth);
+    Assert(uDstX + uSrcWidth <= uDstWidth);
+    Assert(uDstY < uDstHeight);
+    Assert(uDstY + uSrcHeight <= uDstHeight);
+    Assert(uSrcBPP % 8 == 0);
+
+    RT_NOREF(uSrcHeight, uDstHeight);
+
+#define CALC_Y(r, g, b) \
+    (66 * r + 129 * g + 25 * b) >> 8
+#define CALC_U(r, g, b) \
+    ((-38 * r + -74 * g + 112 * b) >> 8) + 128
+#define CALC_V(r, g, b) \
+    ((112 * r + -94 * g + -18 * b) >> 8) + 128
+
+    uint32_t uDstXCur = uDstX;
+
+    const unsigned uSrcBytesPerPixel = uSrcBPP / 8;
+
+    size_t offSrc = (uSrcY * uSrcStride) + (uSrcX * uSrcBytesPerPixel);
+
+    for (size_t y = 0; y < uSrcHeight; y++)
+    {
+        for (size_t x = 0; x < uSrcWidth; x++)
+        {
+            size_t const offBGR = offSrc + (x * uSrcBytesPerPixel);
+
+            uint8_t const b = paSrc[offBGR];
+            uint8_t const g = paSrc[offBGR + 1];
+            uint8_t const r = paSrc[offBGR + 2];
+
+            size_t const offY  = uDstY * uDstWidth + uDstXCur;
+            size_t const offUV = (uDstY / 2) * (uDstWidth / 2) + (uDstXCur / 2) + uDstWidth * uDstHeight;
+
+            paDst[offY]                               = CALC_Y(r, g, b);
+            paDst[offUV]                              = CALC_U(r, g, b);
+            paDst[offUV + uDstWidth * uDstHeight / 4] = CALC_V(r, g, b);
+
+            uDstXCur++;
+        }
+
+        offSrc += uSrcStride;
+
+        uDstXCur = uDstX;
+        uDstY++;
+    }
+
+#undef CALC_Y
+#undef CALC_U
+#undef CALC_V
+}
+
+/**
+ * Crops (centers) or centers coordinates of a given source.
+ *
+ * @returns VBox status code.
+ * @retval  VWRN_RECORDING_ENCODING_SKIPPED if the source is not visible.
+ * @param   pCodecParms         Video codec parameters to use for cropping / centering.
+ * @param   sx                  Input / output: X location (in pixel) of the source.
+ * @param   sy                  Input / output: Y location (in pixel) of the source.
+ * @param   sw                  Input / output: Width (in pixel) of the source.
+ * @param   sh                  Input / output: Height (in pixel) of the source.
+ * @param   dx                  Input / output: X location (in pixel) of the destination.
+ * @param   dy                  Input / output: Y location (in pixel) of the destination.
+ *
+ * @note    Used when no other scaling algorithm is being selected / available. See testcase.
+ */
+int RecordingUtilsCoordsCropCenter(PRECORDINGCODECPARMS pCodecParms,
+                                   int32_t *sx, int32_t *sy, int32_t *sw, int32_t *sh, int32_t *dx, int32_t *dy)
+{
+    int vrc = VINF_SUCCESS;
+
+    Log3Func(("Original: sx=%RI32 sy=%RI32 sw=%RI32 sh=%RI32 dx=%RI32 dy=%RI32\n",
+              *sx, *sy, *sw, *sh, *dx, *dy));
+
+    /*
+     * Do centered cropping or centering.
+     */
+
+    int32_t const uOriginX = (int32_t)pCodecParms->u.Video.Scaling.u.Crop.m_iOriginX;
+    int32_t const uOriginY = (int32_t)pCodecParms->u.Video.Scaling.u.Crop.m_iOriginY;
+
+    /* Apply cropping / centering values. */
+    *dx += uOriginX;
+    *dy += uOriginY;
+
+    if (*dx < 0)
+    {
+        *dx  = 0;
+        *sx += RT_ABS(uOriginX);
+        *sw -= RT_ABS(uOriginX);
+    }
+
+    if (*dy < 0)
+    {
+        *dy  = 0;
+        *sy += RT_ABS(uOriginY);
+        *sh -= RT_ABS(uOriginY);
+    }
+
+    Log3Func(("Crop0: sx=%RI32 sy=%RI32 sw=%RI32 sh=%RI32 dx=%RI32 dy=%RI32\n",
+              *sx, *sy, *sw, *sh, *dx, *dy));
+
+    if (*sw > (int32_t)pCodecParms->u.Video.uWidth)
+        *sw = (int32_t)pCodecParms->u.Video.uWidth;
+
+    if (*sh > (int32_t)pCodecParms->u.Video.uHeight)
+        *sh = pCodecParms->u.Video.uHeight;
+
+    if (*dx + *sw >= (int32_t)pCodecParms->u.Video.uWidth)
+        *sw = pCodecParms->u.Video.uWidth - *dx;
+
+    if (*dy + *sh >= (int32_t)pCodecParms->u.Video.uHeight)
+        *sh = pCodecParms->u.Video.uHeight - *dy;
+
+    if (   *dx + *sw < 1
+        || *dy + *sh < 1
+        || *dx > (int32_t)pCodecParms->u.Video.uWidth
+        || *dy > (int32_t)pCodecParms->u.Video.uHeight
+        || *sw < 1
+        || *sh < 1)
+    {
+        vrc = VWRN_RECORDING_ENCODING_SKIPPED; /* Not visible, skip encoding. */
+    }
+
+    Log3Func(("Crop1: sx=%RI32 sy=%RI32 sw=%RI32 sh=%RI32 dx=%RI32 dy=%RI32 -> vrc=%Rrc\n",
+              *sx, *sy, *sw, *sh, *dx, *dy, vrc));
+
+    return vrc;
 }
 
 #ifdef DEBUG
 /**
- * Dumps a video recording frame to a bitmap (BMP) file, extended version.
+ * Dumps image data to a bitmap (BMP) file.
  *
  * @returns VBox status code.
- * @param   pu8RGBBuf           Pointer to actual RGB frame data.
+ * @param   pu8RGBBuf           Pointer to actual RGB image data.
  * @param   cbRGBBuf            Size (in bytes) of \a pu8RGBBuf.
  * @param   pszPath             Absolute path to dump file to. Must exist.
- *                              Specify NULL to use the system's temp directory.
- *                              Existing frame files will be overwritten.
- * @param   pszPrefx            Naming prefix to use. Optional and can be NULL.
+ *                              Specify NULL to use the system's temp directory as output directory.
+ *                              Existing files will be overwritten.
+ * @param   pszWhat             Hint of what to dump. Optional and can be NULL.
  * @param   uWidth              Width (in pixel) to write.
  * @param   uHeight             Height (in pixel) to write.
+ * @param   uBytsPerLine        Bytes per line.
  * @param   uBPP                Bits in pixel.
  */
-int RecordingUtilsDbgDumpFrameEx(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, const char *pszPath, const char *pszPrefx,
-                                 uint16_t uWidth, uint32_t uHeight, uint8_t uBPP)
+int RecordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, const char *pszPath, const char *pszWhat,
+                                   uint32_t uWidth, uint32_t uHeight, uint32_t uBytesPerLine, uint8_t uBPP)
 {
     RT_NOREF(cbRGBBuf);
 
@@ -227,7 +401,7 @@ int RecordingUtilsDbgDumpFrameEx(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, cons
     fileHdr.offBits    = (uint32_t)(sizeof(BMPFILEHDR) + sizeof(BMPWIN3XINFOHDR));
 
     coreHdr.cbSize         = sizeof(BMPWIN3XINFOHDR);
-    coreHdr.uWidth         = uWidth ;
+    coreHdr.uWidth         = uWidth;
     coreHdr.uHeight        = uHeight;
     coreHdr.cPlanes        = 1;
     coreHdr.cBits          = uBPP;
@@ -236,16 +410,19 @@ int RecordingUtilsDbgDumpFrameEx(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, cons
 
     static uint64_t s_iCount = 0;
 
+    /* Hardcoded path for now. */
     char szPath[RTPATH_MAX];
     if (!pszPath)
-        RTPathTemp(szPath, sizeof(szPath));
+    {
+        int rc2 = RTPathTemp(szPath, sizeof(szPath));
+        if (RT_FAILURE(rc2))
+            return rc2;
+    }
 
     char szFileName[RTPATH_MAX];
     if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s/RecDump-%04RU64-%s-w%RU16h%RU16.bmp",
-                     pszPath ? pszPath : szPath, s_iCount, pszPrefx ? pszPrefx : "Frame", uWidth, uHeight) <= 0)
-    {
+                     pszPath ? pszPath : szPath, s_iCount, pszWhat ? pszWhat : "Frame", uWidth, uHeight) <= 0)
         return VERR_BUFFER_OVERFLOW;
-    }
 
     s_iCount++;
 
@@ -258,13 +435,13 @@ int RecordingUtilsDbgDumpFrameEx(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, cons
         RTFileWrite(fh, &coreHdr, sizeof(coreHdr), NULL);
 
         /* Bitmaps (DIBs) are stored upside-down (thanks, OS/2), so work from the bottom up. */
-        uint32_t offSrc = (uHeight * uWidth * uBytesPerPixel) - uWidth * uBytesPerPixel;
+        uint32_t offSrc = cbRGBBuf - uBytesPerLine;
 
         /* Do the copy. */
         for (unsigned int i = 0; i < uHeight; i++)
         {
-            RTFileWrite(fh, pu8RGBBuf + offSrc, uWidth * uBytesPerPixel, NULL);
-            offSrc -= uWidth * uBytesPerPixel;
+            RTFileWrite(fh, pu8RGBBuf + offSrc, uBytesPerLine, NULL);
+            offSrc -= uBytesPerLine;
         }
 
         RTFileClose(fh);
@@ -274,17 +451,30 @@ int RecordingUtilsDbgDumpFrameEx(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, cons
 }
 
 /**
+ * Dumps a video recording frame to a bitmap (BMP) file, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pFrame              Video frame to dump.
+ * @param   pszPath             Output directory.
+ * @param   pszWhat             Hint of what to dump. Optional and can be NULL.
+ */
+int RecordingUtilsDbgDumpVideoFrameEx(const PRECORDINGVIDEOFRAME pFrame, const char *pszPath, const char *pszWhat)
+{
+    return RecordingUtilsDbgDumpImageData(pFrame->pau8Buf, pFrame->cbBuf,
+                                          pszPath, pszWhat,
+                                          pFrame->Info.uWidth, pFrame->Info.uHeight, pFrame->Info.uBytesPerLine, pFrame->Info.uBPP);
+}
+
+/**
  * Dumps a video recording frame to a bitmap (BMP) file.
  *
  * @returns VBox status code.
  * @param   pFrame              Video frame to dump.
+ * @param   pszWhat             Hint of what to dump. Optional and can be NULL.
  */
-int RecordingUtilsDbgDumpFrame(const PRECORDINGFRAME pFrame)
+int RecordingUtilsDbgDumpVideoFrame(const PRECORDINGVIDEOFRAME pFrame, const char *pszWhat)
 {
-    AssertReturn(pFrame->enmType == RECORDINGFRAME_TYPE_VIDEO, VERR_INVALID_PARAMETER);
-    return RecordingUtilsDbgDumpFrameEx(pFrame->Video.pu8RGBBuf, pFrame->Video.cbRGBBuf,
-                                        NULL /*  Use temp directory */, NULL /* pszPrefix */,
-                                        pFrame->Video.uWidth, pFrame->Video.uHeight, pFrame->Video.uBPP);
+    return RecordingUtilsDbgDumpVideoFrameEx(pFrame, NULL /* Use temp directory */, pszWhat);
 }
 #endif /* DEBUG */
 

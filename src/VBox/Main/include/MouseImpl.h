@@ -36,6 +36,95 @@
 #include "EventImpl.h"
 #include <VBox/vmm/pdmdrv.h>
 
+/**
+ * Structure for keeping mouse pointer data.
+ */
+struct MousePointerData
+{
+    MousePointerData()
+        : fVisible(false)
+        , hotX(0)
+        , hotY(0)
+        , width(0)
+        , height(0)
+        , pu8Shape(NULL)
+        , cbShape(0) { }
+
+    virtual ~MousePointerData()
+    {
+        Destroy();
+    }
+
+    /**
+     * Initialize pointer shape data.
+     *
+     * @returns VBox status code.
+     * @param   afVisible           Whether the mouse cursor actually is visible or not.
+     * @param   afAlpha             Whether the pixel data contains an alpha mask or not.
+     * @param   auHotX              X hot position (in pixel) of the new cursor.
+     * @param   auHotY              Y hot position (in pixel) of the new cursor.
+     * @param   auWidth             Width (in pixel) of the new cursor.
+     * @param   auHeight            Height (in pixel) of the new cursor.
+     * @param   apu8Shape           Pixel data of the new cursor.
+     * @param   acbShape            Size of \a apu8Shape (in bytes).
+     */
+    int Init(bool afVisible, bool afAlpha, uint32_t auHotX, uint32_t auHotY, uint32_t auWidth, uint32_t auHeight,
+             const uint8_t *apu8Shape, uint32_t acbShape)
+    {
+        AssertMsgReturn(pu8Shape == NULL, ("Already initialized!\n"), VERR_WRONG_ORDER);
+
+        fVisible = afVisible;
+        fAlpha   = afAlpha;
+        hotX     = auHotX;
+        hotY     = auHotY;
+        width    = auWidth;
+        height   = auHeight;
+        if (acbShape)
+        {
+            pu8Shape = (uint8_t *)RTMemDup(apu8Shape, acbShape);
+            AssertPtrReturn(pu8Shape, VERR_NO_MEMORY);
+            cbShape = acbShape;
+        }
+
+        return VINF_SUCCESS;
+    }
+
+    /**
+     * Initialize pointer shape data with another pointer shape data instance.
+     *
+     * @returns VBox status code.
+     * @param   aThat           Pointer shape data instance to use for initialization.
+     */
+    int Init(const MousePointerData &aThat)
+    {
+        return Init(aThat.fVisible, aThat.fAlpha, aThat.hotX, aThat.hotY, aThat.width, aThat.height,
+                    aThat.pu8Shape, aThat.cbShape);
+    }
+
+    /**
+     * Destroys a pointer shape.
+     */
+    void Destroy(void)
+    {
+        if (pu8Shape)
+        {
+            Assert(cbShape);
+            RTMemFree(pu8Shape);
+            pu8Shape = NULL;
+        }
+        cbShape = 0;
+    }
+
+    bool fVisible;
+    bool fAlpha;
+    uint32_t hotX;
+    uint32_t hotY;
+    uint32_t width;
+    uint32_t height;
+    uint8_t *pu8Shape;
+    uint32_t cbShape;
+};
+
 /** Maximum number of devices supported */
 enum { MOUSE_MAX_DEVICES = 4 };
 /** Mouse driver instance data. */
@@ -69,11 +158,11 @@ public:
         i_sendMouseCapsNotifications();
     }
 
-    void updateMousePointerShape(bool fVisible, bool fAlpha,
-                                 uint32_t hotX, uint32_t hotY,
-                                 uint32_t width, uint32_t height,
-                                 const uint8_t *pu8Shape, uint32_t cbShape);
-private:
+    int i_getPointerShape(MousePointerData &aData);
+    int i_updatePointerShape(bool fVisible, bool fAlpha,
+                             uint32_t xHot, uint32_t yHot,
+                             uint32_t uWidth, uint32_t uHeight,
+                             const uint8_t *pu8Shape, uint32_t cbShape);
 
     // Wrapped IMouse properties
     HRESULT getAbsoluteSupported(BOOL *aAbsoluteSupported);
@@ -103,7 +192,7 @@ private:
                                      const com::Utf8Str &aContacts,
                                      BOOL isTouchScreen,
                                      ULONG aScanTime);
-
+private:
 
     static DECLCALLBACK(void *) i_drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(void)   i_mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs, bool fMTAbs, bool fMTRel);
@@ -147,17 +236,8 @@ private:
     uint32_t mfLastButtons;
 
     ComPtr<IMousePointerShape> mPointerShape;
-    struct
-    {
-        bool fVisible;
-        bool fAlpha;
-        uint32_t hotX;
-        uint32_t hotY;
-        uint32_t width;
-        uint32_t height;
-        uint8_t *pu8Shape;
-        uint32_t cbShape;
-    } mPointerData;
+    /** Current mouse pointer data. */
+    MousePointerData           mPointerData;
 
     const ComObjPtr<EventSource> mEventSource;
     VBoxEventDesc                mMouseEvent;

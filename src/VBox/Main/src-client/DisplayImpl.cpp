@@ -33,6 +33,7 @@
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "GuestImpl.h"
+#include "MouseImpl.h"
 #include "VMMDev.h"
 
 #include "AutoCaller.h"
@@ -60,6 +61,7 @@
 #ifdef VBOX_WITH_RECORDING
 # include <iprt/path.h>
 # include "Recording.h"
+# include "RecordingUtils.h"
 
 # include <VBox/vmm/pdmapi.h>
 # include <VBox/vmm/pdmaudioifs.h>
@@ -589,9 +591,6 @@ void Display::uninit()
         maFramebuffers[uScreenId].updateImage.pu8Address = NULL;
         maFramebuffers[uScreenId].updateImage.cbLine = 0;
         maFramebuffers[uScreenId].pFramebuffer.setNull();
-#ifdef VBOX_WITH_RECORDING
-        maFramebuffers[uScreenId].Recording.pSourceBitmap.setNull();
-#endif
     }
 
     if (mParent)
@@ -796,13 +795,18 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     ComPtr<IFramebuffer> pFramebuffer = pFBInfo->pFramebuffer;
     const bool fDisabled = pFBInfo->fDisabled;
 
+#ifdef VBOX_WITH_RECORDING
+    /* Recording needs to be called before releasing the display's lock below. */
+    i_recordingScreenChanged(uScreenId, pFBInfo);
+#endif
+
     alock.release();
 
     if (!pFramebuffer.isNull())
     {
-        HRESULT hr = pFramebuffer->NotifyChange(uScreenId, 0, 0, w, h); /** @todo origin */
-        LogFunc(("NotifyChange hr %08X\n", hr));
-        NOREF(hr);
+        HRESULT hrc = pFramebuffer->NotifyChange(uScreenId, 0, 0, w, h); /** @todo origin */
+        LogFunc(("NotifyChange hr %08X\n", hrc));
+        RT_NOREF(hrc);
     }
 
     if (fGuestMonitorChangedEvent)
@@ -826,10 +830,6 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     /* And re-send the seamless rectangles if necessary. */
     if (mfSeamlessEnabled)
         i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
-
-#ifdef VBOX_WITH_RECORDING
-    i_recordingScreenChanged(uScreenId);
-#endif
 
     LogRelFlowFunc(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
 
@@ -908,6 +908,18 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
             if (w != 0 && h != 0)
             {
                 pFramebuffer->NotifyUpdate(x, y, w, h);
+
+#ifdef VBOX_WITH_RECORDING
+                RECORDINGVIDEOFRAME Frame =
+                {
+                    (uint16_t)w, (uint16_t)h,
+                    (uint8_t )pFBInfo->u16BitsPerPixel, RECORDINGPIXELFMT_BRGA32, pFBInfo->u32LineSize,
+                    pFBInfo->pu8FramebufferVRAM + (y * pFBInfo->u32LineSize + x * (pFBInfo->u16BitsPerPixel / 8)),
+                    pFBInfo->w * pFBInfo->u32LineSize,
+                    (uint16_t)x, (uint16_t)y
+                };
+                i_recordingScreenUpdate(uScreenId, &Frame);
+#endif
             }
         }
         else
@@ -942,6 +954,17 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
                             pFBInfo->updateImage.pSourceBitmap = pSourceBitmap;
                             pFBInfo->updateImage.pu8Address = pAddress;
                             pFBInfo->updateImage.cbLine = ulBytesPerLine;
+#ifdef VBOX_WITH_RECORDING
+                            RECORDINGVIDEOFRAME Frame =
+                            {
+                                (uint16_t)ulWidth, (uint16_t)ulHeight,
+                                (uint8_t )ulBitsPerPixel, RECORDINGPIXELFMT_BRGA32, ulBytesPerLine,
+                                pAddress, ulHeight * ulBytesPerLine,
+                                0, 0
+                            };
+
+                            i_recordingScreenUpdate(uScreenId, &Frame);
+#endif
                         }
 
                         pSourceBitmap = pFBInfo->updateImage.pSourceBitmap;
@@ -971,23 +994,37 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
                     /* Make sure that the requested update is within the source bitmap dimensions. */
                     i_checkCoordBounds(&x, &y, &w, &h, ulWidth, ulHeight);
 
-                    if (w != 0 && h != 0)
+                    if (   w != 0
+                        && h != 0)
                     {
-                        const size_t cbData = w * h * 4;
+                        unsigned const uBytesPerPixel = ulBitsPerPixel / 8;
+
+                        const size_t cbData = w * h * uBytesPerPixel;
                         com::SafeArray<BYTE> image(cbData);
 
                         uint8_t *pu8Dst = image.raw();
-                        const uint8_t *pu8Src = pbAddress + ulBytesPerLine * y + x * 4;
+                        const uint8_t *pu8Src = pbAddress + ulBytesPerLine * y + x * uBytesPerPixel;
 
-                        int i;
-                        for (i = y; i < y + h; ++i)
+                        for (int i = y; i < y + h; ++i)
                         {
-                            memcpy(pu8Dst, pu8Src, w * 4);
-                            pu8Dst += w * 4;
+                            memcpy(pu8Dst, pu8Src, w * uBytesPerPixel);
+                            pu8Dst += w * uBytesPerPixel;
                             pu8Src += ulBytesPerLine;
                         }
 
                         pFramebuffer->NotifyUpdateImage(x, y, w, h, ComSafeArrayAsInParam(image));
+
+#ifdef VBOX_WITH_RECORDING
+                        RECORDINGVIDEOFRAME Frame =
+                        {
+                            (uint16_t)w, (uint16_t)h,
+                            (uint8_t)ulBitsPerPixel, RECORDINGPIXELFMT_BRGA32, ulBytesPerLine,
+                            pu8Dst, h * ulBytesPerLine,
+                            (uint16_t)x, (uint16_t)y
+                        };
+
+                        i_recordingScreenUpdate(uScreenId, &Frame);
+#endif
                     }
                 }
             }
@@ -1127,7 +1164,7 @@ void Display::i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
 
 /** Updates the device's view of the host cursor handling capabilities.
  *  Calls into mpDrv->pUpPort. */
-void Display::i_UpdateDeviceCursorCapabilities(void)
+void Display::i_updateDeviceCursorCapabilities(void)
 {
     bool fRenderCursor = true;
     bool fMoveCursor = mcVRDPRefs == 0;
@@ -1171,7 +1208,7 @@ HRESULT Display::i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uin
     CHECK_CONSOLE_DRV(mpDrv);
     alock.release();  /* Release before calling up for lock order reasons. */
     mfHostCursorCapabilities = fHostCursorCapabilities;
-    i_UpdateDeviceCursorCapabilities();
+    i_updateDeviceCursorCapabilities();
     return S_OK;
 }
 
@@ -1418,7 +1455,7 @@ void Display::i_VRDPConnectionEvent(bool fConnect)
                 ASMAtomicDecS32(&mcVRDPRefs);
 
     i_VideoAccelVRDP(fConnect, c);
-    i_UpdateDeviceCursorCapabilities();
+    i_updateDeviceCursorCapabilities();
 }
 
 
@@ -2149,12 +2186,18 @@ int Display::i_recordingStop(void)
  *
  * @returns VBox status code.
  * @param   fForce              Whether to force invalidation or not. Default is @c false.
+ *
+ * @note    Takes the display's read lock.
  */
 int Display::i_recordingInvalidate(bool fForce /* = false */)
 {
     RecordingContext *pCtx = mParent->i_recordingGetContext();
     if (!pCtx)
         return VINF_SUCCESS;
+
+    LogFlowFuncEnter();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /*
      * Invalidate screens.
@@ -2168,8 +2211,12 @@ int Display::i_recordingInvalidate(bool fForce /* = false */)
 
         maRecordingEnabled[uScreen] = fStreamEnabled;
 
-        if (fChanged && uScreen < mcMonitors)
-            i_recordingScreenChanged(uScreen);
+        if (   fStreamEnabled
+            && fChanged)
+        {
+            DISPLAYFBINFO const *pFBInfo = &maFramebuffers[uScreen];
+            /* ignore rc */ i_recordingScreenChanged(uScreen, pFBInfo);
+        }
     }
 
     return VINF_SUCCESS;
@@ -2178,32 +2225,158 @@ int Display::i_recordingInvalidate(bool fForce /* = false */)
 /**
  * Called when the recording state of a screen got changed.
  *
+ * @returns VBox status code.
  * @param   uScreenId           ID of screen for which the recording state got changed.
+ * @param   pFBInfo             Frame buffer information to use.
  */
-void Display::i_recordingScreenChanged(unsigned uScreenId)
+int Display::i_recordingScreenChanged(unsigned uScreenId, const DISPLAYFBINFO *pFBInfo)
 {
+    AssertReturn(uScreenId < mcMonitors, VERR_INVALID_PARAMETER);
+
     RecordingContext *pCtx = mParent->i_recordingGetContext();
 
-    i_UpdateDeviceCursorCapabilities();
+    i_updateDeviceCursorCapabilities();
     if (   RT_LIKELY(!maRecordingEnabled[uScreenId])
         || !pCtx || !pCtx->IsStarted())
     {
         /* Skip recording this screen. */
-        return;
+        return VINF_SUCCESS;
     }
 
-    /* Get a new source bitmap which will be used by video recording code. */
-    ComPtr<IDisplaySourceBitmap> pSourceBitmap;
-    QuerySourceBitmap(uScreenId, pSourceBitmap.asOutParam());
+    LogFlowFuncEnter();
 
-    int vrc2 = RTCritSectEnter(&mVideoRecLock);
-    if (RT_SUCCESS(vrc2))
+    RECORDINGSURFACEINFO ScreenInfo;
+    ScreenInfo.uWidth      = pFBInfo->w;
+    ScreenInfo.uHeight     = pFBInfo->h;
+    ScreenInfo.uBPP        = (uint8_t)pFBInfo->u16BitsPerPixel;
+    ScreenInfo.enmPixelFmt = RECORDINGPIXELFMT_BRGA32; /** @todo Does this apply everywhere? */
+
+    uint64_t const tsNowMs = pCtx->GetCurrentPTS();
+
+    int vrc = pCtx->SendScreenChange(uScreenId, &ScreenInfo, tsNowMs);
+    if (RT_SUCCESS(vrc))
     {
-        maFramebuffers[uScreenId].Recording.pSourceBitmap = pSourceBitmap;
+        /** @todo BUGBUG For whatever reason pFBInfo contains a wrong pFBInfo->u32LineSize
+         *        when shutting down a VM. So (re-)calculate the line size based on the framebuffer's
+         *        BPP + width parameters.
+         *
+         *        So fend off any requests here which look fishy before sending a full screen update. */
+        if (   !pFBInfo->u16BitsPerPixel
+            ||  pFBInfo->u16BitsPerPixel % 2 != 0
+            || !pFBInfo->w
+            || !pFBInfo->h
+            ||  pFBInfo->u32LineSize != pFBInfo->w * (pFBInfo->u16BitsPerPixel / 8))
+        {
+            vrc = VERR_INVALID_PARAMETER;
+        }
+        else
+        {
+            /* Make sure that we get the latest mouse pointer shape required for recording. */
+            MousePointerData pointerData;
+            mParent->i_getMouse()->i_getPointerShape(pointerData);
+            mParent->i_recordingCursorShapeChange(pointerData.fVisible, pointerData.fAlpha,
+                                                  pointerData.hotX, pointerData.hotY,
+                                                  pointerData.width, pointerData.height,
+                                                  pointerData.pu8Shape, pointerData.cbShape);
+            /* Send the full screen update. */
+            RECORDINGVIDEOFRAME Frame =
+            {
+                (uint16_t)pFBInfo->w, (uint16_t)pFBInfo->h,
+                (uint8_t)pFBInfo->u16BitsPerPixel, RECORDINGPIXELFMT_BRGA32, pFBInfo->u32LineSize, //pFBInfo->w * (pFBInfo->u16BitsPerPixel / 8),
+                pFBInfo->pu8FramebufferVRAM, pFBInfo->h * pFBInfo->u32LineSize, 0, 0
+            };
 
-        vrc2 = RTCritSectLeave(&mVideoRecLock);
-        AssertRC(vrc2);
+            vrc = i_recordingScreenUpdate(uScreenId, &Frame);
+        }
     }
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+/**
+ * Called when a part of a screen got updated.
+ *
+ * @returns VBox status code.
+ * @param   uScreenId           ID of screen which got updated.
+ * @param   pFrame              Video frama to send.
+ */
+int Display::i_recordingScreenUpdate(unsigned uScreenId, PRECORDINGVIDEOFRAME pFrame)
+{
+    if (!maRecordingEnabled[uScreenId])
+        return VINF_NO_CHANGE;
+
+    AssertPtr(mParent);
+    RecordingContext *pCtx = mParent->i_recordingGetContext();
+    if (!pCtx)
+        return VINF_SUCCESS;
+
+    /* If the recording context has reached the configured recording
+     * limit, disable recording. */
+    if (pCtx->IsLimitReached())
+    {
+        mParent->i_onRecordingChange(FALSE /* Disable */);
+        return VINF_SUCCESS;
+    }
+
+    uint64_t const tsNowMs = pCtx->GetCurrentPTS();
+
+    int vrc = VINF_NO_CHANGE;
+
+    if (   pCtx->IsStarted()
+        && pCtx->IsFeatureEnabled(RecordingFeature_Video))
+    {
+        STAM_PROFILE_START(&Stats.Monitor[uScreenId].Recording.profileRecording, a);
+
+        vrc = pCtx->SendVideoFrame(uScreenId, pFrame, tsNowMs);
+
+        STAM_PROFILE_STOP(&Stats.Monitor[uScreenId].Recording.profileRecording, a);
+    }
+
+    return vrc;
+}
+
+/**
+ * Called when the mouse cursor position has changed within the guest.
+ *
+ * @returns VBox status code.
+ * @param   uScreenId           ID of screen.
+ * @param   fFlags              Position flags. Not used yet.
+ * @param   x                   X position of the mouse cursor (within guest).
+ * @param   y                   Y position of the mouse cursor (within guest).
+ *
+ * @note    Requires Guest Additions installed + mouse integration enabled.
+ */
+int Display::i_recordingCursorPositionChange(unsigned uScreenId, uint32_t fFlags, int32_t x, int32_t y)
+{
+    RT_NOREF(fFlags);
+
+#if 0 /** @todo For whatever reason we always report SVGA_ID_INVALID here. Needs investigation. */
+    if (   uScreenId > mcMonitors /* Might be SVGA_ID_INVALID. */
+        || !maRecordingEnabled[uScreenId])
+        return VINF_SUCCESS;
+#endif
+
+    AssertPtr(mParent);
+    RecordingContext *pCtx = mParent->i_recordingGetContext();
+    if (!pCtx)
+        return VINF_SUCCESS;
+
+    /* If the recording context has reached the configured recording
+     * limit, disable recording. */
+    if (pCtx->IsLimitReached())
+    {
+        mParent->i_onRecordingChange(FALSE /* Disable */);
+        return VINF_SUCCESS;
+    }
+
+    if (   pCtx->IsStarted()
+        && pCtx->IsFeatureEnabled(RecordingFeature_Video))
+    {
+        return pCtx->SendCursorPositionChange(uScreenId, x, y, pCtx->GetCurrentPTS());
+    }
+
+    return VINF_SUCCESS;
 }
 #endif /* VBOX_WITH_RECORDING */
 
@@ -3024,87 +3197,6 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
         }
     }
 
-#ifdef VBOX_WITH_RECORDING
-    AssertPtr(pDisplay->mParent);
-    RecordingContext *pCtx = pDisplay->mParent->i_recordingGetContext();
-
-    if (   pCtx
-        && pCtx->IsStarted()
-        && pCtx->IsFeatureEnabled(RecordingFeature_Video))
-    {
-        do
-        {
-            /* If the recording context has reached the configured recording
-             * limit, disable recording. */
-            if (pCtx->IsLimitReached())
-            {
-                pDisplay->mParent->i_onRecordingChange(FALSE /* Disable */);
-                break;
-            }
-
-            STAM_PROFILE_START(&pDisplay->Stats.Recording.profileRecording, b);
-
-            uint64_t tsNowMs = RTTimeProgramMilliTS();
-            for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
-            {
-                if (!pDisplay->maRecordingEnabled[uScreenId])
-                    continue;
-
-                if (!pCtx->NeedsUpdate(uScreenId, tsNowMs))
-                    continue;
-
-                STAM_PROFILE_START(&pDisplay->Stats.Monitor[uScreenId].Recording.profileRecording, c);
-
-                DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
-                if (!pFBInfo->fDisabled)
-                {
-                    ComPtr<IDisplaySourceBitmap> pSourceBitmap;
-                    int vrc2 = RTCritSectEnter(&pDisplay->mVideoRecLock);
-                    if (RT_SUCCESS(vrc2))
-                    {
-                        pSourceBitmap = pFBInfo->Recording.pSourceBitmap;
-                        RTCritSectLeave(&pDisplay->mVideoRecLock);
-                    }
-
-                    if (!pSourceBitmap.isNull())
-                    {
-                        BYTE *pbAddress = NULL;
-                        ULONG ulWidth = 0;
-                        ULONG ulHeight = 0;
-                        ULONG ulBitsPerPixel = 0;
-                        ULONG ulBytesPerLine = 0;
-                        BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
-                        HRESULT hrc = pSourceBitmap->QueryBitmapInfo(&pbAddress,
-                                                                     &ulWidth,
-                                                                     &ulHeight,
-                                                                     &ulBitsPerPixel,
-                                                                     &ulBytesPerLine,
-                                                                     &bitmapFormat);
-                        if (SUCCEEDED(hrc) && pbAddress)
-                            vrc = pCtx->SendVideoFrame(uScreenId, 0, 0, BitmapFormat_BGR,
-                                                       ulBitsPerPixel, ulBytesPerLine, ulWidth, ulHeight,
-                                                       pbAddress, tsNowMs);
-                        else
-                            vrc = VERR_NOT_SUPPORTED;
-
-                        pSourceBitmap.setNull();
-                    }
-                    else
-                        vrc = VERR_NOT_SUPPORTED;
-
-                    if (vrc == VINF_TRY_AGAIN)
-                        break;
-                }
-
-                STAM_PROFILE_STOP(&pDisplay->Stats.Monitor[uScreenId].Recording.profileRecording, c);
-            }
-
-            STAM_PROFILE_STOP(&pDisplay->Stats.Recording.profileRecording, b);
-
-        } while (0);
-    }
-#endif /* VBOX_WITH_RECORDING */
-
     STAM_PROFILE_STOP(&pDisplay->Stats.profileDisplayRefreshCallback, a);
 }
 
@@ -3692,6 +3784,10 @@ DECLCALLBACK(void) Display::i_displayVBVAReportCursorPosition(PPDMIDISPLAYCONNEC
         y += pThis->maFramebuffers[aScreenId].yOrigin;
     }
     ::FireCursorPositionChangedEvent(pThis->mParent->i_getEventSource(), RT_BOOL(fFlags & VBVA_CURSOR_VALID_DATA), x, y);
+
+# ifdef VBOX_WITH_RECORDING
+    pThis->i_recordingCursorPositionChange(aScreenId, fFlags, x, y);
+# endif
 }
 
 #endif /* VBOX_WITH_HGSMI */

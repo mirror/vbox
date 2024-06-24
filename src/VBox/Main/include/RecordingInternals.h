@@ -75,6 +75,118 @@ typedef RECORDINGFRAME *PRECORDINGFRAME;
 *********************************************************************************************************************************/
 
 /**
+ * Enumeration for supported pixel formats.
+ */
+enum RECORDINGPIXELFMT
+{
+    /** Unknown pixel format. */
+    RECORDINGPIXELFMT_UNKNOWN    = 0,
+    /** BRGA 32. */
+    RECORDINGPIXELFMT_BRGA32     = 1,
+    /** The usual 32-bit hack. */
+    RECORDINGPIXELFMT_32BIT_HACK = 0x7fffffff
+};
+
+/**
+ * Structure for keeping recording surface information.
+ */
+typedef struct RECORDINGSURFACEINFO
+{
+    /** Width (in pixel). */
+    uint32_t          uWidth;
+    /** Height (in pixel). */
+    uint32_t          uHeight;
+    /** Bits per pixel. */
+    uint8_t           uBPP;
+    /** Pixel format. */
+    RECORDINGPIXELFMT enmPixelFmt;
+    /** Bytes per scan line (stride). */
+    uint32_t          uBytesPerLine;
+} RECORDINGSURFACEINFO;
+/** Pointer to recording surface information. */
+typedef RECORDINGSURFACEINFO *PRECORDINGSURFACEINFO;
+
+/**
+ * Structure for keeping recording relative or absolute position information.
+ */
+typedef struct RECORDINGPOS
+{
+    uint32_t x;
+    uint32_t y;
+} RECORDINGPOS;
+/** Pointer to a RECORDINGRECT. */
+typedef RECORDINGPOS *PRECORDINGPOS;
+
+/** No flags set. */
+#define RECORDINGVIDEOFRAME_F_NONE       UINT32_C(0)
+/** Frame is visible. */
+#define RECORDINGVIDEOFRAME_F_VISIBLE    RT_BIT(0)
+/** Use blitting with alpha blending. */
+#define RECORDINGVIDEOFRAME_F_BLIT_ALPHA RT_BIT(1)
+/** Validation mask. */
+#define RECORDINGVIDEOFRAME_F_VALID_MASK 0x3
+
+/**
+ * Structure for keeping a single recording video frame.
+ */
+typedef struct RECORDINGVIDEOFRAME
+{
+    /** Surface information of this frame. */
+    RECORDINGSURFACEINFO Info;
+    /** Pixel data buffer. */
+    uint8_t             *pau8Buf;
+    /** Size (in bytes) of \a pau8Buf. */
+    size_t               cbBuf;
+    /** X / Y positioning hint (in pixel) of this frame.
+     *  Note: This does *not* mean offset within \a pau8Buf! */
+    RECORDINGPOS         Pos;
+    /** Recording video frame flags of type RECORDINGVIDEOFRAME_F_XXX. */
+    uint32_t             fFlags;
+} RECORDINGVIDEOFRAME;
+/** Pointer to a video recording frame. */
+typedef RECORDINGVIDEOFRAME *PRECORDINGVIDEOFRAME;
+
+/**
+ * Enumeration for supported scaling methods.
+ */
+enum RECORDINGSCALINGMETHOD
+{
+    /** No scaling applied.
+     *  Bigger frame buffers will be cropped (centered),
+     *  smaller frame buffers will be centered. */
+    RECORDINGSCALINGMETHOD_NONE       = 0,
+    /** The usual 32-bit hack. */
+    RECORDINGSCALINGMETHOD_32BIT_HACK = 0x7fffffff
+};
+
+/**
+ * Structure for keeping recording scaling information.
+ */
+typedef struct RECORDINGSCALINGINFO
+{
+    /** The scaling method to use. */
+    RECORDINGSCALINGMETHOD enmMethod;
+    /** Union based on \a enmMethod. */
+    union
+    {
+        /** Cropping information. */
+        struct
+        {
+            /** X origin.
+             *  If negative, the frame buffer will be cropped with centering applied,
+             *  if positive, the frame buffer will be centered. */
+            int32_t m_iOriginX;
+            /** Y origin. *
+             * If negative, the frame buffer will be cropped with centering applied,
+             * if positive, the frame buffer will be centered. */
+            int32_t m_iOriginY;
+        } Crop;
+    } u;
+} RECORDINGSCALINGINFO;
+/** Pointer to a recording scaling information. */
+typedef RECORDINGSCALINGINFO *PRECORDINGSCALINGINFO;
+
+/**
  * Enumeration for specifying a (generic) codec type.
  */
 typedef enum RECORDINGCODECTYPE
@@ -116,18 +228,27 @@ typedef struct RECORDINGCODECOPS
      * @param   pCodec              Codec instance to parse options for.
      * @param   strOptions          Options string to parse.
      */
-    DECLCALLBACKMEMBER(int, pfnParseOptions, (PRECORDINGCODEC pCodec, const com::Utf8Str &strOptions));
+    DECLCALLBACKMEMBER(int, pfnParseOptions,  (PRECORDINGCODEC pCodec, const com::Utf8Str &strOptions));
 
     /**
      * Feeds the codec encoder with data to encode.
      *
      * @returns VBox status code.
      * @param   pCodec              Codec instance to use.
-     * @param   pFrame              Pointer to frame data to encode.
-     * @param   pcEncoded           Where to return the number of encoded blocks in \a pvDst on success. Optional.
-     * @param   pcbEncoded          Where to return the number of encoded bytes in \a pvDst on success. Optional.
+     * @param   pFrame              Pointer to frame data to encode. Optional and can be NULL.
+     * @param   msTimestamp         Timestamp (PTS) of frame to encode.
+     * @param   pvUser              User data pointer. Optional and can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnEncode,       (PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded));
+    DECLCALLBACKMEMBER(int, pfnEncode,       (PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser));
+
+    /**
+     * Tells the codec about a screen change. Optional.
+     *
+     * @returns VBox status code.
+     * @param   pCodec              Codec instance to use.
+     * @param   pInfo               Screen information to send.
+     */
+    DECLCALLBACKMEMBER(int, pfnScreenChange, (PRECORDINGCODEC pCodec, PRECORDINGSURFACEINFO pInfo));
 
     /**
      * Tells the codec to finalize the current stream. Optional.
@@ -145,7 +266,7 @@ typedef struct RECORDINGCODECOPS
 /** Data block is invisible. */
 #define RECORDINGCODEC_ENC_F_BLOCK_IS_INVISIBLE RT_BIT_32(1)
 /** Encoding flags valid mask. */
-#define RECORDINGCODEC_ENC_F_VALID_MASK         0x1
+#define RECORDINGCODEC_ENC_F_VALID_MASK         0x3
 
 /**
  * Structure for keeping a codec callback table.
@@ -188,21 +309,23 @@ typedef struct RECORDINGCODECPARMS
         struct
         {
             /** Frames per second. */
-            uint8_t             uFPS;
+            uint8_t              uFPS;
             /** Target width (in pixels) of encoded video image. */
-            uint16_t            uWidth;
+            uint32_t             uWidth;
             /** Target height (in pixels) of encoded video image. */
-            uint16_t            uHeight;
+            uint32_t             uHeight;
             /** Minimal delay (in ms) between two video frames.
              *  This value is based on the configured FPS rate. */
-            uint32_t            uDelayMs;
+            uint32_t             uDelayMs;
+            /** Scaling information. */
+            RECORDINGSCALINGINFO Scaling;
         } Video;
         struct
         {
             /** The codec's used PCM properties. */
             PDMAUDIOPCMPROPS    PCMProps;
         } Audio;
-    };
+    } u;
     /** Desired (average) bitrate (in kbps) to use, for codecs which support bitrate management.
      *  Set to 0 to use a variable bit rate (VBR) (if available, otherwise fall back to CBR). */
     uint32_t                    uBitrate;
@@ -229,12 +352,28 @@ typedef struct RECORDINGCODECVPX
     vpx_codec_enc_cfg_t Cfg;
     /** VPX image context. */
     vpx_image_t         RawImage;
-    /** Pointer to the codec's internal YUV buffer. */
+    /** Pointer to the codec's internal YUV buffer.
+     *  VP8 works exclusively with an 8-bit YUV 4:2:0 image, so frame packed, where U and V are half resolution images. */
     uint8_t            *pu8YuvBuf;
     /** The encoder's deadline (in ms).
      *  The more time the encoder is allowed to spend encoding, the better the encoded
      *  result, in exchange for higher CPU usage and time spent encoding. */
     unsigned int        uEncoderDeadline;
+    /** Front buffer which is going to be encoded.
+     *  Matches Main's framebuffer pixel format for faster / easier conversion.
+     *  Not necessarily the same size as the encoder buffer. In such a case a scaling / cropping
+     *  operation has to be performed first. */
+    RECORDINGVIDEOFRAME Front;
+    /** Back buffer which holds the framebuffer data before we blit anything to it.
+     *  Needed for mouse cursor handling, if the mouse cursor is not actually part of the framebuffer data.
+     *  Always matches the front buffer (\a Front) in terms of size. */
+    RECORDINGVIDEOFRAME Back;
+    /** The current cursor shape to use.
+     *  Set to NULL if not used (yet). */
+    PRECORDINGVIDEOFRAME pCursorShape;
+    /** Old cursor position since last cursor position message. */
+    RECORDINGPOS        PosCursorOld;
+
 } RECORDINGCODECVPX;
 /** Pointer to a VPX encoder state. */
 typedef RECORDINGCODECVPX *PRECORDINGCODECVPX;
@@ -283,6 +422,8 @@ typedef struct RECORDINGCODEC
     RECORDINGCODECPARMS         Parms;
     /** Generic codec parameters. */
     RECORDINGCODECSTATE         State;
+    /** Crtitical section. */
+    RTCRITSECT                  CritSect;
 
 #ifdef VBOX_WITH_LIBVPX
     union
@@ -300,38 +441,12 @@ typedef struct RECORDINGCODEC
     } Audio;
 #endif /* VBOX_WITH_AUDIO_RECORDING */
 
-    /** Internal scratch buffer for en-/decoding steps. */
+    /** Internal scratch buffer for en-/decoding steps.
+     *  Might be NULL if not being used. */
     void               *pvScratch;
     /** Size (in bytes) of \a pvScratch. */
     uint32_t            cbScratch;
-
-#ifdef VBOX_WITH_STATISTICS /** @todo Register these values with STAM. */
-    struct
-    {
-        /** Number of frames encoded. */
-        uint64_t        cEncBlocks;
-        /** Total time (in ms) of already encoded audio data. */
-        uint64_t        msEncTotal;
-    } STAM;
-#endif
 } RECORDINGCODEC, *PRECORDINGCODEC;
-
-/**
- * Enumeration for supported pixel formats.
- */
-enum RECORDINGPIXELFMT
-{
-    /** Unknown pixel format. */
-    RECORDINGPIXELFMT_UNKNOWN    = 0,
-    /** RGB 24. */
-    RECORDINGPIXELFMT_RGB24      = 1,
-    /** RGB 24. */
-    RECORDINGPIXELFMT_RGB32      = 2,
-    /** RGB 565. */
-    RECORDINGPIXELFMT_RGB565     = 3,
-    /** The usual 32-bit hack. */
-    RECORDINGPIXELFMT_32BIT_HACK = 0x7fffffff
-};
 
 /**
  * Enumeration for a recording frame type.
@@ -339,39 +454,21 @@ enum RECORDINGPIXELFMT
 enum RECORDINGFRAME_TYPE
 {
     /** Invalid frame type; do not use. */
-    RECORDINGFRAME_TYPE_INVALID   = 0,
+    RECORDINGFRAME_TYPE_INVALID       = 0,
     /** Frame is an audio frame. */
-    RECORDINGFRAME_TYPE_AUDIO     = 1,
+    RECORDINGFRAME_TYPE_AUDIO         = 1,
     /** Frame is an video frame. */
-    RECORDINGFRAME_TYPE_VIDEO     = 2,
-    /** Frame contains a video frame pointer. */
-    RECORDINGFRAME_TYPE_VIDEO_PTR = 3
+    RECORDINGFRAME_TYPE_VIDEO         = 2,
+    /** Frame is a cursor shape frame.
+     *  Send when a (mouse) cursor shape has changed. */
+    RECORDINGFRAME_TYPE_CURSOR_SHAPE  = 3,
+    /** Frame is a cursor position change request.
+     *  Sent when a (mouse) cursor position has changed. */
+    RECORDINGFRAME_TYPE_CURSOR_POS    = 4,
+    /** Screen change information.
+     *  Sent when the screen properties (resolution, BPP, ...) have changed. */
+    RECORDINGFRAME_TYPE_SCREEN_CHANGE = 5
 };
-
-/**
- * Structure for keeping a single recording video frame.
- */
-typedef struct RECORDINGVIDEOFRAME
-{
-    /** X origin  (in pixel) of this frame. */
-    uint16_t            uX;
-    /** X origin  (in pixel) of this frame. */
-    uint16_t            uY;
-    /** X resolution (in pixel) of this frame. */
-    uint16_t            uWidth;
-    /** Y resolution (in pixel)  of this frame. */
-    uint16_t            uHeight;
-    /** Bits per pixel (BPP). */
-    uint8_t             uBPP;
-    /** Pixel format of this frame. */
-    RECORDINGPIXELFMT   enmPixelFmt;
-    /** Bytes per scan line. */
-    uint16_t            uBytesPerLine;
-    /** RGB buffer containing the unmodified frame buffer data from Main's display. */
-    uint8_t            *pu8RGBBuf;
-    /** Size (in bytes) of the RGB buffer. */
-    size_t              cbRGBBuf;
-} RECORDINGVIDEOFRAME, *PRECORDINGVIDEOFRAME;
 
 /**
  * Structure for keeping a single recording audio frame.
@@ -385,7 +482,20 @@ typedef struct RECORDINGAUDIOFRAME
 } RECORDINGAUDIOFRAME, *PRECORDINGAUDIOFRAME;
 
 /**
- * Structure for keeping a single recording audio frame.
+ * Structure for keeping cursor information.
+ */
+typedef struct RECORDINGCURSORINFO
+{
+    /** Cursor ID. Currently always 0. */
+    uint8_t          Id;
+    /** Current position. */
+    RECORDINGPOS     Pos;
+} RECORDINGCURSORINFO;
+/** Pointer to a RECORDINGCURSORINFO. */
+typedef RECORDINGCURSORINFO *PRECORDINGCURSORINFO;
+
+/**
+ * Structure for keeping a single recording frame.
  */
 typedef struct RECORDINGFRAME
 {
@@ -398,38 +508,44 @@ typedef struct RECORDINGFRAME
     RECORDINGFRAME_TYPE     enmType;
     /** Timestamp (PTS, in ms). */
     uint64_t                msTimestamp;
+    /** Union holding different frame types depending on \a enmType. */
     union
     {
 #ifdef VBOX_WITH_AUDIO_RECORDING
-        /** Audio frame data. */
+        /** Audio data.
+         *  Used by RECORDINGFRAME_TYPE_AUDIO. */
         RECORDINGAUDIOFRAME  Audio;
 #endif
-        /** Video frame data. */
-        RECORDINGVIDEOFRAME  Video;
         /** A (weak) pointer to a video frame. */
-        RECORDINGVIDEOFRAME *VideoPtr;
-    };
-} RECORDINGFRAME, *PRECORDINGFRAME;
+        RECORDINGVIDEOFRAME  Video;
+        /** Recording screen information. */
+        RECORDINGSURFACEINFO ScreenInfo;
+        /** Cursor shape frame.
+         *  Used by RECORDINGFRAME_TYPE_CURSOR_SHAPE. */
+        RECORDINGVIDEOFRAME  CursorShape;
+        /** Cursor information.
+         *  Used by RECORDINGFRAME_TYPE_CURSOR_POS. */
+        RECORDINGCURSORINFO  Cursor;
+    } u;
+} RECORDINGFRAME;
+/** Pointer to a RECORDINGFRAME. */
+typedef RECORDINGFRAME *PRECORDINGFRAME;
 
-/**
- * Enumeration for specifying a video recording block type.
- */
-typedef enum RECORDINGBLOCKTYPE
-{
-    /** Uknown block type, do not use. */
-    RECORDINGBLOCKTYPE_UNKNOWN = 0,
-    /** The block is a video frame. */
-    RECORDINGBLOCKTYPE_VIDEO,
-    /** The block is an audio frame. */
-    RECORDINGBLOCKTYPE_AUDIO
-} RECORDINGBLOCKTYPE;
+PRECORDINGVIDEOFRAME RecordingVideoFrameAlloc(void);
+PRECORDINGVIDEOFRAME RecordingVideoFrameAllocEx(const void *pvData, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t uBPP, RECORDINGPIXELFMT enmFmt);
+void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame);
+int RecordingVideoFrameInit(PRECORDINGVIDEOFRAME pFrame, uint32_t fFlags, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t uBPP, RECORDINGPIXELFMT enmFmt);
+void RecordingVideoFrameDestroy(PRECORDINGVIDEOFRAME pFrame);
+PRECORDINGVIDEOFRAME RecordingVideoFrameDup(PRECORDINGVIDEOFRAME pFrame);
+void RecordingVideoFrameClear(PRECORDINGVIDEOFRAME pFrame);
+int RecordingVideoFrameBlitRawAlpha(PRECORDINGVIDEOFRAME pFrame, uint32_t uDstX, uint32_t uDstY, const uint8_t *pu8Src, size_t cbSrc, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight, uint32_t uSrcBytesPerLine, uint8_t uSrcBPP, RECORDINGPIXELFMT enmFmt);
+int RecordingVideoFrameBlitRaw(PRECORDINGVIDEOFRAME pFrame, uint32_t uDstX, uint32_t uDstY, const uint8_t *pu8Src, size_t cbSrc, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight, uint32_t uSrcBytesPerLine, uint8_t uSrcBPP, RECORDINGPIXELFMT enmFmt);
+int RecordingVideoFrameBlitFrame(PRECORDINGVIDEOFRAME pDstFrame, uint32_t uDstX, uint32_t uDstY, PRECORDINGVIDEOFRAME pSrcFrame, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight);
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
-int RecordingVideoFrameInit(PRECORDINGVIDEOFRAME pFrame, int w, int h, uint8_t uBPP, RECORDINGPIXELFMT enmPixelFmt);
-void RecordingVideoFrameDestroy(PRECORDINGVIDEOFRAME pFrame);
 void RecordingAudioFrameFree(PRECORDINGAUDIOFRAME pFrame);
 #endif
-void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame);
+
 void RecordingFrameFree(PRECORDINGFRAME pFrame);
 
 /**
@@ -438,53 +554,36 @@ void RecordingFrameFree(PRECORDINGFRAME pFrame);
 struct RecordingBlock
 {
     RecordingBlock()
-        : enmType(RECORDINGBLOCKTYPE_UNKNOWN)
-        , cRefs(0)
+        : cRefs(0)
         , uFlags(RECORDINGCODEC_ENC_F_NONE)
         , pvData(NULL)
         , cbData(0) { }
 
     virtual ~RecordingBlock()
     {
-        Reset();
+        Destroy();
     }
 
-    void Reset(void)
+    void Destroy(void)
     {
-        switch (enmType)
-        {
-            case RECORDINGBLOCKTYPE_UNKNOWN:
-                break;
+        PRECORDINGFRAME pFrame = (PRECORDINGFRAME)pvData;
+        if (!pFrame)
+            return;
 
-            case RECORDINGBLOCKTYPE_VIDEO:
-                RecordingVideoFrameFree((PRECORDINGVIDEOFRAME)pvData);
-                break;
+        RecordingFrameFree(pFrame);
 
-#ifdef VBOX_WITH_AUDIO_RECORDING
-            case RECORDINGBLOCKTYPE_AUDIO:
-                RecordingAudioFrameFree((PRECORDINGAUDIOFRAME)pvData);
-                break;
-#endif
-            default:
-                AssertFailed();
-                break;
-        }
-
-        enmType = RECORDINGBLOCKTYPE_UNKNOWN;
         cRefs   = 0;
         pvData  = NULL;
         cbData  = 0;
     }
 
-    /** The block's type. */
-    RECORDINGBLOCKTYPE enmType;
     /** Number of references held of this block. */
     uint16_t           cRefs;
     /** Block flags of type RECORDINGCODEC_ENC_F_XXX. */
     uint64_t           uFlags;
     /** The (absolute) timestamp (in ms, PTS) of this block. */
     uint64_t           msTimestamp;
-    /** Opaque data block to the actual block data, depending on the block's type. */
+    /** Opaque data block to the actual block data. Currently only used with PRECORDINGFRAME. */
     void              *pvData;
     /** Size (in bytes) of the (opaque) data block. */
     size_t             cbData;
@@ -497,7 +596,9 @@ int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmA
 int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmVideoCodec);
 int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreenSettings &Settings);
 int recordingCodecDestroy(PRECORDINGCODEC pCodec);
-int recordingCodecEncode(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, size_t *pcEncoded, size_t *pcbEncoded);
+int recordingCodecEncodeFrame(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser);
+int recordingCodecEncodeCurrent(PRECORDINGCODEC pCodec, uint64_t msTimestamp);
+int recordingCodecScreenChange(PRECORDINGCODEC pCodec, PRECORDINGSURFACEINFO pInfo);
 int recordingCodecFinalize(PRECORDINGCODEC pCodec);
 bool recordingCodecIsInitialized(const PRECORDINGCODEC pCodec);
 uint32_t recordingCodecGetWritable(const PRECORDINGCODEC pCodec, uint64_t msTimestamp);

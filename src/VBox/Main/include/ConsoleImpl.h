@@ -203,6 +203,7 @@ public:
     int i_recordingGetSettings(settings::RecordingSettings &recording);
     int i_recordingStart(util::AutoWriteLock *pAutoLock = NULL);
     int i_recordingStop(util::AutoWriteLock *pAutoLock = NULL);
+    int i_recordingCursorShapeChange(bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot, uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, uint32_t cbShape);
 # ifdef VBOX_WITH_AUDIO_RECORDING
     AudioVideoRec *i_recordingGetAudioDrv(void) const { return mRecording.mAudioRec; }
 # endif

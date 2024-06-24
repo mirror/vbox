@@ -47,6 +47,7 @@ ifndef VBOX_ONLY_SDK
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlPaths,) \
   	tstMediumLock \
   	tstSafeArray \
+  	tstRecording \
   	tstSettings \
   	tstBstr \
   	tstGuid \
@@ -293,6 +294,17 @@ tstMediumLock_SOURCES  = tstMediumLock.cpp
 #
 tstSafeArray_TEMPLATE = VBoxMainClientTstExe
 tstSafeArray_SOURCES  = tstSafeArray.cpp
+
+
+#
+# tstRecording
+#
+tstRecording_TEMPLATE = VBoxMainClientTstExe
+tstRecording_SOURCES  = \
+	tstRecording.cpp \
+	../src-client/RecordingUtils.cpp
+tstRecording_INCS     = \
+	../include
 
 
 #

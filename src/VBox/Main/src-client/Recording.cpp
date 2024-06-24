@@ -67,6 +67,111 @@ using namespace com;
 #endif
 
 
+
+RecordingCursorState::RecordingCursorState()
+    : m_fFlags(VBOX_RECORDING_CURSOR_F_NONE)
+{
+    m_Shape.Pos.x = UINT16_MAX;
+    m_Shape.Pos.y = UINT16_MAX;
+
+    RT_ZERO(m_Shape);
+}
+
+RecordingCursorState::~RecordingCursorState()
+{
+    Destroy();
+}
+
+/**
+ * Destroys a cursor state.
+ */
+void RecordingCursorState::Destroy(void)
+{
+    RecordingVideoFrameDestroy(&m_Shape);
+}
+
+/**
+ * Creates or updates the cursor shape.
+ *
+ * @returns VBox status code.
+ * @param   fAlpha              Whether the pixel data contains alpha channel information or not.
+ * @param   uWidth              Width (in pixel) of new cursor shape.
+ * @param   uHeight             Height (in pixel) of new cursor shape.
+ * @param   pu8Shape            Pixel data of new cursor shape.
+ * @param   cbShape             Bytes of \a pu8Shape.
+ */
+int RecordingCursorState::CreateOrUpdate(bool fAlpha, uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, size_t cbShape)
+{
+    int vrc;
+
+    uint32_t fFlags = RECORDINGVIDEOFRAME_F_VISIBLE;
+
+    const uint8_t uBPP = 32; /* Seems to be fixed. */
+
+    uint32_t offShape;
+    if (fAlpha)
+    {
+        /* Calculate the offset to the actual pixel data. */
+        offShape = (uWidth + 7) / 8 * uHeight; /* size of the AND mask */
+        offShape = (offShape + 3) & ~3;
+        AssertReturn(offShape <= cbShape, VERR_INVALID_PARAMETER);
+        fFlags |= RECORDINGVIDEOFRAME_F_BLIT_ALPHA;
+    }
+    else
+        offShape = 0;
+
+    /* Cursor shape size has become bigger? Reallocate. */
+    if (cbShape > m_Shape.cbBuf)
+    {
+        RecordingVideoFrameDestroy(&m_Shape);
+        vrc = RecordingVideoFrameInit(&m_Shape, fFlags, uWidth, uHeight, 0 /* posX */, 0 /* posY */,
+                                      uBPP, RECORDINGPIXELFMT_BRGA32);
+    }
+    else /* Otherwise just zero out first. */
+    {
+        RecordingVideoFrameClear(&m_Shape);
+        vrc = VINF_SUCCESS;
+    }
+
+    if (RT_SUCCESS(vrc))
+        vrc = RecordingVideoFrameBlitRaw(&m_Shape, 0, 0, &pu8Shape[offShape], cbShape - offShape, 0, 0, uWidth, uHeight, uWidth * 4 /* BPP */, uBPP,
+                                         m_Shape.Info.enmPixelFmt);
+#ifdef DEBUG_andy_disabled
+    RecordingUtilsDbgDumpVideoFrameEx(&m_Shape, "/tmp/recording", "cursor-update");
+#endif
+
+    return vrc;
+}
+
+/**
+ * Moves (sets) the cursor to a new position.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NO_CHANGE if the cursor wasn't moved (set).
+ * @param   iX                  New X position to set.
+ * @param   iY                  New Y position to set.
+ */
+int RecordingCursorState::Move(int32_t iX, int32_t iY)
+{
+    /* No relative coordinates here. */
+    if (   iX < 0
+        || iY < 0)
+        return VERR_NO_CHANGE;
+
+    if (   m_Shape.Pos.x == (uint32_t)iX
+        && m_Shape.Pos.y == (uint32_t)iY)
+        return VERR_NO_CHANGE;
+
+    m_Shape.Pos.x = (uint16_t)iX;
+    m_Shape.Pos.y = (uint16_t)iY;
+
+    return VINF_SUCCESS;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 /**
  * Recording context constructor.
  *
@@ -128,13 +233,12 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
 
     for (;;)
     {
-        int vrc = RTSemEventWait(pThis->m_WaitEvent, RT_INDEFINITE_WAIT);
-        AssertRCBreak(vrc);
+        int vrcWait = RTSemEventWait(pThis->m_WaitEvent, RT_MS_1SEC);
 
-        Log2Func(("Processing %zu streams\n", pThis->m_vecStreams.size()));
+        Log2Func(("Processing %zu streams (wait = %Rrc)\n", pThis->m_vecStreams.size(), vrcWait));
 
         /* Process common raw blocks (data which not has been encoded yet). */
-        vrc = pThis->processCommonData(pThis->m_mapBlocksRaw, 100 /* ms timeout */);
+        int vrc = pThis->processCommonData(pThis->m_mapBlocksRaw, 100 /* ms timeout */);
 
         /** @todo r=andy This is inefficient -- as we already wake up this thread
          *               for every screen from Main, we here go again (on every wake up) through
@@ -145,7 +249,7 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
             RecordingStream *pStream = (*itStream);
 
             /* Hand-in common encoded blocks. */
-            vrc = pStream->Process(pThis->m_mapBlocksEncoded);
+            vrc = pStream->ThreadMain(vrcWait, pThis->m_mapBlocksEncoded);
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Recording: Processing stream #%RU16 failed (%Rrc)\n", pStream->GetID(), vrc));
@@ -206,25 +310,21 @@ int RecordingContext::processCommonData(RecordingBlockMap &mapCommon, RTMSINTERV
         while (itBlock != itCommonBlocks->second->List.end())
         {
             RecordingBlock *pBlockCommon = (RecordingBlock *)(*itBlock);
-            switch (pBlockCommon->enmType)
+            PRECORDINGFRAME pFrame = (PRECORDINGFRAME)pBlockCommon->pvData;
+            AssertPtr(pFrame);
+            switch (pFrame->enmType)
             {
 #ifdef VBOX_WITH_AUDIO_RECORDING
-                case RECORDINGBLOCKTYPE_AUDIO:
+                case RECORDINGFRAME_TYPE_AUDIO:
                 {
-                    PRECORDINGAUDIOFRAME pAudioFrame = (PRECORDINGAUDIOFRAME)pBlockCommon->pvData;
-
-                    RECORDINGFRAME Frame;
-                    Frame.msTimestamp = pBlockCommon->msTimestamp;
-                    Frame.Audio.pvBuf = pAudioFrame->pvBuf;
-                    Frame.Audio.cbBuf = pAudioFrame->cbBuf;
-
-                    vrc = recordingCodecEncode(&m_CodecAudio, &Frame, NULL, NULL);
+                    vrc = recordingCodecEncodeFrame(&m_CodecAudio, pFrame, pFrame->msTimestamp, NULL /* pvUser */);
                     break;
                 }
 #endif /* VBOX_WITH_AUDIO_RECORDING */
-                default:
-                    /* Skip unknown stuff. */
-                    break;
+
+            default:
+                /* Skip unknown stuff. */
+                break;
             }
 
             itCommonBlocks->second->List.erase(itBlock);
@@ -277,35 +377,26 @@ int RecordingContext::writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCO
     LogFlowFunc(("pCodec=%p, cbData=%zu, msTimestamp=%zu, uFlags=%#x\n",
                  pCodec, cbData, msTimestamp, uFlags));
 
-    /** @todo Optimize this! Three allocations in here! */
+    RECORDINGFRAME_TYPE const enmType = pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO
+                                      ? RECORDINGFRAME_TYPE_AUDIO : RECORDINGFRAME_TYPE_INVALID;
 
-    RECORDINGBLOCKTYPE const enmType = pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO
-                                     ? RECORDINGBLOCKTYPE_AUDIO : RECORDINGBLOCKTYPE_UNKNOWN;
+    AssertReturn(enmType != RECORDINGFRAME_TYPE_INVALID, VERR_NOT_SUPPORTED);
 
-    AssertReturn(enmType != RECORDINGBLOCKTYPE_UNKNOWN, VERR_NOT_SUPPORTED);
-
-    RecordingBlock *pBlock = new RecordingBlock();
+    PRECORDINGFRAME pFrame = NULL;
 
     switch (enmType)
     {
-        case RECORDINGBLOCKTYPE_AUDIO:
+        case RECORDINGFRAME_TYPE_AUDIO:
         {
-            PRECORDINGAUDIOFRAME pFrame = (PRECORDINGAUDIOFRAME)RTMemAlloc(sizeof(RECORDINGAUDIOFRAME));
+            pFrame = (PRECORDINGFRAME)RTMemAlloc(sizeof(RECORDINGFRAME));
             AssertPtrReturn(pFrame, VERR_NO_MEMORY);
+            pFrame->enmType     = RECORDINGFRAME_TYPE_AUDIO;
+            pFrame->msTimestamp = msTimestamp;
 
-            pFrame->pvBuf = (uint8_t *)RTMemAlloc(cbData);
-            AssertPtrReturn(pFrame->pvBuf, VERR_NO_MEMORY);
-            pFrame->cbBuf = cbData;
-
-            memcpy(pFrame->pvBuf, pvData, cbData);
-
-            pBlock->enmType     = enmType;
-            pBlock->pvData      = pFrame;
-            pBlock->cbData      = sizeof(RECORDINGAUDIOFRAME) + cbData;
-            pBlock->cRefs       = m_cStreamsEnabled;
-            pBlock->msTimestamp = msTimestamp;
-            pBlock->uFlags      = uFlags;
-
+            PRECORDINGAUDIOFRAME pAudioFrame = &pFrame->u.Audio;
+            pAudioFrame->pvBuf = (uint8_t *)RTMemDup(pvData, cbData);
+            AssertPtrReturn(pAudioFrame->pvBuf, VERR_NO_MEMORY);
+            pAudioFrame->cbBuf = cbData;
             break;
         }
 
@@ -318,8 +409,17 @@ int RecordingContext::writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCO
 
     int vrc;
 
+    RecordingBlock *pBlock = NULL;
     try
     {
+        pBlock = new RecordingBlock();
+
+        pBlock->pvData      = pFrame;
+        pBlock->cbData      = sizeof(RECORDINGFRAME);
+        pBlock->cRefs       = m_cStreamsEnabled;
+        pBlock->msTimestamp = msTimestamp;
+        pBlock->uFlags      = uFlags;
+
         RecordingBlockMap::iterator itBlocks = mapCommon.find(msTimestamp);
         if (itBlocks == mapCommon.end())
         {
@@ -333,16 +433,23 @@ int RecordingContext::writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCO
 
         vrc = VINF_SUCCESS;
     }
-    catch (const std::exception &ex)
+    catch (const std::exception &)
     {
-        RT_NOREF(ex);
         vrc = VERR_NO_MEMORY;
     }
 
     unlock();
 
     if (RT_SUCCESS(vrc))
+    {
         vrc = threadNotify();
+    }
+    else
+    {
+        if (pBlock)
+            delete pBlock;
+        RecordingFrameFree(pFrame);
+    }
 
     return vrc;
 }
@@ -447,7 +554,7 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
 
     if (RT_SUCCESS(vrc))
     {
-        m_tsStartMs = RTTimeMilliTS();
+        m_tsStartMs = 0;
         m_enmState  = RECORDINGSTS_CREATED;
         m_fShutdown = false;
 
@@ -473,6 +580,8 @@ int RecordingContext::startInternal(void)
 
     Assert(m_enmState == RECORDINGSTS_CREATED);
 
+    m_tsStartMs = RTTimeMilliTS();
+
     int vrc = RTThreadCreate(&m_Thread, RecordingContext::threadMain, (void *)this, 0,
                              RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "Record");
 
@@ -482,7 +591,7 @@ int RecordingContext::startInternal(void)
     if (RT_SUCCESS(vrc))
     {
         LogRel(("Recording: Started\n"));
-        m_enmState = RECORDINGSTS_STARTED;
+        m_enmState  = RECORDINGSTS_STARTED;
     }
     else
         Log(("Recording: Failed to start (%Rrc)\n", vrc));
@@ -515,7 +624,8 @@ int RecordingContext::stopInternal(void)
     if (RT_SUCCESS(vrc))
     {
         LogRel(("Recording: Stopped\n"));
-        m_enmState = RECORDINGSTS_CREATED;
+        m_tsStartMs = 0;
+        m_enmState  = RECORDINGSTS_CREATED;
     }
     else
         Log(("Recording: Failed to stop (%Rrc)\n", vrc));
@@ -688,6 +798,16 @@ int RecordingContext::Stop(void)
 }
 
 /**
+ * Returns the current PTS (presentation time stamp) for a recording context.
+ *
+ * @returns Current PTS.
+ */
+uint64_t RecordingContext::GetCurrentPTS(void) const
+{
+    return RTTimeMilliTS() - m_tsStartMs;
+}
+
+/**
  * Returns if a specific recoding feature is enabled for at least one of the attached
  * recording streams or not.
  *
@@ -828,7 +948,7 @@ bool RecordingContext::IsLimitReached(uint32_t uScreen, uint64_t msTimestamp)
  * @param   uScreen             Screen ID to retrieve update stats for.
  * @param   msTimestamp         Timestamp (PTS, in ms).
  */
-bool RecordingContext::NeedsUpdate( uint32_t uScreen, uint64_t msTimestamp)
+bool RecordingContext::NeedsUpdate(uint32_t uScreen, uint64_t msTimestamp)
 {
     lock();
 
@@ -899,25 +1019,23 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
  * @thread  EMT
  *
  * @returns VBox status code.
- * @param   uScreen            Screen number to send video frame to.
- * @param   x                  Starting x coordinate of the video frame.
- * @param   y                  Starting y coordinate of the video frame.
- * @param   uPixelFormat       Pixel format.
- * @param   uBPP               Bits Per Pixel (BPP).
- * @param   uBytesPerLine      Bytes per scanline.
- * @param   uSrcWidth          Width of the video frame.
- * @param   uSrcHeight         Height of the video frame.
- * @param   puSrcData          Pointer to video frame data.
- * @param   msTimestamp        Timestamp (PTS, in ms).
+ * @param   uScreen             Screen number to send video frame to.
+ * @param   pFrame              Video frame to send.
+ * @param   msTimestamp         Timestamp (PTS, in ms).
  */
-int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
-                                     uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
-                                     uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData,
-                                     uint64_t msTimestamp)
+int RecordingContext::SendVideoFrame(uint32_t uScreen, PRECORDINGVIDEOFRAME pFrame, uint64_t msTimestamp)
 {
-    AssertReturn(uSrcWidth,  VERR_INVALID_PARAMETER);
-    AssertReturn(uSrcHeight, VERR_INVALID_PARAMETER);
-    AssertReturn(puSrcData,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pFrame, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("uScreen=%RU32, offX=%RU32, offY=%RU32, w=%RU32, h=%RU32, msTimestamp=%RU64\n",
+                 uScreen, pFrame->Pos.x, pFrame->Pos.y, pFrame->Info.uWidth, pFrame->Info.uHeight, msTimestamp));
+
+    if (!pFrame->pau8Buf) /* Empty / invalid frame, skip. */
+        return VINF_SUCCESS;
+
+    /* Sanity. */
+    AssertReturn(pFrame->Info.uWidth  * pFrame->Info.uHeight * (pFrame->Info.uBPP / 8) <= pFrame->cbBuf, VERR_INVALID_PARAMETER);
+    AssertReturn(pFrame->Info.uHeight * pFrame->Info.uBytesPerLine <= pFrame->cbBuf, VERR_INVALID_PARAMETER);
 
     lock();
 
@@ -930,7 +1048,7 @@ int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
         return VERR_NOT_FOUND;
     }
 
-    int vrc = pStream->SendVideoFrame(x, y, uPixelFormat, uBPP, uBytesPerLine, uSrcWidth, uSrcHeight, puSrcData, msTimestamp);
+    int vrc = pStream->SendVideoFrame(pFrame, msTimestamp);
 
     unlock();
 
@@ -939,6 +1057,134 @@ int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
     {
         threadNotify();
     }
+
+    return vrc;
+}
+
+/**
+ * Sends a cursor position change to the recording context.
+ *
+ * @returns VBox status code.
+ * @param   uScreen            Screen number.
+ * @param   x                  X location within the guest.
+ * @param   y                  Y location within the guest.
+ * @param   msTimestamp        Timestamp (PTS, in ms).
+ */
+int RecordingContext::SendCursorPositionChange(uint32_t uScreen, int32_t x, int32_t y, uint64_t msTimestamp)
+{
+    LogFlowFunc(("uScreen=%RU32, x=%RU32, y=%RU32\n", uScreen, x, y));
+
+    /* If no cursor shape is set yet, skip any cursor position changes. */
+    if (!m_Cursor.m_Shape.pau8Buf)
+        return VINF_SUCCESS;
+
+    if (uScreen == 0xFFFFFFFF /* SVGA_ID_INVALID */)
+        uScreen = 0;
+
+    int vrc = m_Cursor.Move(x, y);
+    if (RT_SUCCESS(vrc))
+    {
+        lock();
+
+        RecordingStream *pStream = getStreamInternal(uScreen);
+        if (!pStream)
+        {
+            unlock();
+
+            AssertFailed();
+            return VERR_NOT_FOUND;
+        }
+
+        vrc = pStream->SendCursorPos(0 /* idCursor */, &m_Cursor.m_Shape.Pos, msTimestamp);
+
+        unlock();
+
+        if (   RT_SUCCESS(vrc)
+            && vrc != VINF_RECORDING_THROTTLED) /* Only signal the thread if operation was successful. */
+        {
+            threadNotify();
+        }
+    }
+
+    return vrc;
+}
+
+/**
+ * Sends a cursor shape change to the recording context.
+ *
+ * @returns VBox status code.
+ * @param   fVisible            Whether the mouse cursor actually is visible or not.
+ * @param   fAlpha              Whether the pixel data contains alpha channel information or not.
+ * @param   xHot                X hot position (in pixel) of the new cursor.
+ * @param   yHot                Y hot position (in pixel) of the new cursor.
+ * @param   uWidth              Width (in pixel) of the new cursor.
+ * @param   uHeight             Height (in pixel) of the new cursor.
+ * @param   pu8Shape            Pixel data of the new cursor. Must be 32 BPP RGBA for now.
+ * @param   cbShape             Size of \a pu8Shape (in bytes).
+ * @param   msTimestamp         Timestamp (PTS, in ms).
+ */
+int RecordingContext::SendCursorShapeChange(bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot,
+                                            uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, size_t cbShape,
+                                            uint64_t msTimestamp)
+{
+    RT_NOREF(fAlpha, xHot, yHot);
+
+    LogFlowFunc(("fVisible=%RTbool, fAlpha=%RTbool, uWidth=%RU32, uHeight=%RU32\n", fVisible, fAlpha, uWidth, uHeight));
+
+    if (   !pu8Shape /* Might be NULL on saved state load. */
+        || !fVisible)
+        return VINF_SUCCESS;
+
+    AssertReturn(cbShape, VERR_INVALID_PARAMETER);
+
+    lock();
+
+    int vrc = m_Cursor.CreateOrUpdate(fAlpha, uWidth, uHeight, pu8Shape, cbShape);
+
+    RecordingStreams::iterator it = m_vecStreams.begin();
+    while (it != m_vecStreams.end())
+    {
+        RecordingStream *pStream = (*it);
+
+        int vrc2 = pStream->SendCursorShape(0 /* idCursor */, &m_Cursor.m_Shape, msTimestamp);
+        if (RT_SUCCESS(vrc))
+            vrc = vrc2;
+
+        ++it;
+    }
+
+    unlock();
+
+    if (RT_SUCCESS(vrc))
+        threadNotify();
+
+    return vrc;
+}
+
+/**
+ * Sends a screen change to a recording stream.
+ *
+ * @returns VBox status code.
+ * @param   uScreen             Screen number.
+ * @param   pInfo               Recording screen info to use.
+ * @param   msTimestamp         Timestamp (PTS, in ms).
+ */
+int RecordingContext::SendScreenChange(uint32_t uScreen, PRECORDINGSURFACEINFO pInfo, uint64_t msTimestamp)
+{
+    lock();
+
+    RecordingStream *pStream = getStreamInternal(uScreen);
+    if (!pStream)
+    {
+        unlock();
+
+        AssertFailed();
+        return VERR_NOT_FOUND;
+    }
+
+    int const vrc = pStream->SendScreenChange(pInfo, msTimestamp);
+
+    unlock();
 
     return vrc;
 }
