@@ -119,7 +119,7 @@ void UICloudMachineSettingsDialogPage::updateEditor()
         if (m_strFilter.isNull())
         {
             /* Push initial values to editor: */
-            m_pFormEditor->setValues(initialValues);
+            m_pFormEditor->setFormValues(initialValues);
         }
         /* If filter present: */
         else
@@ -132,7 +132,7 @@ void UICloudMachineSettingsDialogPage::updateEditor()
                 if (groupFields.contains(comValue.GetLabel()))
                     filteredValues << comValue;
             /* Push filtered values to editor: */
-            m_pFormEditor->setValues(filteredValues);
+            m_pFormEditor->setFormValues(filteredValues);
         }
     }
 

@@ -612,12 +612,28 @@ public:
     /** Destruts Form Editor table-view. */
     virtual ~UIFormEditorView() RT_OVERRIDE;
 
+protected:
+
+    /** Handles @a pEvent. */
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
+
+protected slots:
+
+    /** Handles rows being inserted.
+      * @param  parent  Brings the parent under which new rows being inserted.
+      * @param  iStart  Brings the starting position (inclusive).
+      * @param  iStart  Brings the end position (inclusive). */
+    virtual void rowsInserted(const QModelIndex &parent, int iStart, int iEnd) RT_OVERRIDE;
+
 private:
 
     /** Prepares everything. */
     void prepare();
     /** Cleanups everything. */
     void cleanup();
+
+    /** Adjusts table contents. */
+    void adjust();
 
     /** Holds the item editor factory instance. */
     QItemEditorFactory *m_pItemEditorFactory;
@@ -1562,6 +1578,35 @@ UIFormEditorView::~UIFormEditorView()
     cleanup();
 }
 
+bool UIFormEditorView::event(QEvent *pEvent)
+{
+    /* Process different event-types: */
+    switch (pEvent->type())
+    {
+        /* Adjust table on show/resize events: */
+        case QEvent::Show:
+        case QEvent::Resize:
+        {
+            adjust();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QITableView::event(pEvent);
+}
+
+void UIFormEditorView::rowsInserted(const QModelIndex &parent, int iStart, int iEnd)
+{
+    /* Call to base-class: */
+    QITableView::rowsInserted(parent, iStart, iEnd);
+
+    /* Adjust table on rows being inserted: */
+    adjust();
+}
+
 void UIFormEditorView::prepare()
 {
     /* Disable TAB-key navigation: */
@@ -1626,6 +1671,30 @@ void UIFormEditorView::cleanup()
     m_pItemEditorFactory = 0;
 }
 
+void UIFormEditorView::adjust()
+{
+    horizontalHeader()->setStretchLastSection(false);
+    /* If table is NOT empty: */
+    if (model()->rowCount())
+    {
+        /* Resize table to contents size-hint and emit a spare place for first column: */
+        resizeColumnsToContents();
+        const int iFullWidth = viewport()->width();
+        const int iNameWidth = horizontalHeader()->sectionSize(UIFormEditorDataType_Name);
+        const int iValueWidth = qMax(0, iFullWidth - iNameWidth);
+        horizontalHeader()->resizeSection(UIFormEditorDataType_Value, iValueWidth);
+    }
+    /* If table is empty: */
+    else
+    {
+        /* Resize table columns to be equal in size: */
+        const int iFullWidth = viewport()->width();
+        horizontalHeader()->resizeSection(UIFormEditorDataType_Name, iFullWidth / 2);
+        horizontalHeader()->resizeSection(UIFormEditorDataType_Value, iFullWidth / 2);
+    }
+    horizontalHeader()->setStretchLastSection(true);
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIFormEditorWidget implementation.                                                                                     *
@@ -1667,56 +1736,30 @@ void UIFormEditorWidget::setWhatsThis(const QString &strWhatsThis)
 void UIFormEditorWidget::clearForm()
 {
     m_pTableModel->clearForm();
-    adjustTable();
 }
 
-void UIFormEditorWidget::setValues(const QVector<CFormValue> &values)
+void UIFormEditorWidget::setFormValues(const QVector<CFormValue> &values)
 {
     m_pTableModel->setFormValues(values);
-    adjustTable();
 }
 
 void UIFormEditorWidget::setForm(const CForm &comForm)
 {
     AssertPtrReturnVoid(m_pTableModel);
     /// @todo add some check..
-    setValues(comForm.GetValues());
+    setFormValues(comForm.GetValues());
 }
 
 void UIFormEditorWidget::setVirtualSystemDescriptionForm(const CVirtualSystemDescriptionForm &comForm)
 {
     AssertPtrReturnVoid(m_pTableModel);
     /// @todo add some check..
-    setValues(comForm.GetValues());
+    setFormValues(comForm.GetValues());
 }
 
 void UIFormEditorWidget::makeSureEditorDataCommitted()
 {
     m_pTableView->makeSureEditorDataCommitted();
-}
-
-bool UIFormEditorWidget::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    /* Process events for table only: */
-    if (pObject != m_pTableView)
-        return QWidget::eventFilter(pObject, pEvent);
-
-    /* Process different event-types: */
-    switch (pEvent->type())
-    {
-        case QEvent::Show:
-        case QEvent::Resize:
-        {
-            /* Adjust table: */
-            adjustTable();
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return QWidget::eventFilter(pObject, pEvent);
 }
 
 void UIFormEditorWidget::prepare()
@@ -1740,34 +1783,9 @@ void UIFormEditorWidget::prepare()
         if (m_pTableView)
         {
             m_pTableView->setModel(pProxyModel);
-            m_pTableView->installEventFilter(this);
             pLayout->addWidget(m_pTableView);
         }
     }
-}
-
-void UIFormEditorWidget::adjustTable()
-{
-    m_pTableView->horizontalHeader()->setStretchLastSection(false);
-    /* If table is NOT empty: */
-    if (m_pTableModel->rowCount())
-    {
-        /* Resize table to contents size-hint and emit a spare place for first column: */
-        m_pTableView->resizeColumnsToContents();
-        const int iFullWidth = m_pTableView->viewport()->width();
-        const int iNameWidth = m_pTableView->horizontalHeader()->sectionSize(UIFormEditorDataType_Name);
-        const int iValueWidth = qMax(0, iFullWidth - iNameWidth);
-        m_pTableView->horizontalHeader()->resizeSection(UIFormEditorDataType_Value, iValueWidth);
-    }
-    /* If table is empty: */
-    else
-    {
-        /* Resize table columns to be equal in size: */
-        const int iFullWidth = m_pTableView->viewport()->width();
-        m_pTableView->horizontalHeader()->resizeSection(UIFormEditorDataType_Name, iFullWidth / 2);
-        m_pTableView->horizontalHeader()->resizeSection(UIFormEditorDataType_Value, iFullWidth / 2);
-    }
-    m_pTableView->horizontalHeader()->setStretchLastSection(true);
 }
 
 
