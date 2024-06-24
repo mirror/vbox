@@ -607,8 +607,20 @@ class UIFormEditorView : public QITableView
 
 public:
 
-    /** Constructs Form Editor table-view. */
+    /** Constructs Form Editor table-view, passing @a pParent to the base-class. */
     UIFormEditorView(QWidget *pParent = 0);
+    /** Destruts Form Editor table-view. */
+    virtual ~UIFormEditorView() RT_OVERRIDE;
+
+private:
+
+    /** Prepares everything. */
+    void prepare();
+    /** Cleanups everything. */
+    void cleanup();
+
+    /** Holds the item editor factory instance. */
+    QItemEditorFactory *m_pItemEditorFactory;
 };
 
 
@@ -1538,10 +1550,80 @@ bool UIFormEditorProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex 
 *   Class UIFormEditorView implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UIFormEditorView::UIFormEditorView(QWidget * /* pParent = 0 */)
+UIFormEditorView::UIFormEditorView(QWidget *pParent /* = 0 */)
+    : QITableView(pParent)
+    , m_pItemEditorFactory(0)
 {
-    /* Configure widget a bit: */
-    setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
+    prepare();
+}
+
+UIFormEditorView::~UIFormEditorView()
+{
+    cleanup();
+}
+
+void UIFormEditorView::prepare()
+{
+    /* Disable TAB-key navigation: */
+    setTabKeyNavigation(false);
+    /* Adjust selection mode: */
+    setSelectionMode(QAbstractItemView::SingleSelection);
+    /* Extend trigger set: */
+    setEditTriggers(  QAbstractItemView::DoubleClicked
+                    | QAbstractItemView::SelectedClicked
+                    | QAbstractItemView::EditKeyPressed);
+
+    /* Adjust header policy: */
+    verticalHeader()->hide();
+    verticalHeader()->setDefaultSectionSize((int)(verticalHeader()->minimumSectionSize() * 1.33));
+
+    /* We certainly have abstract item delegate: */
+    QAbstractItemDelegate *pAbstractItemDelegate = itemDelegate();
+    if (pAbstractItemDelegate)
+    {
+        /* But is this also styled item delegate? */
+        QIStyledItemDelegate *pStyledItemDelegate = qobject_cast<QIStyledItemDelegate*>(pAbstractItemDelegate);
+        if (pStyledItemDelegate)
+        {
+            /* Configure item delegate: */
+            pStyledItemDelegate->setWatchForEditorDataCommits(true);
+
+            /* Create new item editor factory: */
+            m_pItemEditorFactory = new QItemEditorFactory;
+            if (m_pItemEditorFactory)
+            {
+                /* Register TextEditor as the TextData editor: */
+                int iTextId = qRegisterMetaType<TextData>();
+                QStandardItemEditorCreator<TextEditor> *pTextEditorItemCreator = new QStandardItemEditorCreator<TextEditor>();
+                m_pItemEditorFactory->registerEditor(iTextId, pTextEditorItemCreator);
+
+                /* Register ChoiceEditor as the ChoiceData editor: */
+                int iChoiceId = qRegisterMetaType<ChoiceData>();
+                QStandardItemEditorCreator<ChoiceEditor> *pChoiceEditorItemCreator = new QStandardItemEditorCreator<ChoiceEditor>();
+                m_pItemEditorFactory->registerEditor(iChoiceId, pChoiceEditorItemCreator);
+
+                /* Register RangedIntegerEditor as the RangedIntegerData editor: */
+                int iRangedIntegerId = qRegisterMetaType<RangedIntegerData>();
+                QStandardItemEditorCreator<RangedIntegerEditor> *pRangedIntegerEditorItemCreator = new QStandardItemEditorCreator<RangedIntegerEditor>();
+                m_pItemEditorFactory->registerEditor(iRangedIntegerId, pRangedIntegerEditorItemCreator);
+
+                /* Register RangedInteger64Editor as the RangedInteger64Data editor: */
+                int iRangedInteger64Id = qRegisterMetaType<RangedInteger64Data>();
+                QStandardItemEditorCreator<RangedInteger64Editor> *pRangedInteger64EditorItemCreator = new QStandardItemEditorCreator<RangedInteger64Editor>();
+                m_pItemEditorFactory->registerEditor(iRangedInteger64Id, pRangedInteger64EditorItemCreator);
+
+                /* Set newly created item editor factory for table delegate: */
+                pStyledItemDelegate->setItemEditorFactory(m_pItemEditorFactory);
+            }
+        }
+    }
+}
+
+void UIFormEditorView::cleanup()
+{
+    /* Cleanup editor factory delegate: */
+    delete m_pItemEditorFactory;
+    m_pItemEditorFactory = 0;
 }
 
 
@@ -1555,14 +1637,8 @@ UIFormEditorWidget::UIFormEditorWidget(QWidget *pParent /* = 0 */,
     , m_pNotificationCenter(pNotificationCenter)
     , m_pTableView(0)
     , m_pTableModel(0)
-    , m_pItemEditorFactory(0)
 {
     prepare();
-}
-
-UIFormEditorWidget::~UIFormEditorWidget()
-{
-    cleanup();
 }
 
 UIFormEditorView *UIFormEditorWidget::view() const
@@ -1664,63 +1740,10 @@ void UIFormEditorWidget::prepare()
         if (m_pTableView)
         {
             m_pTableView->setModel(pProxyModel);
-            m_pTableView->setTabKeyNavigation(false);
-            m_pTableView->verticalHeader()->hide();
-            m_pTableView->verticalHeader()->setDefaultSectionSize((int)(m_pTableView->verticalHeader()->minimumSectionSize() * 1.33));
-            m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
             m_pTableView->installEventFilter(this);
-
-            /* We certainly have abstract item delegate: */
-            QAbstractItemDelegate *pAbstractItemDelegate = m_pTableView->itemDelegate();
-            if (pAbstractItemDelegate)
-            {
-                /* But is this also styled item delegate? */
-                QIStyledItemDelegate *pStyledItemDelegate = qobject_cast<QIStyledItemDelegate*>(pAbstractItemDelegate);
-                if (pStyledItemDelegate)
-                {
-                    /* Configure item delegate: */
-                    pStyledItemDelegate->setWatchForEditorDataCommits(true);
-
-                    /* Create new item editor factory: */
-                    m_pItemEditorFactory = new QItemEditorFactory;
-                    if (m_pItemEditorFactory)
-                    {
-                        /* Register TextEditor as the TextData editor: */
-                        int iTextId = qRegisterMetaType<TextData>();
-                        QStandardItemEditorCreator<TextEditor> *pTextEditorItemCreator = new QStandardItemEditorCreator<TextEditor>();
-                        m_pItemEditorFactory->registerEditor(iTextId, pTextEditorItemCreator);
-
-                        /* Register ChoiceEditor as the ChoiceData editor: */
-                        int iChoiceId = qRegisterMetaType<ChoiceData>();
-                        QStandardItemEditorCreator<ChoiceEditor> *pChoiceEditorItemCreator = new QStandardItemEditorCreator<ChoiceEditor>();
-                        m_pItemEditorFactory->registerEditor(iChoiceId, pChoiceEditorItemCreator);
-
-                        /* Register RangedIntegerEditor as the RangedIntegerData editor: */
-                        int iRangedIntegerId = qRegisterMetaType<RangedIntegerData>();
-                        QStandardItemEditorCreator<RangedIntegerEditor> *pRangedIntegerEditorItemCreator = new QStandardItemEditorCreator<RangedIntegerEditor>();
-                        m_pItemEditorFactory->registerEditor(iRangedIntegerId, pRangedIntegerEditorItemCreator);
-
-                        /* Register RangedInteger64Editor as the RangedInteger64Data editor: */
-                        int iRangedInteger64Id = qRegisterMetaType<RangedInteger64Data>();
-                        QStandardItemEditorCreator<RangedInteger64Editor> *pRangedInteger64EditorItemCreator = new QStandardItemEditorCreator<RangedInteger64Editor>();
-                        m_pItemEditorFactory->registerEditor(iRangedInteger64Id, pRangedInteger64EditorItemCreator);
-
-                        /* Set newly created item editor factory for table delegate: */
-                        pStyledItemDelegate->setItemEditorFactory(m_pItemEditorFactory);
-                    }
-                }
-            }
-
-            /* Add into layout: */
             pLayout->addWidget(m_pTableView);
         }
     }
-}
-
-void UIFormEditorWidget::cleanup()
-{
-    delete m_pItemEditorFactory;
-    m_pItemEditorFactory = 0;
 }
 
 void UIFormEditorWidget::adjustTable()

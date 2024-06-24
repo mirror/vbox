@@ -40,7 +40,6 @@
 
 /* Forward declarations: */
 class QHeaderView;
-class QItemEditorFactory;
 class UIFormEditorModel;
 class UIFormEditorView;
 class UINotificationCenter;
@@ -57,8 +56,6 @@ public:
     /** Constructs Form Editor widget passing @a pParent to the base-class.
       * @param  pNotificationCenter  Brings the notification-center this widget should report to. */
     UIFormEditorWidget(QWidget *pParent = 0, UINotificationCenter *pNotificationCenter = 0);
-    /** Destructs Form Editor widget. */
-    virtual ~UIFormEditorWidget() RT_OVERRIDE;
 
     /** Returns the notification-center reference. */
     UINotificationCenter *notificationCenter() const { return m_pNotificationCenter; }
@@ -95,8 +92,6 @@ private:
 
     /** Prepares all. */
     void prepare();
-    /** Cleanups all. */
-    void cleanup();
 
     /** Adjusts table column sizes. */
     void adjustTable();
@@ -108,9 +103,6 @@ private:
     UIFormEditorView  *m_pTableView;
     /** Holds the table-model instance. */
     UIFormEditorModel *m_pTableModel;
-
-    /** Holds the item editor factory instance. */
-    QItemEditorFactory *m_pItemEditorFactory;
 };
 
 /** Safe pointer to Form Editor widget. */
