@@ -230,7 +230,8 @@ void RecordingVideoFrameClear(PRECORDINGVIDEOFRAME pFrame)
  * Simple blitting function for raw image data, inlined version.
  *
  * @returns VBox status code.
- * @param   pFrame              Destination frame.
+ * @param   pu8Dst              Destination buffer.
+ * @param   cbDst               Size (in bytes) of \a pu8Dst.
  * @param   uDstX               X destination (in pixel) within destination frame.
  * @param   uDstY               Y destination (in pixel) within destination frame.
  * @param   uDstBytesPerLine    Bytes per line in destination buffer.

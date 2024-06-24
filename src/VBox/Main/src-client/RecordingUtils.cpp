@@ -414,9 +414,9 @@ int RecordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, co
     char szPath[RTPATH_MAX];
     if (!pszPath)
     {
-        int rc2 = RTPathTemp(szPath, sizeof(szPath));
-        if (RT_FAILURE(rc2))
-            return rc2;
+        int vrc2 = RTPathTemp(szPath, sizeof(szPath));
+        if (RT_FAILURE(vrc2))
+            return vrc2;
     }
 
     char szFileName[RTPATH_MAX];

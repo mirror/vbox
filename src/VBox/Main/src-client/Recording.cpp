@@ -386,6 +386,7 @@ int RecordingContext::writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCO
 
     switch (enmType)
     {
+#ifdef VBOX_WITH_AUDIO_RECORDING
         case RECORDINGFRAME_TYPE_AUDIO:
         {
             pFrame = (PRECORDINGFRAME)RTMemAlloc(sizeof(RECORDINGFRAME));
@@ -399,11 +400,14 @@ int RecordingContext::writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCO
             pAudioFrame->cbBuf = cbData;
             break;
         }
-
+#endif
         default:
             AssertFailed();
             break;
     }
+
+    if (!pFrame)
+        return VINF_SUCCESS;
 
     lock();
 

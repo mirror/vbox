@@ -240,7 +240,6 @@ Mouse::~Mouse()
 HRESULT Mouse::FinalConstruct()
 {
     RT_ZERO(mpDrv);
-    RT_ZERO(mPointerData);
     mcLastX = 0x8000;
     mcLastY = 0x8000;
     mfLastButtons = 0;
