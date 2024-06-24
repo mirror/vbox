@@ -601,7 +601,6 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
 #ifdef RT_OS_WINDOWS
-    HANDLE  *phEvents = pThis->pNATState->phEvents;
     unsigned int cBreak = 0;
 #else /* RT_OS_WINDOWS */
     unsigned int cPollNegRet = 0;
@@ -628,7 +627,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
          * To prevent concurrent execution of sending/receiving threads
          */
 #ifndef RT_OS_WINDOWS
-        uint32_t uTimeout = -1;
+        uint32_t uTimeout = 0;
         pThis->pNATState->nsock = 1;
 
         slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, add_poll_cb /* SlirpAddPollCb */, pThis /* opaque */);
@@ -677,7 +676,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         slirpCheckTimeout(pThis);
 
 #else /* RT_OS_WINDOWS */
-        uint32_t uTimeout = -1;
+        uint32_t uTimeout = 0;
         pThis->pNATState->nsock = 0;
         slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, add_poll_cb /* SlirpAddPollCb */, pThis /* opaque */);
                 LogFlow(("******** nsock = %d\n", pThis->pNATState->nsock));
@@ -1359,11 +1358,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pSlirpCfg->vnetwork = vnetwork;
     pSlirpCfg->vnetmask = vnetmask;
     pSlirpCfg->vhost = vhost;
-#ifndef RT_OS_WINDOWS
+// #ifndef RT_OS_WINDOWS
     pSlirpCfg->in6_enabled = true;
-#else
-    pSlirpCfg->in6_enabled = false;
-#endif
+// #else
+//     pSlirpCfg->in6_enabled = false;
+// #endif
 
 #ifndef RT_OS_WINDOWS
     inet_pton(AF_INET6, "fd00::", &pSlirpCfg->vprefix_addr6);
