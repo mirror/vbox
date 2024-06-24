@@ -34,6 +34,7 @@
 /* Qt includes: */
 #include <QItemSelectionModel>
 #include <QMutex>
+#include <QTableView>
 #include <QThread>
 #include <QWidget>
 
@@ -43,7 +44,6 @@
 
 /* GUI includes: */
 #include "QIDialog.h"
-#include "QITableView.h"
 #include "UIGuestControlDefs.h"
 
 /* Forward declarations: */

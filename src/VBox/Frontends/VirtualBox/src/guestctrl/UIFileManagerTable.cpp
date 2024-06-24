@@ -63,7 +63,7 @@
 *   UIGuestControlFileView definition.                                                                                           *
 *********************************************************************************************************************************/
 
-/** Using QITableView causes the following problem when I click on the table items
+/** Using QTableView causes the following problem when I click on the table items
     Qt WARNING: Cannot creat accessible child interface for object:  UIGuestControlFileView.....
     so for now subclass QTableView */
 class UIGuestControlFileView : public QTableView
