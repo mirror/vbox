@@ -665,7 +665,7 @@ void TextEditor::sltHandleButtonClick()
         if (   !parent()
             || !parent()->parent())
             break;
-        UIFormEditorView *pView = qobject_cast<UIFormEditorView*>(parent()->parent());
+        QITableView *pView = qobject_cast<QITableView*>(parent()->parent());
 
         /* Get the proxy model: */
         if (   !pView
@@ -1710,7 +1710,7 @@ UIFormEditorWidget::UIFormEditorWidget(QWidget *pParent /* = 0 */,
     prepare();
 }
 
-UIFormEditorView *UIFormEditorWidget::view() const
+QITableView *UIFormEditorWidget::view() const
 {
     return m_pTableView;
 }
