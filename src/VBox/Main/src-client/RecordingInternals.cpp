@@ -87,8 +87,8 @@ PRECORDINGVIDEOFRAME RecordingVideoFrameAllocEx(const void *pvData, uint32_t x, 
 {
     PRECORDINGVIDEOFRAME pFrame = recordingVideoFrameAlloc();
     AssertPtrReturn(pFrame, NULL);
-    int rc = recordingVideoFrameInit(pFrame, RECORDINGVIDEOFRAME_F_VISIBLE, w, h, x, y, uBPP, enmFmt);
-    AssertRCReturn(rc, NULL);
+    int vrc = recordingVideoFrameInit(pFrame, RECORDINGVIDEOFRAME_F_VISIBLE, w, h, x, y, uBPP, enmFmt);
+    AssertRCReturn(vrc, NULL);
     memcpy(pFrame->pau8Buf, pvData, pFrame->cbBuf);
 
     return VINF_SUCCESS;
