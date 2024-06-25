@@ -1013,6 +1013,12 @@ typedef uint8_t CPUMISAEXTCFG;
 #define CPUMISAEXTCFG_DISABLED              false
 /** Enable the extension if it's supported by the host CPU. */
 #define CPUMISAEXTCFG_ENABLED_SUPPORTED     true
+/** Enable the extension if it's supported by the host CPU or when on ARM64. */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# define CPUMISAEXTCFG_ENABLED_SUPPORTED_OR_NOT_AMD64   CPUMISAEXTCFG_ENABLED_SUPPORTED
+#else
+# define CPUMISAEXTCFG_ENABLED_SUPPORTED_OR_NOT_AMD64   CPUMISAEXTCFG_ENABLED_ALWAYS
+#endif
 /** Enable the extension if it's supported by the host CPU, but don't let
  * the portable CPUID feature disable it. */
 #define CPUMISAEXTCFG_ENABLED_PORTABLE      UINT8_C(127)
@@ -3026,7 +3032,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     /** @cfgm{/CPUM/IsaExts/ArchCapMSr, isaextcfg, true}
      * Whether to expose the MSR_IA32_ARCH_CAPABILITIES MSR to the guest.
      */
-    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "ArchCapMsr", &pConfig->enmArchCapMsr, CPUMISAEXTCFG_ENABLED_SUPPORTED);
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "ArchCapMsr", &pConfig->enmArchCapMsr, CPUMISAEXTCFG_ENABLED_SUPPORTED_OR_NOT_AMD64);
     AssertLogRelRCReturn(rc, rc);
 
 
@@ -3407,217 +3413,225 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
     }
 
     /*
-     * Setup MSRs introduced in microcode updates or that are otherwise not in
-     * the CPU profile, but are advertised in the CPUID info we just sanitized.
-     */
-    if (RT_SUCCESS(rc))
-        rc = cpumR3MsrReconcileWithCpuId(pVM);
-    /*
-     * MSR fudging.
+     * Move the CPUID array over to the static VM structure allocation
+     * and explode guest CPU features again.  We must do this *before*
+     * reconciling MSRs with CPUIDs and applying any fudging (esp on ARM64).
      */
     if (RT_SUCCESS(rc))
     {
-        /** @cfgm{/CPUM/FudgeMSRs, boolean, true}
-         * Fudges some common MSRs if not present in the selected CPU database entry.
-         * This is for trying to keep VMs running when moved between different hosts
-         * and different CPU vendors. */
-        bool fEnable;
-        rc = CFGMR3QueryBoolDef(pCpumCfg, "FudgeMSRs", &fEnable, true); AssertRC(rc);
-        if (RT_SUCCESS(rc) && fEnable)
-        {
-            rc = cpumR3MsrApplyFudge(pVM);
-            AssertLogRelRC(rc);
-        }
-    }
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Move the MSR and CPUID arrays over to the static VM structure allocations
-         * and explode guest CPU features again.
-         */
-        void *pvFree = pCpum->GuestInfo.paCpuIdLeavesR3;
+        void * const pvFree = pCpum->GuestInfo.paCpuIdLeavesR3;
         rc = cpumR3CpuIdInstallAndExplodeLeaves(pVM, pCpum, pCpum->GuestInfo.paCpuIdLeavesR3,
                                                 pCpum->GuestInfo.cCpuIdLeaves, &GuestMsrs);
+        AssertLogRelRC(rc);
         RTMemFree(pvFree);
-
-        AssertFatalMsg(pCpum->GuestInfo.cMsrRanges <= RT_ELEMENTS(pCpum->GuestInfo.aMsrRanges),
-                       ("%u\n", pCpum->GuestInfo.cMsrRanges));
-        memcpy(pCpum->GuestInfo.aMsrRanges, pCpum->GuestInfo.paMsrRangesR3,
-               sizeof(pCpum->GuestInfo.paMsrRangesR3[0]) * pCpum->GuestInfo.cMsrRanges);
-        RTMemFree(pCpum->GuestInfo.paMsrRangesR3);
-        pCpum->GuestInfo.paMsrRangesR3 = pCpum->GuestInfo.aMsrRanges;
-
-        AssertLogRelRCReturn(rc, rc);
-
-        /*
-         * Some more configuration that we're applying at the end of everything
-         * via the CPUMR3SetGuestCpuIdFeature API.
-         */
-
-        /* Check if 64-bit guest supported was enabled. */
-        bool fEnable64bit;
-        rc = CFGMR3QueryBoolDef(pCpumCfg, "Enable64bit", &fEnable64bit, false);
-        AssertRCReturn(rc, rc);
-        if (fEnable64bit)
-        {
-            /* In case of a CPU upgrade: */
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);      /* (Long mode only on Intel CPUs.) */
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
-
-            /* The actual feature: */
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
-        }
-
-        /* Check if PAE was explicitely enabled by the user. */
-        bool fEnable;
-        rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnablePAE", &fEnable, fEnable64bit);
-        AssertRCReturn(rc, rc);
-        if (fEnable && !pVM->cpum.s.GuestFeatures.fPae)
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
-
-        /* We don't normally enable NX for raw-mode, so give the user a chance to force it on. */
-        rc = CFGMR3QueryBoolDef(pCpumCfg, "EnableNX", &fEnable, fEnable64bit);
-        AssertRCReturn(rc, rc);
-        if (fEnable && !pVM->cpum.s.GuestFeatures.fNoExecute)
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
-
-        /* Check if speculation control is enabled. */
-        rc = CFGMR3QueryBoolDef(pCpumCfg, "SpecCtrl", &fEnable, false);
-        AssertRCReturn(rc, rc);
-        if (fEnable)
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SPEC_CTRL);
-        else
+        if (RT_SUCCESS(rc))
         {
             /*
-             * Set the "SSBD-not-needed" flag to work around a bug in some Linux kernels when the VIRT_SPEC_CTL
-             * feature is not exposed on AMD CPUs and there is only 1 vCPU configured.
-             * This was observed with kernel "4.15.0-29-generic #31~16.04.1-Ubuntu" but more versions are likely affected.
-             *
-             * The kernel doesn't initialize a lock and causes a NULL pointer exception later on when configuring SSBD:
-             *    EIP: _raw_spin_lock+0x14/0x30
-             *    EFLAGS: 00010046 CPU: 0
-             *    EAX: 00000000 EBX: 00000001 ECX: 00000004 EDX: 00000000
-             *    ESI: 00000000 EDI: 00000000 EBP: ee023f1c ESP: ee023f18
-             *    DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
-             *    CR0: 80050033 CR2: 00000004 CR3: 3671c180 CR4: 000006f0
-             *    Call Trace:
-             *     speculative_store_bypass_update+0x8e/0x180
-             *     ssb_prctl_set+0xc0/0xe0
-             *     arch_seccomp_spec_mitigate+0x1d/0x20
-             *     do_seccomp+0x3cb/0x610
-             *     SyS_seccomp+0x16/0x20
-             *     do_fast_syscall_32+0x7f/0x1d0
-             *     entry_SYSENTER_32+0x4e/0x7c
-             *
-             * The lock would've been initialized in process.c:speculative_store_bypass_ht_init() called from two places in smpboot.c.
-             * First when a secondary CPU is started and second in native_smp_prepare_cpus() which is not called in a single vCPU environment.
-             *
-             * As spectre control features are completely disabled anyway when we arrived here there is no harm done in informing the
-             * guest to not even try.
+             * Setup MSRs introduced in microcode updates or that are otherwise not in
+             * the CPU profile, but are advertised in the CPUID info we just sanitized.
              */
-            if (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
-                || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON)
+            if (RT_SUCCESS(rc))
+                rc = cpumR3MsrReconcileWithCpuId(pVM);
+            /*
+             * MSR fudging.
+             */
+            if (RT_SUCCESS(rc))
             {
-                PCPUMCPUIDLEAF pLeaf = cpumR3CpuIdGetExactLeaf(&pVM->cpum.s, UINT32_C(0x80000008), 0);
-                if (pLeaf)
+                /** @cfgm{/CPUM/FudgeMSRs, boolean, true}
+                 * Fudges some common MSRs if not present in the selected CPU database entry.
+                 * This is for trying to keep VMs running when moved between different hosts
+                 * and different CPU vendors. */
+                bool fEnable;
+                rc = CFGMR3QueryBoolDef(pCpumCfg, "FudgeMSRs", &fEnable, true); AssertRC(rc);
+                if (RT_SUCCESS(rc) && fEnable)
                 {
-                    pLeaf->uEbx |= X86_CPUID_AMD_EFEID_EBX_NO_SSBD_REQUIRED;
-                    LogRel(("CPUM: Set SSBD not required flag for AMD to work around some buggy Linux kernels!\n"));
+                    rc = cpumR3MsrApplyFudge(pVM);
+                    AssertLogRelRC(rc);
                 }
             }
-        }
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Move the MSR arrays over to the static VM structure allocation.
+                 */
+                AssertFatalMsg(pCpum->GuestInfo.cMsrRanges <= RT_ELEMENTS(pCpum->GuestInfo.aMsrRanges),
+                               ("%u\n", pCpum->GuestInfo.cMsrRanges));
+                memcpy(pCpum->GuestInfo.aMsrRanges, pCpum->GuestInfo.paMsrRangesR3,
+                       sizeof(pCpum->GuestInfo.paMsrRangesR3[0]) * pCpum->GuestInfo.cMsrRanges);
+                RTMemFree(pCpum->GuestInfo.paMsrRangesR3);
+                pCpum->GuestInfo.paMsrRangesR3 = pCpum->GuestInfo.aMsrRanges;
 
-        /*
-         * MTRR support.
-         * We've always reported the MTRR feature bit in CPUID.
-         * Here we allow exposing MTRRs with reasonable default values (especially required
-         * by Windows 10 guests with Hyper-V enabled). The MTRR support isn't feature
-         * complete, see @bugref{10318} and bugref{10498}.
-         */
-        if (pVM->cpum.s.GuestFeatures.fMtrr)
-        {
-            /** @cfgm{/CPUM/MtrrWrite, boolean, true}
-             * Whether to enable MTRR read-write support. This overrides the MTRR read-only CFGM
-             * setting. */
-            bool fEnableMtrrReadWrite;
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrReadWrite", &fEnableMtrrReadWrite, true);
-            AssertRCReturn(rc, rc);
-            if (fEnableMtrrReadWrite)
-            {
-                pVM->cpum.s.fMtrrRead  = true;
-                pVM->cpum.s.fMtrrWrite = true;
-                LogRel(("CPUM: Enabled MTRR read-write support\n"));
-            }
-            else
-            {
-                /** @cfgm{/CPUM/MtrrReadOnly, boolean, false}
-                 * Whether to enable MTRR read-only support and to initialize mapping of guest
-                 * memory via MTRRs. When disabled, MTRRs are left blank, returns 0 on reads and
-                 * ignores writes. Some guests like GNU/Linux recognize a virtual system when MTRRs
-                 * are left blank but some guests may expect their RAM to be mapped via MTRRs
-                 * similar to real hardware. */
-                rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrReadOnly", &pVM->cpum.s.fMtrrRead, false);
+                /*
+                 * Some more configuration that we're applying at the end of everything
+                 * via the CPUMR3SetGuestCpuIdFeature API.
+                 */
+
+                /* Check if 64-bit guest supported was enabled. */
+                bool fEnable64bit;
+                rc = CFGMR3QueryBoolDef(pCpumCfg, "Enable64bit", &fEnable64bit, false);
                 AssertRCReturn(rc, rc);
-                LogRel(("CPUM: Enabled MTRR read-only support\n"));
-            }
+                if (fEnable64bit)
+                {
+                    /* In case of a CPU upgrade: */
+                    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
+                    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);      /* (Long mode only on Intel CPUs.) */
+                    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
+                    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
+                    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
-            /* Setup MTRR capability based on what the guest CPU profile (typically host) supports. */
-            Assert(!pVM->cpum.s.fMtrrWrite || pVM->cpum.s.fMtrrRead);
-            if (pVM->cpum.s.fMtrrRead)
-            {
-                /** @cfgm{/CPUM/MtrrVarCountIsVirtual, boolean, true}
-                 * When enabled, the number of variable-range MTRRs are virtualized. When disabled,
-                 * the number of variable-range MTRRs are derived from the CPU profile. Unless
-                 * guests have problems with a virtualized number of variable-range MTRRs, it is
-                 * recommended to keep this enabled so that there are sufficient MTRRs to fully
-                 * describe all regions of the guest RAM. */
-                bool fMtrrVarCountIsVirt;
-                rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrVarCountIsVirtual", &fMtrrVarCountIsVirt, true);
+                    /* The actual feature: */
+                    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
+                }
+
+                /* Check if PAE was explicitely enabled by the user. */
+                bool fEnable;
+                rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnablePAE", &fEnable, fEnable64bit);
                 AssertRCReturn(rc, rc);
+                if (fEnable && !pVM->cpum.s.GuestFeatures.fPae)
+                    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
 
-                rc = cpumR3InitMtrrCap(pVM, fMtrrVarCountIsVirt);
-                if (RT_SUCCESS(rc))
-                { /* likely */ }
+                /* We don't normally enable NX for raw-mode, so give the user a chance to force it on. */
+                rc = CFGMR3QueryBoolDef(pCpumCfg, "EnableNX", &fEnable, fEnable64bit);
+                AssertRCReturn(rc, rc);
+                if (fEnable && !pVM->cpum.s.GuestFeatures.fNoExecute)
+                    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
+
+                /* Check if speculation control is enabled. */
+                rc = CFGMR3QueryBoolDef(pCpumCfg, "SpecCtrl", &fEnable, false);
+                AssertRCReturn(rc, rc);
+                if (fEnable)
+                    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SPEC_CTRL);
                 else
-                    return rc;
+                {
+                    /*
+                     * Set the "SSBD-not-needed" flag to work around a bug in some Linux kernels when the VIRT_SPEC_CTL
+                     * feature is not exposed on AMD CPUs and there is only 1 vCPU configured.
+                     * This was observed with kernel "4.15.0-29-generic #31~16.04.1-Ubuntu" but more versions are likely affected.
+                     *
+                     * The kernel doesn't initialize a lock and causes a NULL pointer exception later on when configuring SSBD:
+                     *    EIP: _raw_spin_lock+0x14/0x30
+                     *    EFLAGS: 00010046 CPU: 0
+                     *    EAX: 00000000 EBX: 00000001 ECX: 00000004 EDX: 00000000
+                     *    ESI: 00000000 EDI: 00000000 EBP: ee023f1c ESP: ee023f18
+                     *    DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+                     *    CR0: 80050033 CR2: 00000004 CR3: 3671c180 CR4: 000006f0
+                     *    Call Trace:
+                     *     speculative_store_bypass_update+0x8e/0x180
+                     *     ssb_prctl_set+0xc0/0xe0
+                     *     arch_seccomp_spec_mitigate+0x1d/0x20
+                     *     do_seccomp+0x3cb/0x610
+                     *     SyS_seccomp+0x16/0x20
+                     *     do_fast_syscall_32+0x7f/0x1d0
+                     *     entry_SYSENTER_32+0x4e/0x7c
+                     *
+                     * The lock would've been initialized in process.c:speculative_store_bypass_ht_init() called from two places in smpboot.c.
+                     * First when a secondary CPU is started and second in native_smp_prepare_cpus() which is not called in a single vCPU environment.
+                     *
+                     * As spectre control features are completely disabled anyway when we arrived here there is no harm done in informing the
+                     * guest to not even try.
+                     */
+                    if (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                        || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON)
+                    {
+                        PCPUMCPUIDLEAF pLeaf = cpumR3CpuIdGetExactLeaf(&pVM->cpum.s, UINT32_C(0x80000008), 0);
+                        if (pLeaf)
+                        {
+                            pLeaf->uEbx |= X86_CPUID_AMD_EFEID_EBX_NO_SSBD_REQUIRED;
+                            LogRel(("CPUM: Set SSBD not required flag for AMD to work around some buggy Linux kernels!\n"));
+                        }
+                    }
+                }
+
+                /*
+                 * MTRR support.
+                 * We've always reported the MTRR feature bit in CPUID.
+                 * Here we allow exposing MTRRs with reasonable default values (especially required
+                 * by Windows 10 guests with Hyper-V enabled). The MTRR support isn't feature
+                 * complete, see @bugref{10318} and bugref{10498}.
+                 */
+                if (pVM->cpum.s.GuestFeatures.fMtrr)
+                {
+                    /** @cfgm{/CPUM/MtrrWrite, boolean, true}
+                     * Whether to enable MTRR read-write support. This overrides the MTRR read-only CFGM
+                     * setting. */
+                    bool fEnableMtrrReadWrite;
+                    rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrReadWrite", &fEnableMtrrReadWrite, true);
+                    AssertRCReturn(rc, rc);
+                    if (fEnableMtrrReadWrite)
+                    {
+                        pVM->cpum.s.fMtrrRead  = true;
+                        pVM->cpum.s.fMtrrWrite = true;
+                        LogRel(("CPUM: Enabled MTRR read-write support\n"));
+                    }
+                    else
+                    {
+                        /** @cfgm{/CPUM/MtrrReadOnly, boolean, false}
+                         * Whether to enable MTRR read-only support and to initialize mapping of guest
+                         * memory via MTRRs. When disabled, MTRRs are left blank, returns 0 on reads and
+                         * ignores writes. Some guests like GNU/Linux recognize a virtual system when MTRRs
+                         * are left blank but some guests may expect their RAM to be mapped via MTRRs
+                         * similar to real hardware. */
+                        rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrReadOnly", &pVM->cpum.s.fMtrrRead, false);
+                        AssertRCReturn(rc, rc);
+                        LogRel(("CPUM: Enabled MTRR read-only support\n"));
+                    }
+
+                    /* Setup MTRR capability based on what the guest CPU profile (typically host) supports. */
+                    Assert(!pVM->cpum.s.fMtrrWrite || pVM->cpum.s.fMtrrRead);
+                    if (pVM->cpum.s.fMtrrRead)
+                    {
+                        /** @cfgm{/CPUM/MtrrVarCountIsVirtual, boolean, true}
+                         * When enabled, the number of variable-range MTRRs are virtualized. When disabled,
+                         * the number of variable-range MTRRs are derived from the CPU profile. Unless
+                         * guests have problems with a virtualized number of variable-range MTRRs, it is
+                         * recommended to keep this enabled so that there are sufficient MTRRs to fully
+                         * describe all regions of the guest RAM. */
+                        bool fMtrrVarCountIsVirt;
+                        rc = CFGMR3QueryBoolDef(pCpumCfg, "MtrrVarCountIsVirtual", &fMtrrVarCountIsVirt, true);
+                        AssertRCReturn(rc, rc);
+
+                        rc = cpumR3InitMtrrCap(pVM, fMtrrVarCountIsVirt);
+                        if (RT_SUCCESS(rc))
+                        { /* likely */ }
+                        else
+                            return rc;
+                    }
+                }
+
+                /*
+                 * Finally, initialize guest VMX MSRs.
+                 *
+                 * This needs to be done -after- exploding guest features and sanitizing CPUID leaves
+                 * as constructing VMX capabilities MSRs rely on CPU feature bits like long mode,
+                 * unrestricted-guest execution, CR4 feature bits and possibly more in the future.
+                 */
+                /** @todo r=bird: given that long mode never used to be enabled before the
+                 *        VMINITCOMPLETED_RING0 state, and we're a lot earlier here in ring-3
+                 *        init, the above comment cannot be entirely accurate. */
+                if (pVM->cpum.s.GuestFeatures.fVmx)
+                {
+                    Assert(Config.fNestedHWVirt);
+                    cpumR3InitVmxGuestFeaturesAndMsrs(pVM, pCpumCfg, &pHostMsrs->hwvirt.vmx, &GuestMsrs.hwvirt.vmx);
+
+                    /* Copy MSRs to all VCPUs */
+                    PCVMXMSRS pVmxMsrs = &GuestMsrs.hwvirt.vmx;
+                    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+                    {
+                        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+                        memcpy(&pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs, pVmxMsrs, sizeof(*pVmxMsrs));
+                    }
+                }
+
+                return VINF_SUCCESS;
             }
+
+            /*
+             * Failed before/while switching to internal VM structure storage.
+             */
+            RTMemFree(pCpum->GuestInfo.paCpuIdLeavesR3);
+            pCpum->GuestInfo.paCpuIdLeavesR3 = NULL;
         }
-
-        /*
-         * Finally, initialize guest VMX MSRs.
-         *
-         * This needs to be done -after- exploding guest features and sanitizing CPUID leaves
-         * as constructing VMX capabilities MSRs rely on CPU feature bits like long mode,
-         * unrestricted-guest execution, CR4 feature bits and possibly more in the future.
-         */
-        /** @todo r=bird: given that long mode never used to be enabled before the
-         *        VMINITCOMPLETED_RING0 state, and we're a lot earlier here in ring-3
-         *        init, the above comment cannot be entirely accurate. */
-        if (pVM->cpum.s.GuestFeatures.fVmx)
-        {
-            Assert(Config.fNestedHWVirt);
-            cpumR3InitVmxGuestFeaturesAndMsrs(pVM, pCpumCfg, &pHostMsrs->hwvirt.vmx, &GuestMsrs.hwvirt.vmx);
-
-            /* Copy MSRs to all VCPUs */
-            PCVMXMSRS pVmxMsrs = &GuestMsrs.hwvirt.vmx;
-            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-            {
-                PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-                memcpy(&pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs, pVmxMsrs, sizeof(*pVmxMsrs));
-            }
-        }
-
-        return VINF_SUCCESS;
     }
-
-    /*
-     * Failed before switching to hyper heap.
-     */
-    RTMemFree(pCpum->GuestInfo.paCpuIdLeavesR3);
-    pCpum->GuestInfo.paCpuIdLeavesR3 = NULL;
     RTMemFree(pCpum->GuestInfo.paMsrRangesR3);
     pCpum->GuestInfo.paMsrRangesR3 = NULL;
     return rc;
@@ -3843,22 +3857,34 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
             if (pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL)
             {
                 pLeaf = cpumR3CpuIdGetExactLeaf(&pVM->cpum.s, UINT32_C(0x00000007), 0);
+#ifdef RT_ARCH_AMD64
                 if (   !pLeaf
                     || !(pVM->cpum.s.HostFeatures.fIbpb || pVM->cpum.s.HostFeatures.fIbrs))
                 {
                     LogRel(("CPUM: WARNING! Can't turn on Speculation Control when the host doesn't support it!\n"));
                     return;
                 }
+#else
+                if (!pLeaf)
+                {
+                    LogRel(("CPUM: WARNING! Can't turn on Speculation Control without leaf 0x00000007!\n"));
+                    return;
+                }
+#endif
 
                 /* The feature can be enabled. Let's see what we can actually do. */
                 pVM->cpum.s.GuestFeatures.fSpeculationControl = 1;
 
+#ifdef RT_ARCH_AMD64
                 /* We will only expose STIBP if IBRS is present to keep things simpler (simple is not an option). */
                 if (pVM->cpum.s.HostFeatures.fIbrs)
+#endif
                 {
                     pLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB;
                     pVM->cpum.s.GuestFeatures.fIbrs = 1;
+#ifdef RT_ARCH_AMD64
                     if (pVM->cpum.s.HostFeatures.fStibp)
+#endif
                     {
                         pLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_STIBP;
                         pVM->cpum.s.GuestFeatures.fStibp = 1;
@@ -3897,7 +3923,9 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
 
                 }
 
+#ifdef RT_ARCH_AMD64
                 if (pVM->cpum.s.HostFeatures.fArchCap)
+#endif
                 {
                     /* Install the architectural capabilities MSR. */
                     pMsrRange = cpumLookupMsrRange(pVM, MSR_IA32_ARCH_CAPABILITIES);

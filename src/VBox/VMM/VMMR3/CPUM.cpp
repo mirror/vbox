@@ -132,6 +132,7 @@
 #include <VBox/vmm/ssm.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <VBox/param.h>
 #include <VBox/dis.h>
@@ -2257,6 +2258,41 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     pVM->cpum.s.HostFeatures.fAvx               = false;
     pVM->cpum.s.HostFeatures.fAvx2              = false;
 # endif
+
+    /* We must strongly discourage the guest from doing unnecessary stuff with the
+       page tables to avoid exploits, as that's expensive and doesn't apply to us. */
+    pVM->cpum.s.HostFeatures.fArchRdclNo             = true;
+    pVM->cpum.s.HostFeatures.fArchIbrsAll            = true;
+    //pVM->cpum.s.HostFeatures.fArchRsbOverride        = true;
+    pVM->cpum.s.HostFeatures.fArchVmmNeedNotFlushL1d = true;
+    pVM->cpum.s.HostFeatures.fArchMdsNo              = true;
+    VMCC_FOR_EACH_VMCPU_STMT(pVM, pVCpu->cpum.s.GuestMsrs.msr.ArchCaps = MSR_IA32_ARCH_CAP_F_RDCL_NO
+                                                                       | MSR_IA32_ARCH_CAP_F_IBRS_ALL
+                                                                       //| MSR_IA32_ARCH_CAP_F_RSBO
+                                                                       | MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D
+                                                                       | MSR_IA32_ARCH_CAP_F_SSB_NO
+                                                                       | MSR_IA32_ARCH_CAP_F_MDS_NO
+                                                                       | MSR_IA32_ARCH_CAP_F_IF_PSCHANGE_MC_NO
+                                                                       //| MSR_IA32_ARCH_CAP_F_TSX_CTRL
+                                                                       //| MSR_IA32_ARCH_CAP_F_TAA_NO
+                                                                       //| MSR_IA32_ARCH_CAP_F_MISC_PACKAGE_CTRLS
+                                                                       //| MSR_IA32_ARCH_CAP_F_ENERGY_FILTERING_CTL
+                                                                       //| MSR_IA32_ARCH_CAP_F_DOITM
+                                                                       | MSR_IA32_ARCH_CAP_F_SBDR_SSDP_NO
+                                                                       | MSR_IA32_ARCH_CAP_F_FBSDP_NO
+                                                                       | MSR_IA32_ARCH_CAP_F_PSDP_NO
+                                                                       //| MSR_IA32_ARCH_CAP_F_FB_CLEAR
+                                                                       //| MSR_IA32_ARCH_CAP_F_FB_CLEAR_CTRL
+                                                                       //| MSR_IA32_ARCH_CAP_F_RRSBA
+                                                                       | MSR_IA32_ARCH_CAP_F_BHI_NO
+                                                                       //| MSR_IA32_ARCH_CAP_F_XAPIC_DISABLE_STATUS
+                                                                       //| MSR_IA32_ARCH_CAP_F_OVERCLOCKING_STATUS
+                                                                       | MSR_IA32_ARCH_CAP_F_PBRSB_NO
+                                                                       //| MSR_IA32_ARCH_CAP_F_GDS_CTRL
+                                                                       | MSR_IA32_ARCH_CAP_F_GDS_NO
+                                                                       | MSR_IA32_ARCH_CAP_F_RFDS_NO
+                                                                       //| MSR_IA32_ARCH_CAP_F_RFDS_CLEAR
+                             );
 #endif
 
     /*
