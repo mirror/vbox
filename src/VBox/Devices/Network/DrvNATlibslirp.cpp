@@ -183,10 +183,7 @@ static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
     if (pSgBuf->pvAllocator)
     {
         Assert(!pSgBuf->pvUser);
-
         RTMemFree(pSgBuf->aSegs[0].pvSeg);
-        RTMemFree(pSgBuf->pvAllocator);
-
         pSgBuf->pvAllocator = NULL;
     }
     else if (pSgBuf->pvUser)
@@ -204,12 +201,11 @@ static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
  *
  * @param   pThis               Pointer to the NAT instance.
  * @param   pSgBuf              The scatter/gather buffer.
+ *
  * @thread  NAT
  */
 static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
 {
-    LogFlowFunc(("pThis=%p pSgBuf=%p\n", pThis, pSgBuf));
-
     if (pThis->enmLinkState == PDMNETWORKLINKSTATE_UP)
     {
         const uint8_t *m = static_cast<const uint8_t*>(pSgBuf->pvAllocator);
@@ -218,13 +214,12 @@ static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgB
             /*
              * A normal frame.
              */
-            LogFlowFunc(("m=%p\n", m));
             slirp_input(pThis->pNATState->pSlirp, (uint8_t const *)pSgBuf->pvAllocator, (int)pSgBuf->cbUsed);
         }
         else
         {
             /*
-             * M_EXT buf, need to segment it.
+             * Large/GSO frame.
              */
 
             uint8_t const  *pbFrame = (uint8_t const *)pSgBuf->aSegs[0].pvSeg;
@@ -253,12 +248,18 @@ static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgB
         }
     }
 
-    LogFlowFunc(("leave\n"));
     drvNATFreeSgBuf(pThis, pSgBuf);
 }
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnBeginXmit}
+ *
+ * @param   pInterface      Pointer to UP network interface.
+ * @param   fOnWorkerThread Unused.
+ *
+ * @returns VBox status code.
+ *
+ * @thread ?
  */
 static DECLCALLBACK(int) drvNATNetworkUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWorkerThread)
 {
@@ -276,14 +277,23 @@ static DECLCALLBACK(int) drvNATNetworkUp_BeginXmit(PPDMINETWORKUP pInterface, bo
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
+ *
+ * Allocates a scatter/gather buffer for packet/frame handling.
+ *
+ * @param   pInterface  Pointer to UP network interface.
+ * @param   cbMin       Minimum size of buffer to hold packet/frame.
+ * @param   pGso        The GSO context.
+ * @param   ppSgBuf     Pointer to the resulting scatter/gather buffer.
+ *
+ * @returns VBox status code
+ *
+ * @thread ?
  */
 static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
                                                   PCPDMNETWORKGSO pGso, PPPDMSCATTERGATHER ppSgBuf)
 {
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
     Assert(RTCritSectIsOwner(&pThis->XmitLock));
-
-    LogFlowFunc(("enter\n"));
 
     /*
      * Drop the incoming frame if the NAT thread isn't running.
@@ -366,6 +376,13 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnFreeBuf}
+ *
+ * Wrapper function for drvNATFreeSgBuff.
+ *
+ * @param   pInterface  Pointer to UP network interface.
+ * @param   pSgBuf      Pointer to scatter/gather buffer to be freed.
+ *
+ * @thread  ?
  */
 static DECLCALLBACK(int) drvNATNetworkUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
 {
@@ -377,6 +394,14 @@ static DECLCALLBACK(int) drvNATNetworkUp_FreeBuf(PPDMINETWORKUP pInterface, PPDM
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnSendBuf}
+ *
+ * Sends packet/frame out to network (up from guest).
+ *
+ * @param   pInterface      Pointer to UP network interface.
+ * @param   pSgBuf          Pointer to scatter/gather packet/frame buffer.
+ * @param   fOnWorkerThread Unused.
+ *
+ * @thread  ?
  */
 static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
 {
@@ -384,8 +409,6 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
     Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_OWNER_MASK) == PDMSCATTERGATHER_FLAGS_OWNER_1);
     Assert(RTCritSectIsOwner(&pThis->XmitLock));
-
-    LogFlowFunc(("enter\n"));
 
     int rc;
     if (pThis->pSlirpThread->enmState == PDMTHREADSTATE_RUNNING)
@@ -396,7 +419,6 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
         if (RT_SUCCESS(rc))
         {
             drvNATNotifyNATThread(pThis, "drvNATNetworkUp_SendBuf");
-            LogFlowFunc(("leave success\n"));
             return VINF_SUCCESS;
         }
 
@@ -404,13 +426,19 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
     }
     else
         rc = VERR_NET_DOWN;
+
     drvNATFreeSgBuf(pThis, pSgBuf);
-    LogFlowFunc(("leave rc=%Rrc\n", rc));
     return rc;
 }
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnEndXmit}
+ *
+ * End transmission.
+ *
+ * @param   pInterface  Pointer to UP network interface.
+ *
+ * @thread  ?
  */
 static DECLCALLBACK(void) drvNATNetworkUp_EndXmit(PPDMINETWORKUP pInterface)
 {
@@ -420,6 +448,11 @@ static DECLCALLBACK(void) drvNATNetworkUp_EndXmit(PPDMINETWORKUP pInterface)
 
 /**
  * Get the NAT thread out of poll/WSAWaitForMultipleEvents
+ *
+ * @param   pThis   Pointer to DRVNAT state for current context.
+ * @param   pszWho  String identifying caller.
+ *
+ * @thread  ?
  */
 static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho)
 {
@@ -429,9 +462,6 @@ static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho)
     /* kick poll() */
     size_t cbIgnored;
     rc = RTPipeWrite(pThis->hPipeWrite, "", 1, &cbIgnored);
-#else
-    /* kick WSAWaitForMultipleEvents */
-    rc = WSASetEvent(pThis->hWakeupEvent);
 #endif
     AssertRC(rc);
 }
