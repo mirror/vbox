@@ -42,10 +42,11 @@
 
 /**
  * @callback_method_impl{FNPDMTHREADDRV}
+ * 
+ * Queues guest process received packet. Triggered by drvNATRecvWakeup.
  */
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    LogFlow(("Recv... \n"));
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
@@ -109,6 +110,15 @@ static DECLCALLBACK(int) drvNATUrgRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     return VINF_SUCCESS;
 }
 
+/**
+ * @brief Processes incoming packet (to guest).
+ * 
+ * @param   pThis   Pointer to DRVNAT state for current context.
+ * @param   pBuf    Pointer to packet buffer.
+ * @param   cb      Size of packet in buffer.
+ * 
+ * @thread  NAT
+ */
 static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, void *pBuf, int cb)
 {
     int rc;
@@ -134,8 +144,8 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, void *pBuf, int cb)
     {
         rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pBuf, cb);
         AssertRC(rc);
-        // RTMemFree(pBuf);
-        // pBuf = NULL;
+        RTMemFree(pBuf);
+        pBuf = NULL;
     }
     else if (   rc != VERR_TIMEOUT
              && rc != VERR_INTERRUPTED)
@@ -147,7 +157,6 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, void *pBuf, int cb)
     AssertRC(rc);
 
 done_unlocked:
-    // m_free(m);
     ASMAtomicDecU32(&pThis->cPkts);
 
     drvNATNotifyNATThread(pThis, "drvNATRecvWorker");
@@ -163,6 +172,8 @@ done_unlocked:
  *
  * @param   pThis               Pointer to the NAT instance.
  * @param   pSgBuf              The S/G buffer to free.
+ * 
+ * @thread  NAT
  */
 static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
 {
@@ -174,7 +185,7 @@ static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
         Assert(!pSgBuf->pvUser);
 
         RTMemFree(pSgBuf->aSegs[0].pvSeg);
-        // RTMemFree(pSgBuf->pvAllocator);
+        RTMemFree(pSgBuf->pvAllocator);
 
         pSgBuf->pvAllocator = NULL;
     }
@@ -547,9 +558,7 @@ static int add_poll_cb(int fd, int events, void *opaque)
 
     if (pThis->pNATState->nsock + 1 >= pThis->pNATState->uPollCap)
     {
-        // LogFlow(("OLD SIZE: %d\n", sizeof(pThis->pNATState->polls)));
         int cbNew = pThis->pNATState->uPollCap * 2 * sizeof(struct pollfd);
-        // LogFlow(("NEW SIZE: %d\n", cbNew));
         struct pollfd *pvNew = (struct pollfd *)RTMemRealloc(pThis->pNATState->polls, cbNew);
         if(pvNew)
         {
@@ -563,7 +572,6 @@ static int add_poll_cb(int fd, int events, void *opaque)
     }
 
     int idx = pThis->pNATState->nsock;
-    // LogFlow(("**** nsock = %d\n", pThis->pNATState->nsock));
 #ifdef RT_OS_WINDOWS
     pThis->pNATState->polls[idx].fd = libslirp_wrap_RTHandleTableLookup(fd);
 #else
@@ -572,19 +580,14 @@ static int add_poll_cb(int fd, int events, void *opaque)
     pThis->pNATState->polls[idx].events = slirp_to_poll(events);
     pThis->pNATState->polls[idx].revents = 0;
     pThis->pNATState->nsock += 1;
-    // LogFlow(("add_poll_cb: fd=%d, return=%d\n", fd, idx));
     return idx;
 }
 
 static int get_revents_cb(int idx, void *opaque)
 {
-// #ifndef RT_OS_WINDOWS
     PDRVNAT pThis = (PDRVNAT)opaque;
     struct pollfd* polls = pThis->pNATState->polls;
     return poll_to_slirp(polls[idx].revents);
-// #else
-//     return 0;
-// #endif
 }
 
 /**
@@ -679,32 +682,11 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         uint32_t uTimeout = 0;
         pThis->pNATState->nsock = 0;
         slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, add_poll_cb /* SlirpAddPollCb */, pThis /* opaque */);
-                LogFlow(("******** nsock = %d\n", pThis->pNATState->nsock));
-
         slirpUpdateTimeout(&uTimeout, pThis);
-        // DWORD dwEvent = WSAWaitForMultipleEvents(VBOX_EVENT_COUNT, phEvents, FALSE,
-        //                                          uTimeout, /* :fAlertable */ TRUE);
-        // AssertCompile(WSA_WAIT_EVENT_0 == 0);
-        // if (   (/*dwEvent < WSA_WAIT_EVENT_0 ||*/ dwEvent > WSA_WAIT_EVENT_0 + pThis->pNATState->nsock - 1)
-        //     && dwEvent != WSA_WAIT_TIMEOUT && dwEvent != WSA_WAIT_IO_COMPLETION)
-        // {
-        //     int error = WSAGetLastError();
-        //     LogFlow(("NAT: WSAWaitForMultipleEvents returned %d (error %d)\n", dwEvent, error));
-        //     // RTAssertPanic();
-        // }
-
-        // LogFlow(("WSAWaitForMultipleEvents = %d\n", dwEvent));
-
-        // if(pThis->pNATState->nsock <= 0)
-        // {
-        //     RTThreadSleep(100);
-        //     continue;
-        // }
 
         int cChangedFDs = WSAPoll(pThis->pNATState->polls, pThis->pNATState->nsock, uTimeout /* timeout */);
-            int error = WSAGetLastError();
+        int error = WSAGetLastError();
 
-        LogFlow(("changed fds: %d\n", cChangedFDs));
         if (cChangedFDs < 0)
         {
             LogFlow(("NAT: WSAPoll returned %d (error %d)\n", cChangedFDs, error));
@@ -716,7 +698,6 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
         if (cChangedFDs == 0)
         {
-            LogFlow(("WSA_WAIT_TIMEOUT\n"));
             /* only check for slow/fast timers */
             slirp_pollfds_poll(pThis->pNATState->pSlirp, false /*select error*/, get_revents_cb /* SlirpGetREventsCb */, pThis /* opaque */);
             RTReqQueueProcess(pThis->hSlirpReqQueue, 0);
@@ -1340,15 +1321,12 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     struct in_addr vhost;
     vhost.S_un.S_addr = RT_BSWAP_U32(0x0a000202);
 
-    // struct in6_addr vprefix_addr6 = { 0 };
-
     struct in_addr vdhcp_start;
     vdhcp_start.S_un.S_addr = RT_BSWAP_U32(0x0a00020f);
 
     struct in_addr vnameserver;
     vnameserver.S_un.S_addr = RT_BSWAP_U32(0x0a000203);
 #endif
-    // AssertRC(inet_pton(AF_INET6, "fec0::", &vprefix_addr6));
 
     SlirpConfig *pSlirpCfg = new SlirpConfig { 0 };
 
@@ -1358,27 +1336,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pSlirpCfg->vnetwork = vnetwork;
     pSlirpCfg->vnetmask = vnetmask;
     pSlirpCfg->vhost = vhost;
-// #ifndef RT_OS_WINDOWS
     pSlirpCfg->in6_enabled = true;
-// #else
-//     pSlirpCfg->in6_enabled = false;
-// #endif
 
-#ifndef RT_OS_WINDOWS
     inet_pton(AF_INET6, "fd00::", &pSlirpCfg->vprefix_addr6);
-#else
-    inet_pton(23, "fd00::", &pSlirpCfg->vprefix_addr6);
-#endif
-
     pSlirpCfg->vprefix_len = 64;
-
-#ifndef RT_OS_WINDOWS
     inet_pton(AF_INET6, "fd00::2", &pSlirpCfg->vhost6);
-#else
-    inet_pton(23, "fd00::2", &pSlirpCfg->vhost6);
-#endif
 
-    pSlirpCfg->vhostname = "tmp-vbox-dev";
+    pSlirpCfg->vhostname = "vbox";
     pSlirpCfg->tftp_server_name = pThis->pszNextServer;
     pSlirpCfg->tftp_path = pThis->pszTFTPPrefix;
     pSlirpCfg->bootfile = pThis->pszBootFile;

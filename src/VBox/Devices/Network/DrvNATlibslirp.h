@@ -63,6 +63,7 @@ int inet_pton(int,const char *,void *);
 }
 # endif
 # define inet_aton(x, y) inet_pton(2, x, y)
+# define AF_INET6 23
 #endif
 
 #include <iprt/assert.h>
