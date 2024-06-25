@@ -3652,7 +3652,10 @@ VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_p
     setSelectionBehavior(SelectRows);
     setSelectionMode(SingleSelection);
     if (a_pProxyModel)
+    {
+        header()->setSortIndicator(0, Qt::AscendingOrder); /* defaults to DescendingOrder */
         setSortingEnabled(true);
+    }
 
     /*
      * Create and setup the actions.
