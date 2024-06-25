@@ -42,7 +42,7 @@
 
 /**
  * @callback_method_impl{FNPDMTHREADDRV}
- * 
+ *
  * Queues guest process received packet. Triggered by drvNATRecvWakeup.
  */
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
@@ -112,11 +112,11 @@ static DECLCALLBACK(int) drvNATUrgRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
 /**
  * @brief Processes incoming packet (to guest).
- * 
+ *
  * @param   pThis   Pointer to DRVNAT state for current context.
  * @param   pBuf    Pointer to packet buffer.
  * @param   cb      Size of packet in buffer.
- * 
+ *
  * @thread  NAT
  */
 static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, void *pBuf, int cb)
@@ -172,7 +172,7 @@ done_unlocked:
  *
  * @param   pThis               Pointer to the NAT instance.
  * @param   pSgBuf              The S/G buffer to free.
- * 
+ *
  * @thread  NAT
  */
 static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
