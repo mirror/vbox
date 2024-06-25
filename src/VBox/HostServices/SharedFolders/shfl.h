@@ -35,6 +35,7 @@
 #include <VBox/shflsvc.h>
 
 #include <VBox/log.h>
+#include <VBox/com/VirtualBox.h> /* For SymlinkPolicy_T. */
 
 /** Shared Folders client flags.
  * @{

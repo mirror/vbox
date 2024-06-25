@@ -41,7 +41,7 @@
 
   <refnamediv>
     <refname>VBoxManage-sharedfolder</refname>
-    <refpurpose>add and remove shared folders</refpurpose>
+    <refpurpose>add and remove shared folders, configure security policy for shared folders</refpurpose>
     <refclass>&product-name;</refclass>
   </refnamediv>
 
@@ -53,7 +53,7 @@
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg choice="req">--name=<replaceable>name</replaceable></arg>
+      <arg choice="req">--name=<replaceable>share-name</replaceable></arg>
       <arg choice="req">--hostpath=<replaceable>hostpath</replaceable></arg>
       <arg>--readonly</arg>
       <arg>--transient</arg>
@@ -67,8 +67,25 @@
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg choice="req">--name=<replaceable>name</replaceable></arg>
+      <arg choice="req">--name=<replaceable>share-name</replaceable></arg>
       <arg>--transient</arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-vboxmanage-sharedfolder-modify">
+      <command>VBoxManage sharedfolder modify</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="req">--name=<replaceable>share-name</replaceable></arg>
+      <arg choice="req">--symlink-policy=
+        <group choice="plain">
+          <arg choice="plain">forbidden</arg>
+          <arg choice="plain">subtree</arg>
+          <arg choice="plain">relative</arg>
+          <arg choice="plain">any</arg>
+        </group>
+      </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -102,7 +119,7 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term>--name=<replaceable>name</replaceable></term>
+          <term>--name=<replaceable>share-name</replaceable></term>
           <listitem><para>
               Specifies the name of the share, which is a unique name
               within the namespace of the host OS.
@@ -177,7 +194,7 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term>--name=<replaceable>name</replaceable></term>
+          <term>--name=<replaceable>share-name</replaceable></term>
           <listitem><para>
               Specifies the name of the share to remove.
             </para></listitem>
@@ -192,20 +209,53 @@
         </varlistentry>
       </variablelist>
     </refsect2>
+    <refsect2 id="vboxmanage-sharedfolder-modify">
+      <title>Modify a Shared Folder's Configuration</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        The <command>VBoxManage sharedfolder modify</command> command
+        modifies the configuration of a Shared Folder.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option><replaceable>uuid</replaceable> | <replaceable>vmname</replaceable></option></term>
+          <listitem><para>
+              Specifies the name or UUID of the guest VM that shares a
+              folder with the host system.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>--name=<replaceable>share-name</replaceable></term>
+          <listitem><para>
+              Specifies the name of the share to apply the security policy to.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>--symlink-policy=<replaceable>policy-name</replaceable></term>
+          <listitem><para>
+              Specifies the symbolic link security policy of the shared folder.
+              Valid symlink security policies are:
+                  <literal>forbidden</literal>, <literal>subtree</literal>,
+                  <literal>relative</literal>, and <literal>any</literal>.
+            </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
   </refsect1>
 
   <refsect1 id="vboxmanage-sharedfolder-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
-      The following command creates a shared folder called
-      <filename>o7share</filename> for the <filename>ol7</filename> VM.
-      The share is mounted automatically when the VM is started.
+      The following command creates a shared folder named
+      <filename>o7share</filename> for the <filename>ol7</filename> VM
+      and configures the share to be mounted automatically when the VM
+      is started.
     </para>
 <screen>$ VBoxManage sharedfolder add ol7 --name ol7share --hostpath "/home/user/ol7share" --automount</screen>
     <para>
-      The following command removes the shared folder called
-      <filename>o7share</filename> for the <filename>ol7</filename> VM.
+      The following command removes the shared folder named
+      <filename>o7share</filename> from the <filename>ol7</filename> VM.
     </para>
 <screen>$ VBoxManage sharedfolder remove ol7 --name ol7share</screen>
   </refsect1>

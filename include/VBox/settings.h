@@ -1008,6 +1008,7 @@ struct SharedFolder
     bool            fWritable;
     bool            fAutoMount;
     com::Utf8Str    strAutoMountPoint;
+    SymlinkPolicy_T enmSymlinkPolicy;
 };
 
 typedef std::list<SharedFolder> SharedFoldersList;

@@ -3792,7 +3792,8 @@ bool AudioAdapter::operator==(const AudioAdapter &a) const
  */
 SharedFolder::SharedFolder() :
     fWritable(false),
-    fAutoMount(false)
+    fAutoMount(false),
+    enmSymlinkPolicy(SymlinkPolicy_None)
 {
 }
 
@@ -3808,7 +3809,8 @@ bool SharedFolder::operator==(const SharedFolder &g) const
             && strHostPath       == g.strHostPath
             && fWritable         == g.fWritable
             && fAutoMount        == g.fAutoMount
-            && strAutoMountPoint == g.strAutoMountPoint);
+            && strAutoMountPoint == g.strAutoMountPoint
+            && enmSymlinkPolicy  == g.enmSymlinkPolicy);
 }
 
 /**
@@ -5991,6 +5993,24 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmFolder->getAttributeValue("writable", sf.fWritable);
                 pelmFolder->getAttributeValue("autoMount", sf.fAutoMount);
                 pelmFolder->getAttributeValue("autoMountPoint", sf.strAutoMountPoint);
+
+                Utf8Str strTemp;
+                if (pelmFolder->getAttributeValue("symlinkPolicy", strTemp))
+                {
+                    if (strTemp == "forbidden")
+                        sf.enmSymlinkPolicy = SymlinkPolicy_Forbidden;
+                    else if (strTemp == "subtree")
+                        sf.enmSymlinkPolicy = SymlinkPolicy_AllowedInShareSubtree;
+                    else if (strTemp == "relative")
+                        sf.enmSymlinkPolicy = SymlinkPolicy_AllowedToRelativeTargets;
+                    else if (strTemp == "any")
+                        sf.enmSymlinkPolicy = SymlinkPolicy_AllowedToAnyTarget;
+                    else
+                        throw ConfigFileError(this,
+                                              pelmHwChild,
+                                              N_("Invalid value '%s' in SharedFolder/@symlinkPolicy attribute"),
+                                              strTemp.c_str());
+                }
                 hw.llSharedFolders.push_back(sf);
             }
         }
@@ -8308,6 +8328,18 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             pelmThis->setAttribute("autoMount", sf.fAutoMount);
             if (sf.strAutoMountPoint.isNotEmpty())
                 pelmThis->setAttribute("autoMountPoint", sf.strAutoMountPoint);
+            const char *pcszSymlinkPolicy;
+            if (sf.enmSymlinkPolicy != SymlinkPolicy_None)
+            {
+                switch (sf.enmSymlinkPolicy)
+                {
+                    default: /*case SymlinkPolicy_Forbidden:*/    pcszSymlinkPolicy = "forbidden";  break;
+                    case SymlinkPolicy_AllowedInShareSubtree:     pcszSymlinkPolicy = "subtree";    break;
+                    case SymlinkPolicy_AllowedToRelativeTargets:  pcszSymlinkPolicy = "relative";   break;
+                    case SymlinkPolicy_AllowedToAnyTarget:        pcszSymlinkPolicy = "any";        break;
+                }
+                pelmThis->setAttribute("symlinkPolicy", pcszSymlinkPolicy);
+            }
         }
     }
 
@@ -9529,6 +9561,21 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             /* Note: The new chipset type ARMv8Virtual implies setting the platform architecture type to ARM. */
             m->sv = SettingsVersion_v1_20;
             return;
+        }
+
+        // VirtualBox 7.1 (settings v1.20) adds support for customizable control over Shared Folders symlink creation.
+        if (hardwareMachine.llSharedFolders.size())
+        {
+            for (SharedFoldersList::const_iterator it = hardwareMachine.llSharedFolders.begin();
+                 it != hardwareMachine.llSharedFolders.end();
+                 ++it)
+            {
+                if (it->enmSymlinkPolicy != SymlinkPolicy_None)
+                {
+                    m->sv = SettingsVersion_v1_20;
+                    return;
+                }
+            }
         }
     }
 

@@ -45,7 +45,8 @@ struct SharedFolder::Data
 {
     Data()
     : fWritable(false),
-      fAutoMount(false)
+      fAutoMount(false),
+      enmSymlinkPolicy(SymlinkPolicy_None)
     { }
 
     const Utf8Str   strName;
@@ -54,6 +55,7 @@ struct SharedFolder::Data
     bool            fAutoMount;
     const Utf8Str   strAutoMountPoint;
     Utf8Str         strLastAccessError;
+    SymlinkPolicy_T enmSymlinkPolicy;
 };
 
 // constructor / destructor
@@ -108,7 +110,8 @@ HRESULT SharedFolder::init(Machine *aMachine,
                            bool aWritable,
                            bool aAutoMount,
                            const Utf8Str &aAutoMountPoint,
-                           bool fFailOnError)
+                           bool fFailOnError,
+                           SymlinkPolicy_T enmSymlinkPolicy)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -116,7 +119,8 @@ HRESULT SharedFolder::init(Machine *aMachine,
 
     unconst(mMachine) = aMachine;
 
-    HRESULT hrc = i_protectedInit(aMachine, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
+    HRESULT hrc = i_protectedInit(aMachine, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError,
+                                  enmSymlinkPolicy);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(hrc))
@@ -151,7 +155,8 @@ HRESULT SharedFolder::initCopy(Machine *aMachine, SharedFolder *aThat)
                                   aThat->m->fWritable,
                                   aThat->m->fAutoMount,
                                   aThat->m->strAutoMountPoint,
-                                  false /* fFailOnError */ );
+                                  false /* fFailOnError */,
+                                  aThat->m->enmSymlinkPolicy);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(hrc))
@@ -213,10 +218,11 @@ HRESULT SharedFolder::i_protectedInit(VirtualBoxBase *aParent,
                                       bool aWritable,
                                       bool aAutoMount,
                                       const Utf8Str &aAutoMountPoint,
-                                      bool fFailOnError)
+                                      bool fFailOnError,
+                                      SymlinkPolicy_T enmSymlinkPolicy)
 {
-    LogFlowThisFunc(("aName={%s}, aHostPath={%s}, aWritable={%d}, aAutoMount={%d}\n",
-                      aName.c_str(), aHostPath.c_str(), aWritable, aAutoMount));
+    LogFlowThisFunc(("aName={%s}, aHostPath={%s}, aWritable={%d}, aAutoMount={%d} enmSymlinkPolicy={%d}\n",
+                      aName.c_str(), aHostPath.c_str(), aWritable, aAutoMount, enmSymlinkPolicy));
 
     ComAssertRet(aParent && aName.isNotEmpty() && aHostPath.isNotEmpty(), E_INVALIDARG);
 
@@ -270,6 +276,7 @@ HRESULT SharedFolder::i_protectedInit(VirtualBoxBase *aParent,
     m->fWritable = aWritable;
     m->fAutoMount = aAutoMount;
     unconst(m->strAutoMountPoint) = aAutoMountPoint;
+    m->enmSymlinkPolicy = enmSymlinkPolicy;
 
     return S_OK;
 }
@@ -384,6 +391,30 @@ HRESULT SharedFolder::getLastAccessError(com::Utf8Str &aLastAccessError)
     return S_OK;
 }
 
+HRESULT SharedFolder::getSymlinkPolicy(SymlinkPolicy_T *aSymlinkPolicy)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aSymlinkPolicy = m->enmSymlinkPolicy;
+    return S_OK;
+}
+
+HRESULT SharedFolder::setSymlinkPolicy(SymlinkPolicy_T aSymlinkPolicy)
+{
+    switch (aSymlinkPolicy)
+    {
+        case SymlinkPolicy_AllowedToAnyTarget:
+        case SymlinkPolicy_AllowedInShareSubtree:
+        case SymlinkPolicy_AllowedToRelativeTargets:
+        case SymlinkPolicy_Forbidden:
+            break;
+        default:
+            return setError(E_INVALIDARG, tr("The symbolic link policy specified (%d) is invalid."), aSymlinkPolicy);
+    }
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->enmSymlinkPolicy = aSymlinkPolicy;
+    return S_OK;
+}
 
 const Utf8Str& SharedFolder::i_getName() const
 {
@@ -408,6 +439,11 @@ bool SharedFolder::i_isAutoMounted() const
 const Utf8Str &SharedFolder::i_getAutoMountPoint() const
 {
     return m->strAutoMountPoint;
+}
+
+const SymlinkPolicy_T SharedFolder::i_getSymlinkPolicy() const
+{
+    return m->enmSymlinkPolicy;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
