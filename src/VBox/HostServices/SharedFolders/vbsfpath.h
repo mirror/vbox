@@ -37,7 +37,6 @@
 #define VBSF_O_PATH_WILDCARD                UINT32_C(0x00000001)
 #define VBSF_O_PATH_PRESERVE_LAST_COMPONENT UINT32_C(0x00000002)
 #define VBSF_O_PATH_CHECK_ROOT_ESCAPE       UINT32_C(0x00000004)
-#define VBSF_O_PATH_CHECK_SYMLINK_POLICY    UINT32_C(0x00000008)
 
 #define VBSF_F_PATH_HAS_WILDCARD_IN_PREFIX UINT32_C(0x00000001) /* A component before the last one contains a wildcard. */
 #define VBSF_F_PATH_HAS_WILDCARD_IN_LAST   UINT32_C(0x00000002) /* The last component contains a wildcard. */

@@ -68,11 +68,6 @@ ifdef VBOX_WITH_TESTCASES
  tstSharedFolderService_TEMPLATE = VBoxR3TstExe
  tstSharedFolderService_DEFS    = VBOX_WITH_HGCM UNITTEST
  tstSharedFolderService_INCS    = ..
- ifneq ($(KBUILD_TARGET),win)
-  tstSharedFolderService_DEFS  += VBOX_WITH_XPCOM
-  tstSharedFolderService_INCS  += $(VBOX_XPCOM_INCS)
- endif
- tstSharedFolderService_INCS.win += $(VBOX_PATH_SDK)/bindings/mscom/include
  tstSharedFolderService_SOURCES = \
  	tstSharedFolderService.cpp \
  	../mappings.cpp \

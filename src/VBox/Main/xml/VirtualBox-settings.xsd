@@ -303,15 +303,6 @@
   </xsd:restriction>
 </xsd:simpleType>
 
-<xsd:simpleType name="TSymlinkPolicy"> <!-- new since v1.20. -->
-  <xsd:restriction base="xsd:token">
-    <xsd:enumeration value="forbidden"/>
-    <xsd:enumeration value="subtree"/>
-    <xsd:enumeration value="relative"/>
-    <xsd:enumeration value="any"/>
-  </xsd:restriction>
-</xsd:simpleType>
-
 <!--
 // Complex types
 /////////////////////////////////////////////////////////////////////////
@@ -1313,7 +1304,6 @@
   <xsd:attribute name="writable" type="xsd:boolean" default="true"/>
   <xsd:attribute name="autoMount" type="xsd:boolean" default="false"/>
   <xsd:attribute name="autoMountPoint" type="xsd:string"/>
-  <xsd:attribute name="symlinkPolicy" type="TSymlinkPolicy" default="forbidden"/> <!-- new since v1.20. -->
 </xsd:complexType>
 
 <xsd:complexType name="TSharedFolders">

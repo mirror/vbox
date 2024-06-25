@@ -38,13 +38,8 @@ DLLS += VBoxSharedFolders
 VBoxSharedFolders_TEMPLATE  = VBoxR3Dll
 VBoxSharedFolders_NAME.os2  = VBoxSFld
 VBoxSharedFolders_DEFS      = VBOX_WITH_HGCM RTSHFL
-ifneq ($(KBUILD_TARGET),win)
- VBoxSharedFolders_DEFS    += VBOX_WITH_XPCOM
- VBoxSharedFolders_INCS     = $(VBOX_XPCOM_INCS)
-endif
 VBoxSharedFolders_INCS.win  = \
-	$(VBOX_PATH_SDK) \
-	$(VBOX_PATH_SDK)/bindings/mscom/include
+	$(VBOX_PATH_SDK)
 
 VBoxSharedFolders_LDFLAGS.darwin = \
 	-framework Carbon \

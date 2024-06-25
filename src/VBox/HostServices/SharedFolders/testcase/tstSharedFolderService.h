@@ -122,7 +122,6 @@ void testRenameBadParameters(RTTEST hTest);
 void testSymlink(RTTEST hTest);
 /* Sub-tests for testSymlink(). */
 void testSymlinkBadParameters(RTTEST hTest);
-void testSymlinkCreation(RTTEST hTest);
 
 void testMappingsAdd(RTTEST hTest);
 /* Sub-tests for testMappingsAdd(). */

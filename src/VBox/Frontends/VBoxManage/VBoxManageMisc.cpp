@@ -1636,7 +1636,7 @@ static RTEXITCODE handleSharedFolderAdd(HandlerArg *a)
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 if (pszMachineName)
-                    return errorArgument(Misc::tr("Machine name given more than once: first '%s', then '%s'"),
+                    return errorArgument(Misc::tr("Machine name is given more than once: first '%s', then '%s'"),
                                          pszMachineName, ValueUnion.psz);
                 pszMachineName = ValueUnion.psz;
                 break;
@@ -1748,7 +1748,7 @@ static RTEXITCODE handleSharedFolderRemove(HandlerArg *a)
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 if (pszMachineName)
-                    return errorArgument(Misc::tr("Machine name given more than once: first '%s', then '%s'"),
+                    return errorArgument(Misc::tr("Machine name is given more than once: first '%s', then '%s'"),
                                          pszMachineName, ValueUnion.psz);
                 pszMachineName = ValueUnion.psz;
                 break;
@@ -1809,173 +1809,6 @@ static RTEXITCODE handleSharedFolderRemove(HandlerArg *a)
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-static SymlinkPolicy_T nameToSymlinkPolicy(const char *pszName)
-{
-    if (!RTStrICmp(pszName, "forbidden"))
-        return SymlinkPolicy_Forbidden;
-    if (!RTStrICmp(pszName, "subtree"))
-        return SymlinkPolicy_AllowedInShareSubtree;
-    if (!RTStrICmp(pszName, "relative"))
-        return SymlinkPolicy_AllowedToRelativeTargets;
-    if (!RTStrICmp(pszName, "any"))
-        return SymlinkPolicy_AllowedToAnyTarget;
-
-    return SymlinkPolicy_None;
-}
-
-/**
- * modify shared folder properties
- */
-static RTEXITCODE handleSharedFolderModify(HandlerArg *a)
-{
-    /*
-     * Parse arguments (argv[0] == subcommand).
-     */
-    static const RTGETOPTDEF s_aModifyOptions[] =
-    {
-        { "--name",             'n', RTGETOPT_REQ_STRING },
-        { "-name",              'n', RTGETOPT_REQ_STRING },     // deprecated
-        { "--transient",        't', RTGETOPT_REQ_NOTHING },
-        { "-transient",         't', RTGETOPT_REQ_NOTHING },    // deprecated
-        { "--symlink-policy",   's', RTGETOPT_REQ_STRING },
-        { "-symlink-policy",    's', RTGETOPT_REQ_STRING },     // deprecated
-    };
-    const char *pszMachineName    = NULL;
-    const char *pszName           = NULL;
-    bool        fTransient        = false;
-    SymlinkPolicy_T enmSymlinkPolicy = SymlinkPolicy_None;
-
-    RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, a->argc, a->argv, s_aModifyOptions, RT_ELEMENTS(s_aModifyOptions), 1 /*iFirst*/, 0 /*fFlags*/);
-    int c;
-    RTGETOPTUNION ValueUnion;
-    while ((c = RTGetOpt(&GetState, &ValueUnion)))
-    {
-        switch (c)
-        {
-            case 'n':
-                pszName = ValueUnion.psz;
-                break;
-            case 't':
-                fTransient = true;
-                break;
-            case 's':
-                enmSymlinkPolicy = nameToSymlinkPolicy(ValueUnion.psz);
-                if (enmSymlinkPolicy == SymlinkPolicy_None)
-                    return errorArgument(Misc::tr("Invalid --symlink-policy argument '%s'"), ValueUnion.psz);
-                break;
-            case VINF_GETOPT_NOT_OPTION:
-                if (pszMachineName)
-                    return errorArgument(Misc::tr("Machine name given more than once: first '%s', then '%s'"),
-                                         pszMachineName, ValueUnion.psz);
-                pszMachineName = ValueUnion.psz;
-                break;
-            default:
-                return errorGetOpt(c, &ValueUnion);
-        }
-    }
-
-    if (!pszMachineName)
-        return errorSyntax(Misc::tr("No machine was specified"));
-    if (!pszName)
-        return errorSyntax(Misc::tr("No shared folder name (--name) was supplied."));
-
-    /* the only supported option at the moment so it must be set */
-    if (enmSymlinkPolicy == SymlinkPolicy_None)
-        return errorSyntax(Misc::tr("No symbolic link policy (--symlink-policy) was supplied."));
-
-    /*
-     * Done parsing, do some real work.
-     */
-    ComPtr<IMachine> ptrMachine;
-    CHECK_ERROR2I_RET(a->virtualBox, FindMachine(Bstr(pszMachineName).raw(), ptrMachine.asOutParam()), RTEXITCODE_FAILURE);
-    AssertReturn(ptrMachine.isNotNull(), RTEXITCODE_FAILURE);
-
-    HRESULT hrc;
-    if (fTransient)
-    {
-        /* open an existing session for the VM */
-        CHECK_ERROR_RET(ptrMachine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
-
-        /* get the session machine */
-        ComPtr<IMachine> ptrSessionMachine;
-        CHECK_ERROR_RET(a->session, COMGETTER(Machine)(ptrSessionMachine.asOutParam()), RTEXITCODE_FAILURE);
-
-        /* get the session console */
-        ComPtr<IConsole> ptrConsole;
-        CHECK_ERROR_RET(a->session, COMGETTER(Console)(ptrConsole.asOutParam()), RTEXITCODE_FAILURE);
-        if (ptrConsole.isNull())
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Machine '%s' is not currently running.\n"), pszMachineName);
-
-        /* find the desired transient shared folder to modify */
-        com::SafeIfaceArray <ISharedFolder> sharedFolders;
-        CHECK_ERROR_RET(ptrConsole, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(sharedFolders)), RTEXITCODE_FAILURE);
-        if (sharedFolders.size() == 0)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Machine '%s' has no transient shared folders configured.\n"),
-                                  pszMachineName);
-
-        bool fFound = false;
-        for (size_t i = 0; i < sharedFolders.size(); ++i)
-        {
-            ComPtr<ISharedFolder> sharedFolder = sharedFolders[i];
-            Bstr bstrSharedFolderName;
-            CHECK_ERROR_RET(sharedFolder, COMGETTER(Name)(bstrSharedFolderName.asOutParam()), RTEXITCODE_FAILURE);
-            Utf8Str strSharedFolderName(bstrSharedFolderName);
-            if (!RTStrCmp(strSharedFolderName.c_str(), pszName))
-            {
-                CHECK_ERROR_RET(sharedFolder, COMSETTER(SymlinkPolicy)(enmSymlinkPolicy), RTEXITCODE_FAILURE);
-                fFound = true;
-                break;
-            }
-        }
-        if (!fFound)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Could not find a transient shared folder named '%s'.\n"),
-                                  pszName);
-
-        CHECK_ERROR_RET(a->session, UnlockMachine(), RTEXITCODE_FAILURE);
-    }
-    else
-    {
-        /* open a session for the VM */
-        CHECK_ERROR_RET(ptrMachine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
-
-        /* get the mutable session machine */
-        ComPtr<IMachine> ptrSessionMachine;
-        CHECK_ERROR_RET(a->session, COMGETTER(Machine)(ptrSessionMachine.asOutParam()), RTEXITCODE_FAILURE);
-
-        /* find the desired shared folder to modify */
-        com::SafeIfaceArray <ISharedFolder> sharedFolders;
-        CHECK_ERROR_RET(ptrSessionMachine, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(sharedFolders)), RTEXITCODE_FAILURE);
-        if (sharedFolders.size() == 0)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Machine '%s' has no shared folders configured.\n"),
-                                  pszMachineName);
-
-        bool fFound = false;
-        for (size_t i = 0; i < sharedFolders.size(); ++i)
-        {
-            ComPtr<ISharedFolder> sharedFolder = sharedFolders[i];
-            Bstr bstrSharedFolderName;
-            CHECK_ERROR_RET(sharedFolder, COMGETTER(Name)(bstrSharedFolderName.asOutParam()), RTEXITCODE_FAILURE);
-            Utf8Str strSharedFolderName(bstrSharedFolderName);
-            if (!RTStrCmp(strSharedFolderName.c_str(), pszName))
-            {
-                CHECK_ERROR_RET(sharedFolder, COMSETTER(SymlinkPolicy)(enmSymlinkPolicy), RTEXITCODE_FAILURE);
-                fFound = true;
-                break;
-            }
-        }
-        if (!fFound)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Could not find a shared folder named '%s'.\n"), pszName);
-
-        /* commit and close the session */
-        if (SUCCEEDED(hrc))
-            CHECK_ERROR(ptrSessionMachine, SaveSettings());
-
-        CHECK_ERROR_RET(a->session, UnlockMachine(), RTEXITCODE_FAILURE);
-    }
-
-    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
-}
 
 RTEXITCODE handleSharedFolder(HandlerArg *a)
 {
@@ -1992,12 +1825,6 @@ RTEXITCODE handleSharedFolder(HandlerArg *a)
     {
         setCurrentSubcommand(HELP_SCOPE_SHAREDFOLDER_REMOVE);
         return handleSharedFolderRemove(a);
-    }
-
-    if (!strcmp(a->argv[0], "modify"))
-    {
-        setCurrentSubcommand(HELP_SCOPE_SHAREDFOLDER_MODIFY);
-        return handleSharedFolderModify(a);
     }
 
     return errorUnknownSubcommand(a->argv[0]);

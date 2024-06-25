@@ -910,7 +910,6 @@ protected:
     friend class RecordingSettings;
     friend class RecordingScreenSettings;
     friend class SessionMachine;
-    friend class SharedFolder;
     friend class SnapshotMachine;
     friend class VirtualBox;
 

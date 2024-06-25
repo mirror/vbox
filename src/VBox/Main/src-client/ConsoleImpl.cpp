@@ -9540,8 +9540,7 @@ HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolder
                       | (fSymlinksCreate    ? SHFL_ADD_MAPPING_F_CREATE_SYMLINKS : 0)
                       | (fMissing           ? SHFL_ADD_MAPPING_F_MISSING : 0));
         SHFLSTRING_TO_HGMC_PARAM(&aParams[3], pAutoMountPoint);
-        HGCMSvcSetU32(&aParams[4], SymlinkPolicy_None);
-        AssertCompile(SHFL_CPARMS_ADD_MAPPING == 5);
+        AssertCompile(SHFL_CPARMS_ADD_MAPPING == 4);
 
         vrc = m_pVMMDev->hgcmHostCall("VBoxSharedFolders", SHFL_FN_ADD_MAPPING, SHFL_CPARMS_ADD_MAPPING, aParams);
         if (RT_FAILURE(vrc))

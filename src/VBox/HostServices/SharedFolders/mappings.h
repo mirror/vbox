@@ -51,7 +51,6 @@ typedef struct
     bool        fPlaceholder;           /**< Mapping does not exist in the VM settings but the guest
                                              still has. fMissing is always true for this mapping. */
     bool        fLoadedRootId;          /**< Set if vbsfMappingLoaded has found this mapping already. */
-    SymlinkPolicy_T enmSymlinkPolicy;   /**< Symbolic link creation policy within the guest. */
 } MAPPING;
 /** Pointer to a MAPPING structure. */
 typedef MAPPING *PMAPPING;
@@ -61,8 +60,7 @@ void vbsfMappingInit(void);
 bool vbsfMappingQuery(uint32_t iMapping, PMAPPING *pMapping);
 
 int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWritable,
-                    bool fAutoMount, PSHFLSTRING pAutoMountPoint, bool fCreateSymlinks, bool fMissing, bool fPlaceholder,
-                    SymlinkPolicy_T enmSymlinkPolicy);
+                    bool fAutoMount, PSHFLSTRING pAutoMountPoint, bool fCreateSymlinks, bool fMissing, bool fPlaceholder);
 int vbsfMappingsRemove(PSHFLSTRING pMapName);
 
 int vbsfMappingsQuery(PSHFLCLIENTDATA pClient, bool fOnlyAutoMounts, PSHFLMAPPING pMappings, uint32_t *pcMappings);
@@ -70,7 +68,6 @@ int vbsfMappingsQueryName(PSHFLCLIENTDATA pClient, SHFLROOT root, SHFLSTRING *pS
 int vbsfMappingsQueryWritable(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fWritable);
 int vbsfMappingsQueryAutoMount(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fAutoMount);
 int vbsfMappingsQuerySymlinksCreate(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fSymlinksCreate);
-int vbsfMappingsQuerySymlinkPolicy(PSHFLCLIENTDATA pClient, SHFLROOT root, SymlinkPolicy_T *enmSymlinkPolicy);
 int vbsfMappingsQueryInfo(PSHFLCLIENTDATA pClient, SHFLROOT root, PSHFLSTRING pNameBuf, PSHFLSTRING pMntPtBuf,
                           uint64_t *pfFlags, uint32_t *puVersion);
 

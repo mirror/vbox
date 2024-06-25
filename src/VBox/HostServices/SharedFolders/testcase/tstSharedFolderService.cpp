@@ -586,14 +586,6 @@ extern int testRTSymlinkRead(const char *pszSymlink, char *pszTarget, size_t cbT
     return 0;
 }
 
-extern int testRTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYMLINKTYPE enmType, uint32_t fCreate)
-{
-    if (g_fFailIfNotLowercase && !RTStrIsLowerCased(strpbrk(pszSymlink, "/\\")))
-        return VERR_FILE_NOT_FOUND;
-    RT_NOREF4(pszSymlink, pszTarget, enmType, fCreate);
-    return 0;
-}
-
 
 /*********************************************************************************************************************************
 *   Tests                                                                                                                        *
@@ -685,24 +677,12 @@ static void fillTestShflString(union TESTSHFLSTRING *pDest,
         pDest->string.String.ucs2[i] = (uint16_t)pcszSource[i];
 }
 
-static void fillTestShflStringUtf8(union TESTSHFLSTRING *pDest,
-                                   const char *pcszSource)
-{
-    const size_t cchSource = strlen(pcszSource);
-    AssertRelease(  cchSource * 2 + 2
-                  < sizeof(*pDest) - RT_UOFFSETOF(SHFLSTRING, String));
-    pDest->string.u16Length = (uint16_t)cchSource;
-    pDest->string.u16Size   = pDest->string.u16Length + 1;
-    memcpy(pDest->string.String.utf8, pcszSource, pDest->string.u16Size);
-}
-
 static SHFLROOT initWithWritableMapping(RTTEST hTest,
                                         VBOXHGCMSVCFNTABLE *psvcTable,
                                         VBOXHGCMSVCHELPERS *psvcHelpers,
                                         const char *pcszFolderName,
                                         const char *pcszMapping,
-                                        bool fCaseSensitive = true,
-                                        SymlinkPolicy_T enmSymlinkPolicy = SymlinkPolicy_AllowedToAnyTarget)
+                                        bool fCaseSensitive = true)
 {
     VBOXHGCMSVCPARM aParms[RT_MAX(SHFL_CPARMS_ADD_MAPPING,
                                   SHFL_CPARMS_MAP_FOLDER)];
@@ -725,9 +705,8 @@ static SHFLROOT initWithWritableMapping(RTTEST hTest,
                                       + FolderName.string.u16Size);
     HGCMSvcSetPv(&aParms[1], &Mapping,   RT_UOFFSETOF(SHFLSTRING, String)
                                    + Mapping.string.u16Size);
-    HGCMSvcSetU32(&aParms[2], SHFL_ADD_MAPPING_F_WRITABLE | SHFL_ADD_MAPPING_F_CREATE_SYMLINKS);
+    HGCMSvcSetU32(&aParms[2], 1);
     HGCMSvcSetPv(&aParms[3], &AutoMountPoint, SHFLSTRING_HEADER_SIZE + AutoMountPoint.string.u16Size);
-    HGCMSvcSetU32(&aParms[4], enmSymlinkPolicy);
     rc = psvcTable->pfnHostCall(psvcTable->pvService, SHFL_FN_ADD_MAPPING,
                                 SHFL_CPARMS_ADD_MAPPING, aParms);
     AssertReleaseRC(rc);
@@ -794,35 +773,6 @@ static int createFile(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT Root,
     if (pResult)
         *pResult = CreateParms.Result;
     return VINF_SUCCESS;
-}
-
-static int createSymlink(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT Root,
-                         const char *pcszSourcePath, const char *pcszSymlinkPath)
-{
-    VBOXHGCMSVCPARM aParms[SHFL_CPARMS_SYMLINK];
-    union TESTSHFLSTRING sourcePath;
-    union TESTSHFLSTRING symlinkPath;
-    SHFLFSOBJINFO ObjInfo;
-    VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
-
-    /* vbsfSymlink() only supports UTF-8 */
-    fillTestShflStringUtf8(&sourcePath, pcszSourcePath);
-    fillTestShflStringUtf8(&symlinkPath, pcszSymlinkPath);
-    psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
-                       psvcTable->pvService, SHFL_FN_SET_UTF8,
-                       RT_ELEMENTS(aParms), aParms, 0);
-
-    RT_ZERO(ObjInfo);
-    HGCMSvcSetU32(&aParms[0], Root);
-    HGCMSvcSetPv(&aParms[1], &symlinkPath,  RT_UOFFSETOF(SHFLSTRING, String)
-                                + symlinkPath.string.u16Size);
-    HGCMSvcSetPv(&aParms[2], &sourcePath,   RT_UOFFSETOF(SHFLSTRING, String)
-                                + sourcePath.string.u16Size);
-    HGCMSvcSetPv(&aParms[3], &ObjInfo, sizeof(ObjInfo));
-    psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
-                       psvcTable->pvService, SHFL_FN_SYMLINK,
-                       RT_ELEMENTS(aParms), aParms, 0);
-    return callHandle.rc;
 }
 
 static int readFile(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT Root,
@@ -1053,92 +1003,6 @@ void testCreateDirSimple(RTTEST hTest)
     AssertReleaseRC(rc);
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTDirClose_hDir == hDir, (hTest, "hDir=%p\n", g_testRTDirClose_hDir));
-}
-
-static int testSymlinkCreationForSpecificPolicy(RTTEST hTest, SymlinkPolicy_T enmSymlinkPolicy)
-{
-    VBOXHGCMSVCFNTABLE  svcTable;
-    VBOXHGCMSVCHELPERS  svcHelpers;
-    SHFLROOT Root;
-    const RTFILE hFile = (RTFILE) 0x10000;
-    SHFLCREATERESULT Result;
-    int rc;
-
-    Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
-                                   "/test/mapping", "testname",
-                                   true, enmSymlinkPolicy);
-    g_testRTFileOpen_hFile = hFile;
-    rc = createFile(&svcTable, Root, "file", SHFL_CF_ACCESS_READ, NULL, &Result);
-    RTTEST_CHECK_RC_OK(hTest, rc);
-    RTTEST_CHECK_MSG(hTest,
-                     !strcmp(&g_testRTFileOpen_szName[RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS ? 2 : 0],
-                             "/test/mapping/file"),
-                     (hTest, "pszFilename=%s\n", &g_testRTFileOpen_szName[RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS ? 2 : 0]));
-    RTTEST_CHECK_MSG(hTest, g_testRTFileOpen_fOpen == 0x181,
-                     (hTest, "fOpen=%llu\n", LLUIFY(g_testRTFileOpen_fOpen)));
-    RTTEST_CHECK_MSG(hTest, Result == SHFL_FILE_CREATED,
-                     (hTest, "Result=%d\n", (int)Result));
-
-    /* regular symlink creation should succeed unless no symlinks allowed */
-    rc = createSymlink(&svcTable, Root, "file", "symlink");
-    if (enmSymlinkPolicy == SymlinkPolicy_Forbidden)
-        RTTEST_CHECK_MSG(hTest, rc == VERR_WRITE_PROTECT,
-                         (hTest, "enmSymlinkPolicy=SymlinkPolicy_Forbidden 'ln -s file symlink' failed: rc=%Rrc\n", rc));
-    else
-        RTTEST_CHECK_RC_OK(hTest, rc);
-
-    /* absolute path to symlink sources only allowed for the 'any' policy */
-    rc = createSymlink(&svcTable, Root, "/path/to/file", "abs-symlink");
-    if (enmSymlinkPolicy == SymlinkPolicy_AllowedToAnyTarget)
-        RTTEST_CHECK_RC_OK(hTest, rc);
-    else
-        RTTEST_CHECK_MSG(hTest, rc == VERR_WRITE_PROTECT,
-                         (hTest, "enmSymlinkPolicy=%d 'ln -s file /absolute/path/symlink' failed: rc=%Rrc\n",
-                         enmSymlinkPolicy, rc));
-
-    /* relative path symlink sources with '..' components allowed only with 'relative' policy */
-    rc = createSymlink(&svcTable, Root, "./directory/../file", "rel-symlink");
-    if (   enmSymlinkPolicy == SymlinkPolicy_Forbidden
-        || enmSymlinkPolicy == SymlinkPolicy_AllowedInShareSubtree)
-        RTTEST_CHECK_MSG(hTest, rc == VERR_WRITE_PROTECT,
-                         (hTest, "enmSymlinkPolicy=%d 'ln -s ./path/../symlink' failed: rc=%Rrc\n",
-                         enmSymlinkPolicy, rc));
-    else
-        RTTEST_CHECK_RC_OK(hTest, rc);
-
-    /* relative path symlink source with no '..' components always OK */
-    rc = createSymlink(&svcTable, Root, "./directory/file", "dotslash-symlink");
-    if (enmSymlinkPolicy == SymlinkPolicy_Forbidden)
-        RTTEST_CHECK_MSG(hTest, rc == VERR_WRITE_PROTECT,
-                         (hTest, "enmSymlinkPolicy=%d 'ln -s ./path/../symlink' failed: rc=%Rrc\n",
-                         enmSymlinkPolicy, rc));
-    else
-        RTTEST_CHECK_RC_OK(hTest, rc);
-
-    unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    rc = svcTable.pfnDisconnect(NULL, 0, svcTable.pvService);
-    AssertReleaseRC(rc);
-    rc = svcTable.pfnUnload(NULL);
-    AssertReleaseRC(rc);
-    RTTestGuardedFree(hTest, svcTable.pvService);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileClose_hFile == hFile,
-                     (hTest, "File=%u\n", (uintptr_t)g_testRTFileClose_hFile));
-
-    return rc;
-}
-
-void testSymlinkCreation(RTTEST hTest)
-{
-    SymlinkPolicy_T aEnmSymlinkPolicy[4] = {
-        SymlinkPolicy_AllowedToAnyTarget,
-        SymlinkPolicy_AllowedInShareSubtree,
-        SymlinkPolicy_AllowedToRelativeTargets,
-        SymlinkPolicy_Forbidden
-    };
-
-    RTTestSub(hTest, "Create variety of symlinks with different symlink policies");
-    for (size_t i = 0; i < RT_ELEMENTS(aEnmSymlinkPolicy); i++)
-        testSymlinkCreationForSpecificPolicy(hTest, aEnmSymlinkPolicy[i]);
 }
 
 void testReadFileSimple(RTTEST hTest)

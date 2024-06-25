@@ -2122,7 +2122,7 @@ typedef struct VBoxSFParmSetErrorStyle
 /** mapping is actually missing on the host */
 #define SHFL_ADD_MAPPING_F_MISSING          (RT_BIT_32(3))
 
-#define SHFL_CPARMS_ADD_MAPPING  (5)
+#define SHFL_CPARMS_ADD_MAPPING  (4)
 /** @} */
 
 

@@ -43,8 +43,7 @@ struct ConsoleSharedFolder::Data
 {
     Data()
     : fWritable(false),
-      fAutoMount(false),
-      enmSymlinkPolicy(SymlinkPolicy_None)
+      fAutoMount(false)
     { }
 
     const Utf8Str   strName;
@@ -53,7 +52,6 @@ struct ConsoleSharedFolder::Data
     bool            fAutoMount;
     const Utf8Str   strAutoMountPoint;
     Utf8Str         strLastAccessError;
-    SymlinkPolicy_T enmSymlinkPolicy;
 };
 
 // constructor / destructor
@@ -306,18 +304,6 @@ HRESULT ConsoleSharedFolder::getLastAccessError(com::Utf8Str &aLastAccessError)
     return S_OK;
 }
 
-HRESULT ConsoleSharedFolder::getSymlinkPolicy(SymlinkPolicy_T *aSymlinkPolicy)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *aSymlinkPolicy = m->enmSymlinkPolicy;
-    return S_OK;
-}
-
-HRESULT ConsoleSharedFolder::setSymlinkPolicy(SymlinkPolicy_T aSymlinkPolicy)
-{
-    RT_NOREF(aSymlinkPolicy);
-    return E_NOTIMPL;
-}
 
 const Utf8Str& ConsoleSharedFolder::i_getName() const
 {
@@ -342,11 +328,6 @@ bool ConsoleSharedFolder::i_isAutoMounted() const
 const Utf8Str &ConsoleSharedFolder::i_getAutoMountPoint() const
 {
     return m->strAutoMountPoint;
-}
-
-const SymlinkPolicy_T ConsoleSharedFolder::i_getSymlinkPolicy() const
-{
-    return m->enmSymlinkPolicy;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

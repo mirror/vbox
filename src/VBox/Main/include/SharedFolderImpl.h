@@ -48,8 +48,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aMachine, const com::Utf8Str &aName, const com::Utf8Str &aHostPath,
-                 bool aWritable, bool aAutoMount, const com::Utf8Str &aAutoMountPoint, bool fFailOnError,
-                 SymlinkPolicy_T enmSymlinkPolicy);
+                 bool aWritable, bool aAutoMount, const com::Utf8Str &aAutoMountPoint, bool fFailOnError);
     HRESULT initCopy(Machine *aMachine, SharedFolder *aThat);
 //    HRESULT init(Console *aConsole, const com::Utf8Str &aName, const com::Utf8Str &aHostPath,
 //                 bool aWritable, bool aAutoMount, const com::Utf8Str &aAutoMountPoint, bool fFailOnError);
@@ -89,11 +88,6 @@ public:
      */
     const Utf8Str &i_getAutoMountPoint() const;
 
-    /**
-     * Public internal method for getting the symlink policy.
-     */
-    const SymlinkPolicy_T i_getSymlinkPolicy() const;
-
 protected:
 
     HRESULT i_protectedInit(VirtualBoxBase *aParent,
@@ -102,11 +96,10 @@ protected:
                             bool aWritable,
                             bool aAutoMount,
                             const com::Utf8Str &aAutoMountPoint,
-                            bool fFailOnError,
-                            SymlinkPolicy_T enmSymlinkPolicy);
+                            bool fFailOnError);
 private:
 
-    // wrapped ISharedFolder properties.
+    // wrapped ISharedFolder properies.
     HRESULT getName(com::Utf8Str &aName);
     HRESULT getHostPath(com::Utf8Str &aHostPath);
     HRESULT getAccessible(BOOL *aAccessible);
@@ -117,8 +110,6 @@ private:
     HRESULT getAutoMountPoint(com::Utf8Str &aAutoMountPoint);
     HRESULT setAutoMountPoint(com::Utf8Str const &aAutoMountPoint);
     HRESULT getLastAccessError(com::Utf8Str &aLastAccessError);
-    HRESULT getSymlinkPolicy(SymlinkPolicy_T *aSymlinkPolicy);
-    HRESULT setSymlinkPolicy(SymlinkPolicy_T aSymlinkPolicy);
 
     VirtualBoxBase * const mParent;
 

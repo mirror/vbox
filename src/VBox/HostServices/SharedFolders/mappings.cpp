@@ -185,8 +185,7 @@ int vbsfMappingLoaded(const MAPPING *pLoadedMapping, SHFLROOT root)
               pLoadedMapping->pMapName->String.utf16, pLoadedMapping->pszFolderName));
     return vbsfMappingsAdd(pLoadedMapping->pszFolderName, pLoadedMapping->pMapName,
                            pLoadedMapping->fWritable, pLoadedMapping->fAutoMount, pLoadedMapping->pAutoMountPoint,
-                           pLoadedMapping->fSymlinksCreate, /* fMissing = */ true, /* fPlaceholder = */ true,
-                           pLoadedMapping->enmSymlinkPolicy);
+                           pLoadedMapping->fSymlinksCreate, /* fMissing = */ true, /* fPlaceholder = */ true);
 }
 
 /**
@@ -340,8 +339,7 @@ void testMappingsAdd(RTTEST hTest)
  * We are always executed from one specific HGCM thread. So thread safe.
  */
 int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWritable,
-                    bool fAutoMount, PSHFLSTRING pAutoMountPoint, bool fSymlinksCreate, bool fMissing, bool fPlaceholder,
-                    SymlinkPolicy_T enmSymlinkPolicy)
+                    bool fAutoMount, PSHFLSTRING pAutoMountPoint, bool fSymlinksCreate, bool fMissing, bool fPlaceholder)
 {
     unsigned i;
 
@@ -370,7 +368,7 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWrita
 
     for (i = 0; i < SHFL_MAX_MAPPINGS; i++)
     {
-        if (!g_FolderMapping[i].fValid)
+        if (g_FolderMapping[i].fValid == false)
         {
             /* Make sure the folder name is an absolute path, otherwise we're
                likely to get into trouble with buffer sizes in vbsfPathGuestToHost. */
@@ -399,7 +397,6 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWrita
             g_FolderMapping[i].fMissing        = fMissing;
             g_FolderMapping[i].fPlaceholder    = fPlaceholder;
             g_FolderMapping[i].fLoadedRootId   = false;
-            g_FolderMapping[i].enmSymlinkPolicy = enmSymlinkPolicy;
 
             /* Check if the host file system is case sensitive */
             RTFSPROPERTIES prop;
@@ -448,7 +445,7 @@ int vbsfMappingsRemove(PSHFLSTRING pMapName)
     int rc = VERR_FILE_NOT_FOUND;
     for (unsigned i = 0; i < SHFL_MAX_MAPPINGS; i++)
     {
-        if (g_FolderMapping[i].fValid)
+        if (g_FolderMapping[i].fValid == true)
         {
             if (!RTUtf16LocaleICmp(g_FolderMapping[i].pMapName->String.utf16, pMapName->String.utf16))
             {
@@ -601,7 +598,7 @@ void testMappingsQueryName(RTTEST hTest)
 #endif
 int vbsfMappingsQueryName(PSHFLCLIENTDATA pClient, SHFLROOT root, SHFLSTRING *pString)
 {
-    LogFlow(("vbsfMappingsQueryName: pClient = %p, root = %d, *pString = %p\n", pClient, root, pString));
+    LogFlow(("vbsfMappingsQuery: pClient = %p, root = %d, *pString = %p\n", pClient, root, pString));
 
     int rc;
     MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
@@ -635,7 +632,7 @@ int vbsfMappingsQueryName(PSHFLCLIENTDATA pClient, SHFLROOT root, SHFLSTRING *pS
     else
         rc = VERR_INVALID_PARAMETER;
 
-    LogFlow(("vbsfMappingsQueryName returns rc = %Rrc\n", rc));
+    LogFlow(("vbsfMappingsQuery:Name return rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -657,7 +654,7 @@ int vbsfMappingsQueryWritable(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fWri
     else
         rc = VERR_FILE_NOT_FOUND;
 
-    LogFlow(("vbsfMappingsQueryWritable returns rc = %Rrc\n", rc));
+    LogFlow(("vbsfMappingsQuery:Writable return rc = %Rrc\n", rc));
 
     return rc;
 }
@@ -672,12 +669,12 @@ int vbsfMappingsQueryAutoMount(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fAu
     MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
     AssertReturn(pFolderMapping, VERR_INVALID_PARAMETER);
 
-    if (pFolderMapping->fValid)
+    if (pFolderMapping->fValid == true)
         *fAutoMount = pFolderMapping->fAutoMount;
     else
         rc = VERR_FILE_NOT_FOUND;
 
-    LogFlow(("vbsfMappingsQueryAutoMount returns rc = %Rrc\n", rc));
+    LogFlow(("vbsfMappingsQueryAutoMount:Writable return rc = %Rrc\n", rc));
 
     return rc;
 }
@@ -687,37 +684,17 @@ int vbsfMappingsQuerySymlinksCreate(PSHFLCLIENTDATA pClient, SHFLROOT root, bool
     RT_NOREF1(pClient);
     int rc = VINF_SUCCESS;
 
-    LogFlow(("vbsfMappingsQuerySymlinksCreate: pClient = %p, root = %d\n", pClient, root));
+    LogFlow(("vbsfMappingsQueryAutoMount: pClient = %p, root = %d\n", pClient, root));
 
     MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
     AssertReturn(pFolderMapping, VERR_INVALID_PARAMETER);
 
-    if (pFolderMapping->fValid)
+    if (pFolderMapping->fValid == true)
         *fSymlinksCreate = pFolderMapping->fSymlinksCreate;
     else
         rc = VERR_FILE_NOT_FOUND;
 
-    LogFlow(("vbsfMappingsQuerySymlinksCreate returns rc = %Rrc\n", rc));
-
-    return rc;
-}
-
-int vbsfMappingsQuerySymlinkPolicy(PSHFLCLIENTDATA pClient, SHFLROOT root, SymlinkPolicy_T *enmSymlinkPolicy)
-{
-    RT_NOREF1(pClient);
-    int rc = VINF_SUCCESS;
-
-    LogFlow(("vbsfMappingsQuerySymlinkPolicy: pClient = %p, root = %d\n", pClient, root));
-
-    MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
-    AssertReturn(pFolderMapping, VERR_INVALID_PARAMETER);
-
-    if (pFolderMapping->fValid)
-        *enmSymlinkPolicy = pFolderMapping->enmSymlinkPolicy;
-    else
-        rc = VERR_FILE_NOT_FOUND;
-
-    LogFlow(("vbsfMappingsQuerySymlinkPolicy returns rc = %Rrc\n", rc));
+    LogFlow(("vbsfMappingsQueryAutoMount:SymlinksCreate return rc = %Rrc\n", rc));
 
     return rc;
 }
@@ -901,7 +878,7 @@ int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root)
         AssertFailed();
         return VERR_FILE_NOT_FOUND;
     }
-    Assert(pFolderMapping->fValid && pFolderMapping->cMappings > 0);
+    Assert(pFolderMapping->fValid == true && pFolderMapping->cMappings > 0);
 
     AssertLogRelReturn(root < RT_ELEMENTS(pClient->acMappings), VERR_INTERNAL_ERROR);
     AssertLogRelReturn(!pClient->fHasMappingCounts || pClient->acMappings[root] > 0, VERR_INVALID_HANDLE);

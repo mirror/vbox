@@ -255,8 +255,8 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PCSHFLSTRIN
     char *pszHostPath = NULL;
     uint32_t fu32PathFlags = 0;
     uint32_t fu32Options =   VBSF_O_PATH_CHECK_ROOT_ESCAPE
-                           | (fWildCard ? VBSF_O_PATH_WILDCARD : 0)
-                           | (fPreserveLastComponent ? VBSF_O_PATH_PRESERVE_LAST_COMPONENT : 0);
+                           | (fWildCard? VBSF_O_PATH_WILDCARD: 0)
+                           | (fPreserveLastComponent? VBSF_O_PATH_PRESERVE_LAST_COMPONENT: 0);
 
     int rc = vbsfPathGuestToHost(pClient, root, pPath, cbPath,
                                  &pszHostPath, pcbFullPathRoot, fu32Options, &fu32PathFlags);
@@ -2597,16 +2597,14 @@ void testSymlink(RTTEST hTest)
     /* If the number or types of parameters are wrong the API should fail. */
     testSymlinkBadParameters(hTest);
     /* Add tests as required... */
-    testSymlinkCreation(hTest);
 }
 #endif
-
-int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSymlinkPath, SHFLSTRING *pSourcePath, SHFLFSOBJINFO *pInfo)
+int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SHFLSTRING *pOldPath, SHFLFSOBJINFO *pInfo)
 {
     int rc = VINF_SUCCESS;
 
-    char *pszFullSymlinkPath = NULL;
-    char *pszFullSourcePath = NULL;
+    char *pszFullNewPath = NULL;
+    char *pszFullOldPath = NULL;
 
     /* XXX: no support for UCS2 at the moment. */
     if (!BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
@@ -2618,44 +2616,35 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSymlinkPath
     if (!fSymlinksCreate)
         return VERR_WRITE_PROTECT; /* XXX or VERR_TOO_MANY_SYMLINKS? */
 
-    rc = vbsfBuildFullPath(pClient, root, pSymlinkPath, pSymlinkPath->u16Size + SHFLSTRING_HEADER_SIZE, &pszFullSymlinkPath,
-                           NULL);
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = vbsfBuildFullPath(pClient, root, pNewPath, pNewPath->u16Size + SHFLSTRING_HEADER_SIZE, &pszFullNewPath, NULL);
+    AssertRCReturn(rc, rc);
 
-    /*
-     * The symbolic link source path may be located outside of the shared folder so thus
-     * we don't call vbsfBuildFullPath() which includes VBSF_O_PATH_CHECK_ROOT_ESCAPE to
-     * verify that the pathname resides within the shared folder.  Instead we call the
-     * heart of vbsfBuildFullPath() which is vbsfPathGuestToHost() to perform a subset
-     * of its checks to verify that the symbolic link source is a valid path by checking
-     * for invalid characters, replacing path delimiters if the guest uses a different
-     * slash than the host, and evaluating the symbolic link policy if one has been set.
-     * We don't collapse path components of '..' for example or alter the path otherwise
-     * as this is the documented behavior of symbolic links: the source pathname can be
-     * any pathname and isn't required to exist.
-     */
+    /* Verify that the link target can be a valid host path, i.e. does not contain invalid characters. */
     uint32_t fu32PathFlags = 0;
-    uint32_t fu32Options = VBSF_O_PATH_CHECK_SYMLINK_POLICY;
-    rc = vbsfPathGuestToHost(pClient, root, pSourcePath, pSourcePath->u16Size + SHFLSTRING_HEADER_SIZE,
-                             &pszFullSourcePath, NULL, fu32Options, &fu32PathFlags);
+    uint32_t fu32Options = 0;
+    rc = vbsfPathGuestToHost(pClient, root, pOldPath, pOldPath->u16Size + SHFLSTRING_HEADER_SIZE,
+                             &pszFullOldPath, NULL, fu32Options, &fu32PathFlags);
     if (RT_FAILURE(rc))
     {
-        vbsfFreeFullPath(pszFullSymlinkPath);
+        vbsfFreeFullPath(pszFullNewPath);
         return rc;
     }
 
-    rc = RTSymlinkCreate(pszFullSymlinkPath, pszFullSourcePath, RTSYMLINKTYPE_UNKNOWN, 0);
+    /** @todo r=bird: We _must_ perform slash conversion on the target (what this
+     *        code calls 'pOldPath' for some peculiar reason)! */
+
+    rc = RTSymlinkCreate(pszFullNewPath, (const char *)pOldPath->String.utf8,
+                         RTSYMLINKTYPE_UNKNOWN, 0);
     if (RT_SUCCESS(rc))
     {
         RTFSOBJINFO info;
-        rc = RTPathQueryInfoEx(pszFullSymlinkPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+        rc = RTPathQueryInfoEx(pszFullNewPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
         if (RT_SUCCESS(rc))
             vbfsCopyFsObjInfoFromIprt(pInfo, &info);
     }
 
-    vbsfFreeFullPath(pszFullSourcePath);
-    vbsfFreeFullPath(pszFullSymlinkPath);
+    vbsfFreeFullPath(pszFullOldPath);
+    vbsfFreeFullPath(pszFullNewPath);
 
     return rc;
 }
