@@ -1030,7 +1030,7 @@ bool UIPortForwardingTable::eventFilter(QObject *pObject, QEvent *pEvent)
             case QEvent::FocusOut:
             {
                 /* Update actions: */
-                sltCurrentChanged();
+                sltUpdateActions();
                 break;
             }
             default:
@@ -1065,7 +1065,7 @@ void UIPortForwardingTable::sltAddRule()
     m_pTableModel->addRule(QModelIndex());
     m_pTableView->setFocus();
     m_pTableView->setCurrentIndex(m_pTableModel->index(m_pTableModel->rowCount() - 1, 0));
-    sltCurrentChanged();
+    sltUpdateActions();
     sltAdjustTable();
 }
 
@@ -1074,7 +1074,7 @@ void UIPortForwardingTable::sltCopyRule()
     m_pTableModel->addRule(m_pTableView->currentIndex());
     m_pTableView->setFocus();
     m_pTableView->setCurrentIndex(m_pTableModel->index(m_pTableModel->rowCount() - 1, 0));
-    sltCurrentChanged();
+    sltUpdateActions();
     sltAdjustTable();
 }
 
@@ -1082,7 +1082,7 @@ void UIPortForwardingTable::sltRemoveRule()
 {
     m_pTableModel->removeRule(m_pTableView->currentIndex());
     m_pTableView->setFocus();
-    sltCurrentChanged();
+    sltUpdateActions();
     sltAdjustTable();
 }
 
@@ -1092,7 +1092,7 @@ void UIPortForwardingTable::sltTableDataChanged()
     emit sigDataChanged();
 }
 
-void UIPortForwardingTable::sltCurrentChanged()
+void UIPortForwardingTable::sltUpdateActions()
 {
     bool fTableFocused = m_pTableView->hasFocus();
     bool fTableChildFocused = m_pTableView->findChildren<QWidget*>().contains(QApplication::focusWidget());
@@ -1167,34 +1167,13 @@ void UIPortForwardingTable::prepareLayout()
         m_pLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 3);
 #endif
 
-        /* Prepare table-view: */
+        /* Prepare model: */
+        prepareTableModel();
+        /* Prepare view: */
         prepareTableView();
 
         /* Prepare toolbar: */
         prepareToolbar();
-    }
-}
-
-void UIPortForwardingTable::prepareTableView()
-{
-    /* Create table-view: */
-    m_pTableView = new UIPortForwardingView(m_fIPv6, this);
-    if (m_pTableView)
-    {
-        /* Configure table-view: */
-        m_pTableView->installEventFilter(this);
-
-        /* Prepare model: */
-        prepareTableModel();
-
-        /* Finish configure table-view (after model is configured): */
-        connect(m_pTableView, &UIPortForwardingView::sigCurrentChanged,
-                this, &UIPortForwardingTable::sltCurrentChanged);
-        connect(m_pTableView, &UIPortForwardingView::customContextMenuRequested,
-                this, &UIPortForwardingTable::sltShowTableContexMenu);
-
-        /* Add into layout: */
-        m_pLayout->addWidget(m_pTableView);
     }
 }
 
@@ -1205,13 +1184,33 @@ void UIPortForwardingTable::prepareTableModel()
     if (m_pTableModel)
     {
         /* Configure table-model: */
-        m_pTableView->setModel(m_pTableModel);
         connect(m_pTableModel, &UIPortForwardingModel::dataChanged,
                 this, &UIPortForwardingTable::sltTableDataChanged);
         connect(m_pTableModel, &UIPortForwardingModel::rowsInserted,
                 this, &UIPortForwardingTable::sltTableDataChanged);
         connect(m_pTableModel, &UIPortForwardingModel::rowsRemoved,
                 this, &UIPortForwardingTable::sltTableDataChanged);
+    }
+}
+
+void UIPortForwardingTable::prepareTableView()
+{
+    /* Create table-view: */
+    m_pTableView = new UIPortForwardingView(m_fIPv6, this);
+    if (m_pTableView)
+    {
+        /* Assign model: */
+        if (m_pTableModel)
+            m_pTableView->setModel(m_pTableModel);
+
+        /* Finish configure table-view (after model is assigned): */
+        connect(m_pTableView, &UIPortForwardingView::sigCurrentChanged,
+                this, &UIPortForwardingTable::sltUpdateActions);
+        connect(m_pTableView, &UIPortForwardingView::customContextMenuRequested,
+                this, &UIPortForwardingTable::sltShowTableContexMenu);
+
+        /* Add into layout: */
+        m_pLayout->addWidget(m_pTableView);
     }
 }
 
