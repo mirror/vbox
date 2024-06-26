@@ -61,6 +61,45 @@ public:
         }
         return -1;
     }
+
+    /** Returns the position of the 1st occurrence of the
+      * @a shortcut in the @a shortcuts list, or -1 otherwise. */
+    int operator()(const QList<BaseClass*> &shortcuts, const BaseClass &shortcut)
+    {
+        for (int i = 0; i < shortcuts.size(); ++i)
+        {
+            const BaseClass *pIteratedShortcut = shortcuts.at(i);
+            if (pIteratedShortcut->key() == shortcut.key())
+                return i;
+        }
+        return -1;
+    }
+
+    /** Returns the position of the 1st occurrence of the
+      * @a shortcut in the @a shortcuts list, or -1 otherwise. */
+    int operator()(const QList<BaseClass> &shortcuts, const BaseClass *pShortcut)
+    {
+        for (int i = 0; i < shortcuts.size(); ++i)
+        {
+            const BaseClass &iteratedShortcut = shortcuts.at(i);
+            if (iteratedShortcut.key() == pShortcut->key())
+                return i;
+        }
+        return -1;
+    }
+
+    /** Returns the position of the 1st occurrence of the
+      * @a shortcut in the @a shortcuts list, or -1 otherwise. */
+    int operator()(const QList<BaseClass*> &shortcuts, const BaseClass *pShortcut)
+    {
+        for (int i = 0; i < shortcuts.size(); ++i)
+        {
+            const BaseClass *pIteratedShortcut = shortcuts.at(i);
+            if (pIteratedShortcut->key() == pShortcut->key())
+                return i;
+        }
+        return -1;
+    }
 };
 
 /** Shortcut configuration item. */

@@ -180,7 +180,7 @@ private:
 };
 
 /** Shortcut configuration editor row list. */
-typedef QList<UIShortcutTableViewRow> UIShortcutTableViewContent;
+typedef QList<UIShortcutTableViewRow*> UIShortcutTableViewContent;
 
 
 /** Shortcut item sorting functor. */
@@ -196,26 +196,26 @@ public:
         , m_enmOrder(enmOrder)
     {}
 
-    /** Returns whether the @a item1 is more/less than the @a item2.
+    /** Returns whether the @a pItem1 is more/less than the @a pItem2.
       * @note  Order depends on the one set through constructor, stored in m_enmOrder. */
-    bool operator()(const UIShortcutTableViewRow &item1, const UIShortcutTableViewRow &item2)
+    bool operator()(UIShortcutTableViewRow *pItem1, UIShortcutTableViewRow *pItem2)
     {
         switch (m_iColumn)
         {
             case TableColumnIndex_Description:
                 return   m_enmOrder == Qt::AscendingOrder
-                       ? item1.description() < item2.description()
-                       : item1.description() > item2.description();
+                       ? pItem1->description() < pItem2->description()
+                       : pItem1->description() > pItem2->description();
             case TableColumnIndex_Sequence:
                 return   m_enmOrder == Qt::AscendingOrder
-                       ? item1.currentSequence() < item2.currentSequence()
-                       : item1.currentSequence() > item2.currentSequence();
+                       ? pItem1->currentSequence() < pItem2->currentSequence()
+                       : pItem1->currentSequence() > pItem2->currentSequence();
             default:
                 break;
         }
         return   m_enmOrder == Qt::AscendingOrder
-               ? item1.key() < item2.key()
-               : item1.key() > item2.key();
+               ? pItem1->key() < pItem2->key()
+               : pItem1->key() > pItem2->key();
     }
 
 private:
@@ -244,6 +244,8 @@ public:
     /** Constructs model passing @a pParent to the base-class.
       * @param  enmType  Brings the action-pool type this model is related to. */
     UIShortcutConfigurationModel(UIShortcutConfigurationEditor *pParent, UIType enmType);
+    /** Destructs model. */
+    virtual ~UIShortcutConfigurationModel() RT_OVERRIDE;
 
     /** Loads a @a list of shortcuts to the model. */
     void load(const UIShortcutConfigurationList &list);
@@ -346,6 +348,14 @@ UIShortcutConfigurationModel::UIShortcutConfigurationModel(UIShortcutConfigurati
 {
 }
 
+UIShortcutConfigurationModel::~UIShortcutConfigurationModel()
+{
+    /* Delete the cached data: */
+    qDeleteAll(m_shortcuts);
+    m_shortcuts.clear();
+    m_filteredShortcuts.clear();
+}
+
 void UIShortcutConfigurationModel::load(const UIShortcutConfigurationList &list)
 {
     /* Load a list of passed shortcuts: */
@@ -356,7 +366,7 @@ void UIShortcutConfigurationModel::load(const UIShortcutConfigurationList &list)
             || (m_enmType == UIType_RuntimeUI && item.key().startsWith(GUI_Input_SelectorShortcuts)))
             continue;
         /* Add suitable item to the model as a new shortcut: */
-        m_shortcuts << UIShortcutTableViewRow(view(), item);
+        m_shortcuts << new UIShortcutTableViewRow(view(), item);
     }
     /* Apply filter: */
     applyFilter();
@@ -367,17 +377,15 @@ void UIShortcutConfigurationModel::load(const UIShortcutConfigurationList &list)
 void UIShortcutConfigurationModel::save(UIShortcutConfigurationList &list)
 {
     /* Save cached model shortcuts: */
-    foreach (const UIShortcutTableViewRow &row, m_shortcuts)
+    foreach (UIShortcutTableViewRow *pRow, m_shortcuts)
     {
-        const UIShortcutConfigurationItem &item = row;
-
         /* Search for corresponding item position: */
-        const int iShortcutItemPosition = UIShortcutSearchFunctor<UIShortcutConfigurationItem>()(list, item);
+        const int iShortcutItemPosition = UIShortcutSearchFunctor<UIShortcutConfigurationItem>()(list, pRow);
         /* Make sure position is valid: */
         if (iShortcutItemPosition == -1)
             continue;
         /* Save cached model shortcut to a list: */
-        list[iShortcutItemPosition] = item;
+        list[iShortcutItemPosition] = *pRow;
     }
 }
 
@@ -385,14 +393,14 @@ bool UIShortcutConfigurationModel::isAllShortcutsUnique()
 {
     /* Enumerate all the sequences: */
     QMultiMap<QString, QString> usedSequences;
-    foreach (const UIShortcutTableViewRow &item, m_shortcuts)
+    foreach (UIShortcutTableViewRow *pRow, m_shortcuts)
     {
-        QString strKey = item.currentSequence();
+        QString strKey = pRow->currentSequence();
         if (!strKey.isEmpty())
         {
-            const QString strScope = item.scope();
+            const QString strScope = pRow->scope();
             strKey = strScope.isNull() ? strKey : QString("%1: %2").arg(strScope, strKey);
-            usedSequences.insert(strKey, item.key());
+            usedSequences.insert(strKey, pRow->key());
         }
     }
     /* Enumerate all the duplicated sequences: */
@@ -494,18 +502,18 @@ QVariant UIShortcutConfigurationModel::data(const QModelIndex &index, int iRole 
                 case TableColumnIndex_Description:
                 {
                     /* Return shortcut scope and description: */
-                    const QString strScope = m_filteredShortcuts[iIndex].scope();
-                    const QString strDescription = m_filteredShortcuts[iIndex].description();
+                    const QString strScope = m_filteredShortcuts.at(iIndex)->scope();
+                    const QString strDescription = m_filteredShortcuts.at(iIndex)->description();
                     return strScope.isNull() ? strDescription : QString("%1: %2").arg(strScope, strDescription);
                 }
                 case TableColumnIndex_Sequence:
                 {
                     /* If that is host-combo cell: */
-                    if (m_filteredShortcuts[iIndex].key() == UIHostCombo::hostComboCacheKey())
+                    if (m_filteredShortcuts.at(iIndex)->key() == UIHostCombo::hostComboCacheKey())
                         /* We should return host-combo: */
-                        return UIHostCombo::toReadableString(m_filteredShortcuts[iIndex].currentSequence());
+                        return UIHostCombo::toReadableString(m_filteredShortcuts.at(iIndex)->currentSequence());
                     /* In other cases we should return hot-combo: */
-                    QString strHotCombo = m_filteredShortcuts[iIndex].currentSequence();
+                    QString strHotCombo = m_filteredShortcuts.at(iIndex)->currentSequence();
                     /* But if that is machine table and hot-combo is not empty: */
                     if (m_enmType == UIType_RuntimeUI && !strHotCombo.isEmpty())
                         /* We should prepend it with Host+ prefix: */
@@ -524,13 +532,13 @@ QVariant UIShortcutConfigurationModel::data(const QModelIndex &index, int iRole 
             switch (index.column())
             {
                 case TableColumnIndex_Sequence:
-                    return   m_filteredShortcuts[iIndex].key() == UIHostCombo::hostComboCacheKey()
-                           ? QVariant::fromValue(UIHostComboWrapper(m_filteredShortcuts[iIndex].currentSequence()))
+                    return   m_filteredShortcuts.at(iIndex)->key() == UIHostCombo::hostComboCacheKey()
+                           ? QVariant::fromValue(UIHostComboWrapper(m_filteredShortcuts.at(iIndex)->currentSequence()))
                            : QVariant::fromValue(UIHotKey(  m_enmType == UIType_RuntimeUI
                                                           ? UIHotKeyType_Simple
                                                           : UIHotKeyType_WithModifiers,
-                                                          m_filteredShortcuts[iIndex].currentSequence(),
-                                                          m_filteredShortcuts[iIndex].defaultSequence()));
+                                                          m_filteredShortcuts.at(iIndex)->currentSequence(),
+                                                          m_filteredShortcuts.at(iIndex)->defaultSequence()));
                 default:
                     break;
             }
@@ -546,8 +554,8 @@ QVariant UIShortcutConfigurationModel::data(const QModelIndex &index, int iRole 
             {
                 case TableColumnIndex_Sequence:
                 {
-                    if (   m_filteredShortcuts[iIndex].key() != UIHostCombo::hostComboCacheKey()
-                        && m_filteredShortcuts[iIndex].currentSequence() != m_filteredShortcuts[iIndex].defaultSequence())
+                    if (   m_filteredShortcuts.at(iIndex)->key() != UIHostCombo::hostComboCacheKey()
+                        && m_filteredShortcuts.at(iIndex)->currentSequence() != m_filteredShortcuts.at(iIndex)->defaultSequence())
                         font.setBold(true);
                     break;
                 }
@@ -563,7 +571,7 @@ QVariant UIShortcutConfigurationModel::data(const QModelIndex &index, int iRole 
             {
                 case TableColumnIndex_Sequence:
                 {
-                    if (m_duplicatedSequences.contains(m_filteredShortcuts[iIndex].key()))
+                    if (m_duplicatedSequences.contains(m_filteredShortcuts.at(iIndex)->key()))
                         return QBrush(Qt::red);
                     break;
                 }
@@ -596,14 +604,13 @@ bool UIShortcutConfigurationModel::setData(const QModelIndex &index, const QVari
                     /* Get index: */
                     const int iIndex = index.row();
                     /* Set sequence to shortcut: */
-                    UIShortcutTableViewRow &filteredShortcut = m_filteredShortcuts[iIndex];
-                    const int iShortcutIndex = UIShortcutSearchFunctor<UIShortcutTableViewRow>()(m_shortcuts, filteredShortcut);
+                    UIShortcutTableViewRow *pFilteredShortcut = m_filteredShortcuts.at(iIndex);
+                    const int iShortcutIndex = UIShortcutSearchFunctor<UIShortcutTableViewRow>()(m_shortcuts, pFilteredShortcut);
                     if (iShortcutIndex != -1)
                     {
-                        filteredShortcut.setCurrentSequence(  filteredShortcut.key() == UIHostCombo::hostComboCacheKey()
-                                                            ? value.value<UIHostComboWrapper>().toString()
-                                                            : value.value<UIHotKey>().sequence());
-                        m_shortcuts[iShortcutIndex] = filteredShortcut;
+                        pFilteredShortcut->setCurrentSequence(  pFilteredShortcut->key() == UIHostCombo::hostComboCacheKey()
+                                                              ? value.value<UIHostComboWrapper>().toString()
+                                                              : value.value<UIHotKey>().sequence());
                         emit sigDataChanged();
                         return true;
                     }
@@ -631,8 +638,8 @@ void UIShortcutConfigurationModel::sort(int iColumn, Qt::SortOrder order /* = Qt
     const int iIndexOfHostComboItem = UIShortcutSearchFunctor<UIShortcutTableViewRow>()(m_shortcuts, fakeHostComboTableViewRow);
     if (iIndexOfHostComboItem != -1)
     {
-        UIShortcutTableViewRow hostComboItem = m_shortcuts.takeAt(iIndexOfHostComboItem);
-        m_shortcuts.prepend(hostComboItem);
+        UIShortcutTableViewRow *pHostComboItem = m_shortcuts.takeAt(iIndexOfHostComboItem);
+        m_shortcuts.prepend(pHostComboItem);
     }
     /* Apply the filter: */
     applyFilter();
@@ -651,7 +658,7 @@ QITableView *UIShortcutConfigurationModel::view() const
 
 void UIShortcutConfigurationModel::applyFilter()
 {
-    /* Erase items first if necessary: */
+    /* Erase rows first if necessary: */
     if (!m_filteredShortcuts.isEmpty())
     {
         beginRemoveRows(QModelIndex(), 0, m_filteredShortcuts.size() - 1);
@@ -662,25 +669,25 @@ void UIShortcutConfigurationModel::applyFilter()
     /* If filter is empty: */
     if (m_strFilter.isEmpty())
     {
-        /* Just add all the items: */
+        /* Just add all the rows: */
         m_filteredShortcuts = m_shortcuts;
     }
     else
     {
         /* Check if the description matches the filter: */
-        foreach (const UIShortcutTableViewRow &item, m_shortcuts)
+        foreach (UIShortcutTableViewRow *pRow, m_shortcuts)
         {
-            /* If neither scope nor description or sequence matches the filter, skip item: */
-            if (   !item.scope().contains(m_strFilter, Qt::CaseInsensitive)
-                && !item.description().contains(m_strFilter, Qt::CaseInsensitive)
-                && !item.currentSequence().contains(m_strFilter, Qt::CaseInsensitive))
+            /* If neither scope nor description or sequence matches the filter, skip the pRow: */
+            if (   !pRow->scope().contains(m_strFilter, Qt::CaseInsensitive)
+                && !pRow->description().contains(m_strFilter, Qt::CaseInsensitive)
+                && !pRow->currentSequence().contains(m_strFilter, Qt::CaseInsensitive))
                 continue;
-            /* Add that item: */
-            m_filteredShortcuts << item;
+            /* Add that pRow: */
+            m_filteredShortcuts << pRow;
         }
     }
 
-    /* Add items finally if necessary: */
+    /* Add rows finally if necessary: */
     if (!m_filteredShortcuts.isEmpty())
     {
         beginInsertRows(QModelIndex(), 0, m_filteredShortcuts.size() - 1);
