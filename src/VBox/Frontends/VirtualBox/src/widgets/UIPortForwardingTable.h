@@ -242,11 +242,6 @@ public:
     /** Makes sure current editor data committed. */
     void makeSureEditorDataCommitted();
 
-protected:
-
-    /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
-
 private slots:
 
     /** Handles translation event. */
@@ -266,9 +261,6 @@ private slots:
 
     /** Handles request to show context-menu in certain @a position. */
     void sltShowTableContexMenu(const QPoint &position);
-
-    /** Adjusts table column sizes. */
-    void sltAdjustTable();
 
 private:
 

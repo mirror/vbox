@@ -506,12 +506,34 @@ public:
     /** Destructs Port Forwarding table-view. */
     virtual ~UIPortForwardingView();
 
+protected:
+
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
+
+protected slots:
+
+    /** Handles rows being inserted.
+      * @param  parent  Brings the parent under which new rows being inserted.
+      * @param  iStart  Brings the starting position (inclusive).
+      * @param  iStart  Brings the end position (inclusive). */
+    virtual void rowsInserted(const QModelIndex &parent, int iStart, int iEnd) RT_OVERRIDE;
+
+    /** Handles rows being removed.
+      * @param  parent  Brings the parent for which rows being removed.
+      * @param  iStart  Brings the starting position (inclusive).
+      * @param  iStart  Brings the end position (inclusive). */
+    virtual void rowsAboutToBeRemoved(const QModelIndex &parent, int iStart, int iEnd) RT_OVERRIDE;
+
 private:
 
     /** Prepares everything. */
     void prepare();
     /** Cleanups everything. */
     void cleanup();
+
+    /** Adjusts table contents. */
+    void adjust();
 
     /** Holds whether this view contains IPv6 rules, not IPv4. */
     bool  m_fIPv6;
@@ -809,6 +831,46 @@ UIPortForwardingView::~UIPortForwardingView()
     cleanup();
 }
 
+bool UIPortForwardingView::event(QEvent *pEvent)
+{
+    /* Process different event-types: */
+    switch (pEvent->type())
+    {
+        /* Adjust table on show/resize events: */
+        case QEvent::Show:
+        case QEvent::Resize:
+        {
+            // WORKAROUND:
+            // Make sure layout requests really processed first of all;
+            // This is required for the 1st show event but let it be ..
+            QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+            adjust();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QITableView::event(pEvent);
+}
+
+void UIPortForwardingView::rowsInserted(const QModelIndex &parent, int iStart, int iEnd)
+{
+    /* Call to base-class: */
+    QITableView::rowsInserted(parent, iStart, iEnd);
+    /* Adjust table on rows being inserted: */
+    adjust();
+}
+
+void UIPortForwardingView::rowsAboutToBeRemoved(const QModelIndex &parent, int start, int end)
+{
+    /* Call to base-class: */
+    QITableView::rowsAboutToBeRemoved(parent, start, end);
+    /* Adjust table on rows being removed: */
+    adjust();
+}
+
 void UIPortForwardingView::prepare()
 {
     // WORAKROUND: Do we still need this?
@@ -880,6 +942,30 @@ void UIPortForwardingView::cleanup()
 }
 
 
+void UIPortForwardingView::adjust()
+{
+    horizontalHeader()->setStretchLastSection(false);
+    /* If table is NOT empty: */
+    if (model()->rowCount())
+    {
+        /* Resize table to contents size-hint and emit a spare place for first column: */
+        resizeColumnsToContents();
+        uint uFullWidth = viewport()->width();
+        for (uint u = 1; u < UIPortForwardingDataType_Max; ++u)
+            uFullWidth -= horizontalHeader()->sectionSize(u);
+        horizontalHeader()->resizeSection(UIPortForwardingDataType_Name, uFullWidth);
+    }
+    /* If table is empty: */
+    else
+    {
+        /* Resize table columns to be equal in size: */
+        uint uFullWidth = viewport()->width();
+        for (uint u = 0; u < UIPortForwardingDataType_Max; ++u)
+            horizontalHeader()->resizeSection(u, uFullWidth / UIPortForwardingDataType_Max);
+    }
+    horizontalHeader()->setStretchLastSection(true);
+}
+
 /*********************************************************************************************************************************
 *   Class UIPortForwardingTable implementation.                                                                                  *
 *********************************************************************************************************************************/
@@ -927,7 +1013,6 @@ void UIPortForwardingTable::setRules(const UIPortForwardingDataList &newRules,
     /* Update the list of rules: */
     m_rules = newRules;
     m_pTableModel->setRules(m_rules);
-    sltAdjustTable();
 
     /* Restore last chosen item: */
     if (fHoldPosition && !strPreviousName.isEmpty())
@@ -1009,31 +1094,6 @@ void UIPortForwardingTable::makeSureEditorDataCommitted()
     m_pTableView->makeSureEditorDataCommitted();
 }
 
-bool UIPortForwardingTable::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    /* Process table: */
-    if (pObject == m_pTableView)
-    {
-        /* Process different event-types: */
-        switch (pEvent->type())
-        {
-            case QEvent::Show:
-            case QEvent::Resize:
-            {
-                /* Make sure layout requests really processed first of all: */
-                QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
-                /* Adjust table: */
-                sltAdjustTable();
-                break;
-            }
-            default:
-                break;
-        }
-    }
-    /* Call to base-class: */
-    return QWidget::eventFilter(pObject, pEvent);
-}
-
 void UIPortForwardingTable::sltRetranslateUI()
 {
     /* Table translations: */
@@ -1059,7 +1119,6 @@ void UIPortForwardingTable::sltAddRule()
     m_pTableView->setFocus();
     m_pTableView->setCurrentIndex(m_pTableModel->index(m_pTableModel->rowCount() - 1, 0));
     sltUpdateActions();
-    sltAdjustTable();
 }
 
 void UIPortForwardingTable::sltCopyRule()
@@ -1068,7 +1127,6 @@ void UIPortForwardingTable::sltCopyRule()
     m_pTableView->setFocus();
     m_pTableView->setCurrentIndex(m_pTableModel->index(m_pTableModel->rowCount() - 1, 0));
     sltUpdateActions();
-    sltAdjustTable();
 }
 
 void UIPortForwardingTable::sltRemoveRule()
@@ -1076,7 +1134,6 @@ void UIPortForwardingTable::sltRemoveRule()
     m_pTableModel->removeRule(m_pTableView->currentIndex());
     m_pTableView->setFocus();
     sltUpdateActions();
-    sltAdjustTable();
 }
 
 void UIPortForwardingTable::sltTableDataChanged()
@@ -1103,28 +1160,6 @@ void UIPortForwardingTable::sltShowTableContexMenu(const QPoint &pos)
     else
         menu.addAction(m_pActionAdd);
     menu.exec(m_pTableView->viewport()->mapToGlobal(pos));
-}
-
-void UIPortForwardingTable::sltAdjustTable()
-{
-    /* If table is NOT empty: */
-    if (m_pTableModel->rowCount())
-    {
-        /* Resize table to contents size-hint and emit a spare place for first column: */
-        m_pTableView->resizeColumnsToContents();
-        uint uFullWidth = m_pTableView->viewport()->width();
-        for (uint u = 1; u < UIPortForwardingDataType_Max; ++u)
-            uFullWidth -= m_pTableView->horizontalHeader()->sectionSize(u);
-        m_pTableView->horizontalHeader()->resizeSection(UIPortForwardingDataType_Name, uFullWidth);
-    }
-    /* If table is empty: */
-    else
-    {
-        /* Resize table columns to be equal in size: */
-        uint uFullWidth = m_pTableView->viewport()->width();
-        for (uint u = 0; u < UIPortForwardingDataType_Max; ++u)
-            m_pTableView->horizontalHeader()->resizeSection(u, uFullWidth / UIPortForwardingDataType_Max);
-    }
 }
 
 void UIPortForwardingTable::prepare()
@@ -1248,6 +1283,9 @@ void UIPortForwardingTable::prepareToolbar()
         /* Add into layout: */
         m_pLayout->addWidget(m_pToolBar);
     }
+
+    /* Update actions finally: */
+    sltUpdateActions();
 }
 
 
