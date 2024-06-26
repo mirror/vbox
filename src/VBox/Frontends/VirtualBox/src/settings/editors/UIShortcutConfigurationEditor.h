@@ -37,8 +37,8 @@
 /* Forward declartions: */
 class QLineEdit;
 class QTabWidget;
+class QITableView;
 class UIShortcutConfigurationModel;
-class UIShortcutConfigurationView;
 
 /** Shortcut search functor template. */
 template <class BaseClass>
@@ -169,6 +169,11 @@ public:
     /** Constructs editor passing @a pParent to the base-class. */
     UIShortcutConfigurationEditor(QWidget *pParent = 0);
 
+    /** Returns manager table-view reference. */
+    QITableView *viewManager();
+    /** Returns runtime table-view reference. */
+    QITableView *viewRuntime();
+
     /** Loads shortcut configuration list from passed @a value. */
     void load(const UIShortcutConfigurationList &value);
     /** Saves shortcut configuration list to passed @a value. */
@@ -212,11 +217,11 @@ private:
     /** Holds the Manager UI shortcuts filter instance. */
     QLineEdit                    *m_pEditorFilterManager;
     /** Holds the Manager UI shortcuts table instance. */
-    UIShortcutConfigurationView  *m_pTableManager;
+    QITableView                  *m_pTableManager;
     /** Holds the Runtime UI shortcuts filter instance. */
     QLineEdit                    *m_pEditorFilterRuntime;
     /** Holds the Runtime UI shortcuts table instance. */
-    UIShortcutConfigurationView  *m_pTableRuntime;
+    QITableView                  *m_pTableRuntime;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIShortcutConfigurationEditor_h */

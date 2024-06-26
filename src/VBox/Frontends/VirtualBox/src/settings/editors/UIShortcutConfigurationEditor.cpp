@@ -243,10 +243,7 @@ public:
 
     /** Constructs model passing @a pParent to the base-class.
       * @param  enmType  Brings the action-pool type this model is related to. */
-    UIShortcutConfigurationModel(QObject *pParent, UIType enmType);
-
-    /** Defines the parent @a pTable reference. */
-    void setTable(UIShortcutConfigurationView *pTable);
+    UIShortcutConfigurationModel(UIShortcutConfigurationEditor *pParent, UIType enmType);
 
     /** Loads a @a list of shortcuts to the model. */
     void load(const UIShortcutConfigurationList &list);
@@ -282,14 +279,17 @@ protected:
 
 private:
 
+    /** Return the parent table-view reference. */
+    QITableView *view() const;
+
     /** Applies filter. */
     void applyFilter();
 
+    /** Holds the parent shortcut-configuration editor instance. */
+    UIShortcutConfigurationEditor *m_pShortcutConfigurationEditor;
+
     /** Holds the action-pool type this model is related to. */
     UIType  m_enmType;
-
-    /** Holds the parent table reference. */
-    UIShortcutConfigurationView *m_pTable;
 
     /** Holds current filter. */
     QString  m_strFilter;
@@ -339,16 +339,11 @@ private:
 *   Class UIShortcutConfigurationModel implementation.                                                                           *
 *********************************************************************************************************************************/
 
-UIShortcutConfigurationModel::UIShortcutConfigurationModel(QObject *pParent, UIType enmType)
+UIShortcutConfigurationModel::UIShortcutConfigurationModel(UIShortcutConfigurationEditor *pParent, UIType enmType)
     : QAbstractTableModel(pParent)
+    , m_pShortcutConfigurationEditor(pParent)
     , m_enmType(enmType)
-    , m_pTable(0)
 {
-}
-
-void UIShortcutConfigurationModel::setTable(UIShortcutConfigurationView *pTable)
-{
-    m_pTable = pTable;
 }
 
 void UIShortcutConfigurationModel::load(const UIShortcutConfigurationList &list)
@@ -361,7 +356,7 @@ void UIShortcutConfigurationModel::load(const UIShortcutConfigurationList &list)
             || (m_enmType == UIType_RuntimeUI && item.key().startsWith(GUI_Input_SelectorShortcuts)))
             continue;
         /* Add suitable item to the model as a new shortcut: */
-        m_shortcuts << UIShortcutTableViewRow(m_pTable, item);
+        m_shortcuts << UIShortcutTableViewRow(view(), item);
     }
     /* Apply filter: */
     applyFilter();
@@ -645,6 +640,15 @@ void UIShortcutConfigurationModel::sort(int iColumn, Qt::SortOrder order /* = Qt
     emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
 }
 
+QITableView *UIShortcutConfigurationModel::view() const
+{
+    switch (m_enmType)
+    {
+        case UIType_ManagerUI: return m_pShortcutConfigurationEditor->viewManager();
+        case UIType_RuntimeUI: return m_pShortcutConfigurationEditor->viewRuntime();
+    }
+}
+
 void UIShortcutConfigurationModel::applyFilter()
 {
     /* Erase items first if necessary: */
@@ -792,6 +796,16 @@ UIShortcutConfigurationEditor::UIShortcutConfigurationEditor(QWidget *pParent /*
     prepare();
 }
 
+QITableView *UIShortcutConfigurationEditor::viewManager()
+{
+    return m_pTableManager;
+}
+
+QITableView *UIShortcutConfigurationEditor::viewRuntime()
+{
+    return m_pTableRuntime;
+}
+
 void UIShortcutConfigurationEditor::load(const UIShortcutConfigurationList &value)
 {
     m_pModelManager->load(value);
@@ -894,10 +908,7 @@ void UIShortcutConfigurationEditor::prepareTabManager()
             /* Prepare Manager UI table: */
             m_pTableManager = new UIShortcutConfigurationView(pTabManager, m_pModelManager, "m_pTableManager");
             if (m_pTableManager)
-            {
-                m_pModelManager->setTable(m_pTableManager);
                 pLayoutManager->addWidget(m_pTableManager);
-            }
         }
 
         m_pTabWidget->insertTab(TableIndex_Manager, pTabManager, QString());
@@ -931,10 +942,7 @@ void UIShortcutConfigurationEditor::prepareTabRuntime()
             /* Create Runtime UI table: */
             m_pTableRuntime = new UIShortcutConfigurationView(pTabMachine, m_pModelRuntime, "m_pTableRuntime");
             if (m_pTableRuntime)
-            {
-                m_pModelRuntime->setTable(m_pTableRuntime);
                 pLayoutMachine->addWidget(m_pTableRuntime);
-            }
         }
 
         m_pTabWidget->insertTab(TableIndex_Runtime, pTabMachine, QString());
