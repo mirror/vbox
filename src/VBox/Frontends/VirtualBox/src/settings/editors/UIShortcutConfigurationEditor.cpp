@@ -653,6 +653,7 @@ QITableView *UIShortcutConfigurationModel::view() const
     {
         case UIType_ManagerUI: return m_pShortcutConfigurationEditor->viewManager();
         case UIType_RuntimeUI: return m_pShortcutConfigurationEditor->viewRuntime();
+        default: return 0;
     }
 }
 
