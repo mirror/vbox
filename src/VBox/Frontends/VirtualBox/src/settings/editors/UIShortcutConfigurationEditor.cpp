@@ -246,7 +246,7 @@ public:
     UIShortcutConfigurationModel(QObject *pParent, UIType enmType);
 
     /** Defines the parent @a pTable reference. */
-    void setTable(UIShortcutConfigurationTable *pTable);
+    void setTable(UIShortcutConfigurationView *pTable);
 
     /** Loads a @a list of shortcuts to the model. */
     void load(const UIShortcutConfigurationList &list);
@@ -289,7 +289,7 @@ private:
     UIType  m_enmType;
 
     /** Holds the parent table reference. */
-    UIShortcutConfigurationTable *m_pTable;
+    UIShortcutConfigurationView *m_pTable;
 
     /** Holds current filter. */
     QString  m_strFilter;
@@ -305,7 +305,7 @@ private:
 
 
 /** QITableView subclass representing shortcut configuration table. */
-class UIShortcutConfigurationTable : public QITableView
+class UIShortcutConfigurationView : public QITableView
 {
     Q_OBJECT;
 
@@ -314,9 +314,9 @@ public:
     /** Constructs table passing @a pParent to the base-class.
       * @param  pModel         Brings the model this table is bound to.
       * @param  strObjectName  Brings the object name this table has, required for fast referencing. */
-    UIShortcutConfigurationTable(QWidget *pParent, UIShortcutConfigurationModel *pModel, const QString &strObjectName);
+    UIShortcutConfigurationView(QWidget *pParent, UIShortcutConfigurationModel *pModel, const QString &strObjectName);
     /** Destructs table. */
-    virtual ~UIShortcutConfigurationTable() RT_OVERRIDE;
+    virtual ~UIShortcutConfigurationView() RT_OVERRIDE;
 
 private slots:
 
@@ -346,7 +346,7 @@ UIShortcutConfigurationModel::UIShortcutConfigurationModel(QObject *pParent, UIT
 {
 }
 
-void UIShortcutConfigurationModel::setTable(UIShortcutConfigurationTable *pTable)
+void UIShortcutConfigurationModel::setTable(UIShortcutConfigurationView *pTable)
 {
     m_pTable = pTable;
 }
@@ -686,12 +686,12 @@ void UIShortcutConfigurationModel::applyFilter()
 
 
 /*********************************************************************************************************************************
-*   Class UIShortcutConfigurationTable implementation.                                                                           *
+*   Class UIShortcutConfigurationView implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIShortcutConfigurationTable::UIShortcutConfigurationTable(QWidget *pParent,
-                                                           UIShortcutConfigurationModel *pModel,
-                                                           const QString &strObjectName)
+UIShortcutConfigurationView::UIShortcutConfigurationView(QWidget *pParent,
+                                                         UIShortcutConfigurationModel *pModel,
+                                                         const QString &strObjectName)
     : QITableView(pParent)
     , m_pItemEditorFactory(0)
 {
@@ -704,13 +704,13 @@ UIShortcutConfigurationTable::UIShortcutConfigurationTable(QWidget *pParent,
     prepare();
 }
 
-UIShortcutConfigurationTable::~UIShortcutConfigurationTable()
+UIShortcutConfigurationView::~UIShortcutConfigurationView()
 {
     /* Cleanup all: */
     cleanup();
 }
 
-void UIShortcutConfigurationTable::sltHandleShortcutsLoaded()
+void UIShortcutConfigurationView::sltHandleShortcutsLoaded()
 {
     /* Resize columns to feat contents: */
     resizeColumnsToContents();
@@ -720,7 +720,7 @@ void UIShortcutConfigurationTable::sltHandleShortcutsLoaded()
     setSortingEnabled(true);
 }
 
-void UIShortcutConfigurationTable::prepare()
+void UIShortcutConfigurationView::prepare()
 {
     /* Configure self: */
     setTabKeyNavigation(false);
@@ -740,7 +740,7 @@ void UIShortcutConfigurationTable::prepare()
     UIShortcutConfigurationModel *pHotKeyTableModel = qobject_cast<UIShortcutConfigurationModel*>(model());
     if (pHotKeyTableModel)
         connect(pHotKeyTableModel, &UIShortcutConfigurationModel::sigShortcutsLoaded,
-                this, &UIShortcutConfigurationTable::sltHandleShortcutsLoaded);
+                this, &UIShortcutConfigurationView::sltHandleShortcutsLoaded);
 
     /* Check if we do have proper item delegate: */
     QIStyledItemDelegate *pStyledItemDelegate = qobject_cast<QIStyledItemDelegate*>(itemDelegate());
@@ -769,7 +769,7 @@ void UIShortcutConfigurationTable::prepare()
     }
 }
 
-void UIShortcutConfigurationTable::cleanup()
+void UIShortcutConfigurationView::cleanup()
 {
     /* Cleanup item editor factory: */
     delete m_pItemEditorFactory;
@@ -892,7 +892,7 @@ void UIShortcutConfigurationEditor::prepareTabManager()
             m_pModelManager = new UIShortcutConfigurationModel(this, UIType_ManagerUI);
 
             /* Prepare Manager UI table: */
-            m_pTableManager = new UIShortcutConfigurationTable(pTabManager, m_pModelManager, "m_pTableManager");
+            m_pTableManager = new UIShortcutConfigurationView(pTabManager, m_pModelManager, "m_pTableManager");
             if (m_pTableManager)
             {
                 m_pModelManager->setTable(m_pTableManager);
@@ -929,7 +929,7 @@ void UIShortcutConfigurationEditor::prepareTabRuntime()
             m_pModelRuntime = new UIShortcutConfigurationModel(this, UIType_RuntimeUI);
 
             /* Create Runtime UI table: */
-            m_pTableRuntime = new UIShortcutConfigurationTable(pTabMachine, m_pModelRuntime, "m_pTableRuntime");
+            m_pTableRuntime = new UIShortcutConfigurationView(pTabMachine, m_pModelRuntime, "m_pTableRuntime");
             if (m_pTableRuntime)
             {
                 m_pModelRuntime->setTable(m_pTableRuntime);

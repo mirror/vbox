@@ -38,7 +38,7 @@
 class QLineEdit;
 class QTabWidget;
 class UIShortcutConfigurationModel;
-class UIShortcutConfigurationTable;
+class UIShortcutConfigurationView;
 
 /** Shortcut search functor template. */
 template <class BaseClass>
@@ -212,11 +212,11 @@ private:
     /** Holds the Manager UI shortcuts filter instance. */
     QLineEdit                    *m_pEditorFilterManager;
     /** Holds the Manager UI shortcuts table instance. */
-    UIShortcutConfigurationTable *m_pTableManager;
+    UIShortcutConfigurationView  *m_pTableManager;
     /** Holds the Runtime UI shortcuts filter instance. */
     QLineEdit                    *m_pEditorFilterRuntime;
     /** Holds the Runtime UI shortcuts table instance. */
-    UIShortcutConfigurationTable *m_pTableRuntime;
+    UIShortcutConfigurationView  *m_pTableRuntime;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIShortcutConfigurationEditor_h */
