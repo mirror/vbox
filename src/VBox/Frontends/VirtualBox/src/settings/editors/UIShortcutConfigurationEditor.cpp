@@ -248,11 +248,6 @@ public:
     /** Defines the parent @a pTable reference. */
     void setTable(UIShortcutConfigurationTable *pTable);
 
-    /** Returns the number of children. */
-    int childCount() const;
-    /** Returns the child item with @a iIndex. */
-    QITableViewRow *childItem(int iIndex);
-
     /** Loads a @a list of shortcuts to the model. */
     void load(const UIShortcutConfigurationList &list);
     /** Saves the model shortcuts to a @a list. */
@@ -323,13 +318,6 @@ public:
     /** Destructs table. */
     virtual ~UIShortcutConfigurationTable() RT_OVERRIDE;
 
-protected:
-
-    /** Returns the number of children. */
-    virtual int childCount() const RT_OVERRIDE;
-    /** Returns the child item with @a iIndex. */
-    virtual QITableViewRow *childItem(int iIndex) const RT_OVERRIDE;
-
 private slots:
 
     /** Handles shortcuts loaded signal. */
@@ -361,20 +349,6 @@ UIShortcutConfigurationModel::UIShortcutConfigurationModel(QObject *pParent, UIT
 void UIShortcutConfigurationModel::setTable(UIShortcutConfigurationTable *pTable)
 {
     m_pTable = pTable;
-}
-
-int UIShortcutConfigurationModel::childCount() const
-{
-    /* Return row count: */
-    return rowCount();
-}
-
-QITableViewRow *UIShortcutConfigurationModel::childItem(int iIndex)
-{
-    /* Make sure index is within the bounds: */
-    AssertReturn(iIndex >= 0 && iIndex < m_filteredShortcuts.size(), 0);
-    /* Return corresponding filtered row: */
-    return &m_filteredShortcuts[iIndex];
 }
 
 void UIShortcutConfigurationModel::load(const UIShortcutConfigurationList &list)
@@ -734,18 +708,6 @@ UIShortcutConfigurationTable::~UIShortcutConfigurationTable()
 {
     /* Cleanup all: */
     cleanup();
-}
-
-int UIShortcutConfigurationTable::childCount() const
-{
-    /* Redirect request to table model: */
-    return qobject_cast<UIShortcutConfigurationModel*>(model())->childCount();
-}
-
-QITableViewRow *UIShortcutConfigurationTable::childItem(int iIndex) const
-{
-    /* Redirect request to table model: */
-    return qobject_cast<UIShortcutConfigurationModel*>(model())->childItem(iIndex);
 }
 
 void UIShortcutConfigurationTable::sltHandleShortcutsLoaded()
