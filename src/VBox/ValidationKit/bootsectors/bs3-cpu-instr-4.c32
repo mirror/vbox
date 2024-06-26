@@ -2266,7 +2266,25 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_subps(uint8_t bMode)
               /*mask     */ X86_MXCSR_OM | X86_MXCSR_PM,
               /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
               /*flags    */ X86_MXCSR_OE | X86_MXCSR_PE, X86_MXCSR_OE | X86_MXCSR_PE },
-    /** @todo Rest of overflow, precision and normals, Denormals; Underflow, Precision;
+          { { /*src2     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_NORMAL_MIN(0), BS3_FP32_NORMAL_MAX(0), BS3_FP32_NORMAL_MIN(1), BS3_FP32_NORMAL_MIN(0) } },
+            { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_NORMAL_MIN(0), BS3_FP32_NORMAL_MAX(1), BS3_FP32_NORMAL_MIN(1), BS3_FP32_NORMAL_MIN(0) } },
+            { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(1), BS3_FP32_ZERO(0),       BS3_FP32_NORMAL_MAX(1), BS3_FP32_ZERO(0),       BS3_FP32_ZERO(0)       } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_ZERO,
+              /*flags    */ 0, X86_MXCSR_OE | X86_MXCSR_PE },
+          { { /*src2     */ { BS3_FP32_NORMAL_MIN(0), BS3_FP32_NORMAL_MIN(1),  BS3_FP32_NORMAL_MIN(1), BS3_FP32_NORMAL_MIN(0), BS3_FP32_NORMAL_MIN(0), BS3_FP32_NORMAL_MIN(1), BS3_FP32_NORMAL_MIN(1), BS3_FP32_NORMAL_MIN(0) } },
+            { /*src1     */ { BS3_FP32_NORMAL_MIN(0), BS3_FP32_NORMAL_MAX(1),  BS3_FP32_NORMAL_MIN(1), BS3_FP32_NORMAL_MIN(0), BS3_FP32_NORMAL_MIN(0), BS3_FP32_NORMAL_MIN(1), BS3_FP32_NORMAL_MIN(1), BS3_FP32_NORMAL_MIN(0) } },
+            { /* =>      */ { BS3_FP32_ZERO(0),       BS3_FP32_ZERO(0),        BS3_FP32_ZERO(0),       BS3_FP32_ZERO(0),       BS3_FP32_ZERO(0),       BS3_FP32_ZERO(0),       BS3_FP32_ZERO(0),       BS3_FP32_ZERO(0)       } },
+              /*mask     */ ~(X86_MXCSR_OM | X86_MXCSR_PM),
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_ZERO,
+              /*flags    */ X86_MXCSR_PE, X86_MXCSR_PE },
+          { { /*src2     */ { BS3_FP32_NORMAL_SAFE_INT_MIN(0), BS3_FP32_NORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_NORMAL_SAFE_INT_MAX(1), BS3_FP32_NORMAL_SAFE_INT_MIN(0), BS3_FP32_NORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_NORMAL_SAFE_INT_MAX(1) } },
+            { /*src1     */ { BS3_FP32_NORMAL_SAFE_INT_MAX(0), BS3_FP32_NORMAL_MAX(1), BS3_FP32_ZERO(0), BS3_FP32_NORMAL_SAFE_INT_MAX(1), BS3_FP32_NORMAL_SAFE_INT_MAX(0), BS3_FP32_NORMAL_MAX(1), BS3_FP32_ZERO(0), BS3_FP32_NORMAL_SAFE_INT_MAX(1) } },
+            { /* =>      */ { BS3_FP32_ZERO(0),                BS3_FP32_ZERO(0),       BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),                BS3_FP32_ZERO(0),                BS3_FP32_ZERO(0),       BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)                } },
+              /*mask     */ ~X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_ZERO,
+              /*flags    */ X86_MXCSR_OE |  X86_MXCSR_PE, X86_MXCSR_OE | X86_MXCSR_PE },
+    /** @todo Normals, Denormals; Underflow, Precision;
      *        Rounding, FZ etc. */
     };
 
