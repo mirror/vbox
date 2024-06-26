@@ -1026,13 +1026,6 @@ bool UIPortForwardingTable::eventFilter(QObject *pObject, QEvent *pEvent)
                 sltAdjustTable();
                 break;
             }
-            case QEvent::FocusIn:
-            case QEvent::FocusOut:
-            {
-                /* Update actions: */
-                sltUpdateActions();
-                break;
-            }
             default:
                 break;
         }
@@ -1094,28 +1087,21 @@ void UIPortForwardingTable::sltTableDataChanged()
 
 void UIPortForwardingTable::sltUpdateActions()
 {
-    bool fTableFocused = m_pTableView->hasFocus();
-    bool fTableChildFocused = m_pTableView->findChildren<QWidget*>().contains(QApplication::focusWidget());
-    bool fTableOrChildFocused = fTableFocused || fTableChildFocused;
-    m_pActionCopy->setEnabled(m_pTableView->currentIndex().isValid() && fTableOrChildFocused);
-    m_pActionRemove->setEnabled(m_pTableView->currentIndex().isValid() && fTableOrChildFocused);
+    m_pActionCopy->setEnabled(m_pTableView->currentIndex().isValid());
+    m_pActionRemove->setEnabled(m_pTableView->currentIndex().isValid());
 }
 
 void UIPortForwardingTable::sltShowTableContexMenu(const QPoint &pos)
 {
-    /* Prepare context menu: */
+    /* Prepare and execute context menu: */
     QMenu menu(m_pTableView);
-    /* If some index is currently selected: */
     if (m_pTableView->indexAt(pos).isValid())
     {
         menu.addAction(m_pActionCopy);
         menu.addAction(m_pActionRemove);
     }
-    /* If no valid index selected: */
     else
-    {
         menu.addAction(m_pActionAdd);
-    }
     menu.exec(m_pTableView->viewport()->mapToGlobal(pos));
 }
 
