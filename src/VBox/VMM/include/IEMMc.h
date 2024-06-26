@@ -2658,7 +2658,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * Helper macro for check that all important IEM_CIMPL_F_XXX bits are set.
  */
 #ifdef VBOX_STRICT
-#define IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, a_CallExpr) \
+# define IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, a_CallExpr) \
     do { \
         uint8_t      const cbInstr     = IEM_GET_INSTR_LEN(pVCpu); /* may be flushed */ \
         uint16_t     const uCsBefore   = pVCpu->cpum.GstCtx.cs.Sel; \
@@ -2668,14 +2668,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
         VBOXSTRICTRC const rcStrictHlp = a_CallExpr; \
         if (rcStrictHlp == VINF_SUCCESS) \
         { \
+            uint64_t const fRipMask = (pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_64BIT ? UINT64_MAX : UINT32_MAX; \
             AssertMsg(   ((a_fFlags) & IEM_CIMPL_F_BRANCH_ANY) \
-                      || (   uRipBefore + cbInstr == pVCpu->cpum.GstCtx.rip \
-                          && uCsBefore            == pVCpu->cpum.GstCtx.cs.Sel) \
+                      || (   ((uRipBefore + cbInstr) & fRipMask) == pVCpu->cpum.GstCtx.rip \
+                          && uCsBefore  == pVCpu->cpum.GstCtx.cs.Sel) \
                       || (   ((a_fFlags) & IEM_CIMPL_F_REP) \
                           && uRipBefore == pVCpu->cpum.GstCtx.rip \
                           && uCsBefore  == pVCpu->cpum.GstCtx.cs.Sel), \
                       ("CS:RIP=%04x:%08RX64 + %x -> %04x:%08RX64, expected %04x:%08RX64\n", uCsBefore, uRipBefore, cbInstr, \
-                       pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uCsBefore, uRipBefore + cbInstr)); \
+                       pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uCsBefore, (uRipBefore + cbInstr) & fRipMask)); \
             if ((a_fFlags) & IEM_CIMPL_F_RFLAGS) \
             { /* No need to check fEflBefore */ Assert(!((a_fFlags) & IEM_CIMPL_F_STATUS_FLAGS)); } \
             else if ((a_fFlags) & IEM_CIMPL_F_STATUS_FLAGS) \

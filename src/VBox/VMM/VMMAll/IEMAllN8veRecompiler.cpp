@@ -181,12 +181,16 @@ IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMCPUCC pV
                 fAssertFlags |= IEMTB_F_INHIBIT_SHADOW;
             if (pVCpu->cpum.GstCtx.rflags.uBoth & CPUMCTX_INHIBIT_NMI)
                 fAssertFlags |= IEMTB_F_INHIBIT_NMI;
+#  if 1 /** @todo breaks on IP/EIP/RIP wraparound tests in bs3-cpu-weird-1. */
+            Assert(IEM_F_MODE_X86_IS_FLAT(fFlags));
+#  else
             if (!IEM_F_MODE_X86_IS_FLAT(fFlags))
             {
                 int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip;
                 if (offFromLim < X86_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK))
                     fAssertFlags |= IEMTB_F_CS_LIM_CHECKS;
             }
+#  endif
             Assert(!(fFlags & ~(IEMTB_F_KEY_MASK | IEMTB_F_TYPE_MASK)));
             AssertMsg(fFlags == fAssertFlags, ("fFlags=%#RX32 fAssertFlags=%#RX32 cs:rip=%04x:%#010RX64\n",
                                                fFlags, fAssertFlags, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
