@@ -110,9 +110,10 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -183,9 +184,10 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -260,9 +262,10 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -333,9 +336,10 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -408,9 +412,10 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -467,9 +472,10 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pb
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -528,9 +534,10 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,AtJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -587,9 +594,10 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,AtJmp)(PVMCPUCC pVCpu, uint8_t *pb
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -646,9 +654,10 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -703,9 +712,10 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pb
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -761,9 +771,10 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -817,9 +828,10 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pb
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -887,9 +899,10 @@ RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrM
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -950,9 +963,10 @@ RT_CONCAT3(iemMemStoreStack,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, RTGCPTR GC
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1013,9 +1027,10 @@ RT_CONCAT3(iemMemFlatStoreStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GC
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1072,9 +1087,10 @@ RT_CONCAT3(iemMemFlatStoreStack,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, RTGCPT
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1131,9 +1147,10 @@ RT_CONCAT3(iemMemFetchStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrM
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1185,9 +1202,10 @@ RT_CONCAT3(iemMemFlatFetchStack,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GC
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1243,9 +1261,10 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE u
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1306,9 +1325,10 @@ RT_CONCAT3(iemMemStackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iGRe
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1383,9 +1403,10 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TY
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrEff);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1465,9 +1486,10 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, (RTGCPTR)uNewEsp); /* Doesn't work w/o casting to RTGCPTR (win /3 hangs). */
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV((RTGCPTR)uNewEsp); /* Doesn't work w/o casting to RTGCPTR (win /3 hangs). */
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1524,9 +1546,10 @@ RT_CONCAT3(iemMemFlat32StackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, (RTGCPTR)uOldEsp); /* Cast is required! 2023-08-11 */
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV((RTGCPTR)uOldEsp); /* Cast is required! 2023-08-11 */
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1598,9 +1621,10 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, (RTGCPTR)uNewEsp); /* Doesn't work w/o casting to RTGCPTR (win /3 hangs). */
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV((RTGCPTR)uNewEsp); /* Doesn't work w/o casting to RTGCPTR (win /3 hangs). */
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1676,9 +1700,10 @@ RT_CONCAT3(iemMemFlat64StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, uNewRsp);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(uNewRsp);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.
@@ -1735,9 +1760,10 @@ RT_CONCAT3(iemMemFlat64StackPopGReg,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_
         /*
          * TLB lookup.
          */
-        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, uOldRsp);
-        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-        if (RT_LIKELY(pTlbe->uTag == uTag))
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(uOldRsp);
+        PCIEMTLBENTRY  pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+        if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                      || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
         {
             /*
              * Check TLB page table level access flags.

@@ -605,6 +605,47 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, uint32_t fE
 }
 
 
+#if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
+/**
+ * Worker for iemTlbInvalidateAll.
+ */
+template<bool a_fGlobal>
+DECL_FORCE_INLINE(void) iemTlbInvalidateOne(IEMTLB *pTlb)
+{
+    if (!a_fGlobal)
+        pTlb->cTlsFlushes++;
+    else
+        pTlb->cTlsGlobalFlushes++;
+
+    pTlb->uTlbRevision += IEMTLB_REVISION_INCR;
+    if (RT_LIKELY(pTlb->uTlbRevision != 0))
+    { /* very likely */ }
+    else
+    {
+        pTlb->uTlbRevision = IEMTLB_REVISION_INCR;
+        pTlb->cTlbRevisionRollovers++;
+        unsigned i = RT_ELEMENTS(pTlb->aEntries) / 2;
+        while (i-- > 0)
+            pTlb->aEntries[i * 2].uTag = 0;
+    }
+    if (a_fGlobal)
+    {
+        pTlb->uTlbRevisionGlobal += IEMTLB_REVISION_INCR;
+        if (RT_LIKELY(pTlb->uTlbRevisionGlobal != 0))
+        { /* very likely */ }
+        else
+        {
+            pTlb->uTlbRevisionGlobal = IEMTLB_REVISION_INCR;
+            pTlb->cTlbRevisionRollovers++;
+            unsigned i = RT_ELEMENTS(pTlb->aEntries) / 2;
+            while (i-- > 0)
+                pTlb->aEntries[i * 2 + 1].uTag = 0;
+        }
+    }
+}
+#endif
+
+
 /**
  * Worker for IEMTlbInvalidateAll and IEMTlbInvalidateAllGlobal.
  */
@@ -613,41 +654,14 @@ DECL_FORCE_INLINE(void) iemTlbInvalidateAll(PVMCPUCC pVCpu)
 {
 #if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
     Log10(("IEMTlbInvalidateAll\n"));
+
 # ifdef IEM_WITH_CODE_TLB
     pVCpu->iem.s.cbInstrBufTotal = 0;
-    if (!a_fGlobal)
-        pVCpu->iem.s.CodeTlb.cTlsFlushes++;
-    else
-        pVCpu->iem.s.CodeTlb.cTlsGlobalFlushes++;
-    pVCpu->iem.s.CodeTlb.uTlbRevision += IEMTLB_REVISION_INCR;
-    if (RT_LIKELY(pVCpu->iem.s.CodeTlb.uTlbRevision != 0))
-    { /* very likely */ }
-    else
-    {
-        pVCpu->iem.s.CodeTlb.uTlbRevision = IEMTLB_REVISION_INCR;
-        pVCpu->iem.s.CodeTlb.cTlbRevisionRollovers++;
-        unsigned i = RT_ELEMENTS(pVCpu->iem.s.CodeTlb.aEntries);
-        while (i-- > 0)
-            pVCpu->iem.s.CodeTlb.aEntries[i].uTag = 0;
-    }
+    iemTlbInvalidateOne<a_fGlobal>(&pVCpu->iem.s.CodeTlb);
 # endif
 
 # ifdef IEM_WITH_DATA_TLB
-    if (!a_fGlobal)
-        pVCpu->iem.s.DataTlb.cTlsFlushes++;
-    else
-        pVCpu->iem.s.DataTlb.cTlsGlobalFlushes++;
-    pVCpu->iem.s.DataTlb.uTlbRevision += IEMTLB_REVISION_INCR;
-    if (pVCpu->iem.s.DataTlb.uTlbRevision != 0)
-    { /* very likely */ }
-    else
-    {
-        pVCpu->iem.s.DataTlb.uTlbRevision = IEMTLB_REVISION_INCR;
-        pVCpu->iem.s.DataTlb.cTlbRevisionRollovers++;
-        unsigned i = RT_ELEMENTS(pVCpu->iem.s.DataTlb.aEntries);
-        while (i-- > 0)
-            pVCpu->iem.s.DataTlb.aEntries[i].uTag = 0;
-    }
+    iemTlbInvalidateOne<a_fGlobal>(&pVCpu->iem.s.DataTlb);
 # endif
 #else
     RT_NOREF(pVCpu);
@@ -697,20 +711,28 @@ VMM_INT_DECL(void) IEMTlbInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtr)
     Log10(("IEMTlbInvalidatePage: GCPtr=%RGv\n", GCPtr));
     GCPtr = IEMTLB_CALC_TAG_NO_REV(GCPtr);
     Assert(!(GCPtr >> (48 - X86_PAGE_SHIFT)));
-    uintptr_t const idx = IEMTLB_TAG_TO_INDEX(GCPtr);
+    uintptr_t const idxEven = IEMTLB_TAG_TO_EVEN_INDEX(GCPtr);
 
 # ifdef IEM_WITH_CODE_TLB
-    if (pVCpu->iem.s.CodeTlb.aEntries[idx].uTag == (GCPtr | pVCpu->iem.s.CodeTlb.uTlbRevision))
+    if (pVCpu->iem.s.CodeTlb.aEntries[idxEven].uTag == (GCPtr | pVCpu->iem.s.CodeTlb.uTlbRevision))
     {
-        pVCpu->iem.s.CodeTlb.aEntries[idx].uTag = 0;
+        pVCpu->iem.s.CodeTlb.aEntries[idxEven].uTag = 0;
+        if (GCPtr == IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc))
+            pVCpu->iem.s.cbInstrBufTotal = 0;
+    }
+    if (pVCpu->iem.s.CodeTlb.aEntries[idxEven + 1].uTag == (GCPtr | pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal))
+    {
+        pVCpu->iem.s.CodeTlb.aEntries[idxEven + 1].uTag = 0;
         if (GCPtr == IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc))
             pVCpu->iem.s.cbInstrBufTotal = 0;
     }
 # endif
 
 # ifdef IEM_WITH_DATA_TLB
-    if (pVCpu->iem.s.DataTlb.aEntries[idx].uTag == (GCPtr | pVCpu->iem.s.DataTlb.uTlbRevision))
-        pVCpu->iem.s.DataTlb.aEntries[idx].uTag = 0;
+    if (pVCpu->iem.s.DataTlb.aEntries[idxEven].uTag == (GCPtr | pVCpu->iem.s.DataTlb.uTlbRevision))
+        pVCpu->iem.s.DataTlb.aEntries[idxEven].uTag = 0;
+    if (pVCpu->iem.s.DataTlb.aEntries[idxEven + 1].uTag == (GCPtr | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal))
+        pVCpu->iem.s.DataTlb.aEntries[idxEven + 1].uTag = 0;
 # endif
 #else
     NOREF(pVCpu); NOREF(GCPtr);
@@ -973,9 +995,10 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
         /*
          * Get the TLB entry for this piece of code.
          */
-        uint64_t const     uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.CodeTlb, GCPtrFirst);
-        PIEMTLBENTRY const pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.CodeTlb, uTag);
-        if (pTlbe->uTag == uTag)
+        uint64_t const uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrFirst);
+        PIEMTLBENTRY   pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.CodeTlb, uTagNoRev);
+        if (   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.CodeTlb.uTlbRevision)
+            || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal))
         {
             /* likely when executing lots of code, otherwise unlikely */
 # ifdef IEM_WITH_TLB_STATISTICS
@@ -1037,7 +1060,17 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             }
 
             AssertCompile(IEMTLBE_F_PT_NO_EXEC == 1);
-            pTlbe->uTag             = uTag;
+            if (   !(WalkFast.fEffective & PGM_PTATTRS_G_MASK)
+                || IEM_GET_CPL(pVCpu) != 0) /* optimization: Only use the PTE.G=1 entries in ring-0. */
+            {
+                pTlbe--;
+                pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.CodeTlb.uTlbRevision;
+            }
+            else
+            {
+                pVCpu->iem.s.CodeTlb.cTlbCoreGlobalLoads++;
+                pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal;
+            }
             pTlbe->fFlagsAndPhysRev = (~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A))
                                     | (WalkFast.fEffective >> X86_PTE_PAE_BIT_NX) /*IEMTLBE_F_PT_NO_EXEC*/;
             RTGCPHYS const GCPhysPg = WalkFast.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
@@ -6380,11 +6413,14 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
      * We reload the TLB entry if we need to set the dirty bit (accessed
      * should in theory always be set).
      */
-    uint8_t           *pbMem = NULL;
-    uint64_t const     uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-    PIEMTLBENTRY const pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-    if (   pTlbe->uTag == uTag
-        && !(pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PT_NO_ACCESSED | (fAccess & IEM_ACCESS_TYPE_WRITE ? IEMTLBE_F_PT_NO_DIRTY : 0))) )
+    uint8_t           *pbMem     = NULL;
+    uint64_t const     uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+    PIEMTLBENTRY       pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+    uint64_t const     fTlbeAD   = IEMTLBE_F_PT_NO_ACCESSED | (fAccess & IEM_ACCESS_TYPE_WRITE ? IEMTLBE_F_PT_NO_DIRTY : 0);
+    if (   (   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+            && !(pTlbe->fFlagsAndPhysRev & fTlbeAD) )
+        || (   (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)
+            && !(pTlbe->fFlagsAndPhysRev & fTlbeAD) ) )
     {
 # ifdef IEM_WITH_TLB_STATISTICS
         pVCpu->iem.s.DataTlb.cTlbCoreHits++;
@@ -6467,7 +6503,17 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
             return iemRaisePageFault(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess, rc);
         }
 
-        pTlbe->uTag             = uTag;
+        if (   !(WalkFast.fEffective & PGM_PTATTRS_G_MASK)
+            || IEM_GET_CPL(pVCpu) != 0) /* optimization: Only use the PTE.G=1 entries in ring-0. */
+        {
+            pTlbe--;
+            pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision;
+        }
+        else
+        {
+            pVCpu->iem.s.DataTlb.cTlbCoreGlobalLoads++;
+            pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal;
+        }
         pTlbe->fFlagsAndPhysRev = ~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A); /* skipping NX */
         RTGCPHYS const GCPhysPg = WalkFast.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
         pTlbe->GCPhys           = GCPhysPg;
@@ -6784,11 +6830,13 @@ static void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, ui
                                              ? IEMTLBE_F_PT_NO_WRITE : 0)
                                         : 0;
     uint64_t const     fNoRead          = fAccess & IEM_ACCESS_TYPE_READ ? IEMTLBE_F_PG_NO_READ : 0;
-
-    uint64_t const     uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
-    PIEMTLBENTRY const pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-    if (   pTlbe->uTag == uTag
-        && !(pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PT_NO_ACCESSED | (fNoWriteNoDirty & IEMTLBE_F_PT_NO_DIRTY))) )
+    uint64_t const     uTagNoRev        = IEMTLB_CALC_TAG_NO_REV(GCPtrMem);
+    PIEMTLBENTRY       pTlbe            = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+    uint64_t const     fTlbeAD          = IEMTLBE_F_PT_NO_ACCESSED | (fNoWriteNoDirty & IEMTLBE_F_PT_NO_DIRTY);
+    if (   (   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+            && !(pTlbe->fFlagsAndPhysRev & fTlbeAD) )
+        || (   (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)
+            && !(pTlbe->fFlagsAndPhysRev & fTlbeAD) ) )
     {
 # ifdef IEM_WITH_TLB_STATISTICS
         if (a_fSafeCall)
@@ -6830,7 +6878,20 @@ static void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, ui
             iemRaisePageFaultJmp(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess, rc);
         }
 
-        pTlbe->uTag             = uTag;
+        if (   !(WalkFast.fEffective & PGM_PTATTRS_G_MASK)
+            || IEM_GET_CPL(pVCpu) != 0) /* optimization: Only use the PTE.G=1 entries in ring-0. */
+        {
+            pTlbe--;
+            pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision;
+        }
+        else
+        {
+            if (a_fSafeCall)
+                pVCpu->iem.s.DataTlb.cTlbSafeGlobalLoads++;
+            else
+                pVCpu->iem.s.DataTlb.cTlbCoreGlobalLoads++;
+            pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal;
+        }
         pTlbe->fFlagsAndPhysRev = ~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A); /* skipping NX */
         RTGCPHYS const GCPhysPg = WalkFast.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
         pTlbe->GCPhys           = GCPhysPg;

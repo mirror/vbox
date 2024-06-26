@@ -8532,9 +8532,10 @@ DECLASM(void) iemNativeHlpCheckTlbLookup(PVMCPU pVCpu, uintptr_t uResult, uint64
 
     /* Do the lookup manually. */
     RTGCPTR const      GCPtrFlat = iSegReg == UINT8_MAX ? GCPtr : GCPtr + pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base;
-    uint64_t const     uTag      = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrFlat);
-    PIEMTLBENTRY const pTlbe     = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
-    if (RT_LIKELY(pTlbe->uTag == uTag))
+    uint64_t const     uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrFlat);
+    PCIEMTLBENTRY      pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
+    if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)
+                  || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)))
     {
         /*
          * Check TLB page table level access flags.

@@ -200,8 +200,11 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         AssertCompile(sizeof(pVCpu->iem.s) <= sizeof(pVCpu->iem.padding)); /* (tstVMStruct can't do it's job w/o instruction stats) */
 
-        pVCpu->iem.s.CodeTlb.uTlbRevision = pVCpu->iem.s.DataTlb.uTlbRevision = uInitialTlbRevision;
-        pVCpu->iem.s.CodeTlb.uTlbPhysRev  = pVCpu->iem.s.DataTlb.uTlbPhysRev  = uInitialTlbPhysRev;
+        pVCpu->iem.s.CodeTlb.uTlbRevision       = pVCpu->iem.s.DataTlb.uTlbRevision       = uInitialTlbRevision;
+#ifndef VBOX_VMM_TARGET_ARMV8
+        pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal = pVCpu->iem.s.DataTlb.uTlbRevisionGlobal = uInitialTlbRevision;
+#endif
+        pVCpu->iem.s.CodeTlb.uTlbPhysRev        = pVCpu->iem.s.DataTlb.uTlbPhysRev        = uInitialTlbPhysRev;
 
         /*
          * Host and guest CPU information.
@@ -322,7 +325,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
         /* Code TLB: */
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Code TLB revision",                            "/IEM/CPU%u/Tlb/Code/Revision", idCpu);
+                        "Code TLB non-global revision",                 "/IEM/CPU%u/Tlb/Code/RevisionNonGlobal", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal,  STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB global revision",                     "/IEM/CPU%u/Tlb/Code/RevisionGlobal", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlsFlushes,         STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Code TLB non-global flushes",                  "/IEM/CPU%u/Tlb/Code/RevisionNonGlobalFlushes", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlsGlobalFlushes,   STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
@@ -339,6 +344,8 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbCoreMisses,      STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Code TLB misses",                              "/IEM/CPU%u/Tlb/Code/Misses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbCoreGlobalLoads, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB global loads",                        "/IEM/CPU%u/Tlb/Code/Misses/GlobalLoads", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbSlowCodeReadPath, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Code TLB slow read path",                      "/IEM/CPU%u/Tlb/Code/SlowReads", idCpu);
 # ifdef IEM_WITH_TLB_STATISTICS
@@ -392,7 +399,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
         /* Data TLB organized as best we can... */
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Data TLB revision",                            "/IEM/CPU%u/Tlb/Data/Revision", idCpu);
+                        "Data TLB non-global revision",                 "/IEM/CPU%u/Tlb/Data/RevisionNonGlobal", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.uTlbRevisionGlobal,  STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB global revision",                     "/IEM/CPU%u/Tlb/Data/RevisionGlobal", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlsFlushes,         STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Data TLB non-global flushes",                  "/IEM/CPU%u/Tlb/Data/RevisionNonGlobalFlushes", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlsGlobalFlushes,   STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
@@ -410,6 +419,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbCoreMisses,      STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB core misses (iemMemMap, direct iemMemMapJmp (not safe path))",
                         "/IEM/CPU%u/Tlb/Data/Misses/Core", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbCoreGlobalLoads, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB global loads",
+                        "/IEM/CPU%u/Tlb/Data/Misses/Core/GlobalLoads", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbSafeReadPath,    STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB safe read path (inline/native misses going to iemMemMapJmp)",
                         "/IEM/CPU%u/Tlb/Data/Misses/Safe/Reads", idCpu);
@@ -429,6 +441,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbSafeMisses,      STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB misses in iemMemMapJmp - not part of safe-path total",
                         "/IEM/CPU%u/Tlb/Data/Misses/Safe/SubPartMisses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbSafeGlobalLoads, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB global loads",
+                        "/IEM/CPU%u/Tlb/Data/Misses/Safe/SubPartMisses/GlobalLoads", idCpu);
 
 # ifdef IEM_WITH_TLB_STATISTICS
 #  ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER

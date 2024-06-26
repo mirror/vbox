@@ -494,6 +494,8 @@ typedef struct IEMTLBENTRY
 AssertCompileSize(IEMTLBENTRY, 32);
 /** Pointer to an IEM TLB entry. */
 typedef IEMTLBENTRY *PIEMTLBENTRY;
+/** Pointer to a const IEM TLB entry. */
+typedef IEMTLBENTRY const *PCIEMTLBENTRY;
 
 /** @name IEMTLBE_F_XXX - TLB entry flags (IEMTLBENTRY::fFlagsAndPhysRev)
  * @{  */
@@ -537,7 +539,7 @@ AssertCompile(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) == IEMTLB_ENTRY_COUN
  */
 typedef struct IEMTLB
 {
-    /** The TLB revision.
+    /** The non-global TLB revision.
      * This is actually only 28 bits wide (see IEMTLBENTRY::uTag) and is incremented
      * by adding RT_BIT_64(36) to it.  When it wraps around and becomes zero, all
      * the tags in the TLB must be zeroed and the revision set to RT_BIT_64(36).
@@ -552,8 +554,14 @@ typedef struct IEMTLB
      * a rendezvous is called and each CPU wipe the IEMTLBENTRY::pMappingR3 as well
      * as IEMTLBENTRY::fFlagsAndPhysRev bits 63 thru 8, 4, and 3.
      *
-     * The initial value is choosen to cause an early wraparound. */
+     * The initial value is choosen to cause an early wraparound.
+     *
+     * @note This is placed between the two TLB revisions because we
+     *       load it in pair with one or the other on arm64. */
     uint64_t volatile   uTlbPhysRev;
+    /** The global TLB revision.
+     * Same as uTlbRevision, but only increased for global flushes. */
+    uint64_t            uTlbRevisionGlobal;
 
     /* Statistics: */
 
@@ -573,8 +581,12 @@ typedef struct IEMTLB
      *       for the data TLB this more like 'other misses', while for the code
      *       TLB is all misses. */
     uint64_t            cTlbCoreMisses;
+    /** Subset of cTlbCoreMisses that results in PTE.G=1 loads (odd entries). */
+    uint64_t            cTlbCoreGlobalLoads;
     /** Safe read/write TLB misses in iemMemMapJmp (so data only). */
     uint64_t            cTlbSafeMisses;
+    /** Subset of cTlbSafeMisses that results in PTE.G=1 loads (odd entries). */
+    uint64_t            cTlbSafeGlobalLoads;
     /** Safe read path taken (data only).  */
     uint64_t            cTlbSafeReadPath;
     /** Safe write path taken (data only).  */
@@ -610,8 +622,12 @@ typedef struct IEMTLB
     /** Physical revision rollovers. */
     uint32_t            cTlbPhysRevRollovers;
 
-    /** The TLB entries. */
-    IEMTLBENTRY         aEntries[IEMTLB_ENTRY_COUNT];
+    uint32_t            au32Padding[10];
+
+    /** The TLB entries.
+     * Even entries are for PTE.G=0 and uses uTlbRevision.
+     * Odd  entries are for PTE.G=1 and uses uTlbRevisionGlobal. */
+    IEMTLBENTRY         aEntries[IEMTLB_ENTRY_COUNT * 2];
 } IEMTLB;
 AssertCompileSizeAlignment(IEMTLB, 64);
 /** IEMTLB::uTlbRevision increment.  */
@@ -622,15 +638,6 @@ AssertCompileSizeAlignment(IEMTLB, 64);
  * @sa IEMTLBE_F_PHYS_REV */
 #define IEMTLB_PHYS_REV_INCR    RT_BIT_64(10)
 /**
- * Calculates the TLB tag for a virtual address.
- * @returns Tag value for indexing and comparing with IEMTLB::uTag.
- * @param   a_pTlb      The TLB.
- * @param   a_GCPtr     The virtual address.  Must be RTGCPTR or same size or
- *                      the clearing of the top 16 bits won't work (if 32-bit
- *                      we'll end up with mostly zeros).
- */
-#define IEMTLB_CALC_TAG(a_pTlb, a_GCPtr)    ( IEMTLB_CALC_TAG_NO_REV(a_GCPtr) | (a_pTlb)->uTlbRevision )
-/**
  * Calculates the TLB tag for a virtual address but without TLB revision.
  * @returns Tag value for indexing and comparing with IEMTLB::uTag.
  * @param   a_GCPtr     The virtual address.  Must be RTGCPTR or same size or
@@ -639,23 +646,24 @@ AssertCompileSizeAlignment(IEMTLB, 64);
  */
 #define IEMTLB_CALC_TAG_NO_REV(a_GCPtr)     ( (((a_GCPtr) << 16) >> (GUEST_PAGE_SHIFT + 16)) )
 /**
- * Converts a TLB tag value into a TLB index.
+ * Converts a TLB tag value into a even TLB index.
  * @returns Index into IEMTLB::aEntries.
  * @param   a_uTag      Value returned by IEMTLB_CALC_TAG.
  */
 #if IEMTLB_ENTRY_COUNT == 256
-# define IEMTLB_TAG_TO_INDEX(a_uTag)        ( (uint8_t)(a_uTag) )
+# define IEMTLB_TAG_TO_EVEN_INDEX(a_uTag)   ( (uint8_t)(a_uTag) * 2U )
 #else
-# define IEMTLB_TAG_TO_INDEX(a_uTag)        ( (a_uTag) & (IEMTLB_ENTRY_COUNT - 1U) )
+# define IEMTLB_TAG_TO_EVEN_INDEX(a_uTag)   ( ((a_uTag) & (IEMTLB_ENTRY_COUNT - 1U)) * 2U )
 AssertCompile(RT_IS_POWER_OF_TWO(IEMTLB_ENTRY_COUNT));
 #endif
 /**
- * Converts a TLB tag value into a TLB index.
- * @returns Index into IEMTLB::aEntries.
+ * Converts a TLB tag value into an even TLB index.
+ * @returns Pointer into IEMTLB::aEntries corresponding to .
  * @param   a_pTlb      The TLB.
- * @param   a_uTag      Value returned by IEMTLB_CALC_TAG.
+ * @param   a_uTag      Value returned by IEMTLB_CALC_TAG or
+ *                      IEMTLB_CALC_TAG_NO_REV.
  */
-#define IEMTLB_TAG_TO_ENTRY(a_pTlb, a_uTag) ( &(a_pTlb)->aEntries[IEMTLB_TAG_TO_INDEX(a_uTag)] )
+#define IEMTLB_TAG_TO_EVEN_ENTRY(a_pTlb, a_uTag)    ( &(a_pTlb)->aEntries[IEMTLB_TAG_TO_EVEN_INDEX(a_uTag)] )
 
 
 /** @name IEM_MC_F_XXX - MC block flags/clues.
