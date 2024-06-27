@@ -39,6 +39,7 @@ class QLineEdit;
 class QTabWidget;
 class QITableView;
 class UIShortcutConfigurationModel;
+class UIShortcutConfigurationProxyModel;
 
 /** Shortcut search functor template. */
 template <class BaseClass>
@@ -250,6 +251,11 @@ private:
     UIShortcutConfigurationModel *m_pModelManager;
     /** Holds the Runtime UI shortcut configuration model instance. */
     UIShortcutConfigurationModel *m_pModelRuntime;
+
+    /** Holds the proxy Manager UI shortcut configuration model instance. */
+    UIShortcutConfigurationProxyModel *m_pProxyModelManager;
+    /** Holds the proxy Runtime UI shortcut configuration model instance. */
+    UIShortcutConfigurationProxyModel *m_pProxyModelRuntime;
 
     /** Holds the tab-widget instance. */
     QTabWidget                   *m_pTabWidget;
