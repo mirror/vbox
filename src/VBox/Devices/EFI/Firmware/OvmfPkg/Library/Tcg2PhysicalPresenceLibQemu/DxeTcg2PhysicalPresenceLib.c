@@ -119,7 +119,9 @@ QemuTpmInitPPI (
   )
 {
   EFI_STATUS                       Status;
+#ifndef VBOX
   QEMU_FWCFG_TPM_CONFIG            Config;
+#endif
   EFI_PHYSICAL_ADDRESS             PpiAddress64;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  Descriptor;
   UINTN                            Idx;
