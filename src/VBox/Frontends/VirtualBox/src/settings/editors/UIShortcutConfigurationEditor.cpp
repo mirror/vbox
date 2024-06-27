@@ -216,6 +216,9 @@ public:
     /** Returns whether all shortcuts unique. */
     bool isAllShortcutsUnique();
 
+    /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx index. */
+    virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const RT_OVERRIDE RT_FINAL;
+
     /** Returns the item flags for the given @a index. */
     virtual Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE RT_FINAL;
 
@@ -415,6 +418,17 @@ bool UIShortcutConfigurationModel::isAllShortcutsUnique()
         return false;
     /* True by default: */
     return true;
+}
+
+QModelIndex UIShortcutConfigurationModel::index(int iRow, int iColumn, const QModelIndex &parentIdx /* = QModelIndex() */) const
+{
+    /* No index for unknown items: */
+    if (!hasIndex(iRow, iColumn, parentIdx))
+        return QModelIndex();
+
+    /* Provide index users with packed item pointer: */
+    UIShortcutTableViewRow *pItem = iRow >= 0 && iRow < m_shortcuts.size() ? m_shortcuts.at(iRow) : 0;
+    return pItem ? createIndex(iRow, iColumn, pItem) : QModelIndex();
 }
 
 Qt::ItemFlags UIShortcutConfigurationModel::flags(const QModelIndex &index) const
