@@ -119,7 +119,8 @@ QemuTpmInitPPI (
   )
 {
   EFI_STATUS                       Status;
-#ifndef VBOX
+#if    !defined(VBOX) \
+    || (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64))
   QEMU_FWCFG_TPM_CONFIG            Config;
 #endif
   EFI_PHYSICAL_ADDRESS             PpiAddress64;
