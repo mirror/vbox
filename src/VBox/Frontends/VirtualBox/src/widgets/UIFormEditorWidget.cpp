@@ -529,34 +529,34 @@ public:
     /** Constructs Form Editor model passing @a pParent to the base-class. */
     UIFormEditorModel(UIFormEditorWidget *pParent);
     /** Destructs Port Forwarding model. */
-    virtual ~UIFormEditorModel() RT_OVERRIDE;
+    virtual ~UIFormEditorModel() RT_OVERRIDE RT_FINAL;
 
     /** Clears form. */
     void clearForm();
     /** Defines form @a values. */
     void setFormValues(const CFormValueVector &values);
 
-    /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx. */
-    virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const RT_OVERRIDE;
-
-    /** Returns flags for item with certain @a index. */
-    virtual Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE;
-
-    /** Returns row count of certain @a parent. */
-    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
-    /** Returns column count of certain @a parent. */
-    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
-
-    /** Returns header data for @a iSection, @a enmOrientation and @a iRole specified. */
-    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const RT_OVERRIDE;
-
-    /** Defines the @a iRole data for item with @a index as @a value. */
-    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) RT_OVERRIDE;
-    /** Returns the @a iRole data for item with @a index. */
-    virtual QVariant data(const QModelIndex &index, int iRole) const RT_OVERRIDE;
-
     /** Creates actual TextData editor for specified @a index. */
     void createTextDataEditor(const QModelIndex &index);
+
+    /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx. */
+    virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const RT_OVERRIDE RT_FINAL;
+
+    /** Returns flags for item with certain @a index. */
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE RT_FINAL;
+
+    /** Returns row count of certain @a parent. */
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
+    /** Returns column count of certain @a parent. */
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
+
+    /** Returns header data for @a iSection, @a enmOrientation and @a iRole specified. */
+    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const RT_OVERRIDE RT_FINAL;
+
+    /** Defines the @a iRole data for item with @a index as @a value. */
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) RT_OVERRIDE RT_FINAL;
+    /** Returns the @a iRole data for item with @a index. */
+    virtual QVariant data(const QModelIndex &index, int iRole) const RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -1195,6 +1195,47 @@ void UIFormEditorModel::setFormValues(const CFormValueVector &values)
     endInsertRows();
 }
 
+void UIFormEditorModel::createTextDataEditor(const QModelIndex &index)
+{
+    /* Create dialog on-the-fly: */
+    QPointer<QIDialog> pDialog = new QIDialog(view());
+    if (pDialog)
+    {
+        /* We will need that pointer: */
+        QTextEdit *pEditor = 0;
+        /* Create layout: */
+        QVBoxLayout *pLayout = new QVBoxLayout(pDialog);
+        if (pLayout)
+        {
+            /* Create text-editor: */
+            pEditor = new QTextEdit;
+            if (pEditor)
+            {
+                const TextData td = data(index, Qt::EditRole).value<TextData>();
+                pEditor->setPlainText(td.text());
+                pLayout->addWidget(pEditor);
+            }
+            /* Create button-box: */
+            QIDialogButtonBox *pBox = new QIDialogButtonBox;
+            if (pBox)
+            {
+                pBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+                connect(pBox, &QIDialogButtonBox::accepted, pDialog.data(), &QIDialog::accept);
+                connect(pBox, &QIDialogButtonBox::rejected, pDialog.data(), &QIDialog::reject);
+                pLayout->addWidget(pBox);
+            }
+        }
+        /* Execute the dialog: */
+        if (pDialog->execute() == QDialog::Accepted)
+        {
+            const TextData td = TextData(pEditor->toPlainText(), index);
+            setData(index, QVariant::fromValue(td));
+        }
+        /* Cleanup: */
+        delete pDialog;
+    }
+}
+
 QModelIndex UIFormEditorModel::index(int iRow, int iColumn, const QModelIndex &parentIdx /* = QModelIndex() */) const
 {
     /* No index for unknown items: */
@@ -1447,47 +1488,6 @@ QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
         }
         default:
             return QVariant();
-    }
-}
-
-void UIFormEditorModel::createTextDataEditor(const QModelIndex &index)
-{
-    /* Create dialog on-the-fly: */
-    QPointer<QIDialog> pDialog = new QIDialog(view());
-    if (pDialog)
-    {
-        /* We will need that pointer: */
-        QTextEdit *pEditor = 0;
-        /* Create layout: */
-        QVBoxLayout *pLayout = new QVBoxLayout(pDialog);
-        if (pLayout)
-        {
-            /* Create text-editor: */
-            pEditor = new QTextEdit;
-            if (pEditor)
-            {
-                const TextData td = data(index, Qt::EditRole).value<TextData>();
-                pEditor->setPlainText(td.text());
-                pLayout->addWidget(pEditor);
-            }
-            /* Create button-box: */
-            QIDialogButtonBox *pBox = new QIDialogButtonBox;
-            if (pBox)
-            {
-                pBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-                connect(pBox, &QIDialogButtonBox::accepted, pDialog.data(), &QIDialog::accept);
-                connect(pBox, &QIDialogButtonBox::rejected, pDialog.data(), &QIDialog::reject);
-                pLayout->addWidget(pBox);
-            }
-        }
-        /* Execute the dialog: */
-        if (pDialog->execute() == QDialog::Accepted)
-        {
-            const TextData td = TextData(pEditor->toPlainText(), index);
-            setData(index, QVariant::fromValue(td));
-        }
-        /* Cleanup: */
-        delete pDialog;
     }
 }
 

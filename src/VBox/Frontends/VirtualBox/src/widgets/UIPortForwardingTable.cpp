@@ -444,7 +444,7 @@ public:
       * @param  rules  Brings the list of port forwarding rules to load initially. */
     UIPortForwardingModel(UIPortForwardingTable *pParent, const UIPortForwardingDataList &rules = UIPortForwardingDataList());
     /** Destructs Port Forwarding model. */
-    virtual ~UIPortForwardingModel();
+    virtual ~UIPortForwardingModel() RT_OVERRIDE RT_FINAL;
 
     /** Returns the list of port forwarding rules. */
     UIPortForwardingDataList rules() const;
@@ -473,7 +473,7 @@ public:
     virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const RT_OVERRIDE RT_FINAL;
 
     /** Defines the @a iRole data for item with @a index as @a value. */
-    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) RT_OVERRIDE RT_FINAL;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole) RT_OVERRIDE RT_FINAL;
     /** Returns the @a iRole data for item with @a index. */
     virtual QVariant data(const QModelIndex &index, int iRole) const RT_OVERRIDE RT_FINAL;
 
@@ -696,7 +696,7 @@ QVariant UIPortForwardingModel::headerData(int iSection, Qt::Orientation enmOrie
     }
 }
 
-bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &value, int iRole /* = Qt::EditRole */)
+bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &value, int iRole)
 {
     /* Check index validness: */
     if (!index.isValid() || iRole != Qt::EditRole)

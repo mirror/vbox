@@ -206,7 +206,7 @@ public:
       * @param  enmType  Brings the action-pool type this model is related to. */
     UIShortcutConfigurationModel(UIShortcutConfigurationEditor *pParent, UIType enmType);
     /** Destructs model. */
-    virtual ~UIShortcutConfigurationModel() RT_OVERRIDE;
+    virtual ~UIShortcutConfigurationModel() RT_OVERRIDE RT_FINAL;
 
     /** Loads a @a list of shortcuts to the model. */
     void load(const UIShortcutConfigurationList &list);
@@ -216,21 +216,21 @@ public:
     /** Returns whether all shortcuts unique. */
     bool isAllShortcutsUnique();
 
-protected:
+    /** Returns the item flags for the given @a index. */
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE RT_FINAL;
 
     /** Returns the number of rows under the given @a parent. */
-    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
     /** Returns the number of columns under the given @a parent. */
-    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
 
-    /** Returns the item flags for the given @a index. */
-    virtual Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE;
     /** Returns the data for the given @a iRole and @a iSection in the header with the specified @a enmOrientation. */
-    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole = Qt::DisplayRole) const RT_OVERRIDE;
-    /** Returns the data stored under the given @a iRole for the item referred to by the @a index. */
-    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const RT_OVERRIDE;
+    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const RT_OVERRIDE RT_FINAL;
+
     /** Sets the @a iRole data for the item at @a index to @a value. */
-    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) RT_OVERRIDE;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole) RT_OVERRIDE RT_FINAL;
+    /** Returns the data stored under the given @a iRole for the item referred to by the @a index. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const RT_OVERRIDE RT_FINAL;
 
 private:
 
@@ -417,6 +417,20 @@ bool UIShortcutConfigurationModel::isAllShortcutsUnique()
     return true;
 }
 
+Qt::ItemFlags UIShortcutConfigurationModel::flags(const QModelIndex &index) const
+{
+    /* Check index validness: */
+    if (!index.isValid())
+        return Qt::NoItemFlags;
+    /* Switch for different columns: */
+    switch (index.column())
+    {
+        case TableColumnIndex_Description: return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        case TableColumnIndex_Sequence: return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+        default: return Qt::NoItemFlags;
+    }
+}
+
 int UIShortcutConfigurationModel::rowCount(const QModelIndex& /* parent = QModelIndex() */) const
 {
     return m_shortcuts.size();
@@ -425,22 +439,6 @@ int UIShortcutConfigurationModel::rowCount(const QModelIndex& /* parent = QModel
 int UIShortcutConfigurationModel::columnCount(const QModelIndex& /* parent = QModelIndex() */) const
 {
     return TableColumnIndex_Max;
-}
-
-Qt::ItemFlags UIShortcutConfigurationModel::flags(const QModelIndex &index) const
-{
-    /* No flags for invalid index: */
-    if (!index.isValid())
-        return Qt::NoItemFlags;
-    /* Switch for different columns: */
-    switch (index.column())
-    {
-        case TableColumnIndex_Description: return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-        case TableColumnIndex_Sequence: return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
-        default: break;
-    }
-    /* No flags by default: */
-    return Qt::NoItemFlags;
 }
 
 QVariant UIShortcutConfigurationModel::headerData(int iSection,
@@ -472,7 +470,49 @@ QVariant UIShortcutConfigurationModel::headerData(int iSection,
     return QVariant();
 }
 
-QVariant UIShortcutConfigurationModel::data(const QModelIndex &index, int iRole /* = Qt::DisplayRole */) const
+bool UIShortcutConfigurationModel::setData(const QModelIndex &index, const QVariant &value, int iRole)
+{
+    /* Nothing to set for invalid index: */
+    if (!index.isValid())
+        return false;
+    /* Switch for different roles: */
+    switch (iRole)
+    {
+        case Qt::EditRole:
+        {
+            /* Switch for different columns: */
+            switch (index.column())
+            {
+                case TableColumnIndex_Sequence:
+                {
+                    /* Get index: */
+                    const int iIndex = index.row();
+                    /* Set sequence to shortcut: */
+                    UIShortcutTableViewRow *pFilteredShortcut = m_shortcuts.at(iIndex);
+                    const int iShortcutIndex = UIShortcutSearchFunctor<UIShortcutTableViewRow>()(m_shortcuts, pFilteredShortcut);
+                    if (iShortcutIndex != -1)
+                    {
+                        pFilteredShortcut->setCurrentSequence(  pFilteredShortcut->key() == UIHostCombo::hostComboCacheKey()
+                                                              ? value.value<UIHostComboWrapper>().toString()
+                                                              : value.value<UIHotKey>().sequence());
+                        emit sigDataChanged();
+                        return true;
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    /* Nothing to set by default: */
+    return false;
+}
+
+QVariant UIShortcutConfigurationModel::data(const QModelIndex &index, int iRole) const
 {
     /* No data for invalid index: */
     if (!index.isValid())
@@ -575,48 +615,6 @@ QVariant UIShortcutConfigurationModel::data(const QModelIndex &index, int iRole 
     }
     /* Invalid by default: */
     return QVariant();
-}
-
-bool UIShortcutConfigurationModel::setData(const QModelIndex &index, const QVariant &value, int iRole /* = Qt::EditRole */)
-{
-    /* Nothing to set for invalid index: */
-    if (!index.isValid())
-        return false;
-    /* Switch for different roles: */
-    switch (iRole)
-    {
-        case Qt::EditRole:
-        {
-            /* Switch for different columns: */
-            switch (index.column())
-            {
-                case TableColumnIndex_Sequence:
-                {
-                    /* Get index: */
-                    const int iIndex = index.row();
-                    /* Set sequence to shortcut: */
-                    UIShortcutTableViewRow *pFilteredShortcut = m_shortcuts.at(iIndex);
-                    const int iShortcutIndex = UIShortcutSearchFunctor<UIShortcutTableViewRow>()(m_shortcuts, pFilteredShortcut);
-                    if (iShortcutIndex != -1)
-                    {
-                        pFilteredShortcut->setCurrentSequence(  pFilteredShortcut->key() == UIHostCombo::hostComboCacheKey()
-                                                              ? value.value<UIHostComboWrapper>().toString()
-                                                              : value.value<UIHotKey>().sequence());
-                        emit sigDataChanged();
-                        return true;
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    /* Nothing to set by default: */
-    return false;
 }
 
 QITableView *UIShortcutConfigurationModel::view() const
