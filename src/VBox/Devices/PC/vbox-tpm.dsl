@@ -134,8 +134,8 @@ DefinitionBlock ("SSDT.aml", "SSDT", 1, "VBOX  ", "VBOXTPMT", 2)
 
                 Name (TPB3, Package (0x03)
                 {
-                    Zero, 
-                    Zero, 
+                    Zero,
+                    Zero,
                     Zero
                 })
 
