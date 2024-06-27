@@ -76,41 +76,6 @@ static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread
 }
 
 /**
- * @callback_method_impl{FNPDMTHREADDRV}
- */
-static DECLCALLBACK(int) drvNATUrgRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-
-    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
-        return VINF_SUCCESS;
-
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-    {
-        RTReqQueueProcess(pThis->hUrgRecvReqQueue, 0);
-        if (ASMAtomicReadU32(&pThis->cUrgPkts) == 0)
-        {
-            int rc = RTSemEventWait(pThis->EventUrgRecv, RT_INDEFINITE_WAIT);
-            AssertRC(rc);
-        }
-    }
-    return VINF_SUCCESS;
-}
-
-/**
- * @callback_method_impl{FNPDMTHREADWAKEUPDRV}
- */
-static DECLCALLBACK(int) drvNATUrgRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    RT_NOREF(pThread);
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    int rc = RTSemEventSignal(pThis->EventUrgRecv);
-    AssertRC(rc);
-
-    return VINF_SUCCESS;
-}
-
-/**
  * @brief Processes incoming packet (to guest).
  *
  * @param   pThis   Pointer to DRVNAT state for current context.
@@ -123,15 +88,6 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, void *pBuf, int cb)
 {
     int rc;
     STAM_PROFILE_START(&pThis->StatNATRecv, a);
-
-    while (ASMAtomicReadU32(&pThis->cUrgPkts) != 0)
-    {
-        rc = RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
-        if (   RT_FAILURE(rc)
-            && (   rc == VERR_TIMEOUT
-                || rc == VERR_INTERRUPTED))
-            goto done_unlocked;
-    }
 
     rc = RTCritSectEnter(&pThis->DevAccessLock);
     AssertRC(rc);
@@ -155,15 +111,8 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, void *pBuf, int cb)
 
     rc = RTCritSectLeave(&pThis->DevAccessLock);
     AssertRC(rc);
-
-done_unlocked:
     ASMAtomicDecU32(&pThis->cPkts);
-
     drvNATNotifyNATThread(pThis, "drvNATRecvWorker");
-
-    RTMemFree(pBuf);
-    pBuf = NULL;
-
     STAM_PROFILE_STOP(&pThis->StatNATRecv, a);
 }
 
@@ -425,9 +374,6 @@ static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho)
     /* kick poll() */
     size_t cbIgnored;
     rc = RTPipeWrite(pThis->hPipeWrite, "", 1, &cbIgnored);
-#else
-    /* kick WSAWaitForMultipleEvents */
-    rc = WSASetEvent(pThis->hWakeupEvent);
 #endif
     AssertRC(rc);
 }
@@ -627,7 +573,7 @@ static int drvNAT_addPollCb(int iFd, int iEvents, void *opaque)
  *
  * @thread  ?
  */
-static int get_revents_cb(int idx, void *opaque)
+static int drvNAT_getREventsCb(int idx, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
     struct pollfd* polls = pThis->pNATState->polls;
@@ -705,7 +651,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         }
 
 
-        slirp_pollfds_poll(pThis->pNATState->pSlirp, cChangedFDs < 0, get_revents_cb /* SlirpGetREventsCb */, pThis /* opaque */);
+        slirp_pollfds_poll(pThis->pNATState->pSlirp, cChangedFDs < 0, drvNAT_getREventsCb /* SlirpGetREventsCb */, pThis /* opaque */);
         if (pThis->pNATState->polls[0].revents & (POLLRDNORM|POLLPRI|POLLRDBAND))
         {
             /* drain the pipe
@@ -750,13 +696,13 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         if (cChangedFDs == 0)
         {
             /* only check for slow/fast timers */
-            slirp_pollfds_poll(pThis->pNATState->pSlirp, false /*select error*/, get_revents_cb /* SlirpGetREventsCb */, pThis /* opaque */);
+            slirp_pollfds_poll(pThis->pNATState->pSlirp, false /*select error*/, drvNAT_getREventsCb /* SlirpGetREventsCb */, pThis /* opaque */);
             RTReqQueueProcess(pThis->hSlirpReqQueue, 0);
             continue;
         }
         /* poll the sockets in any case */
         Log2(("%s: poll\n", __FUNCTION__));
-        slirp_pollfds_poll(pThis->pNATState->pSlirp, cChangedFDs < 0 /*select error*/, get_revents_cb /* SlirpGetREventsCb */, pThis /* opaque */);
+        slirp_pollfds_poll(pThis->pNATState->pSlirp, cChangedFDs < 0 /*select error*/, drvNAT_getREventsCb /* SlirpGetREventsCb */, pThis /* opaque */);
 
         /* process _all_ outstanding requests but don't wait */
         RTReqQueueProcess(pThis->hSlirpReqQueue, 0);
@@ -830,10 +776,16 @@ static DECLCALLBACK(void) drvNATInfo(PPDMDRVINS pDrvIns, PCDBGFINFOHLP pHlp, con
  * Sets up the redirectors.
  *
  * @returns VBox status code.
+ * @param   uInstance       ?
+ * @param   pThis           ?
  * @param   pCfg            The configuration handle.
+ * @param   pNetwork        Unused.
+ *
+ * @thread  ?
  */
 static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCfg, PRTNETADDRIPV4 pNetwork)
 {
+    /** @todo r=jack: rewrite to support IPv6? */
     PPDMDRVINS pDrvIns = pThis->pDrvIns;
     PCPDMDRVHLPR3 pHlp = pDrvIns->pHlpR3;
 
@@ -913,10 +865,27 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
     return VINF_SUCCESS;
 }
 
+/**
+ * Applies port forwarding between guest and host.
+ *
+ * @param   pThis           Pointer to DRVNAT state for current context.
+ * @param   fRemove         Flag to remove port forward instead of create.
+ * @param   fUdp            Flag specifying if UDP. If false, TCP.
+ * @param   pHostIp         String of host IP address.
+ * @param   u16HostPort     Host port to forward to.
+ * @param   pGuestIp        String of guest IP address.
+ * @param   u16GuestPort    Guest port to forward.
+ *
+ * @thread  ?
+ */
 static DECLCALLBACK(void) drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
                                                               bool fUdp, const char *pHostIp,
                                                               uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
 {
+    /** @todo r=jack:
+     * - rewrite for IPv6
+     * - do we want to lock the guestIp to the VMs IP?
+     */
     struct in_addr guestIp, hostIp;
 
     if (   pHostIp == NULL
@@ -969,6 +938,14 @@ static DECLCALLBACK(int) drvNATNetworkNatConfigRedirect(PPDMINETWORKNATCONFIG pI
     return rc;
 }
 
+/**
+ * Update the timeout field in given list of Slirp timers.
+ *
+ * @param uTimeout  Pointer to timeout value.
+ * @param opaque    Pointer to NAT State context.
+ *
+ * @thread  ?
+ */
 static void slirpUpdateTimeout(uint32_t *uTimeout, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
@@ -993,6 +970,13 @@ static void slirpUpdateTimeout(uint32_t *uTimeout, void *opaque)
     }
 }
 
+/**
+ * Check if timeout has passed in given list of Slirp timers.
+ *
+ * @param   opaque  Pointer to NAT State context.
+ *
+ * @thread  ?
+ */
 static void slirpCheckTimeout(void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
@@ -1018,6 +1002,18 @@ static void slirpCheckTimeout(void *opaque)
 
 /**
  * CALLBACKS
+ */
+
+/**
+ * Callback called by libslirp to send packet into guest.
+ *
+ * @param   pBuf    Pointer to packet buffer.
+ * @param   cb      Size of packet.
+ * @param   opaque  Pointer to NAT State context.
+ *
+ * @returns Size of packet received or -1 on error.
+ *
+ * @thread  ?
  */
 static DECLCALLBACK(ssize_t) slirpSendPacketCb(const void *pBuf, size_t cb, void *opaque /* PDRVNAT */)
 {
@@ -1045,6 +1041,14 @@ static DECLCALLBACK(ssize_t) slirpSendPacketCb(const void *pBuf, size_t cb, void
     return cb;
 }
 
+/**
+ * Callback called by libslirp on an error from a guest.
+ *
+ * @param   pMsg    Error message string.
+ * @param   opaque  Pointer to NAT State context.
+ *
+ * @thread  ?
+ */
 static DECLCALLBACK(void) slirpGuestErrorCb(const char *pMsg, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
@@ -1055,6 +1059,13 @@ static DECLCALLBACK(void) slirpGuestErrorCb(const char *pMsg, void *opaque)
     LogRel((pMsg));
 }
 
+/**
+ * Callback called by libslirp to get the current timestamp in nanoseconds.
+ *
+ * @param   opaque  Pointer to NAT State context.
+ *
+ * @returns 64-bit signed integer representing time in nanoseconds.
+ */
 static DECLCALLBACK(int64_t) slirpClockGetNsCb(void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
@@ -1063,6 +1074,18 @@ static DECLCALLBACK(int64_t) slirpClockGetNsCb(void *opaque)
     return (int64_t)RTTimeNanoTS();
 }
 
+
+/**
+ * Callback called by slirp to create a new timer and insert it into the given list.
+ *
+ * @param   slirpTimeCb     Callback function supplied to the new timer upon timer expiry.
+ *                          Called later by the timeout handler.
+ * @param   cb_opaque       Opaque object supplied to slirpTimeCb when called. Should be
+ *                          Identical to the opaque parameter.
+ * @param   opaque          Pointer to NAT State context.
+ *
+ * @returns Pointer to new timer.
+ */
 static DECLCALLBACK(void *) slirpTimerNewCb(SlirpTimerCb slirpTimeCb, void *cb_opaque, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
@@ -1081,6 +1104,12 @@ static DECLCALLBACK(void *) slirpTimerNewCb(SlirpTimerCb slirpTimeCb, void *cb_o
     return pNewTimer;
 }
 
+/**
+ * Callback called by slirp to free a timer.
+ *
+ * @param   pTimer  Pointer to slirpTimer object to be freed.
+ * @param   opaque  Pointer to NAT State context.
+ */
 static DECLCALLBACK(void) slirpTimerFreeCb(void *pTimer, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
@@ -1100,6 +1129,13 @@ static DECLCALLBACK(void) slirpTimerFreeCb(void *pTimer, void *opaque)
     }
 }
 
+/**
+ * Callback called by slirp to modify a timer.
+ *
+ * @param   pTimer      Pointer to slirpTimer object to be modified.
+ * @param   expireTime  Signed 64-bit integer representing the new expiry time.
+ * @param   opaque      Pointer to NAT State context.
+ */
 static DECLCALLBACK(void) slirpTimerModCb(void *pTimer, int64_t expireTime, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
@@ -1108,6 +1144,11 @@ static DECLCALLBACK(void) slirpTimerModCb(void *pTimer, int64_t expireTime, void
     ((SlirpTimer *)pTimer)->uTimeExpire = expireTime;
 }
 
+/**
+ * Callback called by slirp when there is I/O that needs to happen.
+ *
+ * @param   opaque  Pointer to NAT State context.
+ */
 static DECLCALLBACK(void) slirpNotifyCb(void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
@@ -1143,17 +1184,11 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
     RTReqQueueDestroy(pThis->hSlirpReqQueue);
     pThis->hSlirpReqQueue = NIL_RTREQQUEUE;
 
-    RTReqQueueDestroy(pThis->hUrgRecvReqQueue);
-    pThis->hUrgRecvReqQueue = NIL_RTREQQUEUE;
-
     RTReqQueueDestroy(pThis->hRecvReqQueue);
     pThis->hRecvReqQueue = NIL_RTREQQUEUE;
 
     RTSemEventDestroy(pThis->EventRecv);
     pThis->EventRecv = NIL_RTSEMEVENT;
-
-    RTSemEventDestroy(pThis->EventUrgRecv);
-    pThis->EventUrgRecv = NIL_RTSEMEVENT;
 
     if (RTCritSectIsInitialized(&pThis->DevAccessLock))
         RTCritSectDelete(&pThis->DevAccessLock);
@@ -1164,19 +1199,6 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 #ifndef RT_OS_WINDOWS
     RTPipeClose(pThis->hPipeRead);
     RTPipeClose(pThis->hPipeWrite);
-#endif
-
-#ifdef RT_OS_DARWIN
-    /* Cleanup the DNS watcher. */
-    if (pThis->hRunLoopSrcDnsWatcher != NULL)
-    {
-        CFRunLoopRef hRunLoopMain = CFRunLoopGetMain();
-        CFRetain(hRunLoopMain);
-        CFRunLoopRemoveSource(hRunLoopMain, pThis->hRunLoopSrcDnsWatcher, kCFRunLoopCommonModes);
-        CFRelease(hRunLoopMain);
-        CFRelease(pThis->hRunLoopSrcDnsWatcher);
-        pThis->hRunLoopSrcDnsWatcher = NULL;
-    }
 #endif
 }
 
@@ -1201,9 +1223,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->pDrvIns                      = pDrvIns;
     pThis->pNATState                    = (SlirpState *)RTMemAlloc(sizeof(SlirpState));
     if(pThis->pNATState == NULL)
-    {
         return VERR_NO_MEMORY;
-    }
     else
     {
         pThis->pNATState->nsock = 0;
@@ -1212,12 +1232,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
         pThis->pNATState->uPollCap = 64;
     }
     pThis->hSlirpReqQueue               = NIL_RTREQQUEUE;
-    pThis->hUrgRecvReqQueue             = NIL_RTREQQUEUE;
     pThis->EventRecv                    = NIL_RTSEMEVENT;
-    pThis->EventUrgRecv                 = NIL_RTSEMEVENT;
-#ifdef RT_OS_DARWIN
-    pThis->hRunLoopSrcDnsWatcher        = NULL;
-#endif
 
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvNATQueryInterface;
@@ -1366,11 +1381,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pSlirpCfg->vnameserver = vnameserver;
     pSlirpCfg->if_mtu = MTU;
 
-#ifndef RT_OS_WINDOWS
     inet_pton(AF_INET6, "fd00::3", &pSlirpCfg->vnameserver6);
-#else
-    inet_pton(23, "fd00::3", &pSlirpCfg->vnameserver6);
-#endif
 
     pSlirpCfg->vdnssearch = NULL;
     pSlirpCfg->vdomainname = NULL;
@@ -1396,8 +1407,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
     pThis->pNATState->pSlirp = pSlirp;
 
-    // pThis->pNATState->polls = NULL;
-
     rc = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfg, &Network);
     AssertLogRelRCReturn(rc, rc);
 
@@ -1410,21 +1419,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     rc = RTReqQueueCreate(&pThis->hRecvReqQueue);
     AssertLogRelRCReturn(rc, rc);
 
-    rc = RTReqQueueCreate(&pThis->hUrgRecvReqQueue);
-    AssertLogRelRCReturn(rc, rc);
-
     rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pRecvThread, pThis, drvNATRecv,
                                 drvNATRecvWakeup, 256 * _1K, RTTHREADTYPE_IO, "NATRX");
     AssertRCReturn(rc, rc);
 
     rc = RTSemEventCreate(&pThis->EventRecv);
-    AssertRCReturn(rc, rc);
-
-    rc = RTSemEventCreate(&pThis->EventUrgRecv);
-    AssertRCReturn(rc, rc);
-
-    rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pUrgRecvThread, pThis, drvNATUrgRecv,
-                                drvNATUrgRecvWakeup, 256 * _1K, RTTHREADTYPE_IO, "NATURGRX");
     AssertRCReturn(rc, rc);
 
     rc = RTCritSectInit(&pThis->DevAccessLock);
@@ -1444,15 +1443,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 #endif
 
 #ifndef RT_OS_WINDOWS
-    /*
-        * Create the control pipe.
-        */
+    /**
+     * Create the control pipe.
+     */
     rc = RTPipeCreate(&pThis->hPipeRead, &pThis->hPipeWrite, 0 /*fFlags*/);
     AssertRCReturn(rc, rc);
-#else
-    pThis->hWakeupEvent = CreateEvent(NULL, FALSE, FALSE, NULL); /* auto-reset event */
-    pThis->pNATState->phEvents[VBOX_WAKEUP_EVENT_INDEX] = pThis->hWakeupEvent;
-    pThis->pNATState->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
 
     rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pSlirpThread, pThis, drvNATAsyncIoThread,

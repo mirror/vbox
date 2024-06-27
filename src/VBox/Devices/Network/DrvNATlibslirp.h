@@ -102,30 +102,6 @@ int inet_pton(int,const char *,void *);
  */
 #define VBOX_NAT_DELAY_HACK
 
-/*
- * ICMP handle state change
- */
-# define VBOX_ICMP_EVENT_INDEX           -1
-
-/**
- * This event is for
- *  - slirp_input
- *  - slirp_link_up
- *  - slirp_link_down
- *  - wakeup
- */
-# define VBOX_WAKEUP_EVENT_INDEX       0
-
-/*
- * UDP/TCP socket state change (socket ready to receive, to send, ...)
- */
-# define VBOX_SOCKET_EVENT_INDEX       1
-
-/*
- * The number of events for WSAWaitForMultipleEvents().
- */
-# define VBOX_EVENT_COUNT              2
-
 #define GET_EXTRADATA(pdrvins, node, name, rc, type, type_name, var)                                  \
 do {                                                                                                \
     (rc) = (pdrvins)->pHlpR3->pfnCFGMQuery ## type((node), name, &(var));                                               \
@@ -178,7 +154,7 @@ do                                                      \
         x.s_addr = def;                                 \
 } while (0)
 
-// timer struct
+/** Slirp Timer */
 typedef struct slirpTimer {
     struct slirpTimer *next;
     int64_t uTimeExpire;
@@ -192,33 +168,11 @@ typedef struct slirpTimer {
 typedef struct SlirpState
 {
     unsigned int nsock;
-# ifndef RT_OS_WINDOWS
-    /* counter of sockets needed for allocation enough room to
-     * process sockets with poll/epoll
-     *
-     * NSOCK_INC/DEC should be injected before every
-     * operation on socket queue (tcb, udb)
-     */
-#  define NSOCK_INC() do {pData->nsock++;} while (0)
-#  define NSOCK_DEC() do {pData->nsock--;} while (0)
-#  define NSOCK_INC_EX(ex) do {ex->pData->nsock++;} while (0)
-#  define NSOCK_DEC_EX(ex) do {ex->pData->nsock--;} while (0)
-# else
-#  define NSOCK_INC() do {} while (0)
-#  define NSOCK_DEC() do {} while (0)
-#  define NSOCK_INC_EX(ex) do {} while (0)
-#  define NSOCK_DEC_EX(ex) do {} while (0)
-# endif
-
-#if defined(RT_OS_WINDOWS)
-# define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
-    HANDLE phEvents[VBOX_EVENT_COUNT];
-#endif
 
     Slirp *pSlirp;
     struct pollfd *polls;
 
-    // Num Polls (not bytes)
+    /** Num Polls (not bytes) */
     unsigned int uPollCap = 0;
 
     SlirpTimer *pTimerHead;
@@ -279,22 +233,14 @@ typedef struct DRVNAT
 #include "slirp/counters.h"
     /** thread delivering packets for receiving by the guest */
     PPDMTHREAD              pRecvThread;
-    /** thread delivering urg packets for receiving by the guest */
-    PPDMTHREAD              pUrgRecvThread;
     /** event to wakeup the guest receive thread */
     RTSEMEVENT              EventRecv;
-    /** event to wakeup the guest urgent receive thread */
-    RTSEMEVENT              EventUrgRecv;
     /** Receive Req queue (deliver packets to the guest) */
     RTREQQUEUE              hRecvReqQueue;
-    /** Receive Urgent Req queue (deliver packets to the guest). */
-    RTREQQUEUE              hUrgRecvReqQueue;
 
     /** makes access to device func RecvAvail and Recv atomical. */
     RTCRITSECT              DevAccessLock;
-    /** Number of in-flight urgent packets. */
-    volatile uint32_t       cUrgPkts;
-    /** Number of in-flight regular packets. */
+    /** Number of in-flight packets. */
     volatile uint32_t       cPkts;
 
     /** Transmit lock taken by BeginXmit and released by EndXmit. */
@@ -305,13 +251,12 @@ typedef struct DRVNAT
     CFRunLoopSourceRef      hRunLoopSrcDnsWatcher;
 #endif /* !VBOX_INCLUDED_SRC_Network_DrvNATlibslirp_h */
 } DRVNAT;
-// AssertCompileMemberAlignment(DRVNAT, StatNATRecvWakeups, 8);
+AssertCompileMemberAlignment(DRVNAT, StatNATRecvWakeups, 8);
 /** Pointer to the NAT driver instance data. */
 typedef DRVNAT *PDRVNAT;
 
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS, PPDMTHREAD);
 static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS, PPDMTHREAD);
-static DECLCALLBACK(int) drvNATUrgRecvWakeup(PPDMDRVINS, PPDMTHREAD);
 static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT, void *, int);
 static void drvNATFreeSgBuf(PDRVNAT, PPDMSCATTERGATHER);
 static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT, PPDMSCATTERGATHER);
