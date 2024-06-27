@@ -1049,6 +1049,8 @@ void UIVMActivityOverviewWidget::setCloudMachineItems(const QList<UIVirtualMachi
 
 void UIVMActivityOverviewWidget::sltRetranslateUI()
 {
+    m_pTableView->setWhatsThis(tr("Lists all currently active virtual machines."));
+
     m_columnTitles[VMActivityOverviewColumn_Name] = UIVMActivityOverviewWidget::tr("VM Name");
     m_columnTitles[VMActivityOverviewColumn_CPUGuestLoad] = UIVMActivityOverviewWidget::tr("CPU Guest");
     m_columnTitles[VMActivityOverviewColumn_CPUVMMLoad] = UIVMActivityOverviewWidget::tr("CPU VMM");

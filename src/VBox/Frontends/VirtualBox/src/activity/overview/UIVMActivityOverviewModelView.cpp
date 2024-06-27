@@ -838,6 +838,17 @@ void UIVMActivityOverviewModel::setShouldUpdate(bool fShouldUpdate)
     }
 }
 
+QModelIndex UIVMActivityOverviewModel::index(int iRow, int iColumn, const QModelIndex &parentIdx /* = QModelIndex() */) const
+{
+    /* No index for unknown items: */
+    if (!hasIndex(iRow, iColumn, parentIdx))
+        return QModelIndex();
+
+    /* Provide index users with packed item pointer: */
+    UIVMActivityOverviewRow *pItem = iRow >= 0 && iRow < m_rows.size() ? m_rows.at(iRow) : 0;
+    return pItem ? createIndex(iRow, iColumn, pItem) : QModelIndex();
+}
+
 int UIVMActivityOverviewModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);

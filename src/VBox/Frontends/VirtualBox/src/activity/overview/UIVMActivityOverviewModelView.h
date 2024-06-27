@@ -131,6 +131,7 @@ public:
 
     ~UIVMActivityOverviewModel();
     UIVMActivityOverviewModel(QObject *pParent, QITableView *pView);
+    QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const RT_OVERRIDE RT_FINAL;
     int      rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
     int      columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE RT_FINAL;
     QVariant data(const QModelIndex &index, int role) const RT_OVERRIDE RT_FINAL;
