@@ -1278,7 +1278,13 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
         if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_FOUND))
         {
             LogRel(("Device '%s'/%d not found in the saved state\n", pDevIns->pReg->szName, pDevIns->iInstance));
-            if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
+            /** @todo The TPM PPI device was added due to @bugref{10701} and it is not an issue if it isn't there
+             *        in the saved state because there is nothing to load. It might make sense to add a new
+             *        flag to PDMDEVREG::fFlags to indicate that having a new device added for a saved state is okay.
+             *        (For now I just want to get saved states unwedged).
+             */
+            if (   SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT
+                && RTStrCmp(pDevIns->pReg->szName, "tpm-ppi"))
                 return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device '%s'/%d not found in the saved state"),
                                         pDevIns->pReg->szName, pDevIns->iInstance);
         }
