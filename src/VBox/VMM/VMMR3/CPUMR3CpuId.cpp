@@ -4437,9 +4437,18 @@ static int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCP
 
     /*
      * This can be skipped.
+     *
+     * @note On ARM we disable the strict checks for now because we can't verify with what the host supports
+     *       and just assume the interpreter/recompiler supports everything what was exposed earlier.
      */
     bool fStrictCpuIdChecks;
-    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "StrictCpuIdChecks", &fStrictCpuIdChecks, true);
+    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "StrictCpuIdChecks", &fStrictCpuIdChecks,
+#ifdef RT_ARCH_ARM64
+                       false
+#else
+                       true
+#endif
+                       );
 
     /*
      * Define a bunch of macros for simplifying the santizing/checking code below.
