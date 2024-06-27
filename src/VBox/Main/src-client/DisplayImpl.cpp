@@ -134,7 +134,7 @@ HRESULT Display::FinalConstruct()
     AssertRC(vrc);
 
     for (unsigned i = 0; i < RT_ELEMENTS(maRecordingEnabled); i++)
-        maRecordingEnabled[i] = true;
+        maRecordingEnabled[i] = false;
 #endif
 
     return BaseFinalConstruct();
@@ -2304,10 +2304,10 @@ int Display::i_recordingScreenChanged(unsigned uScreenId, const DISPLAYFBINFO *p
  */
 int Display::i_recordingScreenUpdate(unsigned uScreenId, PRECORDINGVIDEOFRAME pFrame)
 {
-    if (!maRecordingEnabled[uScreenId])
-        return VINF_NO_CHANGE;
+    if (   uScreenId >= mcMonitors /* Might be SVGA_ID_INVALID. */
+        || !maRecordingEnabled[uScreenId])
+        return VINF_SUCCESS;
 
-    AssertPtr(mParent);
     RecordingContext *pCtx = mParent->i_recordingGetContext();
     if (!pCtx)
         return VINF_SUCCESS;
@@ -2352,13 +2352,10 @@ int Display::i_recordingCursorPositionChange(unsigned uScreenId, uint32_t fFlags
 {
     RT_NOREF(fFlags);
 
-#if 0 /** @todo For whatever reason we always report SVGA_ID_INVALID here. Needs investigation. */
-    if (   uScreenId > mcMonitors /* Might be SVGA_ID_INVALID. */
+    if (   uScreenId >= mcMonitors /* Might be SVGA_ID_INVALID. */
         || !maRecordingEnabled[uScreenId])
         return VINF_SUCCESS;
-#endif
 
-    AssertPtr(mParent);
     RecordingContext *pCtx = mParent->i_recordingGetContext();
     if (!pCtx)
         return VINF_SUCCESS;
