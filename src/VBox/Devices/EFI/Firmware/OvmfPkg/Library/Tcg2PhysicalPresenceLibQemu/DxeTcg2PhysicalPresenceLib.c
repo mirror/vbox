@@ -38,7 +38,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #if defined(VBOX)
 # define IN_RING0
-# include "DevEFI.h"
+# include "../../../../DevEFI.h"
 # include "iprt/cdefs.h" /* RT_ARCH_XXX */
 
 # if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
