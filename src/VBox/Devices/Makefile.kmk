@@ -640,6 +640,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   VBoxDD_DEFS           += VBOX_WITH_TPM
   VBoxDD_SOURCES        += \
   	Security/DevTpm.cpp \
+  	Security/DevTpmPpi.cpp \
   	Security/DrvTpmEmu.cpp
 
   VBoxDD_SOURCES.linux += \

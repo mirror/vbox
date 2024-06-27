@@ -115,6 +115,7 @@ extern const PDMDEVREG g_DeviceVirtualKD;
 extern const PDMDEVREG g_DeviceQemuFwCfg;
 #ifdef VBOX_WITH_TPM
 extern const PDMDEVREG g_DeviceTpm;
+extern const PDMDEVREG g_DeviceTpmPpi;
 #endif
 
 extern const PDMDRVREG g_DrvMouseQueue;

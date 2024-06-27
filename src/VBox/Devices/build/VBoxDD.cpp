@@ -246,6 +246,10 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceTpm);
     if (RT_FAILURE(rc))
         return rc;
+
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceTpmPpi);
+    if (RT_FAILURE(rc))
+        return rc;
 #endif
 #ifdef VBOX_WITH_VIRT_ARMV8
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceEfiArmV8);
