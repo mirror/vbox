@@ -36,6 +36,33 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Library/Tcg2PhysicalPresenceLib.h>
 
+#if defined(VBOX)
+# define IN_RING0
+# include "DevEFI.h"
+# include "iprt/cdefs.h" /* RT_ARCH_XXX */
+
+# if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+#  include "iprt/asm-amd64-x86.h"
+
+/*
+ * Internal Functions
+ */
+static UINT32
+GetVmVariable(UINT32 Variable, CHAR8 *pbBuf, UINT32 cbBuf)
+{
+    UINT32 cbVar, offBuf;
+
+    ASMOutU32(EFI_INFO_PORT, Variable);
+    cbVar = ASMInU32(EFI_INFO_PORT);
+
+    for (offBuf = 0; offBuf < cbVar && offBuf < cbBuf; offBuf++)
+        pbBuf[offBuf] = ASMInU8(EFI_INFO_PORT);
+
+    return cbVar;
+}
+# endif
+#endif
+
 #define CONFIRM_BUFFER_SIZE  4096
 
 EFI_HII_HANDLE  mTcg2PpStringPackHandle;
@@ -44,6 +71,8 @@ EFI_HII_HANDLE  mTcg2PpStringPackHandle;
 
 STATIC volatile QEMU_TPM_PPI  *mPpi;
 
+#if    !defined(VBOX) \
+    || (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64))
 /**
   Reads QEMU PPI config from fw_cfg.
 
@@ -75,6 +104,7 @@ QemuTpmReadConfig (
   QemuFwCfgReadBytes (sizeof (*Config), Config);
   return EFI_SUCCESS;
 }
+#endif
 
 /**
   Initializes QEMU PPI memory region.
@@ -98,6 +128,8 @@ QemuTpmInitPPI (
     return EFI_SUCCESS;
   }
 
+#if    !defined(VBOX) \
+    || (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64))
   Status = QemuTpmReadConfig (&Config);
   if (EFI_ERROR (Status)) {
     return Status;
@@ -107,6 +139,14 @@ QemuTpmInitPPI (
   if (mPpi == NULL) {
     return EFI_PROTOCOL_ERROR;
   }
+#else
+  uint64_t u64TpmPpiBase = 0;
+  if (   GetVmVariable(EFI_INFO_INDEX_TPM_PPI_BASE, (CHAR8 *)&u64TpmPpiBase, sizeof(u64TpmPpiBase)) != sizeof(u64TpmPpiBase)
+      || u64TpmPpiBase == 0)
+    return EFI_PROTOCOL_ERROR;
+
+  mPpi = (QEMU_TPM_PPI *)(UINTN)u64TpmPpiBase;
+#endif
 
   DEBUG ((DEBUG_INFO, "[TPM2PP] mPpi=%p version=%d\n", mPpi, Config.TpmVersion));
 
@@ -136,7 +176,9 @@ QemuTpmInitPPI (
     mPpi->Func[Idx] = 0;
   }
 
+#ifndef VBOX
   if (Config.TpmVersion == QEMU_TPM_VERSION_2) {
+#endif
     mPpi->Func[TCG2_PHYSICAL_PRESENCE_NO_ACTION]         = TPM_PPI_FLAGS;
     mPpi->Func[TCG2_PHYSICAL_PRESENCE_CLEAR]             = TPM_PPI_FLAGS;
     mPpi->Func[TCG2_PHYSICAL_PRESENCE_ENABLE_CLEAR]      = TPM_PPI_FLAGS;
@@ -147,7 +189,9 @@ QemuTpmInitPPI (
     mPpi->Func[TCG2_PHYSICAL_PRESENCE_LOG_ALL_DIGESTS]   = TPM_PPI_FLAGS;
     mPpi->Func[TCG2_PHYSICAL_PRESENCE_ENABLE_BLOCK_SID]  = TPM_PPI_FLAGS;
     mPpi->Func[TCG2_PHYSICAL_PRESENCE_DISABLE_BLOCK_SID] = TPM_PPI_FLAGS;
+#ifndef VBOX
   }
+#endif
 
   if (mPpi->In == 0) {
     mPpi->In          = 1;
