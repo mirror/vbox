@@ -116,11 +116,6 @@ public:
     /** Destructs table-view. */
     virtual ~QITableView() RT_OVERRIDE;
 
-    /** Returns the number of children. */
-    virtual int childCount() const { return 0; }
-    /** Returns the child item with @a iIndex. */
-    virtual QITableViewRow *childItem(int /* iIndex */) const { return 0; }
-
     /** Makes sure current editor data committed. */
     void makeSureEditorDataCommitted();
 
