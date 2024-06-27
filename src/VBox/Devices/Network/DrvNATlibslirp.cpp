@@ -184,7 +184,6 @@ static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
     {
         Assert(!pSgBuf->pvUser);
         RTMemFree(pSgBuf->aSegs[0].pvSeg);
-        pSgBuf->pvAllocator = NULL;
     }
     else if (pSgBuf->pvUser)
     {
@@ -201,11 +200,12 @@ static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
  *
  * @param   pThis               Pointer to the NAT instance.
  * @param   pSgBuf              The scatter/gather buffer.
- *
  * @thread  NAT
  */
 static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
 {
+    LogFlowFunc(("pThis=%p pSgBuf=%p\n", pThis, pSgBuf));
+
     if (pThis->enmLinkState == PDMNETWORKLINKSTATE_UP)
     {
         const uint8_t *m = static_cast<const uint8_t*>(pSgBuf->pvAllocator);
@@ -214,12 +214,13 @@ static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgB
             /*
              * A normal frame.
              */
+            LogFlowFunc(("m=%p\n", m));
             slirp_input(pThis->pNATState->pSlirp, (uint8_t const *)pSgBuf->pvAllocator, (int)pSgBuf->cbUsed);
         }
         else
         {
             /*
-             * Large/GSO frame.
+             * M_EXT buf, need to segment it.
              */
 
             uint8_t const  *pbFrame = (uint8_t const *)pSgBuf->aSegs[0].pvSeg;
@@ -248,18 +249,12 @@ static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgB
         }
     }
 
+    LogFlowFunc(("leave\n"));
     drvNATFreeSgBuf(pThis, pSgBuf);
 }
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnBeginXmit}
- *
- * @param   pInterface      Pointer to UP network interface.
- * @param   fOnWorkerThread Unused.
- *
- * @returns VBox status code.
- *
- * @thread ?
  */
 static DECLCALLBACK(int) drvNATNetworkUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWorkerThread)
 {
@@ -277,23 +272,14 @@ static DECLCALLBACK(int) drvNATNetworkUp_BeginXmit(PPDMINETWORKUP pInterface, bo
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
- *
- * Allocates a scatter/gather buffer for packet/frame handling.
- *
- * @param   pInterface  Pointer to UP network interface.
- * @param   cbMin       Minimum size of buffer to hold packet/frame.
- * @param   pGso        The GSO context.
- * @param   ppSgBuf     Pointer to the resulting scatter/gather buffer.
- *
- * @returns VBox status code
- *
- * @thread ?
  */
 static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
                                                   PCPDMNETWORKGSO pGso, PPPDMSCATTERGATHER ppSgBuf)
 {
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
     Assert(RTCritSectIsOwner(&pThis->XmitLock));
+
+    LogFlowFunc(("enter\n"));
 
     /*
      * Drop the incoming frame if the NAT thread isn't running.
@@ -376,13 +362,6 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnFreeBuf}
- *
- * Wrapper function for drvNATFreeSgBuff.
- *
- * @param   pInterface  Pointer to UP network interface.
- * @param   pSgBuf      Pointer to scatter/gather buffer to be freed.
- *
- * @thread  ?
  */
 static DECLCALLBACK(int) drvNATNetworkUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
 {
@@ -394,14 +373,6 @@ static DECLCALLBACK(int) drvNATNetworkUp_FreeBuf(PPDMINETWORKUP pInterface, PPDM
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnSendBuf}
- *
- * Sends packet/frame out to network (up from guest).
- *
- * @param   pInterface      Pointer to UP network interface.
- * @param   pSgBuf          Pointer to scatter/gather packet/frame buffer.
- * @param   fOnWorkerThread Unused.
- *
- * @thread  ?
  */
 static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
 {
@@ -409,6 +380,8 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
     Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_OWNER_MASK) == PDMSCATTERGATHER_FLAGS_OWNER_1);
     Assert(RTCritSectIsOwner(&pThis->XmitLock));
+
+    LogFlowFunc(("enter\n"));
 
     int rc;
     if (pThis->pSlirpThread->enmState == PDMTHREADSTATE_RUNNING)
@@ -419,6 +392,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
         if (RT_SUCCESS(rc))
         {
             drvNATNotifyNATThread(pThis, "drvNATNetworkUp_SendBuf");
+            LogFlowFunc(("leave success\n"));
             return VINF_SUCCESS;
         }
 
@@ -426,19 +400,13 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
     }
     else
         rc = VERR_NET_DOWN;
-
     drvNATFreeSgBuf(pThis, pSgBuf);
+    LogFlowFunc(("leave rc=%Rrc\n", rc));
     return rc;
 }
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnEndXmit}
- *
- * End transmission.
- *
- * @param   pInterface  Pointer to UP network interface.
- *
- * @thread  ?
  */
 static DECLCALLBACK(void) drvNATNetworkUp_EndXmit(PPDMINETWORKUP pInterface)
 {
@@ -448,11 +416,6 @@ static DECLCALLBACK(void) drvNATNetworkUp_EndXmit(PPDMINETWORKUP pInterface)
 
 /**
  * Get the NAT thread out of poll/WSAWaitForMultipleEvents
- *
- * @param   pThis   Pointer to DRVNAT state for current context.
- * @param   pszWho  String identifying caller.
- *
- * @thread  ?
  */
 static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho)
 {
@@ -462,6 +425,9 @@ static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho)
     /* kick poll() */
     size_t cbIgnored;
     rc = RTPipeWrite(pThis->hPipeWrite, "", 1, &cbIgnored);
+#else
+    /* kick WSAWaitForMultipleEvents */
+    rc = WSASetEvent(pThis->hWakeupEvent);
 #endif
     AssertRC(rc);
 }
@@ -479,6 +445,11 @@ static DECLCALLBACK(void) drvNATNetworkUp_SetPromiscuousMode(PPDMINETWORKUP pInt
 /**
  * Worker function for drvNATNetworkUp_NotifyLinkChanged().
  * @thread "NAT" thread.
+ *
+ * @param   pThis           Pointer to DRVNAT state for current context.
+ * @param   enmLinkState    Enum value of link state.
+ *
+ * @thread  NAT
  */
 static DECLCALLBACK(void) drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWORKLINKSTATE enmLinkState)
 {
@@ -487,13 +458,11 @@ static DECLCALLBACK(void) drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWOR
     {
         case PDMNETWORKLINKSTATE_UP:
             LogRel(("NAT: Link up\n"));
-            // slirp_link_up(pThis->pNATState);
             break;
 
         case PDMNETWORKLINKSTATE_DOWN:
         case PDMNETWORKLINKSTATE_DOWN_RESUME:
             LogRel(("NAT: Link down\n"));
-            // slirp_link_down(pThis->pNATState);
             break;
 
         default:
@@ -506,6 +475,7 @@ static DECLCALLBACK(void) drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWOR
  *
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
  * @param   enmLinkState    The new link state.
+ *
  * @thread  EMT
  */
 static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
@@ -536,54 +506,90 @@ static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInte
     RTReqRelease(pReq);
 }
 
-/** @todo r=jack: move this to the right spot. temp for dev. */
-static void register_poll_fd(int fd, void *opaque) {
+/**
+ * Registers poll. Unused function (other than logging).
+ */
+static void drvNAT_RegisterPoll(int fd, void *opaque) {
     RT_NOREF(fd, opaque);
+    Log4(("Poll registered\n"));
 }
 
-static void unregister_poll_fd(int fd, void *opaque) {
+/**
+ * Unregisters poll. Unused function (other than logging).
+ */
+static void drvNAT_UnregisterPoll(int fd, void *opaque) {
     RT_NOREF(fd, opaque);
+    Log4(("Poll unregistered\n"));
 }
 
-static int slirp_to_poll(int events) {
-    int ret = 0;
+/**
+ * Converts slirp representation of poll events to host representation.
+ *
+ * @param   iEvents     Integer representing slirp type poll events.
+ *
+ * @returns Integer representing host type poll events.
+ *
+ * @thread  ?
+ */
+static int drvNAT_PollEventSlirpToHost(int iEvents) {
+    int iRet = 0;
 #ifndef RT_OS_WINDOWS
-    if (events & SLIRP_POLL_IN)  ret |= POLLIN;
-    if (events & SLIRP_POLL_OUT) ret |= POLLOUT;
-    if (events & SLIRP_POLL_PRI) ret |= POLLPRI;
-    if (events & SLIRP_POLL_ERR) ret |= POLLERR;
-    if (events & SLIRP_POLL_HUP) ret |= POLLHUP;
+    if (iEvents & SLIRP_POLL_IN)  iRet |= POLLIN;
+    if (iEvents & SLIRP_POLL_OUT) iRet |= POLLOUT;
+    if (iEvents & SLIRP_POLL_PRI) iRet |= POLLPRI;
+    if (iEvents & SLIRP_POLL_ERR) iRet |= POLLERR;
+    if (iEvents & SLIRP_POLL_HUP) iRet |= POLLHUP;
 #else
-    if (events & SLIRP_POLL_IN)  ret |= (POLLRDNORM | POLLRDBAND);
-    if (events & SLIRP_POLL_OUT) ret |= POLLWRNORM;
-    if (events & SLIRP_POLL_PRI) ret |= (POLLIN);
-    if (events & SLIRP_POLL_ERR) ret |= 0;
-    if (events & SLIRP_POLL_HUP) ret |= 0;
+    if (iEvents & SLIRP_POLL_IN)  iRet |= (POLLRDNORM | POLLRDBAND);
+    if (iEvents & SLIRP_POLL_OUT) iRet |= POLLWRNORM;
+    if (iEvents & SLIRP_POLL_PRI) iRet |= (POLLIN);
+    if (iEvents & SLIRP_POLL_ERR) iRet |= 0;
+    if (iEvents & SLIRP_POLL_HUP) iRet |= 0;
 #endif
-    return ret;
+    return iRet;
 }
 
-static int poll_to_slirp(int events) {
-    int ret = 0;
+/**
+ * Converts host representation of poll events to slirp representation.
+ *
+ * @param   iEvents     Integer representing host type poll events.
+ *
+ * @returns Integer representing slirp type poll events.
+ *
+ * @thread  ?
+ */
+static int drvNAT_PollEventHostToSlirp(int iEvents) {
+    int iRet = 0;
 #ifndef RT_OS_WINDOWS
-    if (events & POLLIN)  ret |= SLIRP_POLL_IN;
-    if (events & POLLOUT) ret |= SLIRP_POLL_OUT;
-    if (events & POLLPRI) ret |= SLIRP_POLL_PRI;
-    if (events & POLLERR) ret |= SLIRP_POLL_ERR;
-    if (events & POLLHUP) ret |= SLIRP_POLL_HUP;
+    if (iEvents & POLLIN)  iRet |= SLIRP_POLL_IN;
+    if (iEvents & POLLOUT) iRet |= SLIRP_POLL_OUT;
+    if (iEvents & POLLPRI) iRet |= SLIRP_POLL_PRI;
+    if (iEvents & POLLERR) iRet |= SLIRP_POLL_ERR;
+    if (iEvents & POLLHUP) iRet |= SLIRP_POLL_HUP;
 #else
-    if (events & (POLLRDNORM | POLLRDBAND))  ret |= SLIRP_POLL_IN;
-    if (events & POLLWRNORM) ret |= SLIRP_POLL_OUT;
-    if (events & (POLLPRI)) ret |= SLIRP_POLL_PRI;
-    if (events & POLLERR) ret |= SLIRP_POLL_ERR;
-    if (events & POLLHUP) ret |= SLIRP_POLL_HUP;
+    if (iEvents & (POLLRDNORM | POLLRDBAND))  iRet |= SLIRP_POLL_IN;
+    if (iEvents & POLLWRNORM) iRet |= SLIRP_POLL_OUT;
+    if (iEvents & (POLLPRI)) iRet |= SLIRP_POLL_PRI;
+    if (iEvents & POLLERR) iRet |= SLIRP_POLL_ERR;
+    if (iEvents & POLLHUP) iRet |= SLIRP_POLL_HUP;
 #endif
-    return ret;
+    return iRet;
 }
 
-static int add_poll_cb(int fd, int events, void *opaque)
+/**
+ * Callback function to add entry to pollfd array.
+ *
+ * @param   iFd     Integer of system file descriptor of socket.
+ *                  (on windows, this is a VBox internal, not system, value).
+ * @param   iEvents Integer of slirp type poll events.
+ * @param   opaque  Pointer to NAT State context.
+ *
+ * @returns Index of latest pollfd entry.
+ *
+ * @thread  ?
+ */
+static int drvNAT_addPollCb(int iFd, int iEvents, void *opaque)
 {
-    // LogFlow(("add_poll_cb: fd=%d, events=%d\n", fd, events));
     PDRVNAT pThis = (PDRVNAT)opaque;
 
     if (pThis->pNATState->nsock + 1 >= pThis->pNATState->uPollCap)
@@ -595,29 +601,37 @@ static int add_poll_cb(int fd, int events, void *opaque)
             pThis->pNATState->polls = pvNew;
             pThis->pNATState->uPollCap *= 2;
         }
-        else {
-            LogFlow(("add_poll_cb return -1"));
+        else
             return -1;
-        }
     }
 
     int idx = pThis->pNATState->nsock;
 #ifdef RT_OS_WINDOWS
-    pThis->pNATState->polls[idx].fd = libslirp_wrap_RTHandleTableLookup(fd);
+    pThis->pNATState->polls[idx].fd = libslirp_wrap_RTHandleTableLookup(iFd);
 #else
-    pThis->pNATState->polls[idx].fd = fd;
+    pThis->pNATState->polls[idx].fd = iFd;
 #endif
-    pThis->pNATState->polls[idx].events = slirp_to_poll(events);
+    pThis->pNATState->polls[idx].events = drvNAT_PollEventSlirpToHost(iEvents);
     pThis->pNATState->polls[idx].revents = 0;
     pThis->pNATState->nsock += 1;
     return idx;
 }
 
+/**
+ * Get translated revents from a poll at a given index.
+ *
+ * @param   idx     Integer index of poll.
+ * @param   opaque  Pointer to NAT State context.
+ *
+ * @returns Integer representing transalted revents.
+ *
+ * @thread  ?
+ */
 static int get_revents_cb(int idx, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
     struct pollfd* polls = pThis->pNATState->polls;
-    return poll_to_slirp(polls[idx].revents);
+    return drvNAT_PollEventHostToSlirp(polls[idx].revents);
 }
 
 /**
@@ -629,6 +643,13 @@ static int get_revents_cb(int idx, void *opaque)
  * hSlirpReqQueue and handled asynchronously by this thread.  If this thread
  * wants to deliver packets to the guest, it enqueues a request into
  * hRecvReqQueue which is later handled by the Recv thread.
+ *
+ * @param   pDrvIns     Pointer to PDM driver context.
+ * @param   pThread     Pointer to calling thread context.
+ *
+ * @returns VBox status code
+ *
+ * @thread  NAT
  */
 static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
@@ -637,7 +658,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     unsigned int cBreak = 0;
 #else /* RT_OS_WINDOWS */
     unsigned int cPollNegRet = 0;
-    add_poll_cb(RTPipeToNative(pThis->hPipeRead), SLIRP_POLL_IN | SLIRP_POLL_HUP, pThis);
+    drvNAT_addPollCb(RTPipeToNative(pThis->hPipeRead), SLIRP_POLL_IN | SLIRP_POLL_HUP, pThis);
     pThis->pNATState->polls[0].fd = RTPipeToNative(pThis->hPipeRead);
     pThis->pNATState->polls[0].events = POLLRDNORM | POLLPRI | POLLRDBAND;
     pThis->pNATState->polls[0].revents = 0;
@@ -663,7 +684,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         uint32_t uTimeout = 0;
         pThis->pNATState->nsock = 1;
 
-        slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, add_poll_cb /* SlirpAddPollCb */, pThis /* opaque */);
+        slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, drvNAT_addPollCb /* SlirpAddPollCb */, pThis /* opaque */);
         slirpUpdateTimeout(&uTimeout, pThis);
 
         int cChangedFDs = poll(pThis->pNATState->polls, pThis->pNATState->nsock, uTimeout /* timeout */);
@@ -711,7 +732,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 #else /* RT_OS_WINDOWS */
         uint32_t uTimeout = 0;
         pThis->pNATState->nsock = 0;
-        slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, add_poll_cb /* SlirpAddPollCb */, pThis /* opaque */);
+        slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, drvNAT_addPollCb /* SlirpAddPollCb */, pThis /* opaque */);
         slirpUpdateTimeout(&uTimeout, pThis);
 
         int cChangedFDs = WSAPoll(pThis->pNATState->polls, pThis->pNATState->nsock, uTimeout /* timeout */);
@@ -759,6 +780,8 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
  * @returns VBox status code.
  * @param   pDevIns     The pcnet device instance.
  * @param   pThread     The send thread.
+ *
+ * @thread  ?
  */
 static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
@@ -769,6 +792,7 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     return VINF_SUCCESS;
 }
 
+/** @todo r=jack: do we need? */
 static DECLCALLBACK(int) drvNATHostResThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
@@ -1396,8 +1420,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     slirpCallbacks->timer_new = &slirpTimerNewCb;
     slirpCallbacks->timer_free = &slirpTimerFreeCb;
     slirpCallbacks->timer_mod = &slirpTimerModCb;
-    slirpCallbacks->register_poll_fd = &register_poll_fd;
-    slirpCallbacks->unregister_poll_fd = &unregister_poll_fd;
+    slirpCallbacks->register_poll_fd = &drvNAT_RegisterPoll;
+    slirpCallbacks->unregister_poll_fd = &drvNAT_UnregisterPoll;
     slirpCallbacks->notify = &slirpNotifyCb;
     slirpCallbacks->init_completed = NULL;
     slirpCallbacks->timer_new_opaque = NULL;

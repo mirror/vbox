@@ -349,7 +349,3 @@ static DECLCALLBACK(void) slirpTimerModCb(void *, int64_t, void *);
 
 static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS);
 static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS, PCFGMNODE, uint32_t);
-
-/** @todo r=jack: move this to the right spot. temp for dev. */
-static void register_poll_fd(int, void *);
-static void unregister_poll_fd(int, void *);
