@@ -234,8 +234,6 @@ class UIShortcutConfigurationModel : public QAbstractTableModel
 
 signals:
 
-    /** Notifies about shortcuts loaded. */
-    void sigShortcutsLoaded();
     /** Notifies about data changed. */
     void sigDataChanged();
 
@@ -322,10 +320,13 @@ public:
     /** Sets the @a pModel for the view to present. */
     virtual void setModel(QAbstractItemModel *pModel) RT_OVERRIDE;
 
-private slots:
+protected slots:
 
-    /** Handles shortcuts loaded signal. */
-    void sltHandleShortcutsLoaded();
+    /** Handles rows being inserted.
+      * @param  parent  Brings the parent under which new rows being inserted.
+      * @param  iStart  Brings the starting position (inclusive).
+      * @param  iStart  Brings the end position (inclusive). */
+    virtual void rowsInserted(const QModelIndex &parent, int iStart, int iEnd) RT_OVERRIDE;
 
 private:
 
@@ -373,10 +374,9 @@ void UIShortcutConfigurationModel::load(const UIShortcutConfigurationList &list)
         /* Add suitable item to the model as a new shortcut: */
         m_shortcuts << new UIShortcutTableViewRow(view(), item);
     }
+
     /* Apply filter: */
     applyFilter();
-    /* Notify table: */
-    emit sigShortcutsLoaded();
 }
 
 void UIShortcutConfigurationModel::save(UIShortcutConfigurationList &list)
@@ -636,18 +636,16 @@ bool UIShortcutConfigurationModel::setData(const QModelIndex &index, const QVari
 void UIShortcutConfigurationModel::sort(int iColumn, Qt::SortOrder order /* = Qt::AscendingOrder */)
 {
     /* Sort whole the list: */
-    std::stable_sort(m_shortcuts.begin(), m_shortcuts.end(), UIShortcutItemSortingFunctor(iColumn, order));
+    std::stable_sort(m_filteredShortcuts.begin(), m_filteredShortcuts.end(), UIShortcutItemSortingFunctor(iColumn, order));
     /* Make sure host-combo item is always the first one: */
     UIShortcutConfigurationItem fakeHostComboItem(UIHostCombo::hostComboCacheKey(), QString(), QString(), QString(), QString());
     UIShortcutTableViewRow fakeHostComboTableViewRow(0, fakeHostComboItem);
-    const int iIndexOfHostComboItem = UIShortcutSearchFunctor<UIShortcutTableViewRow>()(m_shortcuts, fakeHostComboTableViewRow);
+    const int iIndexOfHostComboItem = UIShortcutSearchFunctor<UIShortcutTableViewRow>()(m_filteredShortcuts, fakeHostComboTableViewRow);
     if (iIndexOfHostComboItem != -1)
     {
-        UIShortcutTableViewRow *pHostComboItem = m_shortcuts.takeAt(iIndexOfHostComboItem);
-        m_shortcuts.prepend(pHostComboItem);
+        UIShortcutTableViewRow *pHostComboItem = m_filteredShortcuts.takeAt(iIndexOfHostComboItem);
+        m_filteredShortcuts.prepend(pHostComboItem);
     }
-    /* Apply the filter: */
-    applyFilter();
     /* Notify the model: */
     emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
 }
@@ -740,28 +738,25 @@ void UIShortcutConfigurationView::setModel(QAbstractItemModel *pModel)
         // to be used after model is already assigned. Getting Qt crash otherwise.
         horizontalHeader()->setSectionResizeMode(TableColumnIndex_Description, QHeaderView::Interactive);
         horizontalHeader()->setSectionResizeMode(TableColumnIndex_Sequence, QHeaderView::Stretch);
-
-        /* Connect model: */
-        UIShortcutConfigurationModel *pHotKeyTableModel = qobject_cast<UIShortcutConfigurationModel*>(model());
-        if (pHotKeyTableModel)
-            connect(pHotKeyTableModel, &UIShortcutConfigurationModel::sigShortcutsLoaded,
-                    this, &UIShortcutConfigurationView::sltHandleShortcutsLoaded);
     }
 }
 
-void UIShortcutConfigurationView::sltHandleShortcutsLoaded()
+void UIShortcutConfigurationView::rowsInserted(const QModelIndex &parent, int iStart, int iEnd)
 {
-    /* Resize columns to feat contents: */
+    /* Call to base-class: */
+    QITableView::rowsInserted(parent, iStart, iEnd);
+
+    /* Resize columns to fit contents: */
     resizeColumnsToContents();
 
-    /* Configure sorting: */
+    /* Reapply sorting: */
     sortByColumn(TableColumnIndex_Description, Qt::AscendingOrder);
-    setSortingEnabled(true);
 }
 
 void UIShortcutConfigurationView::prepare()
 {
     /* Configure self: */
+    setSortingEnabled(true);
     setTabKeyNavigation(false);
     setContextMenuPolicy(Qt::CustomContextMenu);
     setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -1002,5 +997,6 @@ void UIShortcutConfigurationEditor::prepareConnections()
     connect(m_pModelRuntime, &UIShortcutConfigurationModel::sigDataChanged,
             this, &UIShortcutConfigurationEditor::sigValueChanged);
 }
+
 
 # include "UIShortcutConfigurationEditor.moc"
