@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -314,11 +314,13 @@ class UIShortcutConfigurationView : public QITableView
 public:
 
     /** Constructs table passing @a pParent to the base-class.
-      * @param  pModel         Brings the model this table is bound to.
       * @param  strObjectName  Brings the object name this table has, required for fast referencing. */
-    UIShortcutConfigurationView(QWidget *pParent, UIShortcutConfigurationModel *pModel, const QString &strObjectName);
+    UIShortcutConfigurationView(QWidget *pParent, const QString &strObjectName);
     /** Destructs table. */
     virtual ~UIShortcutConfigurationView() RT_OVERRIDE;
+
+    /** Sets the @a pModel for the view to present. */
+    virtual void setModel(QAbstractItemModel *pModel) RT_OVERRIDE;
 
 private slots:
 
@@ -331,6 +333,9 @@ private:
     void prepare();
     /** Cleanups all. */
     void cleanup();
+
+    /** Holds whether the view is polished. */
+    bool  m_fPolished;
 
     /** Holds the item editor factory instance. */
     QItemEditorFactory *m_pItemEditorFactory;
@@ -702,15 +707,13 @@ void UIShortcutConfigurationModel::applyFilter()
 *********************************************************************************************************************************/
 
 UIShortcutConfigurationView::UIShortcutConfigurationView(QWidget *pParent,
-                                                         UIShortcutConfigurationModel *pModel,
                                                          const QString &strObjectName)
     : QITableView(pParent)
+    , m_fPolished(false)
     , m_pItemEditorFactory(0)
 {
     /* Set object name: */
     setObjectName(strObjectName);
-    /* Set model: */
-    setModel(pModel);
 
     /* Prepare all: */
     prepare();
@@ -720,6 +723,30 @@ UIShortcutConfigurationView::~UIShortcutConfigurationView()
 {
     /* Cleanup all: */
     cleanup();
+}
+
+void UIShortcutConfigurationView::setModel(QAbstractItemModel *pModel)
+{
+    /* Call to base-class: */
+    QITableView::setModel(pModel);
+
+    /* Some stuff to be polished after a model is assigned: */
+    if (model() && !m_fPolished)
+    {
+        m_fPolished = true;
+
+        // WORKAROUND:
+        // Due to internal Qt bug QHeaderView::::setSectionResizeMode is only possible
+        // to be used after model is already assigned. Getting Qt crash otherwise.
+        horizontalHeader()->setSectionResizeMode(TableColumnIndex_Description, QHeaderView::Interactive);
+        horizontalHeader()->setSectionResizeMode(TableColumnIndex_Sequence, QHeaderView::Stretch);
+
+        /* Connect model: */
+        UIShortcutConfigurationModel *pHotKeyTableModel = qobject_cast<UIShortcutConfigurationModel*>(model());
+        if (pHotKeyTableModel)
+            connect(pHotKeyTableModel, &UIShortcutConfigurationModel::sigShortcutsLoaded,
+                    this, &UIShortcutConfigurationView::sltHandleShortcutsLoaded);
+    }
 }
 
 void UIShortcutConfigurationView::sltHandleShortcutsLoaded()
@@ -745,14 +772,8 @@ void UIShortcutConfigurationView::prepare()
     verticalHeader()->hide();
     verticalHeader()->setDefaultSectionSize((int)(verticalHeader()->minimumSectionSize() * 1.33));
     horizontalHeader()->setStretchLastSection(false);
-    horizontalHeader()->setSectionResizeMode(TableColumnIndex_Description, QHeaderView::Interactive);
-    horizontalHeader()->setSectionResizeMode(TableColumnIndex_Sequence, QHeaderView::Stretch);
-
-    /* Connect model: */
-    UIShortcutConfigurationModel *pHotKeyTableModel = qobject_cast<UIShortcutConfigurationModel*>(model());
-    if (pHotKeyTableModel)
-        connect(pHotKeyTableModel, &UIShortcutConfigurationModel::sigShortcutsLoaded,
-                this, &UIShortcutConfigurationView::sltHandleShortcutsLoaded);
+    // WORKAROUND:
+    // Rest of horizontalHeader stuff is in setModel() above..
 
     /* Check if we do have proper item delegate: */
     QIStyledItemDelegate *pStyledItemDelegate = qobject_cast<QIStyledItemDelegate*>(itemDelegate());
@@ -914,9 +935,12 @@ void UIShortcutConfigurationEditor::prepareTabManager()
             m_pModelManager = new UIShortcutConfigurationModel(this, UIType_ManagerUI);
 
             /* Prepare Manager UI table: */
-            m_pTableManager = new UIShortcutConfigurationView(pTabManager, m_pModelManager, "m_pTableManager");
+            m_pTableManager = new UIShortcutConfigurationView(pTabManager, "m_pTableManager");
             if (m_pTableManager)
+            {
+                m_pTableManager->setModel(m_pModelManager);
                 pLayoutManager->addWidget(m_pTableManager);
+            }
         }
 
         m_pTabWidget->insertTab(TableIndex_Manager, pTabManager, QString());
@@ -948,9 +972,12 @@ void UIShortcutConfigurationEditor::prepareTabRuntime()
             m_pModelRuntime = new UIShortcutConfigurationModel(this, UIType_RuntimeUI);
 
             /* Create Runtime UI table: */
-            m_pTableRuntime = new UIShortcutConfigurationView(pTabMachine, m_pModelRuntime, "m_pTableRuntime");
+            m_pTableRuntime = new UIShortcutConfigurationView(pTabMachine, "m_pTableRuntime");
             if (m_pTableRuntime)
+            {
+                m_pTableRuntime->setModel(m_pModelRuntime);
                 pLayoutMachine->addWidget(m_pTableRuntime);
+            }
         }
 
         m_pTabWidget->insertTab(TableIndex_Runtime, pTabMachine, QString());
