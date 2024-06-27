@@ -536,7 +536,8 @@ static void vboxTraceLogDecodeEvtTpmAuthSessionResp(PRTTRACELOGDECODERHLP pHlp, 
 
 static void vboxTraceLogDecodeSizedBufU16(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx, const char *pszName)
 {
-    pHlp->pfnStructBldBegin(pHlp, pszName);
+    if (pszName)
+        pHlp->pfnStructBldBegin(pHlp, pszName);
     TPM_DECODE_INIT();
         TPM_DECODE_U16(u16Size, u16Size);
         if (u16Size)
@@ -544,7 +545,8 @@ static void vboxTraceLogDecodeSizedBufU16(PRTTRACELOGDECODERHLP pHlp, PTPMDECODE
             TPM_DECODE_BUF_STR(pb, pszName, u16Size);
         }
     TPM_DECODE_END();
-    pHlp->pfnStructBldEnd(pHlp);
+    if (pszName)
+        pHlp->pfnStructBldEnd(pHlp);
 }
 
 
@@ -645,6 +647,61 @@ static void vboxTraceLogDecode_TPMS_CONTEXT(PRTTRACELOGDECODERHLP pHlp, PTPMDECO
         TPM_DECODE_U32_HEX(hSaved,      hSaved);
         TPM_DECODE_U32_HEX(hHierarchy,  hHierarchy);
         vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "ContextBlob");
+    TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
+}
+
+
+static void vboxTraceLogDecode_TPM2B_SENSITIVE_CREATE(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx, const char *pszName)
+{
+    pHlp->pfnStructBldBegin(pHlp, pszName);
+    TPM_DECODE_INIT();
+        /** @todo */
+        vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, NULL /*pszName*/);
+    TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
+}
+
+
+static void vboxTraceLogDecode_TPM2B_TEMPLATE(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx, const char *pszName)
+{
+    pHlp->pfnStructBldBegin(pHlp, pszName);
+    TPM_DECODE_INIT();
+        /** @todo */
+        vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, NULL /*pszName*/);
+    TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
+}
+
+
+static void vboxTraceLogDecode_TPM2B_PRIVATE(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx, const char *pszName)
+{
+    pHlp->pfnStructBldBegin(pHlp, pszName);
+    TPM_DECODE_INIT();
+        /** @todo */
+        vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, NULL /*pszName*/);
+    TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
+}
+
+
+static void vboxTraceLogDecode_TPM2B_PUBLIC(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx, const char *pszName)
+{
+    pHlp->pfnStructBldBegin(pHlp, pszName);
+    TPM_DECODE_INIT();
+        /** @todo */
+        vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, NULL /*pszName*/);
+    TPM_DECODE_END();
+    pHlp->pfnStructBldEnd(pHlp);
+}
+
+
+static void vboxTraceLogDecode_TPM2B_NAME(PRTTRACELOGDECODERHLP pHlp, PTPMDECODECTX pCtx, const char *pszName)
+{
+    pHlp->pfnStructBldBegin(pHlp, pszName);
+    TPM_DECODE_INIT();
+        /** @todo */
+        vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, NULL /*pszName*/);
     TPM_DECODE_END();
     pHlp->pfnStructBldEnd(pHlp);
 }
@@ -985,6 +1042,40 @@ static const char *g_apszHandlesClearReq[] =
 };
 
 
+static const char *g_apszHandlesClearControlReq[] =
+{
+    "hAuth",
+    NULL
+};
+
+
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeClearControlReq(PRTTRACELOGDECODERHLP pHlp, PTPMSTATE pThis, PTPMDECODECTX pCtx)
+{
+    RT_NOREF(pThis);
+
+    TPM_DECODE_INIT();
+        TPM_DECODE_BOOL(fDisable, fDisable);
+    TPM_DECODE_END();
+}
+
+
+static const char *g_apszHandlesClockSetReq[] =
+{
+    "hAuth",
+    NULL
+};
+
+
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeClockSetReq(PRTTRACELOGDECODERHLP pHlp, PTPMSTATE pThis, PTPMDECODECTX pCtx)
+{
+    RT_NOREF(pThis);
+
+    TPM_DECODE_INIT();
+        TPM_DECODE_U64(u64NewTime, u64NewTime);
+    TPM_DECODE_END();
+}
+
+
 static const char *g_apszHandlesHierarchyChangeAuthReq[] =
 {
     "hAuth",
@@ -999,6 +1090,39 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeHierarchyChangeAuthReq(P
         vboxTraceLogDecodeSizedBufU16(pHlp, pCtx, "NewAuth");
     TPM_DECODE_END();
 }
+
+
+static const char *g_apszHandlesHierarchyControlReq[] =
+{
+    "hAuth",
+    NULL
+};
+
+
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeHierarchyControlReq(PRTTRACELOGDECODERHLP pHlp, PTPMSTATE pThis, PTPMDECODECTX pCtx)
+{
+    RT_NOREF(pThis);
+
+    TPM_DECODE_INIT();
+        TPM_DECODE_U32_HEX(hEnable, hEnable);
+        TPM_DECODE_BOOL(   fState,  fState);
+    TPM_DECODE_END();
+}
+
+
+static const char *g_apszHandlesNvUndefineSpaceReq[] =
+{
+    "hAuth",
+    "hNvIndex",
+    NULL
+};
+
+
+static const char *g_apszHandlesChangeEpsPpsReq[] =
+{
+    "hAuth",
+    NULL
+};
 
 
 static const char *g_apszHandlesNvDefineSpaceReq[] =
@@ -1139,6 +1263,14 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeNvWriteReq(PRTTRACELOGDE
         TPM_DECODE_U16(u16Offset, u16Offset);
     TPM_DECODE_END();
 }
+
+
+static const char *g_apszHandlesNvWriteLockReq[] =
+{
+    "hAuth",
+    "hNvIndex",
+    NULL
+};
 
 
 static const char *g_apszHandlesDictionaryAttackParametersReq[] =
@@ -1623,6 +1755,48 @@ static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodePolicyOrReq(PRTTRACELOGD
 }
 
 
+static const char *g_apszHandlesCreateLoadedReq[] =
+{
+    "hParent",
+    NULL
+};
+
+
+static const char *g_apszHandlesCreateLoadedResp[] =
+{
+    "hObj",
+    NULL
+};
+
+
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeCreateLoadedReq(PRTTRACELOGDECODERHLP pHlp, PTPMSTATE pThis, PTPMDECODECTX pCtx)
+{
+    RT_NOREF(pThis);
+
+    TPM_DECODE_INIT();
+        vboxTraceLogDecode_TPM2B_SENSITIVE_CREATE(pHlp, pCtx, "InSensitive");
+        TPM_DECODE_END_IF_ERROR();
+        vboxTraceLogDecode_TPM2B_TEMPLATE(pHlp, pCtx, "InPublic");
+        TPM_DECODE_END_IF_ERROR();
+    TPM_DECODE_END();
+}
+
+
+static DECLCALLBACK(void) vboxTraceLogDecodeEvtTpmDecodeCreateLoadedResp(PRTTRACELOGDECODERHLP pHlp, PTPMSTATE pThis, PTPMDECODECTX pCtx)
+{
+    RT_NOREF(pThis);
+
+    TPM_DECODE_INIT();
+        vboxTraceLogDecode_TPM2B_PRIVATE(pHlp, pCtx, "OutPrivate");
+        TPM_DECODE_END_IF_ERROR();
+        vboxTraceLogDecode_TPM2B_PUBLIC(pHlp, pCtx, "OutPublic");
+        TPM_DECODE_END_IF_ERROR();
+        vboxTraceLogDecode_TPM2B_NAME(pHlp, pCtx, "Name");
+        TPM_DECODE_END_IF_ERROR();
+    TPM_DECODE_END();
+}
+
+
 static struct
 {
     uint32_t              u32CmdCode;
@@ -1639,13 +1813,13 @@ static struct
                                                                                                  a_pfnReq, a_pfnResp }
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_NV_UNDEFINE_SPACE_SPECIAL),
     TPM_CMD_CODE_INIT(         TPM2_CC_EVICT_CONTROL,                     g_apszHandlesEvictControlReq,                 NULL,                               vboxTraceLogDecodeEvtTpmDecodeEvictControlReq,                  NULL),
-    TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_HIERARCHY_CONTROL),
-    TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_NV_UNDEFINE_SPACE),
-    TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_CHANGE_EPS),
-    TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_CHANGE_PPS),
+    TPM_CMD_CODE_INIT(         TPM2_CC_HIERARCHY_CONTROL,                 g_apszHandlesHierarchyControlReq,             NULL,                               vboxTraceLogDecodeEvtTpmDecodeHierarchyControlReq,              NULL),
+    TPM_CMD_CODE_INIT(         TPM2_CC_NV_UNDEFINE_SPACE,                 g_apszHandlesNvUndefineSpaceReq,              NULL,                               NULL,                                                           NULL),
+    TPM_CMD_CODE_INIT(         TPM2_CC_CHANGE_EPS,                        g_apszHandlesChangeEpsPpsReq,                 NULL,                               NULL,                                                           NULL),
+    TPM_CMD_CODE_INIT(         TPM2_CC_CHANGE_PPS,                        g_apszHandlesChangeEpsPpsReq,                 NULL,                               NULL,                                                           NULL),
     TPM_CMD_CODE_INIT(         TPM2_CC_CLEAR,                             g_apszHandlesClearReq,                        NULL,                               NULL,                                                           NULL),
-    TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_CLEAR_CONTROL),
-    TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_CLOCK_SET),
+    TPM_CMD_CODE_INIT(         TPM2_CC_CLEAR_CONTROL,                     g_apszHandlesClearControlReq,                 NULL,                               vboxTraceLogDecodeEvtTpmDecodeClearControlReq,                  NULL),
+    TPM_CMD_CODE_INIT(         TPM2_CC_CLOCK_SET,                         g_apszHandlesClockSetReq,                     NULL,                               vboxTraceLogDecodeEvtTpmDecodeClockSetReq,                      NULL),
     TPM_CMD_CODE_INIT(         TPM2_CC_HIERARCHY_CHANGE_AUTH,             g_apszHandlesHierarchyChangeAuthReq,          NULL,                               vboxTraceLogDecodeEvtTpmDecodeHierarchyChangeAuthReq,           NULL),
     TPM_CMD_CODE_INIT(         TPM2_CC_NV_DEFINE_SPACE,                   g_apszHandlesNvDefineSpaceReq,                NULL,                               vboxTraceLogDecodeEvtTpmDecodeNvDefineSpaceReq,                 NULL),
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_PCR_ALLOCATE),
@@ -1661,7 +1835,7 @@ static struct
     TPM_CMD_CODE_INIT(         TPM2_CC_NV_SET_BITS,                       g_apszHandlesNvSetBitsReq,                    NULL,                               vboxTraceLogDecodeEvtTpmDecodeNvSetBitsReq,                     NULL),
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_NV_EXTEND),
     TPM_CMD_CODE_INIT(         TPM2_CC_NV_WRITE,                          g_apszHandlesNvWriteReq,                      NULL,                               vboxTraceLogDecodeEvtTpmDecodeNvWriteReq,                       NULL),
-    TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_NV_WRITE_LOCK),
+    TPM_CMD_CODE_INIT(         TPM2_CC_NV_WRITE_LOCK,                     g_apszHandlesNvWriteLockReq,                  NULL,                               NULL,                                                           NULL),
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_DICTIONARY_ATTACK_LOCK_RESET),
     TPM_CMD_CODE_INIT(         TPM2_CC_DICTIONARY_ATTACK_PARAMETERS,      g_apszHandlesDictionaryAttackParametersReq,   NULL,                               vboxTraceLogDecodeEvtTpmDecodeDictionaryAttackParametersReq,    NULL),
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_NV_CHANGE_AUTH),
@@ -1746,7 +1920,7 @@ static struct
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_EC_EPHEMERAL),
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_POLICY_NV_WRITTEN),
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_POLICY_TEMPLATE),
-    TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_CREATE_LOADED),
+    TPM_CMD_CODE_INIT(         TPM2_CC_CREATE_LOADED,                    g_apszHandlesCreateLoadedReq,                   g_apszHandlesCreateLoadedResp,      vboxTraceLogDecodeEvtTpmDecodeCreateLoadedReq,                 vboxTraceLogDecodeEvtTpmDecodeCreateLoadedResp),
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_POLICY_AUTHORIZE_NV),
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_ENCRYPT_DECRYPT_2),
     TPM_CMD_CODE_INIT_NOT_IMPL(TPM2_CC_AC_GET_CAPABILITY),
