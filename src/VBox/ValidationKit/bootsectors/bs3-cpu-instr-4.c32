@@ -2113,7 +2113,10 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addss(uint8_t bMode)
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
               /*flags    */ 0, 0 },
-          { { /*src2     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_RAND_VAL_5(0), BS3_FP32_RAND_VAL_2(1), BS3_FP32_RAND_VAL_0(1), BS3_FP32_RAND_VAL_3(0), BS3_FP32_RAND_VAL_2(0), BS3_FP32_RAND_VAL_0(1), BS3_FP32_RAND_VAL_4(0) } },
+    /*
+     * Denormals.
+     */
+    /*27*/{ { /*src2     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_RAND_VAL_5(0), BS3_FP32_RAND_VAL_2(1), BS3_FP32_RAND_VAL_0(1), BS3_FP32_RAND_VAL_3(0), BS3_FP32_RAND_VAL_2(0), BS3_FP32_RAND_VAL_0(1), BS3_FP32_RAND_VAL_4(0) } },
             { /*src1     */ { BS3_FP32_ZERO(0),         BS3_FP32_RAND_VAL_5(1), BS3_FP32_RAND_VAL_3(1), BS3_FP32_RAND_VAL_2(1), BS3_FP32_RAND_VAL_7(1), BS3_FP32_RAND_VAL_6(0), BS3_FP32_RAND_VAL_3(1), BS3_FP32_RAND_VAL_0(0) } },
             { /* =>      */ { BS3_FP32_ZERO(0),         BS3_FP32_RAND_VAL_5(1), BS3_FP32_RAND_VAL_3(1), BS3_FP32_RAND_VAL_2(1), BS3_FP32_RAND_VAL_7(1), BS3_FP32_RAND_VAL_6(0), BS3_FP32_RAND_VAL_3(1), BS3_FP32_RAND_VAL_0(0) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
@@ -2131,7 +2134,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addss(uint8_t bMode)
               /*mask     */ X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
               /*flags    */ 0, 0 },
-          /** @todo Denormals; Underflow, Precision; Rounding, FZ etc. */
+          /** @todo More denormals; Underflow, Precision; Rounding, FZ etc. */
     };
 
     static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
