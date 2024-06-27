@@ -87,6 +87,7 @@ static int recordingCodecVPXEncodeWorker(PRECORDINGCODEC pCodec, vpx_image_t *pI
 *   Generic inline functions                                                                                                     *
 *********************************************************************************************************************************/
 
+#ifdef VBOX_WITH_LIBVPX /* Currently only used by VPX. */
 DECLINLINE(void) recordingCodecLock(PRECORDINGCODEC pCodec)
 {
     int vrc2 = RTCritSectEnter(&pCodec->CritSect);
@@ -98,6 +99,7 @@ DECLINLINE(void) recordingCodecUnlock(PRECORDINGCODEC pCodec)
     int vrc2 = RTCritSectLeave(&pCodec->CritSect);
     AssertRC(vrc2);
 }
+#endif
 
 
 /*********************************************************************************************************************************
