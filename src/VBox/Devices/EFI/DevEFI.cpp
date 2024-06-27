@@ -190,6 +190,8 @@ typedef struct DEVEFIR3
     uint64_t                u64McfgBase;
     /** Length of PCI config space MMIO region */
     uint64_t                cbMcfgLength;
+    /** Physical address of the TPM PPI area. */
+    uint64_t                u64TpmPpiBase;
     /** Size of the configured NVRAM device. */
     uint32_t                cbNvram;
     /** Start address of the NVRAM flash. */
@@ -320,6 +322,7 @@ static uint32_t efiInfoSize(PDEVEFIR3 pThisCC)
         case EFI_INFO_INDEX_TSC_FREQUENCY:
         case EFI_INFO_INDEX_MCFG_BASE:
         case EFI_INFO_INDEX_MCFG_SIZE:
+        case EFI_INFO_INDEX_TPM_PPI_BASE:
             return 8;
         case EFI_INFO_INDEX_APIC_MODE:
             return 1;
@@ -422,6 +425,7 @@ static uint8_t efiInfoNextByte(PDEVEFIR3 pThisCC)
         case EFI_INFO_INDEX_MCFG_BASE:          return efiInfoNextByteU64(pThisCC, pThisCC->u64McfgBase);
         case EFI_INFO_INDEX_MCFG_SIZE:          return efiInfoNextByteU64(pThisCC, pThisCC->cbMcfgLength);
         case EFI_INFO_INDEX_APIC_MODE:          return efiInfoNextByteU8(pThisCC, pThisCC->u8APIC);
+        case EFI_INFO_INDEX_TPM_PPI_BASE:       return efiInfoNextByteU64(pThisCC, pThisCC->u64TpmPpiBase);
 
         default:
             PDMDevHlpDBGFStop(pThisCC->pDevIns, RT_SRC_POS, "%#x", pThisCC->iInfoSelector);
@@ -1559,7 +1563,8 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                   "UgaHorizontalResolution|"   // legacy
                                   "UgaVerticalResolution|"     // legacy
                                   "GraphicsResolution|"
-                                  "NvramFile", "");
+                                  "NvramFile|"
+                                  "TpmPpiBase", "");
 
     /* CPU count (optional). */
     rc = pHlp->pfnCFGMQueryU32Def(pCfg, "NumCPUs", &pThisCC->cCpus, 1);
@@ -1756,6 +1761,11 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"NvramFile\" as a string failed"));
+
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "TpmPpiBase", &pThisCC->u64TpmPpiBase, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"TpmPpiBase\" as integer failed"));
 
     /*
      * Load firmware volume and thunk ROM.
