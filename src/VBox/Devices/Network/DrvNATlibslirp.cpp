@@ -778,7 +778,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
  * Unblock the send thread so it can respond to a state change.
  *
  * @returns VBox status code.
- * @param   pDevIns     The pcnet device instance.
+ * @param   pDrvIns     The pcnet device instance.
  * @param   pThread     The send thread.
  *
  * @thread  ?
@@ -790,44 +790,6 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
     drvNATNotifyNATThread(pThis, "drvNATAsyncIoWakeup");
     return VINF_SUCCESS;
-}
-
-/** @todo r=jack: do we need? */
-static DECLCALLBACK(int) drvNATHostResThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-
-    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
-        return VINF_SUCCESS;
-
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-    {
-        RTReqQueueProcess(pThis->hHostResQueue, RT_INDEFINITE_WAIT);
-    }
-
-    return VINF_SUCCESS;
-}
-
-static DECLCALLBACK(int) drvNATReqQueueInterrupt()
-{
-    /*
-     * RTReqQueueProcess loops until request returns a warning or info
-     * status code (other than VINF_SUCCESS).
-     */
-    return VINF_INTERRUPTED;
-}
-
-static DECLCALLBACK(int) drvNATHostResWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    RT_NOREF(pThread);
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    Assert(pThis != NULL);
-
-    int rc;
-    rc = RTReqQueueCallEx(pThis->hHostResQueue, NULL /*ppReq*/, 0 /*cMillies*/,
-                          RTREQFLAGS_IPRT_STATUS | RTREQFLAGS_NO_WAIT,
-                          (PFNRT)drvNATReqQueueInterrupt, 0);
-    return rc;
 }
 
 /**
@@ -846,6 +808,12 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, const cha
 
 /**
  * Info handler.
+ *
+ * @param   pDrvIns     The PDM driver context.
+ * @param   pHlp        ....
+ * @param   pszArgs     Unused.
+ *
+ * @thread  any
  */
 static DECLCALLBACK(void) drvNATInfo(PPDMDRVINS pDrvIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
@@ -1172,9 +1140,6 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
         pThis->pNATState = NULL;
     }
 
-    RTReqQueueDestroy(pThis->hHostResQueue);
-    pThis->hHostResQueue = NIL_RTREQQUEUE;
-
     RTReqQueueDestroy(pThis->hSlirpReqQueue);
     pThis->hSlirpReqQueue = NIL_RTREQQUEUE;
 
@@ -1248,7 +1213,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     }
     pThis->hSlirpReqQueue               = NIL_RTREQQUEUE;
     pThis->hUrgRecvReqQueue             = NIL_RTREQQUEUE;
-    pThis->hHostResQueue                = NIL_RTREQQUEUE;
     pThis->EventRecv                    = NIL_RTSEMEVENT;
     pThis->EventUrgRecv                 = NIL_RTSEMEVENT;
 #ifdef RT_OS_DARWIN
@@ -1307,8 +1271,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
     int fDNSProxy = 0;
     GET_S32(rc, pDrvIns, pCfg, "DNSProxy", fDNSProxy);
-    int fUseHostResolver = 0;
-    GET_S32(rc, pDrvIns, pCfg, "UseHostResolver", fUseHostResolver);
     int MTU = 1500;
     GET_S32(rc, pDrvIns, pCfg, "SlirpMTU", MTU);
     int i32AliasMode = 0;
@@ -1402,6 +1364,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pSlirpCfg->bootfile = pThis->pszBootFile;
     pSlirpCfg->vdhcp_start = vdhcp_start;
     pSlirpCfg->vnameserver = vnameserver;
+    pSlirpCfg->if_mtu = MTU;
 
 #ifndef RT_OS_WINDOWS
     inet_pton(AF_INET6, "fd00::3", &pSlirpCfg->vnameserver6);
@@ -1462,14 +1425,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
     rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pUrgRecvThread, pThis, drvNATUrgRecv,
                                 drvNATUrgRecvWakeup, 256 * _1K, RTTHREADTYPE_IO, "NATURGRX");
-    AssertRCReturn(rc, rc);
-
-    rc = RTReqQueueCreate(&pThis->hHostResQueue);
-    AssertRCReturn(rc, rc);
-
-    rc = PDMDrvHlpThreadCreate(pThis->pDrvIns, &pThis->pHostResThread,
-                                pThis, drvNATHostResThread, drvNATHostResWakeup,
-                                128 * _1K, RTTHREADTYPE_IO, "HOSTRES");
     AssertRCReturn(rc, rc);
 
     rc = RTCritSectInit(&pThis->DevAccessLock);

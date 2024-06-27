@@ -300,11 +300,6 @@ typedef struct DRVNAT
     /** Transmit lock taken by BeginXmit and released by EndXmit. */
     RTCRITSECT              XmitLock;
 
-    /** Request queue for the async host resolver. */
-    RTREQQUEUE               hHostResQueue;
-    /** Async host resolver thread. */
-    PPDMTHREAD               pHostResThread;
-
 #ifdef RT_OS_DARWIN
     /* Handle of the DNS watcher runloop source. */
     CFRunLoopSourceRef      hRunLoopSrcDnsWatcher;
@@ -331,9 +326,6 @@ static DECLCALLBACK(void) drvNATNotifyLinkChangedWorker(PDRVNAT, PDMNETWORKLINKS
 static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP, PDMNETWORKLINKSTATE);
 static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS, PPDMTHREAD);
 static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS, PPDMTHREAD);
-static DECLCALLBACK(int) drvNATHostResThread(PPDMDRVINS, PPDMTHREAD);
-static DECLCALLBACK(int) drvNATReqQueueInterrupt();
-static DECLCALLBACK(int) drvNATHostResWakeup(PPDMDRVINS, PPDMTHREAD);
 static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE, const char *);
 static DECLCALLBACK(void) drvNATInfo(PPDMDRVINS, PCDBGFINFOHLP, const char *);
 
