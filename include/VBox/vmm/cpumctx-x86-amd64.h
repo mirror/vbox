@@ -1032,16 +1032,21 @@ AssertCompile(CPUMCTX_INHIBIT_ALL_MASK < UINT32_MAX);
 /** Hit guest DR3 breakpoint. */
 #define CPUMCTX_DBG_HIT_DR3             RT_BIT_32(CPUMCTX_DBG_HIT_DR3_BIT)
 #define CPUMCTX_DBG_HIT_DR3_BIT         (6 + CPUMX86EFLAGS_HW_BITS)
+/** Silent guest DRx breakpoint (presistent Intel errata fun). */
+#define CPUMCTX_DBG_HIT_DRX_SILENT      RT_BIT_32(CPUMCTX_DBG_HIT_DRX_SILENT_BIT)
+#define CPUMCTX_DBG_HIT_DRX_SILENT_BIT  (7 + CPUMX86EFLAGS_HW_BITS)
 /** Shift for the CPUMCTX_DBG_HIT_DRx bits. */
 #define CPUMCTX_DBG_HIT_DRX_SHIFT       CPUMCTX_DBG_HIT_DR0_BIT
-/** Mask of all guest pending DR0-DR3 breakpoint indicators. */
-#define CPUMCTX_DBG_HIT_DRX_MASK        (CPUMCTX_DBG_HIT_DR0 | CPUMCTX_DBG_HIT_DR1 | CPUMCTX_DBG_HIT_DR2 | CPUMCTX_DBG_HIT_DR3)
+/** Mask of all guest pending DR0-DR3 indicators (excluding the silent). */
+#define CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT (CPUMCTX_DBG_HIT_DR0 | CPUMCTX_DBG_HIT_DR1 | CPUMCTX_DBG_HIT_DR2 | CPUMCTX_DBG_HIT_DR3)
+/** Mask of all guest pending DR0-DR3 + silent breakpoint indicators. */
+#define CPUMCTX_DBG_HIT_DRX_MASK        (CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT | CPUMCTX_DBG_HIT_DRX_SILENT)
 /** DBGF event/breakpoint pending. */
 #define CPUMCTX_DBG_DBGF_EVENT          RT_BIT_32(CPUMCTX_DBG_DBGF_EVENT_BIT)
-#define CPUMCTX_DBG_DBGF_EVENT_BIT      (7 + CPUMX86EFLAGS_HW_BITS)
+#define CPUMCTX_DBG_DBGF_EVENT_BIT      (8 + CPUMX86EFLAGS_HW_BITS)
 /** DBGF event/breakpoint pending. */
 #define CPUMCTX_DBG_DBGF_BP             RT_BIT_32(CPUMCTX_DBG_DBGF_BP_BIT)
-#define CPUMCTX_DBG_DBGF_BP_BIT         (8 + CPUMX86EFLAGS_HW_BITS)
+#define CPUMCTX_DBG_DBGF_BP_BIT         (9 + CPUMX86EFLAGS_HW_BITS)
 /** Mask of all DBGF indicators. */
 #define CPUMCTX_DBG_DBGF_MASK           (CPUMCTX_DBG_DBGF_EVENT | CPUMCTX_DBG_DBGF_BP)
 AssertCompile((CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK) < UINT32_MAX);

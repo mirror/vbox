@@ -1262,21 +1262,56 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_DR7_RW_ALL_MASKS                UINT32_C(0x33330000)
 
 #ifndef VBOX_FOR_DTRACE_LIB
-/** Checks the RW and LEN fields are set up for an instruction breakpoint.
+/** Checks if the RW and LEN fields are set up for an instruction breakpoint.
  * @note This does not check if it's enabled. */
 # define X86_DR7_IS_EO_CFG(a_uDR7, a_iBp)   ( ((a_uDR7) & (UINT32_C(0x000f0000) << ((a_iBp) * 4))) == 0 )
 /** Checks if an instruction breakpoint is enabled and configured correctly.
  * @sa X86_DR7_IS_EO_CFG, X86_DR7_ANY_EO_ENABLED */
 # define X86_DR7_IS_EO_ENABLED(a_uDR7, a_iBp) \
     ( ((a_uDR7) & (UINT32_C(0x03) << ((a_iBp) * 2))) != 0 && X86_DR7_IS_EO_CFG(a_uDR7, a_iBp) )
-/** Checks if there are any instruction fetch breakpoint types configured in the
- * RW and LEN registers.
+/** Checks if there are any instruction fetch breakpoint types configured in
+ * the RW and LEN registers and enabled in the Lx/Gx bits.
  * @sa X86_DR7_IS_EO_CFG, X86_DR7_IS_EO_ENABLED */
 # define X86_DR7_ANY_EO_ENABLED(a_uDR7) \
     (   (((a_uDR7) & UINT32_C(0x03)) != 0 && ((a_uDR7) & UINT32_C(0x000f0000)) == 0) \
      || (((a_uDR7) & UINT32_C(0x0c)) != 0 && ((a_uDR7) & UINT32_C(0x00f00000)) == 0) \
      || (((a_uDR7) & UINT32_C(0x30)) != 0 && ((a_uDR7) & UINT32_C(0x0f000000)) == 0) \
      || (((a_uDR7) & UINT32_C(0xc0)) != 0 && ((a_uDR7) & UINT32_C(0xf0000000)) == 0) )
+
+/** Checks if the RW field is set up for a read-write data breakpoint.
+ * @note This does not check if it's enabled. */
+# define X86_DR7_IS_RW_CFG(a_uDR7, a_iBp)   ( ~((a_uDR7) & (UINT32_C(0x00030000) << ((a_iBp) * 4))) == 0)
+
+/** Checks if there are any read-write data breakpoint types configured in the
+ * RW registers and enabled in the Lx/Gx bits.
+ *
+ * @note We don't consider the LEN registers here, even if qword isn't
+ *       techincally valid for older processors - see
+ *       @sdmv3{645,18.2.4,Debug Control Register (DR7)} for details.
+ */
+# define X86_DR7_ANY_RW_ENABLED(a_uDR7) \
+    (   (((a_uDR7) & UINT32_C(0x03)) != 0 && ((a_uDR7) & UINT32_C(0x00030000)) == UINT32_C(0x00030000)) \
+     || (((a_uDR7) & UINT32_C(0x0c)) != 0 && ((a_uDR7) & UINT32_C(0x00300000)) == UINT32_C(0x00300000)) \
+     || (((a_uDR7) & UINT32_C(0x30)) != 0 && ((a_uDR7) & UINT32_C(0x03000000)) == UINT32_C(0x03000000)) \
+     || (((a_uDR7) & UINT32_C(0xc0)) != 0 && ((a_uDR7) & UINT32_C(0x30000000)) == UINT32_C(0x30000000)) )
+
+/** Checks if the RW field is set up for a write-only or read-write data
+ *  breakpoint.
+ * @note This does not check if it's enabled. */
+# define X86_DR7_IS_W_CFG(a_uDR7, a_iBp)   ( ((a_uDR7) & (UINT32_C(0x00010000) << ((a_iBp) * 4))) != 0)
+
+/** Checks if there are any read-write or write-only data breakpoint types
+ * configured in the the RW registers and enabled in the Lx/Gx bits.
+ *
+ * @note We don't consider the LEN registers here, even if qword isn't
+ *       techincally valid for older processors - see
+ *       @sdmv3{645,18.2.4,Debug Control Register (DR7)} for details.
+ */
+# define X86_DR7_ANY_W_ENABLED(a_uDR7) \
+    (   (((a_uDR7) & UINT32_C(0x03)) != 0 && ((a_uDR7) & UINT32_C(0x00010000)) != 0) \
+     || (((a_uDR7) & UINT32_C(0x0c)) != 0 && ((a_uDR7) & UINT32_C(0x00100000)) != 0) \
+     || (((a_uDR7) & UINT32_C(0x30)) != 0 && ((a_uDR7) & UINT32_C(0x01000000)) != 0) \
+     || (((a_uDR7) & UINT32_C(0xc0)) != 0 && ((a_uDR7) & UINT32_C(0x10000000)) != 0) )
 
 /** Checks if there are any I/O breakpoint types configured in the RW
  * registers.  Does NOT check if these are enabled, sorry. */

@@ -578,13 +578,16 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetFirstU8(PVMCPUCC pVCpu, uint8_t *pu8) RT_NO
 {
     /*
      * Check for hardware instruction breakpoints.
+     * Note! Guest breakpoints are only checked after POP SS or MOV SS on AMD CPUs.
      */
     if (RT_LIKELY(!(pVCpu->iem.s.fExec & IEM_F_PENDING_BRK_INSTR)))
     { /* likely */ }
     else
     {
         VBOXSTRICTRC rcStrict = DBGFBpCheckInstruction(pVCpu->CTX_SUFF(pVM), pVCpu,
-                                                       pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
+                                                       pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base,
+                                                          !(pVCpu->cpum.GstCtx.rflags.uBoth & CPUMCTX_INHIBIT_SHADOW_SS)
+                                                       || IEM_IS_GUEST_CPU_AMD(pVCpu));
         if (RT_LIKELY(rcStrict == VINF_SUCCESS))
         { /* likely */ }
         else
@@ -621,13 +624,16 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetFirstU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_M
 {
     /*
      * Check for hardware instruction breakpoints.
+    * Note! Guest breakpoints are only checked after POP SS or MOV SS on AMD CPUs.
      */
     if (RT_LIKELY(!(pVCpu->iem.s.fExec & IEM_F_PENDING_BRK_INSTR)))
     { /* likely */ }
     else
     {
         VBOXSTRICTRC rcStrict = DBGFBpCheckInstruction(pVCpu->CTX_SUFF(pVM), pVCpu,
-                                                       pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
+                                                       pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base,
+                                                          !(pVCpu->cpum.GstCtx.rflags.uBoth & CPUMCTX_INHIBIT_SHADOW_SS)
+                                                       || IEM_IS_GUEST_CPU_AMD(pVCpu));
         if (RT_LIKELY(rcStrict == VINF_SUCCESS))
         { /* likely */ }
         else
@@ -2110,7 +2116,8 @@ static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu, int rcNorma
             pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
             if (pVCpu->cpum.GstCtx.eflags.uBoth & X86_EFL_TF)
                 pVCpu->cpum.GstCtx.dr[6] |= X86_DR6_BS;
-            pVCpu->cpum.GstCtx.dr[6] |= (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK) >> CPUMCTX_DBG_HIT_DRX_SHIFT;
+            pVCpu->cpum.GstCtx.dr[6] |= (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT)
+                                     >> CPUMCTX_DBG_HIT_DRX_SHIFT;
             LogFlowFunc(("Guest #DB fired at %04X:%016llX: DR6=%08X, RFLAGS=%16RX64\n",
                          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (unsigned)pVCpu->cpum.GstCtx.dr[6],
                          pVCpu->cpum.GstCtx.rflags.uBoth));
@@ -2827,7 +2834,8 @@ static VBOXSTRICTRC iemFinishInstructionWithTfSet(PVMCPUCC pVCpu) RT_NOEXCEPT
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
     pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
     pVCpu->cpum.GstCtx.dr[6] |= X86_DR6_BS
-                             |  (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK) >> CPUMCTX_DBG_HIT_DRX_SHIFT;
+                             | (   (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT)
+                                >> CPUMCTX_DBG_HIT_DRX_SHIFT);
     /** @todo Do we set all pending \#DB events, or just one? */
     LogFlowFunc(("Guest #DB fired at %04X:%016llX: DR6=%08X, RFLAGS=%16RX64 (popf)\n",
                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (unsigned)pVCpu->cpum.GstCtx.dr[6],

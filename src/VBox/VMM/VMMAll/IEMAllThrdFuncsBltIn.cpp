@@ -205,7 +205,9 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckMode)
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckHwInstrBps)
 {
     VBOXSTRICTRC rcStrict = DBGFBpCheckInstruction(pVCpu->CTX_SUFF(pVM), pVCpu,
-                                                   pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
+                                                   pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base,
+                                                      !(pVCpu->cpum.GstCtx.rflags.uBoth & CPUMCTX_INHIBIT_SHADOW_SS)
+                                                   || IEM_IS_GUEST_CPU_AMD(pVCpu));
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
         return VINF_SUCCESS;
 

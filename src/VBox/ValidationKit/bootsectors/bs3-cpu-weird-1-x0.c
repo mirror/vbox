@@ -393,6 +393,10 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
          * Note! Intel loses the B0 status, probably for reasons similar to Pentium Pro errata 3.  Similar
          *       erratum is seen with virtually every march since, e.g. skylake SKL009 & SKL111.
          *       Weirdly enougth, they seem to get this right in real mode.  Go figure.
+         *
+         *       Update: In real mode there is no ring transition, so we'll be trampling on
+         *       breakpoint again (POP SS changes SP) when the INT/whatever instruction writes
+         *       the return address.
          */
         g_usBs3TestStep++;
         *BS3_XPTR_GET(uint32_t, StackXptr) = Ctx.ss;

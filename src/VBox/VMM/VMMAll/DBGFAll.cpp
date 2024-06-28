@@ -51,8 +51,9 @@ AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.cHardIntBreakpoints,   VM, dbgf
 AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.cSoftIntBreakpoints,   VM, dbgf.ro.cSoftIntBreakpoints);
 AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.cSelectedEvents,       VM, dbgf.ro.cSelectedEvents);
 
-
 #if !defined(VBOX_VMM_TARGET_ARMV8)
+
+
 /**
  * Gets the hardware breakpoint configuration as DR7.
  *
@@ -183,8 +184,9 @@ VMM_INT_DECL(bool) DBGFBpIsInt3Armed(PVM pVM)
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtrPC     The unsegmented PC address.
+ * @param   fCheckGuest Whether to include guest breakpoints or not.
  */
-VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckInstruction(PVMCC pVM, PVMCPUCC pVCpu, RTGCPTR GCPtrPC)
+VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckInstruction(PVMCC pVM, PVMCPUCC pVCpu, RTGCPTR GCPtrPC, bool fCheckGuest)
 {
     CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR7);
 
@@ -217,54 +219,199 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckInstruction(PVMCC pVM, PVMCPUCC pVCpu, RT
     /*
      * Check the guest.
      */
-    uint32_t const fDr7 = (uint32_t)pVCpu->cpum.GstCtx.dr[7];
-    if (X86_DR7_ANY_EO_ENABLED(fDr7) && !pVCpu->cpum.GstCtx.eflags.Bits.u1RF)
+    if (fCheckGuest)
     {
-        /*
-         * The CPU (10980XE & 6700K at least) will set the DR6.BPx bits for any
-         * DRx that matches the current PC and is configured as an execution
-         * breakpoint (RWx=EO, LENx=1byte).  They don't have to be enabled,
-         * however one that is enabled must match for the #DB to be raised and
-         * DR6 to be modified, of course.
-         */
-        CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
-        uint32_t fMatched = 0;
-        uint32_t fEnabled = 0;
-        for (unsigned iBp = 0, uBpMask = 1; iBp < 4; iBp++, uBpMask <<= 1)
-            if (X86_DR7_IS_EO_CFG(fDr7, iBp))
-            {
-                if (fDr7 & X86_DR7_L_G(iBp))
-                    fEnabled |= uBpMask;
-                if (pVCpu->cpum.GstCtx.dr[iBp] == GCPtrPC)
-                    fMatched |= uBpMask;
-            }
-        if (!(fEnabled & fMatched))
-        { /*likely*/ }
-        else if (fEnabled & fMatched)
+        uint32_t const fDr7 = (uint32_t)pVCpu->cpum.GstCtx.dr[7];
+        if (X86_DR7_ANY_EO_ENABLED(fDr7) && !pVCpu->cpum.GstCtx.eflags.Bits.u1RF)
         {
             /*
-             * Update DR6 and DR7.
-             *
-             * See "AMD64 Architecture Programmer's Manual Volume 2", chapter
-             * 13.1.1.3 for details on DR6 bits.  The basics is that the B0..B3
-             * bits are always cleared while the others must be cleared by software.
-             *
-             * The following sub chapters says the GD bit is always cleared when
-             * generating a #DB so the handler can safely access the debug registers.
+             * The CPU (10980XE & 6700K at least) will set the DR6.BPx bits for any
+             * DRx that matches the current PC and is configured as an execution
+             * breakpoint (RWx=EO, LENx=1byte).  They don't have to be enabled,
+             * however one that is enabled must match for the #DB to be raised and
+             * DR6 to be modified, of course.
              */
-            CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_DR6);
-            pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
-            if (pVM->cpum.ro.GuestFeatures.enmCpuVendor != CPUMCPUVENDOR_INTEL)
-                pVCpu->cpum.GstCtx.dr[6] |= fMatched & fEnabled;
+            CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
+            uint32_t fMatched = 0;
+            uint32_t fEnabled = 0;
+            for (unsigned iBp = 0, uBpMask = 1; iBp < 4; iBp++, uBpMask <<= 1)
+                if (X86_DR7_IS_EO_CFG(fDr7, iBp))
+                {
+                    if (fDr7 & X86_DR7_L_G(iBp))
+                        fEnabled |= uBpMask;
+                    if (pVCpu->cpum.GstCtx.dr[iBp] == GCPtrPC)
+                        fMatched |= uBpMask;
+                }
+            if (!(fEnabled & fMatched))
+            { /*likely*/ }
             else
-                pVCpu->cpum.GstCtx.dr[6] |= fMatched;    /* Intel: All matched, regardless of whether they're enabled or not  */
-            pVCpu->cpum.GstCtx.dr[7] &= ~X86_DR7_GD;
-            LogFlow(("DBGFBpCheckInstruction: hit hw breakpoints %#x at %04x:%RGv (%RGv)\n",
-                     fMatched, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPtrPC));
-            return VINF_EM_RAW_GUEST_TRAP;
+            {
+                /*
+                 * Update DR6 and DR7.
+                 *
+                 * See "AMD64 Architecture Programmer's Manual Volume 2", chapter
+                 * 13.1.1.3 for details on DR6 bits.  The basics is that the B0..B3
+                 * bits are always cleared while the others must be cleared by software.
+                 *
+                 * The following sub chapters says the GD bit is always cleared when
+                 * generating a #DB so the handler can safely access the debug registers.
+                 */
+                CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_DR6);
+                pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
+                if (pVM->cpum.ro.GuestFeatures.enmCpuVendor != CPUMCPUVENDOR_INTEL)
+                    pVCpu->cpum.GstCtx.dr[6] |= fMatched & fEnabled;
+                else
+                    pVCpu->cpum.GstCtx.dr[6] |= fMatched;    /* Intel: All matched, regardless of whether they're enabled or not  */
+                pVCpu->cpum.GstCtx.dr[7] &= ~X86_DR7_GD;
+                LogFlow(("DBGFBpCheckInstruction: hit hw breakpoints %#x at %04x:%RGv (%RGv)\n",
+                         fMatched, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPtrPC));
+                return VINF_EM_RAW_GUEST_TRAP;
+            }
         }
     }
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Common worker for DBGFBpCheckDataRead and DBGFBpCheckDataWrite.
+ */
+template<bool const a_fRead>
+DECL_FORCE_INLINE(uint32_t) dbgfBpCheckData(PVMCC pVM, PVMCPUCC pVCpu, RTGCPTR GCPtrAccess, uint32_t cbAccess, bool fSysAccess)
+{
+    AssertCompile((X86_DR7_RW_RW & 1) && (X86_DR7_RW_WO & 1));
+    CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR7);
+
+    uint32_t      fRet           = 0;
+    RTGCPTR const GCPtrAccessPfn = GCPtrAccess >> GUEST_PAGE_SHIFT;
+    Assert(((GCPtrAccess + cbAccess - 1) >> GUEST_PAGE_SHIFT) == GCPtrAccessPfn); /* No page crossing expected here! */
+
+    /*
+     * Check hyper breakpoints first as the VMM debugger has priority over
+     * the guest.
+     */
+    if (pVM->dbgf.s.cEnabledHwBreakpoints > 0)
+        for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
+        {
+            if (   (pVM->dbgf.s.aHwBreakpoints[iBp].GCPtr >> GUEST_PAGE_SHIFT) != GCPtrAccessPfn
+                || (  a_fRead
+                    ? pVM->dbgf.s.aHwBreakpoints[iBp].fType != X86_DR7_RW_RW
+                    : !(pVM->dbgf.s.aHwBreakpoints[iBp].fType & 1))
+                || pVM->dbgf.s.aHwBreakpoints[iBp].cb    != 0
+                || !pVM->dbgf.s.aHwBreakpoints[iBp].fEnabled
+                || pVM->dbgf.s.aHwBreakpoints[iBp].hBp   == NIL_DBGFBP)
+            { /*likely*/ }
+            else
+            {
+                /* The page is of interest. */
+                AssertCompile(!((CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK) & UINT32_C(1)));
+                fRet |= UINT32_C(1);
+
+                /* If the access overlapping the breakpoint area, we have a hit. */
+                if (   GCPtrAccess            < pVM->dbgf.s.aHwBreakpoints[iBp].GCPtr + pVM->dbgf.s.aHwBreakpoints[iBp].cb
+                    && GCPtrAccess + cbAccess > pVM->dbgf.s.aHwBreakpoints[iBp].GCPtr)
+                {
+                    pVCpu->dbgf.s.hBpActive          = pVM->dbgf.s.aHwBreakpoints[iBp].hBp; /* ? */
+                    pVCpu->dbgf.s.fSingleSteppingRaw = false;
+                    LogFlow(("DBGFBpCheckData%s: hit hw breakpoint %u when accessing %RGv LB %#x\n",
+                             a_fRead ? "Read" : "Write", iBp, GCPtrAccess, cbAccess));
+                    fRet |= CPUMCTX_DBG_DBGF_BP;
+                }
+            }
+        }
+
+    /*
+     * Check the guest.
+     */
+    uint32_t const fDr7 = (uint32_t)pVCpu->cpum.GstCtx.dr[7];
+    if (    (a_fRead ? X86_DR7_ANY_RW_ENABLED(fDr7) : X86_DR7_ANY_W_ENABLED(fDr7))
+        && !pVCpu->cpum.GstCtx.eflags.Bits.u1RF)
+    {
+        /* This is a bit suboptimal... Need a NORET variant. */
+        int rcIgn = VINF_SUCCESS;
+        CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, CPUMCTX_EXTRN_DR0_DR3, rcIgn);
+        RT_NOREF(rcIgn);
+
+        /** @todo Not sure what exactly intel and amd CPUs does here wrt disabled
+         *        breakpoint configurations.  We need a testcase for this.  Following
+         *        the guidelines of the execution breakpoints for now and making
+         *        intel CPUs set status flags regardless of enabled or not. */
+        uint32_t fMatched = 0;
+        uint32_t fEnabled = 0;
+        for (uint32_t iBp = 0, fBpMask = CPUMCTX_DBG_HIT_DR0, fDr7Cfg = fDr7 >> 16, fDr7En = fDr7;
+             iBp < 4;
+             iBp++, fBpMask <<= 1, fDr7Cfg >>= 4, fDr7En >>= 2)
+            if (   (a_fRead ? (fDr7Cfg & 3) == X86_DR7_RW_RW : (fDr7Cfg & 1) != 0)
+                && (pVCpu->cpum.GstCtx.dr[iBp] >> GUEST_PAGE_SHIFT) == GCPtrAccessPfn)
+            {
+                if (fDr7En & 3)
+                {
+                    fEnabled |= fBpMask;
+                    fRet     |= UINT32_C(1);
+                }
+                static uint8_t const s_acbBp[] = { 1, 2, 8, 4 };
+                uint8_t const        cbBp      = s_acbBp[(fDr7Cfg >> 2) & 3];
+                if (   GCPtrAccess            < pVCpu->cpum.GstCtx.dr[iBp] + cbBp
+                    && GCPtrAccess + cbAccess > pVCpu->cpum.GstCtx.dr[iBp])
+                    fMatched |= fBpMask;
+            }
+        if (!(fEnabled & fMatched))
+        { /*likely*/ }
+        else
+        {
+            if (pVM->cpum.ro.GuestFeatures.enmCpuVendor != CPUMCPUVENDOR_INTEL)
+                fRet |= fMatched & fEnabled;
+            else if (!fSysAccess)
+                fRet |= fMatched;
+            else
+                fRet |= CPUMCTX_DBG_HIT_DRX_SILENT; /* see bs3-cpu-weird-1 for special intel behviour  */
+            LogFlow(("DBGFBpCheckData%s: hit hw breakpoints %#x (fRet=%#x) when accessing %RGv LB %#x\n",
+                     a_fRead ? "Read" : "Write", fMatched, fRet, GCPtrAccess, cbAccess));
+        }
+    }
+
+    return fRet;
+}
+
+
+/**
+ * Checks read data access for guest or hypervisor hardware breakpoints.
+ *
+ * @returns Anything in CPUMCTX_DBG_HIT_DRX_MASK and CPUMCTX_DBG_DBGF_MASK if
+ *          there is a hit, zero or one if no hit.  Bit 0 is set if the page
+ *          being accessed has a data breakpoint associated with it and needs
+ *          special handling.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPtrAccess The address being accessed.
+ * @param   cbAccess    The size of the access.  Must not cross a page
+ *                      boundrary.
+ * @param   fSysAccess  Set if a system access, like GDT, LDT or IDT.
+ */
+VMM_INT_DECL(uint32_t) DBGFBpCheckDataRead(PVMCC pVM, PVMCPUCC pVCpu, RTGCPTR GCPtrAccess, uint32_t cbAccess, bool fSysAccess)
+{
+    return dbgfBpCheckData<true /*a_fRead*/>(pVM, pVCpu, GCPtrAccess, cbAccess, fSysAccess);
+}
+
+
+/**
+ * Checks read data access for guest or hypervisor hardware breakpoints.
+ *
+ * @returns Anything in CPUMCTX_DBG_DBGF_MASK if there is a hit, zero or one if
+ *          no hit.  Bit 0 is set if the page being accessed has a data
+ *          breakpoint associated with it and needs special handling.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPtrAccess The address being accessed.
+ * @param   cbAccess    The size of the access.  Must not cross a page
+ *                      boundrary.
+ * @param   fSysAccess  Set if a system access, like GDT, LDT or IDT.
+ */
+VMM_INT_DECL(uint32_t) DBGFBpCheckDataWrite(PVMCC pVM, PVMCPUCC pVCpu, RTGCPTR GCPtrAccess, uint32_t cbAccess, bool fSysAccess)
+{
+    return dbgfBpCheckData<false /*a_fRead*/>(pVM, pVCpu, GCPtrAccess, cbAccess, fSysAccess);
 }
 
 
@@ -444,8 +591,8 @@ VMM_INT_DECL(uint32_t) DBGFBpCheckIo2(PVMCC pVM, PVMCPUCC pVCpu, RTIOPORT uIoPor
 
     return 0;
 }
-#endif /* VBOX_VMM_TARGET_ARMV8 */
 
+#endif /* !VBOX_VMM_TARGET_ARMV8 */
 
 /**
  * Returns the single stepping state for a virtual CPU.

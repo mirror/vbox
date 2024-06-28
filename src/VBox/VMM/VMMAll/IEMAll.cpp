@@ -198,6 +198,9 @@ static VBOXSTRICTRC    iemMemFetchSelDescWithErr(PVMCPUCC pVCpu, PIEMSELDESC pDe
  * Calculates IEM_F_BRK_PENDING_XXX (IEM_F_PENDING_BRK_MASK) flags, slow code
  * path.
  *
+ * This will also invalidate TLB entries for any pages with active data
+ * breakpoints on them.
+ *
  * @returns IEM_F_BRK_PENDING_XXX or zero.
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
@@ -209,9 +212,29 @@ uint32_t iemCalcExecDbgFlagsSlow(PVMCPUCC pVCpu)
     uint32_t fExec = 0;
 
     /*
+     * Helper for invalidate the data TLB for breakpoint addresses.
+     *
+     * This is to make sure any access to the page will always trigger a TLB
+     * load for as long as the breakpoint is enabled.
+     */
+#ifdef IEM_WITH_DATA_TLB
+# define INVALID_TLB_ENTRY_FOR_BP(a_uValue) do { \
+        RTGCPTR uTagNoRev = (a_uValue); \
+        uTagNoRev = IEMTLB_CALC_TAG_NO_REV(uTagNoRev); \
+        uintptr_t const idxEven = IEMTLB_TAG_TO_EVEN_INDEX(uTagNoRev); \
+        if (pVCpu->iem.s.DataTlb.aEntries[idxEven].uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)) \
+            pVCpu->iem.s.DataTlb.aEntries[idxEven].uTag = 0; \
+        if (pVCpu->iem.s.DataTlb.aEntries[idxEven + 1].uTag == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal)) \
+            pVCpu->iem.s.DataTlb.aEntries[idxEven + 1].uTag = 0; \
+    } while (0)
+#else
+# define INVALID_TLB_ENTRY_FOR_BP(a_uValue) do { } while (0)
+#endif
+
+    /*
      * Process guest breakpoints.
      */
-#define PROCESS_ONE_BP(a_fDr7, a_iBp) do { \
+#define PROCESS_ONE_BP(a_fDr7, a_iBp, a_uValue) do { \
         if (a_fDr7 & X86_DR7_L_G(a_iBp)) \
         { \
             switch (X86_DR7_GET_RW(a_fDr7, a_iBp)) \
@@ -222,6 +245,7 @@ uint32_t iemCalcExecDbgFlagsSlow(PVMCPUCC pVCpu)
                 case X86_DR7_RW_WO: \
                 case X86_DR7_RW_RW: \
                     fExec |= IEM_F_PENDING_BRK_DATA; \
+                    INVALID_TLB_ENTRY_FOR_BP(a_uValue); \
                     break; \
                 case X86_DR7_RW_IO: \
                     fExec |= IEM_F_PENDING_BRK_X86_IO; \
@@ -233,22 +257,28 @@ uint32_t iemCalcExecDbgFlagsSlow(PVMCPUCC pVCpu)
     uint32_t const fGstDr7 = (uint32_t)pVCpu->cpum.GstCtx.dr[7];
     if (fGstDr7 & X86_DR7_ENABLED_MASK)
     {
-        PROCESS_ONE_BP(fGstDr7, 0);
-        PROCESS_ONE_BP(fGstDr7, 1);
-        PROCESS_ONE_BP(fGstDr7, 2);
-        PROCESS_ONE_BP(fGstDr7, 3);
+/** @todo extract more details here to simplify matching later. */
+#ifdef IEM_WITH_DATA_TLB
+        IEM_CTX_IMPORT_NORET(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
+#endif
+        PROCESS_ONE_BP(fGstDr7, 0, pVCpu->cpum.GstCtx.dr[0]);
+        PROCESS_ONE_BP(fGstDr7, 1, pVCpu->cpum.GstCtx.dr[1]);
+        PROCESS_ONE_BP(fGstDr7, 2, pVCpu->cpum.GstCtx.dr[2]);
+        PROCESS_ONE_BP(fGstDr7, 3, pVCpu->cpum.GstCtx.dr[3]);
     }
 
     /*
      * Process hypervisor breakpoints.
      */
-    uint32_t const fHyperDr7 = DBGFBpGetDR7(pVCpu->CTX_SUFF(pVM));
+    PVMCC const    pVM       = pVCpu->CTX_SUFF(pVM);
+    uint32_t const fHyperDr7 = DBGFBpGetDR7(pVM);
     if (fHyperDr7 & X86_DR7_ENABLED_MASK)
     {
-        PROCESS_ONE_BP(fHyperDr7, 0);
-        PROCESS_ONE_BP(fHyperDr7, 1);
-        PROCESS_ONE_BP(fHyperDr7, 2);
-        PROCESS_ONE_BP(fHyperDr7, 3);
+/** @todo extract more details here to simplify matching later. */
+        PROCESS_ONE_BP(fHyperDr7, 0, DBGFBpGetDR0(pVM));
+        PROCESS_ONE_BP(fHyperDr7, 1, DBGFBpGetDR1(pVM));
+        PROCESS_ONE_BP(fHyperDr7, 2, DBGFBpGetDR2(pVM));
+        PROCESS_ONE_BP(fHyperDr7, 3, DBGFBpGetDR3(pVM));
     }
 
     return fExec;
@@ -2240,6 +2270,23 @@ iemRaiseXcptOrIntInRealMode(PVMCPUCC      pVCpu,
     if (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
         iemRaiseXcptAdjustState(pVCpu, u8Vector);
 
+    /*
+     * Deal with debug events that follows the exception and clear inhibit flags.
+     */
+    if (   !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+        || !(pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK))
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_INHIBIT_SHADOW);
+    else
+    {
+        Log(("iemRaiseXcptOrIntInRealMode: Raising #DB after %#x; pending=%#x\n",
+             u8Vector, pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK));
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
+        pVCpu->cpum.GstCtx.dr[6] |= (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT)
+                                  >> CPUMCTX_DBG_HIT_DRX_SHIFT;
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_INHIBIT_SHADOW);
+        return iemRaiseDebugException(pVCpu);
+    }
+
     /* The IEM_F_MODE_XXX and IEM_F_X86_CPL_MASK doesn't really change here,
        so best leave them alone in case we're in a weird kind of real mode... */
 
@@ -3206,6 +3253,22 @@ iemRaiseXcptOrIntInProtMode(PVMCPUCC    pVCpu,
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_XCPT_MASK);
 
     /*
+     * Hack alert! Convert incoming debug events to slient on Intel.
+     * See bs3-cpu-weird-1.
+     */
+    if (   !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+        || !(pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT)
+        || !IEM_IS_GUEST_CPU_INTEL(pVCpu))
+    { /* ignore */ }
+    else
+    {
+        Log(("iemRaiseXcptOrIntInProtMode: Converting pending %#x debug events to a silent one (intel hack)\n",
+             u8Vector, pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK));
+        pVCpu->cpum.GstCtx.eflags.uBoth = (pVCpu->cpum.GstCtx.eflags.uBoth & ~CPUMCTX_DBG_HIT_DRX_MASK)
+                                        | CPUMCTX_DBG_HIT_DRX_SILENT;
+    }
+
+    /*
      * Read the IDT entry.
      */
     if (pVCpu->cpum.GstCtx.idtr.cbIdt < UINT32_C(8) * u8Vector + 7)
@@ -3663,6 +3726,23 @@ iemRaiseXcptOrIntInProtMode(PVMCPUCC    pVCpu,
     pVCpu->iem.s.fExec = fExecNew;
     Assert(IEM_GET_CPL(pVCpu) == uNewCpl);
 
+    /*
+     * Deal with debug events that follows the exception and clear inhibit flags.
+     */
+    if (   !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+        || !(pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK))
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_INHIBIT_SHADOW);
+    else
+    {
+        Log(("iemRaiseXcptOrIntInProtMode: Raising #DB after %#x; pending=%#x\n",
+             u8Vector, pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK));
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
+        pVCpu->cpum.GstCtx.dr[6] |= (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT)
+                                  >> CPUMCTX_DBG_HIT_DRX_SHIFT;
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_INHIBIT_SHADOW);
+        return iemRaiseDebugException(pVCpu);
+    }
+
     return fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT ? VINF_IEM_RAISED_XCPT : VINF_SUCCESS;
 }
 
@@ -3688,6 +3768,22 @@ iemRaiseXcptOrIntInLongMode(PVMCPUCC    pVCpu,
                             uint64_t    uCr2) RT_NOEXCEPT
 {
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_XCPT_MASK);
+
+    /*
+     * Hack alert! Convert incoming debug events to slient on Intel.
+     * See bs3-cpu-weird-1.
+     */
+    if (   !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+        || !(pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT)
+        || !IEM_IS_GUEST_CPU_INTEL(pVCpu))
+    { /* ignore */ }
+    else
+    {
+        Log(("iemRaiseXcptOrIntInLongMode: Converting pending %#x debug events to a silent one (intel hack)\n",
+             u8Vector, pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK));
+        pVCpu->cpum.GstCtx.eflags.uBoth = (pVCpu->cpum.GstCtx.eflags.uBoth & ~CPUMCTX_DBG_HIT_DRX_MASK)
+                                        | CPUMCTX_DBG_HIT_DRX_SILENT;
+    }
 
     /*
      * Read the IDT entry.
@@ -3919,6 +4015,23 @@ iemRaiseXcptOrIntInLongMode(PVMCPUCC    pVCpu,
         iemRaiseXcptAdjustState(pVCpu, u8Vector);
 
     iemRecalcExecModeAndCplAndAcFlags(pVCpu);
+
+    /*
+     * Deal with debug events that follows the exception and clear inhibit flags.
+     */
+    if (   !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+        || !(pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK))
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_INHIBIT_SHADOW);
+    else
+    {
+        Log(("iemRaiseXcptOrIntInLongMode: Raising #DB after %#x; pending=%#x\n",
+             u8Vector, pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK));
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
+        pVCpu->cpum.GstCtx.dr[6] |= (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT)
+                                  >> CPUMCTX_DBG_HIT_DRX_SHIFT;
+        pVCpu->cpum.GstCtx.eflags.uBoth &= ~(CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_INHIBIT_SHADOW);
+        return iemRaiseDebugException(pVCpu);
+    }
 
     return fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT ? VINF_IEM_RAISED_XCPT : VINF_SUCCESS;
 }
@@ -6044,6 +6157,19 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PVMCPUCC pVCpu, unsigned iM
 
 
 /**
+ * Helper for iemMemMap, iemMemMapJmp and iemMemBounceBufferMapCrossPage.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemMemCheckDataBreakpoint(PVMCC pVM, PVMCPUCC pVCpu, RTGCPTR GCPtrMem, size_t cbMem, uint32_t fAccess)
+{
+    bool const  fSysAccess = (fAccess & IEM_ACCESS_WHAT_MASK) == IEM_ACCESS_WHAT_SYS;
+    if (fAccess & IEM_ACCESS_TYPE_WRITE)
+        return DBGFBpCheckDataWrite(pVM, pVCpu, GCPtrMem, (uint32_t)cbMem, fSysAccess);
+    return DBGFBpCheckDataRead(pVM, pVCpu, GCPtrMem, (uint32_t)cbMem, fSysAccess);
+}
+
+
+/**
  * iemMemMap worker that deals with a request crossing pages.
  */
 static VBOXSTRICTRC
@@ -6073,6 +6199,22 @@ iemMemBounceBufferMapCrossPage(PVMCPUCC pVCpu, int iMemMap, void **ppvMem, uint8
     GCPhysSecond &= ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK; /** @todo why? */
 
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+
+    /*
+     * Check for data breakpoints.
+     */
+    if (RT_LIKELY(!(pVCpu->iem.s.fExec & IEM_F_PENDING_BRK_DATA)))
+    { /* likely */ }
+    else
+    {
+        uint32_t fDataBps = iemMemCheckDataBreakpoint(pVM, pVCpu, GCPtrFirst, cbFirstPage, fAccess);
+        fDataBps         |= iemMemCheckDataBreakpoint(pVM, pVCpu, (GCPtrFirst + (cbMem - 1)) & ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK,
+                                                      cbSecondPage, fAccess);
+        pVCpu->cpum.GstCtx.eflags.uBoth |= fDataBps & (CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK);
+        if (fDataBps > 1)
+            LogEx(LOG_GROUP_IEM, ("iemMemBounceBufferMapCrossPage: Data breakpoint: fDataBps=%#x for %RGv LB %zx; fAccess=%#x cs:rip=%04x:%08RX64\n",
+                                  fDataBps, GCPtrFirst, cbMem, fAccess, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+    }
 
     /*
      * Read in the current memory content if it's a read, execute or partial
@@ -6503,16 +6645,32 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
             return iemRaisePageFault(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess, rc);
         }
 
-        if (   !(WalkFast.fEffective & PGM_PTATTRS_G_MASK)
-            || IEM_GET_CPL(pVCpu) != 0) /* optimization: Only use the PTE.G=1 entries in ring-0. */
+        uint32_t fDataBps;
+        if (   RT_LIKELY(!(pVCpu->iem.s.fExec & IEM_F_PENDING_BRK_DATA))
+            || RT_LIKELY(!(fDataBps = iemMemCheckDataBreakpoint(pVCpu->CTX_SUFF(pVM), pVCpu, GCPtrMem, cbMem, fAccess))))
         {
-            pTlbe--;
-            pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision;
+            if (   !(WalkFast.fEffective & PGM_PTATTRS_G_MASK)
+                || IEM_GET_CPL(pVCpu) != 0) /* optimization: Only use the PTE.G=1 entries in ring-0. */
+            {
+                pTlbe--;
+                pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision;
+            }
+            else
+            {
+                pVCpu->iem.s.DataTlb.cTlbCoreGlobalLoads++;
+                pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal;
+            }
         }
         else
         {
-            pVCpu->iem.s.DataTlb.cTlbCoreGlobalLoads++;
-            pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal;
+            /* If we hit a data breakpoint, we use a dummy TLBE to force all accesses
+               to the page with the data access breakpoint armed on it to pass thru here. */
+            if (fDataBps > 1)
+                LogEx(LOG_GROUP_IEM, ("iemMemMap: Data breakpoint: fDataBps=%#x for %RGv LB %zx; fAccess=%#x cs:rip=%04x:%08RX64\n",
+                                      fDataBps, GCPtrMem, cbMem, fAccess, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+            pVCpu->cpum.GstCtx.eflags.uBoth |= fDataBps & (CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK);
+            pTlbe = &pVCpu->iem.s.DataBreakpointTlbe;
+            pTlbe->uTag = uTagNoRev;
         }
         pTlbe->fFlagsAndPhysRev = ~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A); /* skipping NX */
         RTGCPHYS const GCPhysPg = WalkFast.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
@@ -6878,19 +7036,35 @@ static void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, ui
             iemRaisePageFaultJmp(pVCpu, GCPtrMem, (uint32_t)cbMem, fAccess, rc);
         }
 
-        if (   !(WalkFast.fEffective & PGM_PTATTRS_G_MASK)
-            || IEM_GET_CPL(pVCpu) != 0) /* optimization: Only use the PTE.G=1 entries in ring-0. */
+        uint32_t fDataBps;
+        if (   RT_LIKELY(!(pVCpu->iem.s.fExec & IEM_F_PENDING_BRK_DATA))
+            || RT_LIKELY(!(fDataBps = iemMemCheckDataBreakpoint(pVCpu->CTX_SUFF(pVM), pVCpu, GCPtrMem, cbMem, fAccess))))
         {
-            pTlbe--;
-            pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision;
+            if (   !(WalkFast.fEffective & PGM_PTATTRS_G_MASK)
+                || IEM_GET_CPL(pVCpu) != 0) /* optimization: Only use the PTE.G=1 entries in ring-0. */
+            {
+                pTlbe--;
+                pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision;
+            }
+            else
+            {
+                if (a_fSafeCall)
+                    pVCpu->iem.s.DataTlb.cTlbSafeGlobalLoads++;
+                else
+                    pVCpu->iem.s.DataTlb.cTlbCoreGlobalLoads++;
+                pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal;
+            }
         }
         else
         {
-            if (a_fSafeCall)
-                pVCpu->iem.s.DataTlb.cTlbSafeGlobalLoads++;
-            else
-                pVCpu->iem.s.DataTlb.cTlbCoreGlobalLoads++;
-            pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal;
+            /* If we hit a data breakpoint, we use a dummy TLBE to force all accesses
+               to the page with the data access breakpoint armed on it to pass thru here. */
+            if (fDataBps > 1)
+                LogEx(LOG_GROUP_IEM, ("iemMemMapJmp<%d>: Data breakpoint: fDataBps=%#x for %RGv LB %zx; fAccess=%#x cs:rip=%04x:%08RX64\n",
+                                      a_fSafeCall, fDataBps, GCPtrMem, cbMem, fAccess, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+            pVCpu->cpum.GstCtx.eflags.uBoth |= fDataBps & (CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK);
+            pTlbe = &pVCpu->iem.s.DataBreakpointTlbe;
+            pTlbe->uTag = uTagNoRev;
         }
         pTlbe->fFlagsAndPhysRev = ~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A); /* skipping NX */
         RTGCPHYS const GCPhysPg = WalkFast.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;

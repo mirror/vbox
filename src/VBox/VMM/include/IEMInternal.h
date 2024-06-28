@@ -1980,6 +1980,9 @@ typedef struct IEMCPU
     /** Dummy entry for ppTbLookupEntryR3. */
     R3PTRTYPE(PIEMTB)       pTbLookupEntryDummyR3;
 
+    /** Dummy TLB entry used for accesses to pages with databreakpoints. */
+    IEMTLBENTRY             DataBreakpointTlbe;
+
     /** Threaded TB statistics: Times TB execution was broken off before reaching the end. */
     STAMCOUNTER             StatTbThreadedExecBreaks;
     /** Statistics: Times BltIn_CheckIrq breaks out of the TB. */
@@ -2200,8 +2203,8 @@ typedef struct IEMCPU
     STAMCOUNTER             StatMemBounceBufferCrossPage;
     STAMCOUNTER             StatMemBounceBufferMapPhys;
     /** @} */
-
-    uint64_t                au64Padding[1];
+                                        
+    uint64_t                au64Padding[5];
     /** @} */
 
     /** Data TLB.
