@@ -83,8 +83,13 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
 %if TMPL_BITS == 16
         cmp     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_RM
         je      .in_ring0
+        cmp     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_LM16
+        je      .do_syscall_restore_ctx
         test    byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_CODE_V86
         jnz     .do_syscall_restore_ctx
+%elif TMPL_BITS == 32
+        cmp     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_LM32
+        je      .do_syscall_restore_ctx
 %endif
         mov     ax, ss
         test    al, 3
