@@ -528,8 +528,8 @@ AssertCompile(PGMIEMGCPHYS2PTR_F_CODE_PAGE    == IEMTLBE_F_PG_CODE_PAGE);
  * We initially chose 256 because that way we can obtain the result directly
  * from a 8-bit register without an additional AND instruction.
  * See also @bugref{10687}. */
-#define IEMTLB_ENTRY_COUNT                      256
-#define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      8
+#define IEMTLB_ENTRY_COUNT                      1024
+#define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      10
 AssertCompile(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) == IEMTLB_ENTRY_COUNT);
 
 /**
