@@ -825,6 +825,16 @@ TEMPLATE_VBoxBS3KitImgBig_DEFS        = $(TEMPLATE_VBoxBS3KitImg_DEFS) BS3_BIG_I
 #	$(subst BS3CLASS32CODE, BS3CLASS32CODE segaddr=0xa000$(SP), $(TEMPLATE_VBoxBS3KitImg_LDFLAGS))
 #TEMPLATE_VBoxBS3KitImgBig_POST_CMDS = $(NO_SUCH_VARIABLE)
 
+TEMPLATE_VBoxBS3KitImgBig_LNK_DEPS = \
+	$(bs3-bootsector-63MB_1_TARGET) \
+	$(VBoxBs3Linker_1_TARGET)
+TEMPLATE_VBoxBS3KitImgBig_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY) \
+		,,$(QUIET)$(MV_EXT) -f -- "$(out)" "$(out).tmp" \
+		$$(NLTAB)$(QUIET)$(VBoxBs3Linker_1_TARGET) -o $(out) $(bs3-bootsector-63MB_1_TARGET) $(out).tmp $($(target)_2_VBOX_BS3KIT_HIGH_DLLS) \
+	$$(NLTAB)$(QUIET)$(RM_EXT) -f -- "$(out).tmp") \
+	$(eval .PRECIOUS: $(outbase).map) # ugly hack!
+
+
 # BS3Kit template for a high image.
 TEMPLATE_VBoxBS3KitHighImg = Template for building BS3Kit test images, the high DLL.
 TEMPLATE_VBoxBS3KitHighImg_EXTENDS   := VBoxBS3KitImg
