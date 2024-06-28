@@ -314,6 +314,10 @@ typedef struct fd_format_t {
 
 /* Note: Low-density disks (160K/180K/320K/360K) use 250 Kbps data rate
  * in 40-track drives, but 300 Kbps in high-capacity 80-track drives.
+ * This is because high-density 5.25" drives rotate at 360 RPM while
+ * other drives spin at 300 RPM.
+ * For that reason, low-density 5.25" aliases for 3.5" drives use 250 Kbps
+ * data rate while the "real" 5.25" versions use 300 Kbps.
  */
 static fd_format_t const fd_formats[] = {
     /* First entry is default format */
@@ -361,11 +365,11 @@ static fd_format_t const fd_formats[] = {
     /* 1.2 MB and low density 3"1/2 floppy 'aliases' */
     { FDRIVE_DRV_144, 15, 80, 1, FDRIVE_RATE_500K,  "1.2 MB 3\"1/2", },
     { FDRIVE_DRV_144, 16, 80, 1, FDRIVE_RATE_500K, "1.28 MB 3\"1/2", },
-    { FDRIVE_DRV_144, 10, 40, 1, FDRIVE_RATE_300K,  "400 kB 3\"1/2", },    /* CP Backup 5.25" DD */
-    { FDRIVE_DRV_144,  9, 40, 1, FDRIVE_RATE_300K,  "360 kB 3\"1/2", },
-    { FDRIVE_DRV_144,  9, 40, 0, FDRIVE_RATE_300K,  "180 kB 3\"1/2", },
-    { FDRIVE_DRV_144,  8, 40, 1, FDRIVE_RATE_300K,  "320 kB 3\"1/2", },
-    { FDRIVE_DRV_144,  8, 40, 0, FDRIVE_RATE_300K,  "160 kB 3\"1/2", },
+    { FDRIVE_DRV_144, 10, 40, 1, FDRIVE_RATE_250K,  "400 kB 3\"1/2", },    /* CP Backup 5.25" DD */
+    { FDRIVE_DRV_144,  9, 40, 1, FDRIVE_RATE_250K,  "360 kB 3\"1/2", },
+    { FDRIVE_DRV_144,  9, 40, 0, FDRIVE_RATE_250K,  "180 kB 3\"1/2", },
+    { FDRIVE_DRV_144,  8, 40, 1, FDRIVE_RATE_250K,  "320 kB 3\"1/2", },
+    { FDRIVE_DRV_144,  8, 40, 0, FDRIVE_RATE_250K,  "160 kB 3\"1/2", },
     /* For larger than real life floppy images (see DrvVD.cpp). */
     /* 15.6 MB fake floppy disk (just need something big). */
     { FDRIVE_DRV_FAKE_15_6,  63, 255, 1, FDRIVE_RATE_1M,   "15.6 MB fake 15.6", },
