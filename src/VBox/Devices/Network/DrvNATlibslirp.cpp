@@ -1071,6 +1071,8 @@ static DECLCALLBACK(int64_t) slirpClockGetNsCb(void *opaque)
     PDRVNAT pThis = (PDRVNAT)opaque;
     Assert(pThis);
 
+    RT_NOREF(pThis);
+
     return (int64_t)RTTimeNanoTS();
 }
 
@@ -1140,6 +1142,8 @@ static DECLCALLBACK(void) slirpTimerModCb(void *pTimer, int64_t expireTime, void
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
     Assert(pThis);
+
+    RT_NOREF(pThis);
 
     ((SlirpTimer *)pTimer)->uTimeExpire = expireTime;
 }
