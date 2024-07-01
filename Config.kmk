@@ -595,7 +595,7 @@ VBOX_WITH_LWIP_NAT = 1
 # Enables compilation of NAT service
 VBOX_WITH_NAT_SERVICE = 1
 # Enable NAT with Libslirp
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET), darwin, linux)
  VBOX_WITH_LIBSLIRP = 1
 endif
 # Enable the E1000 feature.
