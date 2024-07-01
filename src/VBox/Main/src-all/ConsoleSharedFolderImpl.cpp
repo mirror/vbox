@@ -344,7 +344,7 @@ const Utf8Str &ConsoleSharedFolder::i_getAutoMountPoint() const
     return m->strAutoMountPoint;
 }
 
-const SymlinkPolicy_T ConsoleSharedFolder::i_getSymlinkPolicy() const
+SymlinkPolicy_T ConsoleSharedFolder::i_getSymlinkPolicy() const
 {
     return m->enmSymlinkPolicy;
 }

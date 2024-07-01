@@ -91,7 +91,7 @@ public:
     /**
      * Public internal method for getting the symlink policy.
      */
-    const SymlinkPolicy_T i_getSymlinkPolicy() const;
+    SymlinkPolicy_T i_getSymlinkPolicy() const;
 
 protected:
 
