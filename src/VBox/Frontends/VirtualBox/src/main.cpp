@@ -93,7 +93,9 @@
 #  endif /* !RT_ARCH_AMD64 */
 # endif /* RT_OS_LINUX && DEBUG */
 #endif /* VBOX_WS_NIX */
-
+#ifdef VBOX_WITH_HARDENING
+# include <iprt/string.h>
+#endif
 
 /* XXX Temporarily. Don't rely on the user to hack the Makefile himself! */
 QString g_QStrHintLinuxNoMemory = QApplication::tr(
