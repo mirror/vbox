@@ -307,31 +307,25 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
 #ifdef VBOX_WITH_VIDEOHWACCEL
     OPT2("--accelerate-2d-video",           "--accelerate2dvideo",      MODIFYVM_ACCELERATE2DVIDEO,         RTGETOPT_REQ_BOOL_ONOFF),
 #endif
-    /** Kept for backwards-compatibility. */
     OPT1("--firmware-logo-fade-in",                                     MODIFYVM_FWLOGOFADEIN,              RTGETOPT_REQ_BOOL_ONOFF),
-    /** Kept for backwards-compatibility. */
+    OPT1("--firmware-logo-fade-out",                                    MODIFYVM_FWLOGOFADEOUT,             RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--firmware-logo-image-path",                                  MODIFYVM_FWLOGOIMAGEPATH,           RTGETOPT_REQ_STRING),
+    OPT1("--firmware-logo-display-time",                                MODIFYVM_FWLOGODISPLAYTIME,         RTGETOPT_REQ_UINT32),
+    OPT1("--firmware-boot-menu",                                        MODIFYVM_FWBOOTMENU,                RTGETOPT_REQ_STRING),
+    OPT1("--firmware-system-time-offset",                               MODIFYVM_FWSYSTEMTIMEOFFSET,        RTGETOPT_REQ_INT64),
+    OPT1("--firmware-apic",                                             MODIFYVM_FWAPIC,                    RTGETOPT_REQ_STRING),
+    OPT1("--firmware-pxe-debug",                                        MODIFYVM_FWPXEDEBUG,                RTGETOPT_REQ_BOOL_ONOFF),
+    /* { Kept for backwards-compatibility */
     OPT2("--bios-logo-fade-in",             "--bioslogofadein",         MODIFYVM_FWLOGOFADEIN,              RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--firmware-fade-out",                                         MODIFYVM_FWLOGOFADEOUT,             RTGETOPT_REQ_BOOL_ONOFF),
-    /** Kept for backwards-compatibility. */
     OPT2("--bios-logo-fade-out",            "--bioslogofadeout",        MODIFYVM_FWLOGOFADEOUT,             RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--firmware-logo-display-time",                                MODIFYVM_FWLOGODISPLAYTIME,         RTGETOPT_REQ_UINT32),
-    /** Kept for backwards-compatibility. */
     OPT2("--bios-logo-display-time",        "--bioslogodisplaytime",    MODIFYVM_FWLOGODISPLAYTIME,         RTGETOPT_REQ_UINT32),
-    OPT1("--firmware-logo-image-path",                                  MODIFYVM_FWLOGOIMAGEPATH,           RTGETOPT_REQ_STRING),
-    /** Kept for backwards-compatibility. */
     OPT2("--bios-logo-image-path",          "--bioslogoimagepath",      MODIFYVM_FWLOGOIMAGEPATH,           RTGETOPT_REQ_STRING),
-    OPT1("--firmware-boot-menu",                                        MODIFYVM_FWBOOTMENU,                RTGETOPT_REQ_STRING),
-    /** Kept for backwards-compatibility. */
     OPT2("--bios-boot-menu",                "--biosbootmenu",           MODIFYVM_FWBOOTMENU,                RTGETOPT_REQ_STRING),
-    OPT1("--firmware-system-time-offset",                               MODIFYVM_FWSYSTEMTIMEOFFSET,        RTGETOPT_REQ_INT64),
-    /** Kept for backwards-compatibility. */
     OPT2("--bios-system-time-offset",       "--biossystemtimeoffset",   MODIFYVM_FWSYSTEMTIMEOFFSET,        RTGETOPT_REQ_INT64),
-    OPT1("--firmware-apic",                                             MODIFYVM_FWAPIC,                    RTGETOPT_REQ_STRING),
-    /** Kept for backwards-compatibility. */
     OPT2("--bios-apic",                     "--biosapic",               MODIFYVM_FWAPIC,                    RTGETOPT_REQ_STRING),
-    OPT1("--firmware-pxe-debug",                                        MODIFYVM_FWPXEDEBUG,                RTGETOPT_REQ_BOOL_ONOFF),
-    /** Kept for backwards-compatibility. */
     OPT2("--bios-pxe-debug",                "--biospxedebug",           MODIFYVM_FWPXEDEBUG,                RTGETOPT_REQ_BOOL_ONOFF),
+    /* } */
     OPT2("--system-uuid-le",                "--system-uuid-le",         MODIFYVM_SYSTEMUUIDLE,              RTGETOPT_REQ_BOOL_ONOFF),
     OPT2("--bios-auto-serial-num-gen",      "--biosautoserialnumgen",   MODIFYVM_FWAUTOSERIALNUMGEN,        RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--boot",                                                      MODIFYVM_BOOT,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
