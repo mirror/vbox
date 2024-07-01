@@ -73,7 +73,7 @@ endif
 
 # libslirp for NAT
 if   defined(VBOX_WITH_LIBSLIRP) \
-  && !defined(VBOX_ONLY_SDK)
+  && !defined(VBOX_ONLY_BUILD)
  include $(PATH_SUB_CURRENT)/libslirp-4.7.0/Makefile.kmk
 endif
 
