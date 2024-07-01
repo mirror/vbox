@@ -97,6 +97,7 @@
 # include <iprt/string.h>
 #endif
 
+
 /* XXX Temporarily. Don't rely on the user to hack the Makefile himself! */
 QString g_QStrHintLinuxNoMemory = QApplication::tr(
     "This error means that the kernel driver was either not able to "
