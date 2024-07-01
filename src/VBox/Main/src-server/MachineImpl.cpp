@@ -5031,6 +5031,7 @@ HRESULT Machine::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
                         tr("Shared folder named '%s' already exists"),
                         aName.c_str());
 
+    SymlinkPolicy_T enmSymlinkPolicy = SymlinkPolicy_None;
     sharedFolder.createObject();
     hrc = sharedFolder->init(i_getMachine(),
                              aName,
@@ -5038,7 +5039,8 @@ HRESULT Machine::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
                              !!aWritable,
                              !!aAutomount,
                              aAutoMountPoint,
-                             true /* fFailOnError */);
+                             true /* fFailOnError */,
+                             enmSymlinkPolicy);
     if (FAILED(hrc)) return hrc;
 
     i_setModified(IsModified_SharedFolders);
@@ -8817,7 +8819,8 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
                                      RT_BOOL(sf.fWritable),
                                      RT_BOOL(sf.fAutoMount),
                                      sf.strAutoMountPoint,
-                                     false /* fFailOnError */);
+                                     false /* fFailOnError */,
+                                     sf.enmSymlinkPolicy);
             if (FAILED(hrc)) return hrc;
             mHWData->mSharedFolders.push_back(sharedFolder);
         }
@@ -10192,6 +10195,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
             sf.fWritable = !!pSF->i_isWritable();
             sf.fAutoMount = !!pSF->i_isAutoMounted();
             sf.strAutoMountPoint = pSF->i_getAutoMountPoint();
+            sf.enmSymlinkPolicy = pSF->i_getSymlinkPolicy();
 
             data.llSharedFolders.push_back(sf);
         }

@@ -75,6 +75,18 @@ typedef struct SHFLCLIENTDATA
 /** Pointer to a SHFLCLIENTDATA structure. */
 typedef SHFLCLIENTDATA *PSHFLCLIENTDATA;
 
+/** This enum is included here to avoid a build dependency on the VirtualBox
+ * COM definitions pulled in by VBox/com/VirtualBox.h. */
+typedef enum SymlinkPolicy_T {
+    SymlinkPolicy_None,
+    SymlinkPolicy_Forbidden,
+    SymlinkPolicy_AllowedInShareSubtree,
+    SymlinkPolicy_AllowedToRelativeTargets,
+    SymlinkPolicy_AllowedToAnyTarget,
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+    SymlinkPolicy_32BitHack = 0x7fffffff
+#endif /* VBOX_WITH_XPCOM_CPP_ENUM_HACK */
+} SymlinkPolicy_T;
 
 /** @def SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX
  * Whether to make windows error style adjustments on a posix host.
