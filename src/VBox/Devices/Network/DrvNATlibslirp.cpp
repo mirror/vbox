@@ -30,8 +30,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_NAT
-#define __STDC_LIMIT_MACROS
-#define __STDC_CONSTANT_MACROS
 
 #include "DrvNATlibslirp.h"
 
