@@ -40,6 +40,7 @@
 #include "UICloudNetworkingStuff.h"
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
+#include "UILocalMachineStuff.h"
 #include "UILoggingDefs.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
@@ -239,7 +240,7 @@ void UIThreadGroupSettingsSave::run()
         do
         {
             /* 1. Open session: */
-            comSession = uiCommon().openSession(QUuid(strId));
+            comSession = openSession(QUuid(strId));
             if (comSession.isNull())
                 break;
 

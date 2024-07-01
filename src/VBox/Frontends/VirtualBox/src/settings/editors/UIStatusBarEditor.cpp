@@ -51,6 +51,9 @@
 #include "UIStatusBarEditor.h"
 #include "UITranslationEventListener.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 /* Forward declarations: */
 class QAccessibleInterface;
 class QMouseEvent;

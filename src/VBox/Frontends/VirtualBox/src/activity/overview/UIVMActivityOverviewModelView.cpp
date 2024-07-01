@@ -33,9 +33,9 @@
 
 /* GUI includes: */
 #include "UIConverter.h"
-#include "UICommon.h"
 #include "UIExtraDataDefs.h"
 #include "UIGlobalSession.h"
+#include "UILocalMachineStuff.h"
 #include "UIMonitorCommon.h"
 #include "UITranslator.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -379,7 +379,7 @@ UIVMActivityOverviewRowLocal::~UIVMActivityOverviewRowLocal()
 
 void UIVMActivityOverviewRowLocal::resetDebugger()
 {
-    m_comSession = uiCommon().openSession(m_uMachineId, KLockType_Shared);
+    m_comSession = openSession(m_uMachineId, KLockType_Shared);
     if (!m_comSession.isNull())
     {
         CConsole comConsole = m_comSession.GetConsole();

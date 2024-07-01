@@ -50,6 +50,9 @@
 #include "UIMachineWindow.h"
 #include "UIMenuBarEditor.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 /* Forward declarations: */
 class QAccessibleInterface;
 class QRect;

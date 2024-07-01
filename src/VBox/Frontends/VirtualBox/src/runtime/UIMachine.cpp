@@ -36,19 +36,20 @@
 #endif
 
 /* GUI includes: */
+#include "UIActionPoolRuntime.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
-#include "UIMachine.h"
-#include "UISession.h"
-#include "UIActionPoolRuntime.h"
+#include "UILocalMachineStuff.h"
 #include "UILoggingDefs.h"
+#include "UIMachine.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
+#include "UISession.h"
 #ifdef VBOX_WS_MAC
 # include "UICocoaApplication.h"
 # include "VBoxUtils-darwin.h"
@@ -124,7 +125,7 @@ bool UIMachine::startMachine()
     if (uiCommon().shouldRestoreCurrentSnapshot())
     {
         /* Create temporary session: */
-        CSession comSession = uiCommon().openSession(KLockType_VM);
+        CSession comSession = openSession(KLockType_VM);
         if (comSession.isNull())
             return false;
 
@@ -158,7 +159,7 @@ bool UIMachine::startMachine()
         AssertMsgReturn(!machine.isNull(), ("UICommon::managedVMUuid() should have filter that case before!\n"), false);
 
         /* Try to launch corresponding machine: */
-        if (!UICommon::launchMachine(machine, UILaunchMode_Separate))
+        if (!launchMachine(machine, UILaunchMode_Separate))
             return false;
     }
 

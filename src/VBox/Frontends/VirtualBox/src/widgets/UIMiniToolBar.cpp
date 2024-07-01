@@ -54,6 +54,9 @@
 # include "UIExtraDataManager.h"
 #endif
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 
 /** QIToolBar reimplementation
   * providing UIMiniToolBar with mini-toolbar. */

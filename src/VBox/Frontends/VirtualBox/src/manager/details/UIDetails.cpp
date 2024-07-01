@@ -35,6 +35,9 @@
 #include "UIDetailsView.h"
 #include "UIExtraDataManager.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 
 UIDetails::UIDetails(QWidget *pParent /* = 0 */)
     : QWidget(pParent)

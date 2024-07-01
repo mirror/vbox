@@ -229,8 +229,6 @@ bool UIWizardCloneVM::cloneVM()
                                                                                              cloneMachine,
                                                                                              m_enmCloneMode,
                                                                                              options);
-    connect(pNotification, &UINotificationProgressMachineCopy::sigMachineCopied,
-            &uiCommon(), &UICommon::sltHandleMachineCreated);
     gpNotificationCenter->append(pNotification);
 
     return true;

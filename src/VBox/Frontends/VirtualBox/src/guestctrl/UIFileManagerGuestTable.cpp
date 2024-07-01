@@ -46,6 +46,7 @@
 #include "UIFileTableNavigationWidget.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
+#include "UILocalMachineStuff.h"
 #include "UIMessageCenter.h"
 #include "UIPathOperations.h"
 #include "UIUserNamePasswordEditor.h"
@@ -1244,7 +1245,7 @@ bool UIFileManagerGuestTable::openMachineSession()
         emit sigLogOutput("Invalid machine reference", m_strTableName, FileManagerLogType_Error);
         return false;
     }
-    m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
+    m_comSession = openSession(m_comMachine.GetId(), KLockType_Shared);
     if (m_comSession.isNull())
     {
         emit sigLogOutput("Could not open machine session", m_strTableName, FileManagerLogType_Error);

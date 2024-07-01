@@ -33,6 +33,7 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QUuid>
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -42,17 +43,18 @@
 #endif
 
 /* COM includes: */
-#include "CSession.h"
 #include "KGraphicsControllerType.h"
-#include "KLockType.h"
+
+/* Other VBox includes: */
+#include <iprt/types.h>
 
 /* Forward declarations: */
 class QSessionManager;
 class QSpinBox;
 class CCloudMachine;
 class CHostVideoInputDevice;
-class CMachine;
 class CUSBDevice;
+class CUSBDeviceFilter;
 class UIThreadPool;
 class UITranslationEventListener;
 
@@ -243,25 +245,6 @@ public:
 #endif
     /** @} */
 
-    /** @name COM: Virtual Machine stuff.
-     * @{ */
-        /** Switches to certain @a comMachine. */
-        static bool switchToMachine(CMachine &comMachine);
-        /** Launches certain @a comMachine in specified @a enmLaunchMode. */
-        static bool launchMachine(CMachine &comMachine, UILaunchMode enmLaunchMode = UILaunchMode_Default);
-
-        /** Opens session of certain @a enmLockType for VM with certain @a uId. */
-        CSession openSession(QUuid uId, KLockType enmLockType = KLockType_Write);
-        /** Opens session of certain @a enmLockType for currently chosen VM. */
-        CSession openSession(KLockType enmLockType = KLockType_Write);
-        /** Opens session of KLockType_Shared type for VM with certain @a uId. */
-        CSession openExistingSession(const QUuid &uId) { return openSession(uId, KLockType_Shared); }
-        /** Tries to guess if new @a comSession needs to be opened for certain @a comMachine,
-          * if yes, new session of required type will be opened and machine will be updated,
-          * otherwise, no session will be created and machine will be left unchanged. */
-        CSession tryToOpenSessionFor(CMachine &comMachine);
-    /** @} */
-
     /** @name COM: Cloud Virtual Machine stuff.
      * @{ */
         /** Notifies listeners about cloud VM was unregistered.
@@ -368,12 +351,6 @@ public slots:
      * @{ */
         /** Handles language change to new @a strLanguage. */
         void sltGUILanguageChange(QString strLanguage);
-    /** @} */
-
-    /** @name Machine related stuff.
-     * @{ */
-        /** Handles signal about machine was created. */
-        void sltHandleMachineCreated(const CMachine &comMachine);
     /** @} */
 
     /** @name Cloud Machine related stuff.

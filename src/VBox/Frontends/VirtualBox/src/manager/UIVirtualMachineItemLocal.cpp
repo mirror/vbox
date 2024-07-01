@@ -35,6 +35,7 @@
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
+#include "UILocalMachineStuff.h"
 #include "UITranslationEventListener.h"
 #include "UIVirtualMachineItemLocal.h"
 #ifdef VBOX_WS_MAC
@@ -228,7 +229,7 @@ bool UIVirtualMachineItemLocal::isItemRunningHeadless() const
     if (isItemRunning())
     {
         /* Open session to determine which frontend VM is started with: */
-        CSession comSession = uiCommon().openExistingSession(id());
+        CSession comSession = openExistingSession(id());
         if (!comSession.isNull())
         {
             /* Acquire the session name: */

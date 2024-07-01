@@ -55,6 +55,7 @@
 #endif
 
 /* Other VBox includes: */
+#include "iprt/assert.h"
 #if defined(VBOX_WS_NIX)
 # include <VBox/VBoxKeyboard.h>
 #endif

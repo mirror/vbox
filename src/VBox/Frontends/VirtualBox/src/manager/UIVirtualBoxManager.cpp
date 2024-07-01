@@ -65,6 +65,7 @@
 #include "UIGlobalSession.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIIconPool.h"
+#include "UILocalMachineStuff.h"
 #include "UILoggingDefs.h"
 #include "UIMedium.h"
 #include "UIMediumEnumerator.h"
@@ -1931,7 +1932,7 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
     {
         /* Open a session to modify VM: */
         AssertPtrReturnVoid(pItem);
-        CSession comSession = uiCommon().openSession(pItem->id());
+        CSession comSession = openSession(pItem->id());
         if (comSession.isNull())
             return;
 
@@ -1983,7 +1984,7 @@ void UIVirtualBoxManager::sltPerformPauseOrResumeMachine(bool fPause)
             continue;
 
         /* Open a session to modify VM state: */
-        CSession comSession = uiCommon().openExistingSession(pItem->id());
+        CSession comSession = openExistingSession(pItem->id());
         if (comSession.isNull())
             return;
 
@@ -2038,7 +2039,7 @@ void UIVirtualBoxManager::sltPerformResetMachine()
             case UIVirtualMachineItemType_Local:
             {
                 /* Open a session to modify VM state: */
-                CSession comSession = uiCommon().openExistingSession(pItem->id());
+                CSession comSession = openExistingSession(pItem->id());
                 if (comSession.isNull())
                     return;
 
@@ -2176,7 +2177,7 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
         if (pItem->itemType() == UIVirtualMachineItemType_Local)
         {
             /* Open a session to modify VM state: */
-            CSession comSession = uiCommon().openExistingSession(pItem->id());
+            CSession comSession = openExistingSession(pItem->id());
             if (comSession.isNull())
                 return;
 
@@ -2940,7 +2941,7 @@ void UIVirtualBoxManager::launchMachine(CMachine &comMachine,
     if (   comMachine.GetSessionState() == KSessionState_Locked // precondition for CanShowConsoleWindow()
         && comMachine.CanShowConsoleWindow())
     {
-        UICommon::switchToMachine(comMachine);
+        switchToMachine(comMachine);
         return;
     }
 
@@ -3925,7 +3926,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemAbleToShutdown(const QList<UIVirtualMa
         if (pItem->itemType() == UIVirtualMachineItemType_Local)
         {
             /* Skip session failures: */
-            CSession session = uiCommon().openExistingSession(pItem->id());
+            CSession session = openExistingSession(pItem->id());
             if (session.isNull())
                 continue;
             /* Skip console failures: */

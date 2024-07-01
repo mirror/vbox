@@ -47,6 +47,7 @@
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
+#include "UILocalMachineStuff.h"
 #include "UITranslator.h"
 #include "UITranslationEventListener.h"
 #include "UIVMActivityMonitor.h"
@@ -1345,7 +1346,7 @@ void UIVMActivityMonitorLocal::openSession()
 {
     if (!m_comSession.isNull())
         return;
-    m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
+    m_comSession = UILocalMachineStuff::openSession(m_comMachine.GetId(), KLockType_Shared);
     AssertReturnVoid(!m_comSession.isNull());
 
     CConsole comConsole = m_comSession.GetConsole();

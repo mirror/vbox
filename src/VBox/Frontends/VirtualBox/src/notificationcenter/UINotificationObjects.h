@@ -963,11 +963,6 @@ class SHARED_LIBRARY_STUFF UINotificationProgressMachineCopy : public UINotifica
 {
     Q_OBJECT;
 
-signals:
-
-    /** Notifies listeners about @a comMachine was copied. */
-    void sigMachineCopied(const CMachine &comMachine);
-
 public:
 
     /** Constructs machine copy notification-progress.

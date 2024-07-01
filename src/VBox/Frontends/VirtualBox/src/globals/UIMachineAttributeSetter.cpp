@@ -30,7 +30,7 @@
 
 /* GUI includes: */
 #include "UIBootOrderEditor.h"
-#include "UICommon.h"
+#include "UILocalMachineStuff.h"
 #include "UIMachineAttributeSetter.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
@@ -89,7 +89,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
 {
     /* Get editable machine & session: */
     CMachine comMachine = comConstMachine;
-    CSession comSession = uiCommon().tryToOpenSessionFor(comMachine);
+    CSession comSession = tryToOpenSessionFor(comMachine);
 
     /* Main API block: */
     do

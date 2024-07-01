@@ -31,10 +31,10 @@
 
 /* GUI includes: */
 #include "UIAdvancedSettingsDialogSpecific.h"
-#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
+#include "UILocalMachineStuff.h"
 #include "UIMessageCenter.h"
 #include "UISettingsDefs.h"
 #include "UISettingsSerializer.h"
@@ -402,8 +402,8 @@ bool UIAdvancedSettingsDialogMachine::load()
 
     /* Prepare session: */
     m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() :
-                configurationAccessLevel() == ConfigurationAccessLevel_Full ? uiCommon().openSession(m_uMachineId) :
-                                                                              uiCommon().openExistingSession(m_uMachineId);
+                configurationAccessLevel() == ConfigurationAccessLevel_Full ? openSession(m_uMachineId) :
+                                                                              openExistingSession(m_uMachineId);
     /* Check that session was created: */
     if (m_session.isNull())
         return false;
@@ -431,8 +431,8 @@ void UIAdvancedSettingsDialogMachine::save()
 
     /* Prepare session: */
     m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() :
-                configurationAccessLevel() == ConfigurationAccessLevel_Full ? uiCommon().openSession(m_uMachineId) :
-                                                                              uiCommon().openExistingSession(m_uMachineId);
+                configurationAccessLevel() == ConfigurationAccessLevel_Full ? openSession(m_uMachineId) :
+                                                                              openExistingSession(m_uMachineId);
     /* Check that session was created: */
     if (m_session.isNull())
         return;

@@ -43,6 +43,9 @@
 #include "UITranslationEventListener.h"
 #include "UIWelcomePane.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 
 /*********************************************************************************************************************************
 *   Class UIWelcomePane implementation.                                                                                          *

@@ -41,6 +41,7 @@
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIGuestOSType.h"
+#include "UILocalMachineStuff.h"
 #include "UILoggingDefs.h"
 #include "UIMachine.h"
 #include "UIMachineLogic.h"
@@ -2509,10 +2510,10 @@ void UISession::sltHandleSnapshotRestored(bool)
 bool UISession::prepareCOMStuff()
 {
     /* Open session: */
-    m_comSession = uiCommon().openSession(uiCommon().managedVMUuid(),
-                                            uiCommon().isSeparateProcess()
-                                          ? KLockType_Shared
-                                          : KLockType_VM);
+    m_comSession = openSession(uiCommon().managedVMUuid(),
+                                 uiCommon().isSeparateProcess()
+                               ? KLockType_Shared
+                               : KLockType_VM);
     if (m_comSession.isNull())
         return false;
 

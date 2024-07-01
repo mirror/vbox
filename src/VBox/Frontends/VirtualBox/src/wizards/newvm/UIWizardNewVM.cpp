@@ -33,6 +33,7 @@
 #include "UICommon.h"
 #include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
+#include "UILocalMachineStuff.h"
 #include "UIMedium.h"
 #include "UIMediumEnumerator.h"
 #include "UINotificationCenter.h"
@@ -276,7 +277,7 @@ bool UIWizardNewVM::attachDefaultDevices()
 {
     bool success = false;
     QUuid uMachineId = m_machine.GetId();
-    CSession session = uiCommon().openSession(uMachineId);
+    CSession session = openSession(uMachineId);
     if (!session.isNull())
     {
         CMachine machine = session.GetMachine();

@@ -37,6 +37,7 @@
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UIHostComboEditor.h"
+#include "UILocalMachineStuff.h"
 #include "UINotificationCenter.h"
 #include "UINotificationObjects.h"
 #include "UITranslator.h"
@@ -2184,7 +2185,13 @@ CProgress UINotificationProgressMachineCopy::createProgress(COMResult &comResult
 void UINotificationProgressMachineCopy::sltHandleProgressFinished()
 {
     if (m_comTarget.isNotNull() && !m_comTarget.GetId().isNull())
-        emit sigMachineCopied(m_comTarget);
+    {
+        /* Register created machine: */
+        CVirtualBox comVBox = gpGlobalSession->virtualBox();
+        comVBox.RegisterMachine(m_comTarget);
+        if (!comVBox.isOk())
+            UINotificationMessage::cannotRegisterMachine(comVBox, m_comTarget.GetName());
+    }
 }
 
 
@@ -2307,7 +2314,7 @@ QString UINotificationProgressMachineMove::details() const
 CProgress UINotificationProgressMachineMove::createProgress(COMResult &comResult)
 {
     /* Open a session thru which we will modify the machine: */
-    m_comSession = uiCommon().openSession(m_uId, KLockType_Write);
+    m_comSession = openSession(m_uId, KLockType_Write);
     if (m_comSession.isNull())
         return CProgress();
 
@@ -2395,7 +2402,7 @@ CProgress UINotificationProgressMachineSaveState::createProgress(COMResult &comR
         case UIType_ManagerUI:
         {
             /* Open a session thru which we will modify the machine: */
-            m_comSession = uiCommon().openExistingSession(uId);
+            m_comSession = openExistingSession(uId);
             if (m_comSession.isNull())
                 return CProgress();
 
@@ -2510,7 +2517,7 @@ CProgress UINotificationProgressMachinePowerOff::createProgress(COMResult &comRe
             }
 
             /* Open a session thru which we will modify the machine: */
-            m_comSession = uiCommon().openExistingSession(uId);
+            m_comSession = openExistingSession(uId);
             if (m_comSession.isNull())
                 return CProgress();
 
@@ -3733,9 +3740,9 @@ CProgress UINotificationProgressSnapshotTake::createProgress(COMResult &comResul
 
             /* Open a session thru which we will modify the machine: */
             if (enmSessionState != KSessionState_Unlocked)
-                m_comSession = uiCommon().openExistingSession(uId);
+                m_comSession = openExistingSession(uId);
             else
-                m_comSession = uiCommon().openSession(uId);
+                m_comSession = openSession(uId);
             if (m_comSession.isNull())
                 return CProgress();
 
@@ -3862,9 +3869,9 @@ CProgress UINotificationProgressSnapshotRestore::createProgress(COMResult &comRe
 
     /* Open a session thru which we will modify the machine: */
     if (enmSessionState != KSessionState_Unlocked)
-        m_comSession = uiCommon().openExistingSession(m_uMachineId);
+        m_comSession = openExistingSession(m_uMachineId);
     else
-        m_comSession = uiCommon().openSession(m_uMachineId);
+        m_comSession = openSession(m_uMachineId);
     if (m_comSession.isNull())
         return CProgress();
 
@@ -3971,9 +3978,9 @@ CProgress UINotificationProgressSnapshotDelete::createProgress(COMResult &comRes
 
     /* Open a session thru which we will modify the machine: */
     if (enmSessionState != KSessionState_Unlocked)
-        m_comSession = uiCommon().openExistingSession(uId);
+        m_comSession = openExistingSession(uId);
     else
-        m_comSession = uiCommon().openSession(uId);
+        m_comSession = openSession(uId);
     if (m_comSession.isNull())
         return CProgress();
 

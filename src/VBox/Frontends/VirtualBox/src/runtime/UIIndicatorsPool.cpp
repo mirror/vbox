@@ -45,6 +45,9 @@
 #include "UIMachine.h"
 #include "UITranslationEventListener.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 
 /** QIStateStatusBarIndicator extension for Runtime UI. */
 class UISessionStateStatusBarIndicator : public QIStateStatusBarIndicator
