@@ -643,7 +643,7 @@ int RecordingStream::SendVideoFrame(PRECORDINGVIDEOFRAME pVideoFrame, uint64_t m
         offDst += cbDstBytesPerLine;
         offSrc += pVideoFrame->Info.uBytesPerLine;
     }
-    pFrame->u.Video.Info.uBytesPerLine = cbDstBytesPerLine;
+    pFrame->u.Video.Info.uBytesPerLine = (uint32_t)cbDstBytesPerLine;
 
     pFrame->enmType     = RECORDINGFRAME_TYPE_VIDEO;
     pFrame->msTimestamp = msTimestamp;
