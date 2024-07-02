@@ -1009,7 +1009,7 @@ bool RecordingContext::NeedsUpdate(uint32_t uScreen, uint64_t msTimestamp)
  * @param   uScreen             The stream's ID (Screen ID).
  * @param   vrc                 Result code of the limit operation.
  */
-DECLCALLBACK(int) RecordingContext::onLimitReached(uint32_t uScreen, int vrc)
+int RecordingContext::onLimitReached(uint32_t uScreen, int vrc)
 {
     LogFlowThisFunc(("Stream %RU32 has reached its limit (%Rrc)\n", uScreen, vrc));
 
