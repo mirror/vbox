@@ -708,10 +708,35 @@ static DECLCALLBACK(int) rtVfsMemFile_SetSize(void *pvThis, uint64_t cbFile, uin
     AssertReturn(RTVFSFILE_SIZE_F_IS_VALID(fFlags), VERR_INVALID_PARAMETER);
 
     PRTVFSMEMFILE pThis = (PRTVFSMEMFILE)pvThis;
-    if (   (fFlags & RTVFSFILE_SIZE_F_ACTION_MASK) == RTVFSFILE_SIZE_F_NORMAL
-        && (RTFOFF)cbFile >= pThis->Base.ObjInfo.cbObject)
+    if ((fFlags & RTVFSFILE_SIZE_F_ACTION_MASK) == RTVFSFILE_SIZE_F_NORMAL)
     {
-        /* Growing is just a matter of increasing the size of the object. */
+        if ((RTFOFF)cbFile < pThis->Base.ObjInfo.cbObject)
+        {
+            /* Remove any extent beyond the file size. */
+            bool            fHit;
+            PRTVFSMEMEXTENT pExtent = rtVfsMemFile_LocateExtent(pThis, cbFile, &fHit);
+            if (   fHit
+                && cbFile < (pExtent->off + pExtent->cb))
+            {
+                /* Clear the data in this extent. */
+                uint64_t cbRemaining = cbFile - pExtent->off;
+                memset(&pExtent->abData[cbRemaining], 0, pExtent->cb - cbRemaining);
+                pExtent = RTListGetNext(&pThis->ExtentHead, pExtent, RTVFSMEMEXTENT, Entry);
+            }
+
+            while (pExtent)
+            {
+                PRTVFSMEMEXTENT pFree = pExtent;
+                pExtent = RTListGetNext(&pThis->ExtentHead, pExtent, RTVFSMEMEXTENT, Entry);
+
+                RTListNodeRemove(&pFree->Entry);
+                RTMemFree(pFree);
+            }
+
+            pThis->pCurExt = NULL;
+        }
+        /* else: Growing is just a matter of increasing the size of the object. */
+
         pThis->Base.ObjInfo.cbObject = cbFile;
         return VINF_SUCCESS;
     }
