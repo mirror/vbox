@@ -3450,7 +3450,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
      */
     if (pVCpu->cpum.GstCtx.eflags.Bits.u1NT)
     {
-        Log(("iretq with NT=1 (eflags=%#x) -> #GP(0)\n", pVCpu->cpum.GstCtx.eflags.u));
+        Log(("iret/64 with NT=1 (eflags=%#x) -> #GP(0)\n", pVCpu->cpum.GstCtx.eflags.u));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
@@ -3507,7 +3507,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     { /* extremely like */ }
     else
         return rcStrict;
-    Log7(("iretq stack: cs:rip=%04x:%016RX64 rflags=%016RX64 ss:rsp=%04x:%016RX64\n", uNewCs, uNewRip, uNewFlags, uNewSs, uNewRsp));
+    Log7(("iret/64 stack: cs:rip=%04x:%016RX64 rflags=%016RX64 ss:rsp=%04x:%016RX64\n", uNewCs, uNewRip, uNewFlags, uNewSs, uNewRsp));
 
     /*
      * Check stuff.
@@ -3515,7 +3515,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     /* Read the CS descriptor. */
     if (!(uNewCs & X86_SEL_MASK_OFF_RPL))
     {
-        Log(("iret %04x:%016RX64/%04x:%016RX64 -> invalid CS selector, #GP(0)\n", uNewCs, uNewRip, uNewSs, uNewRsp));
+        Log(("iret/64 %04x:%016RX64/%04x:%016RX64 -> invalid CS selector, #GP(0)\n", uNewCs, uNewRip, uNewSs, uNewRsp));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
@@ -3523,7 +3523,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     rcStrict = iemMemFetchSelDesc(pVCpu, &DescCS, uNewCs, X86_XCPT_GP);
     if (rcStrict != VINF_SUCCESS)
     {
-        Log(("iret %04x:%016RX64/%04x:%016RX64 - rcStrict=%Rrc when fetching CS\n",
+        Log(("iret/64 %04x:%016RX64/%04x:%016RX64 - rcStrict=%Rrc when fetching CS\n",
              uNewCs, uNewRip, uNewSs, uNewRsp, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
@@ -3532,7 +3532,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     if (   !DescCS.Legacy.Gen.u1DescType
         || !(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE))
     {
-        Log(("iret %04x:%016RX64/%04x:%016RX64 - CS is not a code segment T=%u T=%#xu -> #GP\n",
+        Log(("iret/64 %04x:%016RX64/%04x:%016RX64 - CS is not a code segment T=%u T=%#xu -> #GP\n",
              uNewCs, uNewRip, uNewSs, uNewRsp, DescCS.Legacy.Gen.u1DescType, DescCS.Legacy.Gen.u4Type));
         return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewCs);
     }
@@ -3543,25 +3543,25 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     {
         if ((uNewCs & X86_SEL_RPL) != DescCS.Legacy.Gen.u2Dpl)
         {
-            Log(("iret %04x:%016RX64 - RPL != DPL (%d) -> #GP\n", uNewCs, uNewRip, DescCS.Legacy.Gen.u2Dpl));
+            Log(("iret/64 %04x:%016RX64 - RPL != DPL (%d) -> #GP\n", uNewCs, uNewRip, DescCS.Legacy.Gen.u2Dpl));
             return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewCs);
         }
     }
     else if ((uNewCs & X86_SEL_RPL) < DescCS.Legacy.Gen.u2Dpl)
     {
-        Log(("iret %04x:%016RX64 - RPL < DPL (%d) -> #GP\n", uNewCs, uNewRip, DescCS.Legacy.Gen.u2Dpl));
+        Log(("iret/64 %04x:%016RX64 - RPL < DPL (%d) -> #GP\n", uNewCs, uNewRip, DescCS.Legacy.Gen.u2Dpl));
         return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewCs);
     }
     if ((uNewCs & X86_SEL_RPL) < IEM_GET_CPL(pVCpu))
     {
-        Log(("iret %04x:%016RX64 - RPL < CPL (%d) -> #GP\n", uNewCs, uNewRip, IEM_GET_CPL(pVCpu)));
+        Log(("iret/64 %04x:%016RX64 - RPL < CPL (%d) -> #GP\n", uNewCs, uNewRip, IEM_GET_CPL(pVCpu)));
         return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewCs);
     }
 
     /* Present? */
     if (!DescCS.Legacy.Gen.u1Present)
     {
-        Log(("iret %04x:%016RX64/%04x:%016RX64 - CS not present -> #NP\n", uNewCs, uNewRip, uNewSs, uNewRsp));
+        Log(("iret/64 %04x:%016RX64/%04x:%016RX64 - CS not present -> #NP\n", uNewCs, uNewRip, uNewSs, uNewRsp));
         return iemRaiseSelectorNotPresentBySelector(pVCpu, uNewCs);
     }
 
@@ -3575,7 +3575,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
             || DescCS.Legacy.Gen.u1DefBig /** @todo exactly how does iret (and others) behave with u1Long=1 and u1DefBig=1? \#GP(sel)? */
             || uNewCpl > 2) /** @todo verify SS=0 impossible for ring-3. */
         {
-            Log(("iret %04x:%016RX64/%04x:%016RX64 -> invalid SS selector, #GP(0)\n", uNewCs, uNewRip, uNewSs, uNewRsp));
+            Log(("iret/64 %04x:%016RX64/%04x:%016RX64 -> invalid SS selector, #GP(0)\n", uNewCs, uNewRip, uNewSs, uNewRsp));
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
         /* Make sure SS is sensible, marked as accessed etc. */
@@ -3586,7 +3586,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         rcStrict = iemMemFetchSelDesc(pVCpu, &DescSS, uNewSs, X86_XCPT_GP); /** @todo Correct exception? */
         if (rcStrict != VINF_SUCCESS)
         {
-            Log(("iret %04x:%016RX64/%04x:%016RX64 - %Rrc when fetching SS\n",
+            Log(("iret/64 %04x:%016RX64/%04x:%016RX64 - %Rrc when fetching SS\n",
                  uNewCs, uNewRip, uNewSs, uNewRsp, VBOXSTRICTRC_VAL(rcStrict)));
             return rcStrict;
         }
@@ -3595,7 +3595,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     /* Privilege checks. */
     if ((uNewSs & X86_SEL_RPL) != (uNewCs & X86_SEL_RPL))
     {
-        Log(("iret %04x:%016RX64/%04x:%016RX64 -> SS.RPL != CS.RPL -> #GP\n", uNewCs, uNewRip, uNewSs, uNewRsp));
+        Log(("iret/64 %04x:%016RX64/%04x:%016RX64 -> SS.RPL != CS.RPL -> #GP\n", uNewCs, uNewRip, uNewSs, uNewRsp));
         return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewSs);
     }
 
@@ -3606,7 +3606,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     {
         if (DescSS.Legacy.Gen.u2Dpl != (uNewCs & X86_SEL_RPL))
         {
-            Log(("iret %04x:%016RX64/%04x:%016RX64 -> SS.DPL (%d) != CS.RPL -> #GP\n",
+            Log(("iret/64 %04x:%016RX64/%04x:%016RX64 -> SS.DPL (%d) != CS.RPL -> #GP\n",
                  uNewCs, uNewRip, uNewSs, uNewRsp, DescSS.Legacy.Gen.u2Dpl));
             return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewSs);
         }
@@ -3614,13 +3614,13 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         /* Must be a writeable data segment descriptor. */
         if (!DescSS.Legacy.Gen.u1DescType)
         {
-            Log(("iret %04x:%016RX64/%04x:%016RX64 -> SS is system segment (%#x) -> #GP\n",
+            Log(("iret/64 %04x:%016RX64/%04x:%016RX64 -> SS is system segment (%#x) -> #GP\n",
                  uNewCs, uNewRip, uNewSs, uNewRsp, DescSS.Legacy.Gen.u4Type));
             return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewSs);
         }
         if ((DescSS.Legacy.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_WRITE)) != X86_SEL_TYPE_WRITE)
         {
-            Log(("iret %04x:%016RX64/%04x:%016RX64 - not writable data segment (%#x) -> #GP\n",
+            Log(("iret/64 %04x:%016RX64/%04x:%016RX64 - not writable data segment (%#x) -> #GP\n",
                  uNewCs, uNewRip, uNewSs, uNewRsp, DescSS.Legacy.Gen.u4Type));
             return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewSs);
         }
@@ -3628,7 +3628,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         /* Present? */
         if (!DescSS.Legacy.Gen.u1Present)
         {
-            Log(("iret %04x:%016RX64/%04x:%016RX64 -> SS not present -> #SS\n", uNewCs, uNewRip, uNewSs, uNewRsp));
+            Log(("iret/64 %04x:%016RX64/%04x:%016RX64 -> SS not present -> #SS\n", uNewCs, uNewRip, uNewSs, uNewRsp));
             return iemRaiseStackSelectorNotPresentBySelector(pVCpu, uNewSs);
         }
         cbLimitSs = X86DESC_LIMIT_G(&DescSS.Legacy);
@@ -3639,8 +3639,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     {
         if (!IEM_IS_CANONICAL(uNewRip))
         {
-            Log(("iret %04x:%016RX64/%04x:%016RX64 -> RIP is not canonical -> #GP(0)\n",
-                 uNewCs, uNewRip, uNewSs, uNewRsp));
+            Log(("iret/64 %04x:%016RX64/%04x:%016RX64 -> RIP is not canonical -> #GP(0)\n", uNewCs, uNewRip, uNewSs, uNewRsp));
             return iemRaiseNotCanonical(pVCpu);
         }
 /** @todo check the location of this... Testcase. */
@@ -3648,7 +3647,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         { /* likely */ }
         else
         {
-            Log(("iret %04x:%016RX64/%04x:%016RX64 -> both L and D are set -> #GP(0)\n", uNewCs, uNewRip, uNewSs, uNewRsp));
+            Log(("iret/64 %04x:%016RX64/%04x:%016RX64 -> both L and D are set -> #GP(0)\n", uNewCs, uNewRip, uNewSs, uNewRsp));
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
     }
@@ -3656,7 +3655,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     {
         if (uNewRip > cbLimitCS)
         {
-            Log(("iret %04x:%016RX64/%04x:%016RX64 -> EIP is out of bounds (%#x) -> #GP(0)\n",
+            Log(("iret/64 %04x:%016RX64/%04x:%016RX64 -> EIP is out of bounds (%#x) -> #GP(0)\n",
                  uNewCs, uNewRip, uNewSs, uNewRsp, cbLimitCS));
             /** @todo Which is it, \#GP(0) or \#GP(sel)? */
             return iemRaiseSelectorBoundsBySelector(pVCpu, uNewCs);
@@ -3695,7 +3694,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     fEFlagsNew         &= ~fEFlagsMask;
     fEFlagsNew         |= uNewFlags & fEFlagsMask;
 #ifdef DBGFTRACE_ENABLED
-    RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "iret/%ul%u %08llx -> %04x:%04llx %llx %04x:%04llx",
+    RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "iret/64/%ul%u %08llx -> %04x:%04llx %llx %04x:%04llx",
                       IEM_GET_CPL(pVCpu), uNewCpl, pVCpu->cpum.GstCtx.rip, uNewCs, uNewRip, uNewFlags, uNewSs, uNewRsp);
 #endif
 
@@ -3719,7 +3718,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         pVCpu->cpum.GstCtx.ss.Attr.u     = X86DESCATTR_UNUSABLE | (uNewCpl << X86DESCATTR_DPL_SHIFT);
         pVCpu->cpum.GstCtx.ss.u32Limit   = UINT32_MAX;
         pVCpu->cpum.GstCtx.ss.u64Base    = 0;
-        Log2(("iretq new SS: NULL\n"));
+        Log2(("iret/64 new SS: NULL\n"));
     }
     else
     {
@@ -3727,7 +3726,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         pVCpu->cpum.GstCtx.ss.Attr.u     = X86DESC_GET_HID_ATTR(&DescSS.Legacy);
         pVCpu->cpum.GstCtx.ss.u32Limit   = cbLimitSs;
         pVCpu->cpum.GstCtx.ss.u64Base    = X86DESC_BASE(&DescSS.Legacy);
-        Log2(("iretq new SS: base=%#RX64 lim=%#x attr=%#x\n", pVCpu->cpum.GstCtx.ss.u64Base, pVCpu->cpum.GstCtx.ss.u32Limit, pVCpu->cpum.GstCtx.ss.Attr.u));
+        Log2(("iret/64 new SS: base=%#RX64 lim=%#x attr=%#x\n", pVCpu->cpum.GstCtx.ss.u64Base, pVCpu->cpum.GstCtx.ss.u32Limit, pVCpu->cpum.GstCtx.ss.Attr.u));
     }
 
     if (IEM_GET_CPL(pVCpu) != uNewCpl)
