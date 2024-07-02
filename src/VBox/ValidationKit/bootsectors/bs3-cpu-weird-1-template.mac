@@ -54,65 +54,129 @@ TMPL_BEGIN_TEXT
 %ifdef BS3_INSTANTIATING_CMN
 
 
+%if TMPL_BITS != 64
+
 ;
 ; Inhibited int 80h.
 ;
-BS3_PROC_BEGIN_CMN bs3CpuWeird1_InhibitedInt80, BS3_PBC_NEAR
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_InhibitedPopSsInt80, BS3_PBC_NEAR
         ; Load SS from stack.  This instruction causes fusing.
-%if TMPL_BITS != 64
         pop     ss
-%else
-        mov     ss, [rsp]
-%endif
         ; The ring transition instruction.
-BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuWeird1_InhibitedInt80_int80), , 0
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuWeird1_InhibitedPopSsInt80_int80), , 0
         int     80h
         ; We shouldn't get here!
 .ud2_again:
         ud2
         jmp     .ud2_again
-BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedInt80
+BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedPopSsInt80
 
 ;
 ; Inhibited int 3.
 ;
-BS3_PROC_BEGIN_CMN bs3CpuWeird1_InhibitedInt3, BS3_PBC_NEAR
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_InhibitedPopSsInt3, BS3_PBC_NEAR
         ; Load SS from stack.  This instruction causes fusing.
-%if TMPL_BITS != 64
         pop     ss
-%else
-        mov     ss, [rsp]
-%endif
         ; The ring transition instruction.
-BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuWeird1_InhibitedInt3_int3), , 0
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuWeird1_InhibitedPopSsInt3_int3), , 0
         int     3
         ; We shouldn't get here!
 .ud2_again:
         ud2
         jmp     .ud2_again
-AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_InhibitedInt3_int3) == 2)
-BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedInt3
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_InhibitedPopSsInt3_int3) == 2)
+BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedPopSsInt3
 
 
 ;
 ; Inhibited int3.
 ;
-BS3_PROC_BEGIN_CMN bs3CpuWeird1_InhibitedBp, BS3_PBC_NEAR
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_InhibitedPopSsBp, BS3_PBC_NEAR
         ; Load SS from stack.  This instruction causes fusing.
-%if TMPL_BITS != 64
         pop     ss
-%else
-        mov     ss, [rsp]
-%endif
         ; The ring transition instruction.
-BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuWeird1_InhibitedBp_int3), , 0
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuWeird1_InhibitedPopSsBp_int3), , 0
         int3
         ; We shouldn't get here!
 .ud2_again:
         ud2
         jmp     .ud2_again
-AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_InhibitedBp_int3) == 1)
-BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedBp
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_InhibitedPopSsBp_int3) == 1)
+BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedPopSsBp
+
+%endif ; TMPL_BITS != 64
+
+
+;
+; Inhibited int 80h.
+;
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_InhibitedMovSsInt80, BS3_PBC_NEAR
+        ; Load SS from stack.  This instruction causes fusing.
+        mov     ss, [xBP]
+        ; The ring transition instruction.
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuWeird1_InhibitedMovSsInt80_int80), , 0
+        int     80h
+        ; We shouldn't get here!
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedMovSsInt80
+
+;
+; Inhibited int 3.
+;
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_InhibitedMovSsInt3, BS3_PBC_NEAR
+        ; Load SS from stack.  This instruction causes fusing.
+        mov     ss, [xBP]
+        ; The ring transition instruction.
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuWeird1_InhibitedMovSsInt3_int3), , 0
+        int     3
+        ; We shouldn't get here!
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_InhibitedMovSsInt3_int3) == 2)
+BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedMovSsInt3
+
+
+;
+; Inhibited int3.
+;
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_InhibitedMovSsBp, BS3_PBC_NEAR
+        ; Load SS from stack.  This instruction causes fusing.
+        mov     ss, [xBP]
+        ; The ring transition instruction.
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuWeird1_InhibitedMovSsBp_int3), , 0
+        int3
+        ; We shouldn't get here!
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_InhibitedMovSsBp_int3) == 1)
+BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedMovSsBp
+
+
+;
+; Inhibited syscall.
+;
+BS3_PROC_BEGIN_CMN bs3CpuWeird1_InhibitedMovSsSyscall, BS3_PBC_NEAR
+        ; Load SS from stack.  This instruction causes fusing.
+%if 1
+        mov     ss, [xBP]
+%else
+        pushf
+        or    word [xBP - xCB], X86_EFL_TF
+        popf
+%endif
+        ; The ring transition instruction.
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(bs3CpuWeird1_InhibitedMovSsSyscall_syscall), , 0
+        syscall
+        ; We shouldn't get here!
+.ud2_again:
+        ud2
+        jmp     .ud2_again
+AssertCompile(.ud2_again - BS3_CMN_NM(bs3CpuWeird1_InhibitedMovSsSyscall_syscall) == 2)
+BS3_PROC_END_CMN   bs3CpuWeird1_InhibitedMovSsSyscall
 
 
 ;

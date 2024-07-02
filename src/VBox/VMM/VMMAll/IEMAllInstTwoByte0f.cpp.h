@@ -1856,12 +1856,21 @@ FNIEMOP_DEF(iemOp_lsl_Gv_Ew)
 /** Opcode 0x0f 0x05. */
 FNIEMOP_DEF(iemOp_syscall)
 {
-    IEMOP_MNEMONIC(syscall, "syscall"); /** @todo 286 LOADALL   */
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    /** @todo r=aeichner Clobbers cr0 only if this is a 286 LOADALL instruction. */
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB,
-                                RT_BIT_64(kIemNativeGstReg_Cr0), iemCImpl_syscall);
+    if (RT_LIKELY(pVCpu->iem.s.uTargetCpu != IEMTARGETCPU_286))
+    {
+        IEMOP_MNEMONIC(syscall, "syscall");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                    | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB, 0, iemCImpl_syscall);
+    }
+    else
+    {
+        IEMOP_MNEMONIC(loadall286, "loadall286");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                    | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB,
+                                    RT_BIT_64(kIemNativeGstReg_Cr0), iemCImpl_loadall286);
+    }
 }
 
 

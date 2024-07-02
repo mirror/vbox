@@ -195,6 +195,8 @@
 #define Bs3StrPrintf BS3_CMN_MANGLER(Bs3StrPrintf)
 #define Bs3StrPrintfV BS3_CMN_MANGLER(Bs3StrPrintfV)
 #define Bs3SwitchFromV86To16BitAndCallC BS3_CMN_MANGLER(Bs3SwitchFromV86To16BitAndCallC)
+#define Bs3Syscall64Generic BS3_CMN_MANGLER(Bs3Syscall64Generic)
+#define Bs3Syscall64GenericCompatibility BS3_CMN_MANGLER(Bs3Syscall64GenericCompatibility)
 #define Bs3TestCheckExtCtx BS3_CMN_MANGLER(Bs3TestCheckExtCtx)
 #define Bs3TestCheckRegCtxEx BS3_CMN_MANGLER(Bs3TestCheckRegCtxEx)
 #define Bs3TestFailed BS3_CMN_MANGLER(Bs3TestFailed)

@@ -3607,6 +3607,19 @@ BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestoreInRm,(PCBS3REGCTX pCtxRestore, P
  */
 BS3_CMN_PROTO_STUB(void, Bs3TrapUnsetJmp,(void));
 
+/** Entry point for MSR_K8_LSTAR (64-bit).
+ * This hooks into the default Bs3TrapSetJmp logic. */
+BS3_CMN_PROTO_NOSB(void, Bs3Syscall64Generic,(void));
+/** The 32-bit FLAT address of Bs3Syscall64Generic (for 16-bit code). */
+extern uint32_t g_pfnBs3Syscall64GenericFlat;
+
+/** Entry point for MSR_K8_CSTAR (64-bit).
+ * This hooks into the default Bs3TrapSetJmp logic. */
+BS3_CMN_PROTO_NOSB(void, Bs3Syscall64GenericCompatibility,(void));
+/** The 32-bit FLAT address of Bs3Syscall64Generic (for 16-bit code). */
+extern uint32_t g_pfnBs3Syscall64GenericCompatibilityFlat;
+
+
 
 /**
  * The current test step.

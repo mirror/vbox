@@ -3991,9 +3991,7 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
  */
 IEM_CIMPL_DEF_0(iemCImpl_syscall)
 {
-    /** @todo hack, LOADALL should be decoded as such on a 286. */
-    if (RT_UNLIKELY(pVCpu->iem.s.uTargetCpu == IEMTARGETCPU_286))
-        return iemCImpl_loadall286(pVCpu, cbInstr);
+
 
     /*
      * Check preconditions.
@@ -4012,9 +4010,10 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
         Log(("syscall: Protected mode is required -> #GP(0)\n"));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
-    if (IEM_IS_GUEST_CPU_INTEL(pVCpu) && !CPUMIsGuestInLongModeEx(IEM_GET_CTX(pVCpu)))
+    if (   IEM_IS_GUEST_CPU_INTEL(pVCpu)
+        && !IEM_IS_64BIT_CODE(pVCpu)) //&& !CPUMIsGuestInLongModeEx(IEM_GET_CTX(pVCpu)))
     {
-        Log(("syscall: Only available in long mode on intel -> #UD\n"));
+        Log(("syscall: Only available in 64-bit mode on intel -> #UD\n"));
         return iemRaiseUndefinedOpcode(pVCpu);
     }
 
@@ -4031,7 +4030,24 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
-    /* Long mode and legacy mode differs. */
+    /*
+     * Hack alert! Convert incoming debug events to slient on Intel.
+     * See the dbg+inhibit+ringxfer test in bs3-cpu-weird-1.
+     */
+    if (   !(pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT)
+        || !IEM_IS_GUEST_CPU_INTEL(pVCpu))
+    { /* ignore */ }
+    else
+    {
+        Log(("iemCImpl_syscall: Converting pending debug events to a silent one (intel hack)\n",
+             pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK));
+        pVCpu->cpum.GstCtx.eflags.uBoth = (pVCpu->cpum.GstCtx.eflags.uBoth & ~CPUMCTX_DBG_HIT_DRX_MASK)
+                                        | CPUMCTX_DBG_HIT_DRX_SILENT;
+    }
+
+    /*
+     * Long mode and legacy mode differs.
+     */
     if (CPUMIsGuestInLongModeEx(IEM_GET_CTX(pVCpu)))
     {
         uint64_t uNewRip = IEM_IS_64BIT_CODE(pVCpu) ? pVCpu->cpum.GstCtx.msrLSTAR : pVCpu->cpum.GstCtx. msrCSTAR;
@@ -4095,8 +4111,11 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
 
-/** @todo single step   */
-    return VINF_SUCCESS;
+    /*
+     * Handle debug events.
+     * If TF isn't masked, we're supposed to raise a single step #DB.
+     */
+    return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
 }
 
 

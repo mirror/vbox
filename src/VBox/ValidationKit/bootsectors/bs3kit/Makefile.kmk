@@ -371,6 +371,7 @@ bs3kit-common-64_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 	bs3-cmn-PagingMapRamAbove4GForLM.c \
 	bs3-cmn-SwitchHlpConvFlatRetToRetfProtMode.asm \
+	bs3-c64-Syscall64Generic.asm \
 	bs3-c64-Trap64Generic.asm \
 	../../../Runtime/common/asm/ASMGetIDTR.asm \
 	../../../Runtime/common/asm/ASMSetIDTR.asm \

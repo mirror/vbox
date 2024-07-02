@@ -323,9 +323,28 @@ BS3_CMN_DEF(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame))
 
     /*
      * Fatal.
+     *
+     * Special case for #DB so we can get at the DRx values before we print anything,
+     * as a aid for debugging VT-x/AMD-V code getting these out of sync.
      */
-    Bs3TestPrintf("*** GURU ***\n");
-    Bs3TrapPrintFrame(pTrapFrame);
+    if (pTrapFrame->bXcpt != X86_XCPT_DB)
+    {
+        Bs3TestPrintf("*** GURU ***\n");
+        Bs3TrapPrintFrame(pTrapFrame);
+    }
+    else
+    {
+        Bs3TestPrintf("*** GURU ***\n"
+#if ARCH_BITS == 64
+                      "dr6=%08RX32 dr7=%08RX32 dr0=%08RX64\n"
+                      "dr1=%08RX64 dr2=%08RX64 dr3=%08RX64\n"
+#else
+                      "dr6=%08RX32 dr7=%08RX32 dr0=%08RX32 dr1=%08RX32 dr2=%08RX32 dr3=%08RX32\n"
+#endif
+                      , (uint32_t)Bs3RegGetDr6(), (uint32_t)Bs3RegGetDr7(),
+                      Bs3RegGetDr0(), Bs3RegGetDr1(), Bs3RegGetDr2(), Bs3RegGetDr3());
+        Bs3TrapPrintFrame(pTrapFrame);
+    }
     Bs3Panic();
 }
 

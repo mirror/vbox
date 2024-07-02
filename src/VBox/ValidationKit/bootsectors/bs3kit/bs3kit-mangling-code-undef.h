@@ -195,6 +195,8 @@
 #undef Bs3StrPrintf
 #undef Bs3StrPrintfV
 #undef Bs3SwitchFromV86To16BitAndCallC
+#undef Bs3Syscall64Generic
+#undef Bs3Syscall64GenericCompatibility
 #undef Bs3TestCheckExtCtx
 #undef Bs3TestCheckRegCtxEx
 #undef Bs3TestFailed

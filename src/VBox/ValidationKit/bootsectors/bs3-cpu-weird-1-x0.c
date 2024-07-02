@@ -56,30 +56,25 @@
         else bs3CpuWeird1_FailedF(a_szName "=" a_szFmt " expected " a_szFmt, (a_Actual), (a_Expected)); \
     } while (0)
 
+#define BS3_CPU_WEIRD_1_EXTERN_ASM_FN_VARS(a_Name, a_Label) \
+    extern FNBS3FAR a_Name##_c16, a_Name##_##a_Label##_c16; \
+    extern FNBS3FAR a_Name##_c32, a_Name##_##a_Label##_c32; \
+    extern FNBS3FAR a_Name##_c64, a_Name##_##a_Label##_c64
+
 
 /*********************************************************************************************************************************
 *   External Symbols                                                                                                             *
 *********************************************************************************************************************************/
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt80_c16;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt80_c32;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt80_c64;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt80_int80_c16;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt80_int80_c32;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt80_int80_c64;
+BS3_CPU_WEIRD_1_EXTERN_ASM_FN_VARS(bs3CpuWeird1_InhibitedMovSsInt80, int80);
+BS3_CPU_WEIRD_1_EXTERN_ASM_FN_VARS(bs3CpuWeird1_InhibitedPopSsInt80, int80);
 
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt3_c16;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt3_c32;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt3_c64;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt3_int3_c16;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt3_int3_c32;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedInt3_int3_c64;
+BS3_CPU_WEIRD_1_EXTERN_ASM_FN_VARS(bs3CpuWeird1_InhibitedMovSsInt3, int3);
+BS3_CPU_WEIRD_1_EXTERN_ASM_FN_VARS(bs3CpuWeird1_InhibitedPopSsInt3, int3);
 
-extern FNBS3FAR     bs3CpuWeird1_InhibitedBp_c16;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedBp_c32;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedBp_c64;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedBp_int3_c16;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedBp_int3_c32;
-extern FNBS3FAR     bs3CpuWeird1_InhibitedBp_int3_c64;
+BS3_CPU_WEIRD_1_EXTERN_ASM_FN_VARS(bs3CpuWeird1_InhibitedMovSsBp, int3);
+BS3_CPU_WEIRD_1_EXTERN_ASM_FN_VARS(bs3CpuWeird1_InhibitedPopSsBp, int3);
+
+BS3_CPU_WEIRD_1_EXTERN_ASM_FN_VARS(bs3CpuWeird1_InhibitedMovSsSyscall, syscall);
 
 
 /*********************************************************************************************************************************
@@ -149,7 +144,7 @@ static void bs3CpuWeird1_CompareDbgInhibitRingXfer(PCBS3TRAPFRAME pTrapCtx, PCBS
         Bs3TestPrintf("DR6=%#RX32; Handler: CS=%04RX16 SS:ESP=%04RX16:%08RX64 EFL=%RX64 cbIret=%#x\n",
                       uDr6, pTrapCtx->uHandlerCs, pTrapCtx->uHandlerSs, pTrapCtx->uHandlerRsp,
                       pTrapCtx->fHandlerRfl, pTrapCtx->cbIretFrame);
-#if 0
+#if 1
         Bs3TestPrintf("Halting in CompareIntCtx: bXcpt=%#x\n", bXcpt);
         ASMHalt();
 #endif
@@ -173,31 +168,63 @@ static uint64_t bs3CpuWeird1_GetTrapHandlerEIP(uint8_t bXcpt, uint8_t bMode, boo
 }
 
 
-static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIntGate, uint8_t cbRingInstr, int8_t cbSpAdjust,
-                                                  FPFNBS3FAR pfnTestCode, FPFNBS3FAR pfnTestLabel)
+static void bs3RegCtxScramble(PBS3REGCTX pCtx, uint8_t bTestMode)
 {
-    BS3TRAPFRAME            TrapCtx;
-    BS3TRAPFRAME            TrapExpect;
+    if (BS3_MODE_IS_64BIT_SYS(bTestMode))
+    {
+        pCtx->r8.au32[0]  ^= UINT32_C(0x2f460cb9);
+        pCtx->r8.au32[1]  ^= UINT32_C(0x2dc346ff);
+        pCtx->r9.au32[0]  ^= UINT32_C(0x9c50d12e);
+        pCtx->r9.au32[1]  ^= UINT32_C(0x60be8859);
+        pCtx->r10.au32[0] ^= UINT32_C(0xa45fbe73);
+        pCtx->r10.au32[1] ^= UINT32_C(0x094140bf);
+        pCtx->r11.au32[0] ^= UINT32_C(0x8200148b);
+        pCtx->r11.au32[1] ^= UINT32_C(0x95dfc457);
+        pCtx->r12.au32[0] ^= UINT32_C(0xabc885f6);
+        pCtx->r12.au32[1] ^= UINT32_C(0xb9af126a);
+        pCtx->r13.au32[0] ^= UINT32_C(0xa2c4435c);
+        pCtx->r13.au32[1] ^= UINT32_C(0x1692b52e);
+        pCtx->r14.au32[0] ^= UINT32_C(0x85a56477);
+        pCtx->r14.au32[1] ^= UINT32_C(0x31a44a04);
+        pCtx->r15.au32[0] ^= UINT32_C(0x8d5b3072);
+        pCtx->r15.au32[1] ^= UINT32_C(0xc2ffce37);
+    }
+}
+
+
+typedef enum {
+    DbgInhibitRingXferType_SoftInt,
+    DbgInhibitRingXferType_Syscall
+} DBGINHIBITRINGXFERTYPE;
+
+static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIntGate, uint8_t cbRingInstr, int8_t cbSpAdjust,
+                                                  FPFNBS3FAR pfnTestCode, FPFNBS3FAR pfnTestLabel, DBGINHIBITRINGXFERTYPE enmType)
+{
     BS3REGCTX               Ctx;
+    BS3TRAPFRAME            TrapCtx;
+    BS3TRAPFRAME            TrapExpectXfer;     /* Expected registers after transfer (no #DB). */
+    BS3TRAPFRAME            TrapExpectXferDb;   /* Expected registers after transfer followed by some #DB. */
     uint8_t                 bSavedDpl;
     uint8_t const           offTestLabel    = BS3_FP_OFF(pfnTestLabel) - BS3_FP_OFF(pfnTestCode);
-    //uint8_t const           cbIretFrameSame = BS3_MODE_IS_RM_SYS(bTestMode)    ? 6
-    //                                        : BS3_MODE_IS_16BIT_SYS(bTestMode) ? 12
-    //                                        : BS3_MODE_IS_64BIT_SYS(bTestMode) ? 40 : 12;
-    uint8_t                 cbIretFrameInt;
-    uint8_t                 cbIretFrameIntDb;
     uint8_t const           cbIretFrameSame = BS3_MODE_IS_16BIT_SYS(bTestMode) ? 6
                                             : BS3_MODE_IS_32BIT_SYS(bTestMode) ? 12 : 40;
+    uint8_t const           cbIretFrameRing = BS3_MODE_IS_16BIT_SYS(bTestMode) ? 10
+                                            : BS3_MODE_IS_32BIT_SYS(bTestMode) ? 20 : 40;
     uint8_t const           cbSpAdjSame     = BS3_MODE_IS_64BIT_SYS(bTestMode) ? 48 : cbIretFrameSame;
-    uint8_t                 bVmeMethod = 0;
-    uint64_t                uHandlerRspInt;
-    uint64_t                uHandlerRspIntDb;
+    bool const              fAlwaysUd       = enmType == DbgInhibitRingXferType_Syscall && bTestMode != BS3_MODE_LM64;
+    uint8_t                 bVmeMethod      = 0;
+    uint8_t                 cbIretFrameDb;      /* #DB before xfer */
+    uint64_t                uHandlerRspDb;      /* #DB before xfer */
     BS3_XPTR_AUTO(uint32_t, StackXptr);
+
+    if (fAlwaysUd)
+        bIntGate = X86_XCPT_UD;
 
     /* make sure they're allocated  */
     Bs3MemZero(&Ctx, sizeof(Ctx));
     Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
-    Bs3MemZero(&TrapExpect, sizeof(TrapExpect));
+    Bs3MemZero(&TrapExpectXfer, sizeof(TrapExpectXfer));
+    Bs3MemZero(&TrapExpectXferDb, sizeof(TrapExpectXferDb));
 
     /*
      * Make INT xx accessible from DPL 3 and create a ring-3 context that we can work with.
@@ -205,6 +232,7 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
     bSavedDpl = Bs3TrapSetDpl(bIntGate, 3);
 
     Bs3RegCtxSaveEx(&Ctx, bTestMode, 1024);
+    bs3RegCtxScramble(&Ctx, bTestMode);
     Bs3RegCtxSetRipCsFromLnkPtr(&Ctx, pfnTestCode);
     if (BS3_MODE_IS_16BIT_SYS(bTestMode))
         g_uBs3TrapEipHint = Ctx.rip.u32;
@@ -224,7 +252,7 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
         Bs3RegCtxConvertToRingX(&Ctx, 3);
 
     /* V8086: Set IOPL to 3. */
-    if (BS3_MODE_IS_V86(bTestMode))
+    if (BS3_MODE_IS_V86(bTestMode) && enmType != DbgInhibitRingXferType_Syscall)
     {
         Ctx.rflags.u32 |= X86_EFL_IOPL;
         if (g_fVME)
@@ -242,6 +270,9 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
 #endif
     }
 
+    /* Make BP = SP since 16-bit can't use SP for addressing. */
+    Ctx.rbp = Ctx.rsp;
+
     /*
      * Test #0: Test run.  Calc expected delayed #DB from it.
      */
@@ -251,46 +282,69 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
         Bs3RegSetDr6(X86_DR6_INIT_VAL);
     }
     *BS3_XPTR_GET(uint32_t, StackXptr) = Ctx.ss;
-    Bs3TrapSetJmpAndRestore(&Ctx, &TrapExpect);
-    if (TrapExpect.bXcpt != bIntGate)
+    Bs3TrapSetJmpAndRestore(&Ctx, &TrapExpectXfer);
+    if (TrapExpectXfer.bXcpt != bIntGate)
     {
-
-        Bs3TestFailedF("%u: bXcpt is %#x, expected %#x!\n", g_usBs3TestStep, TrapExpect.bXcpt, bIntGate);
-        Bs3TrapPrintFrame(&TrapExpect);
+        Bs3TestFailedF("%u: bXcpt is %#x, expected %#x!\n", g_usBs3TestStep, TrapExpectXfer.bXcpt, bIntGate);
+        Bs3TrapPrintFrame(&TrapExpectXfer);
         return 1;
     }
+    Bs3MemCpy(&TrapExpectXferDb, &TrapExpectXfer, sizeof(TrapExpectXferDb));
 
-    cbIretFrameInt   = TrapExpect.cbIretFrame;
-    cbIretFrameIntDb = cbIretFrameInt + cbIretFrameSame;
-    uHandlerRspInt   = TrapExpect.uHandlerRsp;
-    uHandlerRspIntDb = uHandlerRspInt - cbSpAdjSame;
-
-    TrapExpect.Ctx.bCpl         = 0;
-    TrapExpect.Ctx.cs           = TrapExpect.uHandlerCs;
-    TrapExpect.Ctx.ss           = TrapExpect.uHandlerSs;
-    TrapExpect.Ctx.rsp.u64      = TrapExpect.uHandlerRsp;
-    TrapExpect.Ctx.rflags.u64   = TrapExpect.fHandlerRfl;
-    if (BS3_MODE_IS_V86(bTestMode))
+    if (!fAlwaysUd)
     {
-        if (bVmeMethod >= 5)
+        TrapExpectXferDb.Ctx.bCpl         = 0;
+        TrapExpectXferDb.Ctx.cs           = TrapExpectXfer.uHandlerCs;
+        TrapExpectXferDb.Ctx.ss           = TrapExpectXfer.uHandlerSs;
+        TrapExpectXferDb.Ctx.rsp.u64      = TrapExpectXfer.uHandlerRsp;
+        TrapExpectXferDb.Ctx.rflags.u64   = TrapExpectXfer.fHandlerRfl;
+
+        if (enmType != DbgInhibitRingXferType_Syscall)
         {
-            TrapExpect.Ctx.rflags.u32 |= X86_EFL_VM;
-            TrapExpect.Ctx.bCpl = 3;
-            TrapExpect.Ctx.rip.u64 = bs3CpuWeird1_GetTrapHandlerEIP(bIntGate, bTestMode, true);
-            cbIretFrameIntDb = 36;
-            if (BS3_MODE_IS_16BIT_SYS(bTestMode))
-                uHandlerRspIntDb = Bs3Tss16.sp0  - cbIretFrameIntDb;
-            else
-                uHandlerRspIntDb = Bs3Tss32.esp0 - cbIretFrameIntDb;
+            TrapExpectXferDb.cbIretFrame  = TrapExpectXfer.cbIretFrame + cbIretFrameSame;
+            TrapExpectXferDb.uHandlerRsp  = TrapExpectXfer.uHandlerRsp - cbSpAdjSame;
         }
         else
         {
-            TrapExpect.Ctx.ds   = 0;
-            TrapExpect.Ctx.es   = 0;
-            TrapExpect.Ctx.fs   = 0;
-            TrapExpect.Ctx.gs   = 0;
+            TrapExpectXfer.cbIretFrame    = 0xff;
+            TrapExpectXferDb.cbIretFrame  = cbIretFrameSame;
+            TrapExpectXfer.uHandlerRsp    = Ctx.rsp.u - cbSpAdjust;
+            TrapExpectXferDb.uHandlerRsp  = (TrapExpectXfer.uHandlerRsp & ~(uint64_t)15) - cbIretFrameSame;
+        }
+        if (BS3_MODE_IS_V86(bTestMode))
+        {
+            if (bVmeMethod >= 5)
+            {
+                TrapExpectXferDb.Ctx.rflags.u32 |= X86_EFL_VM;
+                TrapExpectXferDb.Ctx.bCpl = 3;
+                TrapExpectXferDb.Ctx.rip.u64 = bs3CpuWeird1_GetTrapHandlerEIP(bIntGate, bTestMode, true);
+                TrapExpectXferDb.cbIretFrame = 36;
+                if (BS3_MODE_IS_16BIT_SYS(bTestMode))
+                    TrapExpectXferDb.uHandlerRsp = Bs3Tss16.sp0  - TrapExpectXferDb.cbIretFrame;
+                else
+                    TrapExpectXferDb.uHandlerRsp = Bs3Tss32.esp0 - TrapExpectXferDb.cbIretFrame;
+            }
+            else
+            {
+                TrapExpectXferDb.Ctx.ds   = 0;
+                TrapExpectXferDb.Ctx.es   = 0;
+                TrapExpectXferDb.Ctx.fs   = 0;
+                TrapExpectXferDb.Ctx.gs   = 0;
+            }
         }
     }
+
+    if (enmType != DbgInhibitRingXferType_Syscall)
+    {
+        cbIretFrameDb = TrapExpectXfer.cbIretFrame;
+        uHandlerRspDb = TrapExpectXfer.uHandlerRsp;
+    }
+    else
+    {
+        cbIretFrameDb = cbIretFrameRing;
+        uHandlerRspDb = BS3_ADDR_STACK_R0 - cbIretFrameRing;
+    }
+
 
     /*
      * Test #1: Single stepping ring-3.  Ignored except for V8086 w/ VME.
@@ -302,19 +356,20 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
         Bs3RegSetDr6(X86_DR6_INIT_VAL);
     }
     *BS3_XPTR_GET(uint32_t, StackXptr) = Ctx.ss;
-    Ctx.rflags.u32 |= X86_EFL_TF;
+//    Ctx.rflags.u32 |= X86_EFL_TF;
 
     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
     if (   !BS3_MODE_IS_V86(bTestMode)
-        || bVmeMethod < 5)
-        bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &Ctx, bIntGate, offTestLabel + cbRingInstr, cbSpAdjust,
-                                               X86_DR6_INIT_VAL, cbIretFrameInt, uHandlerRspInt);
+             || bVmeMethod < 5)
+        bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXfer.Ctx, bIntGate, 0, 0, X86_DR6_INIT_VAL,
+                                               TrapExpectXfer.cbIretFrame, TrapExpectXfer.uHandlerRsp);
     else
     {
-        TrapExpect.Ctx.rflags.u32 |= X86_EFL_TF;
-        bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpect.Ctx, X86_XCPT_DB, offTestLabel, -2,
-                                               X86_DR6_INIT_VAL | X86_DR6_BS, cbIretFrameIntDb, uHandlerRspIntDb);
-        TrapExpect.Ctx.rflags.u32 &= ~X86_EFL_TF;
+        TrapExpectXferDb.Ctx.rflags.u32 |= X86_EFL_TF;
+        bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXferDb.Ctx, X86_XCPT_DB, offTestLabel, -2,
+                                               X86_DR6_INIT_VAL | X86_DR6_BS,
+                                               TrapExpectXferDb.cbIretFrame, TrapExpectXferDb.uHandlerRsp);
+        TrapExpectXferDb.Ctx.rflags.u32 &= ~X86_EFL_TF;
     }
 
     Ctx.rflags.u32 &= ~X86_EFL_TF;
@@ -336,10 +391,10 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
         Bs3RegSetDr7(0);
         if (g_enmCpuVendor == BS3CPUVENDOR_AMD || g_enmCpuVendor == BS3CPUVENDOR_HYGON)
             bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &Ctx, X86_XCPT_DB, offTestLabel, cbSpAdjust,
-                                                   X86_DR6_INIT_VAL | X86_DR6_B0, cbIretFrameInt, uHandlerRspInt);
+                                                   X86_DR6_INIT_VAL | X86_DR6_B0, TrapExpectXfer.cbIretFrame, TrapExpectXfer.uHandlerRsp);
         else
-            bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &Ctx, bIntGate, offTestLabel + cbRingInstr, cbSpAdjust,
-                                                   X86_DR6_INIT_VAL, cbIretFrameInt, uHandlerRspInt);
+            bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXfer.Ctx, bIntGate, 0, 0, X86_DR6_INIT_VAL,
+                                                   TrapExpectXfer.cbIretFrame, TrapExpectXfer.uHandlerRsp);
 
         /*
          * Test #3: Same as above, but with the LE and GE flags set.
@@ -353,14 +408,17 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
         if (g_enmCpuVendor == BS3CPUVENDOR_AMD || g_enmCpuVendor ==  BS3CPUVENDOR_HYGON)
             bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &Ctx, X86_XCPT_DB, offTestLabel, cbSpAdjust,
-                                                   X86_DR6_INIT_VAL | X86_DR6_B0, cbIretFrameInt, uHandlerRspInt);
+                                                   X86_DR6_INIT_VAL | X86_DR6_B0, TrapExpectXfer.cbIretFrame, TrapExpectXfer.uHandlerRsp);
         else
-            bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &Ctx, bIntGate, offTestLabel + cbRingInstr, cbSpAdjust,
-                                                   X86_DR6_INIT_VAL, cbIretFrameInt, uHandlerRspInt);
+            bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXfer.Ctx, bIntGate, 0, 0, X86_DR6_INIT_VAL,
+                                                   TrapExpectXfer.cbIretFrame, TrapExpectXfer.uHandlerRsp);
 
         /*
          * Test #4: Execution breakpoint on pop ss / mov ss.  Hits.
+         *
          * Note! In real mode AMD-V updates the stack pointer, or something else is busted. Totally weird!
+         *
+         *       Update: see Test #6 update.
          */
         g_usBs3TestStep++;
         Bs3RegSetDr0(Bs3SelRealModeCodeToFlat(pfnTestCode));
@@ -369,9 +427,8 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
         *BS3_XPTR_GET(uint32_t, StackXptr) = Ctx.ss;
 
         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-        bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &Ctx, X86_XCPT_DB, 0, 0, X86_DR6_INIT_VAL | X86_DR6_B0,
-                                               cbIretFrameInt,
-                                               uHandlerRspInt - (BS3_MODE_IS_RM_SYS(bTestMode) ? 2 : 0) );
+        bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &Ctx, X86_XCPT_DB, 0, 0, X86_DR6_INIT_VAL | X86_DR6_B0, cbIretFrameDb,
+                                               uHandlerRspDb - (BS3_MODE_IS_RM_SYS(bTestMode) ? cbSpAdjust : 0) );
 
         /*
          * Test #5: Same as above, but with the LE and GE flags set.
@@ -383,9 +440,9 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
         *BS3_XPTR_GET(uint32_t, StackXptr) = Ctx.ss;
 
         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-        bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &Ctx, X86_XCPT_DB, 0, 0, X86_DR6_INIT_VAL | X86_DR6_B0,
-                                               cbIretFrameInt,
-                                               uHandlerRspInt - (BS3_MODE_IS_RM_SYS(bTestMode) ? 2 : 0) );
+        bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &Ctx, X86_XCPT_DB, 0, 0, X86_DR6_INIT_VAL | X86_DR6_B0, cbIretFrameDb,
+                                               uHandlerRspDb - (BS3_MODE_IS_RM_SYS(bTestMode) ? cbSpAdjust : 0) );
+        Bs3RegSetDr7(0);
 
         /*
          * Test #6: Data breakpoint on SS load.  The #DB is delivered after ring transition.  Weird!
@@ -405,13 +462,18 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
         Bs3RegSetDr6(X86_DR6_INIT_VAL);
 
         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-        TrapExpect.Ctx.rip = TrapCtx.Ctx.rip; /// @todo fixme
+        Bs3RegSetDr7(0);
+        TrapExpectXferDb.Ctx.rip = TrapCtx.Ctx.rip; /// @todo fixme
         Bs3RegSetDr7(0);
         uDr6Expect = X86_DR6_INIT_VAL | X86_DR6_B0;
-        if (g_enmCpuVendor == BS3CPUVENDOR_INTEL && bTestMode != BS3_MODE_RM)
+        if (g_enmCpuVendor == BS3CPUVENDOR_INTEL && (bTestMode != BS3_MODE_RM || cbSpAdjust == 0))
             uDr6Expect = X86_DR6_INIT_VAL;
-        bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpect.Ctx, X86_XCPT_DB, 0, 0, uDr6Expect,
-                                               cbIretFrameSame, uHandlerRspIntDb);
+        if (!fAlwaysUd)
+            bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXferDb.Ctx, X86_XCPT_DB, 0, 0, uDr6Expect,
+                                                   cbIretFrameSame, TrapExpectXferDb.uHandlerRsp);
+        else
+            bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXfer.Ctx, X86_XCPT_UD, 0, 0, uDr6Expect,
+                                                   TrapExpectXfer.cbIretFrame, TrapExpectXfer.uHandlerRsp);
 
         /*
          * Test #7: Same as above, but with the LE and GE flags set.
@@ -423,13 +485,17 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
         Bs3RegSetDr6(X86_DR6_INIT_VAL);
 
         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-        TrapExpect.Ctx.rip = TrapCtx.Ctx.rip; /// @todo fixme
+        TrapExpectXferDb.Ctx.rip = TrapCtx.Ctx.rip; /// @todo fixme
         Bs3RegSetDr7(0);
         uDr6Expect = X86_DR6_INIT_VAL | X86_DR6_B0;
-        if (g_enmCpuVendor == BS3CPUVENDOR_INTEL && bTestMode != BS3_MODE_RM)
+        if (g_enmCpuVendor == BS3CPUVENDOR_INTEL && (bTestMode != BS3_MODE_RM || cbSpAdjust == 0))
             uDr6Expect = X86_DR6_INIT_VAL;
-        bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpect.Ctx, X86_XCPT_DB, 0, 0, uDr6Expect,
-                                               cbIretFrameSame, uHandlerRspIntDb);
+        if (!fAlwaysUd)
+            bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXferDb.Ctx, X86_XCPT_DB, 0, 0, uDr6Expect,
+                                                   cbIretFrameSame, TrapExpectXferDb.uHandlerRsp);
+        else
+            bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXfer.Ctx, X86_XCPT_UD, 0, 0, uDr6Expect,
+                                                   TrapExpectXfer.cbIretFrame, TrapExpectXfer.uHandlerRsp);
 
         if (!BS3_MODE_IS_RM_OR_V86(bTestMode))
         {
@@ -446,11 +512,15 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
             Bs3RegSetDr6(X86_DR6_INIT_VAL);
 
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            TrapExpect.Ctx.rip = TrapCtx.Ctx.rip; /// @todo fixme
+            TrapExpectXferDb.Ctx.rip = TrapCtx.Ctx.rip; /// @todo fixme
             Bs3RegSetDr7(0);
             uDr6Expect = g_enmCpuVendor == BS3CPUVENDOR_INTEL ? X86_DR6_INIT_VAL : X86_DR6_INIT_VAL | X86_DR6_B1;
-            bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpect.Ctx, X86_XCPT_DB, 0, 0, uDr6Expect,
-                                                   cbIretFrameSame, uHandlerRspIntDb);
+            if (!fAlwaysUd)
+                bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXferDb.Ctx, X86_XCPT_DB, 0, 0, uDr6Expect,
+                                                       cbIretFrameSame, TrapExpectXferDb.uHandlerRsp);
+            else
+                bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXfer.Ctx, X86_XCPT_UD, 0, 0, uDr6Expect,
+                                                       TrapExpectXfer.cbIretFrame, TrapExpectXfer.uHandlerRsp);
 
             /*
              * Test #9: Same as above, but with the LE and GE flags set.
@@ -464,11 +534,15 @@ static int bs3CpuWeird1_DbgInhibitRingXfer_Worker(uint8_t bTestMode, uint8_t bIn
             Bs3RegSetDr6(X86_DR6_INIT_VAL);
 
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            TrapExpect.Ctx.rip = TrapCtx.Ctx.rip; /// @todo fixme
+            TrapExpectXferDb.Ctx.rip = TrapCtx.Ctx.rip; /// @todo fixme
             Bs3RegSetDr7(0);
             uDr6Expect = g_enmCpuVendor == BS3CPUVENDOR_INTEL ? X86_DR6_INIT_VAL : X86_DR6_INIT_VAL | X86_DR6_B1;
-            bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpect.Ctx, X86_XCPT_DB, 0, 0, uDr6Expect,
-                                                   cbIretFrameSame, uHandlerRspIntDb);
+            if (!fAlwaysUd)
+                bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXferDb.Ctx, X86_XCPT_DB, 0, 0, uDr6Expect,
+                                                       cbIretFrameSame, TrapExpectXferDb.uHandlerRsp);
+            else
+                bs3CpuWeird1_CompareDbgInhibitRingXfer(&TrapCtx, &TrapExpectXfer.Ctx, X86_XCPT_UD, 0, 0, uDr6Expect,
+                                                       TrapExpectXfer.cbIretFrame, TrapExpectXfer.uHandlerRsp);
         }
 
         /*
@@ -507,28 +581,68 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_DbgInhibitRingXfer)(uint8_t bM
     /** @todo test INTO. */
     /** @todo test all V8086 software INT delivery modes (currently only 4 and 1). */
 
+#define ASM_FN_ARGS(a_Name, a_Label, a_ModeSuff, a_Type) \
+        bs3CpuWeird1_##a_Name##_##a_ModeSuff, bs3CpuWeird1_##a_Name##_##a_Label##_##a_ModeSuff, DbgInhibitRingXferType_##a_Type
+
     /* Note! Both ICEBP and BOUND has be checked cursorily and found not to be affected. */
     if (BS3_MODE_IS_16BIT_CODE(bMode))
     {
-        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x80, 2, 2, bs3CpuWeird1_InhibitedInt80_c16, bs3CpuWeird1_InhibitedInt80_int80_c16);
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x80, 2, 2, ASM_FN_ARGS(InhibitedPopSsInt80, int80, c16, SoftInt));
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x80, 2, 0, ASM_FN_ARGS(InhibitedMovSsInt80, int80, c16, SoftInt));
         if (!BS3_MODE_IS_V86(bMode) || !g_fVME)
         {
             /** @todo explain why these GURU     */
-            bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 2, 2, bs3CpuWeird1_InhibitedInt3_c16,  bs3CpuWeird1_InhibitedInt3_int3_c16);
-            bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 1, 2, bs3CpuWeird1_InhibitedBp_c16,    bs3CpuWeird1_InhibitedBp_int3_c16);
+            bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 2, 2, ASM_FN_ARGS(InhibitedPopSsInt3, int3, c16, SoftInt));
+            bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 2, 0, ASM_FN_ARGS(InhibitedMovSsInt3, int3, c16, SoftInt));
+            bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 1, 2, ASM_FN_ARGS(InhibitedPopSsBp,   int3, c16, SoftInt));
+            bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 1, 0, ASM_FN_ARGS(InhibitedMovSsBp,   int3, c16, SoftInt));
         }
     }
     else if (BS3_MODE_IS_32BIT_CODE(bMode))
     {
-        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x80, 2, 4, bs3CpuWeird1_InhibitedInt80_c32, bs3CpuWeird1_InhibitedInt80_int80_c32);
-        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 2, 4, bs3CpuWeird1_InhibitedInt3_c32,  bs3CpuWeird1_InhibitedInt3_int3_c32);
-        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 1, 4, bs3CpuWeird1_InhibitedBp_c32,    bs3CpuWeird1_InhibitedBp_int3_c32);
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x80, 2, 4, ASM_FN_ARGS(InhibitedPopSsInt80, int80, c32, SoftInt));
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x80, 2, 0, ASM_FN_ARGS(InhibitedMovSsInt80, int80, c32, SoftInt));
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 2, 4, ASM_FN_ARGS(InhibitedPopSsInt3,  int3,  c32, SoftInt));
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 2, 0, ASM_FN_ARGS(InhibitedMovSsInt3,  int3,  c32, SoftInt));
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 1, 4, ASM_FN_ARGS(InhibitedPopSsBp,    int3,  c32, SoftInt));
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 1, 0, ASM_FN_ARGS(InhibitedMovSsBp,    int3,  c32, SoftInt));
     }
     else
     {
-        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x80, 2, 0, bs3CpuWeird1_InhibitedInt80_c64, bs3CpuWeird1_InhibitedInt80_int80_c64);
-        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 2, 0, bs3CpuWeird1_InhibitedInt3_c64,  bs3CpuWeird1_InhibitedInt3_int3_c64);
-        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 1, 0, bs3CpuWeird1_InhibitedBp_c64,    bs3CpuWeird1_InhibitedBp_int3_c64);
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x80, 2, 0, ASM_FN_ARGS(InhibitedMovSsInt80, int80, c64, SoftInt));
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 2, 0, ASM_FN_ARGS(InhibitedMovSsInt3,  int3,  c64, SoftInt));
+        bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0x03, 1, 0, ASM_FN_ARGS(InhibitedMovSsBp,    int3,  c64, SoftInt));
+    }
+
+    /* On intel, syscall only works in long mode. */
+/** @todo test this on AMD and extend it to non-64-bit modes */
+    if (BS3_MODE_IS_64BIT_SYS(bMode))
+    {
+        uint64_t const fSavedEfer = ASMRdMsr(MSR_K6_EFER);
+        ASMWrMsr(MSR_K8_SF_MASK, X86_EFL_TF);
+        ASMWrMsr(MSR_K8_LSTAR, g_pfnBs3Syscall64GenericFlat);
+        ASMWrMsr(MSR_K8_CSTAR, g_pfnBs3Syscall64GenericCompatibilityFlat);
+        ASMWrMsr(MSR_K6_STAR, (uint64_t)BS3_SEL_R0_CS64 << MSR_K6_STAR_SYSCALL_CS_SS_SHIFT);
+        ASMWrMsr(MSR_K6_EFER, fSavedEfer | MSR_K6_EFER_SCE);
+
+        if (BS3_MODE_IS_16BIT_CODE(bMode))
+        {
+            bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0xfe, 2, 0, ASM_FN_ARGS(InhibitedMovSsSyscall, syscall, c16, Syscall));
+        }
+        else if (BS3_MODE_IS_32BIT_CODE(bMode))
+        {
+            bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0xfe, 2, 0, ASM_FN_ARGS(InhibitedMovSsSyscall, syscall, c32, Syscall));
+        }
+        else
+        {
+            bs3CpuWeird1_DbgInhibitRingXfer_Worker(bMode, 0xff, 2, 0, ASM_FN_ARGS(InhibitedMovSsSyscall, syscall, c64, Syscall));
+        }
+
+        ASMWrMsr(MSR_K6_EFER, fSavedEfer);
+        ASMWrMsr(MSR_K6_STAR, 0);
+        ASMWrMsr(MSR_K8_LSTAR, 0);
+        ASMWrMsr(MSR_K8_CSTAR, 0);
+        ASMWrMsr(MSR_K8_SF_MASK, 0);
     }
 
     return 0;
