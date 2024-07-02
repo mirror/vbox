@@ -7608,7 +7608,17 @@ int Console::i_recordingCreate(void)
     settings::RecordingSettings recordingSettings;
     int vrc = i_recordingGetSettings(recordingSettings);
     if (RT_SUCCESS(vrc))
+    {
         vrc = mRecording.mCtx.Create(this, recordingSettings);
+        if (RT_SUCCESS(vrc))
+        {
+            RecordingContext::CALLBACKS Callbacks;
+            RT_ZERO(Callbacks);
+            Callbacks.pfnStateChanged = Console::s_recordingOnStateChangedCallback;
+
+            mRecording.mCtx.SetCallbacks(&Callbacks, this /* pvUser */);
+        }
+    }
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -7622,8 +7632,31 @@ void Console::i_recordingDestroy(void)
     mRecording.mCtx.Destroy();
 }
 
+/** @copydoc RecordingContext::CALLBACKS::pfnStateChanged */
+DECLCALLBACK(void) Console::s_recordingOnStateChangedCallback(RecordingContext *pCtx,
+                                                              RECORDINGSTS enmSts, uint32_t uScreen, int vrc, void *pvUser)
+{
+    RT_NOREF(pCtx, vrc);
+
+    Console *pThis = (Console *)pvUser;
+    AssertPtrReturnVoid(pThis);
+
+    switch (enmSts)
+    {
+        case RECORDINGSTS_LIMIT_REACHED:
+        {
+            if (uScreen == UINT32_MAX) /* Limit for all screens reached? Disable recording. */
+                pThis->i_onRecordingChange(FALSE /* Disable */);
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
 /**
- * Starts recording. Does nothing if recording is already active.
+ * Starts recording. Does nothing if recording is already started.
  *
  * @returns VBox status code.
  */
@@ -7645,7 +7678,7 @@ int Console::i_recordingStart(util::AutoWriteLock *pAutoLock /* = NULL */)
 }
 
 /**
- * Stops recording. Does nothing if recording is not active.
+ * Stops recording. Does nothing if recording is not in started state.
  *
  * Note: This does *not* disable recording for a VM, in other words,
  *       it does not change the VM's recording (enabled) setting.

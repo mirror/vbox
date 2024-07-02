@@ -373,7 +373,7 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
      * - the actual framebuffer updates
      * - if available (through mouse integration via Guest Additions): the guest's mouse cursor via a (software) overlay
      *
-     * So composing is done the folowing way:
+     * So composing is done the following way:
      *
      *  - always store the plain framebuffer updates in our back buffer first
      *  - copy the framebuffer updates to our front buffer
@@ -387,11 +387,15 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
         {
             PRECORDINGVIDEOFRAME pSrc = &pFrame->u.Video;
 
-            vrc = RecordingVideoFrameBlitFrame(pFront, pSrc->Pos.x, pSrc->Pos.y,
-                                               pSrc, 0 /* uSrcX */, 0 /* uSrcY */, pSrc->Info.uWidth, pSrc->Info.uHeight);
+            vrc = RecordingVideoBlitRaw(pFront->pau8Buf, pFront->cbBuf, pSrc->Pos.x, pSrc->Pos.y,
+                                        pFront->Info.uBytesPerLine, pFront->Info.uBPP, pFront->Info.enmPixelFmt,
+                                        pSrc->pau8Buf, pSrc->cbBuf, 0 /* uSrcX */, 0 /* uSrcY */, pSrc->Info.uWidth, pSrc->Info.uHeight,
+                                        pSrc->Info.uBytesPerLine, pSrc->Info.uBPP, pSrc->Info.enmPixelFmt);
 #if 0
             RecordingUtilsDbgDumpVideoFrameEx(pFront, "/tmp/recording", "encode-front");
-            RecordingUtilsDbgDumpVideoFrameEx(pSrc, "/tmp/recording", "encode-src");
+            RecordingUtilsDbgDumpImageData(pSrc->pau8Buf, pSrc->cbBuf,
+                                           "/tmp/recording", "encode-src",
+                                           pSrc->Info.uWidth, pSrc->Info.uHeight, pSrc->Info.uBytesPerLine, pSrc->Info.uBPP);
 #endif
             vrc = RecordingVideoFrameBlitFrame(pBack, pSrc->Pos.x, pSrc->Pos.y,
                                                pSrc,  0 /* uSrcX */, 0 /* uSrcY */, pSrc->Info.uWidth, pSrc->Info.uHeight);
@@ -498,20 +502,6 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
               pCodec->Parms.u.Video.uWidth, pCodec->Parms.u.Video.uHeight, pCodec->Parms.u.Video.uFPS,
               pCodec->Parms.u.Video.Scaling.u.Crop.m_iOriginX, pCodec->Parms.u.Video.Scaling.u.Crop.m_iOriginY));
 
-    int32_t sx_b = sx; /* X origin within the source frame. */
-    int32_t sy_b = sy; /* Y origin within the source frame. */
-    int32_t sw_b = sw; /* Width of the source frame (starting at X origin). */
-    int32_t sh_b = sh; /* Height of the source frame (starting at Y origin). */
-    int32_t dx_b = dx; /* X destination of the source frame within the destination frame. */
-    int32_t dy_b = dy; /* Y destination of the source frame within the destination frame. */
-
-    RT_NOREF(sx_b);
-    RT_NOREF(sy_b);
-    RT_NOREF(sw_b);
-    RT_NOREF(sh_b);
-    RT_NOREF(dx_b);
-    RT_NOREF(dy_b);
-
     vrc = RecordingUtilsCoordsCropCenter(&pCodec->Parms, &sx, &sy, &sw, &sh, &dx, &dy);
     if (vrc == VINF_SUCCESS) /* vrc might be VWRN_RECORDING_ENCODING_SKIPPED to skip encoding. */
     {
@@ -545,19 +535,6 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
 /** @copydoc RECORDINGCODECOPS::pfnScreenChange */
 static DECLCALLBACK(int) recordingCodecVPXScreenChange(PRECORDINGCODEC pCodec, PRECORDINGSURFACEINFO pInfo)
 {
-    LogRel2(("Recording: Codec got screen change notification (%RU16x%RU16, %RU8 BPP)\n",
-             pInfo->uWidth, pInfo->uHeight, pInfo->uBPP));
-
-    /* Fend-off bogus reports. */
-    if (   !pInfo->uWidth
-        || !pInfo->uHeight)
-        return VERR_INVALID_PARAMETER;
-
-     /** @todo BUGBUG Not sure why we sometimes get 0 BPP for a display change from Main.
-      *               For now we ASSUME 32 BPP. */
-    if (!pInfo->uBPP)
-        pInfo->uBPP = 32;
-
     /* The VPX encoder only understands even frame sizes. */
     if (   (pInfo->uWidth  % 2) != 0
         || (pInfo->uHeight % 2) != 0)
@@ -1205,8 +1182,17 @@ int recordingCodecEncodeCurrent(PRECORDINGCODEC pCodec, uint64_t msTimestamp)
  */
 int recordingCodecScreenChange(PRECORDINGCODEC pCodec, PRECORDINGSURFACEINFO pInfo)
 {
+    LogRel2(("Recording: Codec got screen change notification (%RU16x%RU16, %RU8 BPP)\n",
+             pInfo->uWidth, pInfo->uHeight, pInfo->uBPP));
+
     if (!pCodec->Ops.pfnScreenChange)
         return VINF_SUCCESS;
+
+    /* Fend-off bogus reports. */
+    if (   !pInfo->uWidth
+        || !pInfo->uHeight)
+        return VERR_INVALID_PARAMETER;
+    AssertReturn(pInfo->uBPP % 8 == 0, VERR_INVALID_PARAMETER);
 
     return pCodec->Ops.pfnScreenChange(pCodec, pInfo);
 }

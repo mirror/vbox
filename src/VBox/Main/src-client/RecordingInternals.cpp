@@ -247,10 +247,10 @@ void RecordingVideoFrameClear(PRECORDINGVIDEOFRAME pFrame)
  * @param   uSrcBPP             BPP of source data. Must match \a pFrame.
  * @param   enmSrcFmt           Pixel format of source data. Must match \a pFrame.
  */
-DECLINLINE(int) recordingVideoFrameBlitRaw(uint8_t *pu8Dst, size_t cbDst, uint32_t uDstX, uint32_t uDstY,
-                                           uint32_t uDstBytesPerLine, uint8_t uDstBPP, RECORDINGPIXELFMT enmDstFmt,
-                                           const uint8_t *pu8Src, size_t cbSrc, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight,
-                                           uint32_t uSrcBytesPerLine, uint8_t uSrcBPP, RECORDINGPIXELFMT enmSrcFmt)
+DECLINLINE(int) recordingVideoBlitRaw(uint8_t *pu8Dst, size_t cbDst, uint32_t uDstX, uint32_t uDstY,
+                                      uint32_t uDstBytesPerLine, uint8_t uDstBPP, RECORDINGPIXELFMT enmDstFmt,
+                                      const uint8_t *pu8Src, size_t cbSrc, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight,
+                                      uint32_t uSrcBytesPerLine, uint8_t uSrcBPP, RECORDINGPIXELFMT enmSrcFmt)
 {
     RT_NOREF(enmDstFmt, enmSrcFmt);
 
@@ -274,6 +274,15 @@ DECLINLINE(int) recordingVideoFrameBlitRaw(uint8_t *pu8Dst, size_t cbDst, uint32
     }
 
     return VINF_SUCCESS;
+}
+
+int RecordingVideoBlitRaw(uint8_t *pu8Dst, size_t cbDst, uint32_t uDstX, uint32_t uDstY,
+                          uint32_t uDstBytesPerLine, uint8_t uDstBPP, RECORDINGPIXELFMT enmDstFmt,
+                          const uint8_t *pu8Src, size_t cbSrc, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight,
+                          uint32_t uSrcBytesPerLine, uint8_t uSrcBPP, RECORDINGPIXELFMT enmSrcFmt)
+{
+    return recordingVideoBlitRaw(pu8Dst, cbDst, uDstX, uDstY, uDstBytesPerLine,uDstBPP, enmDstFmt,
+                                 pu8Src, cbSrc, uSrcX, uSrcY, uSrcWidth, uSrcHeight,uSrcBytesPerLine, uSrcBPP, enmSrcFmt);
 }
 
 /**
@@ -365,18 +374,18 @@ int RecordingVideoFrameBlitRaw(PRECORDINGVIDEOFRAME pDstFrame, uint32_t uDstX, u
                                const uint8_t *pu8Src, size_t cbSrc, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight,
                                uint32_t uSrcBytesPerLine, uint8_t uSrcBPP, RECORDINGPIXELFMT enmFmt)
 {
-    return recordingVideoFrameBlitRaw(/* Destination */
-                                      pDstFrame->pau8Buf, pDstFrame->cbBuf, uDstX, uDstY,
-                                      pDstFrame->Info.uBytesPerLine, pDstFrame->Info.uBPP, pDstFrame->Info.enmPixelFmt,
-                                      /* Source */
-                                      pu8Src, cbSrc, uSrcX, uSrcY, uSrcWidth, uSrcHeight, uSrcBytesPerLine, uSrcBPP, enmFmt);
+    return recordingVideoBlitRaw(/* Destination */
+                                pDstFrame->pau8Buf, pDstFrame->cbBuf, uDstX, uDstY,
+                                pDstFrame->Info.uBytesPerLine, pDstFrame->Info.uBPP, pDstFrame->Info.enmPixelFmt,
+                                /* Source */
+                                pu8Src, cbSrc, uSrcX, uSrcY, uSrcWidth, uSrcHeight, uSrcBytesPerLine, uSrcBPP, enmFmt);
 }
 
 /**
  * Simple blitting function for raw image data with alpha channel.
  *
  * @returns VBox status code.
- * @param   pFrame              Destination frame.
+ * @param   pDstFrame           Destination frame.
  * @param   uDstX               X destination (in pixel) within destination frame.
  * @param   uDstY               Y destination (in pixel) within destination frame.
  * @param   pu8Src              Source data to blit. Must be in the same pixel format as \a pFrame.
@@ -389,11 +398,11 @@ int RecordingVideoFrameBlitRaw(PRECORDINGVIDEOFRAME pDstFrame, uint32_t uDstX, u
  * @param   uSrcBPP             BPP of source data. Must match \a pFrame.
  * @param   enmFmt              Pixel format of source data. Must match \a pFrame.
  */
-int RecordingVideoFrameBlitRawAlpha(PRECORDINGVIDEOFRAME pFrame, uint32_t uDstX, uint32_t uDstY,
+int RecordingVideoFrameBlitRawAlpha(PRECORDINGVIDEOFRAME pDstFrame, uint32_t uDstX, uint32_t uDstY,
                                     const uint8_t *pu8Src, size_t cbSrc, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight,
                                     uint32_t uSrcBytesPerLine, uint8_t uSrcBPP, RECORDINGPIXELFMT enmFmt)
 {
-    return recordingVideoFrameBlitRawAlpha(pFrame, uDstX, uDstY,
+    return recordingVideoFrameBlitRawAlpha(pDstFrame, uDstX, uDstY,
                                            pu8Src, cbSrc, uSrcX, uSrcY, uSrcWidth, uSrcHeight, uSrcBytesPerLine, uSrcBPP, enmFmt);
 }
 
@@ -415,12 +424,12 @@ int RecordingVideoFrameBlitRawAlpha(PRECORDINGVIDEOFRAME pFrame, uint32_t uDstX,
 int RecordingVideoFrameBlitFrame(PRECORDINGVIDEOFRAME pDstFrame, uint32_t uDstX, uint32_t uDstY,
                                  PRECORDINGVIDEOFRAME pSrcFrame, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight)
 {
-    return recordingVideoFrameBlitRaw(/* Dest */
-                                      pDstFrame->pau8Buf, pDstFrame->cbBuf, uDstX, uDstY,
-                                      pDstFrame->Info.uBytesPerLine, pDstFrame->Info.uBPP, pDstFrame->Info.enmPixelFmt,
-                                      /* Source */
-                                      pSrcFrame->pau8Buf, pSrcFrame->cbBuf, uSrcX, uSrcY, uSrcWidth, uSrcHeight,
-                                      pSrcFrame->Info.uBytesPerLine, pSrcFrame->Info.uBPP, pSrcFrame->Info.enmPixelFmt);
+    return recordingVideoBlitRaw(/* Dest */
+                                 pDstFrame->pau8Buf, pDstFrame->cbBuf, uDstX, uDstY,
+                                 pDstFrame->Info.uBytesPerLine, pDstFrame->Info.uBPP, pDstFrame->Info.enmPixelFmt,
+                                 /* Source */
+                                 pSrcFrame->pau8Buf, pSrcFrame->cbBuf, uSrcX, uSrcY, uSrcWidth, uSrcHeight,
+                                 pSrcFrame->Info.uBytesPerLine, pSrcFrame->Info.uBPP, pSrcFrame->Info.enmPixelFmt);
 }
 
 #ifdef VBOX_WITH_AUDIO_RECORDING

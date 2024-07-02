@@ -45,6 +45,7 @@
 
 #ifdef VBOX_WITH_RECORDING
 # include "RecordingInternals.h"
+class RecordingContext;
 #endif
 
 class Console;
@@ -187,9 +188,10 @@ public:
 #ifdef VBOX_WITH_RECORDING
     int i_recordingStart(void);
     int i_recordingStop(void);
-    int i_recordingInvalidate(bool fForce = false);
+    int i_recordingInvalidate(void);
     int i_recordingScreenChanged(unsigned uScreenId, const DISPLAYFBINFO *pFBInfo);
-    int i_recordingScreenUpdate(unsigned uScreenId, PRECORDINGVIDEOFRAME pFrame);
+    int i_recordingScreenUpdate(unsigned uScreenId, uint8_t *pauFramebuffer, size_t cbFramebuffer, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t uBytesPerLine);
+    int i_recordingScreenUpdate(unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
     int i_recordingCursorPositionChange(unsigned uScreenId, uint32_t fFlags, int32_t x, int32_t y);
 #endif
 
@@ -413,13 +415,20 @@ private:
     RTCRITSECT           mVideoAccelLock;
 
 #ifdef VBOX_WITH_RECORDING
-    /* Serializes access to video recording source bitmaps. */
-    RTCRITSECT           mVideoRecLock;
-    /** Array which defines which screens are being enabled for recording. */
-    bool                 maRecordingEnabled[SchemaDefs::MaxGuestMonitors];
+    /** Struct which holds information and state about (video) recording. */
+    struct Recording
+    {
+        Recording()
+            : pCtx(NULL) { }
+
+        /** Recording context. Constant across lifetime.
+         *  Might be NULL if not being used. */
+        RecordingContext * const pCtx;
+    } Recording;
 #endif
 
 #ifdef VBOX_WITH_STATISTICS
+    /** Struct for keeping STAM values. */
     struct
     {
         /** Profiling Display::i_displayRefreshCallback(). */

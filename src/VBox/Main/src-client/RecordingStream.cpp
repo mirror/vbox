@@ -147,7 +147,7 @@ bool RecordingStream::isLimitReachedInternal(uint64_t msTimestamp) const
                      msTimestamp, m_ScreenSettings.ulMaxTimeS, m_tsStartMs));
 
     if (   m_ScreenSettings.ulMaxTimeS
-        && msTimestamp >= m_tsStartMs + (m_ScreenSettings.ulMaxTimeS * RT_MS_1SEC))
+        && msTimestamp >= m_ScreenSettings.ulMaxTimeS * RT_MS_1SEC)
     {
         LogRel(("Recording: Time limit for stream #%RU16 has been reached (%RU32s)\n",
                 m_uScreenID, m_ScreenSettings.ulMaxTimeS));
@@ -184,10 +184,15 @@ bool RecordingStream::isLimitReachedInternal(uint64_t msTimestamp) const
  * Does housekeeping and recording context notification.
  *
  * @returns VBox status code.
+ * @retval  VINF_RECORDING_LIMIT_REACHED if the stream's recording limit has been reached.
  * @param   msTimestamp         Timestamp (PTS, in ms).
+ *
+ * @note    Caller must *not* have the stream's lock (callbacks involved).
  */
 int RecordingStream::iterateInternal(uint64_t msTimestamp)
 {
+    AssertReturn(!RTCritSectIsOwner(&m_CritSect), VERR_WRONG_ORDER);
+
     if (!m_fEnabled)
         return VINF_SUCCESS;
 
@@ -208,7 +213,7 @@ int RecordingStream::iterateInternal(uint64_t msTimestamp)
         {
             m_fEnabled = false;
 
-            int vrc2 = m_pCtx->OnLimitReached(m_uScreenID, VINF_SUCCESS /* vrc */);
+            int vrc2 = m_pCtx->onLimitReached(m_uScreenID, VINF_SUCCESS /* vrc */);
             AssertRC(vrc2);
             break;
         }
@@ -229,20 +234,21 @@ int RecordingStream::iterateInternal(uint64_t msTimestamp)
  */
 bool RecordingStream::IsLimitReached(uint64_t msTimestamp) const
 {
-    if (!IsReady())
+    if (!m_fEnabled)
         return true;
 
     return isLimitReachedInternal(msTimestamp);
 }
 
 /**
- * Returns whether a recording stream is ready (e.g. enabled and active) or not.
+ * Returns whether a feature for a recording stream is enabled or not.
  *
  * @returns @c true if ready, @c false if not.
+ * @param   enmFeature          Feature of stream to check enabled status for.
  */
-bool RecordingStream::IsReady(void) const
+bool RecordingStream::IsFeatureEnabled(RecordingFeature_T enmFeature) const
 {
-    return m_fEnabled;
+    return m_fEnabled && m_ScreenSettings.isFeatureEnabled(enmFeature);
 }
 
 /**
@@ -391,6 +397,7 @@ int RecordingStream::process(const RecordingBlockSet &streamBlocks, RecordingBlo
  * The stream's main routine called from the encoding thread.
  *
  * @returns VBox status code.
+ * @retval  VINF_RECORDING_LIMIT_REACHED if the stream's recording limit has been reached.
  * @param   rcWait              Result of the encoding thread's wait operation.
  *                              Can be used for figuring out if the encoder has to perform some
  *                              worked based on that result.
@@ -400,7 +407,9 @@ int RecordingStream::process(const RecordingBlockSet &streamBlocks, RecordingBlo
  */
 int RecordingStream::ThreadMain(int rcWait, RecordingBlockMap &commonBlocks)
 {
-    Log3Func(("rcWait=%Rrc\n", rcWait));
+    Log3Func(("uScreenID=%RU16, rcWait=%Rrc\n", m_uScreenID, rcWait));
+
+    uint64_t const msTimestamp = m_pCtx->GetCurrentPTS();
 
     /* No new data arrived within time? Feed the encoder with the last frame we built.
      *
@@ -409,7 +418,7 @@ int RecordingStream::ThreadMain(int rcWait, RecordingBlockMap &commonBlocks)
     if (   rcWait == VERR_TIMEOUT
         && m_ScreenSettings.isFeatureEnabled(RecordingFeature_Video))
     {
-        return recordingCodecEncodeCurrent(&m_CodecVideo, m_pCtx->GetCurrentPTS());
+        return recordingCodecEncodeCurrent(&m_CodecVideo, msTimestamp);
     }
 
     int vrc = process(m_Blocks, commonBlocks);
@@ -527,14 +536,9 @@ int RecordingStream::SendCursorPos(uint8_t idCursor, PRECORDINGPOS pPos, uint64_
     RT_NOREF(idCursor);
     AssertPtrReturn(pPos, VERR_INVALID_POINTER);
 
-    lock();
-
     int vrc = iterateInternal(msTimestamp);
     if (vrc != VINF_SUCCESS) /* Can return VINF_RECORDING_LIMIT_REACHED. */
-    {
-        unlock();
         return vrc;
-    }
 
     PRECORDINGFRAME pFrame = (PRECORDINGFRAME)RTMemAlloc(sizeof(RECORDINGFRAME));
     AssertPtrReturn(pFrame, VERR_NO_MEMORY);
@@ -542,6 +546,8 @@ int RecordingStream::SendCursorPos(uint8_t idCursor, PRECORDINGPOS pPos, uint64_
     pFrame->msTimestamp = msTimestamp;
 
     pFrame->u.Cursor.Pos = *pPos;
+
+    lock();
 
     vrc = addFrame(pFrame, msTimestamp);
 
@@ -567,14 +573,9 @@ int RecordingStream::SendCursorShape(uint8_t idCursor, PRECORDINGVIDEOFRAME pSha
     AssertPtrReturn(pShape, VERR_INVALID_POINTER);
     AssertPtrReturn(m_pCtx, VERR_WRONG_ORDER);
 
-    lock();
-
     int vrc = iterateInternal(msTimestamp);
     if (vrc != VINF_SUCCESS) /* Can return VINF_RECORDING_LIMIT_REACHED. */
-    {
-        unlock();
         return vrc;
-    }
 
     PRECORDINGFRAME pFrame = (PRECORDINGFRAME)RTMemAlloc(sizeof(RECORDINGFRAME));
     AssertPtrReturn(pFrame, VERR_NO_MEMORY);
@@ -588,15 +589,17 @@ int RecordingStream::SendCursorShape(uint8_t idCursor, PRECORDINGVIDEOFRAME pSha
     pFrame->enmType     = RECORDINGFRAME_TYPE_CURSOR_SHAPE;
     pFrame->msTimestamp = msTimestamp;
 
+    lock();
+
     vrc = addFrame(pFrame, msTimestamp);
+
+    unlock();
 
     if (RT_FAILURE(vrc))
     {
         RecordingVideoFrameDestroy(&pFrame->u.Video);
         RecordingFrameFree(pFrame);
     }
-
-    unlock();
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -619,36 +622,43 @@ int RecordingStream::SendVideoFrame(PRECORDINGVIDEOFRAME pVideoFrame, uint64_t m
     AssertPtrReturn(pVideoFrame, VERR_INVALID_POINTER);
     AssertPtrReturn(m_pCtx, VERR_WRONG_ORDER);
 
-    lock();
-
     int vrc = iterateInternal(msTimestamp);
     if (vrc != VINF_SUCCESS) /* Can return VINF_RECORDING_LIMIT_REACHED. */
-    {
-        unlock();
         return vrc;
-    }
 
     PRECORDINGFRAME pFrame = (PRECORDINGFRAME)RTMemAlloc(sizeof(RECORDINGFRAME));
     AssertPtrReturn(pFrame, VERR_NO_MEMORY);
 
     pFrame->u.Video = *pVideoFrame;
+
     /* Make a deep copy of the pixel data. */
-    pFrame->u.Video.pau8Buf = (uint8_t *)RTMemDup(pVideoFrame->pau8Buf, pVideoFrame->cbBuf);
+    pFrame->u.Video.pau8Buf = (uint8_t *)RTMemAlloc(pVideoFrame->cbBuf);
     AssertPtrReturnStmt(pFrame->u.Video.pau8Buf, RTMemFree(pFrame), VERR_NO_MEMORY);
-    pFrame->u.Video.cbBuf   = pVideoFrame->cbBuf;
+    size_t       offDst            = 0;
+    size_t       offSrc            = 0;
+    size_t const cbDstBytesPerLine = pVideoFrame->Info.uWidth * (pVideoFrame->Info.uBPP / 8);
+    for (uint32_t h = 0; h < pFrame->u.Video.Info.uHeight; h++)
+    {
+        memcpy(pFrame->u.Video.pau8Buf + offDst, pVideoFrame->pau8Buf + offSrc, cbDstBytesPerLine);
+        offDst += cbDstBytesPerLine;
+        offSrc += pVideoFrame->Info.uBytesPerLine;
+    }
+    pFrame->u.Video.Info.uBytesPerLine = cbDstBytesPerLine;
 
     pFrame->enmType     = RECORDINGFRAME_TYPE_VIDEO;
     pFrame->msTimestamp = msTimestamp;
 
+    lock();
+
     vrc = addFrame(pFrame, msTimestamp);
+
+    unlock();
 
     if (RT_FAILURE(vrc))
     {
         RecordingVideoFrameDestroy(&pFrame->u.Video);
         RecordingFrameFree(pFrame);
     }
-
-    unlock();
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;

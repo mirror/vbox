@@ -41,6 +41,7 @@
 #include <iprt/formats/bmp.h>
 #endif
 
+#define LOG_GROUP LOG_GROUP_RECORDING
 #include <VBox/log.h>
 
 
@@ -369,6 +370,7 @@ int RecordingUtilsCoordsCropCenter(PRECORDINGCODECPARMS pCodecParms,
  *
  * @returns VBox status code.
  * @param   pu8RGBBuf           Pointer to actual RGB image data.
+ *                              Must point right to the beginning of the pixel data (offset, if any).
  * @param   cbRGBBuf            Size (in bytes) of \a pu8RGBBuf.
  * @param   pszPath             Absolute path to dump file to. Must exist.
  *                              Specify NULL to use the system's temp directory as output directory.
@@ -382,13 +384,16 @@ int RecordingUtilsCoordsCropCenter(PRECORDINGCODECPARMS pCodecParms,
 int RecordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, const char *pszPath, const char *pszWhat,
                                    uint32_t uWidth, uint32_t uHeight, uint32_t uBytesPerLine, uint8_t uBPP)
 {
-    RT_NOREF(cbRGBBuf);
-
     const uint8_t  uBytesPerPixel = uBPP / 8 /* Bits */;
     const size_t   cbData         = uWidth * uHeight * uBytesPerPixel;
 
     if (!cbData) /* No data to write? Bail out early. */
         return VINF_SUCCESS;
+
+    AssertReturn(cbData <= cbRGBBuf, VERR_INVALID_PARAMETER);
+
+    Log3Func(("pu8RGBBuf=%p, cbRGBBuf=%zu, uWidth=%RU32, uHeight=%RU32, uBytesPerLine=%RU32, uBPP=%RU8\n",
+              pu8RGBBuf, cbRGBBuf, uWidth, uHeight, uBytesPerLine, uBPP));
 
     BMPFILEHDR fileHdr;
     RT_ZERO(fileHdr);
@@ -408,7 +413,7 @@ int RecordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, co
     coreHdr.uXPelsPerMeter = 5000;
     coreHdr.uYPelsPerMeter = 5000;
 
-    static uint64_t s_iCount = 0;
+    static uint64_t s_cRecordingUtilsBmpsDumped = 0;
 
     /* Hardcoded path for now. */
     char szPath[RTPATH_MAX];
@@ -420,11 +425,11 @@ int RecordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, co
     }
 
     char szFileName[RTPATH_MAX];
-    if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s/RecDump-%04RU64-%s-w%RU16h%RU16.bmp",
-                     pszPath ? pszPath : szPath, s_iCount, pszWhat ? pszWhat : "Frame", uWidth, uHeight) <= 0)
+    if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s/RecDump-%04RU64-%s-w%RU32h%RU32bpp%RU8.bmp",
+                     pszPath ? pszPath : szPath, s_cRecordingUtilsBmpsDumped, pszWhat ? pszWhat : "Frame", uWidth, uHeight, uBPP) <= 0)
         return VERR_BUFFER_OVERFLOW;
 
-    s_iCount++;
+    s_cRecordingUtilsBmpsDumped++;
 
     RTFILE fh;
     int vrc = RTFileOpen(&fh, szFileName,
@@ -435,16 +440,23 @@ int RecordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, co
         RTFileWrite(fh, &coreHdr, sizeof(coreHdr), NULL);
 
         /* Bitmaps (DIBs) are stored upside-down (thanks, OS/2), so work from the bottom up. */
-        size_t offSrc = cbRGBBuf - uBytesPerLine;
+        size_t offSrc = uBytesPerLine * (uHeight - 1);
+        Assert(offSrc <= cbRGBBuf);
 
         /* Do the copy. */
-        for (unsigned int i = 0; i < uHeight; i++)
+        while (offSrc)
         {
-            RTFileWrite(fh, pu8RGBBuf + offSrc, uBytesPerLine, NULL);
+            LogFunc(("offSrc=%zu\n", offSrc));
+            vrc = RTFileWrite(fh, pu8RGBBuf + offSrc, uWidth * uBytesPerPixel, NULL);
+            AssertRCBreak(vrc);
+            Assert(offSrc >= uBytesPerLine);
             offSrc -= uBytesPerLine;
+
         }
 
-        RTFileClose(fh);
+        int vrc2 = RTFileClose(fh);
+        if (RT_SUCCESS(vrc))
+            vrc = vrc2;
     }
 
     return vrc;

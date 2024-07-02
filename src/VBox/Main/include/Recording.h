@@ -70,10 +70,54 @@ public:
 };
 
 /**
+ * Enumeration for a recording context state.
+ */
+enum RECORDINGSTS
+{
+    /** Recording not initialized. */
+    RECORDINGSTS_UNINITIALIZED = 0,
+    /** Recording was created. */
+    RECORDINGSTS_CREATED       = 1,
+    /** Recording was started. */
+    RECORDINGSTS_STARTED       = 2,
+    /** Recording was stopped. */
+    RECORDINGSTS_STOPPED       = 3,
+    /** Limit has been reached. */
+    RECORDINGSTS_LIMIT_REACHED = 4,
+    /** Recording experienced an error. */
+    RECORDINGSTS_FAILURE       = 5,
+    /** The usual 32-bit hack. */
+    RECORDINGSTS_32BIT_HACK    = 0x7fffffff
+};
+
+/**
  * Class for managing a recording context.
  */
 class RecordingContext
 {
+    friend RecordingStream;
+
+public:
+
+    /** Recording context callback table. */
+    struct CALLBACKS
+    {
+       /**
+        * Recording state got changed. Optional.
+        *
+        * @param   pCtx                 Recording context.
+        * @param   enmSts               New status.
+        * @param   uScreen              Screen ID.
+        *                               Set to UINT32_MAX if the limit of all streams was reached.
+        * @param   vrc                  Result code of state change.
+        * @param   pvUser               User-supplied pointer. Might be NULL.
+        */
+        DECLCALLBACKMEMBER(void, pfnStateChanged, (RecordingContext *pCtx, RECORDINGSTS enmSts, uint32_t uScreen, int vrc, void *pvUser));
+
+        /** User-supplied pointer. Might be NULL. */
+        void *pvUser;
+    };
+
 public:
 
     RecordingContext();
@@ -107,14 +151,13 @@ public:
 
     uint64_t GetCurrentPTS(void) const;
     bool IsFeatureEnabled(RecordingFeature_T enmFeature);
+    bool IsFeatureEnabled(uint32_t uScreen, RecordingFeature_T enmFeature);
     bool IsReady(void);
-    bool IsReady(uint32_t uScreen, uint64_t msTimestamp);
     bool IsStarted(void);
     bool IsLimitReached(void);
     bool IsLimitReached(uint32_t uScreen, uint64_t msTimestamp);
     bool NeedsUpdate(uint32_t uScreen, uint64_t msTimestamp);
-
-    DECLCALLBACK(int) OnLimitReached(uint32_t uScreen, int vrc);
+    void SetCallbacks(RecordingContext::CALLBACKS *pCallbacks, void *pvUser);
 
     /** The state mouse cursor state.
      *  We currently only support one mouse cursor at a time. */
@@ -137,6 +180,8 @@ protected:
     int lock(void);
     int unlock(void);
 
+    int onLimitReached(uint32_t uScreen, int vrc);
+
     static DECLCALLBACK(int) threadMain(RTTHREAD hThreadSelf, void *pvUser);
 
     int threadNotify(void);
@@ -149,27 +194,14 @@ protected:
 
 protected:
 
-    /**
-     * Enumeration for a recording context state.
-     */
-    enum RECORDINGSTS
-    {
-        /** Context not initialized. */
-        RECORDINGSTS_UNINITIALIZED = 0,
-        /** Context was created. */
-        RECORDINGSTS_CREATED       = 1,
-        /** Context was started. */
-        RECORDINGSTS_STARTED       = 2,
-        /** The usual 32-bit hack. */
-        RECORDINGSTS_32BIT_HACK    = 0x7fffffff
-    };
-
     /** Pointer to the console object. */
     Console                     *m_pConsole;
     /** Used recording configuration. */
     settings::RecordingSettings  m_Settings;
     /** The current state. */
     RECORDINGSTS                 m_enmState;
+    /** Callback table. */
+    CALLBACKS                    m_Callbacks;
     /** Critical section to serialize access. */
     RTCRITSECT                   m_CritSect;
     /** Semaphore to signal the encoding worker thread. */

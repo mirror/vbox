@@ -143,7 +143,7 @@ public:
     PRECORDINGCODEC GetVideoCodec(void) { return &this->m_CodecVideo; };
 
     bool IsLimitReached(uint64_t msTimestamp) const;
-    bool IsReady(void) const;
+    bool IsFeatureEnabled(RecordingFeature_T enmFeature) const;
     bool NeedsUpdate(uint64_t msTimestamp) const;
 
 public:

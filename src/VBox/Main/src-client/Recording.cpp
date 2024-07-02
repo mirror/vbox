@@ -136,7 +136,7 @@ int RecordingCursorState::CreateOrUpdate(bool fAlpha, uint32_t uWidth, uint32_t 
     if (RT_SUCCESS(vrc))
         vrc = RecordingVideoFrameBlitRaw(&m_Shape, 0, 0, &pu8Shape[offShape], cbShape - offShape, 0, 0, uWidth, uHeight, uWidth * 4 /* BPP */, uBPP,
                                          m_Shape.Info.enmPixelFmt);
-#ifdef DEBUG_andy_disabled
+#if 0
     RecordingUtilsDbgDumpVideoFrameEx(&m_Shape, "/tmp/recording", "cursor-update");
 #endif
 
@@ -529,6 +529,7 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
 #endif
 
     m_pConsole = ptrConsole;
+    RT_ZERO(m_Callbacks);
 
     settings::RecordingScreenSettingsMap::const_iterator itScreen = m_Settings.mapScreens.begin();
     while (itScreen != m_Settings.mapScreens.end())
@@ -536,11 +537,13 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
         RecordingStream *pStream = NULL;
         try
         {
-            pStream = new RecordingStream(this, itScreen->first /* Screen ID */, itScreen->second);
-            m_vecStreams.push_back(pStream);
             if (itScreen->second.fEnabled)
+            {
+                pStream = new RecordingStream(this, itScreen->first /* Screen ID */, itScreen->second);
+                m_vecStreams.push_back(pStream);
                 m_cStreamsEnabled++;
-            LogFlowFunc(("pStream=%p\n", pStream));
+                LogFlowFunc(("pStream=%p\n", pStream));
+            }
         }
         catch (std::bad_alloc &)
         {
@@ -564,12 +567,30 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
 
         vrc = RTSemEventCreate(&m_WaitEvent);
         AssertRCReturn(vrc, vrc);
+
+        RT_ZERO(m_Callbacks);
     }
 
     if (RT_FAILURE(vrc))
         destroyInternal();
 
     return vrc;
+}
+
+/**
+ * Sets the callback table for a recording context.
+ *
+ * @param   pCallbacks          Callback table to set.
+ * @param   pvUser              User-supplied pointer.
+ */
+void RecordingContext::SetCallbacks(RecordingContext::CALLBACKS *pCallbacks, void *pvUser)
+{
+    lock();
+
+    memcpy(&m_Callbacks, pCallbacks, sizeof(RecordingContext::CALLBACKS));
+    m_Callbacks.pvUser = pvUser;
+
+    unlock();
 }
 
 /**
@@ -856,25 +877,25 @@ bool RecordingContext::IsReady(void)
 }
 
 /**
- * Returns if this recording context is ready to accept new recording data for a given screen.
+ * Returns if a feature for a given stream is enabled or not.
  *
- * @returns @c true if the specified screen is ready, @c false if not.
+ * @returns @c true if the specified feature is enabled (running), @c false if not.
  * @param   uScreen             Screen ID.
- * @param   msTimestamp         Timestamp (PTS, in ms). Currently not being used.
+ * @param   enmFeature          Feature of stream to check for.
+ *
+ * @note    Implies that the stream is enabled (i.e. active).
  */
-bool RecordingContext::IsReady(uint32_t uScreen, uint64_t msTimestamp)
+bool RecordingContext::IsFeatureEnabled(uint32_t uScreen, RecordingFeature_T enmFeature)
 {
-    RT_NOREF(msTimestamp);
-
     lock();
 
     bool fIsReady = false;
 
-    if (m_enmState != RECORDINGSTS_STARTED)
+    if (m_enmState == RECORDINGSTS_STARTED)
     {
         const RecordingStream *pStream = getStreamInternal(uScreen);
         if (pStream)
-            fIsReady = pStream->IsReady();
+            fIsReady = pStream->IsFeatureEnabled(enmFeature);
 
         /* Note: Do not check for other constraints like the video FPS rate here,
          *       as this check then also would affect other (non-FPS related) stuff
@@ -889,7 +910,7 @@ bool RecordingContext::IsReady(uint32_t uScreen, uint64_t msTimestamp)
 /**
  * Returns whether a given recording context has been started or not.
  *
- * @returns true if active, false if not.
+ * @returns @c true if started, @c false if not.
  */
 bool RecordingContext::IsStarted(void)
 {
@@ -905,7 +926,7 @@ bool RecordingContext::IsStarted(void)
 /**
  * Checks if a specified limit for recording has been reached.
  *
- * @returns true if any limit has been reached.
+ * @returns @c true if any limit has been reached, @c false if not.
  */
 bool RecordingContext::IsLimitReached(void)
 {
@@ -923,7 +944,7 @@ bool RecordingContext::IsLimitReached(void)
 /**
  * Checks if a specified limit for recording has been reached.
  *
- * @returns true if any limit has been reached.
+ * @returns @c true if any limit has been reached, @c false if not.
  * @param   uScreen             Screen ID.
  * @param   msTimestamp         Timestamp (PTS, in ms) to check for.
  */
@@ -981,19 +1002,32 @@ bool RecordingContext::NeedsUpdate(uint32_t uScreen, uint64_t msTimestamp)
     return fNeedsUpdate;
 }
 
-DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int vrc)
+/**
+ * Gets called by a stream if its limit has been reached.
+ *
+ * @returns VBox status code.
+ * @param   uScreen             The stream's ID (Screen ID).
+ * @param   vrc                 Result code of the limit operation.
+ */
+DECLCALLBACK(int) RecordingContext::onLimitReached(uint32_t uScreen, int vrc)
 {
-    RT_NOREF(uScreen, vrc);
     LogFlowThisFunc(("Stream %RU32 has reached its limit (%Rrc)\n", uScreen, vrc));
 
     lock();
 
     Assert(m_cStreamsEnabled);
-    m_cStreamsEnabled--;
+    if (m_cStreamsEnabled)
+        m_cStreamsEnabled--;
+
+    bool const fAllDisabled = m_cStreamsEnabled == 0;
 
     LogFlowThisFunc(("cStreamsEnabled=%RU16\n", m_cStreamsEnabled));
 
-    unlock();
+    unlock(); /* Leave the lock before invoking callbacks. */
+
+    if (m_Callbacks.pfnStateChanged)
+        m_Callbacks.pfnStateChanged(this, RECORDINGSTS_LIMIT_REACHED,
+                                    fAllDisabled ? UINT32_MAX : uScreen, vrc, m_Callbacks.pvUser);
 
     return VINF_SUCCESS;
 }
@@ -1031,15 +1065,17 @@ int RecordingContext::SendVideoFrame(uint32_t uScreen, PRECORDINGVIDEOFRAME pFra
 {
     AssertPtrReturn(pFrame, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("uScreen=%RU32, offX=%RU32, offY=%RU32, w=%RU32, h=%RU32, msTimestamp=%RU64\n",
-                 uScreen, pFrame->Pos.x, pFrame->Pos.y, pFrame->Info.uWidth, pFrame->Info.uHeight, msTimestamp));
+    LogFlowFunc(("uScreen=%RU32, offX=%RU32, offY=%RU32, w=%RU32, h=%RU32 (%zu bytes), msTimestamp=%RU64\n",
+                 uScreen, pFrame->Pos.x, pFrame->Pos.y, pFrame->Info.uWidth, pFrame->Info.uHeight,
+                 pFrame->Info.uHeight * pFrame->Info.uWidth * (pFrame->Info.uBPP / 8), msTimestamp));
 
     if (!pFrame->pau8Buf) /* Empty / invalid frame, skip. */
         return VINF_SUCCESS;
 
     /* Sanity. */
+    AssertReturn(pFrame->Info.uBPP, VERR_INVALID_PARAMETER);
+    AssertReturn(pFrame->cbBuf, VERR_INVALID_PARAMETER);
     AssertReturn(pFrame->Info.uWidth  * pFrame->Info.uHeight * (pFrame->Info.uBPP / 8) <= pFrame->cbBuf, VERR_INVALID_PARAMETER);
-    AssertReturn(pFrame->Info.uHeight * pFrame->Info.uBytesPerLine <= pFrame->cbBuf, VERR_INVALID_PARAMETER);
 
     lock();
 
@@ -1047,20 +1083,14 @@ int RecordingContext::SendVideoFrame(uint32_t uScreen, PRECORDINGVIDEOFRAME pFra
     if (!pStream)
     {
         unlock();
-
-        AssertFailed();
-        return VERR_NOT_FOUND;
+        return VINF_SUCCESS;
     }
-
-    int vrc = pStream->SendVideoFrame(pFrame, msTimestamp);
 
     unlock();
 
-    if (   RT_SUCCESS(vrc)
-        && vrc != VINF_RECORDING_THROTTLED) /* Only signal the thread if operation was successful. */
-    {
+    int vrc = pStream->SendVideoFrame(pFrame, msTimestamp);
+    if (vrc == VINF_SUCCESS) /* Might be VINF_RECORDING_THROTTLED or VINF_RECORDING_LIMIT_REACHED. */
         threadNotify();
-    }
 
     return vrc;
 }
@@ -1082,9 +1112,6 @@ int RecordingContext::SendCursorPositionChange(uint32_t uScreen, int32_t x, int3
     if (!m_Cursor.m_Shape.pau8Buf)
         return VINF_SUCCESS;
 
-    if (uScreen == 0xFFFFFFFF /* SVGA_ID_INVALID */)
-        uScreen = 0;
-
     int vrc = m_Cursor.Move(x, y);
     if (RT_SUCCESS(vrc))
     {
@@ -1094,20 +1121,14 @@ int RecordingContext::SendCursorPositionChange(uint32_t uScreen, int32_t x, int3
         if (!pStream)
         {
             unlock();
-
-            AssertFailed();
-            return VERR_NOT_FOUND;
+            return VINF_SUCCESS;
         }
-
-        vrc = pStream->SendCursorPos(0 /* idCursor */, &m_Cursor.m_Shape.Pos, msTimestamp);
 
         unlock();
 
-        if (   RT_SUCCESS(vrc)
-            && vrc != VINF_RECORDING_THROTTLED) /* Only signal the thread if operation was successful. */
-        {
+        vrc = pStream->SendCursorPos(0 /* idCursor */, &m_Cursor.m_Shape.Pos, msTimestamp);
+        if (vrc == VINF_SUCCESS) /* Might be VINF_RECORDING_THROTTLED or VINF_RECORDING_LIMIT_REACHED. */
             threadNotify();
-        }
     }
 
     return vrc;
@@ -1159,7 +1180,7 @@ int RecordingContext::SendCursorShapeChange(bool fVisible, bool fAlpha, uint32_t
 
     unlock();
 
-    if (RT_SUCCESS(vrc))
+    if (vrc == VINF_SUCCESS) /* Might be VINF_RECORDING_THROTTLED or VINF_RECORDING_LIMIT_REACHED. */
         threadNotify();
 
     return vrc;
@@ -1181,14 +1202,12 @@ int RecordingContext::SendScreenChange(uint32_t uScreen, PRECORDINGSURFACEINFO p
     if (!pStream)
     {
         unlock();
-
-        AssertFailed();
-        return VERR_NOT_FOUND;
+        return VINF_SUCCESS;
     }
 
-    int const vrc = pStream->SendScreenChange(pInfo, msTimestamp);
-
     unlock();
+
+    int const vrc = pStream->SendScreenChange(pInfo, msTimestamp);
 
     return vrc;
 }
