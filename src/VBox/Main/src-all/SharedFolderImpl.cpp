@@ -442,7 +442,7 @@ const Utf8Str &SharedFolder::i_getAutoMountPoint() const
     return m->strAutoMountPoint;
 }
 
-const SymlinkPolicy_T SharedFolder::i_getSymlinkPolicy() const
+SymlinkPolicy_T SharedFolder::i_getSymlinkPolicy() const
 {
     return m->enmSymlinkPolicy;
 }
