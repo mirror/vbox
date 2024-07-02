@@ -68,6 +68,12 @@
 #if defined(VBOX_RUNTIME_UI) && defined(VBOX_WS_MAC)
 # include <iprt/path.h>
 #endif
+#ifdef VBOX_WS_WIN
+# include <VBox/com/microatl.h>
+#endif
+#if defined(VBOX_WITH_HARDENING) || defined(VBOX_WS_WIN)
+# include <iprt/string.h>
+#endif
 
 /* Other includes: */
 #ifdef VBOX_WS_MAC
@@ -93,9 +99,6 @@
 #  endif /* !RT_ARCH_AMD64 */
 # endif /* RT_OS_LINUX && DEBUG */
 #endif /* VBOX_WS_NIX */
-#ifdef VBOX_WITH_HARDENING
-# include <iprt/string.h>
-#endif
 
 
 /* XXX Temporarily. Don't rely on the user to hack the Makefile himself! */
