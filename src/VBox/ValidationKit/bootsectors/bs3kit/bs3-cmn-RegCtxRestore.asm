@@ -422,7 +422,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         lar     eax, dx
         jnz     .iretq_ok
         test    eax, X86LAR_F_D | X86LAR_F_L
-        jnz     .iretq_ok               ; Returning to a big of long SS needs not extra work.
+        jnz     .iretq_ok               ; Returning to a big or long SS needs not extra work.
 
         lar     eax, word [xBX + BS3REGCTX.cs]
         jnz     .iretq_ok
@@ -430,6 +430,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         jnz     .iretq_ok               ; It doesn't matter when returning to 64-bit code.
 
         ; Convert ss:sp to a flat address.
+        movzx   ecx, cx                 ; 16-bit stacks are 16-bit, so chop the offset down.
         BS3_EXTERN_CMN Bs3SelFar32ToFlat32NoClobber
         call    Bs3SelFar32ToFlat32NoClobber
         mov     rdi, rax

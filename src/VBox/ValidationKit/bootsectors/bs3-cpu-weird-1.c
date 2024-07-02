@@ -56,16 +56,10 @@ FNBS3TESTDOMODE BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg);
 *********************************************************************************************************************************/
 static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
 {
-#if 1/** @todo asserts in ring-0 on VT-x!  (It works when run directly on intel 6700K hardware.) */
-    { "dbg+inhibit+ringxfer", BS3_CMN_FAR_NM(bs3CpuWeird1_DbgInhibitRingXfer), 0 },
-#endif
-#if 0
-#if 1
-    { "pc wrapping", BS3_CMN_FAR_NM(bs3CpuWeird1_PcWrapping), 0 },
-#endif
-//    { "push/pop", BS3_CMN_FAR_NM(bs3CpuWeird1_PushPop), 0 },
-    { "push/pop sreg", BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg), 0 },
-#endif
+    { "dbg+inhibit+ringxfer",   BS3_CMN_FAR_NM(bs3CpuWeird1_DbgInhibitRingXfer),    0 },
+    { "pc wrapping",            BS3_CMN_FAR_NM(bs3CpuWeird1_PcWrapping),            0 },
+    { "push/pop",               BS3_CMN_FAR_NM(bs3CpuWeird1_PushPop),               0 },
+    { "push/pop sreg",          BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg),           0 },
 };
 
 
