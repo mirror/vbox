@@ -1022,7 +1022,8 @@ static DECLCALLBACK(ssize_t) slirpSendPacketCb(const void *pBuf, size_t cb, void
     Assert(pThis);
 
     LogFlow(("slirp_output BEGIN %p %d\n", pNewBuf, cb));
-    Log6(("slirp_output: pu8Buf=%p cb=%#x (pThis=%p)\n%.*Rhxd\n", pNewBuf, cb, pThis));
+    Log6(("slirp_output: pNewBuf=%p cb=%#x (pThis=%p)\n"
+          "%.*Rhxd\n", pNewBuf, cb, pThis));
 
     /* don't queue new requests when the NAT thread is about to stop */
     if (pThis->pSlirpThread->enmState != PDMTHREADSTATE_RUNNING)
