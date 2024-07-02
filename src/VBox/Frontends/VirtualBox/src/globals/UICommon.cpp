@@ -186,7 +186,6 @@ UICommon::UICommon(UIType enmType)
     , m_fSettingsPwSet(false)
     , m_pThreadPool(0)
     , m_pThreadPoolCloud(0)
-    , m_pTranlationEventListener(0)
 {
     /* Assign instance: */
     s_pInstance = this;
