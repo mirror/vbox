@@ -492,6 +492,25 @@ static const char BS3_FAR *bs3CpuInstr4XcptName(uint8_t uVector)
 }
 
 
+DECL_FORCE_INLINE(bool) bs3CpuInstr4IsSse(uint8_t enmType)
+{
+    return enmType >= T_SSE && enmType < T_AVX_128;
+}
+
+
+DECL_FORCE_INLINE(bool) bs3CpuInstr4IsAvx(uint8_t enmType)
+{
+    return enmType >= T_AVX_128;
+}
+
+
+DECL_FORCE_INLINE(uint8_t) bs3CpuInstr4GetOperandSize(uint8_t enmType)
+{
+    return enmType < T_128BITS ?  64/8
+         : enmType < T_256BITS ? 128/8 : 256/8;
+}
+
+
 /**
  * Gets the names of floating-point exception flags that are set for a given MXCSR.
  *
@@ -1061,8 +1080,6 @@ typedef struct BS3CPUINSTR4_TEST1_CTX_T
     uint8_t                              cbOperand;    /**< Size of the instruction operand (8 for MMX, 16 for SSE etc). */
     uint8_t                              cbInstr;      /**< Size of the instruction opcode. */
     uint8_t                              bXcptExpect;  /**< The expected exception while/after executing the instruction. */
-    bool                                 fSseInstr;    /**< Whether this is an SSE instruction. */
-    bool                                 fAvxInstr;    /**< Whether this is an AVX instruction. */
     uint16_t                             idTestStep;   /**< The test iteration step. */
 } BS3CPUINSTR4_TEST1_CTX_T;
 /** Pointer to a test 1 context. */
@@ -1092,6 +1109,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
                                                                     : pValues->f128ExpectedMxCsrFlags;
     bool const       fFpFlagsExpect      = RT_BOOL(  (fExpectedMxCsrFlags
                                                    & (~pValues->fMxCsrMask >> X86_MXCSR_XCPT_MASK_SHIFT)) & X86_MXCSR_XCPT_FLAGS);
+    bool const       fSseInstr           = bs3CpuInstr4IsSse(pTest->enmType);
     uint32_t         uMxCsr;
     X86YMMREG        MemOpExpect;
     uint16_t         cErrors;
@@ -1117,11 +1135,11 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
         BS3_ASSERT(pTest->enmRm >= RM_MEM);
         Bs3MemCpy(puMemOpAlias, &pValues->uSrc1, cbMemOp);
         if (pTest->iRegDst == UINT8_MAX)
-            BS3_ASSERT(pTestCtx->fSseInstr);
+            BS3_ASSERT(fSseInstr);
         else
             MemOpExpect.ymm = pValues->uSrc1.ymm;
     }
-    else if (pTestCtx->fSseInstr)
+    else if (fSseInstr)
         Bs3ExtCtxSetXmm(pExtCtx, pTest->iRegSrc1, &pValues->uSrc1.ymm.DQWords.dqw0);
     else
         Bs3ExtCtxSetYmm(pExtCtx, pTest->iRegSrc1, &pValues->uSrc1.ymm, 32);
@@ -1134,7 +1152,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
         Bs3MemCpy(puMemOpAlias, &pValues->uSrc2, cbMemOp);
         MemOpExpect.ymm = pValues->uSrc2.ymm;
     }
-    else if (pTestCtx->fSseInstr)
+    else if (fSseInstr)
         Bs3ExtCtxSetXmm(pExtCtx, pTest->iRegSrc2, &pValues->uSrc2.ymm.DQWords.dqw0);
     else
         Bs3ExtCtxSetYmm(pExtCtx, pTest->iRegSrc2, &pValues->uSrc2.ymm, 32);
@@ -1180,7 +1198,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
         && !fFpFlagsExpect
         && pTest->iRegDst != UINT8_MAX)
     {
-        if (pTestCtx->fSseInstr)
+        if (fSseInstr)
             Bs3ExtCtxSetXmm(pExtCtx, pTest->iRegDst, &pValues->uDstOut.ymm.DQWords.dqw0);
         else
             Bs3ExtCtxSetYmm(pExtCtx, pTest->iRegDst, &pValues->uDstOut.ymm, cbOperand);
@@ -1311,10 +1329,9 @@ static uint8_t bs3CpuInstr4_WorkerTestType1(uint8_t bMode, BS3CPUINSTR4_TEST1_T 
                 {
                     BS3CPUINSTR4_TEST1_T const BS3_FAR *pTest = &paTests[iTest];
                     unsigned const    cValues       = pTest->cValues;
-                    bool const        fSseInstr     = pTest->enmType >= T_SSE && pTest->enmType < T_AVX_128;
-                    bool const        fAvxInstr     = pTest->enmType >= T_AVX_128;
-                    uint8_t const     cbOperand     = pTest->enmType < T_128BITS ? 64/8
-                                                    : pTest->enmType < T_256BITS ? 128/8 : 256/8;
+                    bool const        fSseInstr     = bs3CpuInstr4IsSse(pTest->enmType);
+                    bool const        fAvxInstr     = bs3CpuInstr4IsAvx(pTest->enmType);
+                    uint8_t const     cbOperand     = bs3CpuInstr4GetOperandSize(pTest->enmType);
                     uint8_t const     cbMemOp       = bs3CpuInstrXMemOpSize(cbOperand, pTest->enmRm);
                     uint8_t const     cbAlign       = cbMemOp;
                     uint8_t BS3_FAR  *puMemOp       = bs3CpuInstrXBufForOperand(pbBuf, cbBuf, cbMemOp, cbAlign, &paConfigs[iCfg], fPf);
@@ -1392,8 +1409,6 @@ static uint8_t bs3CpuInstr4_WorkerTestType1(uint8_t bMode, BS3CPUINSTR4_TEST1_T 
                             TestCtx.cbMemOp      = cbMemOp;
                             TestCtx.cbOperand    = cbOperand;
                             TestCtx.bXcptExpect  = bXcptExpect;
-                            TestCtx.fSseInstr    = fSseInstr;
-                            TestCtx.fAvxInstr    = fAvxInstr;
                             TestCtx.idTestStep   = idTestStep;
                             cErrors = bs3CpuInstr4_WorkerTestType1_Inner(bMode, &TestCtx, &SavedCfg);
                             if (cErrors != Bs3TestSubErrorCount())
