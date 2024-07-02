@@ -744,7 +744,6 @@ UIAdvancedSettingsDialog::UIAdvancedSettingsDialog(QWidget *pParent,
     , m_pWarningPane(0)
     , m_fValid(true)
     , m_fSilent(true)
-    , m_pScrollingTimer(0)
     , m_pLayoutMain(0)
     , m_pCheckBoxMode(0)
     , m_pEditorFilter(0)
@@ -837,37 +836,37 @@ bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
     /* Ignore other than wheel events in this handler: */
     if (pEvent->type() != QEvent::Wheel)
         return QMainWindow::eventFilter(pObject, pEvent);
+    /* Ignore events to anything but widgets in this handler: */
+    QWidget *pWidget = qobject_cast<QWidget*>(pObject);
+    if (!pWidget)
+        return QMainWindow::eventFilter(pObject, pEvent);
 
     /* Do not touch wheel events for m_pScrollArea or it's children: */
-    if (   pObject == m_pScrollArea
-        || pObject->parent() == m_pScrollArea)
-    {
-        /* Moreover restart 'sticky scrolling timer' during which
-         * all the scrolling will be redirected to m_pScrollViewport: */
-        m_pScrollingTimer->start();
-        return QMainWindow::eventFilter(pObject, pEvent);
-    }
+    if (   pWidget == m_pScrollArea
+        || pWidget->parent() == m_pScrollArea)
+        return QMainWindow::eventFilter(pWidget, pEvent);
 
     /* Unconditionally and for good
      * redirect wheel event for widgets of following types to m_pScrollViewport: */
-    if (   qobject_cast<QAbstractButton*>(pObject)
-        || qobject_cast<QAbstractSpinBox*>(pObject)
-        || qobject_cast<QAbstractSpinBox*>(pObject->parent())
-        || qobject_cast<QComboBox*>(pObject)
-        || qobject_cast<QSlider*>(pObject)
-        || qobject_cast<QTabWidget*>(pObject)
-        || qobject_cast<QTabWidget*>(pObject->parent()))
+    if (   qobject_cast<QAbstractButton*>(pWidget)
+        || qobject_cast<QAbstractSpinBox*>(pWidget)
+        || qobject_cast<QAbstractSpinBox*>(pWidget->parent())
+        || qobject_cast<QComboBox*>(pWidget)
+        || qobject_cast<QSlider*>(pWidget)
+        || qobject_cast<QTabWidget*>(pWidget)
+        || qobject_cast<QTabWidget*>(pWidget->parent()))
     {
         /* Check if redirected event was really handled, otherwise give it back: */
         if (QCoreApplication::sendEvent(m_pScrollViewport, pEvent))
             return true;
     }
 
-    /* While 'sticky scrolling timer' is active
-     * redirect wheel event for widgets of following types to m_pScrollViewport: */
-    if (   m_pScrollingTimer->isActive()
-        && (   qobject_cast<QAbstractScrollArea*>(pObject)
-            || qobject_cast<QAbstractScrollArea*>(pObject->parent())))
+    /* Unless widget of QAbstractScrollArea subclass is focused
+     * redirect it's wheel event to m_pScrollViewport: */
+    if (   (   qobject_cast<QAbstractScrollArea*>(pWidget)
+            || qobject_cast<QAbstractScrollArea*>(pWidget->parent()))
+        && !pWidget->hasFocus()
+        && !pWidget->parentWidget()->hasFocus())
     {
         /* Check if redirected event was really handled, otherwise give it back: */
         if (QCoreApplication::sendEvent(m_pScrollViewport, pEvent))
@@ -875,7 +874,7 @@ bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QMainWindow::eventFilter(pObject, pEvent);
+    return QMainWindow::eventFilter(pWidget, pEvent);
 }
 
 void UIAdvancedSettingsDialog::sltRetranslateUI()
@@ -916,6 +915,22 @@ void UIAdvancedSettingsDialog::showEvent(QShowEvent *pEvent)
 
 void UIAdvancedSettingsDialog::polishEvent()
 {
+    /* Install event-filters for all the required children.
+     * These children can be added together with pages. */
+    foreach (QWidget *pChild, findChildren<QWidget*>())
+    {
+        if (   qobject_cast<QAbstractButton*>(pChild)
+            || qobject_cast<QAbstractScrollArea*>(pChild)
+            || qobject_cast<QAbstractScrollArea*>(pChild->parent())
+            || qobject_cast<QAbstractSpinBox*>(pChild)
+            || qobject_cast<QAbstractSpinBox*>(pChild->parent())
+            || qobject_cast<QComboBox*>(pChild)
+            || qobject_cast<QSlider*>(pChild)
+            || qobject_cast<QTabWidget*>(pChild)
+            || qobject_cast<QTabWidget*>(pChild->parent()))
+            pChild->installEventFilter(this);
+    }
+
     /* Resize to minimum size: */
     resize(minimumSizeHint());
 
@@ -1317,14 +1332,6 @@ void UIAdvancedSettingsDialog::sltHandleVerticalScrollAreaWheelEvent()
 
 void UIAdvancedSettingsDialog::prepare()
 {
-    /* Prepare 'sticky scrolling timer': */
-    m_pScrollingTimer = new QTimer(this);
-    if (m_pScrollingTimer)
-    {
-        m_pScrollingTimer->setInterval(500);
-        m_pScrollingTimer->setSingleShot(true);
-    }
-
     /* Prepare central-widget: */
     setCentralWidget(new QWidget);
     if (centralWidget())

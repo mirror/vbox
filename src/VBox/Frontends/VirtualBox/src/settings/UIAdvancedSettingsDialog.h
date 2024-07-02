@@ -43,7 +43,6 @@ class QGridLayout;
 class QProgressBar;
 class QShowEvent;
 class QStackedWidget;
-class QTimer;
 class QIDialogButtonBox;
 class UIFilterEditor;
 class UIModeCheckBox;
@@ -273,9 +272,6 @@ private:
 
     /** Stores the help tag per page. */
     QMap<int, QString>  m_pageHelpKeywords;
-
-    /** Holds the 'sticky scrolling timer' instance. */
-    QTimer *m_pScrollingTimer;
 
     /** @name Widgets
      * @{ */
