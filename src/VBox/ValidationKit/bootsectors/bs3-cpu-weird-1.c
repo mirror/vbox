@@ -49,6 +49,7 @@ FNBS3TESTDOMODE BS3_CMN_FAR_NM(bs3CpuWeird1_DbgInhibitRingXfer);
 FNBS3TESTDOMODE BS3_CMN_FAR_NM(bs3CpuWeird1_PcWrapping);
 FNBS3TESTDOMODE BS3_CMN_FAR_NM(bs3CpuWeird1_PushPop);
 FNBS3TESTDOMODE BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg);
+FNBS3TESTDOMODE BS3_CMN_FAR_NM(bs3CpuWeird1_Popf);
 
 
 /*********************************************************************************************************************************
@@ -56,10 +57,13 @@ FNBS3TESTDOMODE BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg);
 *********************************************************************************************************************************/
 static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
 {
+#if 1
     { "dbg+inhibit+ringxfer",   BS3_CMN_FAR_NM(bs3CpuWeird1_DbgInhibitRingXfer),    0 },
     { "pc wrapping",            BS3_CMN_FAR_NM(bs3CpuWeird1_PcWrapping),            0 },
     { "push/pop",               BS3_CMN_FAR_NM(bs3CpuWeird1_PushPop),               0 },
     { "push/pop sreg",          BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg),           0 },
+#endif
+    { "popf",                   BS3_CMN_FAR_NM(bs3CpuWeird1_Popf),                  0 },
 };
 
 

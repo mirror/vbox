@@ -818,17 +818,15 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
-            /** @todo Is the popf VME \#GP(0) delivered after updating RSP+RIP
-             *        or before? */
-            if (    (   (u16Value & X86_EFL_IF)
-                     && (fEflOld  & X86_EFL_VIP))
-                ||  (u16Value & X86_EFL_TF) )
+            if (   (   (u16Value & X86_EFL_IF)
+                    && (fEflOld  & X86_EFL_VIP))
+                || (u16Value & X86_EFL_TF) )
                 return iemRaiseGeneralProtectionFault0(pVCpu);
 
-            fEflNew = u16Value | (fEflOld & UINT32_C(0xffff0000) & ~X86_EFL_VIF);
-            fEflNew |= (fEflNew & X86_EFL_IF) << (19 - 9);
-            fEflNew &=   X86_EFL_POPF_BITS & ~(X86_EFL_IOPL | X86_EFL_IF);
-            fEflNew |= ~(X86_EFL_POPF_BITS & ~(X86_EFL_IOPL | X86_EFL_IF)) & fEflOld;
+            fEflNew = X86_EFL_RA1_MASK
+                    | (u16Value & ~(X86_EFL_IF | X86_EFL_IOPL | X86_EFL_RAZ_MASK))
+                    | (fEflOld & (UINT32_C(0xffff0000) | X86_EFL_IF | X86_EFL_IOPL) & ~(X86_EFL_VIF | X86_EFL_RF))
+                    | ((uint32_t)(u16Value & X86_EFL_IF) << (X86_EFL_VIF_BIT - X86_EFL_IF_BIT));
 
             pVCpu->cpum.GstCtx.rsp = TmpRsp.u;
         }

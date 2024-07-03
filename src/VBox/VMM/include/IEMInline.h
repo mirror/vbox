@@ -2097,12 +2097,13 @@ DECL_FORCE_INLINE(void) iemRegAddToRip(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXC
  * @see  @sdmv3{077,200,6.8.3,Masking Exceptions and Interrupts When Switching
  *              Stacks}
  */
+template<uint32_t const a_fTF = X86_EFL_TF>
 static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu, int rcNormal) RT_NOEXCEPT
 {
     /*
      * Normally we're just here to clear RF and/or interrupt shadow bits.
      */
-    if (RT_LIKELY((pVCpu->cpum.GstCtx.eflags.uBoth & (X86_EFL_TF | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK)) == 0))
+    if (RT_LIKELY((pVCpu->cpum.GstCtx.eflags.uBoth & (a_fTF | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK)) == 0))
         pVCpu->cpum.GstCtx.eflags.uBoth &= ~(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW);
     else
     {
@@ -2110,11 +2111,11 @@ static VBOXSTRICTRC iemFinishInstructionWithFlagsSet(PVMCPUCC pVCpu, int rcNorma
          * Raise a #DB or/and DBGF event.
          */
         VBOXSTRICTRC rcStrict;
-        if (pVCpu->cpum.GstCtx.eflags.uBoth & (X86_EFL_TF | CPUMCTX_DBG_HIT_DRX_MASK))
+        if (pVCpu->cpum.GstCtx.eflags.uBoth & (a_fTF | CPUMCTX_DBG_HIT_DRX_MASK))
         {
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
             pVCpu->cpum.GstCtx.dr[6] &= ~X86_DR6_B_MASK;
-            if (pVCpu->cpum.GstCtx.eflags.uBoth & X86_EFL_TF)
+            if (pVCpu->cpum.GstCtx.eflags.uBoth & a_fTF)
                 pVCpu->cpum.GstCtx.dr[6] |= X86_DR6_BS;
             pVCpu->cpum.GstCtx.dr[6] |= (pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK_NONSILENT)
                                      >> CPUMCTX_DBG_HIT_DRX_SHIFT;
@@ -2861,7 +2862,14 @@ DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRfEx(PVMCPUCC pVCpu, 
 {
     iemRegAddToRip(pVCpu, cbInstr);
     if (!(fEflOld & X86_EFL_TF))
-        return iemRegFinishClearingRF(pVCpu, VINF_SUCCESS);
+    {
+        /* Specialized iemRegFinishClearingRF edition here that doesn't check X86_EFL_TF. */
+        AssertCompile(CPUMCTX_INHIBIT_SHADOW < UINT32_MAX);
+        if (RT_LIKELY(!(  pVCpu->cpum.GstCtx.eflags.uBoth
+                        & (X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK)) ))
+            return VINF_SUCCESS;
+        return iemFinishInstructionWithFlagsSet<0 /*a_fTF*/>(pVCpu, VINF_SUCCESS); /* TF=0, so ignore it.  */
+    }
     return iemFinishInstructionWithTfSet(pVCpu);
 }
 

@@ -61,6 +61,16 @@
     extern FNBS3FAR a_Name##_c32, a_Name##_##a_Label##_c32; \
     extern FNBS3FAR a_Name##_c64, a_Name##_##a_Label##_c64
 
+#define PROTO_ALL(a_Template) \
+    extern FNBS3FAR a_Template ## _c16, \
+                    a_Template ## _c32, \
+                    a_Template ## _c64
+
+#define PROTO_ALL_WITH_END(a_Template) \
+    extern FNBS3FAR a_Template ## _c16, a_Template ## _c16_EndProc, \
+                    a_Template ## _c32, a_Template ## _c32_EndProc, \
+                    a_Template ## _c64, a_Template ## _c64_EndProc
+
 
 /*********************************************************************************************************************************
 *   External Symbols                                                                                                             *
@@ -144,7 +154,7 @@ static void bs3CpuWeird1_CompareDbgInhibitRingXfer(PCBS3TRAPFRAME pTrapCtx, PCBS
         Bs3TestPrintf("DR6=%#RX32; Handler: CS=%04RX16 SS:ESP=%04RX16:%08RX64 EFL=%RX64 cbIret=%#x\n",
                       uDr6, pTrapCtx->uHandlerCs, pTrapCtx->uHandlerSs, pTrapCtx->uHandlerRsp,
                       pTrapCtx->fHandlerRfl, pTrapCtx->cbIretFrame);
-#if 1
+#if 0
         Bs3TestPrintf("Halting in CompareIntCtx: bXcpt=%#x\n", bXcpt);
         ASMHalt();
 #endif
@@ -652,20 +662,15 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_DbgInhibitRingXfer)(uint8_t bM
 /*********************************************************************************************************************************
 *   IP / EIP  Wrapping                                                                                                           *
 *********************************************************************************************************************************/
-#define PROTO_ALL(a_Template) \
-    FNBS3FAR a_Template ## _c16, a_Template ## _c16_EndProc, \
-             a_Template ## _c32, a_Template ## _c32_EndProc, \
-             a_Template ## _c64, a_Template ## _c64_EndProc
-PROTO_ALL(bs3CpuWeird1_PcWrapBenign1);
-PROTO_ALL(bs3CpuWeird1_PcWrapBenign2);
-PROTO_ALL(bs3CpuWeird1_PcWrapCpuId);
-PROTO_ALL(bs3CpuWeird1_PcWrapIn80);
-PROTO_ALL(bs3CpuWeird1_PcWrapOut80);
-PROTO_ALL(bs3CpuWeird1_PcWrapSmsw);
-PROTO_ALL(bs3CpuWeird1_PcWrapRdCr0);
-PROTO_ALL(bs3CpuWeird1_PcWrapRdDr0);
-PROTO_ALL(bs3CpuWeird1_PcWrapWrDr0);
-#undef PROTO_ALL
+PROTO_ALL_WITH_END(bs3CpuWeird1_PcWrapBenign1);
+PROTO_ALL_WITH_END(bs3CpuWeird1_PcWrapBenign2);
+PROTO_ALL_WITH_END(bs3CpuWeird1_PcWrapCpuId);
+PROTO_ALL_WITH_END(bs3CpuWeird1_PcWrapIn80);
+PROTO_ALL_WITH_END(bs3CpuWeird1_PcWrapOut80);
+PROTO_ALL_WITH_END(bs3CpuWeird1_PcWrapSmsw);
+PROTO_ALL_WITH_END(bs3CpuWeird1_PcWrapRdCr0);
+PROTO_ALL_WITH_END(bs3CpuWeird1_PcWrapRdDr0);
+PROTO_ALL_WITH_END(bs3CpuWeird1_PcWrapWrDr0);
 
 typedef enum { kPcWrapSetup_None, kPcWrapSetup_ZeroRax } PCWRAPSETUP;
 
@@ -1206,17 +1211,12 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PcWrapping)(uint8_t bMode)
 /*********************************************************************************************************************************
 *   PUSH / POP                                                                                                                   *
 *********************************************************************************************************************************/
-#define PROTO_ALL(a_Template) \
-    FNBS3FAR a_Template ## _c16, \
-             a_Template ## _c32, \
-             a_Template ## _c64
 PROTO_ALL(bs3CpuWeird1_Push_xSP_Ud2);
 PROTO_ALL(bs3CpuWeird1_Push_opsize_xSP_Ud2);
 PROTO_ALL(bs3CpuWeird1_Push_opsize_xBX_Ud2);
 PROTO_ALL(bs3CpuWeird1_Pop_xSP_Ud2);
 PROTO_ALL(bs3CpuWeird1_Pop_opsize_xSP_Ud2);
 PROTO_ALL(bs3CpuWeird1_Pop_opsize_xBX_Ud2);
-#undef PROTO_ALL
 
 
 /**
@@ -1503,10 +1503,6 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPop)(uint8_t bTestMode)
 /*********************************************************************************************************************************
 *   PUSH SREG / POP SREG                                                                                                         *
 *********************************************************************************************************************************/
-#define PROTO_ALL(a_Template) \
-    FNBS3FAR a_Template ## _c16, \
-             a_Template ## _c32, \
-             a_Template ## _c64
 PROTO_ALL(bs3CpuWeird1_Push_cs_Ud2);
 PROTO_ALL(bs3CpuWeird1_Push_ss_Ud2);
 PROTO_ALL(bs3CpuWeird1_Push_ds_Ud2);
@@ -1529,7 +1525,6 @@ PROTO_ALL(bs3CpuWeird1_Pop_opsize_ds_Ud2);
 PROTO_ALL(bs3CpuWeird1_Pop_opsize_es_Ud2);
 PROTO_ALL(bs3CpuWeird1_Pop_opsize_fs_Ud2);
 PROTO_ALL(bs3CpuWeird1_Pop_opsize_gs_Ud2);
-#undef PROTO_ALL
 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg)(uint8_t bTestMode)
@@ -1835,10 +1830,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg)(uint8_t bTestMode
                             bs3CpuWeird1_PushPopInitStack(PtrStack2);
                         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
                         if (bs3CpuWeird1_ComparePushPop(&TrapCtx, &TrapExpect))
-                        {
-                            ASMHalt();
                             break;
-                        }
 
                         if (*PtrStack2.pu64 != u64ExpectPushed.u)
                         {
@@ -1864,10 +1856,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg)(uint8_t bTestMode
                         *PtrStack2.pu16 = !fDefaultSel ? uPopSel : *pRegCtx;
                         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
                         if (bs3CpuWeird1_ComparePushPop(&TrapCtx, &TrapExpect))
-                        {
-                            ASMHalt();
                             break;
-                        }
                     }
 #endif
                 }
@@ -1885,6 +1874,307 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_PushPopSReg)(uint8_t bTestMode
 
     if (pbAltStack)
         Bs3MemFree(pbAltStack, cbAltStack);
+
+    return 0;
+}
+
+
+
+/*********************************************************************************************************************************
+*   POPF                                                                                                                         *
+*********************************************************************************************************************************/
+
+/**
+ * Compares popf result.
+ */
+static uint8_t bs3CpuWeird1_ComparePopf(PCBS3TRAPFRAME pTrapCtx, PCBS3REGCTX pCtxExpect, uint8_t bXcpt)
+{
+    uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
+    CHECK_MEMBER("bXcpt",       "%#04x",    pTrapCtx->bXcpt,        bXcpt);
+    CHECK_MEMBER("bErrCd",      "%#06RX64", pTrapCtx->uErrCd,       0);
+    Bs3TestCheckRegCtxEx(&pTrapCtx->Ctx, pCtxExpect, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/,
+                         g_pszTestMode, g_usBs3TestStep);
+    if (Bs3TestSubErrorCount() != cErrorsBefore)
+    {
+        Bs3TrapPrintFrame(pTrapCtx);
+#if 0
+        Bs3TestPrintf("Halting in ComparePopf: bXcpt=%#x\n", pTrapCtx->bXcpt);
+        ASMHalt();
+#endif
+        return 1;
+    }
+    return 0;
+}
+
+PROTO_ALL(bs3CpuWeird1_Popf_Nop_Ud2);
+PROTO_ALL(bs3CpuWeird1_Popf_opsize_Nop_Ud2);
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_Popf)(uint8_t bTestMode)
+{
+    static struct
+    {
+        FPFNBS3FAR  pfnStart;
+        uint8_t     cBits;
+        int8_t      cbAdjSp;    /**< The SP adjustment value. */
+        uint8_t     offNop;     /**< The NOP offset into the code. */
+        uint8_t     offUd2;     /**< The UD2 offset into the code. */
+    } const s_aTests[] =
+    {
+        { bs3CpuWeird1_Popf_Nop_Ud2_c16,        16, 2, 1, 2 },
+        { bs3CpuWeird1_Popf_opsize_Nop_Ud2_c16, 16, 4, 2, 3 },
+
+        { bs3CpuWeird1_Popf_Nop_Ud2_c32,        32, 4, 1, 2 },
+        { bs3CpuWeird1_Popf_opsize_Nop_Ud2_c32, 32, 2, 2, 3 },
+
+        { bs3CpuWeird1_Popf_Nop_Ud2_c64,        64, 8, 1, 2 },
+        { bs3CpuWeird1_Popf_opsize_Nop_Ud2_c64, 64, 2, 2, 3 },
+    };
+
+    BS3REGCTX               Ctx;
+    BS3REGCTX               CtxExpect;
+    BS3TRAPFRAME            TrapCtx;
+    BS3PTRUNION             PtrStack;
+    uint8_t const           cTestBits = BS3_MODE_IS_16BIT_CODE(bTestMode) ? 16 : BS3_MODE_IS_32BIT_CODE(bTestMode) ? 32 : 64;
+    uint32_t const          fEflCpu   = X86_EFL_1 | X86_EFL_STATUS_BITS | X86_EFL_DF | X86_EFL_IF | X86_EFL_TF
+                                      | ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80286 ? X86_EFL_IOPL | X86_EFL_NT : 0)
+                                      | ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386 ? X86_EFL_RF | X86_EFL_VM : 0)
+                                      | ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486 ? X86_EFL_AC | X86_EFL_VIP | X86_EFL_VIF : 0)
+                                      | (g_uBs3CpuDetected & BS3CPU_F_CPUID                     ? X86_EFL_ID : 0);
+    uint32_t const          fEflClear = X86_EFL_1;
+    uint32_t const          fEflSet   = X86_EFL_1 | X86_EFL_STATUS_BITS
+                                      | X86_EFL_DF /* safe? */
+                                      | X86_EFL_IF /* safe? */
+                                      | ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386 ? X86_EFL_RF : 0)
+                                      | ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486 ? X86_EFL_AC | X86_EFL_VIP : 0)
+                                      | (g_uBs3CpuDetected & BS3CPU_F_CPUID                     ? X86_EFL_ID : 0);
+    uint32_t const          fEflKeep  = X86_EFL_VM;
+    uint32_t const          fXcptRf   = BS3_MODE_IS_16BIT_SYS(bTestMode) ? 0 : X86_EFL_RF;
+    bool const              fVme      = BS3_MODE_IS_V86(bTestMode)
+                                     && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486
+                                     && (Bs3RegGetCr4() & X86_CR4_VME); /* Can't use Ctx.cr4 here, it's always zero. */
+    unsigned                uRing;
+
+    //Bs3TestPrintf("g_uBs3CpuDetected=%#RX16 fEflCpu=%#RX32 fEflSet=%#RX32\n", g_uBs3CpuDetected, fEflCpu, fEflSet);
+    /* make sure they're allocated  */
+    Bs3MemZero(&Ctx, sizeof(Ctx));
+    Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
+
+    bs3CpuWeird1_SetGlobals(bTestMode);
+
+    /* Construct a basic context. */
+    Bs3RegCtxSaveEx(&Ctx, bTestMode, 1024);
+    bs3RegCtxScramble(&Ctx, bTestMode);
+    Bs3MemCpy(&CtxExpect, &Ctx, sizeof(CtxExpect));
+
+    /* Make PtrStack == SS:xSP from Ctx. */
+    PtrStack.pv = Bs3RegCtxGetRspSsAsCurPtr(&Ctx);
+
+    /*
+     * The instruction works differently in different rings, so try them all.
+     */
+    for (uRing = BS3_MODE_IS_V86(bTestMode) ? 3 : 0; ;)
+    {
+        /*
+         * We've got a couple of instruction variations with/without the opsize prefix.
+         */
+        unsigned iTest;
+        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+        {
+            if (s_aTests[iTest].cBits == cTestBits)
+            {
+                uint8_t const cbAdjSp = s_aTests[iTest].cbAdjSp;
+                unsigned      uIopl;
+
+                /* Setup the test context. */
+                Bs3RegCtxSetRipCsFromLnkPtr(&Ctx, s_aTests[iTest].pfnStart);
+                if (BS3_MODE_IS_16BIT_SYS(bTestMode))
+                    g_uBs3TrapEipHint = Ctx.rip.u32;
+                CtxExpect.cs    = Ctx.cs;
+
+                for (uIopl = 0; uIopl <= X86_EFL_IOPL; uIopl += 1 << X86_EFL_IOPL_SHIFT)
+                {
+                    bool const     fAlwaysUd  = cbAdjSp != 2 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) <= BS3CPU_80286;
+                    bool const     fAlwaysGp  = uIopl != X86_EFL_IOPL && BS3_MODE_IS_V86(bTestMode) && (cbAdjSp == 4 || !fVme);
+                    uint8_t const  bXcptNorm  = fAlwaysGp ? X86_XCPT_GP : X86_XCPT_UD;
+                    uint8_t const  offUd      = fAlwaysGp || fAlwaysUd ? 0 : s_aTests[iTest].offUd2;
+                    uint32_t const fCleared   = fAlwaysUd ? 0 : fAlwaysGp ? /* 10980xe - go figure: */ X86_EFL_RF
+                                              : bTestMode == BS3_MODE_RM
+                                              ? X86_EFL_RF | X86_EFL_AC | X86_EFL_VIP /** @todo figure this. iret? bs3kit bug? */
+                                              : X86_EFL_RF;
+                    uint32_t       fPoppable  = fAlwaysGp || fAlwaysUd ? 0
+                                              : uRing == 0                              ? X86_EFL_POPF_BITS
+                                              : uRing <= (uIopl >> X86_EFL_IOPL_SHIFT)  ? X86_EFL_POPF_BITS & ~(X86_EFL_IOPL)
+                                              : !fAlwaysGp                              ? X86_EFL_POPF_BITS & ~(X86_EFL_IOPL | X86_EFL_IF)
+                                              : 0;
+                    uint8_t        bXcptExpect;
+                    fPoppable &= fEflCpu;
+                    if (cbAdjSp == 2)
+                        fPoppable &= UINT16_MAX;
+                    if (bTestMode == BS3_MODE_RM && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) == BS3CPU_80286)
+                        fPoppable &= ~(X86_EFL_IOPL | X86_EFL_NT);
+                    //Bs3TestPrintf("uRing=%u iTest=%u uIopl=%#x fPoppable=%#RX32 fVme=%d cbAdjSp=%d\n", uRing, iTest, uIopl, fPoppable, fVme, cbAdjSp);
+
+                    /* The first steps works with as many EFLAGS bits set as possible. */
+                    Ctx.rflags.u32 &= fEflKeep;
+                    Ctx.rflags.u32 |= fEflSet | uIopl;
+                    CtxExpect.rip.u = Ctx.rip.u + offUd;
+                    CtxExpect.rsp.u = fAlwaysGp || fAlwaysUd ? Ctx.rsp.u : Ctx.rsp.u + cbAdjSp;
+
+                    /*
+                     * Step 1 - pop zero.
+                     */
+                    g_usBs3TestStep++;
+                    PtrStack.pu32[1]     = UINT32_MAX;
+                    if (cbAdjSp >= 4)
+                        PtrStack.pu32[0] = 0;
+                    else
+                    {
+                        PtrStack.pu16[1] = UINT16_MAX;
+                        PtrStack.pu16[0] = 0;
+                    }
+                    CtxExpect.rflags.u32 = (Ctx.rflags.u32 & ~fPoppable & ~fCleared) | fXcptRf;
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    if (bs3CpuWeird1_ComparePopf(&TrapCtx, &CtxExpect, bXcptNorm))
+                        break;
+
+                    /*
+                     * Step 2 - pop 0xfffffff sans TF.
+                     */
+                    g_usBs3TestStep++;
+                    PtrStack.pu32[1] = UINT32_MAX;
+                    PtrStack.pu32[0] = UINT32_MAX & ~X86_EFL_TF;
+                    CtxExpect.rflags.u32 = (Ctx.rflags.u32 & ~fPoppable & ~fCleared)
+                                         | (UINT32_MAX & ~X86_EFL_TF & fPoppable & ~fCleared)
+                                         | fXcptRf;
+                    bXcptExpect = bXcptNorm;
+                    if (fVme && cbAdjSp == 2 && uIopl != X86_EFL_IOPL)
+                    {
+                        CtxExpect.rip.u      = Ctx.rip.u;
+                        CtxExpect.rsp.u      = Ctx.rsp.u;
+                        CtxExpect.rflags.u32 = (Ctx.rflags.u32 & ~fCleared) | fXcptRf;
+                        bXcptExpect = X86_XCPT_GP;
+                    }
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    if (bs3CpuWeird1_ComparePopf(&TrapCtx, &CtxExpect, bXcptExpect))
+                        break;
+
+
+                    /* We repeat the steps with max bits cleared before the popf. */
+                    Ctx.rflags.u32 &= fEflKeep;
+                    Ctx.rflags.u32 |= fEflClear | uIopl;
+                    CtxExpect.rip.u = Ctx.rip.u + offUd;
+                    CtxExpect.rsp.u = fAlwaysGp || fAlwaysUd ? Ctx.rsp.u : Ctx.rsp.u + cbAdjSp;
+
+                    /*
+                     * Step 3 - pop zero.
+                     */
+                    g_usBs3TestStep++;
+                    PtrStack.pu32[1]     = UINT32_MAX;
+                    if (cbAdjSp >= 4)
+                        PtrStack.pu32[0] = 0;
+                    else
+                    {
+                        PtrStack.pu16[1] = UINT16_MAX;
+                        PtrStack.pu16[0] = 0;
+                    }
+                    CtxExpect.rflags.u32 = (Ctx.rflags.u32 & ~fPoppable & ~fCleared) | fXcptRf;
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    if (bs3CpuWeird1_ComparePopf(&TrapCtx, &CtxExpect, bXcptNorm))
+                        break;
+
+                    /*
+                     * Step 4 - pop 0xfffffff sans TF.
+                     */
+                    g_usBs3TestStep++;
+                    PtrStack.pu32[1] = UINT32_MAX;
+                    PtrStack.pu32[0] = UINT32_MAX & ~X86_EFL_TF;
+                    CtxExpect.rflags.u32 = (Ctx.rflags.u32 & ~fPoppable & ~fCleared)
+                                         | (UINT32_MAX & ~X86_EFL_TF & fPoppable & ~fCleared)
+                                         | fXcptRf;
+                    if (fVme && cbAdjSp == 2 && uIopl != X86_EFL_IOPL)
+                        CtxExpect.rflags.u32 |= X86_EFL_VIF;
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    if (bs3CpuWeird1_ComparePopf(&TrapCtx, &CtxExpect, bXcptNorm))
+                        break;
+
+                    /*
+                     * Step 5 - Pop TF and get a #DB on the following instruction.
+                     */
+                    g_usBs3TestStep++;
+                    PtrStack.pu32[1] = UINT32_MAX;
+                    PtrStack.pu32[0] = UINT32_MAX;
+                    if (cbAdjSp != 2 || !fVme || uIopl == X86_EFL_IOPL)
+                    {
+                        CtxExpect.rflags.u32 = (Ctx.rflags.u32 & ~fPoppable & ~fCleared)
+                                             | (UINT32_MAX & fPoppable & ~fCleared)
+                                             | fXcptRf;
+                        CtxExpect.rip.u      = Ctx.rip.u + offUd;
+                        if (CtxExpect.rip.u != Ctx.rip.u)
+                        {
+                            bXcptExpect = X86_XCPT_DB;
+                            CtxExpect.rflags.u32 &= ~X86_EFL_RF;
+                        }
+                        else
+                            bXcptExpect = bXcptNorm;
+                    }
+                    else
+                    {
+                        CtxExpect.rflags.u32 = Ctx.rflags.u32 | fXcptRf;
+                        CtxExpect.rip.u      = Ctx.rip.u;
+                        CtxExpect.rsp.u      = Ctx.rsp.u;
+                        PtrStack.pu32[0]     = UINT32_MAX & ~X86_EFL_IF; /* only one trigger */
+                        bXcptExpect     = X86_XCPT_GP;
+                    }
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    if (bs3CpuWeird1_ComparePopf(&TrapCtx, &CtxExpect, bXcptExpect))
+                        break;
+
+                    /*
+                     * Step 6 - Start with TF set and pop zeros.  Should #DB after POPF.
+                     */
+                    g_usBs3TestStep++;
+                    PtrStack.pu32[1]     = UINT32_MAX;
+                    if (cbAdjSp >= 4)
+                        PtrStack.pu32[0] = 0;
+                    else
+                    {
+                        PtrStack.pu16[1] = UINT16_MAX;
+                        PtrStack.pu16[0] = 0;
+                    }
+                    Ctx.rflags.u32      |= X86_EFL_TF;
+                    CtxExpect.rip.u      = Ctx.rip.u + offUd - !!offUd;
+                    CtxExpect.rsp.u      = Ctx.rsp.u + (offUd ? cbAdjSp : 0);
+                    CtxExpect.rflags.u32 = (Ctx.rflags.u32 & ~fPoppable & ~fCleared) | fXcptRf;
+                    if (offUd)
+                        CtxExpect.rflags.u32 &= ~X86_EFL_RF;
+
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                    if (bs3CpuWeird1_ComparePopf(&TrapCtx, &CtxExpect, offUd ? X86_XCPT_DB : bXcptNorm))
+                        break;
+
+                    /** @todo test VIP in VME mode. */
+                    g_usBs3TestStep = (g_usBs3TestStep + 9) / 10 * 10;
+                }
+                g_usBs3TestStep = (g_usBs3TestStep + 99) / 100 * 100;
+            }
+            g_usBs3TestStep = (g_usBs3TestStep + 999) / 1000 * 1000;
+        }
+
+        /*
+         * Next ring.
+         */
+        if (uRing >= 3 || bTestMode == BS3_MODE_RM)
+            break;
+        uRing++;
+        Bs3RegCtxConvertToRingX(&Ctx, uRing);
+        CtxExpect.bCpl = Ctx.bCpl;
+        CtxExpect.ss   = Ctx.ss;
+        CtxExpect.ds   = Ctx.ds;
+        CtxExpect.es   = Ctx.es;
+        CtxExpect.fs   = Ctx.fs;
+        CtxExpect.gs   = Ctx.gs;
+        g_usBs3TestStep = (g_usBs3TestStep + 9999) / 10000 * 10000;
+    }
 
     return 0;
 }
