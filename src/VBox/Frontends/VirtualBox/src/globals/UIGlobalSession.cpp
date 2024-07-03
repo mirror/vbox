@@ -34,6 +34,9 @@
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxClientEventHandler.h"
 
+/* COM includes: */
+#include "CSystemProperties.h"
+
 /* Other VBox includes: */
 #ifdef VBOX_WITH_XPCOM
 # include <iprt/path.h>
@@ -151,19 +154,13 @@ const UIGuestOSTypeManager &UIGlobalSession::guestOSTypeManager()
     return *m_pGuestOSTypeManager;
 }
 
-UIGlobalSession::UIGlobalSession()
-    : m_fWrappersValid(false)
-    , m_fVBoxSVCAvailable(true)
-    , m_pGuestOSTypeManager(0)
+int UIGlobalSession::supportedRecordingFeatures() const
 {
-    /* Assign instance: */
-    s_pInstance = this;
-}
-
-UIGlobalSession::~UIGlobalSession()
-{
-    /* Unassign instance: */
-    s_pInstance = 0;
+    int iSupportedFlag = 0;
+    CSystemProperties comProperties = virtualBox().GetSystemProperties();
+    foreach (const KRecordingFeature &enmFeature, comProperties.GetSupportedRecordingFeatures())
+        iSupportedFlag |= enmFeature;
+    return iSupportedFlag;
 }
 
 void UIGlobalSession::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
@@ -205,6 +202,21 @@ void UIGlobalSession::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
 
     /* Notify listeners about the VBoxSVC availability change: */
     emit sigVBoxSVCAvailabilityChange(m_fVBoxSVCAvailable);
+}
+
+UIGlobalSession::UIGlobalSession()
+    : m_fWrappersValid(false)
+    , m_fVBoxSVCAvailable(true)
+    , m_pGuestOSTypeManager(0)
+{
+    /* Assign instance: */
+    s_pInstance = this;
+}
+
+UIGlobalSession::~UIGlobalSession()
+{
+    /* Unassign instance: */
+    s_pInstance = 0;
 }
 
 bool UIGlobalSession::comWrappersReinit()

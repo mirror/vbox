@@ -86,7 +86,6 @@
 #include "CHostUSBDevice.h"
 #include "CHostVideoInputDevice.h"
 #include "CMachine.h"
-#include "CSystemProperties.h"
 #include "CUSBDevice.h"
 #include "CUSBDeviceFilter.h"
 
@@ -1324,15 +1323,6 @@ QString UICommon::usbToolTip(const CHostVideoInputDevice &comWebcam)
         records << strPath;
 
     return records.join("<br>");
-}
-
-int UICommon::supportedRecordingFeatures() const
-{
-    int iSupportedFlag = 0;
-    CSystemProperties comProperties = gpGlobalSession->virtualBox().GetSystemProperties();
-    foreach (const KRecordingFeature &enmFeature, comProperties.GetSupportedRecordingFeatures())
-        iSupportedFlag |= enmFeature;
-    return iSupportedFlag;
 }
 
 /* static */

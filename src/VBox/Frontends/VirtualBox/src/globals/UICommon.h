@@ -273,12 +273,6 @@ public:
         static QString usbToolTip(const CHostVideoInputDevice &comWebcam);
     /** @} */
 
-    /** @name COM: Recording stuff.
-     * @{ */
-        /** Returns supported recording features flag. */
-        int supportedRecordingFeatures() const;
-    /** @} */
-
     /** @name File-system stuff.
      * @{ */
         /** Returns full help file name. */

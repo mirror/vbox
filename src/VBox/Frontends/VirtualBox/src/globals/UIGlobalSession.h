@@ -95,6 +95,12 @@ public:
         const UIGuestOSTypeManager &guestOSTypeManager();
     /** @} */
 
+    /** @name Recording stuff.
+     * @{ */
+        /** Returns supported recording features flag. */
+        int supportedRecordingFeatures() const;
+    /** @} */
+
 protected slots:
 
     /** @name General COM stuff.
