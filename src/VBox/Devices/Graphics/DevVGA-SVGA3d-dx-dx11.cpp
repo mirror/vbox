@@ -55,7 +55,14 @@
 #if defined(Status)
 #undef Status
 #endif
+#ifndef RT_OS_WINDOWS
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 #include <d3d11_1.h>
+#ifndef RT_OS_WINDOWS
+# pragma GCC diagnostic pop
+#endif
 
 
 #ifdef RT_OS_WINDOWS
