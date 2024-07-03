@@ -61,13 +61,12 @@
 
 
 RTDECL(int) RTCrX509Certificate_GenerateSelfSignedRsa(RTDIGESTTYPE enmDigestType, uint32_t cBits, uint32_t cSecsValidFor,
-                                                      uint32_t fKeyUsage, uint64_t fExtKeyUsage, void *pvSubjectTodo,
+                                                      uint32_t fKeyUsage, uint64_t fExtKeyUsage, const char *pvSubject,
                                                       const char *pszCertFile, const char *pszPrivateKeyFile, PRTERRINFO pErrInfo)
 {
     AssertReturn(cSecsValidFor <= (uint32_t)INT32_MAX, VERR_OUT_OF_RANGE); /* larger values are not portable (win) */
     AssertReturn(!fKeyUsage, VERR_NOT_IMPLEMENTED);
     AssertReturn(!fExtKeyUsage, VERR_NOT_IMPLEMENTED);
-    AssertReturn(pvSubjectTodo == NULL, VERR_NOT_IMPLEMENTED);
 
     /*
      * Translate enmDigestType.
@@ -158,6 +157,8 @@ RTDECL(int) RTCrX509Certificate_GenerateSelfSignedRsa(RTDIGESTTYPE enmDigestType
 
         /* Make it self signed: */
         X509_NAME *pX509Name = X509_get_subject_name(pNewCert);
+        rcOssl = X509_NAME_add_entry_by_txt(pX509Name, "CN", MBSTRING_ASC, (unsigned char *) pvSubject, -1, -1, 0);
+        AssertStmt(rcOssl > 0, rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "X509_NAME_add_entry_by_txt failed"));
         rcOssl = X509_set_issuer_name(pNewCert, pX509Name);
         AssertStmt(rcOssl > 0, rc = RTErrInfoSet(pErrInfo, VERR_GENERAL_FAILURE, "X509_set_issuer_name failed"));
 

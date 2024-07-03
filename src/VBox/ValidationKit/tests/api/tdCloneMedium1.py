@@ -213,7 +213,7 @@ class SubTstDrvCloneMedium1(base.SubTestDriverBase):
 
         reporter.testStart("testResizeAndClone")
 
-        oVM = self.oTstDrv.createTestVM('test-medium-clone-only', 1, None, 4)
+        oVM = self.oTstDrv.createTestVM('test-medium-resize-and-clone', 1, None, 4)
 
         hd1 = self.createTestMedium(oVM, "hd1-resizeandclone", data=[self.iDataToWrite])
         hd2 = self.createTestMedium(oVM, "hd2-resizeandclone")
