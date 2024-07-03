@@ -168,7 +168,11 @@ namespace dxvk {
     auto iter = m_setMaps.emplace(
       std::piecewise_construct,
       std::tuple(layout),
+#ifdef VBOX
+      std::tuple{});
+#else
       std::tuple());
+#endif
 
     for (uint32_t i = 0; i < DxvkDescriptorSets::SetCount; i++) {
       iter.first->second.sets[i] = (layout->getSetMask() & (1u << i))
@@ -189,7 +193,11 @@ namespace dxvk {
     auto iter = m_setLists.emplace(
       std::piecewise_construct,
       std::tuple(layout),
+#ifdef VBOX
+      std::tuple{});
+#else
       std::tuple());
+#endif
     return &iter.first->second;
   }
 
