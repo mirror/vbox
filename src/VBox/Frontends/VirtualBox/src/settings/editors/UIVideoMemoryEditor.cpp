@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2019-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2019-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -34,8 +34,8 @@
 
 /* GUI includes: */
 #include "QIAdvancedSlider.h"
-#include "UICommon.h"
 #include "UIGlobalSession.h"
+#include "UIGuestOSType.h"
 #include "UIVideoMemoryEditor.h"
 
 /* COM includes: */
@@ -322,7 +322,7 @@ void UIVideoMemoryEditor::updateRequirements()
     m_iMaxVRAMVisible = m_cGuestScreenCount * 32;
 
     /* Get monitors count and recommended VRAM: */
-    int iNeedMBytes = UICommon::requiredVideoMemory(m_strGuestOSTypeId, m_cGuestScreenCount) / _1M;
+    int iNeedMBytes = UIGuestOSTypeHelpers::requiredVideoMemory(m_strGuestOSTypeId, m_cGuestScreenCount) / _1M;
 
     /* Adjust visible maximum VRAM to be no less than 128MB (if possible): */
     if (m_iMaxVRAMVisible < 128 && m_iMaxVRAM >= 128)

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -27,6 +27,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
 
@@ -35,6 +36,91 @@
 #include "CPlatformProperties.h"
 #include "CSystemProperties.h"
 
+/* VirtualBox interface declarations: */
+#include <VBox/com/VirtualBox.h>
+
+
+/*********************************************************************************************************************************
+*   Class UIGuestOSTypeHelpers implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+#ifdef VBOX_WITH_3D_ACCELERATION
+bool UIGuestOSTypeHelpers::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
+{
+    return    strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("WindowsVista"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows7"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows8"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows81"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows10"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows11"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows2008"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows2012"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows2016"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows2019"));
+}
+#endif /* VBOX_WITH_3D_ACCELERATION */
+
+quint64 UIGuestOSTypeHelpers::requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors /* = 1 */)
+{
+    /* We create a list of the size of all available host monitors. This list
+     * is sorted by value and by starting with the biggest one, we calculate
+     * the memory requirements for every guest screen. This is of course not
+     * correct, but as we can't predict on which host screens the user will
+     * open the guest windows, this is the best assumption we can do, cause it
+     * is the worst case. */
+    const int cHostScreens = UIDesktopWidgetWatchdog::screenCount();
+    QVector<int> screenSize(qMax(cMonitors, cHostScreens), 0);
+    for (int i = 0; i < cHostScreens; ++i)
+    {
+        QRect r = gpDesktop->screenGeometry(i);
+        screenSize[i] = r.width() * r.height();
+    }
+    /* Now sort the vector: */
+    std::sort(screenSize.begin(), screenSize.end(), std::greater<int>());
+    /* For the case that there are more guest screens configured then host
+     * screens available, replace all zeros with the greatest value in the
+     * vector. */
+    for (int i = 0; i < screenSize.size(); ++i)
+        if (screenSize.at(i) == 0)
+            screenSize.replace(i, screenSize.at(0));
+
+    quint64 uNeedBits = 0;
+    for (int i = 0; i < cMonitors; ++i)
+    {
+        /* Calculate summary required memory amount in bits: */
+        uNeedBits += (screenSize.at(i) * /* with x height */
+                     32 + /* we will take the maximum possible bpp for now */
+                     8 * _1M) + /* current cache per screen - may be changed in future */
+                     8 * 4096; /* adapter info */
+    }
+    /* Translate value into megabytes with rounding to highest side: */
+    quint64 uNeedMBytes = uNeedBits % (8 * _1M)
+                        ? uNeedBits / (8 * _1M) + 1
+                        : uNeedBits / (8 * _1M) /* convert to megabytes */;
+
+    if (strGuestOSTypeId.startsWith("Windows"))
+    {
+        /* Windows guests need offscreen VRAM too for graphics acceleration features: */
+#ifdef VBOX_WITH_3D_ACCELERATION
+        if (isWddmCompatibleOsType(strGuestOSTypeId))
+        {
+            /* WDDM mode, there are two surfaces for each screen: shadow & primary: */
+            uNeedMBytes *= 3;
+        }
+        else
+#endif /* VBOX_WITH_3D_ACCELERATION */
+        {
+            uNeedMBytes *= 2;
+        }
+    }
+
+    return uNeedMBytes * _1M;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIGuestOSTypeManager implementation.                                                                                   *
+*********************************************************************************************************************************/
 
 void UIGuestOSTypeManager::reCacheGuestOSTypes()
 {

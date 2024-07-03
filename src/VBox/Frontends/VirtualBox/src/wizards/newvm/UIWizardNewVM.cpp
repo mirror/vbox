@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -30,7 +30,6 @@
 #include <QLayout>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
 #include "UILocalMachineStuff.h"
@@ -179,7 +178,8 @@ bool UIWizardNewVM::createVM()
     m_machine.SetCPUCount(iVPUCount);
     /* Correct the VRAM size since API does not take fullscreen memory requirements into account: */
     CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
-    comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(m_guestOSTypeId) / _1M)));
+    comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(),
+                                 (ULONG)(UIGuestOSTypeHelpers::requiredVideoMemory(m_guestOSTypeId) / _1M)));
     /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
     if (iVPUCount > 1)
         comFirmwareSettings.SetIOAPICEnabled(true);
@@ -241,7 +241,7 @@ bool UIWizardNewVM::createVirtualDisk()
     if (!handleNotificationProgressNow(pNotification))
         return fResult;
 
-    /* Inform UICommon about it: */
+    /* Inform UIMediumEnumerator about it: */
     gpMediumEnumerator->createMedium(UIMedium(newVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
 
     /* Remember created virtual-disk: */

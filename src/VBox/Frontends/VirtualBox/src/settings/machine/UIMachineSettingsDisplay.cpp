@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2008-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -37,9 +37,7 @@
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UIGraphicsControllerEditor.h"
-#ifdef VBOX_WITH_3D_ACCELERATION
-# include "UIDisplayScreenFeaturesEditor.h"
-#endif
+#include "UIGuestOSType.h"
 #include "UIMachineSettingsDisplay.h"
 #include "UIMonitorCountEditor.h"
 #include "UIRecordingSettingsEditor.h"
@@ -47,6 +45,9 @@
 #include "UITranslator.h"
 #include "UIVideoMemoryEditor.h"
 #include "UIVRDESettingsEditor.h"
+#ifdef VBOX_WITH_3D_ACCELERATION
+# include "UIDisplayScreenFeaturesEditor.h"
+#endif
 
 /* COM includes: */
 #include "CExtPackManager.h"
@@ -335,11 +336,12 @@ void UIMachineSettingsDisplay::setGuestOSTypeId(const QString &strGuestOSTypeId)
 
 #ifdef VBOX_WITH_3D_ACCELERATION
     /* Check if WDDM mode supported by the guest OS type: */
-    m_fWddmModeSupported = UICommon::isWddmCompatibleOsType(m_strGuestOSTypeId);
+    m_fWddmModeSupported = UIGuestOSTypeHelpers::isWddmCompatibleOsType(m_strGuestOSTypeId);
     m_pEditorVideoMemorySize->set3DAccelerationSupported(m_fWddmModeSupported);
 #endif /* VBOX_WITH_3D_ACCELERATION */
     /* Acquire recommended graphics controller type: */
-    m_enmGraphicsControllerTypeRecommended = uiCommon().getRecommendedGraphicsController(m_strGuestOSTypeId);
+    m_enmGraphicsControllerTypeRecommended =
+        gpGlobalSession->guestOSTypeManager().getRecommendedGraphicsController(m_strGuestOSTypeId);
     /* Revalidate: */
     revalidate();
 }
@@ -637,7 +639,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         /* Video RAM amount test: */
         if (shouldWeWarnAboutLowVRAM() && !m_strGuestOSTypeId.isEmpty())
         {
-            quint64 uNeedBytes = UICommon::requiredVideoMemory(m_strGuestOSTypeId, m_pEditorMonitorCount->value());
+            quint64 uNeedBytes = UIGuestOSTypeHelpers::requiredVideoMemory(m_strGuestOSTypeId, m_pEditorMonitorCount->value());
 
             /* Basic video RAM amount test: */
             if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
