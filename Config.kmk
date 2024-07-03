@@ -5082,8 +5082,8 @@ VBOXLNX32GUEST_SUFF_LIB = .a
 ifdef VBOX_WITH_DXVK
  SDK_VBoxDxVk                  := Direct3D 9/10/11 to Vulkan - for dll linking.
  SDK_VBoxDxVk_DEFAULT_INCS     := \
- 	$(PATH_ROOT)/src/libs/dxvk-native-1.9.2a/include/native/directx \
- 	$(PATH_ROOT)/src/libs/dxvk-native-1.9.2a/include/native/windows
+ 	$(PATH_ROOT)/src/libs/dxvk-2.3.1/include/native/directx \
+ 	$(PATH_ROOT)/src/libs/dxvk-2.3.1/include/native/windows
  SDK_VBoxDxVk_INCS             ?= $(SDK_VBoxDxVk_DEFAULT_INCS)
  # Loaded dynamically
  SDK_VBoxDxVk_LIBS             ?=
