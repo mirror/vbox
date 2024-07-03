@@ -2203,7 +2203,7 @@ typedef struct IEMCPU
     STAMCOUNTER             StatMemBounceBufferCrossPage;
     STAMCOUNTER             StatMemBounceBufferMapPhys;
     /** @} */
-                                        
+
     uint64_t                au64Padding[5];
     /** @} */
 
