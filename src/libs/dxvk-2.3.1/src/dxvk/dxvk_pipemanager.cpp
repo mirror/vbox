@@ -443,7 +443,11 @@ namespace dxvk {
 
     auto iter = m_shaderLibraries.emplace(
       std::piecewise_construct,
+#ifdef VBOX
+      std::tuple{},
+#else
       std::tuple(),
+#endif
       std::tuple(m_device, this, key, layout));
     return &iter.first->second;
   }
