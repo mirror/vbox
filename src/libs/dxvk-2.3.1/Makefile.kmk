@@ -253,6 +253,8 @@ VBox-DxVkNativeDxVk_VBOX_SHADERS := \
 	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_clear_image3d_f.comp \
 	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_pack_d24s8.comp \
 	\
+	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_fullscreen_geom.geom \
+	\
 	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_present_vert.vert \
 	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_fullscreen_vert.vert \
 	$(PATH_SUB_CURRENT)/src/dxvk/shaders/dxvk_fullscreen_layer_vert.vert \
