@@ -58,7 +58,7 @@ class SHARED_LIBRARY_STUFF UICommon : public QObject
 
 signals:
 
-    /** @name Common stuff.
+    /** @name General stuff.
      * @{ */
         /** Asks #UIStarter listener to restart UI. */
         void sigAskToRestartUI();
@@ -71,7 +71,7 @@ signals:
         void sigAskToDetachCOM();
     /** @} */
 
-    /** @name Theme stuff.
+    /** @name Host OS stuff.
      * @{ */
         /** Notifies listeners about theme change. */
         void sigThemeChange();
@@ -229,7 +229,10 @@ public:
 
         /** Returns whether VM should start paused. */
         bool shouldStartPaused() const;
+    /** @} */
 
+    /** @name Application stuff.
+     * @{ */
 #ifdef VBOX_GUI_WITH_PIDFILE
         /** Creates PID file. */
         void createPidfile();
@@ -238,7 +241,7 @@ public:
 #endif
     /** @} */
 
-    /** @name COM: Cloud Virtual Machine stuff.
+    /** @name Cloud Virtual Machine stuff.
      * @{ */
         /** Notifies listeners about cloud VM was unregistered.
           * @param  strProviderShortName  Brings provider short name.
@@ -258,11 +261,6 @@ public:
 
     /** @name COM: USB stuff.
      * @{ */
-#ifdef RT_OS_LINUX
-        /** Verifies that USB drivers are properly configured on Linux. */
-        static void checkForWrongUSBMounted();
-#endif
-
         /** Generates details for passed USB @a comDevice. */
         static QString usbDetails(const CUSBDevice &comDevice);
         /** Generates tool-tip for passed USB @a comDevice. */
@@ -322,13 +320,7 @@ public slots:
         bool openURL(const QString &strURL) const;
     /** @} */
 
-    /** @name Localization stuff.
-     * @{ */
-        /** Handles language change to new @a strLanguage. */
-        void sltGUILanguageChange(QString strLanguage);
-    /** @} */
-
-    /** @name Cloud Machine related stuff.
+    /** @name Cloud Virtual Machine stuff.
      * @{ */
         /** Handles signal about cloud machine was added. */
         void sltHandleCloudMachineAdded(const QString &strProviderShortName,
@@ -363,8 +355,14 @@ protected slots:
         void sltHandleVBoxSVCAvailabilityChange(bool fAvailable);
     /** @} */
 
-    /* Handle font scale factor change. */
-    void sltHandleFontScaleFactorChanged(int iFontScaleFactor);
+    /** @name Localization stuff.
+     * @{ */
+        /** Handles language change to new @a strLanguage. */
+        void sltGUILanguageChange(QString strLanguage);
+
+        /** Handles font @a iFontScaleFactor change. */
+        void sltHandleFontScaleFactorChanged(int iFontScaleFactor);
+    /** @} */
 
 private:
 
@@ -395,6 +393,14 @@ private:
           * @param  piDbgCfgVar       Brings the debugger config variable to consult.
           * @param  pszExtraDataName  Brings the extra data name relating to this variable. */
         bool isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName) const;
+#endif
+    /** @} */
+
+    /** @name USB stuff.
+     * @{ */
+#ifdef RT_OS_LINUX
+        /** Verifies that USB drivers are properly configured on Linux. */
+        static void checkForWrongUSBMounted();
 #endif
     /** @} */
 
@@ -494,10 +500,13 @@ private:
         char  m_astrSettingsPw[256];
         /** Holds the --settingspwfile option value. */
         bool  m_fSettingsPwSet;
+    /** @} */
 
+    /** @name Application stuff.
+     * @{ */
 #ifdef VBOX_GUI_WITH_PIDFILE
         /** Holds the --pidfile option value (application PID file path). */
-        QString m_strPidFile;
+        QString  m_strPidFile;
 #endif
     /** @} */
 

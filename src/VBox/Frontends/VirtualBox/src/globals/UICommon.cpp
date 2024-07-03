@@ -1159,35 +1159,6 @@ void UICommon::notifyCloudMachineRegistered(const QString &strProviderShortName,
     emit sigCloudMachineRegistered(strProviderShortName, strProfileName, comMachine);
 }
 
-#ifdef RT_OS_LINUX
-/* static */
-void UICommon::checkForWrongUSBMounted()
-{
-    /* Make sure '/proc/mounts' exists and can be opened: */
-    QFile file("/proc/mounts");
-    if (!file.exists() || !file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return;
-
-    /* Fetch contents: */
-    QStringList contents;
-    for (;;)
-    {
-        QByteArray line = file.readLine();
-        if (line.isEmpty())
-            break;
-        contents << line;
-    }
-    /* Grep contents for usbfs presence: */
-    QStringList grep1(contents.filter("/sys/bus/usb/drivers"));
-    QStringList grep2(grep1.filter("usbfs"));
-    if (grep2.isEmpty())
-        return;
-
-    /* Show corresponding warning: */
-    msgCenter().warnAboutWrongUSBMounted();
-}
-#endif /* RT_OS_LINUX */
-
 /* static */
 QString UICommon::usbDetails(const CUSBDevice &comDevice)
 {
@@ -1545,14 +1516,6 @@ bool UICommon::openURL(const QString &strUrl) const
     return fResult;
 }
 
-void UICommon::sltGUILanguageChange(QString strLanguage)
-{
-    /* Make sure medium-enumeration is not in progress! */
-    AssertReturnVoid(!gpMediumEnumerator->isMediumEnumerationInProgress());
-    /* Load passed language: */
-    UITranslator::loadLanguage(strLanguage);
-}
-
 void UICommon::sltHandleCloudMachineAdded(const QString &strProviderShortName,
                                           const QString &strProfileName,
                                           const CCloudMachine &comMachine)
@@ -1604,6 +1567,14 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
 
     /* Call to base-class: */
     return QObject::eventFilter(pObject, pEvent);
+}
+
+void UICommon::sltGUILanguageChange(QString strLanguage)
+{
+    /* Make sure medium-enumeration is not in progress! */
+    AssertReturnVoid(!gpMediumEnumerator->isMediumEnumerationInProgress());
+    /* Load passed language: */
+    UITranslator::loadLanguage(strLanguage);
 }
 
 void UICommon::sltHandleFontScaleFactorChanged(int iFontScaleFactor)
@@ -1804,5 +1775,34 @@ bool UICommon::isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName) 
 
     return (*piDbgCfgVar & UICOMMON_DBG_CFG_VAR_MASK) == UICOMMON_DBG_CFG_VAR_TRUE;
 }
+
+#ifdef RT_OS_LINUX
+/* static */
+void UICommon::checkForWrongUSBMounted()
+{
+    /* Make sure '/proc/mounts' exists and can be opened: */
+    QFile file("/proc/mounts");
+    if (!file.exists() || !file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return;
+
+    /* Fetch contents: */
+    QStringList contents;
+    for (;;)
+    {
+        QByteArray line = file.readLine();
+        if (line.isEmpty())
+            break;
+        contents << line;
+    }
+    /* Grep contents for usbfs presence: */
+    QStringList grep1(contents.filter("/sys/bus/usb/drivers"));
+    QStringList grep2(grep1.filter("usbfs"));
+    if (grep2.isEmpty())
+        return;
+
+    /* Show corresponding warning: */
+    msgCenter().warnAboutWrongUSBMounted();
+}
+#endif /* RT_OS_LINUX */
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
