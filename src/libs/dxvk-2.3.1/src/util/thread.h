@@ -306,6 +306,9 @@ namespace dxvk {
   };
 
 #else
+# if defined(VBOX) && !defined(SCHED_IDLE)
+#  define SCHED_IDLE SCHED_OTHER
+# endif
   class thread : public std::thread {
   public:
     using std::thread::thread;
