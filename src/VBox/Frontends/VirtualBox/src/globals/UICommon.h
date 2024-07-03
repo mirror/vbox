@@ -42,6 +42,11 @@
 # include "VBoxUtils-nix.h"
 #endif
 
+/* Other VBox includes: */
+#ifdef VBOX_WITH_DEBUGGER_GUI
+# include <iprt/types.h> /* for RTLDRMOD */
+#endif
+
 /* Forward declarations: */
 class QSessionManager;
 class QSpinBox;
