@@ -8,6 +8,10 @@
 #include <limits.h>
 #endif
 
+#ifdef VBOX
+# include <iprt/process.h>
+#endif
+
 #include "util_env.h"
 
 #include "./com/com_include.h"
@@ -71,6 +75,12 @@ namespace dxvk::env {
 
 
   std::string getExePath() {
+#ifdef VBOX
+    std::array<char, PATH_MAX> exePath = {};
+    if (!RTProcGetExecutablePath(exePath.data(), exePath.size()))
+      return std::string("");
+    return std::string(exePath.begin(), exePath.begin() + strlen(exePath.begin()));
+#else
 #if defined(_WIN32)
     std::vector<WCHAR> exePath;
     exePath.resize(MAX_PATH + 1);
@@ -86,6 +96,7 @@ namespace dxvk::env {
 
     return std::string(exePath.begin(), exePath.begin() + count);
 #endif
+#endif /* VBOX */
   }
   
   
@@ -108,7 +119,11 @@ namespace dxvk::env {
 #else
     std::array<char, 16> posixName = {};
     dxvk::str::strlcpy(posixName.data(), name.c_str(), 16);
+# if defined(VBOX) && defined(RT_OS_DARWIN)
+    ::pthread_setname_np(posixName.data());
+# else
     ::pthread_setname_np(pthread_self(), posixName.data());
+# endif
 #endif
   }
 
