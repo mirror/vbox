@@ -312,8 +312,13 @@ namespace dxvk {
     enabledFeatures.core.features.variableMultisampleRate =
       m_deviceFeatures.core.features.variableMultisampleRate;
 
+#ifndef VBOX
     // Always enable memory model so client APIs can use it
     enabledFeatures.vk12.vulkanMemoryModel = VK_TRUE;
+#else
+    /* Not available with MoltenVK. */
+    enabledFeatures.vk12.vulkanMemoryModel = m_deviceFeatures.vk12.vulkanMemoryModel;
+#endif
 
     // Optionally used by some client API extensions
     enabledFeatures.vk12.drawIndirectCount =
@@ -342,9 +347,15 @@ namespace dxvk {
     enabledFeatures.vk13.pipelineCreationCacheControl =
       m_deviceFeatures.vk13.pipelineCreationCacheControl;
 
+#ifndef VBOX
     // Core features that we're relying on in various places
     enabledFeatures.vk13.synchronization2 = VK_TRUE;
     enabledFeatures.vk13.dynamicRendering = VK_TRUE;
+#else
+    /* Not available with MoltenVK. */
+    enabledFeatures.vk13.synchronization2 = m_deviceFeatures.vk13.synchronization2;
+    enabledFeatures.vk13.dynamicRendering = m_deviceFeatures.vk13.dynamicRendering;
+#endif
 
     // We expose depth clip rather than depth clamp to client APIs
     enabledFeatures.extDepthClipEnable.depthClipEnable =
@@ -382,12 +393,19 @@ namespace dxvk {
     enabledFeatures.extMemoryPriority.memoryPriority =
       m_deviceFeatures.extMemoryPriority.memoryPriority;
 
+#ifndef VBOX
     // Require robustBufferAccess2 since we use the robustness alignment
     // info in a number of places, and require null descriptor support
     // since we no longer have a fallback for those in the backend
     enabledFeatures.extRobustness2.robustBufferAccess2 = VK_TRUE;
     enabledFeatures.extRobustness2.robustImageAccess2 = m_deviceFeatures.extRobustness2.robustImageAccess2;
     enabledFeatures.extRobustness2.nullDescriptor = VK_TRUE;
+#else
+    /* Not available with MoltenVK. */
+    enabledFeatures.extRobustness2.robustBufferAccess2 = m_deviceFeatures.extRobustness2.robustBufferAccess2;
+    enabledFeatures.extRobustness2.robustImageAccess2 = m_deviceFeatures.extRobustness2.robustImageAccess2;
+    enabledFeatures.extRobustness2.nullDescriptor = m_deviceFeatures.extRobustness2.nullDescriptor;
+#endif
 
     // We use this to avoid decompressing SPIR-V shaders in some situations
     enabledFeatures.extShaderModuleIdentifier.shaderModuleIdentifier =
