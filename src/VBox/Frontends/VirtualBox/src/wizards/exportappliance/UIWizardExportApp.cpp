@@ -32,7 +32,7 @@
 
 /* GUI includes: */
 #include "UIAddDiskEncryptionPasswordDialog.h"
-#include "UICommon.h"
+#include "UICloudMachineManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINotificationCenter.h"
@@ -219,7 +219,7 @@ bool UIWizardExportApp::createCloudVM()
                                                                                                            format(),
                                                                                                            profileName());
     connect(pNotification, &UINotificationProgressCloudMachineCreate::sigCloudMachineCreated,
-            &uiCommon(), &UICommon::sltHandleCloudMachineAdded);
+            gpCloudMachineManager, &UICloudMachineManager::sltHandleCloudMachineAdded);
     gpNotificationCenter->append(pNotification);
 
     /* Return result: */

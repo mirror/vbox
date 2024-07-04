@@ -26,7 +26,7 @@
  */
 
 /* GUI includes: */
-#include "UICommon.h"
+#include "UICloudMachineManager.h"
 #include "UINotificationCenter.h"
 #include "UIWizardAddCloudVM.h"
 #include "UIWizardAddCloudVMPageExpert.h"
@@ -80,7 +80,7 @@ bool UIWizardAddCloudVM::addCloudVMs()
                                                                                                          providerShortName(),
                                                                                                          profileName());
         connect(pNotification, &UINotificationProgressCloudMachineAdd::sigCloudMachineAdded,
-                &uiCommon(), &UICommon::sltHandleCloudMachineAdded);
+                gpCloudMachineManager, &UICloudMachineManager::sltHandleCloudMachineAdded);
         gpNotificationCenter->append(pNotification);
 
         /* Positive: */

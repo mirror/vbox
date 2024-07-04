@@ -294,6 +294,7 @@ endif
 #
 VBOX_GUI_INC_DIRS = \
 	./src \
+	./src/cloud \
 	./src/cloud/consolemanager \
 	./src/cloud/machinesettings \
 	./src/cloud/profilemanager \
@@ -596,6 +597,7 @@ endif
 # Headers containing definitions of classes that use the Q_OBJECT macro.
 #
 VirtualBox_QT_MOCHDRS = \
+	src/cloud/UICloudMachineManager.h \
 	src/cloud/consolemanager/UICloudConsoleDetailsWidget.h \
 	src/cloud/consolemanager/UICloudConsoleManager.h \
 	src/cloud/machinesettings/UICloudMachineSettingsDialog.h \
@@ -1127,6 +1129,7 @@ VBOX_GH_SOURCES := \
 #
 VirtualBox_SOURCES = \
 	src/main.cpp \
+	src/cloud/UICloudMachineManager.cpp \
 	src/cloud/consolemanager/UICloudConsoleDetailsWidget.cpp \
 	src/cloud/consolemanager/UICloudConsoleManager.cpp \
 	src/cloud/machinesettings/UICloudMachineSettingsDialog.cpp \

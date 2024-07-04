@@ -50,7 +50,6 @@
 /* Forward declarations: */
 class QSessionManager;
 class QSpinBox;
-class CCloudMachine;
 class UIThreadPool;
 
 /** QObject subclass containing common GUI functionality. */
@@ -77,24 +76,6 @@ signals:
      * @{ */
         /** Notifies listeners about theme change. */
         void sigThemeChange();
-    /** @} */
-
-    /** @name Cloud Virtual Machine stuff.
-     * @{ */
-        /** Notifies listeners about cloud VM was unregistered.
-          * @param  strProviderShortName  Brings provider short name.
-          * @param  strProfileName        Brings profile name.
-          * @param  uId                   Brings cloud VM id. */
-        void sigCloudMachineUnregistered(const QString &strProviderShortName,
-                                         const QString &strProfileName,
-                                         const QUuid &uId);
-        /** Notifies listeners about cloud VM was registered.
-          * @param  strProviderShortName  Brings provider short name.
-          * @param  strProfileName        Brings profile name.
-          * @param  comMachine            Brings cloud VM. */
-        void sigCloudMachineRegistered(const QString &strProviderShortName,
-                                       const QString &strProfileName,
-                                       const CCloudMachine &comMachine);
     /** @} */
 
 public:
@@ -243,24 +224,6 @@ public:
 #endif
     /** @} */
 
-    /** @name Cloud Virtual Machine stuff.
-     * @{ */
-        /** Notifies listeners about cloud VM was unregistered.
-          * @param  strProviderShortName  Brings provider short name.
-          * @param  strProfileName        Brings profile name.
-          * @param  uId                   Brings cloud VM id. */
-        void notifyCloudMachineUnregistered(const QString &strProviderShortName,
-                                            const QString &strProfileName,
-                                            const QUuid &uId);
-        /** Notifies listeners about cloud VM was registered.
-          * @param  strProviderShortName  Brings provider short name.
-          * @param  strProfileName        Brings profile name.
-          * @param  comMachine            Brings cloud VM. */
-        void notifyCloudMachineRegistered(const QString &strProviderShortName,
-                                          const QString &strProfileName,
-                                          const CCloudMachine &comMachine);
-    /** @} */
-
     /** @name File-system stuff.
      * @{ */
         /** Returns full help file name. */
@@ -308,14 +271,6 @@ public slots:
      * @{ */
         /** Opens the specified URL using OS/Desktop capabilities. */
         bool openURL(const QString &strURL) const;
-    /** @} */
-
-    /** @name Cloud Virtual Machine stuff.
-     * @{ */
-        /** Handles signal about cloud machine was added. */
-        void sltHandleCloudMachineAdded(const QString &strProviderShortName,
-                                        const QString &strProfileName,
-                                        const CCloudMachine &comMachine);
     /** @} */
 
 protected:
