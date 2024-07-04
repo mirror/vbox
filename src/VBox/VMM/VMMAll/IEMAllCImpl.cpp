@@ -4036,7 +4036,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
     { /* ignore */ }
     else
     {
-        Log(("iemCImpl_syscall: Converting pending debug events to a silent one (intel hack)\n",
+        Log(("iemCImpl_syscall: Converting pending %#x debug events to a silent one (intel hack)\n",
              pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK));
         pVCpu->cpum.GstCtx.eflags.uBoth = (pVCpu->cpum.GstCtx.eflags.uBoth & ~CPUMCTX_DBG_HIT_DRX_MASK)
                                         | CPUMCTX_DBG_HIT_DRX_SILENT;
