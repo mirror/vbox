@@ -4454,10 +4454,10 @@ ifdef VBOX_SIGNING_MODE
   # Since the corp code signing cannot dual signing and doesn't even have a
   # SHA-1 cert, we have to get creative:
   #   1. Sign $1 using local SHA-1 certificate.
-  #   2. Make temporary copy of $1 as $1.ccs
-  #   3. Do SHA-256 corp code signing of $1.ccs
-  #   4. Add the SHA-256 signature from $1.ccs to $1 using bldRTSignTool.
-  #   5. Delete $1.ccs.
+  #   2. Make temporary copy of $1 as $1.dual
+  #   3. Do SHA-256 corp code signing of $1
+  #   4. Add the SHA-256 signature from $1 to $1.dual using bldRTSignTool.
+  #   5. Move $1.dual to $1.
   #
   # @param 1  The file to sign.
   # @param 2  File description. Optional.
@@ -4477,11 +4477,11 @@ ifdef VBOX_SIGNING_MODE
   	$(3) \
   	"$(1)" \
   	$(if-expr "$5" == "", \
-  		$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.ccs" \
-  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(CP) -- "$1" "$1.ccs" \
-  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1.ccs,,-digest_algo SHA2) \
-  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_RTSIGNTOOL) add-nested-$(if-expr "$(suffix $1)" == ".cat",cat,exe)-signature -v "$1" "$1.ccs" \
-  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.ccs" \
+  		$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.dual" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(CP) -- "$1" "$1.dual" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo SHA2) \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_RTSIGNTOOL) add-nested-$(if-expr "$(suffix $1)" == ".cat",cat,exe)-signature -v "$1.dual" "$1" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(MV) -f -- "$1.dual" "$1"\
   	,)
 
   ## Sign an executable image.
