@@ -87,7 +87,8 @@
          <topicref href="topics/virtintro.dita"/>
          <topicref href="topics/features-overview.dita"/>
          <topicref href="topics/hostossupport.dita">
-         <topicref href="topics/hostcpurequirements.dita"/>
+            <topicref href="topics/hostcpurequirements.dita"/>
+            <topicref href="topics/hostcpurequirements.dita"/>
          </topicref>
          <topicref href="topics/intro-installing.dita"/>
          <topicref href="topics/intro-starting.dita"/>
@@ -105,17 +106,17 @@
             </topicref>
             <topicref href="topics/help-viewer.dita"/>
             <topicref href="topics/vboxmanager-wizards.dita"/>
+            <topicref href="topics/ui-experience-level.dita"/>
          </topicref>
          <topicref href="topics/create-vm-wizard.dita">
             <topicref href="topics/create-vm-wizard-name-os.dita"/>
             <topicref href="topics/create-vm-wizard-unattended-install.dita"/>
             <topicref href="topics/create-vm-wizard-hardware.dita"/>
             <topicref href="topics/create-vm-wizard-virtual-hard-disk.dita"/>
-            <!-- <topicref href="topics/create-vm-wizard-summary.dita"/> -->
-            <!-- <topicref href="topics/create-vm-wizard-unattended-examples.dita"/> -->
          </topicref>
          <topicref href="topics/intro-running.dita">
             <topicref href="topics/intro-starting-vm-first-time.dita"/>
+            <topicref href="topics/vm-status-bar.dita"/>
             <topicref href="topics/keyb_mouse_normal.dita"/>
             <topicref href="topics/specialcharacters.dita"/>
             <topicref href="topics/intro-removable-media-changing.dita"/>
@@ -146,8 +147,10 @@
                <topicref href="topics/cloud-vm-oci-group.dita"/>
                <topicref href="topics/cloud-vm-new.dita"/>
                <topicref href="topics/cloud-vm-add.dita"/>
+               <topicref href="topics/cloud-vm-clone.dita"/>
                <topicref href="topics/cloud-vm-settings.dita"/>
                <topicref href="topics/cloud-vm-control.dita"/>
+               <topicref href="topics/cloud-vm-monitor.dita"/>
                <topicref href="topics/cloud-vm-remove.dita"/>
                <topicref href="topics/cloud-vm-instance-console.dita"/>
             </topicref>
@@ -224,6 +227,7 @@
             <topicref href="topics/unattended-guest-install-example.dita"/>
          </topicref>
          <topicref href="topics/emul-hardware.dita"/>
+         <topicref href="topics/settings-window.dita"/>
          <topicref href="topics/generalsettings.dita">
             <topicref href="topics/settings-basic.dita"/>
             <topicref href="topics/settings-general-advanced.dita"/>
