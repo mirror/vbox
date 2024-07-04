@@ -111,8 +111,8 @@
             <topicref href="topics/create-vm-wizard-unattended-install.dita"/>
             <topicref href="topics/create-vm-wizard-hardware.dita"/>
             <topicref href="topics/create-vm-wizard-virtual-hard-disk.dita"/>
-            <topicref href="topics/create-vm-wizard-summary.dita"/>
-            <topicref href="topics/create-vm-wizard-unattended-examples.dita"/>
+            <!-- <topicref href="topics/create-vm-wizard-summary.dita"/> -->
+            <!-- <topicref href="topics/create-vm-wizard-unattended-examples.dita"/> -->
          </topicref>
          <topicref href="topics/intro-running.dita">
             <topicref href="topics/intro-starting-vm-first-time.dita"/>
