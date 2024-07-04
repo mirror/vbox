@@ -16,7 +16,7 @@ namespace dxvk::vk {
       "vulkan-1.dll",
 #else
 # if defined(VBOX) && defined(RT_OS_DARWIN)
-      "libMoltenVK",
+      "libMoltenVK.dylib",
       "SomeDummyNameToFillTheArray"
 # else
       "libvulkan.so",
