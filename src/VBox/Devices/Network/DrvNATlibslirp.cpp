@@ -1015,7 +1015,7 @@ static void slirpCheckTimeout(void *opaque)
  */
 static DECLCALLBACK(ssize_t) slirpSendPacketCb(const void *pBuf, size_t cb, void *opaque /* PDRVNAT */)
 {
-    char *pNewBuf = (char *)RTMemAlloc(cb);
+    char *pNewBuf = (char *)RTMemAlloc(cb); /** @todo r=aeichner Missing check whether memory was actually allocated */
     memcpy(pNewBuf, pBuf, cb);
 
     PDRVNAT pThis = (PDRVNAT)opaque;
@@ -1023,7 +1023,7 @@ static DECLCALLBACK(ssize_t) slirpSendPacketCb(const void *pBuf, size_t cb, void
 
     LogFlow(("slirp_output BEGIN %p %d\n", pNewBuf, cb));
     Log6(("slirp_output: pNewBuf=%p cb=%#x (pThis=%p)\n"
-          "%.*Rhxd\n", pNewBuf, cb, pThis));
+          "%.*Rhxd\n", pNewBuf, cb, pThis, cb, pNewBuf));
 
     /* don't queue new requests when the NAT thread is about to stop */
     if (pThis->pSlirpThread->enmState != PDMTHREADSTATE_RUNNING)
