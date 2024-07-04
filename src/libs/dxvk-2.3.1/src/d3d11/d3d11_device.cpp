@@ -1892,7 +1892,11 @@ namespace dxvk {
     enabled.core.features.dualSrcBlend                            = VK_TRUE;
     enabled.core.features.fillModeNonSolid                        = VK_TRUE;
     enabled.core.features.fullDrawIndexUint32                     = VK_TRUE;
+#ifndef VBOX
     enabled.core.features.geometryShader                          = VK_TRUE;
+#else
+    enabled.core.features.geometryShader                          = supported.core.features.geometryShader;
+#endif
     enabled.core.features.imageCubeArray                          = VK_TRUE;
     enabled.core.features.independentBlend                        = VK_TRUE;
     enabled.core.features.multiViewport                           = VK_TRUE;
@@ -1901,7 +1905,11 @@ namespace dxvk {
     enabled.core.features.sampleRateShading                       = VK_TRUE;
     enabled.core.features.samplerAnisotropy                       = supported.core.features.samplerAnisotropy;
     enabled.core.features.shaderClipDistance                      = VK_TRUE;
+#ifndef VBOX
     enabled.core.features.shaderCullDistance                      = VK_TRUE;
+#else
+    enabled.core.features.shaderCullDistance                      = supported.core.features.shaderCullDistance;
+#endif
     enabled.core.features.shaderImageGatherExtended               = VK_TRUE;
     enabled.core.features.textureCompressionBC                    = VK_TRUE;
 
@@ -1909,12 +1917,20 @@ namespace dxvk {
 
     enabled.vk12.samplerMirrorClampToEdge                         = VK_TRUE;
 
+#ifndef VBOX
     enabled.vk13.shaderDemoteToHelperInvocation                   = VK_TRUE;
+#else
+    enabled.vk13.shaderDemoteToHelperInvocation                   = supported.vk13.shaderDemoteToHelperInvocation;
+#endif
 
     enabled.extCustomBorderColor.customBorderColors               = supported.extCustomBorderColor.customBorderColorWithoutFormat;
     enabled.extCustomBorderColor.customBorderColorWithoutFormat   = supported.extCustomBorderColor.customBorderColorWithoutFormat;
 
+#ifndef VBOX
     enabled.extTransformFeedback.transformFeedback                = VK_TRUE;
+#else
+    enabled.extTransformFeedback.transformFeedback                = supported.extTransformFeedback.transformFeedback;
+#endif
     enabled.extTransformFeedback.geometryStreams                  = VK_TRUE;
 
     enabled.extVertexAttributeDivisor.vertexAttributeInstanceRateDivisor      = supported.extVertexAttributeDivisor.vertexAttributeInstanceRateDivisor;
@@ -1924,7 +1940,11 @@ namespace dxvk {
     enabled.core.features.drawIndirectFirstInstance               = supported.core.features.drawIndirectFirstInstance;
     enabled.core.features.fragmentStoresAndAtomics                = supported.core.features.fragmentStoresAndAtomics;
     enabled.core.features.multiDrawIndirect                       = supported.core.features.multiDrawIndirect;
+#ifndef VBOX
+    enabled.core.features.tessellationShader                      = VK_TRUE;
+#else
     enabled.core.features.tessellationShader                      = supported.core.features.tessellationShader;
+#endif
 
     // Required for Feature Level 11_1
     enabled.core.features.logicOp                                 = supported.core.features.logicOp;

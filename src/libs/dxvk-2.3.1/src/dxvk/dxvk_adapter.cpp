@@ -1222,7 +1222,13 @@ namespace dxvk {
       "\n  bufferDeviceAddress                    : ", features.vk12.bufferDeviceAddress,
       "\n  shaderOutputViewportIndex              : ", features.vk12.shaderOutputViewportIndex,
       "\n  shaderOutputLayer                      : ", features.vk12.shaderOutputLayer,
+#ifndef VBOX
       "\n  vulkanMemoryModel                      : ", features.vk12.vulkanMemoryModel,
+#else
+      /* Crashes on macOS Apple Silicon due to stack overflow, so split the reporting into two chunks. */
+      "\n  vulkanMemoryModel                      : ", features.vk12.vulkanMemoryModel));
+    Logger::info(str::format(
+#endif
       "\nVulkan 1.3",
       "\n  robustImageAccess                      : ", features.vk13.robustImageAccess,
       "\n  pipelineCreationCacheControl           : ", features.vk13.pipelineCreationCacheControl,

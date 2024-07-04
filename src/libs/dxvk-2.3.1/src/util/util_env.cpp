@@ -139,7 +139,11 @@ namespace dxvk::env {
     widePath[length] = L'\0';
     return !!CreateDirectoryW(widePath.data(), nullptr);
 #else
+# ifndef VBOX /* We don't want to create any directories for caches etc. */
     return std::filesystem::create_directories(path);
+# else
+    return false;
+# endif
 #endif
   }
   
