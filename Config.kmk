@@ -4478,10 +4478,10 @@ ifdef VBOX_SIGNING_MODE
   	"$(1)" \
   	$(if-expr "$5" == "", \
   		$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.dual" \
-		$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(CP) -- "$1" "$1.dual" \
-		$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo SHA2) \
-		$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_RTSIGNTOOL) add-nested-$(if-expr "$(suffix $1)" == ".cat",cat,exe)-signature -v "$1.dual" "$1" \
-		$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(MV) -f -- "$1.dual" "$1" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(CP) -- "$1" "$1.dual" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo SHA2) \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_RTSIGNTOOL) add-nested-$(if-expr "$(suffix $1)" == ".cat",cat,exe)-signature -v "$1.dual" "$1" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(MV) -f -- "$1.dual" "$1" \
   	,)
 
   ## Sign an executable image.
