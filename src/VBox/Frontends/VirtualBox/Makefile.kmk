@@ -327,6 +327,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/settings/machine \
 	./src/softkeyboard \
 	./src/snapshots \
+	./src/usb \
 	./src/widgets \
 	./src/widgets/graphics \
 	./src/wizards \
@@ -1543,6 +1544,7 @@ UICommon_SOURCES = \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsSystem.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
+	src/usb/UIUSBTools.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFileTableNavigationWidget.cpp \

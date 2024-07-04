@@ -51,9 +51,6 @@
 class QSessionManager;
 class QSpinBox;
 class CCloudMachine;
-class CHostVideoInputDevice;
-class CUSBDevice;
-class CUSBDeviceFilter;
 class UIThreadPool;
 
 /** QObject subclass containing common GUI functionality. */
@@ -262,18 +259,6 @@ public:
         void notifyCloudMachineRegistered(const QString &strProviderShortName,
                                           const QString &strProfileName,
                                           const CCloudMachine &comMachine);
-    /** @} */
-
-    /** @name COM: USB stuff.
-     * @{ */
-        /** Generates details for passed USB @a comDevice. */
-        static QString usbDetails(const CUSBDevice &comDevice);
-        /** Generates tool-tip for passed USB @a comDevice. */
-        static QString usbToolTip(const CUSBDevice &comDevice);
-        /** Generates tool-tip for passed USB @a comFilter. */
-        static QString usbToolTip(const CUSBDeviceFilter &comFilter);
-        /** Generates tool-tip for passed USB @a comWebcam. */
-        static QString usbToolTip(const CHostVideoInputDevice &comWebcam);
     /** @} */
 
     /** @name File-system stuff.

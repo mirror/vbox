@@ -75,6 +75,7 @@
 #include "UISoftKeyboard.h"
 #include "UITranslationEventListener.h"
 #include "UITakeSnapshotDialog.h"
+#include "UIUSBTools.h"
 #include "UIVersion.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVMLogViewerDialog.h"
@@ -632,9 +633,9 @@ void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsA
     if (!error.isNull())
     {
         if (fIsAttached)
-            UINotificationMessage::cannotAttachUSBDevice(error, uiCommon().usbDetails(device), machineName());
+            UINotificationMessage::cannotAttachUSBDevice(error, usbDetails(device), machineName());
         else
-            UINotificationMessage::cannotDetachUSBDevice(error, uiCommon().usbDetails(device), machineName());
+            UINotificationMessage::cannotDetachUSBDevice(error, usbDetails(device), machineName());
     }
 }
 

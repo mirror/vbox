@@ -56,6 +56,7 @@
 #include "UINotificationCenter.h"
 #include "UISession.h"
 #include "UITextTable.h"
+#include "UIUSBTools.h"
 #include "UIVersion.h"
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 # include "UIKeyboardHandler.h"
@@ -1099,14 +1100,14 @@ bool UISession::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
             }
             if (fSuccess)
             {
-                /// @todo make sure UICommon::usbDetails is checked for errors as well
-                guiUSBDevice.m_strName = uiCommon().usbDetails(comUSBDevice);
+                /// @todo make sure UIUSBTools::usbDetails is checked for errors as well
+                guiUSBDevice.m_strName = usbDetails(comUSBDevice);
                 fSuccess = comUSBDevice.isOk();
             }
             if (fSuccess)
             {
-                /// @todo make sure UICommon::usbToolTip is checked for errors as well
-                guiUSBDevice.m_strToolTip = uiCommon().usbToolTip(comUSBDevice);
+                /// @todo make sure UIUSBTools::usbToolTip is checked for errors as well
+                guiUSBDevice.m_strToolTip = usbToolTip(comUSBDevice);
                 fSuccess = comUSBDevice.isOk();
             }
             if (fSuccess)
@@ -1145,8 +1146,8 @@ bool UISession::attachUSBDevice(const QUuid &uId)
         /* Get USB device from current host USB device,
          * this stuff requires #include <VBox/com/VirtualBox.h> */
         CUSBDevice comUSBDevice(comHostUSBDevice);
-        UINotificationMessage::cannotAttachUSBDevice(comConsole, uiCommon().usbDetails(comUSBDevice));
-        /// @todo make sure UICommon::usbDetails is checked for errors as well
+        UINotificationMessage::cannotAttachUSBDevice(comConsole, usbDetails(comUSBDevice));
+        /// @todo make sure UIUSBTools::usbDetails is checked for errors as well
     }
     return fSuccess;
 }
@@ -1159,8 +1160,8 @@ bool UISession::detachUSBDevice(const QUuid &uId)
     if (!fSuccess)
     {
         CUSBDevice comUSBDevice = CConsole(comConsole).FindUSBDeviceById(uId);
-        UINotificationMessage::cannotDetachUSBDevice(comConsole, uiCommon().usbDetails(comUSBDevice));
-        /// @todo make sure UICommon::usbDetails is checked for errors as well
+        UINotificationMessage::cannotDetachUSBDevice(comConsole, usbDetails(comUSBDevice));
+        /// @todo make sure UIUSBTools::usbDetails is checked for errors as well
     }
     return fSuccess;
 }
@@ -1203,8 +1204,8 @@ bool UISession::webcamDevices(QList<WebcamDeviceInfo> &guiWebcamDevices)
                     }
                     if (fSuccess)
                     {
-                        /// @todo make sure UICommon::usbToolTip is checked for errors as well
-                        guiWebcamDevice.m_strToolTip = uiCommon().usbToolTip(comHostVideoInputDevice);
+                        /// @todo make sure UIUSBTools::usbToolTip is checked for errors as well
+                        guiWebcamDevice.m_strToolTip = usbToolTip(comHostVideoInputDevice);
                         fSuccess = comHostVideoInputDevice.isOk();
                     }
                     if (fSuccess)

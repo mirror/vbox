@@ -38,11 +38,11 @@
 #include "QILabelSeparator.h"
 #include "QIToolBar.h"
 #include "QITreeWidget.h"
-#include "UICommon.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
 #include "UIUSBFilterDetailsEditor.h"
 #include "UIUSBFiltersEditor.h"
+#include "UIUSBTools.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -162,7 +162,7 @@ bool UIUSBMenu::event(QEvent *pEvent)
             CUSBDevice usb = m_usbDeviceMap[pAction];
             if (!usb.isNull())
             {
-                QToolTip::showText(pHelpEvent->globalPos(), uiCommon().usbToolTip(usb));
+                QToolTip::showText(pHelpEvent->globalPos(), usbToolTip(usb));
                 return true;
             }
         }
@@ -195,7 +195,7 @@ void UIUSBMenu::processAboutToShow()
         foreach (const CHostUSBDevice &comHostUsb, comHost.GetUSBDevices())
         {
             CUSBDevice comUsb(comHostUsb);
-            QAction *pAction = addAction(uiCommon().usbDetails(comUsb));
+            QAction *pAction = addAction(usbDetails(comUsb));
             pAction->setCheckable(true);
             m_usbDeviceMap[pAction] = comUsb;
             /* Check if created item was already attached to this session: */
@@ -400,7 +400,7 @@ void UIUSBFiltersEditor::sltAddFilterConfirmed(QAction *pAction)
     /* Prepare new USB filter data: */
     UIDataUSBFilter newFilterData;
     newFilterData.m_fActive = true;
-    newFilterData.m_strName = uiCommon().usbDetails(comUsb);
+    newFilterData.m_strName = usbDetails(comUsb);
     newFilterData.m_strVendorId  = QString::number(comUsb.GetVendorId(),  16).toUpper().rightJustified(4, '0');
     newFilterData.m_strProductId = QString::number(comUsb.GetProductId(), 16).toUpper().rightJustified(4, '0');
     newFilterData.m_strRevision  = QString::number(comUsb.GetRevision(),  16).toUpper().rightJustified(4, '0');

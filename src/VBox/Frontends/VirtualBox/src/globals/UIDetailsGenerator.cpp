@@ -32,7 +32,6 @@
 
 /* GUI includes: */
 #include "UIBootOrderEditor.h"
-#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDetailsGenerator.h"
 #include "UIErrorString.h"
@@ -41,6 +40,7 @@
 #include "UIMedium.h"
 #include "UIMediumTools.h"
 #include "UITranslator.h"
+#include "UIUSBTools.h"
 
 /* COM includes: */
 #include "CAudioAdapter.h"
@@ -606,7 +606,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
             QString strAttachmentInfo = UIMediumTools::storageDetails(attachment.GetMedium(), false, false);
             /* That hack makes sure 'Inaccessible' word is always bold: */
             { // hack
-                const QString strInaccessibleString(UICommon::tr("Inaccessible", "medium"));
+                const QString strInaccessibleString(QApplication::translate("UICommon", "Inaccessible", "medium"));
                 const QString strBoldInaccessibleString(QString("<b>%1</b>").arg(strInaccessibleString));
                 strAttachmentInfo.replace(strInaccessibleString, strBoldInaccessibleString);
             } // hack
@@ -1385,7 +1385,7 @@ void UIDetailsGenerator::acquireUsbStatusInfo(CMachine &comMachine, CConsole &co
     {
         /* Enumerate all the USB devices: */
         foreach (const CUSBDevice &comUsbDevice, comConsole.GetUSBDevices())
-            strInfo += e_strTableRow1.arg(uiCommon().usbDetails(comUsbDevice));
+            strInfo += e_strTableRow1.arg(usbDetails(comUsbDevice));
         /* Handle 'no-usb-devices' case: */
         if (strInfo.isNull())
             strInfo = e_strTableRow1
@@ -1428,7 +1428,7 @@ void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString 
 
     /* Video Memory: */
     const ULONG uVRAMSize = comGraphics.GetVRAMSize();
-    const QString strVRAMSize = UICommon::tr("<nobr>%1 MB</nobr>", "details report").arg(uVRAMSize);
+    const QString strVRAMSize = QApplication::translate("UICommon", "<nobr>%1 MB</nobr>", "details report").arg(uVRAMSize);
     strInfo += e_strTableRow2
         .arg(QApplication::translate("UIIndicatorsPool", "Video memory", "Display tooltip"), strVRAMSize);
 
@@ -1446,8 +1446,8 @@ void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString 
     if (fAcceleration3D)
     {
         const QString strAcceleration3D = fAcceleration3D
-            ? UICommon::tr("Enabled", "details report (3D Acceleration)")
-            : UICommon::tr("Disabled", "details report (3D Acceleration)");
+            ? QApplication::translate("UICommon", "Enabled", "details report (3D Acceleration)")
+            : QApplication::translate("UICommon", "Disabled", "details report (3D Acceleration)");
         strInfo += e_strTableRow2
             .arg(QApplication::translate("UIIndicatorsPool", "3D acceleration", "Display tooltip"), strAcceleration3D);
     }
@@ -1512,19 +1512,19 @@ void UIDetailsGenerator::acquireFeaturesStatusInfo(CMachine &comMachine, QString
             enmEngine = KVMExecutionEngine_NotSet;
             RT_FALL_THRU();
         case KVMExecutionEngine_NotSet:
-            strExecutionEngine = UICommon::tr("not set", "details report (execution engine)");
+            strExecutionEngine = QApplication::translate("UICommon", "not set", "details report (execution engine)");
             break;
     }
 
     /* Nested Paging feature: */
     const QString strNestedPaging = fNestedPagingEnabled
-                                  ? UICommon::tr("Active", "details report (Nested Paging)")
-                                  : UICommon::tr("Inactive", "details report (Nested Paging)");
+                                  ? QApplication::translate("UICommon", "Active", "details report (Nested Paging)")
+                                  : QApplication::translate("UICommon", "Inactive", "details report (Nested Paging)");
 
     /* Unrestricted Execution feature: */
     const QString strUnrestrictExec = fUxEnabled
-                                    ? UICommon::tr("Active", "details report (Unrestricted Execution)")
-                                    : UICommon::tr("Inactive", "details report (Unrestricted Execution)");
+                                    ? QApplication::translate("UICommon", "Active", "details report (Unrestricted Execution)")
+                                    : QApplication::translate("UICommon", "Inactive", "details report (Unrestricted Execution)");
 
     /* CPU Execution Cap feature: */
     const QString strCPUExecCap = QString::number(comMachine.GetCPUExecutionCap());
@@ -1533,16 +1533,16 @@ void UIDetailsGenerator::acquireFeaturesStatusInfo(CMachine &comMachine, QString
     const QString strParavirt = gpConverter->toString(enmProvider);
 
     /* Compose tool-tip: */
-    strInfo += e_strTableRow2.arg(UICommon::tr("Execution engine", "details report"),             strExecutionEngine);
-    strInfo += e_strTableRow2.arg(UICommon::tr("Nested Paging"),                                  strNestedPaging);
-    strInfo += e_strTableRow2.arg(UICommon::tr("Unrestricted Execution"),                         strUnrestrictExec);
-    strInfo += e_strTableRow2.arg(UICommon::tr("Execution Cap", "details report"),                strCPUExecCap);
-    strInfo += e_strTableRow2.arg(UICommon::tr("Paravirtualization Interface", "details report"), strParavirt);
+    strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Execution engine", "details report"),             strExecutionEngine);
+    strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Nested Paging"),                                  strNestedPaging);
+    strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Unrestricted Execution"),                         strUnrestrictExec);
+    strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Execution Cap", "details report"),                strCPUExecCap);
+    strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Paravirtualization Interface", "details report"), strParavirt);
 
     /* Add CPU count optional info: */
     const int cCpuCount = comMachine.GetCPUCount();
     if (cCpuCount > 1)
-        strInfo += e_strTableRow2.arg(UICommon::tr("Processors", "details report"), QString::number(cCpuCount));
+        strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Processors", "details report"), QString::number(cCpuCount));
 }
 
 QString UIDetailsGenerator::summarizeGenericProperties(const CNetworkAdapter &comAdapter)
