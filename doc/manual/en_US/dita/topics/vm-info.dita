@@ -3,18 +3,21 @@
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vm-info">
             <title>Monitoring of Virtual Machines</title>
-            
+  <!-- 7.1: metrics info now included for OCI instances -->        
             <body>
                <p>
       <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> includes the following tools for viewing runtime
-      information and changing the configuration of virtual machines.
+      information, configuration details, and performance metrics of virtual machines and cloud VM instances.
     </p>
+              <note><p>To monitor a cloud VM, the Compute Instance Monitoring plugin must be enabled and running on the
+                <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance. See the <ph conkeyref="vbox-conkeyref-phrases/oci"/> 
+                documentation for more details.</p></note>
                <ul>
                   <li>
                      <p>
                         <b outputclass="bold"> VM Activity Overview.</b>
           Displays an overview of performance metrics for all running
-          VMs.
+          virtual machines and cloud VM instances.
         </p>
                      <p>
           See <xref href="vm-activity-overview.dita#vm-activity-overview"/>.
@@ -24,10 +27,10 @@
                      <p>
                         <b outputclass="bold">Session Information Dialog.</b>
           Displays configuration and runtime information for the
-          selected guest system.
+          selected guest system or cloud VM.
         </p>
                      <p>
-          See <xref href="vm-activity-session-information.dita#vm-activity-session-information"/>
+          See <xref href="vm-activity-session-information.dita#vm-activity-session-information"/>.
                      </p>
                   </li>
                </ul>

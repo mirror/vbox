@@ -51,18 +51,15 @@
         during startup when it is run in a virtual machine. The Guest
         Additions work in those distributions.
       </p>
-    <p>
-        Note that some Linux distributions already come with all or part
-        of the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions. You may choose to keep
-        the distribution's version of the Guest Additions but these are
-        often not up to date and limited in functionality, so we
-        recommend replacing them with the Guest Additions that come with
-        <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Linux Guest Additions
-        installer tries to detect an existing installation and replace
-        them but depending on how the distribution integrates the Guest
-        Additions, this may require some manual interaction. It is
-        highly recommended to take a snapshot of the virtual machine
-        before replacing preinstalled Guest Additions.
-      </p>
+    <p> Note that some Linux distributions already come with all or part of the <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions. You may choose to keep
+      the distribution's version of the Guest Additions but these are often out of date and limited
+      in functionality, so we recommend replacing them with the Guest Additions that come with <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/>. The <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> Linux Guest Additions installer tries to
+      detect an existing installation and replace them but depending on how the distribution
+      integrates the Guest Additions, this may require some manual interaction. It is highly
+      recommended to take a snapshot of the virtual machine before replacing preinstalled Guest
+      Additions. </p>
   </body>
 </topic>

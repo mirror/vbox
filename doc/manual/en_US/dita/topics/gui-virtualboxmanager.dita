@@ -21,6 +21,7 @@
       first time you start <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, before you have created any
       virtual machines.
     </p>
+    <!-- 7.1: Welcome screen now includes Experience Level selection button: new pics required?-->
     <fig id="fig-vbox-manager-initial">
       <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, Showing Welcome Screen After Initial Startup</title>
       <xref href="images/virtualbox-main-empty.png" format="png" platform="htmlhelp">

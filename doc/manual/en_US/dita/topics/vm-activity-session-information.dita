@@ -3,7 +3,8 @@
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vm-activity-session-information">
                <title>Session Information Dialog</title>
-               
+  <!-- 7.1: metrics info for OCI instances-->  
+  <!-- 7.1: Add pic for cloud VM Activity info? -->
                <body>
                   <p>
         The Session Information dialog includes multiple tabs which show
@@ -45,12 +46,10 @@
           </p>
                      </li>
                   </ul>
-                  <p>
-        To display the Session Information dialog, select
-        <b outputclass="bold">Machine</b>,
-        <b outputclass="bold">Session Information</b> in the
-        guest VM.
-      </p>
+                 <note><p>For cloud VMs, only the VM Activity tab is shown.</p></note>
+                  <p> To display session information for a guest virtual machine or a cloud VM,
+      select the VM name in the machine list and click <b>Activity</b> in the machine tools
+      menu.</p>
                  <fig id="fig-vm-session-information">
                    <title>Session Information Dialog, Showing VM Activity Tab</title>
                    <xref href="images/session-information.png" format="png" platform="htmlhelp">

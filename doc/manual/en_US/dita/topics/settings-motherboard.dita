@@ -57,6 +57,7 @@
             Note that ICH9 support is experimental and not recommended
             for guest OSes which do not require it.
           </p>
+        <!-- 7.1: Any chipset options for Arm?-->
       </li>
       <li>
         <p><b outputclass="bold">TPM:</b> Enables support for a

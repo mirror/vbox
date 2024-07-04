@@ -56,10 +56,8 @@
         folder for all virtual machines is <filepath>$HOME/VirtualBox
         VMs</filepath>.
       </p>
-    <p>
-        As an example, when you create a virtual machine called "Example
-        VM", <ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates the following:
-      </p>
+    <p> As an example, when you create a virtual machine called <i>Example VM</i>, <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> creates the following: </p>
     <ul>
       <li>
         <p>

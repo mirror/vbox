@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="guestadd-gc-file-manager">
   <title>Guest Control File Manager</title>
-  
+  <!-- 7.1: new icons added, new pic needed -->
   <body>
     <p>
       The Guest Control File Manager is a feature of the Guest Additions

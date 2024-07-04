@@ -211,17 +211,13 @@
       GUI applications such as <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. The table above contains
       some hints, but in general refer to the Linux documentation.
     </p>
-    <p>
-      If you have trouble getting any beeps even if the device
-      permissions are set up and VBox.log confirms that it uses evdev or
-      console for the PC speaker control, check if your system has a PC
-      speaker. Some systems do not have one. Other complications can
-      arise from Linux rerouting the PC speaker output to a sound card.
-      Check if the beeps are audible if you connect speakers to your
-      sound card. Today almost all systems have one. Finally, check if
-      the audio mixer control has a channel named "beep", which could be
-      hidden in the mixer settings, and that it is not muted.
-    </p>
+    <p> If you have trouble getting any beeps even if the device permissions are set up and VBox.log
+      confirms that it uses evdev or console for the PC speaker control, check if your system has a
+      PC speaker. Some systems do not have one. Other complications can arise from Linux rerouting
+      the PC speaker output to a sound card. Check if the beeps are audible if you connect speakers
+      to your sound card. Today almost all systems have one. Finally, check if the audio mixer
+      control has a channel named <i>beep</i>, which could be hidden in the mixer settings, and that
+      it is not muted. </p>
   </body>
   
 </topic>

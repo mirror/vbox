@@ -3,7 +3,7 @@
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="solaris-zones">
                <title>Configuring a Non-Global Zone for Running <ph conkeyref="vbox-conkeyref-phrases/product-name"/></title>
-
+               
                <body>
                   <p>
         After installing <ph conkeyref="vbox-conkeyref-phrases/product-name"/> in the global zone
@@ -20,7 +20,8 @@
         non-gloabl zone where you plan to run <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       </p>
                   <p>
-        Use <userinput>zonecfg(8)</userinput> to add the <codeph>device</codeph> resource
+        Use <userinput>zonecfg(8)</userinput> to add the
+        <codeph>device</codeph> resource
         and the <codeph>match</codeph> property for each
         <ph conkeyref="vbox-conkeyref-phrases/product-name"/> device node in the global
         zone to the non-global zone as follows:
@@ -37,14 +38,11 @@ zonecfg:vboxzone&gt; exit</pre>
         pointing device or a USB pass-through device, you should also pass through the 
         <filepath>/dev/vboxusbmon</filepath> device using the steps above.
       </p>
-                  <p>
-        Oracle Solaris 11 doesn't support sparse root zones so you will need to
-        loopback mount <filepath>/opt/VirtualBox</filepath> from the
-        global zone into the non-global zone at the same path.  This is
-        done using <userinput>zonecfg(8)</userinput> to set the <codeph>dir</codeph>
-        attribute and the <codeph>special</codeph> attribute for this directory.
-        For example:
-      </p>
+                  <p> Oracle Solaris 11 does not support sparse root zones so you will need to
+      loopback mount <filepath>/opt/VirtualBox</filepath> from the global zone into the non-global
+      zone at the same path. This is done using <userinput>zonecfg(8)</userinput> to set the
+        <codeph>dir</codeph> attribute and the <codeph>special</codeph> attribute for this
+      directory. For example: </p>
                   <pre xml:space="preserve">zonecfg:vboxzone&gt; add fs
 zonecfg:vboxzone:fs&gt; set dir=/opt/VirtualBox
 zonecfg:vboxzone:fs&gt; set special=/opt/VirtualBox
@@ -56,7 +54,7 @@ zonecfg:vboxzone&gt; exit</pre>
         After making the above changes using <userinput>zonecfg(8)</userinput>, reboot the zone
         using <userinput>zoneadm(8)</userinput> as follows:
         </p>
-                  <pre xml:space="preserve">global$ zoneadm -z <varname>vboxzone</varname> reboot
+               <pre xml:space="preserve">global$ zoneadm -z <varname>vboxzone</varname> reboot
                   </pre>
                   <p>
         for the changes to take effect.  You will then be able to run
@@ -64,5 +62,5 @@ zonecfg:vboxzone&gt; exit</pre>
         configured non-global zone.
       </p>
                </body>
-
+               
             </topic>

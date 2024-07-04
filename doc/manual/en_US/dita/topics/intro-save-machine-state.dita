@@ -2,7 +2,6 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="intro-save-machine-state">
   <title>Saving the State of the Machine</title>
-  
   <body>
     <p>
         When you click on the <b outputclass="bold">Close</b>

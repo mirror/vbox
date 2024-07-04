@@ -73,9 +73,7 @@
           allowing the user to select a driver which can be included
           with <ph conkeyref="vbox-conkeyref-phrases/product-name"/> or be distributed in an extension pack.
         </p>
-        <p>
-          The following sub-modes are available:
-        </p>
+        <p> The following submodes are available: </p>
         <ul>
           <li>
             <p><b outputclass="bold">UDP Tunnel:</b> Used to

@@ -3,17 +3,15 @@
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 
 <topic xml:lang="en-us" id="soft-keyb">
+  <!-- 7.1: Updated pic added -->
   <title>Soft Keyboard</title>
-
-
   <body>
     <p>
       <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a <i>soft keyboard</i> that
       enables you to input keyboard characters on the guest. A soft
       keyboard is an on-screen keyboard that can be used as an
       alternative to a physical keyboard. See
-      <xref href="soft-keyb-using.dita#soft-keyb-using"/>
- for details of how to use the
+      <xref href="soft-keyb-using.dita#soft-keyb-using"/> for details of how to use the
       soft keyboard.
     </p>
     <note type="caution">

@@ -135,15 +135,12 @@
                 </p>
               </li>
             </ul>
-            <p>
-              In this case, you can configure whether <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
-              should create the named pipe, or the local domain socket
-              non-Windows hosts, itself or whether <ph conkeyref="vbox-conkeyref-phrases/product-name"/> should
-              assume that the pipe or socket exists already. With the
-              <userinput>VBoxManage</userinput> command-line options, this
-              is referred to as server mode or client mode,
-              respectively.
-            </p>
+            <p> In this case, you can configure whether <ph
+                conkeyref="vbox-conkeyref-phrases/product-name"/> should create the named pipe, or
+              the local domain socket on non-Windows hosts, itself or whether <ph
+                conkeyref="vbox-conkeyref-phrases/product-name"/> should assume that the pipe or
+              socket exists already. With the <userinput>VBoxManage</userinput> command-line
+              options, this is referred to as server mode or client mode, respectively. </p>
             <p>
               For a direct connection between two virtual machines,
               corresponding to a null-modem cable, simply configure one

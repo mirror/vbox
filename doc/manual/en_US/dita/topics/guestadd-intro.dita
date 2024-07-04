@@ -51,13 +51,11 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">Better video support.</b> While
-          the virtual graphics card which <ph conkeyref="vbox-conkeyref-phrases/product-name"/> emulates for
-          any guest operating system provides all the basic features,
-          the custom video drivers that are installed with the Guest
-          Additions provide you with extra high and non-standard video
-          modes, as well as accelerated video performance.
-        </p>
+        <p><b outputclass="bold">Better video support.</b> While the virtual graphics card which <ph
+            conkeyref="vbox-conkeyref-phrases/product-name"/> emulates for any guest operating
+          system provides all the basic features, the custom video drivers that are installed with
+          the Guest Additions provide you with extra high and nonstandard video modes, as well as
+          accelerated video performance. </p>
         <p>
           In addition, with Windows, Linux, and Oracle Solaris guests,
           you can resize the virtual machine's window if the Guest

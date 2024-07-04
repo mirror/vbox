@@ -10,10 +10,8 @@
     </p>
     <ul>
       <li>
-        <p><b outputclass="bold">Host Suspends.</b> This event is
-          generated when the host is about to suspend, that is, the host
-          saves the state to some non-volatile storage and powers off.
-        </p>
+        <p><b outputclass="bold">Host Suspends.</b> This event is generated when the host is about
+          to suspend, that is, the host saves the state to some nonvolatile storage and powers off. </p>
         <p>
           This event is currently only handled on Windows hosts and Mac
           OS X hosts. When this event is generated, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will

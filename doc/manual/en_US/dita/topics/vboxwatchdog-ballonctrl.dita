@@ -4,11 +4,8 @@
   <title>Memory Ballooning Control</title>
   
   <body>
-    <p>
-        The memory ballooning control inflates and deflates the memory
-        balloon of VMs based on the VMs free memory and the desired
-        maximum balloon size.
-      </p>
+    <p> The memory ballooning control inflates and deflates the memory balloon of VMs based on the
+      VMs free memory and the requested maximum balloon size. </p>
     <p>
         To set up the memory ballooning control the maximum ballooning
         size a VM can reach needs to be set. This can be specified using

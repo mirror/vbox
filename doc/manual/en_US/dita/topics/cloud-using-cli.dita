@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-using-cli">
   <title>Using VBoxManage Commands With <ph conkeyref="vbox-conkeyref-phrases/oci"/></title>
-
+  
   <body>
     <p>
         This section includes some examples of how
@@ -78,10 +78,15 @@
       </p>
     <pre xml:space="preserve">VBoxManage cloud --provider="OCI" --profile="vbox-oci" instance terminate \
 --id="ocid1.instance.oc1..." </pre>
+    
+    <p><b outputclass="bold">Showing Cloud Instance Performance Metrics</b></p>
     <p>
-        For more details about the available commands for cloud operations, see <xref
-        href="vboxmanage-cloud.dita"/>.
+      To show CPU usage metrics for a cloud instance:
     </p>
+    <pre xml:space="preserve">VBoxManage cloud --provider="OCI" --profile="vbox-oci" instance metricdata \
+--id="ocid1.instance.oc1..." --metric-name="CpuUtilization"</pre>  
+    <p> For more details about the available commands for cloud operations, see <xref
+      href="vboxmanage-cloud.dita"/>. </p>
   </body>
-
+  
 </topic>

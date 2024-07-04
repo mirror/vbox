@@ -10,15 +10,13 @@
     </p>
     <ul>
       <li>
-        <p><b outputclass="bold">Keep software up to date</b>. One
-          of the principles of good security practise is to keep all
-          software versions and patches up to date. Activate the
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> update notification to get notified when a new
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> release is available. When updating
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, do not forget to update the Guest Additions.
-          Keep the host operating system as well as the guest operating
-          system up to date.
-        </p>
+        <p><b outputclass="bold">Keep software up-to-date</b>. One of the principles of good
+          security practise is to keep all software versions and patches up-to-date. Activate the
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> update notification to get
+          notified when a new <ph conkeyref="vbox-conkeyref-phrases/product-name"/> release is
+          available. When updating <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, do not
+          forget to update the Guest Additions. Keep the host operating system as well as the guest
+          operating system up-to-date. </p>
       </li>
       <li>
         <p><b outputclass="bold">Restrict network access to critical
@@ -54,11 +52,8 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">Keep up to date on latest security
-          information.</b> Oracle continually improves its
-          software and documentation. Check this note yearly for
-          revisions.
-        </p>
+        <p><b outputclass="bold">Keep up-to-date on latest security information.</b> Oracle
+          continually improves its software and documentation. Check this note yearly for revisions. </p>
       </li>
     </ul>
   </body>

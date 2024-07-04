@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="create-optical-disk-image">
   <title>Creating a Virtual Optical Disk Image</title>
-  
+  <!-- 7.1: Can now import VISO files-->
   <body>
     <p>
         Use the <b outputclass="bold">VISO Creator</b> tool to
@@ -31,8 +31,8 @@
                 Configure the name of the ISO file.
               </p>
             <p>
-                Click <b outputclass="bold">Configuration</b> and
-                enter a name in the <b outputclass="bold">Viso
+                Click <b outputclass="bold">Settings</b> and select the <b>VISO Options</b> tab.
+                Enter the name in the <b outputclass="bold">Viso
                 Name</b> field.
               </p>
           </li>
@@ -76,6 +76,14 @@
                     VISO Content</b>.
                   </p>
               </li>
+              <li>
+                <p> To import <i>all</i> file content from an existing ISO into the virtual ISO,
+                  highlight the ISO file name and click <b>Import Selected ISO into the VISO
+                    Content</b>. The imported ISO is opened and content is listed in the <b
+                    outputclass="bold">VISO Content</b> pane.</p>
+                <p>To remove files from the imported ISO, select the files in the <b>Viso
+                    Content</b> pane and click <b>Remove Selected Item(s) from VISO</b>.</p>
+              </li>
             </ul>
           </li>
         </ol>
@@ -85,7 +93,7 @@
             Create the virtual ISO image.
           </p>
         <p>
-            Click <b outputclass="bold">Create</b>.
+            Click <b outputclass="bold">Save and Close</b>.
           </p>
         <p>
             A virtual ISO file with the specified name and content is

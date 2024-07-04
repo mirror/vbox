@@ -4,14 +4,10 @@
   <title>Buffer Overwriting and Disabling Hyper-Threading</title>
   
   <body>
-    <p>
-          First, up to date CPU microcode is a prerequisite for the
-          buffer overwriting (clearing) mitigations. Some host OSes may
-          install these automatically, though it has traditionally been
-          a task best performed by the system firmware. Please check
-          with your system or mainboard manufacturer for the latest
-          firmware update.
-        </p>
+    <p> First, up-to-date CPU microcode is a prerequisite for the buffer overwriting (clearing)
+      mitigations. Some host OSes may install these automatically, though it has traditionally been
+      a task best performed by the system firmware. Please check with your system or mainboard
+      manufacturer for the latest firmware update. </p>
     <p>
           This mitigation aims at removing potentially sensitive data
           from the affected buffers before running guest code. Since

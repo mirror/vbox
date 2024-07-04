@@ -4,16 +4,12 @@
   <title>Networking</title>
   
   <body>
-    <p>
-          The default networking mode for VMs is NAT which means that
-          the VM acts like a computer behind a router, see
-          <xref href="network_nat.dita">Network Address Translation (NAT)</xref>. The guest is part of a private
-          subnet belonging to this VM and the guest IP is not visible
-          from the outside. This networking mode works without any
-          additional setup and is sufficient for many purposes. Keep in
-          mind that NAT allows access to the host operating system's
-          loopback interface.
-        </p>
+    <p> The default networking mode for VMs is NAT which means that the VM acts like a computer
+      behind a router, see <xref href="network_nat.dita">Network Address Translation (NAT)</xref>.
+      The guest is part of a private subnet belonging to this VM and the guest IP is not visible
+      from the outside. This networking mode works without any additional setup and is sufficient
+      for many purposes. Remember that NAT allows access to the host operating system's loopback
+      interface. </p>
     <p>
           If bridged networking is used, the VM acts like a computer
           inside the same network as the host, see

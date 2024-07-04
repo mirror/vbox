@@ -6,13 +6,10 @@
   <body>
     <ul>
       <li>
-        <p><b outputclass="bold">Video Memory:</b> Sets the size
-            of the memory provided by the virtual graphics card
-            available to the guest, in MB. As with the main memory, the
-            specified amount will be allocated from the host's resident
-            memory. Based on the amount of video memory, higher
-            resolutions and color depths may be available.
-          </p>
+        <p><b outputclass="bold">Video Memory:</b> Sets the size of the memory provided by the
+          virtual graphics card available to the guest, in megabytes. As with the main memory, the
+          specified amount will be allocated from the host's resident memory. Based on the amount of
+          video memory, higher resolutions and color depths may be available. </p>
         <p>
             <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> will show a warning if the amount of video memory
             is too small to be able to switch the VM into full screen

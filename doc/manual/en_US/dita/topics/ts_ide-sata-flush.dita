@@ -4,13 +4,9 @@
   <title>Responding to Guest IDE/SATA Flush Requests</title>
   
   <body>
-    <p>
-        If desired, the virtual disk images can be flushed when the
-        guest issues the IDE FLUSH CACHE command. Normally these
-        requests are ignored for improved performance. The parameters
-        below are only accepted for disk drives. They must not be set
-        for DVD drives.
-      </p>
+    <p> If required, the virtual disk images can be flushed when the guest issues the IDE FLUSH
+      CACHE command. Normally these requests are ignored for improved performance. The parameters
+      below are only accepted for disk drives. They must not be set for DVD drives. </p>
     <p>
         To enable flushing for IDE disks, issue the following command:
       </p>

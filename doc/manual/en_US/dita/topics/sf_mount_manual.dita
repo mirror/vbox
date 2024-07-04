@@ -112,13 +112,10 @@ $</pre>
                         <pre xml:space="preserve">VBoxControl sharedfolder use D: MyShareName
 VBoxControl sharedfolder unuse D:
 VBoxControl sharedfolder list</pre>
-                        <p>
-            As with Windows guests, shared folders can also be accessed
-            via UNC using <filepath>\\VBoxSF\</filepath>,
-            <filepath>\\VBoxSvr\</filepath> or
-            <filepath>\\VBoxSrv\</filepath> as the server name and the
-            shared folder name as <varname>sharename</varname>.
-          </p>
+                        <p> As with Windows guests, shared folders can also be accessed using UNC ,
+          with <filepath>\\VBoxSF\</filepath>, <filepath>\\VBoxSvr\</filepath> or
+            <filepath>\\VBoxSrv\</filepath> as the server name and the shared folder name as
+            <varname>sharename</varname>. </p>
                      </li>
                   </ul>
                </body>

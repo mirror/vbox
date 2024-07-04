@@ -48,11 +48,9 @@
           </p>
       </li>
       <li>
-        <p><b outputclass="bold">Video Quality:</b> Use the
-            slider to set the the bit rate of the video in kilobits per
-            second. Increasing this value improves the appearance of the
-            video at the cost of an increased file size.
-          </p>
+        <p><b outputclass="bold">Video Quality:</b> Use the slider to set the bit rate of the video
+          in kilobits per second. Increasing this value improves the appearance of the video at the
+          cost of an increased file size. </p>
       </li>
       <li>
         <p><b outputclass="bold">Audio Quality:</b> Use the

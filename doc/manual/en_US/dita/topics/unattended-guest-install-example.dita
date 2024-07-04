@@ -3,7 +3,6 @@
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="unattended-guest-install-example">
                <title>Using VBoxManage Commands for Unattended Guest Installation</title>
-
                <body>
                   <p>
         The following example shows how to perform an unattended guest
@@ -183,5 +182,4 @@
                      </li>
                   </ol>
                </body>
-
             </topic>

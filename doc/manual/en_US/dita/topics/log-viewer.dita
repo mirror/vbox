@@ -10,6 +10,7 @@
       <b outputclass="bold">Log Viewer</b> is a <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> tool
       that enables you to view and analyze system logs.
     </p>
+    <!-- 7.1: New pic required? Tab operation changed. Log Viewer/Filter pane. bugref:10496 -->
     <fig id="fig-log-viewer-tool">
       <title>Log Viewer Tool, Showing System Events</title>
       <xref href="images/log-viewer.png" format="png" platform="htmlhelp">
@@ -81,9 +82,8 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">Options:</b> Configures the text
-          display used in the log message window.
-        </p>
+        <p><b outputclass="bold">Preferences:</b> Configures the text display used in the log
+          message window. </p>
       </li>
       <li>
         <p><b outputclass="bold">Refresh:</b> Refreshes the log

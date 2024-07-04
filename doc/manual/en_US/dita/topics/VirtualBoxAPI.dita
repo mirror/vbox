@@ -5,12 +5,11 @@
   
   <body>
     <p>
-    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> comes with comprehensive support for third-party
-    developers. The so-called <i>Main API</i> of
-    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> exposes the entire feature set of the virtualization
-    engine. It is completely documented and available to anyone who
-    wishes to control <ph conkeyref="vbox-conkeyref-phrases/product-name"/> programmatically.
-  </p>
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> comes with comprehensive support for
+      third-party developers. The so-called <i>Main API</i> of <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> exposes the entire feature set of the
+      virtualization engine. It is completely documented and available to anyone who wants to
+      control <ph conkeyref="vbox-conkeyref-phrases/product-name"/> programmatically. </p>
     <p>
     The Main API is made available to C++ clients through COM on Windows
     hosts or XPCOM on other hosts. Bridges also exist for SOAP, Java and

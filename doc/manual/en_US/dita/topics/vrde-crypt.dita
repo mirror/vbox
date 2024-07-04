@@ -40,11 +40,8 @@
             and, as a part of the TLS handshake, sends the server
             certificate to the client.
           </p>
-        <p>
-            The <codeph>Security/Method</codeph> VRDE property sets
-            the desired security method, which is used for a connection.
-            Valid values are as follows:
-          </p>
+        <p> The <codeph>Security/Method</codeph> VRDE property sets the required security method,
+          which is used for a connection. Valid values are as follows: </p>
         <ul>
           <li>
             <p><b outputclass="bold">Negotiate.</b> Both

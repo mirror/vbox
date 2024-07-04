@@ -4,12 +4,10 @@
   <title>Technical Background</title>
   
   <body>
-    <p>
-    This chapter provides additional information for readers who are
-    familiar with computer architecture and technology and wish to find
-    out more about how <ph conkeyref="vbox-conkeyref-phrases/product-name"/> works <i>under the
-    hood</i>. The contents of this chapter are not required
-    reading in order to use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> successfully.
-  </p>
+    <p> This chapter provides additional information for readers who are familiar with computer
+      architecture and technology and want to find out more about how <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> works <i>under the hood</i>. The contents
+      of this chapter are not required reading in order to use <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> successfully. </p>
   </body>
 </topic>

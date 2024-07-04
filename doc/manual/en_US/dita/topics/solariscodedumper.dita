@@ -20,16 +20,12 @@
     </p>
     <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> VBoxInternal2/CoreDumpDir <varname>path-to-directory</varname>
                </pre>
-    <p>
-      Make sure the directory you specify is on a volume with sufficient
-      free space and that the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> process has sufficient
-      permissions to write files to this directory. If you skip this
-      command and do not specify any core dump directory, the current
-      directory of the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> executable will be used. This
-      would most likely fail when writing cores as they are protected
-      with root permissions. It is recommended you explicitly set a core
-      dump directory.
-    </p>
+    <p> Ensure the directory you specify is on a volume with sufficient free space and that the <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> process has sufficient permissions to
+      write files to this directory. If you skip this command and do not specify any core dump
+      directory, the current directory of the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
+      executable will be used. This would most likely fail when writing cores as they are protected
+      with root permissions. It is recommended you explicitly set a core dump directory. </p>
     <p>
       You must specify when the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> CoreDumper should be
       triggered. This is done using the following commands:

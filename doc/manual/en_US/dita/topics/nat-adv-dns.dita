@@ -4,14 +4,10 @@
   <title>Enabling DNS Proxy in NAT Mode</title>
   
   <body>
-    <p>
-        The NAT engine by default offers the same DNS servers to the
-        guest that are configured on the host. In some scenarios, it can
-        be desirable to hide the DNS server IPs from the guest, for
-        example when this information can change on the host due to
-        expiring DHCP leases. In this case, you can tell the NAT engine
-        to act as DNS proxy using the following command:
-      </p>
+    <p> The NAT engine by default offers the same DNS servers to the guest that are configured on
+      the host. In some scenarios, it can be appropriate to hide the DNS server IPs from the guest,
+      for example when this information can change on the host due to expiring DHCP leases. In this
+      case, you can tell the NAT engine to act as DNS proxy using the following command: </p>
     <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> --natdnsproxy1 on</pre>
   </body>
   

@@ -89,17 +89,14 @@
           </li>
           <li>
             <p><b outputclass="bold">Hardware compatibility.</b>
-              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> virtualizes a vast array of virtual
-              devices, among them many devices that are typically
-              provided by other virtualization platforms. That includes
-              IDE, SCSI, and SATA hard disk controllers, several virtual
-              network cards and sound cards, virtual serial and parallel
-              ports and an Input/Output Advanced Programmable Interrupt
-              Controller (I/O APIC), which is found in many computer
-              systems. This enables easy cloning of disk images from
-              real machines and importing of third-party virtual
-              machines into <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
-            </p>
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> virtualizes a vast array of
+              virtual devices, among them many devices that are typically provided by other
+              virtualization platforms. That includes IDE, SCSI, and SATA hard disk controllers,
+              several virtual network cards and sound cards, virtual serial ports and an
+              Input/Output Advanced Programmable Interrupt Controller (I/O APIC), which is found in
+              many computer systems. This enables easy cloning of disk images from real machines and
+              importing of third-party virtual machines into <ph
+                conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
           </li>
           <li>
             <p><b outputclass="bold">Full ACPI support.</b> The

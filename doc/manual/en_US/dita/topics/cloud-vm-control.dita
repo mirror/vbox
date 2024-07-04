@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-vm-control">
   <title>Controlling a Cloud VM</title>
-  
+  <!-- 7.1: OCI instance reset feature-->
   <body>
     <p>
           You can use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to control a cloud VM as follows:
@@ -15,11 +15,15 @@
             </p>
       </li>
       <li>
-        <p><b outputclass="bold">Stop.</b> Right-click on the
-              cloud VM name, to display the
-              <b outputclass="bold">Close</b> menu. Options to
+        <p><b outputclass="bold">Stop.</b> Click on the
+              cloud VM name and select <b>Machine</b>, <b>Stop</b>. Menu options to
               shut down and power off the cloud VM are available.
             </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Reset.</b> Click on the
+          cloud VM name and select <b>Machine</b>, <b>Reset</b>. The cloud VM is stopped, then restarted automatically.
+        </p>
       </li>
       <li>
         <p><b outputclass="bold">Terminate.</b> Use the
@@ -36,8 +40,7 @@
     <p>
           When you control a cloud VM in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> the machine list is
           updated automatically with the current instance state, such as
-          <b outputclass="bold">Stopped</b> or
-          <b outputclass="bold">Running</b>.
+          <b outputclass="bold">Stopped</b> or <b outputclass="bold">Running</b>.
         </p>
     <p>
           When you control an instance using the <ph conkeyref="vbox-conkeyref-phrases/oci"/> console,

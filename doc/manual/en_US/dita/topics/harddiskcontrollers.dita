@@ -14,18 +14,14 @@
     </p>
     <ul>
       <li>
-        <p><b outputclass="bold">IDE (ATA)</b> controllers are a
-          backwards-compatible yet very advanced extension of the disk
-          controller in the IBM PC/AT (1984). Initially, this interface
-          worked only with hard disks, but was later extended to also
-          support CD-ROM drives and other types of removable media. In
-          physical PCs, this standard uses flat ribbon parallel cables
-          with 40 or 80 wires. Each such cable can connect two devices,
-          called device 0 and device 1, to a controller. Typical PCs had
-          two connectors for such cables. As a result, support for up to
-          four IDE devices was most common: primary device 0, primary
-          device 1, secondary device 0, and secondary device 1.
-        </p>
+        <p><b outputclass="bold">IDE (ATA)</b> controllers are a backward-compatible yet very
+          advanced extension of the disk controller in the IBM PC/AT (1984). Initially, this
+          interface worked only with hard disks, but was later extended to also support CD-ROM
+          drives and other types of removable media. In physical PCs, this standard uses flat ribbon
+          parallel cables with 40 or 80 wires. Each such cable can connect two devices, called
+          device 0 and device 1, to a controller. Typical PCs had two connectors for such cables. As
+          a result, support for up to four IDE devices was most common: primary device 0, primary
+          device 1, secondary device 0, and secondary device 1. </p>
         <p>
           In <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, each virtual machine may have one IDE
           controller enabled, which gives you up to four virtual storage

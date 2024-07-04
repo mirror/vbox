@@ -1,8 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="frontends">
-  <title>Alternative Front-Ends</title>
-  
+  <title>Alternative Front Ends</title>
   <body>
     <p>
       As briefly mentioned in <xref href="features-overview.dita#features-overview"/>,
@@ -14,18 +13,15 @@
       you can even run virtual machines remotely on a headless server
       and have all the graphical output redirected over the network.
     </p>
-    <p>
-      The following front-ends are shipped in the standard
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> package:
-    </p>
+    <p> The following front ends are shipped in the standard <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> package: </p>
     <ul>
       <li>
-        <p><b outputclass="bold">VirtualBox.</b> This is the
-          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, a graphical user interface that uses the Qt
-          toolkit. This interface is described throughout this manual.
-          While this is the simplest and easiest front-end to use, some
-          of the more advanced <ph conkeyref="vbox-conkeyref-phrases/product-name"/> features are not included.
-        </p>
+        <p><b outputclass="bold">VirtualBox.</b> This is the <ph
+            conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, a graphical user interface that uses the
+          Qt toolkit. This interface is described throughout this manual. While this is the simplest
+          and easiest front end to use, some of the more advanced <ph
+            conkeyref="vbox-conkeyref-phrases/product-name"/> features are not included. </p>
       </li>
       <li>
         <p><b outputclass="bold">VBoxManage.</b> A command-line
@@ -35,25 +31,26 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">VBoxHeadless.</b> A front-end
-          that produces no visible output on the host at all, but can
-          act as a RDP server if the VirtualBox Remote Desktop Extension
-          (VRDE) is installed and enabled for the VM. As opposed to the
-          other graphical interfaces, the headless front-end requires no
-          graphics support. This is useful, for example, if you want to
-          host your virtual machines on a headless Linux server that has
-          no X Window system installed. See
-          <xref href="vboxheadless.dita">VBoxHeadless, the Remote Desktop Server</xref>.
-        </p>
+        <p><b outputclass="bold">VBoxHeadless.</b> A front end that produces no visible output on
+          the host at all, but can act as a RDP server if the VirtualBox Remote Desktop Extension
+          (VRDE) is installed and enabled for the VM. As opposed to the other graphical interfaces,
+          the headless front end requires no graphics support. This is useful, for example, if you
+          want to host your virtual machines on a headless Linux server that has no X Window system
+          installed. See <xref href="vboxheadless.dita">VBoxHeadless, the Remote Desktop
+            Server</xref>. </p>
+      </li>
+      <li>
+        <!-- Separate mode: check with Klaus whether this needs to be covered in 7.1-->
+        <p><b>Separate mode.</b> A front end that is based on <userinput>VBoxHeadless</userinput>, 
+          but does not require VRDE or an RDP viewer. See <xref href="vboxheadless-separate-mode.dita">Separate Mode</xref>.</p>
       </li>
     </ul>
-    <p>
-      If the above front-ends still do not satisfy your particular
-      needs, it is possible to create yet another front-end to the
-      complex virtualization engine that is the core of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>,
-      as the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> core neatly exposes all of its features in a
-      clean API. See <xref href="VirtualBoxAPI.dita"><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Programming Interfaces</xref>.
-    </p>
+    <p> If the above front ends still do not satisfy your particular needs, it is possible to create
+      yet another front end to the complex virtualization engine that is the core of <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/>, as the <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> core neatly exposes all of its features in
+      a clean API. See <xref href="VirtualBoxAPI.dita"><ph
+          conkeyref="vbox-conkeyref-phrases/product-name"/> Programming Interfaces</xref>. </p>
   </body>
   
 </topic>

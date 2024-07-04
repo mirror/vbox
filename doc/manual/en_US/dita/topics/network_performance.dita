@@ -26,15 +26,11 @@
         Knowledge base article 842264 for additional information.
       </p>
                </note>
-               <p>
-      Three attachment types: Internal, Bridged, and Host-Only, have
-      nearly identical performance. The Internal type is a little bit
-      faster and uses less CPU cycles as the packets never reach the
-      host's network stack. The NAT attachment type is the slowest and
-      most secure of all attachment types, as it provides network
-      address translation. The generic driver attachment is special and
-      cannot be considered as an alternative to other attachment types.
-    </p>
+               <p> Three attachment types: Internal, Bridged, and Host-Only, have nearly identical
+      performance. The Internal type is slightly faster and uses less CPU cycles as the packets
+      never reach the host's network stack. The NAT attachment type is the slowest and most secure
+      of all attachment types, as it provides network address translation. The generic driver
+      attachment is special and cannot be considered as an alternative to other attachment types. </p>
                <p>
       The number of CPUs assigned to VM does not improve network
       performance and in some cases may hurt it due to increased
@@ -57,12 +53,9 @@
         </p>
                   </li>
                   <li>
-                     <p>
-          Make sure segmentation offloading is enabled in the guest OS.
-          Usually it will be enabled by default. You can check and
-          modify offloading settings using the
-          <userinput>ethtool</userinput> command on Linux guests.
-        </p>
+                     <p> Ensure segmentation offloading is enabled in the guest OS. Usually it will
+          be enabled by default. You can check and modify offloading settings using the
+            <userinput>ethtool</userinput> command on Linux guests. </p>
                   </li>
                   <li>
                      <p>

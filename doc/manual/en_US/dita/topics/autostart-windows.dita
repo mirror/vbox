@@ -73,11 +73,8 @@
         Windows security policies, the autostart service cannot be
         installed for users with empty passwords.
       </p>
-    <p>
-        Finally, the user should define which VMs should be started at
-        boot. The user should run the following command for every VM
-        they wish to start at boot:
-      </p>
+    <p> Finally, the user should define which VMs should be started at boot. The user should run the
+      following command for every VM they want to start at boot: </p>
     <pre xml:space="preserve">VBoxManage modifyvm <varname>VM name or UUID</varname> --autostart-enabled on</pre>
     <p>
         The user can remove a particular VM from the VMs starting at
@@ -85,12 +82,9 @@
       </p>
     <pre xml:space="preserve">VBoxManage modifyvm <varname>VM name or UUID</varname> --autostart-enabled off</pre>
     <note>
-      <p>
-          On Windows hosts, starting VMs via the autostart service might
-          cause some issues, as the virtual machines are starting within
-          the same session as VBoxSVC. For more information see
-          <xref href="vboxsvc-session-0.dita#vboxsvc-session-0"/>.
-        </p>
+      <p> On Windows hosts, starting VMs by using the autostart service might cause some issues, as
+        the virtual machines are starting within the same session as VBoxSVC. For more information
+        see <xref href="vboxsvc-session-0.dita#vboxsvc-session-0"/>. </p>
     </note>
   </body>
   

@@ -14,17 +14,6 @@
           <b outputclass="bold">Machine Tools</b> menu is
           displayed.
         </p>
-    <fig id="fig-machine-tools-menu">
-      <title>Machine Tools Menu</title>
-      <xref href="images/machine-tools-menu.png" format="png" platform="htmlhelp">
-        <image href="images/machine-tools-menu.png" width="10cm" placement="break">
-          <alt>Machine Tools Menu</alt>
-        </image>
-      </xref>
-      <image platform="ohc" href="images/machine-tools-menu.png" width="10cm" placement="break">
-        <alt>Machine Tools Menu</alt>
-      </image>
-    </fig>
     <p>
           A drop-down list enables you to select from the following
           machine tools:
@@ -68,6 +57,10 @@
             </p>
       </li>
     </ul>
+    <note>
+      <p>The available tools may vary, depending on the selected experience level for the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user interface.</p>
+      <p>See <xref href="ui-experience-level.dita#gui-experience-level"/>.</p>
+    </note>
   </body>
   
 </topic>

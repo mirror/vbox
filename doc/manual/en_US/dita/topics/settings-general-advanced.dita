@@ -41,6 +41,7 @@
             in the <b outputclass="bold">Devices</b> menu of the
             virtual machine.
           </p>
+        <!--7.1: r159813: checkbox added to the Shared Clipboard menu? -->
       </li>
       <li>
         <p><b outputclass="bold">Drag and Drop:</b> This setting

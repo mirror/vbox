@@ -7,6 +7,10 @@
     <p>
           A summary of settings is shown for the virtual machine.
         </p>
+    <note>
+      <p>Settings shown may vary, depending on the selected experience level for the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user interface.</p>
+      <p>See <xref href="ui-experience-level.dita#gui-experience-level"/>.</p>
+    </note>
     <p>
           You can change some virtual machine settings, by clicking on
           the setting in the Details pane.

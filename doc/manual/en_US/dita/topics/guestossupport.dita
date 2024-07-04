@@ -9,6 +9,7 @@
       virtualization environment for x86 systems, it can run guest
       operating systems (OSes) of any kind.
     </p>
+    <!-- 7.1: Require info on supported aarch64 guest OSes -->
     <p>
       The following guest OS platforms are supported:
     </p>
@@ -24,8 +25,7 @@
           can be used with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, but only qualify
           for limited support because of the vintage of the technology involved. Therefore,
           resolution of customer issues for such legacy guest OS platforms cannot be assured. See
-            <xref href="#guestossupport/table-limited-support"/>.
-        </p>
+            <xref href="#guestossupport/table-limited-support"/>. </p>
       </li>
     </ul>
     <table id="table-premier-support">

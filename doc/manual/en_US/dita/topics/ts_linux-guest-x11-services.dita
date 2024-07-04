@@ -21,17 +21,12 @@ $ VBoxClient --seamless</pre>
         worth checking whether the process which should provide it is
         running.
       </p>
-    <p>
-        The <userinput>VBoxClient</userinput> processes create files in the
-        user's home directory with names of the form
-        <filepath>.vboxclient-*.pid</filepath> when they are running in
-        order to prevent a given service from being started twice. It
-        can happen due to misconfiguration that these files are created
-        owned by root and not deleted when the services are stopped,
-        which will prevent them from being started in future sessions.
-        If the services cannot be started, you may wish to check whether
-        these files still exist.
-      </p>
+    <p> The <userinput>VBoxClient</userinput> processes create files in the user's home directory
+      with names of the form <filepath>.vboxclient-*.pid</filepath> when they are running in order
+      to prevent a given service from being started twice. It can happen due to misconfiguration
+      that these files are created owned by root and not deleted when the services are stopped,
+      which will prevent them from being started in future sessions. If the services cannot be
+      started, you may want to check whether these files still exist. </p>
   </body>
   
 </topic>

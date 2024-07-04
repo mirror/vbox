@@ -13,14 +13,10 @@
           guest to see. In addition, flushing the level 1 data cache is
           usually not without performance side effects.
         </p>
-    <p>
-          Up to date CPU microcode is a prerequisite for the cache
-          flushing mitigations. Some host OSes may install these
-          automatically, though it has traditionally been a task best
-          performed by the system firmware. So, please check with your
-          system / mainboard manufacturer for the latest firmware
-          update.
-        </p>
+    <p> Up-to-date CPU microcode is a prerequisite for the cache flushing mitigations. Some host
+      OSes may install these automatically, though it has traditionally been a task best performed
+      by the system firmware. So, please check with your system / mainboard manufacturer for the
+      latest firmware update. </p>
     <p>
           We recommend disabling hyper threading on the host. This is
           traditionally done from the firmware setup, but some OSes also
@@ -36,16 +32,12 @@
           handle security sensitive data from interrupt handlers and
           similar without taking precautions.
         </p>
-    <p>
-          A more aggressive flushing option is provided via the
-          <userinput>VBoxManage modifyvm</userinput>
-           <codeph>--l1d-flush-on-vm-entry</codeph> option. When enabled
-          the level 1 data cache will be flushed on every VM entry. The
-          performance impact is greater than with the default option,
-          though this of course depends on the workload. Workloads
-          producing a lot of VM exits (like networking, VGA access, and
-          similiar) will probably be most impacted.
-        </p>
+    <p> A more aggressive flushing option is provided using the <userinput>VBoxManage
+        modifyvm</userinput>
+      <codeph>--l1d-flush-on-vm-entry</codeph> option. When enabled the level 1 data cache will be
+      flushed on every VM entry. The performance impact is greater than with the default option,
+      though this of course depends on the workload. Workloads producing a lot of VM exits (like
+      networking, VGA access, and similiar) will probably be most impacted. </p>
     <p>
           For users not concerned by this security issue, the default
           mitigation can be disabled using the <userinput>VBoxManage

@@ -4,10 +4,7 @@
   <title id="doc-accessibility-title">Documentation Accessibility</title>
   <body>
     <section id="doc-accessibility-body">
-      <p> For information about Oracle's commitment to accessibility, visit the Oracle Accessibility
-        Program website at <xref href="http://www.oracle.com/pls/topic/lookup?ctx=acc&amp;id=docacc" format="html" scope="external"/>. </p>
-      <p>For information about the accessibility of the Oracle Help Center, see the Oracle
-        Accessibility Conformance Report at <xref href="https://www.oracle.com/corporate/accessibility/templates/t2-11535.html" format="html" scope="external"/>.</p>
+      <p>For information about Oracle's commitment to accessibility, visit the <xref href="https://www.oracle.com/corporate/accessibility/" format="html" scope="external">Oracle Accessibility Program</xref>. </p>
     </section>
   </body>
 </topic>

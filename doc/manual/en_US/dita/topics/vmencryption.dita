@@ -16,13 +16,10 @@
       (DEK). The DEK is stored encrypted in the VM configuration file
       and is decrypted during VM startup.
     </p>
-    <p>
-      Since the DEK is stored as part of the VM configuration file, it
-      is important that the file is kept safe. Losing the DEK means that
-      the data stored in the VM is lost irrecoverably. Having complete
-      and up to date backups of all data related to the VM is the
-      responsibility of the user.
-    </p>
+    <p> Since the DEK is stored as part of the VM configuration file, it is important that the file
+      is kept safe. Losing the DEK means that the data stored in the VM is lost irrecoverably.
+      Having complete and up-to-date backups of all data related to the VM is the responsibility of
+      the user. </p>
     <p>
       The VM, even if it is encrypted, may contain media encrypted with
       different passwords. To deal with this, the password for the VM

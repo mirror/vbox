@@ -16,10 +16,8 @@
         guest driver is started, the mouse capture is automatically
         released.
       </p>
-    <p>
-        The default behavior is sometimes not desired. Therefore it can
-        be configured as follows:
-      </p>
+    <p> The default behavior is sometimes not appropriate. Therefore it can be configured as
+      follows: </p>
     <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> GUI/MouseCapturePolicy <varname>mode</varname>
                   </pre>
     <p><varname>mode</varname> is one of the following:

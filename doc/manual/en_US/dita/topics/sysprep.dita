@@ -4,17 +4,12 @@
   <title>Automated Windows System Preparation</title>
   
   <body>
-    <p>
-        Microsoft offers a system preparation tool called Sysprep, to
-        prepare a Windows system for deployment or redistribution. Some
-        Windows releases include Sysprep on the installation medium, but
-        the tool is also available for download from the Microsoft web
-        site. In a standard For most Windows versions, Sysprep is
-        included in a default installation. Sysprep mainly consists of
-        an executable called <userinput>sysprep.exe</userinput> which is
-        invoked by the user to put the Windows installation into
-        preparation mode.
-      </p>
+    <p> Microsoft offers a system preparation tool called Sysprep, to prepare a Windows system for
+      deployment or redistribution. Some Windows releases include Sysprep on the installation
+      medium, but the tool is also available for download from the Microsoft website. In a standard
+      For most Windows versions, Sysprep is included in a default installation. Sysprep mainly
+      consists of an executable called <userinput>sysprep.exe</userinput> which is invoked by the
+      user to put the Windows installation into preparation mode. </p>
     <p>
         The Guest Additions offer a way to launch a system preparation
         on the guest operating system in an automated way, controlled

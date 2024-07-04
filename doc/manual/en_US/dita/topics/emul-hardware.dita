@@ -4,11 +4,9 @@
   <title>Emulated Hardware</title>
   
   <body>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> virtualizes nearly all hardware of the host.
-      Depending on a VM's configuration, the guest will see the
-      following virtual hardware:
-    </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> virtualizes nearly all of the host's
+      hardware. Depending on a VM's configuration, the guest will see the following virtual
+      hardware: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Input devices.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
@@ -51,25 +49,12 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">USB.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> emulates
-          these types of USB host controllers: xHCI, EHCI, and OHCI.
-          While xHCI handles all USB transfer speeds, some legacy guest
-          OSes may not support xHCI. Note that for some legacy Windows
-          guests, third party drivers must be installed for xHCI
-          support.
-        </p>
-        <p>
-          Legacy guest OSes typically support OHCI and EHCI. These two
-          controllers are needed because OHCI only handles USB low-speed
-          and full-speed devices (both USB 1.x and 2.0), while EHCI only
-          handles high-speed devices (USB 2.0 only).
-        </p>
-        <p>
-          The emulated USB controllers do not communicate directly with
-          devices on the host. Instead they communicate with a virtual
-          USB layer which abstracts the USB protocol and enables the use
-          of remote USB devices.
-        </p>
+        <p><b outputclass="bold">USB.</b>
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> emulates the most common USB host
+          controllers. See <xref href="usb-support.dita"/>.</p>
+        <p>The emulated USB controllers do not communicate directly with devices on the host.
+          Instead they communicate with a virtual USB layer that abstracts the USB protocol and
+          enables the use of remote USB devices. </p>
       </li>
       <li>
         <p><b outputclass="bold">Audio.</b> See

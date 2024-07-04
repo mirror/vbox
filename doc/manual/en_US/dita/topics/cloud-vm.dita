@@ -2,7 +2,6 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-vm">
   <title>Using Cloud Virtual Machines</title>
-  
   <body>
     <p>
         A cloud virtual machine (<i>cloud VM</i>) is a
@@ -22,14 +21,14 @@
         </p>
     </note>
     <fig id="fig-cloud-vm-overview">
-      <title>Cloud VMs, Shown in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></title>
-      <xref href="images/cloudvm-overview.png" format="png" platform="htmlhelp">
-        <image href="images/cloudvm-overview.png" width="12cm" placement="break">
-          <alt>Cloud VMs, Shown in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></alt>
+      <title>Cloud VMs, Shown With Local VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></title>
+      <xref href="images/cloudvm-overview-mixed.png" format="png" platform="htmlhelp">
+        <image href="images/cloudvm-overview-mixed.png" width="12cm" placement="break">
+          <alt>Cloud VMs, Shown With Local VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></alt>
         </image>
       </xref>
-      <image platform="ohc" href="images/cloudvm-overview.png" width="12cm" placement="break">
-        <alt>Cloud VMs, Shown in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></alt>
+      <image platform="ohc" href="images/cloudvm-overview-mixed.png" width="12cm" placement="break">
+        <alt>Cloud VMs, Shown With Local VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></alt>
       </image>
     </fig>
     <p>
@@ -45,6 +44,11 @@
         <p><b outputclass="bold"> Use an existing <ph conkeyref="vbox-conkeyref-phrases/oci"/>
             instance.</b> See <xref href="cloud-vm-add.dita#cloud-vm-add"/>.
           </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Copy an existing <ph conkeyref="vbox-conkeyref-phrases/oci"/>
+          instance.</b> See <xref href="cloud-vm-clone.dita#cloud-vm-clone"/>.
+        </p>
       </li>
       <li>
         <p><b outputclass="bold">Configure an <ph conkeyref="vbox-conkeyref-phrases/oci"/>

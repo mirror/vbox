@@ -4,14 +4,10 @@
   <title>USB Not Working</title>
   
   <body>
-    <p>
-        If USB is not working on your Linux host, make sure that the
-        current user is a member of the <codeph>vboxusers</codeph>
-        group. Please keep in mind that group membership does not take
-        effect immediately but rather at the next login. If available,
-        the <userinput>newgrp</userinput> command may avoid the need for a
-        logout and login.
-      </p>
+    <p> If USB is not working on your Linux host, make sure that the current user is a member of the
+        <codeph>vboxusers</codeph> group. Please remember that group membership does not take effect
+      immediately but rather at the next login. If available, the <userinput>newgrp</userinput>
+      command may avoid the need for a logout and login. </p>
   </body>
   
 </topic>

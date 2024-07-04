@@ -18,12 +18,9 @@
       startup by entering a password which was chosen when the image was
       encrypted.
     </p>
-    <p>
-      Since the DEK is stored as part of the VM configuration file, it
-      is important that it is kept safe. Losing the DEK means that the
-      data stored in the disk images is lost irrecoverably. Having
-      complete and up to date backups of all data related to the VM is
-      the responsibility of the user.
-    </p>
+    <p> Since the DEK is stored as part of the VM configuration file, it is important that it is
+      kept safe. Losing the DEK means that the data stored in the disk images is lost irrecoverably.
+      Having complete and up-to-date backups of all data related to the VM is the responsibility of
+      the user. </p>
   </body>
 </topic>

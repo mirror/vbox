@@ -4,15 +4,11 @@
   <title>Uninstalling the Linux Guest Additions</title>
   
   <body>
-    <p>
-          If you have a version of the Guest Additions installed on your
-          virtual machine and wish to remove it without installing new
-          ones, you can do so by inserting the Guest Additions CD image
-          into the virtual CD-ROM drive as described above. Then run the
-          installer for the current Guest Additions with the
-          <codeph>uninstall</codeph> parameter from the path that the
-          CD image is mounted on in the guest, as follows:
-        </p>
+    <p> If you have a version of the Guest Additions installed on your virtual machine and want to
+      remove it without installing new ones, you can do so by inserting the Guest Additions CD image
+      into the virtual CD-ROM drive as described above. Then run the installer for the current Guest
+      Additions with the <codeph>uninstall</codeph> parameter from the path that the CD image is
+      mounted on in the guest, as follows: </p>
     <pre xml:space="preserve">sh ./VBoxLinuxAdditions.run uninstall</pre>
     <p>
           While this will normally work without issues, you may need to

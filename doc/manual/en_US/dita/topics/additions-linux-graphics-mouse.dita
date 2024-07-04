@@ -30,12 +30,9 @@
           the guest screens can be adjusted as needed using the tools
           which come with the guest operating system.
         </p>
-    <p>
-          If you want to understand more about the details of how the
-          X.Org drivers are set up, in particular if you wish to use
-          them in a setting which our installer does not handle
-          correctly, see <xref href="guestxorgsetup.dita">Guest Graphics and Mouse Driver Setup in Depth</xref>.
-        </p>
+    <p> If you want to understand more about the details of how the X.Org drivers are set up, in
+      particular if you want to use them in a setting which our installer does not handle correctly,
+      see <xref href="guestxorgsetup.dita">Guest Graphics and Mouse Driver Setup in Depth</xref>. </p>
     <p>
           Starting from <ph conkeyref="vbox-conkeyref-phrases/product-name"/> 7, Linux guest screen resize
           functionality for guests running VMSVGA graphics configuration

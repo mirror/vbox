@@ -20,17 +20,12 @@
           </p>
       </li>
       <li>
-        <p><b outputclass="bold">Receiving of UDP
-            broadcasts.</b> The guest does not reliably receive
-            UDP broadcasts. In order to save resources, it only listens
-            for a certain amount of time after the guest has sent UDP
-            data on a particular port. As a consequence, NetBios name
-            resolution based on broadcasts does not always work, but
-            WINS always works. As a workaround, you can use the numeric
-            IP of the desired server in the
-            <filepath>\\<varname>server</varname>\<varname>share</varname></filepath>
-            notation.
-          </p>
+        <p><b outputclass="bold">Receiving of UDP broadcasts.</b> The guest does not reliably
+          receive UDP broadcasts. In order to save resources, it only listens for a certain amount
+          of time after the guest has sent UDP data on a particular port. As a consequence, NetBios
+          name resolution based on broadcasts does not always work, but WINS always works. As a
+          workaround, you can use the numeric IP of the required server in the
+              <filepath>\\<varname>server</varname>\<varname>share</varname></filepath> notation. </p>
       </li>
       <li>
         <p><b outputclass="bold">Some protocols are not
@@ -51,14 +46,10 @@
           </p>
       </li>
     </ul>
-    <p>
-        These limitations normally do not affect standard network use.
-        But the presence of NAT has also subtle effects that may
-        interfere with protocols that are normally working. One example
-        is NFS, where the server is often configured to refuse
-        connections from non-privileged ports, which are those ports not
-        below 1024.
-      </p>
+    <p> These limitations normally do not affect standard network use. But the presence of NAT has
+      also subtle effects that may interfere with protocols that are normally working. One example
+      is NFS, where the server is often configured to refuse connections from non-privileged ports,
+      which are those ports above 1024. </p>
   </body>
   
 </topic>

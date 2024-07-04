@@ -4,23 +4,18 @@
   <title>Drag'n Drop not Working</title>
   
   <body>     
-    <p>
-      Microsoft Windows uses technologies like UAC (User Account Control) and
-      UIPI (User Interface Privilege Isolation) to prevent and/or mitigate
-      security issues. By default, UAC and UIPI are enabled.
-    </p>
-    <p>
-      When an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VM process is running with a higher so-called
-      privilege level than another process that wants to interact with the
-      VM process via drag'n drop (or system clipboard), Windows prevents this
-      by default due to security reasons. This results in <ph conkeyref="vbox-conkeyref-phrases/product-name"/> not
-      being able to receive any Windows messages for drag'n drop. To make this work, 
-      the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VM process must be running with
-      the same (or lower) privilege level as the process it is interacting with
-      using drag'n drop.</p>
+    <p> Microsoft Windows uses technologies like UAC (User Account Control) and UIPI (User Interface
+      Privilege Isolation) to prevent and mitigate security issues. By default, UAC and UIPI are
+      enabled. </p>
+    <p> When an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VM process is running with a
+      higher so-called privilege level than another process that wants to interact with the VM
+      process using drag'n drop (or system clipboard), Windows prevents this by default due to
+      security reasons. This results in <ph conkeyref="vbox-conkeyref-phrases/product-name"/> not
+      being able to receive any Windows messages for drag'n drop. To make this work, the <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> VM process must be running with the same
+      (or lower) privilege level as the process it is interacting with using drag'n drop.</p>
       
-      <p>Disabling UAC and/or UIPI is not recommended.
-    </p>
+      <p>Disabling UAC or UIPI is not recommended. </p>
   </body>
   
 </topic>

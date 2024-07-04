@@ -4,14 +4,10 @@
   <title>Common Third-Party RDP Viewers</title>
   
   <body>
-    <p>
-        Since VRDP is backwards-compatible to RDP, you can use any
-        standard RDP viewer to connect to such a remote virtual machine.
-        For this to work, you must specify the IP address of your
-        <i>host</i> system, not of the virtual machine, as
-        the server address to connect to. You must also specify the port
-        number that the VRDP server is using.
-      </p>
+    <p> Since VRDP is backward-compatible to RDP, you can use any standard RDP viewer to connect to
+      such a remote virtual machine. For this to work, you must specify the IP address of your
+        <i>host</i> system, not of the virtual machine, as the server address to connect to. You
+      must also specify the port number that the VRDP server is using. </p>
     <p>
         The following examples are for the most common RDP viewers:
       </p>

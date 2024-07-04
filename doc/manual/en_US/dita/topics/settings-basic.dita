@@ -16,8 +16,7 @@
             Manager window. Using this name, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also saves
             the VM's configuration files. If you change the name,
             <ph conkeyref="vbox-conkeyref-phrases/product-name"/> renames these files as well. As a result, you
-            can only use characters which are allowed for file names on
-            your host OS.
+            can only use characters which are allowed for file names on your host OS.
           </p>
         <p>
             Note that internally, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses unique identifiers
@@ -26,8 +25,10 @@
           </p>
       </li>
       <li>
-        <p><b outputclass="bold">Type:</b> The type of the guest
-            OS for the VM. This is the same setting that is specified in
+        <p><b outputclass="bold">Type and Subtype:</b> The type and subtype of the guest
+            OS for the VM. For example, if the <b>Type</b> is Linux, the <b>Subtype</b> might be 
+          Oracle Linux.</p>
+        <p>These are the same settings that are specified in
             the <b outputclass="bold">New Virtual Machine</b>
             wizard. See <xref href="create-vm-wizard.dita#create-vm-wizard"/>.
           </p>

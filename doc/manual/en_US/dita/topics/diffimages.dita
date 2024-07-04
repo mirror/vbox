@@ -63,15 +63,11 @@
         <alt>Differencing Images, Shown in Virtual Media Manager</alt>
       </image>
     </fig>
-    <p>
-      In all of these situations, from the point of view of the virtual
-      machine, the virtual hard disk behaves like any other disk. While
-      the virtual machine is running, there is a slight run-time I/O
-      overhead because <ph conkeyref="vbox-conkeyref-phrases/product-name"/> might need to look up sectors
-      several times. This is not noticeable however since the tables
-      with sector information are always kept in memory and can be
-      looked up quickly.
-    </p>
+    <p> In all of these situations, from the point of view of the virtual machine, the virtual hard
+      disk behaves like any other disk. While the virtual machine is running, there is a slight
+      runtime I/O overhead because <ph conkeyref="vbox-conkeyref-phrases/product-name"/> might need
+      to look up sectors several times. This is not noticeable however since the tables with sector
+      information are always kept in memory and can be looked up quickly. </p>
     <p>
       Differencing images are used in the following situations:
     </p>

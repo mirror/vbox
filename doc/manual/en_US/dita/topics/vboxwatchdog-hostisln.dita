@@ -61,10 +61,8 @@
           </p>
       </li>
       <li>
-        <p><codeph>save</codeph>. Saves the current machine state and
-            powers off the VM afterwards. If saving the machine state
-            fails the VM will be paused.
-          </p>
+        <p><codeph>save</codeph>. Saves the current machine state and then powers off the VM. If
+          saving the machine state fails the VM will be paused. </p>
       </li>
       <li>
         <p><codeph>shutdown</codeph>. Shuts down the VM in a gentle

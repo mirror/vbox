@@ -10,11 +10,8 @@
         The symptoms may be choppy audio in the guest or erratic guest
         clock behavior.
       </p>
-    <p>
-        Some of the problems may be caused by firmware and/or host
-        operating system bugs. Therefore, updating the firmware and
-        applying operating systems fixes is recommended.
-      </p>
+    <p> Some of the problems may be caused by firmware or host operating system bugs. Therefore,
+      updating the firmware and applying operating system fixes is recommended. </p>
     <p>
         For optimal virtualization performance, the C1E power state
         support in the system's BIOS should be disabled, if such a

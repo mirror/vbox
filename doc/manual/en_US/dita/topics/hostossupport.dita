@@ -2,11 +2,10 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="hostossupport">
   <title>Supported Host Operating Systems</title>
-  
+  <!-- 7.1: Arm platforms; require statement on host support -->
   <body>
-    <p>
-      Currently, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> runs on the following host OSes:
-    </p>
+    <p>Currently, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> runs on the following host
+      OSes: </p>
     <ul>
       <li>
         <p>
@@ -14,45 +13,18 @@
         </p>
         <ul>
           <li>
-            <p>
-              Windows 8.1
-            </p>
+            <p>Windows 10 </p>
           </li>
           <li>
-            <p>
-              Windows 10
-            </p>
+            <p>Windows 11 </p>
           </li>
           <li>
-            <p>
-              Windows 11 21H2
-            </p>
+            <p>Windows Server 2019 </p>
           </li>
           <li>
-            <p>
-              Windows Server 2012
-            </p>
+            <p>Windows Server 2022 </p>
           </li>
-          <li>
-            <p>
-              Windows Server 2012 R2
-            </p>
-          </li>
-          <li>
-            <p>
-              Windows Server 2016
-            </p>
-          </li>
-          <li>
-            <p>
-              Windows Server 2019
-            </p>
-          </li>
-          <li>
-            <p>
-              Windows Server 2022
-            </p>
-          </li>
+          <li>Windows Server 2025</li>
         </ul>
       </li>
       <li>
@@ -61,37 +33,24 @@
         </p>
         <ul>
           <li>
-            <p>
-              10.15 (Catalina)
-            </p>
+            <p>11 (Big Sur) </p>
           </li>
           <li>
-            <p>
-              11 (Big Sur)
-            </p>
+            <p>12 (Monterey) </p>
           </li>
           <li>
-            <p>
-              12 (Monterey)
-            </p>
+            <p>13 (Ventura) </p>
           </li>
+          <li>14 (Sonoma)</li>
         </ul>
-        <p>
-          Intel hardware is required. See also
-          <xref href="KnownIssues.dita">Known Limitations</xref>.
-        </p>
-        <p>
-          An installer package is available for macOS/Arm64, for systems
-          using an Apple silicon CPU. With this package, you can run
-          some guest operating systems for Intel x86/x64 CPUs in an
-          emulation.
-        </p>
-        <p>
-          The macOS/Arm64 installer package for Apple silicon platform
-          is available as a Developer Preview release. This package
-          represents a work in progress project and the performance is
-          very modest.
-        </p>
+        <p>Intel hardware is required. See also <xref href="KnownIssues.dita">Known
+            Limitations</xref>. </p>
+        <p>An installer package is available for macOS/Arm64, for systems using an Apple silicon
+          CPU. With this package, you can run some guest operating systems for Intel x86/x64 CPUs in
+          an emulation. </p>
+        <p>The macOS/Arm64 installer package for Apple silicon platform is available as a Developer
+          Preview release. This package represents a work in progress project and the performance is
+          very modest. </p>
         <note>
           <p>
             Developer Preview is a public release for developers, which
@@ -106,54 +65,33 @@
         </p>
         <ul>
           <li>
-            <p>
-              Ubuntu 18.04 LTS, 20.04 LTS and 22.04
-            </p>
+            <p>Ubuntu 20.04 LTS, 22.04 and 24.04</p>
           </li>
           <li>
-            <p>
-              Debian GNU/Linux 10 ("Buster") and 11 ("Bullseye")
-            </p>
+            <p>Debian GNU/Linux 11 (Bullseye) and 12 (Bookworm)</p>
           </li>
           <li>
-            <p>
-              Oracle Linux 7, 8 and 9
-            </p>
+            <p>Oracle Linux 7, 8 and 9 </p>
           </li>
           <li>
-            <p>
-              CentOS/Red Hat Enterprise Linux 7, 8 and 9
-            </p>
+            <p>CentOS/Red Hat Enterprise Linux 8 and 9 </p>
           </li>
           <li>
-            <p>
-              Fedora 35 and 36
-            </p>
+            <p>Fedora 39 and 40 </p>
           </li>
           <li>
-            <p>
-              Gentoo Linux
-            </p>
+            <p>SUSE Linux Enterprise server 15 </p>
           </li>
           <li>
-            <p>
-              SUSE Linux Enterprise server 12 and 15
-            </p>
-          </li>
-          <li>
-            <p>
-              openSUSE Leap 15.3
-            </p>
+            <p>openSUSE Leap 15.3, 15.4 and 15.5</p>
           </li>
         </ul>
-        <p>
-          It should be possible to use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on most systems
-          based on Linux kernel 2.6, 3.x, 4.x or 5.x using either the
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> installer or by doing a manual installation.
-          See <xref href="install-linux-host.dita#install-linux-host"/>. However, the
-          formally tested and supported Linux distributions are those
-          for which we offer a dedicated package.
-        </p>
+        <p> It should be possible to use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on
+          most systems based on Linux kernel 2.6 or later, using either the <ph
+            conkeyref="vbox-conkeyref-phrases/product-name"/> installer or by doing a manual
+          installation. See <xref href="install-linux-host.dita#install-linux-host"/>. However, the
+          formally tested and supported Linux distributions are those for which we offer a dedicated
+          package. </p>
         <p>
           Note that Linux 2.4-based host OSes are no longer supported.
         </p>

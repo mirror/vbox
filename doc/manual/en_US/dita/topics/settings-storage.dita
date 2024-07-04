@@ -80,14 +80,10 @@
       you have one, or a disk image, which in this case must be in RAW
       format.
     </p>
-    <p>
-      You can modify these media attachments freely. For example, if you
-      wish to copy some files from another virtual disk that you
-      created, you can connect that disk as a second hard disk, as in
-      the above screenshot. You could also add a second virtual CD/DVD
-      drive, or change where these items are attached. The following
-      options are available:
-    </p>
+    <p> You can modify these media attachments freely. For example, if you want to copy some files
+      from another virtual disk that you created, you can connect that disk as a second hard disk,
+      as in the above screenshot. You could also add a second virtual CD/DVD drive, or change where
+      these items are attached. The following options are available: </p>
     <ul>
       <li>
         <p>

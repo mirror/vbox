@@ -2,7 +2,6 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="technical-components">
   <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Executables and Components</title>
-  
   <body>
     <p>
       <ph conkeyref="vbox-conkeyref-phrases/product-name"/> was designed to be modular and flexible. When the
@@ -57,13 +56,10 @@
         </p>
       </li>
     </ul>
-    <p>
-      Any <ph conkeyref="vbox-conkeyref-phrases/product-name"/> front-end, or client, will communicate with the
-      service process and can both control and reflect the current
-      state. For example, either the VM selector or the VM window or
-      VBoxManage can be used to pause the running VM, and other
-      components will always reflect the changed state.
-    </p>
+    <p> Any <ph conkeyref="vbox-conkeyref-phrases/product-name"/> front end, or client, will
+      communicate with the service process and can both control and reflect the current state. For
+      example, either the VM selector or the VM window or VBoxManage can be used to pause the
+      running VM, and other components will always reflect the changed state. </p>
     <p>
       The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> GUI application, called <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, is only one
       of several available front ends, or clients. The complete list

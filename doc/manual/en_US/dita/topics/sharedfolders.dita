@@ -36,12 +36,9 @@
     </p>
                <ul>
                   <li>
-                     <p>
-          In the window of a running VM, you select
-          <b outputclass="bold">Shared Folders</b> from the
-          <b outputclass="bold">Devices</b> menu, or click on the
-          folder icon on the status bar in the bottom right corner.
-        </p>
+                     <p> In the window of a running VM, you select <b outputclass="bold">Shared
+            Folders</b> from the <b outputclass="bold">Devices</b> menu, or click the folder icon on
+          the status bar in the bottom right corner. </p>
                   </li>
                   <li>
                      <p>
@@ -109,15 +106,15 @@
                      <p>
           For security reasons the guest OS is not allowed to create
           symlinks by default. If you trust the guest OS to not abuse
-          the functionality, you can enable the creation of symlinks for
+          this functionality, you can enable the creation of symlinks for
           a shared folder as follows:
         </p>
                      <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> VBoxInternal2/SharedFoldersEnableSymlinksCreate/<varname>sharename</varname> 1</pre>
                   </li>
                </ul>
-               <p>
+            <p>
           If a symbolic link is created inside a shared folder on the host
-          and the installed Guest Additions don't support symbolic links
+          and the installed Guest Additions do not support symbolic links
           then the guest will see the target of the symlink as a file
           inside the shared folder. For example, if a symlink is created
           to a file on a Linux host:
@@ -126,7 +123,7 @@
                      <pre xml:space="preserve">$ cd /SharedFolder &amp;&amp; ln -s filename symlink-to-filename</pre>
         </p>
                <p>
-          And then the shared folder is viewed on a Windows guest there
+          When the shared folder is viewed on a Windows guest there
           will be two identical files listed, <userinput>filename</userinput>
           and <userinput>symlink-to-filename</userinput>.
         </p>

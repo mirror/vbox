@@ -34,18 +34,12 @@
           <codeph>password</codeph> are not supported.
         </p>
     </note>
-    <p>
-        The <filepath>pam_vbox.so</filepath> module is shipped as part
-        of the Guest Additions but it is not installed and/or activated
-        on the guest OS by default. In order to install it, it has to be
-        copied from
-        <filepath>/opt/VBoxGuestAdditions-<varname>version</varname>/other/</filepath>
-        to the security modules directory. This is usually
-        <filepath>/lib/security/</filepath> on 32-bit Linux guests or
-        <filepath>/lib64/security/</filepath> on 64-bit Linux guests.
-        Please refer to your guest OS documentation for the correct PAM
-        module directory.
-      </p>
+    <p> The <filepath>pam_vbox.so</filepath> module is shipped as part of the Guest Additions but it
+      is not installed or activated on the guest OS by default. In order to install it, it has to be
+      copied from <filepath>/opt/VBoxGuestAdditions-<varname>version</varname>/other/</filepath> to
+      the security modules directory. This is usually <filepath>/lib/security/</filepath> on 32-bit
+      Linux guests or <filepath>/lib64/security/</filepath> on 64-bit Linux guests. Please refer to
+      your guest OS documentation for the correct PAM module directory. </p>
     <p>
         For example, to use <filepath>pam_vbox.so</filepath> with a
         Ubuntu Linux guest OS and the GNOME Desktop Manager (GDM) to log
@@ -73,22 +67,16 @@
           </p>
       </li>
       <li>
-        <p>
-            If authentication against the shadow database using
-            <filepath>pam_unix.so</filepath> or
-            <filepath>pam_unix2.so</filepath> is desired, the argument
-            <codeph>try_first_pass</codeph> for
-            <filepath>pam_unix.so</filepath> or
-            <codeph>use_first_pass</codeph> for
-            <filepath>pam_unix2.so</filepath> is needed in order to pass
-            the credentials from the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> module to the shadow
-            database authentication module. For Ubuntu, this needs to be
-            added to <filepath>/etc/pam.d/common-auth</filepath>, to the
-            end of the line referencing
-            <filepath>pam_unix.so</filepath>. This argument tells the
-            PAM module to use credentials already present in the stack,
-            such as the ones provided by the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> PAM module.
-          </p>
+        <p> If authentication against the shadow database using <filepath>pam_unix.so</filepath> or
+            <filepath>pam_unix2.so</filepath> is required, the argument
+            <codeph>try_first_pass</codeph> for <filepath>pam_unix.so</filepath> or
+            <codeph>use_first_pass</codeph> for <filepath>pam_unix2.so</filepath> is needed in order
+          to pass the credentials from the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
+          module to the shadow database authentication module. For Ubuntu, this must be added to
+            <filepath>/etc/pam.d/common-auth</filepath>, to the end of the line referencing
+            <filepath>pam_unix.so</filepath>. This argument tells the PAM module to use credentials
+          already present in the stack, such as the ones provided by the <ph
+            conkeyref="vbox-conkeyref-phrases/product-name"/> PAM module. </p>
       </li>
     </ol>
     <note type="attention">

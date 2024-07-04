@@ -25,11 +25,8 @@
       Oracle provides support for the VirtualBox Remote Display Protocol
       (VRDP) in such an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension package.
     </p>
-    <p>
-      VRDP is a backwards-compatible extension to Microsoft's Remote
-      Desktop Protocol (RDP). As a result, you can use any standard RDP
-      client to control the remote VM.
-    </p>
+    <p> VRDP is a backward-compatible extension to Microsoft's Remote Desktop Protocol (RDP). As a
+      result, you can use any standard RDP client to control the remote VM. </p>
     <p>
       Even when the extension is installed, the VRDP server is disabled
       by default. It can easily be enabled on a per-VM basis either from

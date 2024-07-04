@@ -42,14 +42,14 @@
         key is always displayed at the bottom right of your VM window.
       </p>
     <fig id="fig-host-key">
-      <title>Host Key Setting on the Virtual Machine Taskbar</title>
+      <title>Host Key Setting on the Virtual Machine Status Bar</title>
       <xref href="images/vm-hostkey.png" format="png" platform="htmlhelp">
         <image href="images/vm-hostkey.png" width="7cm" placement="break">
-          <alt>Host Key Setting on the Virtual Machine Taskbar</alt>
+          <alt>Host Key Setting on the Virtual Machine Status Bar</alt>
         </image>
       </xref>
       <image platform="ohc" href="images/vm-hostkey.png" width="7cm" placement="break">
-        <alt>Host Key Setting on the Virtual Machine Taskbar</alt>
+        <alt>Host Key Setting on the Virtual Machine Status Bar</alt>
       </image>
     </fig>
     <p>

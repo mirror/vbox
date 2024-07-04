@@ -4,10 +4,9 @@
   <title>Unattended Installation</title>
   
   <body>
-    <p>
-        To perform a non-interactive installation of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> you
-        can use the command line version of the installer application.
-      </p>
+    <p> To perform a noninteractive installation of <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> you can use the command line version of
+      the installer application. </p>
     <p>
         Mount the <filepath>dmg</filepath> disk image file, as described
         in the installation procedure, or use the following command

@@ -81,12 +81,9 @@
           EC Ultra Ethernet NIC is known to cause packet losses under
           certain conditions.
         </p>
-        <p>
-          Some adapters strip VLAN tags in hardware. This does not allow
-          you to use VLAN trunking between VM and the external network
-          with pre-2.6.27 Linux kernels, or with host operating systems
-          other than Linux.
-        </p>
+        <p> Some adapters strip VLAN tags in hardware. This does not allow you to use VLAN trunking
+          between VM and the external network with Linux kernels before 2.6.27, or with host
+          operating systems other than Linux. </p>
       </li>
       <li>
         <p><b outputclass="bold">Oracle Solaris hosts.</b> There

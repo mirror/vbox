@@ -67,10 +67,8 @@
         <pre xml:space="preserve">VBoxManage list ostypes</pre>
       </li>
       <li>
-        <p>
-            Make sure the settings for the VM are appropriate for the
-            guest operating system that we will install. For example:
-          </p>
+        <p> Ensure the settings for the VM are appropriate for the guest operating system that we
+          will install. For example: </p>
         <pre xml:space="preserve">VBoxManage modifyvm "Windows XP" --memory 256 --acpi on --boot1 dvd --nic1 nat</pre>
       </li>
       <li>

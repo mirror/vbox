@@ -4,6 +4,7 @@
   <title>Clipboard</title>
   
   <body>
+    <!-- 7.1: Shared clipboard check box; clarify operation with dev -->
     <p>
       <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to copy clipboard content from the host
       to the guest, and vice versa. For this to work the latest version

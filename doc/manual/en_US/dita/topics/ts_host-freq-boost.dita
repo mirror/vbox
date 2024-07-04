@@ -12,14 +12,10 @@
         a function of the momentary overall system load. The exact
         behavior depends strongly on the specific processor model.
       </p>
-    <p>
-        As a consequence, benchmarking on systems which utilize
-        frequency boosting may produce unstable and non-repeatable
-        results. This is especially true if benchmark runs are short, of
-        the order of seconds. To obtain stable results, benchmarks must
-        be run over longer periods of time and with a constant system
-        load apart from the VM being tested.
-      </p>
+    <p> As a consequence, benchmarking on systems which utilize frequency boosting may produce
+      unstable and nonrepeatable results. This is especially true if benchmark runs are short, of
+      the order of seconds. To obtain stable results, benchmarks must be run over longer periods of
+      time and with a constant system load apart from the VM being tested. </p>
   </body>
   
 </topic>
