@@ -430,9 +430,9 @@ HRESULT VRDEServer::setEnabled(BOOL aEnabled)
         if (aEnabled)
         {
             BOOL certificateGenerated = false;
-            int vrc = i_certificateRepair(certificateGenerated);
-            if (RT_FAILURE(vrc))
-                LogRel((("Failed to auto generate server key and certificate: (%Rrc)\n"), vrc));
+            hrc = i_certificateRepair(certificateGenerated);
+            if (FAILED(hrc))
+                LogRel((("Failed to auto generate server key and certificate: (%Rhrc)\n"), hrc));
         }
 
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, needs no locking
@@ -628,9 +628,9 @@ HRESULT VRDEServer::getVRDEProperty(const com::Utf8Str &aKey, com::Utf8Str &aVal
         || aKey == "Security/ServerPrivateKey")
     {
         BOOL certificateGenerated = false;
-        int vrc = i_certificateRepair(certificateGenerated);
-        if ( RT_FAILURE(vrc) )
-            LogRel((("Failed to auto generate server key and certificate: (%Rrc)\n"), vrc));
+        HRESULT hrc = i_certificateRepair(certificateGenerated);
+        if (FAILED(hrc))
+            LogRel((("Failed to auto generate server key and certificate: (%Rhrc)\n"), hrc));
         else if (certificateGenerated)
         {
             AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);
