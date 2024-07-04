@@ -4302,8 +4302,8 @@ iemRaiseXcptOrInt(PVMCPUCC    pVCpu,
     { /* ignore */ }
     else
     {
-        Log(("iemRaiseXcptOrIntInLongMode: Converting pending %#x debug events to a silent one (intel hack)\n",
-             u8Vector, pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK));
+        Log(("iemRaiseXcptOrInt: Converting pending %#x debug events to a silent one (intel hack); vec=%#x\n",
+             pVCpu->cpum.GstCtx.eflags.uBoth & CPUMCTX_DBG_HIT_DRX_MASK, u8Vector));
         pVCpu->cpum.GstCtx.eflags.uBoth = (pVCpu->cpum.GstCtx.eflags.uBoth & ~CPUMCTX_DBG_HIT_DRX_MASK)
                                         | CPUMCTX_DBG_HIT_DRX_SILENT;
     }
