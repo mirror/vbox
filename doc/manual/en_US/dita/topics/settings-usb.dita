@@ -52,10 +52,10 @@
         matching filter can be passed manually to the guest, for example by using the <b
           outputclass="bold">Devices</b>, <b outputclass="bold">USB</b> menu. <ul
           id="ul_jjz_cxv_qbc">
-          <li>Click the USB filter button to create a new filter with blank fields, and then
+          <li>Click the <b>USB filter</b> button to create a new filter with blank fields, and then
             complete the fields. </li>
-          <li>Or, click the Add USB filter button to create a filter with the fields completed for
-            the selected USB device. </li>
+          <li>Or, click the <b>Add USB filter</b> button to create a filter with the fields
+            completed for the selected USB device. </li>
         </ul><p>Give the filter a name, for later reference, and specify the filter criteria. The
           more criteria you specify, the more precisely devices will be selected. For instance, if
           you specify only a vendor ID of 046d, all devices produced by Logitech will be available
