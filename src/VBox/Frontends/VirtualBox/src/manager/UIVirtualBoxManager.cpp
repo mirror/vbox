@@ -53,6 +53,7 @@
 #include "UIActionPoolManager.h"
 #include "UIAdvancedSettingsDialogSpecific.h"
 #include "UICloudConsoleManager.h"
+#include "UICloudMachineManager.h"
 #include "UICloudNetworkingStuff.h"
 #include "UICloudProfileManager.h"
 #include "UICommon.h"
@@ -2391,6 +2392,7 @@ void UIVirtualBoxManager::prepare()
     prepareMenuBar();
     prepareStatusBar();
     prepareWidgets();
+    prepareCloudMachineManager();
     prepareConnections();
 
     /* Update actions initially: */
@@ -2496,6 +2498,11 @@ void UIVirtualBoxManager::prepareWidgets()
     m_pWidget = new UIVirtualBoxManagerWidget(this);
     if (m_pWidget)
         setCentralWidget(m_pWidget);
+}
+
+void UIVirtualBoxManager::prepareCloudMachineManager()
+{
+    UICloudMachineManager::create();
 }
 
 void UIVirtualBoxManager::prepareConnections()
@@ -2746,6 +2753,11 @@ void UIVirtualBoxManager::cleanupConnections()
     m_pWidget->disconnect(this);
 }
 
+void UIVirtualBoxManager::cleanupCloudMachineManager()
+{
+    UICloudMachineManager::destroy();
+}
+
 void UIVirtualBoxManager::cleanupWidgets()
 {
     /* Deconfigure central-widget: */
@@ -2773,6 +2785,7 @@ void UIVirtualBoxManager::cleanup()
     sltHandleCommitData();
 
     /* Cleanup: */
+    cleanupCloudMachineManager();
     cleanupWidgets();
     cleanupMenuBar();
 }

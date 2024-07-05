@@ -363,6 +363,8 @@ private:
         void prepareToolbar();
         /** Prepares widgets. */
         void prepareWidgets();
+        /** Prepares cloud machine manager. */
+        void prepareCloudMachineManager();
         /** Prepares connections. */
         void prepareConnections();
         /** Loads settings. */
@@ -370,6 +372,8 @@ private:
 
         /** Cleanups connections. */
         void cleanupConnections();
+        /** Cleanups cloud machine manager. */
+        void cleanupCloudMachineManager();
         /** Cleanups widgets. */
         void cleanupWidgets();
         /** Cleanups menu-bar. */
