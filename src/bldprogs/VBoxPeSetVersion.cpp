@@ -51,6 +51,8 @@
 *********************************************************************************************************************************/
 static const char *g_pszFilename;
 static unsigned    g_cVerbosity = 0;
+static enum { kUpdateCheckSum_Never, kUpdateCheckSum_WhenNeeded, kUpdateCheckSum_Always, kUpdateCheckSum_Zero }
+                   g_enmUpdateChecksum = kUpdateCheckSum_WhenNeeded;
 
 
 static int Error(const char *pszFormat, ...)
@@ -79,8 +81,164 @@ static void Info(unsigned iLevel, const char *pszFormat, ...)
 }
 
 
+/**
+ * File size.
+ *
+ * @returns file size in bytes.
+ * @returns 0 on failure.
+ * @param   pFile   File to size.
+ */
+static size_t fsize(FILE *pFile)
+{
+    long    cbFile;
+    off_t   Pos = ftell(pFile);
+    if (    Pos >= 0
+        &&  !fseek(pFile, 0, SEEK_END))
+    {
+        cbFile = ftell(pFile);
+        if (    cbFile >= 0
+            &&  !fseek(pFile, 0, SEEK_SET))
+            return cbFile;
+    }
+    return 0;
+}
+
+
+/**
+ * Calculates a raw PE-style checksum on a plain buffer.
+ *
+ * ASSUMES pvBuf is dword aligned.
+ */
+static uint16_t CalcRawPeChecksum(void const *pvBuf, size_t cb, uint32_t uChksum)
+{
+    /*
+     * Work thru the memory in 64 bits at a time.
+     * ASSUMES well aligned input.
+     */
+    uint64_t        uBigSum = uChksum;
+    uint64_t const *pu64    = (uint64_t const *)pvBuf;
+    size_t          cQWords = cb / 8;
+    while (cQWords-- > 0)
+    {
+        /* We emulate add with carry here. */
+        uint64_t uTmp = uBigSum + *pu64++;
+        uBigSum = uTmp >= uBigSum ? uTmp : uTmp + 1;
+    }
+
+    /*
+     * Zeropadd any remaining bytes before adding them.
+     */
+    if (cb & 7)
+    {
+        uint8_t const *pb     = (uint8_t const *)pu64;
+        uint64_t       uQWord = 0;
+        switch (cb & 7)
+        {
+            case 7: uQWord |= (uint64_t)pb[6] << 48; RT_FALL_THRU();
+            case 6: uQWord |= (uint64_t)pb[5] << 40; RT_FALL_THRU();
+            case 5: uQWord |= (uint64_t)pb[4] << 32; RT_FALL_THRU();
+            case 4: uQWord |= (uint64_t)pb[3] << 24; RT_FALL_THRU();
+            case 3: uQWord |= (uint64_t)pb[2] << 16; RT_FALL_THRU();
+            case 2: uQWord |= (uint64_t)pb[1] <<  8; RT_FALL_THRU();
+            case 1: uQWord |= (uint64_t)pb[0]; break;
+        }
+
+        uint64_t uTmp = uBigSum + uQWord;
+        uBigSum = uTmp >= uBigSum ? uTmp : uTmp + 1;
+    }
+
+    /*
+     * Convert the 64-bit checksum to a 16-bit one.
+     */
+    uChksum =  (uBigSum        & 0xffffU)
+            + ((uBigSum >> 16) & 0xffffU)
+            + ((uBigSum >> 32) & 0xffffU)
+            + ((uBigSum >> 48) & 0xffffU);
+    uChksum = (uChksum         & 0xffffU)
+            + (uChksum >> 16);
+    if (uChksum > 0xffffU) Error("Checksum IPE#1");
+    return uChksum & 0xffffU;
+}
+
+
+static int UpdateChecksum(FILE *pFile)
+{
+    /*
+     * Read the whole file into memory.
+     */
+    size_t const    cbFile = fsize(pFile);
+    if (!cbFile)
+        return Error("Failed to determine file size: %s", strerror(errno));
+    uint8_t * const pbFile = (uint8_t *)malloc(cbFile + 4);
+    if (!pbFile)
+        return Error("Failed to allocate %#lx bytes for checksum calculations", (unsigned long)(cbFile + 4U));
+    memset(pbFile, 0, cbFile + 4);
+
+    int        rcExit;
+    size_t     cItemsRead = fread(pbFile, cbFile, 1, pFile);
+    if (cItemsRead == 1)
+    {
+        /*
+         * Locate the NT headers as we need the CheckSum field in order to update it.
+         * It has the same location in 32-bit and 64-bit images.
+         */
+        IMAGE_DOS_HEADER const   * const pMzHdr  = (IMAGE_DOS_HEADER const *)pbFile;
+        AssertCompileMembersAtSameOffset(IMAGE_NT_HEADERS32, OptionalHeader.CheckSum, IMAGE_NT_HEADERS64, OptionalHeader.CheckSum);
+        IMAGE_NT_HEADERS32 * const       pNtHdrs
+            = (IMAGE_NT_HEADERS32 *)&pbFile[pMzHdr->e_magic == IMAGE_DOS_SIGNATURE ? pMzHdr->e_lfanew : 0];
+        if ((uintptr_t)&pNtHdrs->OptionalHeader.DataDirectory[0] - (uintptr_t)pbFile < cbFile)
+        {
+            if (   pNtHdrs->Signature == IMAGE_NT_SIGNATURE
+                && (   pNtHdrs->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC
+                    || pNtHdrs->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC))
+            {
+                /*
+                 * Set the checksum field to zero to avoid having to do tedious
+                 * adjustments of the raw checksum. Then calculate the raw check sum.
+                 */
+                pNtHdrs->OptionalHeader.CheckSum = 0;
+                uint32_t uChksum = CalcRawPeChecksum(pbFile, RT_ALIGN_Z(cbFile, 2), 0);
+
+                /* Finalize the checksum by adding the image size to it. */
+                uChksum += (uint32_t)cbFile;
+                pNtHdrs->OptionalHeader.CheckSum = uChksum;
+
+                /*
+                 * Write back the checksum to the file.
+                 */
+                size_t const offChecksumField = (uintptr_t)&pNtHdrs->OptionalHeader.CheckSum - (uintptr_t)pbFile;
+
+                if (fseek(pFile, (long)offChecksumField, SEEK_SET) == 0)
+                {
+                    if (fwrite(&pNtHdrs->OptionalHeader.CheckSum, sizeof(pNtHdrs->OptionalHeader.CheckSum), 1, pFile) == 1)
+                    {
+                        Info(1, "Checksum: %#x", uChksum);
+                        rcExit = RTEXITCODE_SUCCESS;
+                    }
+                    else
+                        rcExit = Error("Checksum write failed");
+                }
+                else
+                    rcExit = Error("Failed seeking to %#lx for checksum write", (long)offChecksumField);
+            }
+            else
+                rcExit = Error("PE header not found");
+        }
+        else
+            rcExit = Error("NT headers not within file when checksumming");
+    }
+    else
+        rcExit = Error("Failed read in file (%#lx bytes) for checksum calculations", (unsigned long)(cbFile + 4U));
+
+    free(pbFile);
+    return rcExit;
+}
+
+
 static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *ppaShdr)
 {
+    unsigned cFileModifications = 0;
+
     /*
      * Locate and read the PE header.
      *
@@ -181,7 +339,10 @@ static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *p
             return Error("Failed to seek to PE header at %#lx: %s", offNtHdrs, strerror(errno));
         if (fwrite(&NtHdrsNew, cbNewHdrs, 1, pFile) != 1)
             return Error("Failed to write PE header at %#lx: %s", offNtHdrs, strerror(errno));
+        cFileModifications++;
     }
+    else
+        Info(3, "No header changes");
 
     /*
      * Make the IAT writable for NT 3.1 and drop the non-cachable flag from .bss.
@@ -245,6 +406,7 @@ static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *p
                     if (fwrite(&paShdrs[i], sizeof(IMAGE_SECTION_HEADER), 1, pFile) != 1)
                         return Error("Failed to write %8.8s section header header at %#lx: %s",
                                      paShdrs[i].Name, offShdr, strerror(errno));
+                    cFileModifications++;
                     if (uRvaIat == UINT32_MAX && fFoundBss)
                         break;
                 }
@@ -252,7 +414,27 @@ static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *p
                 /* Advance */
                 uRvaEnd = paShdrs[i].VirtualAddress;
             }
+    }
 
+    /*
+     * Recalculate the checksum if we changed anything or if it is zero.
+     */
+    if (   g_enmUpdateChecksum == kUpdateCheckSum_Always
+        || (   g_enmUpdateChecksum == kUpdateCheckSum_WhenNeeded
+            && (cFileModifications || NtHdrsNew.x32.OptionalHeader.CheckSum == 0)))
+        return UpdateChecksum(pFile);
+
+    /* Zero the checksum if explicitly requested. */
+    if (   g_enmUpdateChecksum == kUpdateCheckSum_Zero
+        && NtHdrsNew.x32.OptionalHeader.CheckSum != 0)
+    {
+        unsigned long const offCheckSumField = offNtHdrs + RT_UOFFSETOF(IMAGE_NT_HEADERS32, OptionalHeader.CheckSum);
+        if (fseek(pFile, offCheckSumField, SEEK_SET) != 0)
+            return Error("Failed to seek to the CheckSum field in the PE at %#lx: %s", offCheckSumField, strerror(errno));
+
+        NtHdrsNew.x32.OptionalHeader.CheckSum = 0;
+        if (fwrite(&NtHdrsNew.x32.OptionalHeader.CheckSum, sizeof(NtHdrsNew.x32.OptionalHeader.CheckSum), 1, pFile) != 1)
+            return Error("Failed to write the CheckSum field in the PE header at %#lx: %s", offCheckSumField, strerror(errno));
     }
 
     return RTEXITCODE_SUCCESS;
@@ -270,7 +452,10 @@ static int Usage(FILE *pOutput)
             "    Quiet operation (default).\n"
             "  --nt31, --nt350, --nt351, --nt4, --w2k, --xp, --w2k3, --vista,\n"
             "  --w7, --w8, --w81, --w10\n"
-            "    Which version to set.  Default: --nt31\n"
+            "    Which version to set.  Default: --nt31 (x86), --w2k3 (amd64)\n"
+            "  --update-checksum-when-needed, --always-update-checksum,\n"
+            "  --never-update-checksum, --zero-checksum:\n"
+            "    Checksum updating. Default: --update-checksum-when-needed\n"
             );
     return RTEXITCODE_SYNTAX;
 }
@@ -335,6 +520,14 @@ int main(int argc, char **argv)
                         uNtVersion = MK_VER(6,3);
                     else if (strcmp(psz, "w10") == 0)
                         uNtVersion = MK_VER(10,0);
+                    else if (strcmp(psz, "always-update-checksum") == 0)
+                        g_enmUpdateChecksum = kUpdateCheckSum_Always;
+                    else if (strcmp(psz, "never-update-checksum") == 0)
+                        g_enmUpdateChecksum = kUpdateCheckSum_Never;
+                    else if (strcmp(psz, "update-checksum-when-needed") == 0)
+                        g_enmUpdateChecksum = kUpdateCheckSum_WhenNeeded;
+                    else if (strcmp(psz, "zero-checksum") == 0)
+                        g_enmUpdateChecksum = kUpdateCheckSum_Zero;
                     else
                     {
                         fprintf(stderr, "VBoxPeSetVersion: syntax error: Unknown option: --%s\n", psz);
