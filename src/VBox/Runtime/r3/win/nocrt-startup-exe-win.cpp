@@ -81,7 +81,11 @@ static int rtTerminateProcess(int32_t rcExit, bool fDoAtExit)
      * Terminate.
      */
     for (;;)
+#if 1 /* Using NtTerminateProcess triggers heuristics in some annoying AV scanner.  */
+        TerminateProcess(NtCurrentProcess(), rcExit);
+#else
         NtTerminateProcess(NtCurrentProcess(), rcExit);
+#endif
 }
 
 
