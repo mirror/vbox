@@ -1625,6 +1625,9 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
               /*mask     */ X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_DOWN,
               /*flags    */ 0, 0 },
+    /*
+    * Denormals.
+    */
     /*26*/{ { /*src2     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)         } },
             { /*src1     */ { BS3_FP32_ZERO(0),         BS3_FP32_DENORMAL_MAX(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(1) } },
             { /* =>      */ { BS3_FP32_ZERO(0),         BS3_FP32_DENORMAL_MAX(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(1) } },
@@ -1643,10 +1646,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
               /*mask     */ X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
               /*flags    */ 0, 0 },
-    /*
-     * Denormals.
-     */
-    /*29*/{ { /*src2     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+         { { /*src2     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
             { /*src1     */ { BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
             { /* =>      */ { BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
@@ -2362,6 +2362,45 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_haddps(uint8_t bMode)
             { /* =>      */ { BS3_FP32_VAL(0, 0x769b5e, 0x92)/*1010101.875*/, BS3_FP32_VAL(0, 0x10c030, 0x92)/*592899.000*/, BS3_FP32_VAL(0, 0x52e0b4, 0x92)/*863755.250*/, BS3_FP32_VAL(1, 0, 2),                         BS3_FP32_VAL(0, 0x4c20f0, 0x94)/*3344444.00*/, BS3_FP32_VAL(0, 0x62f630, 0x91)/*464817.50*/,  BS3_FP32_VAL(0, 0, 2),                         BS3_FP32_VAL(0, 0x769b5e, 0x92)/*1010101.875*/ } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_DOWN,
+              /*flags    */ 0, 0 },
+    /*
+     * Denormals.
+     */
+    /*26*/{ { /*src2     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)         } },
+            { /*src1     */ { BS3_FP32_ZERO(0),         BS3_FP32_DENORMAL_MAX(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(1) } },
+            { /* =>      */ { BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)         } },
+              /*mask     */ ~X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ X86_MXCSR_DE, X86_MXCSR_DE },
+          { { /*src2     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+            { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+            { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MAX(0) } },
+            { /*src1     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MIN(0) } },
+            { /* =>      */ { BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),        } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
+              /*flags    */ 0, 0 },
+         { { /*src2     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+            { /*src1     */ { BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+            { /* =>      */ { BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+              /*mask     */ ~X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ X86_MXCSR_DE, X86_MXCSR_DE },
+          { { /*src2     */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(1) } },
+            { /*src1     */ { BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)         } },
+            { /* =>      */ { BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)         } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MAX(0) } },
+            { /*src1     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MIN(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_DENORMAL_MIN(0) } },
+            { /* =>      */ { BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0)        , BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0)         } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
               /*flags    */ 0, 0 },
           /** @todo Denormals; Rounding, FZ etc. */
     };
