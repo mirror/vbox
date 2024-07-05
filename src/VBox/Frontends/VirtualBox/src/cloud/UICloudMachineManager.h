@@ -34,6 +34,9 @@
 /* Qt includes: */
 #include <QObject>
 
+/* Other VBox includes: */
+#include <iprt/cdefs.h> // for RT_OVERRIDE / RT_FINAL stuff
+
 /* Forward declarations: */
 class QString;
 class QUuid;
