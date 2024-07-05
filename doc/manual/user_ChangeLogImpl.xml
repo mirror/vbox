@@ -113,6 +113,11 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+       <para>Video Recording: Bigger general performance improvements for the encoding
+         pipeline, resulting in less CPU usage while recording is active</para>
+      </listitem>
+
+      <listitem>
        <para>VBoxManage: Added the ability to query the guest's mount points via a new "mount"
          Guest Control sub command. Requires at least 7.1 Guest Additions</para>
       </listitem>
