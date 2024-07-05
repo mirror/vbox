@@ -202,6 +202,8 @@ typedef struct VBOXNETFLTINS
             struct sk_buff_head   XmitQueue;
             struct work_struct    XmitTask;
 #  endif
+            /** Unique identifier of network namespace of device to attach to. */
+            uint32_t uNamespaceInode;
             /** @} */
 # elif defined(RT_OS_SOLARIS)
             /** @name Solaris instance data.

@@ -47,6 +47,10 @@
 #if RTLNX_VER_MIN(2,6,24)
 # include <linux/nsproxy.h>
 #endif
+#if RTLNX_VER_MIN(3,10,0) /* proc_ns introduced */
+# define VBOXNETFLT_LINUX_NAMESPACE_SUPPORT
+# include <linux/proc_ns.h>
+#endif
 #if RTLNX_VER_MIN(6,4,10) || RTLNX_RHEL_RANGE(9,4, 9,99) || RTLNX_SUSE_MAJ_PREREQ(15, 6)
 # include <net/gso.h>
 #endif
@@ -1841,6 +1845,7 @@ static void vboxNetFltSetLinkState(PVBOXNETFLTINS pThis, struct net_device *pDev
  */
 static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_device *pDev)
 {
+    bool fAlreadyAttached = false;
     LogFlow(("vboxNetFltLinuxAttachToInterface: pThis=%p (%s)\n", pThis, pThis->szName));
 
     /*
@@ -1849,8 +1854,19 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
     dev_hold(pDev);
 
     RTSpinlockAcquire(pThis->hSpinlock);
-    ASMAtomicUoWritePtr(&pThis->u.s.pDev, pDev);
+    if (ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *))
+        fAlreadyAttached = true;    /* Do not attach multiple times! */
+    else
+        ASMAtomicUoWritePtr(&pThis->u.s.pDev, pDev);
     RTSpinlockRelease(pThis->hSpinlock);
+
+    if (fAlreadyAttached)
+    {
+        dev_put(pDev);
+        Log(("vboxNetFltLinuxAttachToInterface: Not attaching to %p(%s), already attached to %p(%s).\n",
+             pDev, pDev->name, pThis->u.s.pDev, pThis->u.s.pDev->name));
+        return VINF_ALREADY_INITIALIZED;
+    }
 
     Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) retained. ref=%d\n",
           pDev, pDev->name,
@@ -2062,6 +2078,29 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
 
     if (ulEventType == NETDEV_REGISTER)
     {
+#ifdef VBOXNETFLT_LINUX_NAMESPACE_SUPPORT
+# if RTLNX_VER_MIN(3,19,0) /* ns_common introduced */
+#  define VBOX_DEV_NET_NS_INUM(dev) dev_net(dev)->ns.inum
+# else
+#  define VBOX_DEV_NET_NS_INUM(dev) dev_net(dev)->proc_inum
+# endif
+        if (pThis->u.s.uNamespaceInode == 0 || pThis->u.s.uNamespaceInode == VBOX_DEV_NET_NS_INUM(pDev))
+        {
+            /* Skip namespace if it is present */
+            const char *pcszIfName = strchr(pThis->szName, '/');
+            if (pcszIfName)
+                ++pcszIfName;
+            else
+                pcszIfName = pThis->szName;
+            if (strcmp(pDev->name, pcszIfName) == 0)
+                vboxNetFltLinuxAttachToInterface(pThis, pDev);
+            else
+                Log(("VBoxNetFlt: not attaching to '%s' as it does not match '%s'\n", pDev->name, pcszIfName));
+        }
+        else
+            Log(("VBoxNetFlt: ignoring '%s' in wrong namespace (%u, expected %u)\n", pDev->name,
+                 VBOX_DEV_NET_NS_INUM(pDev), pThis->u.s.uNamespaceInode));
+#else /* !VBOXNETFLT_LINUX_NAMESPACE_SUPPORT */
 #if RTLNX_VER_MIN(2,6,24) /* cgroups/namespaces introduced */
 # if RTLNX_VER_MIN(2,6,26)
 #  define VBOX_DEV_NET(dev)             dev_net(dev)
@@ -2081,6 +2120,7 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
                 vboxNetFltLinuxAttachToInterface(pThis, pDev);
             }
         }
+#endif /* !VBOXNETFLT_LINUX_NAMESPACE_SUPPORT */
     }
     else
     {
@@ -2579,6 +2619,12 @@ int  vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     pThis->u.s.fPromiscuousSet = false;
     pThis->u.s.fPacketHandler  = false;
     memset(&pThis->u.s.PacketType, 0, sizeof(pThis->u.s.PacketType));
+#ifdef VBOXNETFLT_LINUX_NAMESPACE_SUPPORT
+    /* We should get the interface name in the form <namespace>/<ifname>, parse it. */
+    pThis->u.s.uNamespaceInode = RTStrToUInt32(pThis->szName);
+#else /* !VBOXNETFLT_LINUX_NAMESPACE_SUPPORT */
+    pThis->u.s.uNamespaceInode = 0;
+#endif /* !VBOXNETFLT_LINUX_NAMESPACE_SUPPORT */
 #ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
     skb_queue_head_init(&pThis->u.s.XmitQueue);
 # if RTLNX_VER_MIN(2,6,20)

@@ -2659,6 +2659,17 @@ int Console::i_configNetwork(const char *pszDevice,
                         close(iSock);
                     }
                 }
+#  ifdef VBOXNETFLT_LINUX_NAMESPACE_SUPPORT
+                RTUUID IfaceUuid;
+                Bstr IfId;
+                hrc = hostInterface->COMGETTER(Id)(IfId.asOutParam());                      H();
+                vrc = RTUuidFromUtf16(&IfaceUuid, IfId.raw());
+                AssertRCReturn(vrc, vrc);
+                char szTrunkNameWithNamespace[INTNET_MAX_TRUNK_NAME];
+                RTStrPrintf(szTrunkNameWithNamespace, sizeof(szTrunkNameWithNamespace), "%u/%s",
+                            IfaceUuid.au32[0], pszTrunk);
+                pszTrunk = szTrunkNameWithNamespace;
+#  endif
 
 # else
 #  error "PORTME (VBOX_WITH_NETFLT)"

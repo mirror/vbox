@@ -43,6 +43,13 @@
 # include <stdio.h>
 #endif /* !RT_OS_WINDOWS */
 
+#ifdef RT_OS_LINUX
+# include <linux/version.h>
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0) /* proc_ns introduced */
+#  define VBOXNETFLT_LINUX_NAMESPACE_SUPPORT
+# endif
+#endif
+
 #define VBOXNET_IPV4ADDR_DEFAULT      0x0138A8C0  /* 192.168.56.1 */
 #define VBOXNET_IPV4MASK_DEFAULT      "255.255.255.0"
 

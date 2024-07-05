@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <iprt/asm.h>
+#include <errno.h>
 
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
@@ -154,7 +155,27 @@ static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
         /* Generate UUID from name and MAC address. */
         RTUUID uuid;
         RTUuidClear(&uuid);
+#ifdef VBOXNETFLT_LINUX_NAMESPACE_SUPPORT
+        uuid.au32[0] = 0;   /* Use 0 as the indicator of missing namespace info. */
+        /*
+         * Namespace links use the following naming convention: "net:[1234567890]".
+         * The maximum value of inode number is 4294967295, which gives up precisely
+         * 16 characters without terminating zero.
+         */
+        char szBuf[24];
+        ssize_t len = readlink("/proc/self/ns/net", szBuf, sizeof(szBuf) - 1);
+        if (len == -1)
+            Log(("NetIfList: Failed to get namespace for VBoxSVC, error %d\n", errno));
+        else if (!RTStrStartsWith(szBuf, "net:["))
+            Log(("NetIfList: Failed to get network namespace inode from %s\n", szBuf));
+        else
+            uuid.au32[0] = RTStrToUInt32(szBuf + 5);
+        Log(("NetIfList: VBoxSVC namespace inode %u\n", uuid.au32[0]));
+        /* Hashing the name is probably an overkill as MAC addresses should ensure uniqueness */
+        uuid.au32[1] = RTStrHash1(pszName);
+#else /* !VBOXNETFLT_LINUX_NAMESPACE_SUPPORT */
         memcpy(&uuid, Req.ifr_name, RT_MIN(sizeof(Req.ifr_name), sizeof(uuid)));
+#endif /* !VBOXNETFLT_LINUX_NAMESPACE_SUPPORT */
         uuid.Gen.u8ClockSeqHiAndReserved = (uint8_t)((uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80);
         uuid.Gen.u16TimeHiAndVersion = (uint16_t)((uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000);
         memcpy(uuid.Gen.au8Node, &Req.ifr_hwaddr.sa_data, sizeof(uuid.Gen.au8Node));
