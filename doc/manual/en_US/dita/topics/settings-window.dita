@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="settings-window">
+  <title>The Settings Window</title>
+  
+  <body>
+    <p>Settings for a virtual machine are configured using the <b>Settings</b> window.</p>
+    <p>To display the <b>Settings</b> window, do either of the following:</p>
+    <ul>
+      <li>
+        <p>In the machine list, right-click the virtual machine name. Select the <b>Settings</b> 
+           menu option.</p>
+      </li>
+      <li>
+        <p>In the machine list, click the virtual machine name. Select the <b>Machine</b>, <b>Settings</b> 
+          menu option.</p>
+      </li>
+      <li>
+        <p>
+          Click the <b>Settings</b> button in the toolbar in the Details pane. See <xref href="gui-details.dita#gui-details"/>.
+        </p>
+      </li>
+    </ul>
+    
+    <note>
+      <p>The available settings depend on the selected experience level. To display all
+       available settings, ensure the experience level is set to <b>Expert</b>.</p>
+      <p>See <xref href="ui-experience-level.dita#gui-experience-level"/>.</p>
+    </note>
+  </body>
+</topic>

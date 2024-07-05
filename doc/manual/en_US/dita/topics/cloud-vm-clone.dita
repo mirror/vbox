@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-vm-clone">
+  <title>Cloning a Cloud VM</title>
+  
+  <body>
+    <p>
+      When you clone a cloud VM, a copy of the <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance 
+      for the cloud VM is created and associated with the new cloud VM.
+        </p>
+    <p>
+          Perform the following steps to clone a cloud VM:
+        </p>
+    <ol>
+      <li>
+        <p>
+              Click on a cloud profile in the
+              <b outputclass="bold">OCI</b> group.
+            </p>
+        <p>
+              The cloud VMs for the selected cloud profile are
+              displayed.
+            </p>
+      </li>
+      <li>
+        <p>
+              Right-click on the cloud VM you want to clone and select <b outputclass="bold">Clone</b>.
+            </p>
+        <p>
+              The <b outputclass="bold">Clone Name</b> dialog is displayed.
+            </p>
+        <p>Enter a name for the clone.</p>
+        <p>The name you enter is also used as the display name for the related 
+          <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance. The default name for the clone
+          consists of the <codeph>_clone</codeph> suffix appended to the original name. For example,
+            <codeph>ol9-dev_clone</codeph>.</p>
+      </li>
+      <li>
+        <p> Click <b>OK</b> to create the clone and the related <ph
+            conkeyref="vbox-conkeyref-phrases/oci"/> instance. The new instance is started
+          automatically. </p>   
+        <p>
+          The new cloud VM is shown in the
+          <b outputclass="bold">OCI</b> group in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
+        </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

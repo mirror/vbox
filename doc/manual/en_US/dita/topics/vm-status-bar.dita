@@ -1,0 +1,331 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vm-status-bar">
+  <title>Virtual Machine Status Bar</title>
+ <!-- 7.1: Processor icon updated --> 
+  <body>
+    <p>
+       A status bar is displayed at the bottom of the virtual machine window. The status bar contains icons 
+       that enable you to view and change settings for the virtual machine, as follows:
+      </p>
+    <ul>
+      <li><p>Highlight an icon to show details of the current settings.</p></li>
+      <li><p>Right-click an icon to change a setting.</p>
+        <p>Some settings, such as audio, can be changed directly by right-clicking the status bar icon. For other
+          settings, you select from the displayed menu options.</p>
+      </li>
+    </ul>
+   
+   <p>See <xref href="BasicConcepts.dita#BasicConcepts"/> for detailed information about the available virtual 
+      machine settings.</p>
+    
+    <p><xref href="#vm-status-bar/table-status-bar-icons"/> describes the icons on the status bar.</p>
+   
+    <table id="table-status-bar-icons">
+      <title>Virtual Machine Status Bar Icons</title>
+      <desc>Describes icons on the status bar located at the bottom of the virtual machine window</desc>
+      <tgroup cols="2">
+        <thead>
+          <row>
+            <entry>
+              <p>
+                <b>Icon</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b>Description</b>
+              </p>
+            </entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_sata.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_sata.png" placement="break" align="center">
+                    <alt>SATA device settings icon on the virtual machine status bar</alt>
+                  </image>
+                </xref>
+                <image platform="ohc" href="images/icon_sata.png" placement="break" align="center">
+                  <alt>SATA device settings icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>Storage (SATA)</b></p>
+              <p>Settings for attached SATA storage devices, such as hard disk drives.</p>
+              <p>See also <xref href="settings-storage.dita#settings-storage"/>.</p>
+              
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_ide.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_ide.png" placement="break" align="center">
+                  <alt>IDE device settings icon on the virtual machine status bar</alt>
+                </image>
+                </xref>
+                <image platform="ohc" href="images/icon_ide.png" placement="break" align="center">
+                  <alt>IDE device settings icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>Storage (IDE)</b></p>
+              <p>Settings for attached IDE storage devices, such as optical CD-ROM drives.</p>
+              <p>See also <xref href="settings-storage.dita#settings-storage"/>.</p>
+              <p>Right-click to show options for adding and removing IDE devices.</p>
+              <p>See also <xref href="intro-removable-media-changing.dita#intro-removable-media-changing"/>.</p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_audio.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_audio.png" placement="break" align="center">
+                  <alt>Audio settings icon on the virtual machine status bar</alt>
+                </image>
+                </xref>
+                <image platform="ohc" href="images/icon_audio.png" placement="break" align="center">
+                  <alt>Audio settings icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>Audio</b></p>
+              <p>Settings for audio output and audio input.</p>
+              <p>Right-click to change a setting. The status bar icon is updated automatically to show 
+                which settings are enabled.</p>
+              <p>See also <xref href="settings-audio.dita#settings-audio"/>.</p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_network.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_network.png" placement="break" align="center">
+                  <alt>Network settings icon on the virtual machine status bar</alt>
+                </image>
+                </xref>
+                <image platform="ohc" href="images/icon_network.png" placement="break" align="center">
+                  <alt>Network settings icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>Network</b></p>
+              <p>Settings for attached network adapters.</p>
+              <p>Right-click to connect or disconnect a network adapter.</p>
+              <p>See also <xref href="settings-network.dita#settings-network"/>.</p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_usb.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_usb.png" placement="break" align="center">
+                  <alt>USB settings icon on the virtual machine status bar</alt>
+                </image>
+                </xref>
+                <image platform="ohc" href="images/icon_usb.png" placement="break" align="center">
+                  <alt>USB settings icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>USB</b></p>
+              <p>Settings for attached USB devices.</p>
+              <p>Right-click to select from the available USB devices on the host and 
+                to specify a USB filter.</p>
+              <p>See also <xref href="settings-usb.dita#settings-usb"/>.</p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_shared_folder.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_shared_folder.png" placement="break" align="center">
+                  <alt>Shared folders settings icon on the virtual machine status bar</alt>
+                </image>
+                </xref>
+                <image platform="ohc" href="images/icon_shared_folder.png" placement="break" align="center">
+                  <alt>Shared folders settings icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>Shared Folders</b></p>
+              <p>Settings for shared folders.</p>
+              <p>Right-click to change shared folder settings or to add a new 
+                shared folder.</p>
+              <p>See also <xref href="shared-folders.dita#shared-folders"/>.</p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_display.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_display.png" placement="break" align="center">
+                  <alt>Display settings icon on the virtual machine status bar</alt>
+                </image>
+                </xref>
+                <image platform="ohc" href="images/icon_display.png" placement="break" align="center">
+                  <alt>Display settings icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>Display</b></p>
+              <p>Settings for the virtual machine display.</p>
+              <p>Right-click to show options for resizing and scaling the display.</p>
+              <p>See also <xref href="intro-resize-window.dita#intro-resize-window"/>.</p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_recording.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_recording.png" placement="break" align="center">
+                  <alt>Recording settings icon on the virtual machine status bar. Recording is disabled.</alt>
+                </image>
+                </xref>
+                <image platform="ohc" href="images/icon_recording.png" placement="break" align="center">
+                  <alt>Recording settings icon on the virtual machine status bar. Recording is disabled.</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>Recording</b></p>
+              <p>Settings for video and audio recording.</p>
+              <p>Right-click to show options to enable and disable recording, or to change recording
+                settings.</p>
+              <p>To enable recording, right-click on the status bar and select the <b>Recording</b>
+                option. The icon changes to show a movie reel animation, as follows:</p>
+             <p>
+               <xref href="images/icon_recording_enabled.png" format="png" platform="htmlhelp"> 
+                 <image href="images/icon_recording_enabled.png" placement="break" align="center">
+                 <alt>Recording settings icon on the virtual machine status bar. Recording is enabled.</alt>
+               </image>
+               </xref>
+               <image platform="ohc" href="images/icon_recording_enabled.png" align="center" placement="break">
+                 <alt>Recording settings icon on the virtual machine status bar. Recording is enabled.</alt>
+               </image>
+             </p>
+              <p>To disable recording, right-click on the status bar and deselect the
+                  <b>Recording</b> option. The icon changes back to the default image.</p>
+              <p>See also <xref href="settings-capture.dita#settings-capture"/>.</p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_cpu_activity.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_cpu_activity.png" placement="break" align="center">
+                  <alt>Processor settings icon on the virtual machine status bar</alt>
+                </image>
+                </xref>
+                <image platform="ohc" href="images/icon_cpu_activity.png" placement="break" align="center">
+                  <alt>Processor settings icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>Processor</b></p>
+              <p>Settings for the CPU used by the virtual machine.</p>
+              <p>The colored bar in the icon indicates current processor activity. Red indicates
+                high CPU usage, Green indicates low CPU usage.</p>
+              <p>A green turtle icon indicates that a native hypervisor, such as Hyper-V, is running on the host.</p>
+              <p>
+                <xref href="images/icon_turtle.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_turtle.png" placement="break" align="center">
+                    <alt>Turtle icon on the virtual machine status bar</alt>
+                  </image>
+                </xref>
+                <image platform="ohc" href="images/icon_turtle.png" align="center" placement="break">
+                  <alt>Turtle icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+              
+              <p>See also <xref href="settings-processor.dita#settings-processor"/>.</p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_mouse_integration.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_mouse_integration.png" placement="break" align="center">
+                    <alt>Mouse integration icon on the virtual machine status bar</alt>
+                  </image>
+                </xref>
+                <image platform="ohc" href="images/icon_mouse_integration.png" placement="break" align="center">
+                  <alt>Mouse integration icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>Mouse Integration</b></p>
+              <p>Settings for capturing the host mouse pointer.</p>
+              <p>Right-click to enable or disable mouse integration.</p>
+              <p>See also <xref href="keyb_mouse_normal.dita#keyb_mouse_normal"/>.</p>
+            </entry>        
+          </row>
+          <row>
+            <entry>
+              <p>
+                <xref href="images/icon_host_key.png" format="png" platform="htmlhelp"> 
+                  <image href="images/icon_host_key.png" placement="break" align="center">
+                  <alt>Host key icon on the virtual machine status bar</alt>
+                </image>
+                </xref>
+                <image platform="ohc" href="images/icon_host_key.png" placement="break" align="center">
+                  <alt>Host key icon on the virtual machine status bar</alt>
+                </image>
+              </p>
+            </entry>
+            <entry>
+              <p><b>Host Key</b></p>
+              <p>Settings for capturing the host keyboard.</p>
+              <p>The current host key setting is displayed to the right of the icon.</p>
+              <p>Right-click to show options for configuring the host key combination and other
+                keyboard shortcuts.</p>
+              <p>Right-click to insert a special key combination, such as Ctrl-Alt-Del.</p>
+              <p>See also <xref href="specialcharacters.dita#specialcharacters"/>.</p>
+            </entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <section id="vm-status-bar-configure">
+      <title>Configuring the Status Bar</title>
+      <p>You can configure the status bar as follows:</p>
+      <ul>
+        <li>
+          <p>To <b>hide</b> the status bar, right-click in the status bar area and deselect <b>Show Status Bar</b>.</p>
+        </li>
+        <li>
+          <p>To <b>show</b> the status bar, select <b>View</b>, <b>Status Bar</b>, <b>Show Status Bar</b> from the 
+            virtual machine's menu bar.</p>
+        </li>
+        <li>
+          <p>To <b>modify</b> the status bar contents, right-click in the status bar area and select 
+            <b>Status Bar Settings</b>. You can then do the following:</p>
+          <ul>
+            <li><p>Select icons that you want to include in the status bar.</p></li>
+            <li><p>Deselect icons that you want to remove from the status bar.</p></li>
+            <li><p>Drag and drop icons to change their order in the status bar.</p></li>
+          </ul>
+          <p>Click the check mark button to save your changes to the status bar.</p>
+          <p>See also <xref href="user-interface.dita#user-interface"/> for other options to change the status bar.</p>
+        </li>     
+      </ul>  
+      
+    </section>
+    
+   
+
+  </body>
+  
+</topic>
