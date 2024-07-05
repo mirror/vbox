@@ -130,6 +130,7 @@ void UIMediumDetailsWidget::sltRetranslateUI()
     for (int i = 0; i < m_pComboBoxType->count(); ++i)
         m_pComboBoxType->setItemText(i, gpConverter->toString(m_pComboBoxType->itemData(i).value<KMediumType>()));
     m_pEditorLocation->setToolTip(UIMediumManager::tr("Holds the location of this medium."));
+    m_pButtonLocation->setText(UIMediumManager::tr("Choose Medium Location"));
     m_pButtonLocation->setToolTip(UIMediumManager::tr("Choose Medium Location"));
     m_pEditorDescription->setToolTip(UIMediumManager::tr("Holds the description of this medium."));
     m_pEditorSize->setToolTip(UIMediumManager::tr("Holds the size of this medium."));
