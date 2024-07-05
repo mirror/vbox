@@ -1264,7 +1264,11 @@ BEGINPROC_EXPORTED %1, 0
 ;
 %macro RT_NOCRT_BEGINPROC 1
  %ifdef RT_WITH_NOCRT_ALIASES
+  %ifdef IN_RT_STATIC
+BEGINPROC          RT_NOCRT(%1), 1 ; Do our own IBT_ENDBRxx after aliasing/
+  %else
 BEGINPROC_EXPORTED RT_NOCRT(%1), 1 ; Do our own IBT_ENDBRxx after aliasing/
+  %endif
   %ifdef ASM_FORMAT_ELF
    ; ELF
    %ifdef RT_WITH_NOCRT_UNDERSCORE_ALIASES
@@ -1285,7 +1289,11 @@ GLOBALNAME %1
   %endif
         IBT_ENDBRxx
  %else  ; !RT_WITH_NOCRT_ALIASES
+  %ifdef IN_RT_STATIC
+BEGINPROC          RT_NOCRT(%1), 0
+  %else
 BEGINPROC_EXPORTED RT_NOCRT(%1), 0
+  %endif
  %endif ; !RT_WITH_NOCRT_ALIASES
 %endmacro ; RT_NOCRT_BEGINPROC
 
