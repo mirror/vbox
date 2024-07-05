@@ -2199,7 +2199,7 @@ PCHDEFS  += $(CDEFS)
 OBJCDEFS += $(CDEFS)
 
 USES += dtrace
-USES.win += vboximportchecker
+USES.win += vboximportchecker vboxsetpeversion
 
 
 #
@@ -8647,13 +8647,11 @@ ifeq ($(KBUILD_TARGET),win)
  # Similarly, for XP64 and 64-bit W2K3 we need to make sure the subsystem version
  # in the binaries are set to 5.2.  The Visual C++ 2019 linker defaults to 6.0.
  # HACK ALERT! Double expansion of $$(NLTAB).
- TEMPLATE_VBoxGuestR3ExeBase_USES.win                      = $(TEMPLATE_VBoxR3StaticBase_USES.win) vboximportchecker
+ TEMPLATE_VBoxGuestR3ExeBase_USES.win                      = $(TEMPLATE_VBoxR3StaticBase_USES.win) vboximportchecker vboxsetpeversion
  TEMPLATE_VBoxGuestR3ExeBase_VBOX_IMPORT_CHECKER.win.x86   = nt31
  TEMPLATE_VBoxGuestR3ExeBase_VBOX_IMPORT_CHECKER.win.amd64 = xp64
- TEMPLATE_VBoxGuestR3ExeBase_POST_CMDS.win.x86   = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_$(TEMPLATE_VBoxGuestR3ExeBase_EXTENDS)_POST_CMDS))
- TEMPLATE_VBoxGuestR3ExeBase_LNK_DEPS.win.x86    = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
- TEMPLATE_VBoxGuestR3ExeBase_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_$(TEMPLATE_VBoxGuestR3ExeBase_EXTENDS)_POST_CMDS))
- TEMPLATE_VBoxGuestR3ExeBase_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
+ TEMPLATE_VBoxGuestR3ExeBase_VBOX_SET_PE_VERSION.win.x86   = default
+ TEMPLATE_VBoxGuestR3ExeBase_VBOX_SET_PE_VERSION.win.amd64 = default
  ifdef VBOX_WITH_NOCRT_STATIC
   TEMPLATE_VBoxGuestR3ExeBase_LDFLAGS.win.x86   = $(TEMPLATE_$(TEMPLATE_VBoxGuestR3ExeBase_EXTENDS)_LDFLAGS.win.x86) -NoOptIData
  else
@@ -8807,13 +8805,13 @@ endif
 TEMPLATE_VBoxGuestR3DllMinW2K = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
 TEMPLATE_VBoxGuestR3DllMinW2K_EXTENDS  = VBoxGuestR3Dll
 TEMPLATE_VBoxGuestR3DllMinW2K_VBOX_IMPORT_CHECKER.win.x86 = w2k
+TEMPLATE_VBoxGuestR3DllMinW2K_VBOX_SET_PE_VERSION.win.x86 = w2k
 ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_NOCRT_STATIC
   TEMPLATE_VBoxGuestR3DllMinW2K_LDFLAGS.win.x86 = $(filter-out -NoOptIData,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
  else
   TEMPLATE_VBoxGuestR3DllMinW2K_LDFLAGS.win.x86 = $(filter-out -NoOptIData -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
  endif
- TEMPLATE_VBoxGuestR3DllMinW2K_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --w2k,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
 endif
 
 #
@@ -8823,14 +8821,14 @@ TEMPLATE_VBoxGuestR3DllMinVista = VBox Guest User Dynamic Libraries w/ IPRT and 
 TEMPLATE_VBoxGuestR3DllMinVista_EXTENDS  = VBoxGuestR3Dll
 TEMPLATE_VBoxGuestR3DllMinVista_VBOX_IMPORT_CHECKER.win.x86   = vista
 TEMPLATE_VBoxGuestR3DllMinVista_VBOX_IMPORT_CHECKER.win.amd64 = vista
+TEMPLATE_VBoxGuestR3DllMinVista_VBOX_SET_PE_VERSION.win.x86   = vista
+TEMPLATE_VBoxGuestR3DllMinVista_VBOX_SET_PE_VERSION.win.amd64 = vista
 ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_NOCRT_STATIC
   TEMPLATE_VBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
  else
   TEMPLATE_VBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
  endif
- TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.x86   = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
- TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.amd64 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.amd64))
 endif
 
 #
@@ -8876,14 +8874,14 @@ TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS             = \
 #
 TEMPLATE_NewerVccVBoxGuestR3DllMinVista = NewerVccVBoxGuestR3Dll with the newer Visual C++ version (2013 or later).
 TEMPLATE_NewerVccVBoxGuestR3DllMinVista_EXTENDS := NewerVccVBoxGuestR3Dll
+TEMPLATE_NewerVccVBoxGuestR3DllMinVista_VBOX_SET_PE_VERSION.win.x86   := vista
+TEMPLATE_NewerVccVBoxGuestR3DllMinVista_VBOX_SET_PE_VERSION.win.amd64 := vista
 ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_NOCRT_STATIC
   TEMPLATE_NewerVccVBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData,$(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win.x86))
  else
   TEMPLATE_NewerVccVBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -NoOptIData -Section:.bss$(COMMA)RW!K,$(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win.x86))
  endif
- TEMPLATE_NewerVccVBoxGuestR3DllMinVista_POST_CMDS.win.x86   = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_NewerVccVBoxGuestR3Dll_POST_CMDS.win.x86))
- TEMPLATE_NewerVccVBoxGuestR3DllMinVista_POST_CMDS.win.amd64 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_NewerVccVBoxGuestR3Dll_POST_CMDS.win.amd64))
 endif
 
 #

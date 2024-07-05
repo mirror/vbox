@@ -114,16 +114,15 @@ ifndef VBOX_WITH_NOCRT_STATIC
  	-Section:.bss,RW!K
 endif
 TEMPLATE_VBoxValidationKitR3_LDFLAGS.win.x86 += -NoOptIData
-TEMPLATE_VBoxValidationKitR3_POST_CMDS.win.x86   = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBoxValidationKitR3Base_POST_CMDS.win.x86)$$(NLTAB)
-TEMPLATE_VBoxValidationKitR3_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB))$(TEMPLATE_VBoxValidationKitR3Base_POST_CMDS.win.amd64)$$(NLTAB)
-TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.x86    = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxValidationKitR3Base_LNK_DEPS.win.x86)
-TEMPLATE_VBoxValidationKitR3_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxValidationKitR3Base_LNK_DEPS.win.amd64)
 
-#TODO: TEMPLATE_VBoxValidationKitR3_EXTENDS = VBoxGuestR3Exe
+TEMPLATE_VBoxValidationKitR3_USES.win += vboxsetpeversion
+TEMPLATE_VBoxValidationKitR3_VBOX_SET_PE_VERSION.win.x86   = nt31
+TEMPLATE_VBoxValidationKitR3_VBOX_SET_PE_VERSION.win.amd64 = xp64
 
 TEMPLATE_VBoxValidationKitR3_USES.win += vboximportchecker
 TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.x86   = nt31
 TEMPLATE_VBoxValidationKitR3_VBOX_IMPORT_CHECKER.win.amd64 = xp64
+#TODO: TEMPLATE_VBoxValidationKitR3_EXTENDS = VBoxGuestR3Exe
 
 
 #

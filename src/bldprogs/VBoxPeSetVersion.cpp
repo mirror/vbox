@@ -496,7 +496,9 @@ int main(int argc, char **argv)
                     ch = 'V';
                 else
                 {
-                    if (strcmp(psz, "nt31") == 0)
+                    if (strcmp(psz, "default") == 0)
+                        uNtVersion = 0;
+                    else if (strcmp(psz, "nt31") == 0)
                         uNtVersion = MK_VER(3,10);
                     else if (strcmp(psz, "nt350") == 0)
                         uNtVersion = MK_VER(3,50);
@@ -508,7 +510,7 @@ int main(int argc, char **argv)
                         uNtVersion = MK_VER(5,0);
                     else if (strcmp(psz, "xp") == 0)
                         uNtVersion = MK_VER(5,1);
-                    else if (strcmp(psz, "w2k3") == 0)
+                    else if (strcmp(psz, "w2k3") == 0 || strcmp(psz, "xp64") == 0)
                         uNtVersion = MK_VER(5,2);
                     else if (strcmp(psz, "vista") == 0)
                         uNtVersion = MK_VER(6,0);

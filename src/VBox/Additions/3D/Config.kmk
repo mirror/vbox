@@ -156,10 +156,9 @@ TEMPLATE_VBoxMesa3DGuestR3DllMinVista                     = VBox Mesa 3D Guest U
 TEMPLATE_VBoxMesa3DGuestR3DllMinVista_EXTENDS             = VBoxMesa3DGuestR3Dll
 TEMPLATE_VBoxMesa3DGuestR3DllMinVista_VBOX_IMPORT_CHECKER.win.x86   := vista
 TEMPLATE_VBoxMesa3DGuestR3DllMinVista_VBOX_IMPORT_CHECKER.win.amd64 := vista
+TEMPLATE_VBoxMesa3DGuestR3DllMinVista_VBOX_SET_PE_VERSION.win.x86   := vista
+TEMPLATE_VBoxMesa3DGuestR3DllMinVista_VBOX_SET_PE_VERSION.win.amd64 := vista
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxMesa3DGuestR3DllMinVista_LDFLAGS.win.x86    = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win.x86))
- TEMPLATE_VBoxMesa3DGuestR3DllMinVista_POST_CMDS.win.x86  = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxMesa3DGuestR3Dll_POST_CMDS.win.x86))
- TEMPLATE_VBoxMesa3DGuestR3DllMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBoxMesa3DGuestR3Dll_POST_CMDS.win.amd64))
- TEMPLATE_VBoxMesa3DGuestR3DllMinVista_LNK_DEPS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxMesa3DGuestR3Dll_LNK_DEPS.win.amd64)
 endif
 
