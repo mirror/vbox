@@ -34,16 +34,13 @@
 /* Qt includes: */
 #include <QObject>
 
-/* GUI includes: */
-#include "UILibraryDefs.h"
-
 /* Forward declarations: */
 class QString;
 class QUuid;
 class CCloudMachine;
 
 /** QObject subclass processing various cloud signals and handlers. */
-class SHARED_LIBRARY_STUFF UICloudMachineManager : public QObject
+class UICloudMachineManager : public QObject
 {
     Q_OBJECT;
 
