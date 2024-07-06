@@ -625,6 +625,16 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
                 case 0x10:  pszCheck = "Invalid indirect call (indirect call guard) [?]"; break;
                 case 0x11:  pszCheck = "Invalid memory write (write guard) [?]"; break;
                 case 0x12:  pszCheck = "Invalid target context for fiber switch [?]"; break;
+                case 0x13:  pszCheck = "Invalid register context assignment"; break;
+                case 0x14:  pszCheck = "Invalid object reference count"; break;
+                case 0x15: case 0x16: case 0x17:
+                case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e:
+                case 0x1f:  pszCheck = "Memory safety violation"; break;
+                case 0x18:  pszCheck = "Invalid jmp_buf"; break;
+                case 0x19:  pszCheck = "Modifying read-only data"; break;
+                case 0x20:  pszCheck = "Crypto self-test fail"; break;
+                case 0x21:  pszCheck = "Invalid exception chain"; break;
+                case 0x22:  pszCheck = "Crypto library error"; break;
                 /** @todo there are lots more... */
                 default:    pszCheck = "Todo/Unknown"; break;
             }
