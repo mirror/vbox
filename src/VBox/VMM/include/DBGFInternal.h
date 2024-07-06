@@ -1161,11 +1161,16 @@ typedef struct DBGF
     /** @} */
 
     /**
-     * Bug check data.
-     * @note This will not be reset on reset.
+     * Bug check configuration and data.
+     * @note The data will not be reset on reset.
      */
     struct
     {
+        /** Whether to power off VM on BSOD.   */
+        bool                    fCfgPowerOffOnBsod;
+        /** Explicit padding. */
+        bool                    afReserved[3];
+
         /** The ID of the CPU reporting it. */
         VMCPUID                 idCpu;
         /** The event associated with the bug check (gives source).
@@ -1173,8 +1178,6 @@ typedef struct DBGF
         DBGFEVENTTYPE           enmEvent;
         /** The total reset count at the time (VMGetResetCount). */
         uint32_t                uResetNo;
-        /** Explicit padding. */
-        uint32_t                uPadding;
         /** When it was reported (TMVirtualGet). */
         uint64_t                uTimestamp;
         /** The bug check number.
