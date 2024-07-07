@@ -4964,6 +4964,64 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrQxtn(ARMV8INSTRVECQXTNOP enmOp, bo
          | iVecRegDst;
 }
 
+
+/** Armv8 floating point size. */
+typedef enum
+{
+    kArmv8VecInstrFpSz_2x_Single = 0,                             /**< 2x single precision values in the low 64-bit of the 128-bit register. */
+    kArmv8VecInstrFpSz_4x_Single = RT_BIT_32(30),                 /**< 4x single precision values in the 128-bit register. */
+    kArmv8VecInstrFpSz_2x_Double = RT_BIT_32(30) | RT_BIT_32(22), /**< 2x double precision values in the 128-bit register. */
+} ARMV8INSTRVECFPSZ;
+
+
+/** Armv8 3 operand floating point operation. */
+typedef enum
+{
+                                        /*   insn[29]          insn[23]      insn[15:11]     */
+    kArmv8VecInstrFpOp_Add               =                                 UINT32_C(0xd000), /**< FADD    */
+    kArmv8VecInstrFpOp_Sub               =                 RT_BIT_32(23) | UINT32_C(0xd000), /**< FADD    */
+    kArmv8VecInstrFpOp_AddPairwise       = RT_BIT_32(29) |                 UINT32_C(0xd000), /**< FADDP   */
+    kArmv8VecInstrFpOp_Mul               = RT_BIT_32(29) |                 UINT32_C(0xd800), /**< FMUL    */
+    kArmv8VecInstrFpOp_Div               = RT_BIT_32(29) |                 UINT32_C(0xf800), /**< FDIV    */
+
+    kArmv8VecInstrFpOp_Max               =                                 UINT32_C(0xf000), /**< FMAX    */
+    kArmv8VecInstrFpOp_MaxNumber         =                                 UINT32_C(0xc000), /**< FMAXNM  */
+    kArmv8VecInstrFpOp_MaxNumberPairwise = RT_BIT_32(29) |                 UINT32_C(0xc000), /**< FMAXNMP */
+    kArmv8VecInstrFpOp_MaxPairwise       = RT_BIT_32(29) |                 UINT32_C(0xf000), /**< FMAXP   */
+
+    kArmv8VecInstrFpOp_Min               =                 RT_BIT_32(23) | UINT32_C(0xf000), /**< FMIN    */
+    kArmv8VecInstrFpOp_MinNumber         =                 RT_BIT_32(23) | UINT32_C(0xc000), /**< FMINNM  */
+    kArmv8VecInstrFpOp_MinNumberPairwise = RT_BIT_32(29) | RT_BIT_32(23) | UINT32_C(0xc000), /**< FMINNMP */
+    kArmv8VecInstrFpOp_MinPairwise       = RT_BIT_32(29) | RT_BIT_32(23) | UINT32_C(0xf000), /**< FMINP   */
+
+    kArmv8VecInstrFpOp_Fmla              =                                 UINT32_C(0xc800), /**< FMLA    */
+    kArmv8VecInstrFpOp_Fmls              =                 RT_BIT_32(23) | UINT32_C(0xc800), /**< FMLS    */
+} ARMV8INSTRVECFPOP;
+
+/**
+ * A64: Encodes a 3 operand floating point operation (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   enmOp       The operation to perform.
+ * @param   enmSz       The size to operate on.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc1 The first vector source register.
+ * @param   iVecRegSrc2 The second vector source register.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrFp3Op(ARMV8INSTRVECFPOP enmOp, ARMV8INSTRVECFPSZ enmSz, uint32_t iVecRegDst,
+                                                    uint32_t iVecRegSrc1, uint32_t iVecRegSrc2)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc1 < 32); Assert(iVecRegSrc2 < 32);
+
+    return UINT32_C(0x0e200400)
+         | ((uint32_t)enmOp)
+         | ((uint32_t)enmSz)
+         | (iVecRegSrc2 << 16)
+         | (iVecRegSrc1 << 5)
+         | iVecRegDst;
+}
+
+
 /** @} */
 
 #endif /* !dtrace && __cplusplus */
