@@ -2083,10 +2083,10 @@ IEMNATIVE_NATIVE_EMIT_SHIFT_LEFT_IMM_U128(psllq, 64, kArmv8InstrShiftSz_U64, 0x7
 
 
 /**
- * Common emitter for the paddX/psubX instructions.
+ * Common emitter for packed arithmetic instructions.
  */
 #ifdef RT_ARCH_AMD64
-# define IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(a_Instr, a_fSub, a_ArmElemSz, a_bOpcX86) \
+# define IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(a_Instr, a_enmArmOp, a_ArmElemSz, a_bOpcX86) \
     DECL_INLINE_THROW(uint32_t) \
     RT_CONCAT3(iemNativeEmit_,a_Instr,_rr_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, \
                                                 uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc) \
@@ -2130,7 +2130,7 @@ IEMNATIVE_NATIVE_EMIT_SHIFT_LEFT_IMM_U128(psllq, 64, kArmv8InstrShiftSz_U64, 0x7
     } \
     typedef int ignore_semicolon
 #elif defined(RT_ARCH_ARM64)
-# define IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(a_Instr, a_fSub, a_ArmElemSz, a_bOpcX86) \
+# define IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(a_Instr, a_enmArmOp, a_ArmElemSz, a_bOpcX86) \
     DECL_INLINE_THROW(uint32_t) \
     RT_CONCAT3(iemNativeEmit_,a_Instr,_rr_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, \
                                                 uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc) \
@@ -2140,7 +2140,7 @@ IEMNATIVE_NATIVE_EMIT_SHIFT_LEFT_IMM_U128(psllq, 64, kArmv8InstrShiftSz_U64, 0x7
         uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc), \
                                                                               kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly); \
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1); \
-        pCodeBuf[off++] = Armv8A64MkVecInstrAddSub((a_fSub), idxSimdRegDst, idxSimdRegDst, idxSimdRegSrc, (a_ArmElemSz)); \
+        pCodeBuf[off++] = Armv8A64MkVecInstrArithOp((a_enmArmOp), idxSimdRegDst, idxSimdRegDst, idxSimdRegSrc, (a_ArmElemSz)); \
         iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst); \
         iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc); \
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
@@ -2154,7 +2154,7 @@ IEMNATIVE_NATIVE_EMIT_SHIFT_LEFT_IMM_U128(psllq, 64, kArmv8InstrShiftSz_U64, 0x7
                                                                               kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate); \
         uint8_t const idxSimdRegSrc = iemNativeVarSimdRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/); \
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1); \
-        pCodeBuf[off++] = Armv8A64MkVecInstrAddSub((a_fSub), idxSimdRegDst, idxSimdRegDst, idxSimdRegSrc, (a_ArmElemSz)); \
+        pCodeBuf[off++] = Armv8A64MkVecInstrArithOp((a_enmArmOp), idxSimdRegDst, idxSimdRegDst, idxSimdRegSrc, (a_ArmElemSz)); \
         iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst); \
         iemNativeVarRegisterRelease(pReNative, idxVarSrc); \
         IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
@@ -2165,15 +2165,32 @@ IEMNATIVE_NATIVE_EMIT_SHIFT_LEFT_IMM_U128(psllq, 64, kArmv8InstrShiftSz_U64, 0x7
 # error "Port me"
 #endif
 
-IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(paddb, false /*a_fSub*/, kArmv8VecInstrArithSz_8,  0xfc);
-IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(paddw, false /*a_fSub*/, kArmv8VecInstrArithSz_16, 0xfd);
-IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(paddd, false /*a_fSub*/, kArmv8VecInstrArithSz_32, 0xfe);
-IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(paddq, false /*a_fSub*/, kArmv8VecInstrArithSz_64, 0xd4);
+/*
+ * PADDx.
+ */
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(paddb, kArmv8VecInstrArithOp_Add, kArmv8VecInstrArithSz_8,  0xfc);
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(paddw, kArmv8VecInstrArithOp_Add, kArmv8VecInstrArithSz_16, 0xfd);
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(paddd, kArmv8VecInstrArithOp_Add, kArmv8VecInstrArithSz_32, 0xfe);
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(paddq, kArmv8VecInstrArithOp_Add, kArmv8VecInstrArithSz_64, 0xd4);
 
-IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubb, true  /*a_fSub*/, kArmv8VecInstrArithSz_8,  0xf8);
-IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubw, true  /*a_fSub*/, kArmv8VecInstrArithSz_16, 0xf9);
-IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubd, true  /*a_fSub*/, kArmv8VecInstrArithSz_32, 0xfa);
-IEMNATIVE_NATIVE_EMIT_ADD_SUB_U128(psubq, true  /*a_fSub*/, kArmv8VecInstrArithSz_64, 0xfb);
+/*
+ * PSUBx.
+ */
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(psubb, kArmv8VecInstrArithOp_Sub, kArmv8VecInstrArithSz_8,  0xf8);
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(psubw, kArmv8VecInstrArithOp_Sub, kArmv8VecInstrArithSz_16, 0xf9);
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(psubd, kArmv8VecInstrArithOp_Sub, kArmv8VecInstrArithSz_32, 0xfa);
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(psubq, kArmv8VecInstrArithOp_Sub, kArmv8VecInstrArithSz_64, 0xfb);
+
+/*
+ * PADDUSx.
+ */
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(paddusb, kArmv8VecInstrArithOp_UnsignSat_Add, kArmv8VecInstrArithSz_8,  0xdc);
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(paddusw, kArmv8VecInstrArithOp_UnsignSat_Add, kArmv8VecInstrArithSz_16, 0xdd);
+
+/*
+ * PMULLx.
+ */
+IEMNATIVE_NATIVE_EMIT_ARITH_OP_U128(pmullw,  kArmv8VecInstrArithOp_Mul, kArmv8VecInstrArithSz_16, 0xd5);
 
 
 /**

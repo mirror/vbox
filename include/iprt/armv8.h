@@ -4819,11 +4819,25 @@ typedef enum ARMV8INSTRVECARITHSZ
     kArmv8VecInstrArithSz_64  = 3  /**<  64-bit. */
 } ARMV8INSTRVECARITHSZ;
 
+
+/** Armv8 vector arithmetic operation. */
+typedef enum
+{
+    kArmv8VecInstrArithOp_Add           =                 RT_BIT_32(15),                                               /**< ADD   */
+    kArmv8VecInstrArithOp_Sub           = RT_BIT_32(29) | RT_BIT_32(15),                                               /**< SUB   */
+    kArmv8VecInstrArithOp_UnsignSat_Add = RT_BIT_32(29) |                                               RT_BIT_32(11), /**< UQADD */
+    kArmv8VecInstrArithOp_UnsignSat_Sub = RT_BIT_32(29) |                 RT_BIT_32(13)               | RT_BIT_32(11), /**< UQSUB */
+    kArmv8VecInstrArithOp_SignSat_Add   =                                                               RT_BIT_32(11), /**< SQADD */
+    kArmv8VecInstrArithOp_SignSat_Sub   =                                 RT_BIT_32(13)               | RT_BIT_32(11), /**< SQSUB */
+    kArmv8VecInstrArithOp_Mul           =                 RT_BIT_32(15) |               RT_BIT_32(12) | RT_BIT_32(11)  /**< MUL   */
+} ARMV8INSTRVECARITHOP;
+
+
 /**
- * A64: Encodes ADD/SUB (vector, register).
+ * A64: Encodes an arithmetic operation (vector, register).
  *
  * @returns The encoded instruction.
- * @param   fSub        Flag whther this is an addition (false) or subtraction (true) instruction.
+ * @param   enmOp       The operation to encode.
  * @param   iVecRegDst  The vector register to put the result into.
  * @param   iVecRegSrc1 The first vector source register.
  * @param   iVecRegSrc2 The second vector source register.
@@ -4831,14 +4845,14 @@ typedef enum ARMV8INSTRVECARITHSZ
  * @param   f128Bit     Flag whether this operates on the full 128-bit (true, default) of the vector register
  *                      or just the low 64-bit (false).
  */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrAddSub(bool fSub, uint32_t iVecRegDst, uint32_t iVecRegSrc1, uint32_t iVecRegSrc2,
-                                                     ARMV8INSTRVECARITHSZ enmSz, bool f128Bit = true)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrArithOp(ARMV8INSTRVECARITHOP enmOp, uint32_t iVecRegDst, uint32_t iVecRegSrc1, uint32_t iVecRegSrc2,
+                                                      ARMV8INSTRVECARITHSZ enmSz, bool f128Bit = true)
 {
     Assert(iVecRegDst < 32); Assert(iVecRegSrc1 < 32); Assert(iVecRegSrc2 < 32);
 
-    return UINT32_C(0x0e208400)
+    return UINT32_C(0x0e200400)
+         | (uint32_t)enmOp
          | ((uint32_t)f128Bit << 30)
-         | ((uint32_t)fSub    << 29)
          | ((uint32_t)enmSz   << 22)
          | (iVecRegSrc2 << 16)
          | (iVecRegSrc1 << 5)
