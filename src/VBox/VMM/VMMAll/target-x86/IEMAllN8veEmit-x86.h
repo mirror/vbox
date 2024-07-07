@@ -1878,169 +1878,94 @@ iemNativeEmit_rcr_r_CL_efl(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 *********************************************************************************************************************************/
 
 /**
- * Common emitter for the PXOR, XORPS, XORPD instructions - guest register / guest register variant.
+ * Common emitter for packed arithmetic instructions.
  */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmit_pxor_rr_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                           uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc)
-{
-    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
-    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
-
 #ifdef RT_ARCH_AMD64
-    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
-
-    /* pxor xmm, xmm */
-    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-    if (idxSimdRegDst >= 8 || idxSimdRegSrc >= 8)
-        pCodeBuf[off++] =   (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0)
-                          | (idxSimdRegDst >= 8 ? X86_OP_REX_R : 0);
-    pCodeBuf[off++] = 0x0f;
-    pCodeBuf[off++] = 0xef;
-    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxSimdRegDst & 7, idxSimdRegSrc & 7);
-
+# define IEMNATIVE_NATIVE_EMIT_LOGICAL_OP_U128(a_Instr, a_enmArmOp, a_bOpcX86) \
+    DECL_INLINE_THROW(uint32_t) \
+    RT_CONCAT3(iemNativeEmit_,a_Instr,_rr_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, \
+                                                uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc) \
+    { \
+        uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst), \
+                                                                              kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate); \
+        uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc), \
+                                                                              kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly); \
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5); \
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP; \
+        if (idxSimdRegDst >= 8 || idxSimdRegSrc >= 8) \
+            pCodeBuf[off++] =   (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0) \
+                              | (idxSimdRegDst >= 8 ? X86_OP_REX_R : 0); \
+        pCodeBuf[off++] = 0x0f; \
+        pCodeBuf[off++] = (a_bOpcX86); \
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxSimdRegDst & 7, idxSimdRegSrc & 7); \
+        iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst); \
+        iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc); \
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
+        return off; \
+    } \
+    DECL_INLINE_THROW(uint32_t) \
+    RT_CONCAT3(iemNativeEmit_,a_Instr,_rv_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, \
+                                                uint8_t const idxSimdGstRegDst, uint8_t const idxVarSrc) \
+    { \
+        uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst), \
+                                                                              kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate); \
+        uint8_t const idxSimdRegSrc = iemNativeVarSimdRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/); \
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5); \
+        pCodeBuf[off++] = X86_OP_PRF_SIZE_OP; \
+        if (idxSimdRegDst >= 8 || idxSimdRegSrc >= 8) \
+            pCodeBuf[off++] =   (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0) \
+                              | (idxSimdRegDst >= 8 ? X86_OP_REX_R : 0); \
+        pCodeBuf[off++] = 0x0f; \
+        pCodeBuf[off++] = (a_bOpcX86); \
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxSimdRegDst & 7, idxSimdRegSrc & 7); \
+        iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst); \
+        iemNativeVarRegisterRelease(pReNative, idxVarSrc); \
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
+        return off; \
+    } \
+    typedef int ignore_semicolon
 #elif defined(RT_ARCH_ARM64)
-    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-
-    pCodeBuf[off++] = Armv8A64MkVecInstrEor(idxSimdRegDst, idxSimdRegDst, idxSimdRegSrc);
+# define IEMNATIVE_NATIVE_EMIT_LOGICAL_OP_U128(a_Instr, a_enmArmOp, a_bOpcX86) \
+    DECL_INLINE_THROW(uint32_t) \
+    RT_CONCAT3(iemNativeEmit_,a_Instr,_rr_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, \
+                                                uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc) \
+    { \
+        uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst), \
+                                                                              kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate); \
+        uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc), \
+                                                                              kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly); \
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1); \
+        pCodeBuf[off++] = Armv8A64MkVecInstrLogical((a_enmArmOp), idxSimdRegDst, idxSimdRegDst, idxSimdRegSrc); \
+        iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst); \
+        iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc); \
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
+        return off; \
+    } \
+    DECL_INLINE_THROW(uint32_t) \
+    RT_CONCAT3(iemNativeEmit_,a_Instr,_rv_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, \
+                                                uint8_t const idxSimdGstRegDst, uint8_t const idxVarSrc) \
+    { \
+        uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst), \
+                                                                              kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate); \
+        uint8_t const idxSimdRegSrc = iemNativeVarSimdRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/); \
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1); \
+        pCodeBuf[off++] = Armv8A64MkVecInstrLogical((a_enmArmOp), idxSimdRegDst, idxSimdRegDst, idxSimdRegSrc); \
+        iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst); \
+        iemNativeVarRegisterRelease(pReNative, idxVarSrc); \
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off); \
+        return off; \
+    } \
+    typedef int ignore_semicolon
 #else
-# error "port me"
+# error "Port me"
 #endif
 
-    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
-    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc);
-
-    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-    return off;
-}
-
-
-/**
- * Common emitter for the PXOR, XORPS, XORPD instructions - guest register / recompiler variable variant.
- */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmit_pxor_rv_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                           uint8_t const idxSimdGstRegDst, uint8_t const idxVarSrc)
-{
-    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarSrc);
-    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVarSrc, sizeof(RTUINT128U));
-
-    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
-    uint8_t const idxSimdRegSrc = iemNativeVarSimdRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
-
-
-#ifdef RT_ARCH_AMD64
-    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
-
-    /* pxor xmm, xmm */
-    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-    if (idxSimdRegDst >= 8 || idxSimdRegSrc >= 8)
-        pCodeBuf[off++] =   (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0)
-                          | (idxSimdRegDst >= 8 ? X86_OP_REX_R : 0);
-    pCodeBuf[off++] = 0x0f;
-    pCodeBuf[off++] = 0xef;
-    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxSimdRegDst & 7, idxSimdRegSrc & 7);
-
-#elif defined(RT_ARCH_ARM64)
-    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-
-    pCodeBuf[off++] = Armv8A64MkVecInstrEor(idxSimdRegDst, idxSimdRegDst, idxSimdRegSrc);
-#else
-# error "port me"
-#endif
-
-    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
-    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
-
-    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-    return off;
-}
-
-
-/**
- * Common emitter for the PAND, ANDPS, ANDPD instructions - guest register / guest register variant.
- */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmit_pand_rr_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                           uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc)
-{
-    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
-    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
-
-#ifdef RT_ARCH_AMD64
-    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
-
-    /* pand xmm, xmm */
-    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-    if (idxSimdRegDst >= 8 || idxSimdRegSrc >= 8)
-        pCodeBuf[off++] =   (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0)
-                          | (idxSimdRegDst >= 8 ? X86_OP_REX_R : 0);
-    pCodeBuf[off++] = 0x0f;
-    pCodeBuf[off++] = 0xdb;
-    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxSimdRegDst & 7, idxSimdRegSrc & 7);
-
-#elif defined(RT_ARCH_ARM64)
-    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-
-    pCodeBuf[off++] = Armv8A64MkVecInstrAnd(idxSimdRegDst, idxSimdRegDst, idxSimdRegSrc);
-#else
-# error "port me"
-#endif
-
-    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
-    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc);
-
-    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-    return off;
-}
-
-
-/**
- * Common emitter for the PAND, ANDPS, ANDPD instructions - guest register / recompiler variable variant.
- */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmit_pand_rv_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                           uint8_t const idxSimdGstRegDst, uint8_t const idxVarSrc)
-{
-    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarSrc);
-    IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVarSrc, sizeof(RTUINT128U));
-
-    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForUpdate);
-    uint8_t const idxSimdRegSrc = iemNativeVarSimdRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
-
-
-#ifdef RT_ARCH_AMD64
-    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
-
-    /* pand xmm, xmm */
-    pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-    if (idxSimdRegDst >= 8 || idxSimdRegSrc >= 8)
-        pCodeBuf[off++] =   (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0)
-                          | (idxSimdRegDst >= 8 ? X86_OP_REX_R : 0);
-    pCodeBuf[off++] = 0x0f;
-    pCodeBuf[off++] = 0xdb;
-    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxSimdRegDst & 7, idxSimdRegSrc & 7);
-
-#elif defined(RT_ARCH_ARM64)
-    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-
-    pCodeBuf[off++] = Armv8A64MkVecInstrAnd(idxSimdRegDst, idxSimdRegDst, idxSimdRegSrc);
-#else
-# error "port me"
-#endif
-
-    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
-    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
-
-    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-    return off;
-}
+/* POR, ORPS, ORPD. */
+IEMNATIVE_NATIVE_EMIT_LOGICAL_OP_U128(por, kArmv8VecInstrLogicOp_Orr, 0xeb);
+/* PXOR, XORPS, XORPD. */
+IEMNATIVE_NATIVE_EMIT_LOGICAL_OP_U128(pxor, kArmv8VecInstrLogicOp_Eor, 0xef);
+/* PAND, ANDPS, ANDPD. */
+IEMNATIVE_NATIVE_EMIT_LOGICAL_OP_U128(pand, kArmv8VecInstrLogicOp_And, 0xdb);
 
 
 /**
