@@ -4469,7 +4469,7 @@ typedef enum
     kArmv8VecInstrLogicOp_Eor = RT_BIT_32(29),                                 /**< EOR */
     kArmv8VecInstrLogicOp_Bsl = RT_BIT_32(29) |                 RT_BIT_32(22), /**< BSL */
     kArmv8VecInstrLogicOp_Bit = RT_BIT_32(29) | RT_BIT_32(23),                 /**< BIT */
-    kArmv8VecInstrLogicOp_Bif = RT_BIT_32(29) | RT_BIT_32(23) | RT_BIT_32(22), /**< BIF */
+    kArmv8VecInstrLogicOp_Bif = RT_BIT_32(29) | RT_BIT_32(23) | RT_BIT_32(22)  /**< BIF */
 } ARMV8INSTRVECLOGICOP;
 
 
