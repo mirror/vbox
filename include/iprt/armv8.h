@@ -4970,7 +4970,7 @@ typedef enum
 {
     kArmv8VecInstrFpSz_2x_Single = 0,                             /**< 2x single precision values in the low 64-bit of the 128-bit register. */
     kArmv8VecInstrFpSz_4x_Single = RT_BIT_32(30),                 /**< 4x single precision values in the 128-bit register. */
-    kArmv8VecInstrFpSz_2x_Double = RT_BIT_32(30) | RT_BIT_32(22), /**< 2x double precision values in the 128-bit register. */
+    kArmv8VecInstrFpSz_2x_Double = RT_BIT_32(30) | RT_BIT_32(22)  /**< 2x double precision values in the 128-bit register. */
 } ARMV8INSTRVECFPSZ;
 
 
@@ -4995,7 +4995,7 @@ typedef enum
     kArmv8VecInstrFpOp_MinPairwise       = RT_BIT_32(29) | RT_BIT_32(23) | UINT32_C(0xf000), /**< FMINP   */
 
     kArmv8VecInstrFpOp_Fmla              =                                 UINT32_C(0xc800), /**< FMLA    */
-    kArmv8VecInstrFpOp_Fmls              =                 RT_BIT_32(23) | UINT32_C(0xc800), /**< FMLS    */
+    kArmv8VecInstrFpOp_Fmls              =                 RT_BIT_32(23) | UINT32_C(0xc800)  /**< FMLS    */
 } ARMV8INSTRVECFPOP;
 
 /**
