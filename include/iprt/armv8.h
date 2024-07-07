@@ -4933,6 +4933,37 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrCmpAgainstZero(ARMV8VECINSTRCMPOP 
          | iVecRegDst;
 }
 
+
+/** Armv8 [Signed,Unsigned] Extract {Unsigned} operation. */
+typedef enum
+{
+    kArmv8VecInstrQxtnOp_Sqxtn  =                 RT_BIT_32(14),                /**< SQXTN  */
+    kArmv8VecInstrQxtnOp_Sqxtun = RT_BIT_32(29) |                RT_BIT_32(13), /**< SQXTUN */
+    kArmv8VecInstrQxtnOp_Uqxtn  = RT_BIT_32(29) | RT_BIT_32(14)                 /**< UQXTN  */
+} ARMV8INSTRVECQXTNOP;
+
+/**
+ * A64: Encodes SQXTN/SQXTN2/UQXTN/UQXTN2/SQXTUN/SQXTUN2 (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   enmOp       The operation to perform.
+ * @param   fUpper      Flag whether to write the result to the lower (false) or upper (true) half of the destinatiom register.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc  The first vector source register.
+ * @param   enmSz       Element size.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrQxtn(ARMV8INSTRVECQXTNOP enmOp, bool fUpper, uint32_t iVecRegDst, uint32_t iVecRegSrc, ARMV8INSTRVECARITHSZ enmSz)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc < 32);
+
+    return UINT32_C(0x0e210800)
+         | ((uint32_t)enmOp)
+         | ((uint32_t)fUpper    << 30)
+         | ((uint32_t)enmSz     << 22)
+         | (iVecRegSrc << 5)
+         | iVecRegDst;
+}
+
 /** @} */
 
 #endif /* !dtrace && __cplusplus */
