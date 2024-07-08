@@ -165,9 +165,6 @@ void UISessionStateStatusBarIndicator::sltRetranslateUI()
     /* Translate description: */
     m_strDescription = tr("%1 status-bar indicator", "like 'hard-disk status-bar indicator'")
                          .arg(gpConverter->toString(type()));
-
-    /* Update appearance finally: */
-    updateAppearance();
 }
 
 
@@ -195,8 +192,8 @@ public:
                 this, &UIIndicatorHardDrive::updateAppearance);
         connect(m_pMachine, &UIMachine::sigMediumChange,
                 this, &UIIndicatorHardDrive::updateAppearance);
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected slots:
@@ -220,6 +217,9 @@ protected slots:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(m_cAttachmentsCount ? KDeviceActivity_Idle : KDeviceActivity_Null);
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 
     /** Handles translation event. */
@@ -265,8 +265,8 @@ public:
                 this, &UIIndicatorOpticalDisks::updateAppearance);
         connect(m_pMachine, &UIMachine::sigMediumChange,
                 this, &UIIndicatorOpticalDisks::updateAppearance);
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected slots:
@@ -290,6 +290,9 @@ protected slots:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(m_cAttachmentsMountedCount ? KDeviceActivity_Idle : KDeviceActivity_Null);
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 
     /** Handles translation event. */
@@ -338,8 +341,8 @@ public:
                 this, &UIIndicatorFloppyDisks::updateAppearance);
         connect(m_pMachine, &UIMachine::sigMediumChange,
                 this, &UIIndicatorFloppyDisks::updateAppearance);
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected slots:
@@ -363,6 +366,9 @@ protected slots:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(m_cAttachmentsMountedCount ? KDeviceActivity_Idle : KDeviceActivity_Null);
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 
     /** Handles translation event. */
@@ -420,8 +426,8 @@ public:
                 this, &UIIndicatorAudio::updateAppearance);
         connect(m_pMachine, &UIMachine::sigAudioAdapterChange,
                 this, &UIIndicatorAudio::updateAppearance);
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected slots:
@@ -451,6 +457,9 @@ protected slots:
         if (m_fInputEnabled)
             enmState = (AudioState)(enmState | AudioState_InputOn);
         setState(enmState);
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 
     /** Handles translation event. */
@@ -497,8 +506,8 @@ public:
                 this, &UIIndicatorNetwork::updateAppearance);
         connect(m_pMachine, &UIMachine::sigNetworkAdapterChange,
                 this, &UIIndicatorNetwork::updateAppearance);
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected slots:
@@ -522,6 +531,9 @@ protected slots:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(m_fAdaptersPresent && !m_fCablesDisconnected ? KDeviceActivity_Idle : KDeviceActivity_Null);
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 
     /** Handles translation event. */
@@ -568,8 +580,8 @@ public:
                 this, &UIIndicatorUSB::updateAppearance);
         connect(m_pMachine, &UIMachine::sigUSBDeviceStateChange,
                 this, &UIIndicatorUSB::updateAppearance);
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected slots:
@@ -592,6 +604,9 @@ protected slots:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(fUsbEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 };
 
@@ -617,8 +632,8 @@ public:
                 this, &UIIndicatorSharedFolders::updateAppearance);
         connect(m_pMachine, &UIMachine::sigSharedFolderChange,
                 this, &UIIndicatorSharedFolders::updateAppearance);
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected slots:
@@ -635,6 +650,9 @@ protected slots:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(fFoldersPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 };
 
@@ -665,8 +683,8 @@ public:
         /* Configure connection: */
         connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorDisplay::updateAppearance);
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected slots:
@@ -691,6 +709,9 @@ protected slots:
                 enmState = DisplayState_Hardware;
         }
         setState(enmState);
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 };
 
@@ -734,8 +755,8 @@ public:
         m_pAnimation = UIAnimationLoop::installAnimationLoop(this, "rotationAngle",
                                                              "rotationAngleStart", "rotationAngleFinal",
                                                              1000);
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected:
@@ -790,6 +811,9 @@ protected slots:
                 enmState = RecordingState_Paused;
         }
         setState(enmState);
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 
 private slots:
@@ -872,8 +896,8 @@ public:
             /* Start the timer immediately if the machine is running: */
             sltHandleMachineStateChange();
         }
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected:
@@ -934,6 +958,9 @@ protected slots:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(enmEngine);
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 
 private slots:
@@ -988,8 +1015,8 @@ public:
         /* Configure connection: */
         connect(m_pMachine, &UIMachine::sigMouseStateChange,
                 this, static_cast<void(UIIndicatorMouse::*)(int)>(&UIIndicatorMouse::setState)); // us to blame ..
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected slots:
@@ -1023,6 +1050,9 @@ protected slots:
 
         /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 
 private slots:
@@ -1067,8 +1097,8 @@ public:
         /* Configure connection: */
         connect(m_pMachine, &UIMachine::sigKeyboardStateChange,
                 this, static_cast<void(UIIndicatorKeyboard::*)(int)>(&UIIndicatorKeyboard::setState)); // us to blame ..
-        /* Translate finally: */
-        sltRetranslateUI();
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
 protected slots:
@@ -1090,6 +1120,9 @@ protected slots:
 
         /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
+
+        /* Retranslate finally: */
+        sltRetranslateUI();
     }
 };
 
@@ -1105,27 +1138,28 @@ public:
     {
         /* Make sure host-combination label will be updated: */
         connect(gEDataManager, &UIExtraDataManager::sigRuntimeUIHostKeyCombinationChange,
-                this, &UIIndicatorKeyboardExtension::sltUpdateAppearance);
-        /* Translate finally: */
-        sltRetranslateUI();
+                this, &UIIndicatorKeyboardExtension::updateAppearance);
         connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
                 this, &UIIndicatorKeyboardExtension::sltRetranslateUI);
+        /* Update & translate finally: */
+        updateAppearance();
     }
 
-public slots:
+protected slots:
 
     /** Update routine. */
-    void sltUpdateAppearance()
+    void updateAppearance()
     {
+        /* Update combination: */
         setText(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination()));
-    }
 
-private slots:
+        /* Retranslate finally: */
+        sltRetranslateUI();
+    }
 
     /** Retranslation routine. */
     void sltRetranslateUI()
     {
-        sltUpdateAppearance();
         setToolTip(QApplication::translate("UIMachineWindowNormal",
                                            "Shows the currently assigned Host key.<br>"
                                            "This key, when pressed alone, toggles the keyboard and mouse "
