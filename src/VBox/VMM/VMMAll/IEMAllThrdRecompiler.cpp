@@ -1104,6 +1104,7 @@ DECL_FORCE_INLINE(PIEMTB) iemTbAllocatorAllocCore(PIEMTBALLOCATOR const pTbAlloc
         AssertLogRelReturn(idxTb >= 0, NULL);
     }
     Assert((uint32_t)idxTb < pTbAllocator->cTotalTbs);
+    pTbAllocator->iStartHint = idxTb;
     ASMBitSet(pTbAllocator->bmAllocated, idxTb);
 
     /** @todo shift/mask optimization for power of two IEMTB sizes. */
