@@ -36,22 +36,24 @@ MY_SED=kmk_sed
 # This script is very internal, so we got the following fixed position parameters:
 #   1: user_ChangeLogImpl.xml to use as input.
 #   2: docbook-changelog-to-manual-dita.xsl
-#   3: The out directory.
-#   4: '--'
-#   5+: xsltproc invocation (sans output, input and xslt file).
+#   5: The out directory.
+#   6: '--'
+#   7+: xsltproc invocation (sans output, input and xslt file).
 #
-if test $# -lt 6; then
+if test $# -lt 8; then
     echo "syntax error: too few arguments" 1>&2;
     exit 2;
 fi
 MY_INPUT_FILE="$1"
 MY_XSLT="$2"
-MY_OUTPUT_DIR="$3"
-if test "$4" != "--"; then
-    echo "syntax error: Expected '--' as the 4th parameter, got: $4" 1>&2;
+MY_GENERATED_KMK="$3"
+MY_GENERATED_KMK_VARIABLE="$4"
+MY_OUTPUT_DIR="$5"
+if test "$6" != "--"; then
+    echo "syntax error: Expected '--' as the 6th parameter, got: $6" 1>&2;
     exit 2;
 fi
-shift 4
+shift 6
 
 if ! test -f "${MY_INPUT_FILE}"; then
     echo "error: Input file does not exists or is not a regular file: ${MY_INPUT_FILE}" 1>&2;
@@ -75,6 +77,8 @@ set -e
 #
 MY_TOPIC_IDS=$($* --stringparam g_sMode ids "${MY_XSLT}" "${MY_INPUT_FILE}" | ${MY_SED} -e 1d)
 
+echo "${MY_GENERATED_KMK_VARIABLE} += \\" > "${MY_GENERATED_KMK}"
+
 #
 # Extract each topic.
 #
@@ -84,10 +88,12 @@ do
         --stringparam g_sMode topic \
         --stringparam g_idTopic "${MY_ID}" \
         --output "${MY_OUTPUT_DIR}/${MY_ID}.dita" "${MY_XSLT}" "${MY_INPUT_FILE}"
+    echo "    ${MY_OUTPUT_DIR}/${MY_ID}.dita \\" >> "${MY_GENERATED_KMK}"
 done
 
 #
 # Now for the ditamap file.
 #
 $* --stringparam g_sMode map --output "${MY_OUTPUT_DIR}/changelog-versions.ditamap" "${MY_XSLT}" "${MY_INPUT_FILE}"
+echo "" >> "${MY_GENERATED_KMK}"
 exit 0

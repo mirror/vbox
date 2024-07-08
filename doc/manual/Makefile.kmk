@@ -263,6 +263,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES2_en_US) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/RefEntryDITA.zip \
  	$(PATH_STAGE_BIN)/RefEntryDITA.zip \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLogDITA.zip \
+ 	$(PATH_STAGE_BIN)/ChangeLogDITA.zip \
  	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip \
  	$(PATH_STAGE_BIN)/UserManual-html.zip \
  	$(PATH_STAGE_BIN)/UserManual.pdf \
@@ -338,13 +340,24 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
   ifdef VBOX_WITH_DOCS_USERMANUAL_REFENTRY_DITA
    #
-   # target for installing the chunked HTML docs
+   # target for installing the ZIP containing the manpages in DITA format
    #
    INSTALLS += VBox-docs-usermanual-refentry-dita
    VBox-docs-usermanual-refentry-dita_INST = $(INST_BIN)
    VBox-docs-usermanual-refentry-dita_MODE = a+r,u+w
    VBox-docs-usermanual-refentry-dita_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/RefEntryDITA.zip
    VBOX_MANUAL_PACK += $(PATH_STAGE_BIN)/RefEntryDITA.zip
+  endif
+
+  ifdef VBOX_WITH_DOCS_USERMANUAL_CHANGELOG_DITA
+   #
+   # target for installing the ZIP containing the change log in DITA format
+   #
+   INSTALLS += VBox-docs-usermanual-changelog-dita
+   VBox-docs-usermanual-changelog-dita_INST = $(INST_BIN)
+   VBox-docs-usermanual-changelog-dita_MODE = a+r,u+w
+   VBox-docs-usermanual-changelog-dita_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLogDITA.zip
+   VBOX_MANUAL_PACK += $(PATH_STAGE_BIN)/ChangeLogDITA.zip
   endif
 
   ifdef VBOX_WITH_DOCS_ACCESSIBILITY
@@ -759,13 +772,14 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"$(VBOX_PATH_MANUAL_OUTBASE)/testcase-refentry1.xml"
 
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/RefEntryDITA.zip: \
- 		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
+ 		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US) \
+ 		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES2_en_US) \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/vboxmanage-cmd-overview.dita
 	$(call MSG_L1,Packing documentation $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
 		-9 -r "$@" \
-		$(patsubst $(VBOX_PATH_MANUAL_OUTBASE)/en_US/%,%,$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)) \
-		$(patsubst $(VBOX_PATH_MANUAL_OUTBASE)/en_US/%,%,$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES2_en_US))
+		$(patsubst $(VBOX_PATH_MANUAL_OUTBASE)/en_US/%,%,$^)
 
  refentry-dita-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/RefEntryDITA.zip
 
@@ -810,7 +824,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # @note  Outputs a bunch of .dita files for each version too...
  define def_vbox_convert_changelog_to_dita
   VBOX_USER_MANUAL_DITA_STAGED_FILES_$1 += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/changelog-versions.ditamap
-  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/changelog-versions.ditamap: \
+  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/changelog-versions.ditamap \
+  + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/changelog-versions.ditamap.kmk: \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-to-manual-dita.sh \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-to-manual-dita.xsl \
   		$$(VBOX_XML_CATALOG) \
@@ -823,11 +838,37 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-to-manual-dita.sh \
 		$$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-to-manual-dita.xsl \
+		$$(@).kmk \
+		VBOX_USER_MANUAL_CONVERTED_CHANGELOG_DITA_FILES_$(1) \
 		$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics \
 		-- \
 		$$(call VBOX_XSLTPROC_WITH_CAT)
  endef # def_vbox_convert_changelog_to_dita
  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),$(evalcall2 def_vbox_convert_changelog_to_dita,$(lang)))
+
+ ifdef VBOX_ONLY_DOCS
+  include $(VBOX_PATH_MANUAL_OUTBASE)/changelog.kmk
+
+  $(VBOX_PATH_MANUAL_OUTBASE)/changelog.kmk: \
+  		$(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES) \
+  			,$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/changelog-versions.ditamap.kmk)
+	$(QUIET)$(RM) -f -- "$@"
+	$(APPEND) -tn "$@" '# changelog.kmk'
+	$(APPEND) -n "$@" $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),'include $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/changelog-versions.ditamap.kmk')
+	$(APPEND) -n "$@" '# done'
+
+ endif
+
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLogDITA.zip: \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/changelog-versions.ditamap \
+ 		$(VBOX_USER_MANUAL_CONVERTED_CHANGELOG_DITA_FILES_en_US)
+	$(call MSG_L1,Packing documentation $@)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
+		-9 -r "$@" \
+		$(patsubst $(VBOX_PATH_MANUAL_OUTBASE)/en_US/%,%,$^)
+
+ changelog-dita-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLogDITA.zip
 
 
  #
