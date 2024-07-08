@@ -1016,6 +1016,9 @@ static void slirpCheckTimeout(void *opaque)
 static DECLCALLBACK(ssize_t) slirpSendPacketCb(const void *pBuf, size_t cb, void *opaque /* PDRVNAT */)
 {
     char *pNewBuf = (char *)RTMemAlloc(cb); /** @todo r=aeichner Missing check whether memory was actually allocated */
+    if (pNewBuf == NULL)
+        return -1;
+
     memcpy(pNewBuf, pBuf, cb);
 
     PDRVNAT pThis = (PDRVNAT)opaque;
