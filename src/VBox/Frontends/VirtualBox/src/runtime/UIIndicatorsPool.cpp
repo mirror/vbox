@@ -229,8 +229,8 @@ protected slots:
         UISessionStateStatusBarIndicator::sltRetranslateUI();
 
         /* Append description with more info: */
-        m_strDescription = tr("%1, %2 disks attached.", "%Name, %Description")
-                              .arg(m_strDescription).arg(m_cAttachmentsCount);
+        const QString strAttachmentStatus = tr("%1 disks attached").arg(m_cAttachmentsCount);
+        m_strDescription = QString("%1, %2").arg(m_strDescription, strAttachmentStatus);
     }
 
 private:
@@ -299,8 +299,9 @@ protected slots:
         UISessionStateStatusBarIndicator::sltRetranslateUI();
 
         /* Append description with more info: */
-        m_strDescription = tr("%1, %2 drives attached, %3 images mounted.", "%Name, %Description")
-                              .arg(m_strDescription).arg(m_cAttachmentsCount).arg(m_cAttachmentsMountedCount);
+        const QString strAttachmentStatus = tr("%1 drives attached").arg(m_cAttachmentsCount);
+        const QString strMountingStatus = tr("%1 images mounted").arg(m_cAttachmentsMountedCount);
+        m_strDescription = QString("%1, %2, %3").arg(m_strDescription, strAttachmentStatus, strMountingStatus);
     }
 
 private:
@@ -371,8 +372,9 @@ protected slots:
         UISessionStateStatusBarIndicator::sltRetranslateUI();
 
         /* Append description with more info: */
-        m_strDescription = tr("%1, %2 drives attached, %3 images mounted.", "%Name, %Description")
-                              .arg(m_strDescription).arg(m_cAttachmentsCount).arg(m_cAttachmentsMountedCount);
+        const QString strAttachmentStatus = tr("%1 drives attached").arg(m_cAttachmentsCount);
+        const QString strMountingStatus = tr("%1 images mounted").arg(m_cAttachmentsMountedCount);
+        m_strDescription = QString("%1, %2, %3").arg(m_strDescription, strAttachmentStatus, strMountingStatus);
     }
 
 private:
