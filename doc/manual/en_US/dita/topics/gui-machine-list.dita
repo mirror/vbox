@@ -14,16 +14,11 @@
       </p>
     <ul>
       <li>
-        <p>
-            Right-click on the virtual machine name, to display menu
-            options.
-          </p>
+        <p> Right-click the virtual machine name, to display menu options. </p>
       </li>
       <li>
-        <p>
-            Click on the Machine Tools menu, to the right of the virtual
-            machine name. See <xref href="gui-tools-machine.dita#gui-tools-machine"/>.
-          </p>
+        <p> Click the Machine Tools menu icon, to the right of the virtual machine name. See <xref
+            href="gui-tools-machine.dita#gui-tools-machine"/>. </p>
       </li>
       <li>
         <p>

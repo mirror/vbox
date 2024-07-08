@@ -11,10 +11,9 @@
     </p>
     <ul>
       <li>
-        <p><b outputclass="bold">Removing a VM.</b> To remove a
-          VM, right-click on the VM in the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> machine list and
-          select <b outputclass="bold">Remove</b>.
-        </p>
+        <p><b outputclass="bold">Removing a VM.</b> To remove a VM, right-click the VM in the <ph
+            conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> machine list and select <b
+            outputclass="bold">Remove</b>. </p>
         <p>
           The confirmation dialog enables you to specify whether to only
           remove the VM from the list of machines or to remove the files
@@ -26,11 +25,9 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">Moving a VM.</b> To move a VM to
-          a new location on the host, right-click on the VM in the
-          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>'s machine list and select
-          <b outputclass="bold">Move</b>.
-        </p>
+        <p><b outputclass="bold">Moving a VM.</b> To move a VM to a new location on the host,
+          right-click the VM in the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>'s machine list
+          and select <b outputclass="bold">Move</b>. </p>
         <p>
           The file dialog prompts you to specify a new location for the
           VM.

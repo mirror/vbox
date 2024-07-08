@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="KnownProblems">
   <title>Known Issues</title>
-  
+
   <body>
     <p>
       The following section describes known problems with this release
@@ -182,7 +182,7 @@
       </li>
       <li>
         <p>
-          <b outputclass="bold">macOS/ARM64 (Apple silicon) host
+          <b outputclass="bold">macOS/Arm64 (Apple silicon) host
           package</b>
         </p>
       </li>
@@ -330,5 +330,5 @@
       </li>
     </ul>
   </body>
-  
+
 </topic>

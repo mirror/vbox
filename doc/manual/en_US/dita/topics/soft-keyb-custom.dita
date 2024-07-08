@@ -61,11 +61,8 @@
                         <p>
             Enter a new name for the layout.
           </p>
-                        <p>
-            Edit keys in the new layout. Click on the key that you want
-            to edit and enter new key captions in the
-            <b outputclass="bold">Captions</b> fields.
-          </p>
+                        <p> Edit keys in the new layout. Click the key that you want to edit and
+          enter new key captions in the <b outputclass="bold">Captions</b> fields. </p>
                         <p>
             The keyboard graphic is updated with the new captions.
           </p>

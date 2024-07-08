@@ -4,7 +4,7 @@
   <title>64-bit Guests</title>
   
   <body>
-    <note type="attention">
+    <note>
       <p>
           Be sure to enable <b outputclass="bold">I/O APIC</b>
           for virtual machines that you intend to use in 64-bit mode.

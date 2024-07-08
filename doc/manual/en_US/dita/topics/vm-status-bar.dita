@@ -202,8 +202,9 @@
               <p>Settings for video and audio recording.</p>
               <p>Right-click to show options to enable and disable recording, or to change recording
                 settings.</p>
-              <p>To enable recording, right-click on the status bar and select the <b>Recording</b>
-                option. The icon changes to show a movie reel animation, as follows:</p>
+              <p>To enable recording, right-click the status bar icon and select the
+                  <b>Recording</b> option. The icon changes to show a movie reel animation, as
+                follows:</p>
              <p>
                <xref href="images/icon_recording_enabled.png" format="png" platform="htmlhelp"> 
                  <image href="images/icon_recording_enabled.png" placement="break" align="center">
@@ -214,7 +215,7 @@
                  <alt>Recording settings icon on the virtual machine status bar. Recording is enabled.</alt>
                </image>
              </p>
-              <p>To disable recording, right-click on the status bar and deselect the
+              <p>To disable recording, right-click the status bar icon and deselect the
                   <b>Recording</b> option. The icon changes back to the default image.</p>
               <p>See also <xref href="settings-capture.dita#settings-capture"/>.</p>
             </entry>

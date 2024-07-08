@@ -10,11 +10,8 @@
         </p>
     <ol>
       <li>
-        <p>
-              Right-click on the cloud VM name and select
-              <b outputclass="bold">Console</b>,
-              <b outputclass="bold">Create Connection</b>.
-            </p>
+        <p> Right-click the cloud VM name and select <b outputclass="bold">Console</b>, <b
+            outputclass="bold">Create Connection</b>. </p>
       </li>
       <li>
         <p>

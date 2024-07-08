@@ -11,17 +11,11 @@
       </p>
     <ol>
       <li>
-        <p>
-            Double-click on the <filepath>dmg</filepath> file, to mount
-            the contents.
-          </p>
+        <p> Double-click the <filepath>dmg</filepath> file, to mount the contents. </p>
       </li>
       <li>
-        <p>
-            A window opens, prompting you to double-click on the
-            <filepath>VirtualBox.pkg</filepath> installer file displayed
-            in that window.
-          </p>
+        <p> A window opens, prompting you to double-click the <filepath>VirtualBox.pkg</filepath>
+          installer file displayed in that window. </p>
       </li>
       <li>
         <p>

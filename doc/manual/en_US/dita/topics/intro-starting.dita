@@ -9,21 +9,15 @@
     </p>
     <ul>
       <li>
-        <p><b outputclass="bold">Windows hosts.</b> In the
-          <b outputclass="bold">Programs</b> menu, click on the
-          item in the <b outputclass="bold">VirtualBox</b> group.
-          On some Windows platforms, you can also enter
-          <userinput>VirtualBox</userinput> in the search box of the
-          <b outputclass="bold">Start</b> menu.
-        </p>
+        <p><b outputclass="bold">Windows hosts.</b> In the <b outputclass="bold">Programs</b> menu,
+          click the item in the <b outputclass="bold">VirtualBox</b> group. On some Windows
+          platforms, you can also enter <userinput>VirtualBox</userinput> in the search box of the
+            <b outputclass="bold">Start</b> menu. </p>
       </li>
       <li>
-        <p><b outputclass="bold">macOS hosts.</b> In the Finder,
-          double-click on the
-          <b outputclass="bold">VirtualBox</b> item in the
-          Applications folder. You may want to drag this item onto your
-          Dock.
-        </p>
+        <p><b outputclass="bold">macOS hosts.</b> In the Finder, double-click the <b
+            outputclass="bold">VirtualBox</b> item in the Applications folder. You may want to drag
+          this item onto your Dock. </p>
       </li>
       <li>
         <p><b outputclass="bold">Linux or Oracle Solaris

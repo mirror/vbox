@@ -9,10 +9,8 @@
     </p>
     <ul>
       <li>
-        <p>
-          Double-click on the VM's entry in the machine list in
-          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
-        </p>
+        <p> Double-click the VM's name in the machine list in <ph
+            conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. </p>
       </li>
       <li>
         <p>
@@ -22,13 +20,9 @@
         </p>
       </li>
       <li>
-        <p>
-          Go to the <filepath>VirtualBox VMs</filepath> folder in your
-          system user's home directory. Find the subdirectory of the
-          machine you want to start and double-click on the machine
-          settings file. This file has a <filepath>.vbox</filepath> file
-          extension.
-        </p>
+        <p> Go to the <filepath>VirtualBox VMs</filepath> folder in your system user's home
+          directory. Find the subdirectory of the machine you want to start and double-click the
+          machine settings file. This file has a <filepath>.vbox</filepath> file extension. </p>
       </li>
     </ul>
     <p>

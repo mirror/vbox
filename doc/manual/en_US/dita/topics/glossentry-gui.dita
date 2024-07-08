@@ -4,7 +4,7 @@
   <glossterm>GUI</glossterm>
   <glossdef>
     Graphical User Interface. Commonly used as an antonym to a "command line interface".
-    In the context of Oracle VM VirtualBox, we sometimes refer to the main graphical
+    In the context of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, we sometimes refer to the main graphical
     VirtualBox program as the "GUI", to differentiate it from the VBoxManage interface.
   </glossdef>
 </glossentry>

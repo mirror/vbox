@@ -109,7 +109,7 @@
             APIC slightly increases the overhead of virtualization and
             therefore slows down the guest OS a little.
           </p>
-        <note type="attention">
+        <note>
           <p>
               All Windows OSes install different kernels, depending on
               whether an I/O APIC is available. As with ACPI, the I/O
@@ -153,7 +153,7 @@
         Windows and Linux support ACPI, it is also enabled by default in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. ACPI
         can only be turned off using the command line. See <xref href="vboxmanage-modifyvm.dita"/>.
     </p>
-    <note type="attention">
+    <note>
       <p>
           All Windows OSes install different kernels, depending on
           whether ACPI is available. This means that ACPI <i>must

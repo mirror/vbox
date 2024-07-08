@@ -6,7 +6,7 @@
     A Universally Unique Identifier, often also called GUID (Globally Unique Identifier).
     A UUID is a string of numbers and letters which can be computed dynamically and is
     guaranteed to be unique. Generally, it is used as a global handle to identify entities.
-    Oracle VM VirtualBox makes use of UUIDs to identify VMs, Virtual Disk Images (VDI files),
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> makes use of UUIDs to identify VMs, Virtual Disk Images (VDI files), 
     and other entities.
   </glossdef>
 </glossentry>

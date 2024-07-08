@@ -86,18 +86,13 @@
       these items are attached. The following options are available: </p>
     <ul>
       <li>
-        <p>
-          To <b outputclass="bold">add another virtual hard disk, or a
-          CD/DVD or floppy drive</b>, select the storage
-          controller to which it should be added (such as IDE, SATA,
-          SCSI, SAS, floppy controller) and then click the
-          <b outputclass="bold">Add Disk</b> button below the
-          tree. You can then either select <b outputclass="bold">Optical
-          Drive</b> or <b outputclass="bold">Hard
-          Disk</b>. If you clicked on a floppy controller, you
-          can add a floppy drive instead. Alternatively, right-click on
-          the storage controller and select a menu item there.
-        </p>
+        <p> To <b outputclass="bold">add another virtual hard disk, or a CD/DVD or floppy drive</b>,
+          select the storage controller to which it should be added (such as IDE, SATA, SCSI, SAS,
+          floppy controller) and then click the <b outputclass="bold">Add Disk</b> button below the
+          tree. You can then either select <b outputclass="bold">Optical Drive</b> or <b
+            outputclass="bold">Hard Disk</b>. If you clicked on a floppy controller, you can add a
+          floppy drive instead. Alternatively, right-click the storage controller and select a menu
+          item there. </p>
         <p>
           A dialog is displayed, enabling you to select an existing disk
           image file or to create a new disk image file. Depending on
@@ -155,12 +150,9 @@
         </ul>
       </li>
       <li>
-        <p>
-          To <b outputclass="bold">remove an attachment</b>,
-          either select it and click on the
-          <b outputclass="bold">Remove</b> icon at the bottom, or
-          right-click on it and select the menu item.
-        </p>
+        <p> To <b outputclass="bold">remove an attachment</b>, either select it and click the <b
+            outputclass="bold">Remove</b> icon at the bottom, or right-click the attachment and
+          select the menu item. </p>
       </li>
     </ul>
     <p>

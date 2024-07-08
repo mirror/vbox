@@ -14,7 +14,7 @@
     <ol>
       <li>
         <p>
-              Click on a cloud profile in the
+              Click a cloud profile in the
               <b outputclass="bold">OCI</b> group.
             </p>
         <p>
@@ -24,7 +24,7 @@
       </li>
       <li>
         <p>
-              Right-click on the cloud VM you want to clone and select <b outputclass="bold">Clone</b>.
+              Right-click the cloud VM you want to clone and select <b outputclass="bold">Clone</b>.
             </p>
         <p>
               The <b outputclass="bold">Clone Name</b> dialog is displayed.

@@ -7,7 +7,7 @@
     by which an interface modifies the source and/or target IP addresses of
     network packets according to specific rules. Commonly employed by routers
     and firewalls to shield an internal network from the Internet,
-    Oracle VM VirtualBox can use NAT to easily share a host's physical
+    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can use NAT to easily share a host's physical
     networking hardware with its virtual machines.
     See <xref href="network_nat.dita"/>.
   </glossdef>

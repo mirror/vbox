@@ -6,7 +6,7 @@
     Mozilla Cross Platform Component Object Model, a programming infrastructure
     developed by the Mozilla browser project which is similar to Microsoft COM
     and enables applications to provide a modular programming interface.
-    Oracle VM VirtualBox makes use of XPCOM on Linux both internally and
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> makes use of XPCOM on Linux both internally and 
     externally to provide a comprehensive API to third-party developers.
   </glossdef>
 </glossentry>

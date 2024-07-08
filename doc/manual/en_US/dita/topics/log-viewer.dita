@@ -75,11 +75,9 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">Bookmark:</b> Saves the location
-          of a log message, enabling you to find it quickly. To create a
-          bookmark, either click on the line number, or select some text
-          and then click <b outputclass="bold">Bookmark</b>.
-        </p>
+        <p><b outputclass="bold">Bookmark:</b> Saves the location of a log message, enabling you to
+          find it quickly. To create a bookmark, either click the line number, or select some text
+          and then click <b outputclass="bold">Bookmark</b>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Preferences:</b> Configures the text display used in the log

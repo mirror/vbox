@@ -74,7 +74,7 @@
           default, and the default disk that is created with a new VM is
           attached to this controller.
         </p>
-        <note type="attention">
+        <note>
           <p>
             The entire SATA controller and the virtual disks attached to
             it, including those in IDE compatibility mode, will not be
@@ -138,7 +138,7 @@
           SCSI Controller</b>. The new controller appears as a
           separate PCI device in the virtual machine.
         </p>
-        <note type="attention">
+        <note>
           <p>
             As with the other controller types, a SCSI controller will
             only be seen by OSes with device support for it. Windows
@@ -164,7 +164,7 @@
           time, up to 255 devices can be connected to the SAS
           controller.
         </p>
-        <note type="attention">
+        <note>
           <p>
             As with SATA, the SAS controller will only be seen by OSes
             with device support for it. In particular, <i>there
@@ -193,7 +193,7 @@
           controller. Each disk attached to the controller appears as a
           dedicated USB device to the guest.
         </p>
-        <note type="attention">
+        <note>
           <p>
             Booting from drives attached using USB is only supported
             when EFI is used as the BIOS lacks USB support.
@@ -215,7 +215,7 @@
         <p>
           The NVMe controller is part of the extension pack.
         </p>
-        <note type="attention">
+        <note>
           <p>
             Booting from drives attached using NVMe is only supported
             when EFI is used as the BIOS lacks the appropriate driver.
@@ -229,7 +229,7 @@
           support these devices, but Windows needs additional drivers.
           Currently virtio-scsi controller support is experimental.
         </p>
-        <note type="attention">
+        <note>
           <p>
             The virtio-scsi controller will only be seen by OSes with
             device support for it. In particular, <i>there is no

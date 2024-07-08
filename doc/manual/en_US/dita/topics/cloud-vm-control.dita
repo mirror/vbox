@@ -15,13 +15,13 @@
             </p>
       </li>
       <li>
-        <p><b outputclass="bold">Stop.</b> Click on the
+        <p><b outputclass="bold">Stop.</b> Click the
               cloud VM name and select <b>Machine</b>, <b>Stop</b>. Menu options to
               shut down and power off the cloud VM are available.
             </p>
       </li>
       <li>
-        <p><b outputclass="bold">Reset.</b> Click on the
+        <p><b outputclass="bold">Reset.</b> Click the
           cloud VM name and select <b>Machine</b>, <b>Reset</b>. The cloud VM is stopped, then restarted automatically.
         </p>
       </li>

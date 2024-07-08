@@ -69,7 +69,7 @@
         </p>
       </li>
     </ul>
-    <note type="attention">
+    <note type="caution">
       <p>
         Do not run other hypervisors, either open source or commercial
         virtualization products, together with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. While

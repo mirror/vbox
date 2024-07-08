@@ -6,7 +6,7 @@
     Microsoft Component Object Model, a programming infrastructure for modular software.
     COM enables applications to provide application programming interfaces which can be
     accessed from various other programming languages and applications.
-    Oracle VM VirtualBox makes use of COM both internally and externally to provide a
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> makes use of COM both internally and externally to provide a 
     comprehensive API to third party developers.
   </glossdef>
 </glossentry>

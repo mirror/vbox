@@ -79,7 +79,7 @@
             conkeyref="vbox-conkeyref-phrases/product-name"/> PAM module. </p>
       </li>
     </ol>
-    <note type="attention">
+    <note type="caution">
       <p>
           An incorrectly configured PAM stack can effectively prevent
           you from logging into your guest system.

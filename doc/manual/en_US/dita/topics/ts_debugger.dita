@@ -9,7 +9,7 @@
         users may find useful. This debugger enables you to examine and,
         to some extent, control the VM state.
       </p>
-    <note type="attention">
+    <note type="caution">
       <p>
           Use the VM debugger at your own risk. There is no support for
           it, and the following documentation is only made available for

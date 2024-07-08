@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="network_hostonly">
   <title>Host-Only Networking</title>
-
+  
   <body>
     <p>
       Host-only networking can be thought of as a hybrid between the
@@ -134,5 +134,5 @@
     <pre xml:space="preserve">      # No addresses are allowed for host-only adapters
       </pre>
   </body>
-
+  
 </topic>

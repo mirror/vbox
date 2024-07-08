@@ -13,10 +13,7 @@
         </p>
     <ol>
       <li>
-        <p>
-              Click on a cloud profile in the
-              <b outputclass="bold">OCI</b> group.
-            </p>
+        <p> Click a cloud profile in the <b outputclass="bold">OCI</b> group. </p>
         <p>
               The cloud VMs for the selected cloud profile are
               displayed.

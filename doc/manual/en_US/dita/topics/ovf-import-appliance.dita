@@ -10,9 +10,7 @@
       </p>
     <ol>
       <li>
-        <p>
-            Double-click on the OVF or OVA file.
-          </p>
+        <p> Double-click the OVF or OVA file. </p>
         <p>
             <ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates file type associations automatically
             for any OVF and OVA files on your host OS.

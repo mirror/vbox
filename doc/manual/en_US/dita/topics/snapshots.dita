@@ -13,12 +13,9 @@
       in Saved state, but there can be many of them, and these saved
       states are preserved.
     </p>
-               <p>
-      To see the snapshots of a virtual machine, click on the machine
-      name in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. In the machine tools menu for the VM, click
-      <b outputclass="bold">Snapshots</b>. The Snapshots tool is
-      displayed.
-    </p>
+               <p> To see the snapshots of a virtual machine, click the machine name in <ph
+        conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. In the machine tools menu for the VM, click
+        <b outputclass="bold">Snapshots</b>. The Snapshots tool is displayed. </p>
               <fig id="fig-snapshots-tool">
                 <title>Snapshots Tool, Showing Snapshot Properties</title>
                 <xref href="images/snapshots-1.png" format="png" platform="htmlhelp">

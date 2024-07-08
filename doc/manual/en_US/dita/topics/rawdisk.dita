@@ -23,7 +23,7 @@
         before a host OS crash. Consult your host OS documentation for
         details on this.
       </p>
-    <note type="attention">
+    <note type="caution">
       <p>
           Raw hard disk access is for expert users only. Incorrect use
           or use of an outdated configuration can lead to

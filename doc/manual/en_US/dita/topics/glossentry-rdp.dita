@@ -9,7 +9,7 @@
     using a network connection over which data is transferred in
     both directions. Typically graphics updates and audio are sent
     from the remote machine and keyboard and mouse input events are
-    sent from the client. An Oracle VM VirtualBox extension package by
+        sent from the client. An <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension package by 
     Oracle provides VRDP, an enhanced implementation of the relevant
     standards which is largely compatible with Microsoft's RDP
     implementation.

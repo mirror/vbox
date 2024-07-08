@@ -14,14 +14,14 @@
       and have all the graphical output redirected over the network.
     </p>
     <p> The following front ends are shipped in the standard <ph
-        conkeyref="vbox-conkeyref-phrases/product-name"/> package: </p>
+        conkeyref="vbox-conkeyref-phrases/product-name"/> package:</p>
     <ul>
       <li>
         <p><b outputclass="bold">VirtualBox.</b> This is the <ph
             conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, a graphical user interface that uses the
           Qt toolkit. This interface is described throughout this manual. While this is the simplest
           and easiest front end to use, some of the more advanced <ph
-            conkeyref="vbox-conkeyref-phrases/product-name"/> features are not included. </p>
+            conkeyref="vbox-conkeyref-phrases/product-name"/> features are not included.</p>
       </li>
       <li>
         <p><b outputclass="bold">VBoxManage.</b> A command-line
