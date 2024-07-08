@@ -92,7 +92,7 @@ do
         --stringparam g_idTopic "${MY_ID}" \
         --output "${MY_OUTPUT_DIR}/${MY_ID}.dita" "${MY_XSLT_TO_SINGLE_TOPIC}" "${MY_INPUT_FILE}"
     echo "    ${MY_OUTPUT_DIR}/${MY_ID}.dita \\" >> "${MY_GENERATED_KMK}"
-
 done
+
 echo "" >> "${MY_GENERATED_KMK}"
 exit 0
