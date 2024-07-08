@@ -405,6 +405,8 @@ public:
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorAudio(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_Audio, pMachine)
+        , m_fOutputEnabled(false)
+        , m_fInputEnabled(false)
     {
         /* Assign state-icons: */
         setStateIcon(AudioState_AllOff, UIIconPool::iconSet(":/audio_all_off_16px.png"));
@@ -482,6 +484,8 @@ public:
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorNetwork(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_Network, pMachine)
+        , m_fAdaptersPresent(false)
+        , m_fCablesDisconnected(true)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/nw_16px.png"));
@@ -503,22 +507,41 @@ protected slots:
     virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
-        bool fAdaptersPresent = false;
-        bool fCablesDisconnected = true;
-        m_pMachine->acquireNetworkStatusInfo(strFullData, fAdaptersPresent, fCablesDisconnected);
+        m_fAdaptersPresent = false;
+        m_fCablesDisconnected = true;
+        m_pMachine->acquireNetworkStatusInfo(strFullData, m_fAdaptersPresent, m_fCablesDisconnected);
 
         /* Show/hide indicator if there are no attachments
          * and parent is visible already: */
         if (   parentWidget()
             && parentWidget()->isVisible())
-            setVisible(fAdaptersPresent);
+            setVisible(m_fAdaptersPresent);
 
         /* Update tool-tip: */
         if (!strFullData.isEmpty())
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
-        setState(fAdaptersPresent && !fCablesDisconnected ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        setState(m_fAdaptersPresent && !m_fCablesDisconnected ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        const QString strAdaptersStatus = m_fAdaptersPresent ? tr("Adapters present") : tr("No network adapters");
+        const QString strCablesStatus = m_fCablesDisconnected ? tr("All cables disconnected") : QString();
+        m_strDescription = QString("%1, %2, %3").arg(m_strDescription, strAdaptersStatus, strCablesStatus);
+    }
+
+private:
+
+    /** Holds whether adapters present. */
+    bool  m_fAdaptersPresent;
+    /** Holds whether cables disconnected. */
+    bool  m_fCablesDisconnected;
 };
 
 
