@@ -1682,6 +1682,22 @@ int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
 
         VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[0];
         Assert(pScreen->idScreen == 0);
+
+        if (   pScreen->cWidth  == VMSVGA_VAL_UNINITIALIZED
+            || pScreen->cHeight == VMSVGA_VAL_UNINITIALIZED
+            || pScreen->cBpp    == VMSVGA_VAL_UNINITIALIZED)
+        {
+            /* Do not apply the change if the guest has not finished updating registers.
+             * This is necessary in order to make a full mode change, including freeing
+             * pvScreenBitmap buffers for screen 0 if necessary.
+             */
+            return VINF_SUCCESS;
+        }
+
+        /* Remember screen bitmap buffers to be freed. */
+        void * apvOldScreenBitmap[RT_ELEMENTS(pSVGAState->aScreens)];
+        RT_ZERO(apvOldScreenBitmap);
+
         pScreen->fDefined  = true;
         pScreen->fModified = true;
         pScreen->fuScreen  = SVGA_SCREEN_MUST_BE_SET | SVGA_SCREEN_IS_PRIMARY;
@@ -1692,6 +1708,11 @@ int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
         pScreen->cWidth    = pThis->svga.uWidth;
         pScreen->cHeight   = pThis->svga.uHeight;
         pScreen->cBpp      = pThis->svga.uBpp;
+        pScreen->cDpi      = 0; /* GFB mode does not support dpi. */
+        /* GFB mode uses the guest VRAM. The screen bitmap must be deallocated after 'vmsvgaR3VBVAResize'. */
+        apvOldScreenBitmap[0] = pScreen->pvScreenBitmap;
+        /* Set pvScreenBitmap to zero because if it is not, then vmsvgaR3VBVAResize uses it as VRAM address. */
+        pScreen->pvScreenBitmap = 0;
 
         for (unsigned iScreen = 1; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
         {
@@ -1701,8 +1722,21 @@ int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
             {
                 pScreen->fModified = true;
                 pScreen->fDefined = false;
+
+#ifdef VBOX_WITH_VMSVGA3D
+                if (RT_LIKELY(pThis->svga.f3DEnabled))
+                    vmsvga3dDestroyScreen(pThisCC, pScreen);
+#endif
+                apvOldScreenBitmap[iScreen] = pScreen->pvScreenBitmap;
+                pScreen->pvScreenBitmap = 0;
             }
         }
+
+        vmsvgaR3VBVAResize(pThis, pThisCC);
+
+        /* Deallocate screen bitmaps for all screens because GFB mode uses the guest VRAM. */
+        for (unsigned iScreen = 0; iScreen < RT_ELEMENTS(apvOldScreenBitmap); ++iScreen)
+            RTMemFree(apvOldScreenBitmap[iScreen]);
     }
     else
     {
@@ -1713,9 +1747,9 @@ int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
         pThis->svga.uWidth  = VMSVGA_VAL_UNINITIALIZED;
         pThis->svga.uHeight = VMSVGA_VAL_UNINITIALIZED;
         pThis->svga.uBpp    = pThis->svga.uHostBpp;
-    }
 
-    vmsvgaR3VBVAResize(pThis, pThisCC);
+        vmsvgaR3VBVAResize(pThis, pThisCC);
+    }
 
     /* Last stuff. For the VGA device screenshot. */
     pThis->last_bpp        = pSVGAState->aScreens[0].cBpp;

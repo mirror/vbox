@@ -1939,6 +1939,11 @@ static void vmsvga3dCmdDefineGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC
         pScreen->offVRAM = 0; /* Not applicable for screen targets, they use either a separate memory buffer or a host window. */
         pScreen->cbPitch = pCmd->width * 4;
         pScreen->cBpp    = 32;
+        pScreen->cDpi    = pCmd->dpi;
+
+        /* The screen bitmap must be deallocated after 'vmsvgaR3ChangeMode'. */
+        void *pvOldScreenBitmap = pScreen->pvScreenBitmap;
+        pScreen->pvScreenBitmap = 0;
 
         if (RT_LIKELY(pThis->svga.f3DEnabled))
             vmsvga3dDefineScreen(pThis, pThisCC, pScreen);
@@ -1951,6 +1956,8 @@ static void vmsvga3dCmdDefineGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC
 
         pThis->svga.fGFBRegisters = false;
         vmsvgaR3ChangeMode(pThis, pThisCC);
+
+        RTMemFree(pvOldScreenBitmap);
     }
 }
 
@@ -7698,6 +7705,12 @@ void vmsvgaR3CmdDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDe
 
     VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[idScreen];
     Assert(pScreen->idScreen == idScreen);
+    pScreen->cDpi      = 0; /* SVGAFifoCmdDefineScreen does not support dpi. */
+
+    /* SVGAFifoCmdDefineScreen uses the guest VRAM. The screen bitmap must be deallocated after 'vmsvgaR3ChangeMode'. */
+    void *pvOldScreenBitmap = pScreen->pvScreenBitmap;
+    pScreen->pvScreenBitmap = 0;
+
     pScreen->fDefined  = true;
     pScreen->fModified = true;
     pScreen->fuScreen  = pCmd->screen.flags;
@@ -7720,13 +7733,15 @@ void vmsvgaR3CmdDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDe
         /* Screen blanked. Keep old values. */
     }
 
-    pThis->svga.fGFBRegisters = false;
-    vmsvgaR3ChangeMode(pThis, pThisCC);
-
 #ifdef VBOX_WITH_VMSVGA3D
     if (RT_LIKELY(pThis->svga.f3DEnabled))
         vmsvga3dDefineScreen(pThis, pThisCC, pScreen);
 #endif
+
+    pThis->svga.fGFBRegisters = false;
+    vmsvgaR3ChangeMode(pThis, pThisCC);
+
+    RTMemFree(pvOldScreenBitmap);
 }
 
 
