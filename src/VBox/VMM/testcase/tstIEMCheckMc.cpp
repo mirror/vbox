@@ -842,6 +842,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_BROADCAST_XREG_U64_ZX_VLMAX(a_iXRegDst, a_u64Value)  do { CHK_XREG_IDX(a_iXRegDst); CHK_VAR(a_u64Value);  CHK_TYPE(uint64_t,   a_u64Value);  (void)fAvxWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_BROADCAST_XREG_U128_ZX_VLMAX(a_iXRegDst, a_u128Value) do {CHK_XREG_IDX(a_iXRegDst); CHK_VAR(a_u128Value); CHK_TYPE(RTUINT128U, a_u128Value); (void)fAvxWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg)                   do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_pu128Dst); (a_pu128Dst) = (PRTUINT128U)((uintptr_t)0);        CHK_PTYPE(PRTUINT128U, a_pu128Dst);     (void)fSseWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_REF_XREG_XMM(a_pXmmDst, a_iXReg)                     do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_pXmmDst);  (a_pXmmDst)  = (PX86XMMREG)((uintptr_t)0);         CHK_PTYPE(PX86XMMREG, a_pXmmDst);       (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg)             do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_pu128Dst); (a_pu128Dst) = (PCRTUINT128U)((uintptr_t)0);       CHK_PTYPE(PCRTUINT128U, a_pu128Dst);    (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_U32_CONST(a_pu32Dst, a_iXReg)               do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_pu32Dst);  (a_pu32Dst)  = (uint32_t const *)((uintptr_t)0);   CHK_PTYPE(uint32_t const *, a_pu32Dst); (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg)               do { CHK_XREG_IDX(a_iXReg);    CHK_VAR(a_pu64Dst);  (a_pu64Dst)  = (uint64_t const *)((uintptr_t)0);   CHK_PTYPE(uint64_t const *, a_pu64Dst); (void)fSseWrite; (void)fMcBegin; } while (0)
@@ -851,6 +852,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_COPY_XREG_U128(a_iXRegDst, a_iXRegSrc)               do { CHK_XREG_IDX(a_iXRegDst); CHK_XREG_IDX(a_iXRegSrc); (void)fSseWrite; (void)fMcBegin; } while (0)
 
 #define IEM_MC_FETCH_YREG_U256(a_u256Value, a_iYRegSrc)             do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_u256Value); (a_u256Value).au64[0] = (a_u256Value).au64[1] = (a_u256Value).au64[2] = (a_u256Value).au64[3] = 0; CHK_TYPE(RTUINT256U, a_u256Value); (void)fAvxRead; (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_YREG_YMM(a_YmmValue, a_iYRegSrc)               do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_YmmValue);  (a_YmmValue).au64[0] = (a_YmmValue).au64[1] = (a_YmmValue).au64[2] = (a_YmmValue).au64[3] = 0; CHK_TYPE(X86YMMREG, a_YmmValue); (void)fAvxRead; (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_YREG_U128(a_u128Value, a_iYRegSrc, a_iDQWord)  do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_u128Value); (a_u128Value).au64[0] = (a_u128Value).au64[1] = 0; CHK_TYPE(RTUINT128U, a_u128Value); (void)fAvxRead; (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_YREG_U64(a_u64Value, a_iYRegSrc, a_iQWord)     do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_u64Value);  (a_u64Value) = UINT64_MAX; CHK_TYPE(uint64_t, a_u64Value); (void)fAvxRead; (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_YREG_U32(a_u32Value, a_iYRegSrc)               do { CHK_YREG_IDX(a_iYRegSrc); CHK_VAR(a_u32Value);  (a_u32Value) = UINT32_MAX; CHK_TYPE(uint32_t, a_u32Value); (void)fAvxRead; (void)fMcBegin; } while (0)
@@ -860,6 +862,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_STORE_YREG_U64_ZX_VLMAX(a_iYRegDst, a_u64Value)      do { CHK_YREG_IDX(a_iYRegDst); CHK_VAR(a_u64Value);  CHK_TYPE(uint64_t,   a_u64Value);  (void)fAvxWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_YREG_U128_ZX_VLMAX(a_iYRegDst, a_u128Value)    do { CHK_YREG_IDX(a_iYRegDst); CHK_VAR(a_u128Value); CHK_TYPE(RTUINT128U, a_u128Value); (void)fAvxWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_YREG_U256_ZX_VLMAX(a_iYRegDst, a_u256Value)    do { CHK_YREG_IDX(a_iYRegDst); CHK_VAR(a_u256Value); CHK_TYPE(RTUINT256U, a_u256Value); (void)fAvxWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_STORE_YREG_YMM_ZX_VLMAX(a_iYRegDst, a_uYmmValue)     do { CHK_YREG_IDX(a_iYRegDst); CHK_VAR(a_uYmmValue); CHK_TYPE(X86YMMREG,  a_uYmmValue); (void)fAvxWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_YREG_U32_U256(a_iYRegDst, a_iDwDst, a_u256Value, a_iDwSrc) do { CHK_XREG_IDX(a_iYRegDst); CHK_VAR(a_u256Value); CHK_TYPE(RTUINT256U, a_u256Value);  AssertCompile((a_iDwDst) < RT_ELEMENTS((a_u256Value).au32)); AssertCompile((a_iDwSrc) < RT_ELEMENTS((a_u256Value).au32)); (void)fAvxWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_YREG_U64_U256(a_iYRegDst, a_iQwDst, a_u256Value, a_iQwSrc) do { CHK_XREG_IDX(a_iYRegDst); CHK_VAR(a_u256Value); CHK_TYPE(RTUINT256U, a_u256Value);  AssertCompile((a_iQwDst) < RT_ELEMENTS((a_u256Value).au64)); AssertCompile((a_iQwSrc) < RT_ELEMENTS((a_u256Value).au64)); (void)fAvxWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_BROADCAST_YREG_U8_ZX_VLMAX(a_iYRegDst, a_u8Value)    do { CHK_YREG_IDX(a_iYRegDst); CHK_VAR(a_u8Value);   CHK_TYPE(uint8_t,    a_u8Value);   (void)fAvxWrite; (void)fMcBegin; } while (0)
@@ -923,6 +926,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_FETCH_MEM_U256(a_u256Dst, a_iSeg, a_GCPtrMem)            do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u256Dst); CHK_TYPE(RTUINT256U, a_u256Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U256_NO_AC(a_u256Dst, a_iSeg, a_GCPtrMem)      do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u256Dst); CHK_TYPE(RTUINT256U, a_u256Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U256_ALIGN_AVX(a_u256Dst, a_iSeg, a_GCPtrMem)  do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u256Dst); CHK_TYPE(RTUINT256U, a_u256Dst); (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_MEM_YMM_NO_AC(a_YmmDst, a_iSeg, a_GCPtrMem)        do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_YmmDst);  CHK_TYPE(X86YMMREG,  a_YmmDst);  (void)fMcBegin; } while (0)
 
 # define IEM_MC_FETCH_MEM_U128_AND_XREG_U128(a_Dst, a_iXReg1, a_iSeg2, a_GCPtrMem2)         \
     do { CHK_XREG_IDX(a_iXReg1); (void)fSseRead; CHK_SEG_IDX(a_iSeg2); CHK_GCPTR(a_GCPtrMem2); CHK_VAR(a_GCPtrMem2); CHK_VAR(a_Dst); CHK_TYPE(IEMPCMPISTRXSRC, a_Dst); (void)fMcBegin; } while (0)

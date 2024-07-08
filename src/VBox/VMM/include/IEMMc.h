@@ -632,6 +632,8 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 #define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg)       \
     (a_pu128Dst) = (&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].uXmm)
+#define IEM_MC_REF_XREG_XMM(a_pXmmDst, a_iXReg)       \
+    (a_pXmmDst) = (&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)])
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg) \
     (a_pu128Dst) = ((PCRTUINT128U)&pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iXReg)].uXmm)
 #define IEM_MC_REF_XREG_XMM_CONST(a_pXmmDst, a_iXReg) \
@@ -682,6 +684,13 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
          (a_u256Dst).au64[2] = pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegSrcTmp].au64[0]; \
          (a_u256Dst).au64[3] = pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegSrcTmp].au64[1]; \
     } while (0)
+#define IEM_MC_FETCH_YREG_YMM(a_uYmmDst, a_iYRegSrc) \
+    do { uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \
+         (a_uYmmDst).au64[0] = pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegSrcTmp].au64[0]; \
+         (a_uYmmDst).au64[1] = pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegSrcTmp].au64[1]; \
+         (a_uYmmDst).au64[2] = pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegSrcTmp].au64[0]; \
+         (a_uYmmDst).au64[3] = pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegSrcTmp].au64[1]; \
+    } while (0)
 
 #define IEM_MC_STORE_YREG_U128(a_iYRegDst, a_iDQword, a_u128Value) \
     do { uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
@@ -729,6 +738,14 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
          pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegDstTmp].au64[1]       = (a_u256Src).au64[1]; \
          pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = (a_u256Src).au64[2]; \
          pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = (a_u256Src).au64[3]; \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(iYRegDstTmp); \
+    } while (0)
+#define IEM_MC_STORE_YREG_YMM_ZX_VLMAX(a_iYRegDst, a_uYmmSrc) \
+    do { uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegDstTmp].au64[0]       = (a_uYmmSrc).au64[0]; \
+         pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegDstTmp].au64[1]       = (a_uYmmSrc).au64[1]; \
+         pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = (a_uYmmSrc).au64[2]; \
+         pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = (a_uYmmSrc).au64[3]; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(iYRegDstTmp); \
     } while (0)
 #define IEM_MC_STORE_YREG_U32_U256(a_iYRegDst, a_iDwDst, a_u256Value, a_iDwSrc) \

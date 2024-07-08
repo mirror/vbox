@@ -745,6 +745,7 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_BROADCAST_XREG_U64_ZX_VLMAX(a_iXRegDst, a_u64Src)    NOP()
 
 #define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg)                   NOP()
+#define IEM_MC_REF_XREG_XMM(a_puXmmDst, a_iXReg)                    NOP()
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg)             NOP()
 #define IEM_MC_REF_XREG_XMM_CONST(a_pXmmDst, a_iXReg)               NOP()
 #define IEM_MC_REF_XREG_U32_CONST(a_pu32Dst, a_iXReg)               NOP()
@@ -757,6 +758,7 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_FETCH_YREG_U64(a_u64Dst, a_iYRegSrc, a_iQWord)       NOP()
 #define IEM_MC_FETCH_YREG_U128(a_u128Dst, a_iYRegSrc, a_iDQWord)    NOP()
 #define IEM_MC_FETCH_YREG_U256(a_u256Dst, a_iYRegSrc)               NOP()
+#define IEM_MC_FETCH_YREG_YMM(a_uYmmDst, a_iYRegSrc)                NOP()
 
 #define IEM_MC_STORE_YREG_U128(a_iYRegDst, a_iDQword, a_u128Value)  NOP()
 
@@ -765,6 +767,7 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_STORE_YREG_U64_ZX_VLMAX(a_iYRegDst, a_u64Src)        NOP()
 #define IEM_MC_STORE_YREG_U128_ZX_VLMAX(a_iYRegDst, a_u128Src)      NOP()
 #define IEM_MC_STORE_YREG_U256_ZX_VLMAX(a_iYRegDst, a_u256Src)      NOP()
+#define IEM_MC_STORE_YREG_YMM_ZX_VLMAX(a_iYRegDst, a_uYmmSrc)       NOP()
 
 #define IEM_MC_STORE_YREG_U32_U256(a_iYRegDst, a_iDwDst, a_u256Value, a_iDwSrc)      NOP()
 #define IEM_MC_STORE_YREG_U64_U256(a_iYRegDst, a_iQwDst, a_u256Value, a_iQwSrc)      NOP()

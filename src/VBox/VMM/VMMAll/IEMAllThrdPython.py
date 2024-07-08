@@ -81,6 +81,7 @@ g_kdTypeInfo2 = {
     'IEMFPURESULTTWO':  (80+16+80,False, 'IEMFPURESULTTWO', ),
     'RTUINT128U':       (  128,   False, 'RTUINT128U',      ),
     'X86XMMREG':        (  128,   False, 'X86XMMREG',       ),
+    'X86YMMREG':        (  256,   False, 'X86YMMREG',       ),
     'IEMMEDIAF2XMMSRC': (  256,   False, 'IEMMEDIAF2XMMSRC',),
     'RTUINT256U':       (  256,   False, 'RTUINT256U',      ),
     'IEMPCMPISTRXSRC':  (  256,   False, 'IEMPCMPISTRXSRC', ),
@@ -1835,6 +1836,7 @@ class ThreadedFunction(object):
         'IEM_MC_COPY_XREG_U128':                    '__xreg128',
 
         'IEM_MC_FETCH_YREG_U256':                   '__yreg256',
+        'IEM_MC_FETCH_YREG_YMM':                    '__yreg256',
         'IEM_MC_FETCH_YREG_U128':                   '__yreg128',
         'IEM_MC_FETCH_YREG_U64':                    '__yreg64',
         'IEM_MC_FETCH_YREG_U32':                    '__yreg32',

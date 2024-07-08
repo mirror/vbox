@@ -5412,6 +5412,9 @@ iemNativeEmitRefEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxV
 #define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg) \
     off = iemNativeEmitRefXregXxx(pReNative, off, a_pu128Dst, a_iXReg, false /*fConst*/)
 
+#define IEM_MC_REF_XREG_XMM(a_puXmmDst, a_iXReg) \
+    off = iemNativeEmitRefXregXxx(pReNative, off, a_puXmmDst, a_iXReg, false /*fConst*/)
+
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg) \
     off = iemNativeEmitRefXregXxx(pReNative, off, a_pu128Dst, a_iXReg, true /*fConst*/)
 
@@ -7163,6 +7166,11 @@ AssertCompileSize(X86XMMREG, sizeof(RTUINT128U));
                                                sizeof(RTUINT128U), sizeof(RTUINT128U) - 1, kIemNativeEmitMemOp_Fetch, \
                                                (uintptr_t)iemNativeHlpMemFlatFetchDataU128NoAc, pCallEntry->idxInstr)
 
+#define IEM_MC_FETCH_MEM_FLAT_XMM_NO_AC(a_uXmmDst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_uXmmDst, UINT8_MAX, a_GCPtrMem, \
+                                               sizeof(X86XMMREG), sizeof(X86XMMREG) - 1, kIemNativeEmitMemOp_Fetch, \
+                                               (uintptr_t)iemNativeHlpMemFlatFetchDataU128NoAc, pCallEntry->idxInstr)
+
 /* 256-bit segmented: */
 #define IEM_MC_FETCH_MEM_U256(a_u256Dst, a_iSeg, a_GCPtrMem) \
     off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u256Dst, a_iSeg, a_GCPtrMem, \
@@ -7195,6 +7203,12 @@ AssertCompileSize(X86XMMREG, sizeof(RTUINT128U));
     off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u256Dst, UINT8_MAX, a_GCPtrMem, sizeof(RTUINT256U), \
                                                (sizeof(RTUINT256U) - 1U) | IEM_MEMMAP_F_ALIGN_GP, kIemNativeEmitMemOp_Fetch, \
                                                (uintptr_t)iemNativeHlpMemFlatFetchDataU256AlignedAvx, pCallEntry->idxInstr)
+
+#define IEM_MC_FETCH_MEM_FLAT_YMM_NO_AC(a_uYmmDst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_uYmmDst, UINT8_MAX, a_GCPtrMem, \
+                                               sizeof(X86YMMREG), sizeof(X86YMMREG) - 1, kIemNativeEmitMemOp_Fetch, \
+                                               (uintptr_t)iemNativeHlpMemFlatFetchDataU256NoAc, pCallEntry->idxInstr)
+
 #endif
 
 
@@ -9767,8 +9781,10 @@ iemNativeEmitSimdClearXregU32Mask(PIEMRECOMPILERSTATE pReNative, uint32_t off, u
 #define IEM_MC_FETCH_YREG_U256(a_u256Dst, a_iYRegSrc) \
     off = iemNativeEmitSimdFetchYregU256(pReNative, off, a_u256Dst, a_iYRegSrc)
 
+#define IEM_MC_FETCH_YREG_YMM(a_uYmmDst, a_iYRegSrc) \
+    off = iemNativeEmitSimdFetchYregU256(pReNative, off, a_uYmmDst, a_iYRegSrc)
 
-/** Emits code for IEM_MC_FETCH_YREG_U256. */
+/** Emits code for IEM_MC_FETCH_YREG_U256/IEM_MC_FETCH_YREG_YMM. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdFetchYregU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iYRegSrc)
 {
@@ -9792,8 +9808,10 @@ iemNativeEmitSimdFetchYregU256(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 #define IEM_MC_STORE_YREG_U256_ZX_VLMAX(a_iYRegDst, a_u256Src) \
     off = iemNativeEmitSimdStoreYregU256ZxVlmax(pReNative, off, a_iYRegDst, a_u256Src)
 
+#define IEM_MC_STORE_YREG_YMM_ZX_VLMAX(a_iYRegDst, a_uYmmSrc) \
+    off = iemNativeEmitSimdStoreYregU256ZxVlmax(pReNative, off, a_iYRegDst, a_uYmmSrc)
 
-/** Emits code for IEM_MC_STORE_YREG_U256_ZX_VLMAX. */
+/** Emits code for IEM_MC_STORE_YREG_U256_ZX_VLMAX/IEM_MC_STORE_YREG_YMM_ZX_VLMAX. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitSimdStoreYregU256ZxVlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iYRegDst, uint8_t idxSrcVar)
 {
