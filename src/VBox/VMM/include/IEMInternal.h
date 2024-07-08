@@ -1489,7 +1489,7 @@ typedef struct IEMTBALLOCATOR
     /** Where to start pruning native TBs from when we're out of executable memory.
      *  See iemTbAllocatorFreeupNativeSpace for details. */
     uint32_t        iPruneNativeFrom;
-    /** Index into IEMTBALLOCATOR::aFreeCache were the next freed TB can be stored
+    /** Index into IEMTBALLOCATOR::apTbFreeCache were the next freed TB can be stored
      * (0 means the cache is empty, 32 the cache is full). */
     uint32_t        idxTbCacheFree;
 
