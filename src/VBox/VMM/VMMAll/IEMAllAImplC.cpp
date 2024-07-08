@@ -15606,6 +15606,7 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 /**
  * Helper for transfering exception to MXCSR and setting the result value
  * accordingly - ignores Flush-to-Zero.
@@ -15692,6 +15693,7 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResultNoFz(softfloat_sta
 
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
 }
+#endif
 
 
 /**
@@ -15840,6 +15842,7 @@ DECLINLINE(bool) iemSseBinaryValIsNaNR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr64V
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 /**
  * Validates the given single input operand returning whether the operation can continue or whether
  * contains a NaN value, setting the output accordingly.
@@ -15898,6 +15901,7 @@ DECLINLINE(bool) iemSseUnaryValIsNaNR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr64Va
 
     return false;
 }
+#endif
 
 
 /**
@@ -15967,7 +15971,6 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_addss_u128_r32,(uint32_t uMxCsrIn, PX86XMMR
 /**
  * ADDPD
  */
-#ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_addpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Val1, PCRTFLOAT64U pr64Val2)
 {
     if (iemSseBinaryValIsNaNR64(pr64Res, pr64Val1, pr64Val2, &fMxcsr))
@@ -15982,12 +15985,29 @@ static uint32_t iemAImpl_addpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_addpd_u128,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
     return   iemAImpl_addpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], &puSrc2->ar64[0])
            | iemAImpl_addpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc1->ar64[1], &puSrc2->ar64[1]);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vaddpd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    return   iemAImpl_addpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], &puSrc2->ar64[0])
+           | iemAImpl_addpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc1->ar64[1], &puSrc2->ar64[1]);
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vaddpd_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG pResult, PCX86YMMREG puSrc1, PCX86YMMREG puSrc2))
+{
+    return   iemAImpl_addpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], &puSrc2->ar64[0])
+           | iemAImpl_addpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc1->ar64[1], &puSrc2->ar64[1])
+           | iemAImpl_addpd_u128_worker(&pResult->ar64[2], uMxCsrIn, &puSrc1->ar64[2], &puSrc2->ar64[2])
+           | iemAImpl_addpd_u128_worker(&pResult->ar64[3], uMxCsrIn, &puSrc1->ar64[3], &puSrc2->ar64[3]);
+}
 
 
 /**
