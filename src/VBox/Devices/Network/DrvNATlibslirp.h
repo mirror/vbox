@@ -52,16 +52,8 @@
 # include <netinet/in.h>
 #endif
 
-/** @todo r=jack: do we need to externally define inet* functions on win */
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/winsock2.h>
-# ifdef __cplusplus
-extern "C" {
-# endif
-int inet_pton(int,const char *,void *);
-# ifdef __cplusplus
-}
-# endif
 # define inet_aton(x, y) inet_pton(2, x, y)
 # define AF_INET6 23
 #endif
@@ -255,16 +247,20 @@ AssertCompileMemberAlignment(DRVNAT, StatNATRecvWakeups, 8);
 /** Pointer to the NAT driver instance data. */
 typedef DRVNAT *PDRVNAT;
 
+/**
+ * PDM Function Implementations
+ */
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS, PPDMTHREAD);
 static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS, PPDMTHREAD);
 static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT, void *, int);
 static void drvNATFreeSgBuf(PDRVNAT, PPDMSCATTERGATHER);
 static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT, PPDMSCATTERGATHER);
+static DECLCALLBACK(int) drvNATNetworkUp_BeginXmit(PPDMINETWORKUP, bool);
 static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP, size_t,
                                                   PCPDMNETWORKGSO, PPPDMSCATTERGATHER);
 static DECLCALLBACK(int) drvNATNetworkUp_FreeBuf(PPDMINETWORKUP, PPDMSCATTERGATHER);
 static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP, PPDMSCATTERGATHER, bool);
-static DECLCALLBACK(void) drvNATNetworkUp_EndXmit(PPDMINETWORKUP );
+static DECLCALLBACK(void) drvNATNetworkUp_EndXmit(PPDMINETWORKUP);
 static void drvNATNotifyNATThread(PDRVNAT pThis, const char *);
 static DECLCALLBACK(void) drvNATNetworkUp_SetPromiscuousMode(PPDMINETWORKUP, bool);
 static DECLCALLBACK(void) drvNATNotifyLinkChangedWorker(PDRVNAT, PDMNETWORKLINKSTATE);
@@ -273,16 +269,38 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS, PPDMTHREAD);
 static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS, PPDMTHREAD);
 static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE, const char *);
 static DECLCALLBACK(void) drvNATInfo(PPDMDRVINS, PCDBGFINFOHLP, const char *);
+static int drvNATConstructRedir(unsigned, PDRVNAT, PCFGMNODE, PRTNETADDRIPV4);
+static DECLCALLBACK(void) drvNATNotifyApplyPortForwardCommand(PDRVNAT, bool, bool, const char *,
+                                                              uint16_t, const char *, uint16_t);
+static DECLCALLBACK(int) drvNATNetworkNatConfigRedirect(PPDMINETWORKNATCONFIG, bool, bool,
+                                                        const char *, uint16_t, const char *, uint16_t);
 
-static void slirpUpdateTimeout(uint32_t *, void *);
-static void slirpCheckTimeout(void *);
+/**
+ * Libslirp Utility Functions
+ */
+static void drvNAT_UpdateTimeout(uint32_t *, void *);
+static void drvNAT_CheckTimeout(void *);
+static int drvNAT_PollEventSlirpToHost(int);
+static int drvNAT_PollEventHostToSlirp(int);
 
-static DECLCALLBACK(ssize_t) slirpSendPacketCb(const void *, size_t, void *);
-static DECLCALLBACK(void) slirpGuestErrorCb(const char *, void *);
-static DECLCALLBACK(int64_t) slirpClockGetNsCb(void *);
-static DECLCALLBACK(void *) slirpTimerNewCb(SlirpTimerCb, void *, void *);
-static DECLCALLBACK(void) slirpTimerFreeCb(void *, void *);
-static DECLCALLBACK(void) slirpTimerModCb(void *, int64_t, void *);
+/**
+ * Libslirp Callback Functions
+ */
+static DECLCALLBACK(ssize_t) drvNAT_SendPacketCb(const void *, size_t, void *);
+static DECLCALLBACK(void) drvNAT_GuestErrorCb(const char *, void *);
+static DECLCALLBACK(int64_t) drvNAT_ClockGetNsCb(void *);
+static DECLCALLBACK(void *) drvNAT_TimerNewCb(SlirpTimerCb, void *, void *);
+static DECLCALLBACK(void) drvNAT_TimerFreeCb(void *, void *);
+static DECLCALLBACK(void) drvNAT_TimerModCb(void *, int64_t, void *);
+static DECLCALLBACK(void) drvNAT_NotifyCb(void *);
+static DECLCALLBACK(void) drvNAT_RegisterPoll(int, void *);
+static DECLCALLBACK(void) drvNAT_UnregisterPoll(int, void *);
 
+static DECLCALLBACK(int) drvNAT_AddPollCb(int, int, void *);
+static DECLCALLBACK(int) drvNAT_GetREventsCb(int, void *);
+
+/**
+ * Contructor/Destructor
+ */
 static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS);
 static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS, PCFGMNODE, uint32_t);

@@ -42,7 +42,7 @@ SOCKET libslirp_wrap_RTHandleTableLookup(int fd)
     if (pNATHandleTable == NULL)
     {
         pNATHandleTable = RTMemAlloc(sizeof(RTHANDLETABLE));
-        int rc = RTHandleTableCreate(pNATHandleTable)
+        int rc = RTHandleTableCreate(pNATHandleTable);
         AssertRC(rc);
     }
 
@@ -61,7 +61,7 @@ int libslirp_wrap_RTHandleTableAlloc(SOCKET uSocket, uint32_t *pHandle)
     }
 
     LogFlowFunc(("Creating sock %llu on %p\n", uSocket, (void *)pNATHandleTable));
-    return RTHandleTableAlloc(*pNATHandleTable, uSocket, pHandle);
+    return RTHandleTableAlloc(*pNATHandleTable, (void *)uSocket, pHandle);
 }
 
 #endif

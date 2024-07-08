@@ -34,9 +34,9 @@
 #include "DrvNATlibslirp.h"
 
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
+/**
+ * PDM Function Implementations
+ */
 
 /**
  * @callback_method_impl{FNPDMTHREADDRV}
@@ -367,11 +367,13 @@ static DECLCALLBACK(void) drvNATNetworkUp_EndXmit(PPDMINETWORKUP pInterface)
 static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho)
 {
     RT_NOREF(pszWho);
-    int rc;
+    int rc = 0;
 #ifndef RT_OS_WINDOWS
     /* kick poll() */
     size_t cbIgnored;
     rc = RTPipeWrite(pThis->hPipeWrite, "", 1, &cbIgnored);
+#else
+    RT_NOREF(pThis);
 #endif
     AssertRC(rc);
 }
@@ -451,134 +453,6 @@ static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInte
 }
 
 /**
- * Registers poll. Unused function (other than logging).
- */
-static void drvNAT_RegisterPoll(int fd, void *opaque) {
-    RT_NOREF(fd, opaque);
-    Log4(("Poll registered\n"));
-}
-
-/**
- * Unregisters poll. Unused function (other than logging).
- */
-static void drvNAT_UnregisterPoll(int fd, void *opaque) {
-    RT_NOREF(fd, opaque);
-    Log4(("Poll unregistered\n"));
-}
-
-/**
- * Converts slirp representation of poll events to host representation.
- *
- * @param   iEvents     Integer representing slirp type poll events.
- *
- * @returns Integer representing host type poll events.
- *
- * @thread  ?
- */
-static int drvNAT_PollEventSlirpToHost(int iEvents) {
-    int iRet = 0;
-#ifndef RT_OS_WINDOWS
-    if (iEvents & SLIRP_POLL_IN)  iRet |= POLLIN;
-    if (iEvents & SLIRP_POLL_OUT) iRet |= POLLOUT;
-    if (iEvents & SLIRP_POLL_PRI) iRet |= POLLPRI;
-    if (iEvents & SLIRP_POLL_ERR) iRet |= POLLERR;
-    if (iEvents & SLIRP_POLL_HUP) iRet |= POLLHUP;
-#else
-    if (iEvents & SLIRP_POLL_IN)  iRet |= (POLLRDNORM | POLLRDBAND);
-    if (iEvents & SLIRP_POLL_OUT) iRet |= POLLWRNORM;
-    if (iEvents & SLIRP_POLL_PRI) iRet |= (POLLIN);
-    if (iEvents & SLIRP_POLL_ERR) iRet |= 0;
-    if (iEvents & SLIRP_POLL_HUP) iRet |= 0;
-#endif
-    return iRet;
-}
-
-/**
- * Converts host representation of poll events to slirp representation.
- *
- * @param   iEvents     Integer representing host type poll events.
- *
- * @returns Integer representing slirp type poll events.
- *
- * @thread  ?
- */
-static int drvNAT_PollEventHostToSlirp(int iEvents) {
-    int iRet = 0;
-#ifndef RT_OS_WINDOWS
-    if (iEvents & POLLIN)  iRet |= SLIRP_POLL_IN;
-    if (iEvents & POLLOUT) iRet |= SLIRP_POLL_OUT;
-    if (iEvents & POLLPRI) iRet |= SLIRP_POLL_PRI;
-    if (iEvents & POLLERR) iRet |= SLIRP_POLL_ERR;
-    if (iEvents & POLLHUP) iRet |= SLIRP_POLL_HUP;
-#else
-    if (iEvents & (POLLRDNORM | POLLRDBAND))  iRet |= SLIRP_POLL_IN;
-    if (iEvents & POLLWRNORM) iRet |= SLIRP_POLL_OUT;
-    if (iEvents & (POLLPRI)) iRet |= SLIRP_POLL_PRI;
-    if (iEvents & POLLERR) iRet |= SLIRP_POLL_ERR;
-    if (iEvents & POLLHUP) iRet |= SLIRP_POLL_HUP;
-#endif
-    return iRet;
-}
-
-/**
- * Callback function to add entry to pollfd array.
- *
- * @param   iFd     Integer of system file descriptor of socket.
- *                  (on windows, this is a VBox internal, not system, value).
- * @param   iEvents Integer of slirp type poll events.
- * @param   opaque  Pointer to NAT State context.
- *
- * @returns Index of latest pollfd entry.
- *
- * @thread  ?
- */
-static int drvNAT_addPollCb(int iFd, int iEvents, void *opaque)
-{
-    PDRVNAT pThis = (PDRVNAT)opaque;
-
-    if (pThis->pNATState->nsock + 1 >= pThis->pNATState->uPollCap)
-    {
-        int cbNew = pThis->pNATState->uPollCap * 2 * sizeof(struct pollfd);
-        struct pollfd *pvNew = (struct pollfd *)RTMemRealloc(pThis->pNATState->polls, cbNew);
-        if(pvNew)
-        {
-            pThis->pNATState->polls = pvNew;
-            pThis->pNATState->uPollCap *= 2;
-        }
-        else
-            return -1;
-    }
-
-    int idx = pThis->pNATState->nsock;
-#ifdef RT_OS_WINDOWS
-    pThis->pNATState->polls[idx].fd = libslirp_wrap_RTHandleTableLookup(iFd);
-#else
-    pThis->pNATState->polls[idx].fd = iFd;
-#endif
-    pThis->pNATState->polls[idx].events = drvNAT_PollEventSlirpToHost(iEvents);
-    pThis->pNATState->polls[idx].revents = 0;
-    pThis->pNATState->nsock += 1;
-    return idx;
-}
-
-/**
- * Get translated revents from a poll at a given index.
- *
- * @param   idx     Integer index of poll.
- * @param   opaque  Pointer to NAT State context.
- *
- * @returns Integer representing transalted revents.
- *
- * @thread  ?
- */
-static int drvNAT_getREventsCb(int idx, void *opaque)
-{
-    PDRVNAT pThis = (PDRVNAT)opaque;
-    struct pollfd* polls = pThis->pNATState->polls;
-    return drvNAT_PollEventHostToSlirp(polls[idx].revents);
-}
-
-/**
  * NAT thread handling the slirp stuff.
  *
  * The slirp implementation is single-threaded so we execute this enginre in a
@@ -602,7 +476,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     unsigned int cBreak = 0;
 #else /* RT_OS_WINDOWS */
     unsigned int cPollNegRet = 0;
-    drvNAT_addPollCb(RTPipeToNative(pThis->hPipeRead), SLIRP_POLL_IN | SLIRP_POLL_HUP, pThis);
+    drvNAT_AddPollCb(RTPipeToNative(pThis->hPipeRead), SLIRP_POLL_IN | SLIRP_POLL_HUP, pThis);
     pThis->pNATState->polls[0].fd = RTPipeToNative(pThis->hPipeRead);
     pThis->pNATState->polls[0].events = POLLRDNORM | POLLPRI | POLLRDBAND;
     pThis->pNATState->polls[0].revents = 0;
@@ -628,8 +502,8 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         uint32_t uTimeout = 0;
         pThis->pNATState->nsock = 1;
 
-        slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, drvNAT_addPollCb /* SlirpAddPollCb */, pThis /* opaque */);
-        slirpUpdateTimeout(&uTimeout, pThis);
+        slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, drvNAT_AddPollCb /* SlirpAddPollCb */, pThis /* opaque */);
+        drvNAT_UpdateTimeout(&uTimeout, pThis);
 
         int cChangedFDs = poll(pThis->pNATState->polls, pThis->pNATState->nsock, uTimeout /* timeout */);
 
@@ -649,7 +523,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         }
 
 
-        slirp_pollfds_poll(pThis->pNATState->pSlirp, cChangedFDs < 0, drvNAT_getREventsCb /* SlirpGetREventsCb */, pThis /* opaque */);
+        slirp_pollfds_poll(pThis->pNATState->pSlirp, cChangedFDs < 0, drvNAT_GetREventsCb /* SlirpGetREventsCb */, pThis /* opaque */);
         if (pThis->pNATState->polls[0].revents & (POLLRDNORM|POLLPRI|POLLRDBAND))
         {
             /* drain the pipe
@@ -671,13 +545,13 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
         /* process _all_ outstanding requests but don't wait */
         RTReqQueueProcess(pThis->hSlirpReqQueue, 0);
-        slirpCheckTimeout(pThis);
+        drvNAT_CheckTimeout(pThis);
 
 #else /* RT_OS_WINDOWS */
         uint32_t uTimeout = 0;
         pThis->pNATState->nsock = 0;
-        slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, drvNAT_addPollCb /* SlirpAddPollCb */, pThis /* opaque */);
-        slirpUpdateTimeout(&uTimeout, pThis);
+        slirp_pollfds_fill(pThis->pNATState->pSlirp, &uTimeout, drvNAT_AddPollCb /* SlirpAddPollCb */, pThis /* opaque */);
+        drvNAT_UpdateTimeout(&uTimeout, pThis);
 
         int cChangedFDs = WSAPoll(pThis->pNATState->polls, pThis->pNATState->nsock, uTimeout /* timeout */);
         int error = WSAGetLastError();
@@ -694,17 +568,17 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         if (cChangedFDs == 0)
         {
             /* only check for slow/fast timers */
-            slirp_pollfds_poll(pThis->pNATState->pSlirp, false /*select error*/, drvNAT_getREventsCb /* SlirpGetREventsCb */, pThis /* opaque */);
+            slirp_pollfds_poll(pThis->pNATState->pSlirp, false /*select error*/, drvNAT_GetREventsCb /* SlirpGetREventsCb */, pThis /* opaque */);
             RTReqQueueProcess(pThis->hSlirpReqQueue, 0);
             continue;
         }
         /* poll the sockets in any case */
         Log2(("%s: poll\n", __FUNCTION__));
-        slirp_pollfds_poll(pThis->pNATState->pSlirp, cChangedFDs < 0 /*select error*/, drvNAT_getREventsCb /* SlirpGetREventsCb */, pThis /* opaque */);
+        slirp_pollfds_poll(pThis->pNATState->pSlirp, cChangedFDs < 0 /*select error*/, drvNAT_GetREventsCb /* SlirpGetREventsCb */, pThis /* opaque */);
 
         /* process _all_ outstanding requests but don't wait */
         RTReqQueueProcess(pThis->hSlirpReqQueue, 0);
-        slirpCheckTimeout(pThis);
+        drvNAT_CheckTimeout(pThis);
 # ifdef VBOX_NAT_DELAY_HACK
         if (cBreak++ > 128)
         {
@@ -937,6 +811,9 @@ static DECLCALLBACK(int) drvNATNetworkNatConfigRedirect(PPDMINETWORKNATCONFIG pI
 }
 
 /**
+ * Libslirp Utility Functions
+ */
+/**
  * Update the timeout field in given list of Slirp timers.
  *
  * @param uTimeout  Pointer to timeout value.
@@ -944,12 +821,12 @@ static DECLCALLBACK(int) drvNATNetworkNatConfigRedirect(PPDMINETWORKNATCONFIG pI
  *
  * @thread  ?
  */
-static void slirpUpdateTimeout(uint32_t *uTimeout, void *opaque)
+static void drvNAT_UpdateTimeout(uint32_t *uTimeout, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
     Assert(pThis);
 
-    int64_t currTime = slirpClockGetNsCb(pThis) / (1000 * 1000);
+    int64_t currTime = drvNAT_ClockGetNsCb(pThis) / (1000 * 1000);
     SlirpTimer *pCurrent = pThis->pNATState->pTimerHead;
     while (pCurrent != NULL)
     {
@@ -975,12 +852,12 @@ static void slirpUpdateTimeout(uint32_t *uTimeout, void *opaque)
  *
  * @thread  ?
  */
-static void slirpCheckTimeout(void *opaque)
+static void drvNAT_CheckTimeout(void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
     Assert(pThis);
 
-    int64_t currTime = slirpClockGetNsCb(pThis) / (1000 * 1000);
+    int64_t currTime = drvNAT_ClockGetNsCb(pThis) / (1000 * 1000);
     SlirpTimer *pCurrent = pThis->pNATState->pTimerHead;
     while (pCurrent != NULL)
     {
@@ -999,9 +876,62 @@ static void slirpCheckTimeout(void *opaque)
 }
 
 /**
- * CALLBACKS
+ * Converts slirp representation of poll events to host representation.
+ *
+ * @param   iEvents     Integer representing slirp type poll events.
+ *
+ * @returns Integer representing host type poll events.
+ *
+ * @thread  ?
  */
+static int drvNAT_PollEventSlirpToHost(int iEvents) {
+    int iRet = 0;
+#ifndef RT_OS_WINDOWS
+    if (iEvents & SLIRP_POLL_IN)  iRet |= POLLIN;
+    if (iEvents & SLIRP_POLL_OUT) iRet |= POLLOUT;
+    if (iEvents & SLIRP_POLL_PRI) iRet |= POLLPRI;
+    if (iEvents & SLIRP_POLL_ERR) iRet |= POLLERR;
+    if (iEvents & SLIRP_POLL_HUP) iRet |= POLLHUP;
+#else
+    if (iEvents & SLIRP_POLL_IN)  iRet |= (POLLRDNORM | POLLRDBAND);
+    if (iEvents & SLIRP_POLL_OUT) iRet |= POLLWRNORM;
+    if (iEvents & SLIRP_POLL_PRI) iRet |= (POLLIN);
+    if (iEvents & SLIRP_POLL_ERR) iRet |= 0;
+    if (iEvents & SLIRP_POLL_HUP) iRet |= 0;
+#endif
+    return iRet;
+}
 
+/**
+ * Converts host representation of poll events to slirp representation.
+ *
+ * @param   iEvents     Integer representing host type poll events.
+ *
+ * @returns Integer representing slirp type poll events.
+ *
+ * @thread  ?
+ */
+static int drvNAT_PollEventHostToSlirp(int iEvents) {
+    int iRet = 0;
+#ifndef RT_OS_WINDOWS
+    if (iEvents & POLLIN)  iRet |= SLIRP_POLL_IN;
+    if (iEvents & POLLOUT) iRet |= SLIRP_POLL_OUT;
+    if (iEvents & POLLPRI) iRet |= SLIRP_POLL_PRI;
+    if (iEvents & POLLERR) iRet |= SLIRP_POLL_ERR;
+    if (iEvents & POLLHUP) iRet |= SLIRP_POLL_HUP;
+#else
+    if (iEvents & (POLLRDNORM | POLLRDBAND))  iRet |= SLIRP_POLL_IN;
+    if (iEvents & POLLWRNORM) iRet |= SLIRP_POLL_OUT;
+    if (iEvents & (POLLPRI)) iRet |= SLIRP_POLL_PRI;
+    if (iEvents & POLLERR) iRet |= SLIRP_POLL_ERR;
+    if (iEvents & POLLHUP) iRet |= SLIRP_POLL_HUP;
+#endif
+    return iRet;
+}
+
+/**
+ * Libslirp Callbacks
+ */
 /**
  * Callback called by libslirp to send packet into guest.
  *
@@ -1013,9 +943,9 @@ static void slirpCheckTimeout(void *opaque)
  *
  * @thread  ?
  */
-static DECLCALLBACK(ssize_t) slirpSendPacketCb(const void *pBuf, size_t cb, void *opaque /* PDRVNAT */)
+static DECLCALLBACK(ssize_t) drvNAT_SendPacketCb(const void *pBuf, size_t cb, void *opaque /* PDRVNAT */)
 {
-    char *pNewBuf = (char *)RTMemAlloc(cb); /** @todo r=aeichner Missing check whether memory was actually allocated */
+    char *pNewBuf = (char *)RTMemAlloc(cb);
     if (pNewBuf == NULL)
         return -1;
 
@@ -1037,7 +967,7 @@ static DECLCALLBACK(ssize_t) slirpSendPacketCb(const void *pBuf, size_t cb, void
                               (PFNRT)drvNATRecvWorker, 3, pThis, pNewBuf, cb);
     AssertRC(rc);
     drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
-    drvNATNotifyNATThread(pThis, "slirpSendPacketCb");
+    drvNATNotifyNATThread(pThis, "drvNAT_SendPacketCb");
     STAM_COUNTER_INC(&pThis->StatQueuePktSent);
     LogFlowFuncLeave();
     return cb;
@@ -1051,7 +981,7 @@ static DECLCALLBACK(ssize_t) slirpSendPacketCb(const void *pBuf, size_t cb, void
  *
  * @thread  ?
  */
-static DECLCALLBACK(void) slirpGuestErrorCb(const char *pMsg, void *opaque)
+static DECLCALLBACK(void) drvNAT_GuestErrorCb(const char *pMsg, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
     Assert(pThis);
@@ -1068,7 +998,7 @@ static DECLCALLBACK(void) slirpGuestErrorCb(const char *pMsg, void *opaque)
  *
  * @returns 64-bit signed integer representing time in nanoseconds.
  */
-static DECLCALLBACK(int64_t) slirpClockGetNsCb(void *opaque)
+static DECLCALLBACK(int64_t) drvNAT_ClockGetNsCb(void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
     Assert(pThis);
@@ -1077,7 +1007,6 @@ static DECLCALLBACK(int64_t) slirpClockGetNsCb(void *opaque)
 
     return (int64_t)RTTimeNanoTS();
 }
-
 
 /**
  * Callback called by slirp to create a new timer and insert it into the given list.
@@ -1090,7 +1019,7 @@ static DECLCALLBACK(int64_t) slirpClockGetNsCb(void *opaque)
  *
  * @returns Pointer to new timer.
  */
-static DECLCALLBACK(void *) slirpTimerNewCb(SlirpTimerCb slirpTimeCb, void *cb_opaque, void *opaque)
+static DECLCALLBACK(void *) drvNAT_TimerNewCb(SlirpTimerCb slirpTimeCb, void *cb_opaque, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
     Assert(pThis);
@@ -1114,7 +1043,7 @@ static DECLCALLBACK(void *) slirpTimerNewCb(SlirpTimerCb slirpTimeCb, void *cb_o
  * @param   pTimer  Pointer to slirpTimer object to be freed.
  * @param   opaque  Pointer to NAT State context.
  */
-static DECLCALLBACK(void) slirpTimerFreeCb(void *pTimer, void *opaque)
+static DECLCALLBACK(void) drvNAT_TimerFreeCb(void *pTimer, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
     Assert(pThis);
@@ -1140,7 +1069,7 @@ static DECLCALLBACK(void) slirpTimerFreeCb(void *pTimer, void *opaque)
  * @param   expireTime  Signed 64-bit integer representing the new expiry time.
  * @param   opaque      Pointer to NAT State context.
  */
-static DECLCALLBACK(void) slirpTimerModCb(void *pTimer, int64_t expireTime, void *opaque)
+static DECLCALLBACK(void) drvNAT_TimerModCb(void *pTimer, int64_t expireTime, void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
     Assert(pThis);
@@ -1155,13 +1084,90 @@ static DECLCALLBACK(void) slirpTimerModCb(void *pTimer, int64_t expireTime, void
  *
  * @param   opaque  Pointer to NAT State context.
  */
-static DECLCALLBACK(void) slirpNotifyCb(void *opaque)
+static DECLCALLBACK(void) drvNAT_NotifyCb(void *opaque)
 {
     PDRVNAT pThis = (PDRVNAT)opaque;
 
     drvNATAsyncIoWakeup(pThis->pDrvIns, NULL);
 }
 
+/**
+ * Registers poll. Unused function (other than logging).
+ */
+static DECLCALLBACK(void) drvNAT_RegisterPoll(int fd, void *opaque) {
+    RT_NOREF(fd, opaque);
+    Log4(("Poll registered\n"));
+}
+
+/**
+ * Unregisters poll. Unused function (other than logging).
+ */
+static DECLCALLBACK(void) drvNAT_UnregisterPoll(int fd, void *opaque) {
+    RT_NOREF(fd, opaque);
+    Log4(("Poll unregistered\n"));
+}
+
+/**
+ * Callback function to add entry to pollfd array.
+ *
+ * @param   iFd     Integer of system file descriptor of socket.
+ *                  (on windows, this is a VBox internal, not system, value).
+ * @param   iEvents Integer of slirp type poll events.
+ * @param   opaque  Pointer to NAT State context.
+ *
+ * @returns Index of latest pollfd entry.
+ *
+ * @thread  ?
+ */
+static DECLCALLBACK(int) drvNAT_AddPollCb(int iFd, int iEvents, void *opaque)
+{
+    PDRVNAT pThis = (PDRVNAT)opaque;
+
+    if (pThis->pNATState->nsock + 1 >= pThis->pNATState->uPollCap)
+    {
+        int cbNew = pThis->pNATState->uPollCap * 2 * sizeof(struct pollfd);
+        struct pollfd *pvNew = (struct pollfd *)RTMemRealloc(pThis->pNATState->polls, cbNew);
+        if(pvNew)
+        {
+            pThis->pNATState->polls = pvNew;
+            pThis->pNATState->uPollCap *= 2;
+        }
+        else
+            return -1;
+    }
+
+    int idx = pThis->pNATState->nsock;
+#ifdef RT_OS_WINDOWS
+    pThis->pNATState->polls[idx].fd = libslirp_wrap_RTHandleTableLookup(iFd);
+#else
+    pThis->pNATState->polls[idx].fd = iFd;
+#endif
+    pThis->pNATState->polls[idx].events = drvNAT_PollEventSlirpToHost(iEvents);
+    pThis->pNATState->polls[idx].revents = 0;
+    pThis->pNATState->nsock += 1;
+    return idx;
+}
+
+/**
+ * Get translated revents from a poll at a given index.
+ *
+ * @param   idx     Integer index of poll.
+ * @param   opaque  Pointer to NAT State context.
+ *
+ * @returns Integer representing transalted revents.
+ *
+ * @thread  ?
+ */
+static DECLCALLBACK(int) drvNAT_GetREventsCb(int idx, void *opaque)
+{
+    PDRVNAT pThis = (PDRVNAT)opaque;
+    struct pollfd* polls = pThis->pNATState->polls;
+    return drvNAT_PollEventHostToSlirp(polls[idx].revents);
+}
+
+/**
+ * Contructor/Destructor
+ */
 /**
  * Destruct a driver instance.
  *
@@ -1394,15 +1400,15 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
     SlirpCb *slirpCallbacks = (struct SlirpCb *)RTMemAlloc(sizeof(SlirpCb));
 
-    slirpCallbacks->send_packet = &slirpSendPacketCb;
-    slirpCallbacks->guest_error = &slirpGuestErrorCb;
-    slirpCallbacks->clock_get_ns = &slirpClockGetNsCb;
-    slirpCallbacks->timer_new = &slirpTimerNewCb;
-    slirpCallbacks->timer_free = &slirpTimerFreeCb;
-    slirpCallbacks->timer_mod = &slirpTimerModCb;
+    slirpCallbacks->send_packet = &drvNAT_SendPacketCb;
+    slirpCallbacks->guest_error = &drvNAT_GuestErrorCb;
+    slirpCallbacks->clock_get_ns = &drvNAT_ClockGetNsCb;
+    slirpCallbacks->timer_new = &drvNAT_TimerNewCb;
+    slirpCallbacks->timer_free = &drvNAT_TimerFreeCb;
+    slirpCallbacks->timer_mod = &drvNAT_TimerModCb;
     slirpCallbacks->register_poll_fd = &drvNAT_RegisterPoll;
     slirpCallbacks->unregister_poll_fd = &drvNAT_UnregisterPoll;
-    slirpCallbacks->notify = &slirpNotifyCb;
+    slirpCallbacks->notify = &drvNAT_NotifyCb;
     slirpCallbacks->init_completed = NULL;
     slirpCallbacks->timer_new_opaque = NULL;
 
