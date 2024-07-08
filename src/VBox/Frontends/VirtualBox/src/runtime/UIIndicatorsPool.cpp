@@ -869,6 +869,7 @@ public:
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorFeatures(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_Features, pMachine)
+        , m_pTimerAutoUpdate(0)
         , m_uEffectiveCPULoad(0)
     {
         /* Assign state-icons: */
@@ -882,7 +883,7 @@ public:
         setStateIcon(KVMExecutionEngine_NativeApi, UIIconPool::iconSet(":/vm_execution_engine_native_api_16px.png"));
         /* Configure connection: */
         connect(m_pMachine, &UIMachine::sigMachineStateChange,
-                this, &UIIndicatorFeatures::sltHandleMachineStateChange);
+                this, &UIIndicatorFeatures::updateAppearance);
         connect(m_pMachine, &UIMachine::sigInitialized,
                 this, &UIIndicatorFeatures::updateAppearance);
         connect(m_pMachine, &UIMachine::sigCPUExecutionCapChange,
@@ -890,12 +891,8 @@ public:
         /* Configure CPU load update timer: */
         m_pTimerAutoUpdate = new QTimer(this);
         if (m_pTimerAutoUpdate)
-        {
             connect(m_pTimerAutoUpdate, &QTimer::timeout,
                     this, &UIIndicatorFeatures::sltHandleTimeout);
-            /* Start the timer immediately if the machine is running: */
-            sltHandleMachineStateChange();
-        }
         /* Update & translate finally: */
         updateAppearance();
     }
@@ -959,24 +956,18 @@ protected slots:
         /* Update indicator state: */
         setState(enmEngine);
 
+        /* Start or stop CPU load update timer: */
+        if (   m_pTimerAutoUpdate
+            && m_pMachine->machineState() == KMachineState_Running)
+            m_pTimerAutoUpdate->start(1000);
+        else
+            m_pTimerAutoUpdate->stop();
+
         /* Retranslate finally: */
         sltRetranslateUI();
     }
 
 private slots:
-
-    /** Updates auto-update timer depending on machine state. */
-    void sltHandleMachineStateChange()
-    {
-        /* Update appearance first of all: */
-        updateAppearance();
-
-        /* Start or stop CPU load update timer: */
-        if (m_pMachine->machineState() == KMachineState_Running)
-            m_pTimerAutoUpdate->start(1000);
-        else
-            m_pTimerAutoUpdate->stop();
-    }
 
     /** Handles timer timeout with CPU load percentage update. */
     void sltHandleTimeout()
