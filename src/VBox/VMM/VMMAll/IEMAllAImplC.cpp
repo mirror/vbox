@@ -15631,6 +15631,7 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResultNoFz(softfloat_sta
 
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
 }
+#endif
 
 
 /**
@@ -15669,6 +15670,7 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResult(softfloat_state_t
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 /**
  * Helper for transfering exception to MXCSR and setting the result value
  * accordingly - ignores Flush-to-Zero.
