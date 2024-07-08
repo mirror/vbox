@@ -499,23 +499,25 @@ typedef IEMTLBENTRY const *PCIEMTLBENTRY;
 
 /** @name IEMTLBE_F_XXX - TLB entry flags (IEMTLBENTRY::fFlagsAndPhysRev)
  * @{  */
-#define IEMTLBE_F_PT_NO_EXEC        RT_BIT_64(0) /**< Page tables: Not executable. */
-#define IEMTLBE_F_PT_NO_WRITE       RT_BIT_64(1) /**< Page tables: Not writable. */
-#define IEMTLBE_F_PT_NO_USER        RT_BIT_64(2) /**< Page tables: Not user accessible (supervisor only). */
-#define IEMTLBE_F_PG_NO_WRITE       RT_BIT_64(3) /**< Phys page:   Not writable (access handler, ROM, whatever). */
-#define IEMTLBE_F_PG_NO_READ        RT_BIT_64(4) /**< Phys page:   Not readable (MMIO / access handler, ROM) */
-#define IEMTLBE_F_PT_NO_ACCESSED    RT_BIT_64(5) /**< Phys tables: Not accessed (need to be marked accessed). */
-#define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(6) /**< Page tables: Not dirty (needs to be made dirty on write). */
-#define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(7) /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
-#define IEMTLBE_F_PG_UNASSIGNED     RT_BIT_64(8) /**< Phys page:   Unassigned memory (not RAM, ROM, MMIO2 or MMIO). */
-#define IEMTLBE_F_PG_CODE_PAGE      RT_BIT_64(9) /**< Phys page:   Code page. */
-#define IEMTLBE_F_PHYS_REV          UINT64_C(0xfffffffffffffc00) /**< Physical revision mask. @sa IEMTLB_PHYS_REV_INCR */
+#define IEMTLBE_F_PT_NO_EXEC        RT_BIT_64(0)  /**< Page tables: Not executable. */
+#define IEMTLBE_F_PT_NO_WRITE       RT_BIT_64(1)  /**< Page tables: Not writable. */
+#define IEMTLBE_F_PT_NO_USER        RT_BIT_64(2)  /**< Page tables: Not user accessible (supervisor only). */
+#define IEMTLBE_F_PG_NO_WRITE       RT_BIT_64(3)  /**< Phys page:   Not writable (access handler, ROM, whatever). */
+#define IEMTLBE_F_PG_NO_READ        RT_BIT_64(4)  /**< Phys page:   Not readable (MMIO / access handler, ROM) */
+#define IEMTLBE_F_PT_NO_ACCESSED    RT_BIT_64(5)  /**< Phys tables: Not accessed (need to be marked accessed). */
+#define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(6)  /**< Page tables: Not dirty (needs to be made dirty on write). */
+#define IEMTLBE_F_PT_LARGE_PAGE     RT_BIT_64(7)  /**< Page tables: Large 2 or 4 MiB page (for flushing). */
+#define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(8)  /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
+#define IEMTLBE_F_PG_UNASSIGNED     RT_BIT_64(9)  /**< Phys page:   Unassigned memory (not RAM, ROM, MMIO2 or MMIO). */
+#define IEMTLBE_F_PG_CODE_PAGE      RT_BIT_64(10) /**< Phys page:   Code page. */
+#define IEMTLBE_F_PHYS_REV          UINT64_C(0xfffffffffffff800) /**< Physical revision mask. @sa IEMTLB_PHYS_REV_INCR */
 /** @} */
 AssertCompile(PGMIEMGCPHYS2PTR_F_NO_WRITE     == IEMTLBE_F_PG_NO_WRITE);
 AssertCompile(PGMIEMGCPHYS2PTR_F_NO_READ      == IEMTLBE_F_PG_NO_READ);
 AssertCompile(PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 == IEMTLBE_F_NO_MAPPINGR3);
 AssertCompile(PGMIEMGCPHYS2PTR_F_UNASSIGNED   == IEMTLBE_F_PG_UNASSIGNED);
 AssertCompile(PGMIEMGCPHYS2PTR_F_CODE_PAGE    == IEMTLBE_F_PG_CODE_PAGE);
+AssertCompile(PGM_WALKINFO_BIG_PAGE           == IEMTLBE_F_PT_LARGE_PAGE);
 /** The bits set by PGMPhysIemGCPhys2PtrNoLock. */
 #define IEMTLBE_GCPHYS2PTR_MASK     (  PGMIEMGCPHYS2PTR_F_NO_WRITE \
                                      | PGMIEMGCPHYS2PTR_F_NO_READ \
@@ -528,8 +530,13 @@ AssertCompile(PGMIEMGCPHYS2PTR_F_CODE_PAGE    == IEMTLBE_F_PG_CODE_PAGE);
  * We initially chose 256 because that way we can obtain the result directly
  * from a 8-bit register without an additional AND instruction.
  * See also @bugref{10687}. */
-#define IEMTLB_ENTRY_COUNT                      1024
-#define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      10
+#if defined(RT_ARCH_AMD64)
+# define IEMTLB_ENTRY_COUNT                      256
+# define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      8
+#else
+# define IEMTLB_ENTRY_COUNT                      8192
+# define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      13
+#endif
 AssertCompile(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) == IEMTLB_ENTRY_COUNT);
 
 /**
@@ -636,7 +643,9 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 #define IEMTLB_REVISION_MASK    (~(RT_BIT_64(36) - 1))
 /** IEMTLB::uTlbPhysRev increment.
  * @sa IEMTLBE_F_PHYS_REV */
-#define IEMTLB_PHYS_REV_INCR    RT_BIT_64(10)
+#define IEMTLB_PHYS_REV_INCR    RT_BIT_64(11)
+AssertCompile(IEMTLBE_F_PHYS_REV == ~(IEMTLB_PHYS_REV_INCR - 1U));
+
 /**
  * Calculates the TLB tag for a virtual address but without TLB revision.
  * @returns Tag value for indexing and comparing with IEMTLB::uTag.

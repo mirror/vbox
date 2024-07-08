@@ -285,17 +285,18 @@ typedef IEMTLBENTRY *PIEMTLBENTRY;
 
 /** @name IEMTLBE_F_XXX - TLB entry flags (IEMTLBENTRY::fFlagsAndPhysRev)
  * @{  */
-#define IEMTLBE_F_PT_NO_EXEC        RT_BIT_64(0) /**< Page tables: Not executable. */
-#define IEMTLBE_F_PT_NO_WRITE       RT_BIT_64(1) /**< Page tables: Not writable. */
-#define IEMTLBE_F_PT_NO_USER        RT_BIT_64(2) /**< Page tables: Not user accessible (supervisor only). */
-#define IEMTLBE_F_PG_NO_WRITE       RT_BIT_64(3) /**< Phys page:   Not writable (access handler, ROM, whatever). */
-#define IEMTLBE_F_PG_NO_READ        RT_BIT_64(4) /**< Phys page:   Not readable (MMIO / access handler, ROM) */
-#define IEMTLBE_F_PT_NO_ACCESSED    RT_BIT_64(5) /**< Phys tables: Not accessed (need to be marked accessed). */
-#define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(6) /**< Page tables: Not dirty (needs to be made dirty on write). */
-#define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(7) /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
-#define IEMTLBE_F_PG_UNASSIGNED     RT_BIT_64(8) /**< Phys page:   Unassigned memory (not RAM, ROM, MMIO2 or MMIO). */
-#define IEMTLBE_F_PG_CODE_PAGE      RT_BIT_64(9) /**< Phys page:   Code page. */
-#define IEMTLBE_F_PHYS_REV          UINT64_C(0xfffffffffffffc00) /**< Physical revision mask. @sa IEMTLB_PHYS_REV_INCR */
+#define IEMTLBE_F_PT_NO_EXEC        RT_BIT_64(0)  /**< Page tables: Not executable. */
+#define IEMTLBE_F_PT_NO_WRITE       RT_BIT_64(1)  /**< Page tables: Not writable. */
+#define IEMTLBE_F_PT_NO_USER        RT_BIT_64(2)  /**< Page tables: Not user accessible (supervisor only). */
+#define IEMTLBE_F_PG_NO_WRITE       RT_BIT_64(3)  /**< Phys page:   Not writable (access handler, ROM, whatever). */
+#define IEMTLBE_F_PG_NO_READ        RT_BIT_64(4)  /**< Phys page:   Not readable (MMIO / access handler, ROM) */
+#define IEMTLBE_F_PT_NO_ACCESSED    RT_BIT_64(5)  /**< Phys tables: Not accessed (need to be marked accessed). */
+#define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(6)  /**< Page tables: Not dirty (needs to be made dirty on write). */
+#define IEMTLBE_F_PT_LARGE_PAGE     RT_BIT_64(7)  /**< Page tables: Large 2 or 4 MiB page (for flushing). */
+#define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(8)  /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
+#define IEMTLBE_F_PG_UNASSIGNED     RT_BIT_64(9)  /**< Phys page:   Unassigned memory (not RAM, ROM, MMIO2 or MMIO). */
+#define IEMTLBE_F_PG_CODE_PAGE      RT_BIT_64(10) /**< Phys page:   Code page. */
+#define IEMTLBE_F_PHYS_REV          UINT64_C(0xfffffffffffff800) /**< Physical revision mask. @sa IEMTLB_PHYS_REV_INCR */
 /** @} */
 
 

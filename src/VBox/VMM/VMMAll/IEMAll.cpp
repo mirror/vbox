@@ -727,6 +727,122 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllGlobal(PVMCPUCC pVCpu)
 }
 
 
+#if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
+template<bool a_fDataTlb>
+DECLINLINE(void) iemTlbInvalidatePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPTR GCPtrTag, uintptr_t idxEven)
+{
+    /*
+     * Flush the entry pair.
+     *
+     * We ASSUME that the guest hasn't tricked us into loading one of these
+     * from a large page and the other from a regular 4KB page.  This is made
+     * much less of a problem, in that the guest would also have to flip the
+     * G bit to accomplish this.
+     */
+    bool fMaybeLargePage = true;
+    if (pTlb->aEntries[idxEven].uTag == (GCPtrTag | pTlb->uTlbRevision))
+    {
+        pTlb->aEntries[idxEven].uTag = 0;
+        fMaybeLargePage = RT_BOOL(pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE);
+        if (!a_fDataTlb && GCPtrTag == IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc))
+            pVCpu->iem.s.cbInstrBufTotal = 0;
+    }
+    if (pTlb->aEntries[idxEven + 1].uTag == (GCPtrTag | pTlb->uTlbRevisionGlobal))
+    {
+        pTlb->aEntries[idxEven + 1].uTag = 0;
+        fMaybeLargePage = RT_BOOL(pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE);
+        if (!a_fDataTlb && GCPtrTag == IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc))
+            pVCpu->iem.s.cbInstrBufTotal = 0;
+    }
+
+    /*
+     * If we cannot rule out a large page, we have to scan all the 4K TLB
+     * entries such a page covers to ensure we evict all relevant entries.
+     * ASSUMES that tag calculation is a right shift by GUEST_PAGE_SHIFT.
+     */
+    if (fMaybeLargePage)
+    {
+        AssertCompile(IEMTLB_CALC_TAG_NO_REV((RTGCPTR)0x8731U << GUEST_PAGE_SHIFT) == 0x8731U);
+        RTGCPTR const GCPtrInstrBufPcTag = IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc);
+        if ((pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE) && (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG))
+        {
+            /* 2MB large page */
+            GCPtrTag             &= ~(RTGCPTR)(RT_BIT_64(21 - GUEST_PAGE_SHIFT) - 1U);
+            RTGCPTR GCPtrTagGlob = GCPtrTag | pTlb->uTlbRevisionGlobal;
+            GCPtrTag            |= pTlb->uTlbRevision;
+
+# if IEMTLB_ENTRY_COUNT >= 512
+            idxEven = IEMTLB_TAG_TO_EVEN_INDEX(GCPtrTag);
+            RTGCPTR const   GCPtrTagMask = ~(RTGCPTR)0;
+            uintptr_t const idxEvenEnd   = idxEven + 512;
+# else
+            RTGCPTR const   GCPtrTagMask = ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK
+                                         & ~(RTGCPTR)(   (RT_BIT_64(9 - IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) - 1U)
+                                                      << IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO);
+            uintptr_t const idxEvenEnd   = IEMTLB_ENTRY_COUNT;
+# endif
+            for (idxEven = 0; idxEven < idxEvenEnd; idxEven += 2)
+            {
+                if ((pTlb->aEntries[idxEven].uTag & GCPtrTagMask) == GCPtrTag)
+                {
+                    Assert(pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); /* bad guest */
+                    pTlb->aEntries[idxEven].uTag = 0;
+                    if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
+                        pVCpu->iem.s.cbInstrBufTotal = 0;
+                }
+                if ((pTlb->aEntries[idxEven + 1].uTag & GCPtrTagMask) == GCPtrTagGlob)
+                {
+                    Assert(pTlb->aEntries[idxEven + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); /* bad guest */
+                    pTlb->aEntries[idxEven + 1].uTag = 0;
+                    if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
+                        pVCpu->iem.s.cbInstrBufTotal = 0;
+                }
+                GCPtrTag++;
+                GCPtrTagGlob++;
+            }
+        }
+        else
+        {
+            /* 4MB large page */
+            GCPtrTag             &= ~(RTGCPTR)(RT_BIT_64(22 - GUEST_PAGE_SHIFT) - 1U);
+            RTGCPTR GCPtrTagGlob = GCPtrTag | pTlb->uTlbRevisionGlobal;
+            GCPtrTag            |= pTlb->uTlbRevision;
+
+# if IEMTLB_ENTRY_COUNT >= 1024
+            idxEven = IEMTLB_TAG_TO_EVEN_INDEX(GCPtrTag);
+            RTGCPTR const   GCPtrTagMask = ~(RTGCPTR)0;
+            uintptr_t const idxEvenEnd   = idxEven + 1024;
+# else
+            RTGCPTR const   GCPtrTagMask = ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK
+                                         & ~(RTGCPTR)(   (RT_BIT_64(10 - IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) - 1U)
+                                                      << IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO);
+            uintptr_t const idxEvenEnd   = IEMTLB_ENTRY_COUNT;
+# endif
+            for (idxEven = 0; idxEven < idxEvenEnd; idxEven += 2)
+            {
+                if ((pTlb->aEntries[idxEven].uTag & GCPtrTagMask) == GCPtrTag)
+                {
+                    Assert(pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); /* bad guest */
+                    pTlb->aEntries[idxEven].uTag = 0;
+                    if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
+                        pVCpu->iem.s.cbInstrBufTotal = 0;
+                }
+                if ((pTlb->aEntries[idxEven + 1].uTag & GCPtrTagMask) == GCPtrTagGlob)
+                {
+                    Assert(pTlb->aEntries[idxEven + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); /* bad guest */
+                    pTlb->aEntries[idxEven + 1].uTag = 0;
+                    if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
+                        pVCpu->iem.s.cbInstrBufTotal = 0;
+                }
+                GCPtrTag++;
+                GCPtrTagGlob++;
+            }
+        }
+    }
+}
+#endif
+
+
 /**
  * Invalidates a page in the TLBs.
  *
@@ -744,25 +860,10 @@ VMM_INT_DECL(void) IEMTlbInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtr)
     uintptr_t const idxEven = IEMTLB_TAG_TO_EVEN_INDEX(GCPtr);
 
 # ifdef IEM_WITH_CODE_TLB
-    if (pVCpu->iem.s.CodeTlb.aEntries[idxEven].uTag == (GCPtr | pVCpu->iem.s.CodeTlb.uTlbRevision))
-    {
-        pVCpu->iem.s.CodeTlb.aEntries[idxEven].uTag = 0;
-        if (GCPtr == IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc))
-            pVCpu->iem.s.cbInstrBufTotal = 0;
-    }
-    if (pVCpu->iem.s.CodeTlb.aEntries[idxEven + 1].uTag == (GCPtr | pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal))
-    {
-        pVCpu->iem.s.CodeTlb.aEntries[idxEven + 1].uTag = 0;
-        if (GCPtr == IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc))
-            pVCpu->iem.s.cbInstrBufTotal = 0;
-    }
+    iemTlbInvalidatePageWorker<false>(pVCpu, &pVCpu->iem.s.CodeTlb, GCPtr, idxEven);
 # endif
-
 # ifdef IEM_WITH_DATA_TLB
-    if (pVCpu->iem.s.DataTlb.aEntries[idxEven].uTag == (GCPtr | pVCpu->iem.s.DataTlb.uTlbRevision))
-        pVCpu->iem.s.DataTlb.aEntries[idxEven].uTag = 0;
-    if (pVCpu->iem.s.DataTlb.aEntries[idxEven + 1].uTag == (GCPtr | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal))
-        pVCpu->iem.s.DataTlb.aEntries[idxEven + 1].uTag = 0;
+    iemTlbInvalidatePageWorker<true>(pVCpu, &pVCpu->iem.s.DataTlb, GCPtr, idxEven);
 # endif
 #else
     NOREF(pVCpu); NOREF(GCPtr);
@@ -1102,7 +1203,8 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal;
             }
             pTlbe->fFlagsAndPhysRev = (~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A))
-                                    | (WalkFast.fEffective >> X86_PTE_PAE_BIT_NX) /*IEMTLBE_F_PT_NO_EXEC*/;
+                                    | (WalkFast.fEffective >> X86_PTE_PAE_BIT_NX) /*IEMTLBE_F_PT_NO_EXEC*/
+                                    | (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE);
             RTGCPHYS const GCPhysPg = WalkFast.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
             pTlbe->GCPhys           = GCPhysPg;
             pTlbe->pbMappingR3      = NULL;
@@ -6656,7 +6758,8 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
             pTlbe = &pVCpu->iem.s.DataBreakpointTlbe;
             pTlbe->uTag = uTagNoRev;
         }
-        pTlbe->fFlagsAndPhysRev = ~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A); /* skipping NX */
+        pTlbe->fFlagsAndPhysRev = (~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A) /* skipping NX */)
+                                | (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE);
         RTGCPHYS const GCPhysPg = WalkFast.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
         pTlbe->GCPhys           = GCPhysPg;
         pTlbe->pbMappingR3      = NULL;
@@ -7050,7 +7153,8 @@ static void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, ui
             pTlbe = &pVCpu->iem.s.DataBreakpointTlbe;
             pTlbe->uTag = uTagNoRev;
         }
-        pTlbe->fFlagsAndPhysRev = ~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A); /* skipping NX */
+        pTlbe->fFlagsAndPhysRev = (~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A) /* skipping NX */)
+                                | (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE);
         RTGCPHYS const GCPhysPg = WalkFast.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
         pTlbe->GCPhys           = GCPhysPg;
         pTlbe->pbMappingR3      = NULL;

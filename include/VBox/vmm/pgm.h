@@ -605,15 +605,16 @@ typedef PGMPTWALK const *PCPGMPTWALK;
 #define PGM_WALKINFO_SUCCEEDED                  RT_BIT_32(0)
 /** Whether this is a second-level address translation. */
 #define PGM_WALKINFO_IS_SLAT                    RT_BIT_32(1)
+
 /** Set if it involves a big page (2/4 MB). */
-#define PGM_WALKINFO_BIG_PAGE                   RT_BIT_32(2)
+#define PGM_WALKINFO_BIG_PAGE                   RT_BIT_32(7)
 /** Set if it involves a gigantic page (1 GB). */
-#define PGM_WALKINFO_GIGANTIC_PAGE              RT_BIT_32(3)
+#define PGM_WALKINFO_GIGANTIC_PAGE              RT_BIT_32(8)
 
 /** Whether the linear address (GCPtr) caused the second-level
  * address translation - read the code to figure this one.
  * @todo for PGMPTWALKFAST::fFailed?  */
-#define PGM_WALKINFO_IS_LINEAR_ADDR_VALID       RT_BIT_32(7)
+#define PGM_WALKINFO_IS_LINEAR_ADDR_VALID       RT_BIT_32(10)
 /** @} */
 
 /**
@@ -1004,9 +1005,9 @@ VMM_INT_DECL(int)   PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPH
  * @{ */
 #define PGMIEMGCPHYS2PTR_F_NO_WRITE     RT_BIT_32(3)    /**< Not writable (IEMTLBE_F_PG_NO_WRITE). */
 #define PGMIEMGCPHYS2PTR_F_NO_READ      RT_BIT_32(4)    /**< Not readable (IEMTLBE_F_PG_NO_READ). */
-#define PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 RT_BIT_32(7)    /**< No ring-3 mapping (IEMTLBE_F_NO_MAPPINGR3). */
-#define PGMIEMGCPHYS2PTR_F_UNASSIGNED   RT_BIT_32(8)    /**< Unassgined memory (IEMTLBE_F_PG_UNASSIGNED). */
-#define PGMIEMGCPHYS2PTR_F_CODE_PAGE    RT_BIT_32(9)    /**< Write monitored IEM code page (IEMTLBE_F_PG_CODE_PAGE). */
+#define PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 RT_BIT_32(8)    /**< No ring-3 mapping (IEMTLBE_F_NO_MAPPINGR3). */
+#define PGMIEMGCPHYS2PTR_F_UNASSIGNED   RT_BIT_32(9)    /**< Unassgined memory (IEMTLBE_F_PG_UNASSIGNED). */
+#define PGMIEMGCPHYS2PTR_F_CODE_PAGE    RT_BIT_32(10)    /**< Write monitored IEM code page (IEMTLBE_F_PG_CODE_PAGE). */
 /** @} */
 
 /** Information returned by PGMPhysNemQueryPageInfo. */

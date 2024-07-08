@@ -158,7 +158,13 @@ typedef struct VMCPU
 #if defined(VMM_INCLUDED_SRC_include_IEMInternal_h) || defined(VMM_INCLUDED_SRC_include_IEMInternal_armv8_h)
         struct IEMCPU       s;
 #endif
-        uint8_t             padding[244672]; /* multiple of 64 */
+        uint8_t             padding[  113600    /* The common base size. */
+#ifdef RT_ARCH_AMD64
+                                    + 32768     /* For 256 entries per TLBs. */
+#else
+                                    + 1048576   /* For 8192 entries per TLBs. */
+#endif
+        ]; /* multiple of 64 */
     } iem;
 
     /** @name Static per-cpu data.
