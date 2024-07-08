@@ -429,9 +429,9 @@ protected slots:
     {
         QString strFullData;
         bool fAudioEnabled = false;
-        bool fEnabledOutput = false;
-        bool fEnabledInput = false;
-        m_pMachine->acquireAudioStatusInfo(strFullData, fAudioEnabled, fEnabledOutput, fEnabledInput);
+        m_fOutputEnabled = false;
+        m_fInputEnabled = false;
+        m_pMachine->acquireAudioStatusInfo(strFullData, fAudioEnabled, m_fOutputEnabled, m_fInputEnabled);
 
         /* Show/hide indicator if there are no attachments
          * and parent is visible already: */
@@ -444,12 +444,31 @@ protected slots:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         AudioState enmState = AudioState_AllOff;
-        if (fEnabledOutput)
+        if (m_fOutputEnabled)
             enmState = (AudioState)(enmState | AudioState_OutputOn);
-        if (fEnabledInput)
+        if (m_fInputEnabled)
             enmState = (AudioState)(enmState | AudioState_InputOn);
         setState(enmState);
     }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        const QString strOutputStatus = m_fOutputEnabled ? tr("Output enabled") : tr("Output disabled");
+        const QString strInputStatus = m_fInputEnabled ? tr("Input enabled") : tr("Input disabled");
+        m_strDescription = QString("%1, %2, %3").arg(m_strDescription, strOutputStatus, strInputStatus);
+    }
+
+private:
+
+    /** Holds whether audio output enabled. */
+    bool  m_fOutputEnabled;
+    /** Holds whether audio input enabled. */
+    bool  m_fInputEnabled;
 };
 
 
