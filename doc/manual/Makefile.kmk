@@ -258,7 +258,15 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
+ 	$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US) \
+ 	$(addsuffix .kmk,$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)) \
+ 	$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES2_en_US) \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/RefEntryDITA.zip \
+ 	$(PATH_STAGE_BIN)/RefEntryDITA.zip \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip \
+ 	$(PATH_STAGE_BIN)/UserManual-html.zip \
  	$(PATH_STAGE_BIN)/UserManual.pdf \
+ 	$(PATH_STAGE_BIN)/VBoxDocumentation.zip \
  	\
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/, \
  		$(VBOX_SDKREF_LATEX_FILES_TARGET) \
@@ -326,6 +334,17 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
     	$(PATH_STAGE_BIN)/UserManual.qch \
     	$(PATH_STAGE_BIN)/UserManual.qhc
    endif
+  endif
+
+  ifdef VBOX_WITH_DOCS_USERMANUAL_REFENTRY_DITA
+   #
+   # target for installing the chunked HTML docs
+   #
+   INSTALLS += VBox-docs-usermanual-refentry-dita
+   VBox-docs-usermanual-refentry-dita_INST = $(INST_BIN)
+   VBox-docs-usermanual-refentry-dita_MODE = a+r,u+w
+   VBox-docs-usermanual-refentry-dita_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/RefEntryDITA.zip
+   VBOX_MANUAL_PACK += $(PATH_STAGE_BIN)/RefEntryDITA.zip
   endif
 
   ifdef VBOX_WITH_DOCS_ACCESSIBILITY
@@ -607,7 +626,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # Do per-language stuff for the refentry -> dita file conversion.
  #
  # The variable VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_<lang> is defined
- # by this define and should be expaneded as a prerequisite for any rule
+ # by this define and should be expanded as a prerequisite for any rule
  # producing a version of the user manual.
  #
  # @param 1    Language.
@@ -635,10 +654,11 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # @param 1    Language
  # @param 2    Filename w/o extension.
  # @param 3    Alternative fallback filename (for isomakercmd-man.xml).
- # @note This produces more files that listed in the output, but we currently let kmk be ignorant of that.
+ # @note This produces more files than listed in the output, but we currently let kmk be ignorant of that.
  define def_vbox_refentry_file_to_dita
   VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$1 += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).ditamap
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).ditamap \
+  + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).ditamap.kmk \
   + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita \
   + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).xml: \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita-pre.xsl \
@@ -664,18 +684,20 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita-pre.xsl \
 		$$(qfirstfile , $$(qwildcard , $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2).xml) $(3) $$(VBOX_PATH_MANUAL_SRC)/en_US/$(2).xml)
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) \
-		--stringparam "g_fReplaceHypens" "true" \
+		--stringparam "g_fReplaceHyphens" "true" \
 		--output "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita" \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita.xsl \
 		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).xml"
 	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/add_file_to_id_only_references.py \
 		--mapping-file "$$(VBOX_USER_MANUAL_ID_MAPPING_FILE_$1)" \
 		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita"
-	$$(QUIET)$$(ASH) -x \
+	$$(QUIET)$$(ASH) \
   		"$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-flat-to-single-topic.sh" \
 		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita" \
   		"$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-flat-topic-ids.xsl" \
   		"$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-flat-to-single-topic.xsl" \
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).ditamap.kmk" \
+		"VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES2_$(1)" \
 		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics" \
 		-- $$(subst $$(REDIRECT),$$(REDIRECT_EXT),$$(call VBOX_XSLTPROC_WITH_CAT)) $(VBOX_XSLTPROC_WORKAROUND) \
 		--path "$$(VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH)"
@@ -695,6 +717,31 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(evalcall2 def_vbox_refentry_file_to_dita,$(lang),user_isomakercmd-man, \
 		$(PATH_ROOT)/src/VBox/Runtime/common/fs/isomakercmd-man.xml))
 
+ include $(VBOX_PATH_MANUAL_OUTBASE)/refentry.kmk
+
+ $(VBOX_PATH_MANUAL_OUTBASE)/refentry.kmk: \
+	$(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES) \
+	,$(VBOX_PATH_MANUAL_OUTBASE)/refentry_$(lang).kmk)
+	$(QUIET)$(RM) -f -- "$@"
+	$(APPEND) -tn "$@" '# refentry.kmk'
+	$(APPEND) -n "$@" $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),'include $(VBOX_PATH_MANUAL_OUTBASE)/refentry_$(lang).kmk')
+	$(APPEND) -n "$@" '# done'
+
+ ## Include file for all language specific refentry files.
+ # @param 1    Language
+ define def_vbox_refentry_lang_kmk
+  $$(VBOX_PATH_MANUAL_OUTBASE)/refentry_$(1).kmk: \
+  	$$(addsuffix .kmk,$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1)))
+	$$(QUIET)$$(RM) -f -- "$$@"
+	$$(APPEND) -tn "$$@" '# refentry_$(1).kmk'
+	$$(APPEND) -n "$$@" $$(addprefix 'include ,$$(addsuffix .kmk',$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1))))
+	$$(APPEND) -n "$$@" '# done'
+
+ endef # def_vbox_refentry_lang_kmk
+
+ $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES) \
+ 	,$(evalcall2 def_vbox_refentry_lang_kmk,$(lang)))
+
  # Run conversion testcase.
  refentry-to-dita-test:
 	$(RM) -f -- \
@@ -708,6 +755,17 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		--output "$(VBOX_PATH_MANUAL_OUTBASE)/testcase-refentry1.dita" \
  		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita.xsl \
 		"$(VBOX_PATH_MANUAL_OUTBASE)/testcase-refentry1.xml"
+
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/RefEntryDITA.zip: \
+ 		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
+	$(call MSG_L1,Packing documentation $@)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
+		-9 -r "$@" \
+		$(patsubst $(VBOX_PATH_MANUAL_OUTBASE)/en_US/%,%,$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)) \
+		$(patsubst $(VBOX_PATH_MANUAL_OUTBASE)/en_US/%,%,$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES2_en_US))
+
+ refentry-dita-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/RefEntryDITA.zip
 
  #
  # 2b. Generate the VBoxManage commands overview topic based upon the
