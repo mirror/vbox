@@ -15908,7 +15908,6 @@ DECLINLINE(bool) iemSseUnaryValIsNaNR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr64Va
 /**
  * ADDPS
  */
-#ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_addps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2)
 {
     if (iemSseBinaryValIsNaNR32(pr32Res, pr32Val1, pr32Val2, &fMxcsr))
@@ -15923,6 +15922,7 @@ static uint32_t iemAImpl_addps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_addps_u128,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
     return   iemAImpl_addps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc1->ar32[0], &puSrc2->ar32[0])
