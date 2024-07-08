@@ -1484,14 +1484,10 @@ typedef struct IEMTBALLOCATOR
     /** Where to start pruning TBs from when we're out.
      *  See iemTbAllocatorAllocSlow for details. */
     uint32_t        iPruneFrom;
-    /** Hint about which bit to start scanning the bitmap from. */
-    uint32_t        iStartHint;
     /** Where to start pruning native TBs from when we're out of executable memory.
      *  See iemTbAllocatorFreeupNativeSpace for details. */
     uint32_t        iPruneNativeFrom;
-    /** Index into IEMTBALLOCATOR::apTbFreeCache were the next freed TB can be stored
-     * (0 means the cache is empty, 32 the cache is full). */
-    uint32_t        idxTbCacheFree;
+    uint64_t        u64Padding;
 
     /** Statistics: Number of TB allocation calls. */
     STAMCOUNTER     StatAllocs;
@@ -1504,15 +1500,11 @@ typedef struct IEMTBALLOCATOR
 
     /** The delayed free list (see iemTbAlloctorScheduleForFree). */
     PIEMTB          pDelayedFreeHead;
-    /* Cache of recently freed TBs for immediate consumption by the allocator. */
-    PIEMTB          apTbFreeCache[32];
+    /* Head of the list of free TBs. */
+    PIEMTB          pTbsFreeHead;
 
     /** Allocation chunks. */
     IEMTBCHUNK      aChunks[256];
-
-    /** Allocation bitmap for all possible chunk chunks. */
-    RT_FLEXIBLE_ARRAY_EXTENSION
-    uint64_t        bmAllocated[RT_FLEXIBLE_ARRAY];
 } IEMTBALLOCATOR;
 /** Pointer to a TB allocator. */
 typedef struct IEMTBALLOCATOR *PIEMTBALLOCATOR;

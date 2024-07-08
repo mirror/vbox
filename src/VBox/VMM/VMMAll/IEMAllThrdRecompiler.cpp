@@ -809,25 +809,23 @@ DECLCALLBACK(int) iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs,
     /*
      * Allocate and initalize it.
      */
-    uint32_t const        c64BitWords   = RT_ALIGN_32(cMaxTbs, 64) / 64;
-    size_t const          cbTbAllocator = RT_UOFFSETOF_DYN(IEMTBALLOCATOR, bmAllocated[c64BitWords]);
-    PIEMTBALLOCATOR const pTbAllocator  = (PIEMTBALLOCATOR)RTMemAllocZ(cbTbAllocator);
+    PIEMTBALLOCATOR const pTbAllocator  = (PIEMTBALLOCATOR)RTMemAllocZ(sizeof(*pTbAllocator));
     if (!pTbAllocator)
         return VMSetError(pVM, VERR_NO_MEMORY, RT_SRC_POS,
                           "Failed to allocate %zu bytes (max %u TBs) for the TB allocator of VCpu #%u",
-                          cbTbAllocator, cMaxTbs, pVCpu->idCpu);
+                          sizeof(*pTbAllocator), cMaxTbs, pVCpu->idCpu);
     pTbAllocator->uMagic        = IEMTBALLOCATOR_MAGIC;
     pTbAllocator->cMaxChunks    = (uint8_t)cMaxChunks;
     pTbAllocator->cTbsPerChunk  = cTbsPerChunk;
     pTbAllocator->cbPerChunk    = cbPerChunk;
     pTbAllocator->cMaxTbs       = cMaxTbs;
+    pTbAllocator->pTbsFreeHead  = NULL;
 #ifdef IEMTB_SIZE_IS_POWER_OF_TWO
     pTbAllocator->fChunkMask    = cTbsPerChunk - 1;
     pTbAllocator->cChunkShift   = cChunkShift;
     Assert(RT_BIT_32(cChunkShift) == cTbsPerChunk);
 #endif
 
-    memset(pTbAllocator->bmAllocated, 0xff, c64BitWords * sizeof(uint64_t)); /* Mark all as allocated, clear as chunks are added. */
     pVCpu->iem.s.pTbAllocatorR3 = pTbAllocator;
 
     /*
@@ -842,8 +840,11 @@ DECLCALLBACK(int) iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs,
                               cbPerChunk, idxChunk, pVCpu->idCpu);
 
         for (uint32_t iTb = 0; iTb < cTbsPerChunk; iTb++)
+        {
             paTbs[iTb].idxAllocChunk = idxChunk; /* This is not strictly necessary... */
-        ASMBitClearRange(pTbAllocator->bmAllocated, idxChunk * cTbsPerChunk, (idxChunk + 1) * cTbsPerChunk);
+            paTbs[iTb].pNext = pTbAllocator->pTbsFreeHead;
+            pTbAllocator->pTbsFreeHead = &paTbs[iTb];
+        }
         pTbAllocator->cAllocatedChunks = (uint16_t)(idxChunk + 1);
         pTbAllocator->cTotalTbs       += cTbsPerChunk;
 
@@ -899,10 +900,9 @@ DECLCALLBACK(int) iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs,
 static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator,
                                     PIEMTB pTb, uint32_t idxChunk, uint32_t idxInChunk)
 {
-    Assert(idxChunk < pTbAllocator->cAllocatedChunks);
-    Assert(idxInChunk < pTbAllocator->cTbsPerChunk);
+    Assert(idxChunk < pTbAllocator->cAllocatedChunks); RT_NOREF(idxChunk);
+    Assert(idxInChunk < pTbAllocator->cTbsPerChunk); RT_NOREF(idxInChunk);
     Assert((uintptr_t)(pTb - pTbAllocator->aChunks[idxChunk].paTbs) == idxInChunk);
-    Assert(ASMBitTest(&pTbAllocator->bmAllocated, IEMTBALLOC_IDX_MAKE(pTbAllocator, idxChunk, idxInChunk)));
 #ifdef VBOX_STRICT
     for (PIEMTB pTbOther = pTbAllocator->pDelayedFreeHead; pTbOther; pTbOther = pTbOther->pNext)
         Assert(pTbOther != pTb);
@@ -936,7 +936,8 @@ static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator
 
     RTMemFree(IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pTb, 0)); /* Frees both the TB lookup table and opcode bytes. */
 
-    pTb->pNext              = NULL;
+    pTb->pNext = pTbAllocator->pTbsFreeHead;
+    pTbAllocator->pTbsFreeHead = pTb;
     pTb->fFlags             = 0;
     pTb->GCPhysPc           = UINT64_MAX;
     pTb->Gen.uPtr           = 0;
@@ -945,10 +946,6 @@ static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator
     pTb->cbOpcodes          = 0;
     pTb->pabOpcodes         = NULL;
 
-    if (pTbAllocator->idxTbCacheFree < RT_ELEMENTS(pTbAllocator->apTbFreeCache))
-        pTbAllocator->apTbFreeCache[pTbAllocator->idxTbCacheFree++] = pTb;
-    else
-        ASMBitClear(&pTbAllocator->bmAllocated, IEMTBALLOC_IDX_MAKE(pTbAllocator, idxChunk, idxInChunk));
     Assert(pTbAllocator->cInUseTbs > 0);
 
     pTbAllocator->cInUseTbs -= 1;
@@ -1005,9 +1002,6 @@ static void iemTbAlloctorScheduleForFree(PVMCPUCC pVCpu, PIEMTB pTb)
     Assert(pTbAllocator && pTbAllocator->uMagic == IEMTBALLOCATOR_MAGIC);
     Assert(pTb->idxAllocChunk < pTbAllocator->cAllocatedChunks);
     Assert((uintptr_t)(pTb - pTbAllocator->aChunks[pTb->idxAllocChunk].paTbs) < pTbAllocator->cTbsPerChunk);
-    Assert(ASMBitTest(&pTbAllocator->bmAllocated,
-                      IEMTBALLOC_IDX_MAKE(pTbAllocator, pTb->idxAllocChunk,
-                                          (uintptr_t)(pTb - pTbAllocator->aChunks[pTb->idxAllocChunk].paTbs))));
     Assert(   (pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE
            || (pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_THREADED);
 #ifdef VBOX_STRICT
@@ -1075,11 +1069,13 @@ static int iemTbAllocatorGrow(PVMCPUCC pVCpu)
 
     uint32_t const cTbsPerChunk = pTbAllocator->cTbsPerChunk;
     for (uint32_t iTb = 0; iTb < cTbsPerChunk; iTb++)
+    {
         paTbs[iTb].idxAllocChunk = idxChunk; /* This is not strictly necessary... */
-    ASMBitClearRange(pTbAllocator->bmAllocated, idxChunk * cTbsPerChunk, (idxChunk + 1) * cTbsPerChunk);
+        paTbs[iTb].pNext = pTbAllocator->pTbsFreeHead;
+        pTbAllocator->pTbsFreeHead = &paTbs[iTb];
+    }
     pTbAllocator->cAllocatedChunks = (uint16_t)(idxChunk + 1);
     pTbAllocator->cTotalTbs       += cTbsPerChunk;
-    pTbAllocator->iStartHint       = idxChunk * cTbsPerChunk;
 
     return VINF_SUCCESS;
 }
@@ -1093,35 +1089,10 @@ static int iemTbAllocatorGrow(PVMCPUCC pVCpu)
 DECL_FORCE_INLINE(PIEMTB) iemTbAllocatorAllocCore(PIEMTBALLOCATOR const pTbAllocator, bool fThreaded)
 {
     Assert(pTbAllocator->cInUseTbs < pTbAllocator->cTotalTbs);
+    Assert(pTbAllocator->pTbsFreeHead);
 
-    PIEMTB pTb;
-    if (pTbAllocator->idxTbCacheFree)
-        pTb = pTbAllocator->apTbFreeCache[--pTbAllocator->idxTbCacheFree];
-    else
-    {
-        int idxTb;
-        if (pTbAllocator->iStartHint < pTbAllocator->cTotalTbs)
-            idxTb = ASMBitNextClear(pTbAllocator->bmAllocated,
-                                    pTbAllocator->cTotalTbs,
-                                    pTbAllocator->iStartHint & ~(uint32_t)63);
-        else
-            idxTb = -1;
-        if (idxTb < 0)
-        {
-            idxTb = ASMBitFirstClear(pTbAllocator->bmAllocated, pTbAllocator->cTotalTbs);
-            AssertLogRelReturn(idxTb >= 0, NULL);
-        }
-        Assert((uint32_t)idxTb < pTbAllocator->cTotalTbs);
-        pTbAllocator->iStartHint = idxTb;
-        ASMBitSet(pTbAllocator->bmAllocated, idxTb);
-
-        /** @todo shift/mask optimization for power of two IEMTB sizes. */
-        uint32_t const idxChunk     = IEMTBALLOC_IDX_TO_CHUNK(pTbAllocator, idxTb);
-        uint32_t const idxTbInChunk = IEMTBALLOC_IDX_TO_INDEX_IN_CHUNK(pTbAllocator, idxTb, idxChunk);
-        pTb          = &pTbAllocator->aChunks[idxChunk].paTbs[idxTbInChunk];
-        Assert(pTb->idxAllocChunk == idxChunk);
-    }
-
+    PIEMTB const pTb = pTbAllocator->pTbsFreeHead;
+    pTbAllocator->pTbsFreeHead = pTb->pNext;
     pTbAllocator->cInUseTbs        += 1;
     if (fThreaded)
         pTbAllocator->cThreadedTbs += 1;
