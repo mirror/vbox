@@ -15570,7 +15570,6 @@ DECLINLINE(PRTFLOAT64U) iemFpSoftF64ToIprt(PRTFLOAT64U pr64Dst, float64_t const 
         32 /* Rounding precision, not relevant for SIMD. */ \
     }
 
-#ifdef IEM_WITHOUT_ASSEMBLY
 
 /**
  * Helper for transfering exception to MXCSR and setting the result value
@@ -15694,8 +15693,6 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResultNoFz(softfloat_sta
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
 }
 
-#endif /* IEM_WITHOUT_ASSEMBLY */
-
 
 /**
  * Sets the given single precision floating point input value to the given output taking the Denormals-as-zero flag
@@ -15758,7 +15755,6 @@ DECLINLINE(uint32_t) iemSsePrepareValueR64(PRTFLOAT64U pr64Val, uint32_t fMxcsr,
     return 0;
 }
 
-#ifdef IEM_WITHOUT_ASSEMBLY
 
 /**
  * Validates the given input operands returning whether the operation can continue or whether one
@@ -15903,7 +15899,6 @@ DECLINLINE(bool) iemSseUnaryValIsNaNR64(PRTFLOAT64U pr64Res, PCRTFLOAT64U pr64Va
     return false;
 }
 
-#endif /* IEM_WITHOUT_ASSEMBLY */
 
 /**
  * ADDPS
