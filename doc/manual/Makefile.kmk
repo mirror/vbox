@@ -717,30 +717,32 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(evalcall2 def_vbox_refentry_file_to_dita,$(lang),user_isomakercmd-man, \
 		$(PATH_ROOT)/src/VBox/Runtime/common/fs/isomakercmd-man.xml))
 
- include $(VBOX_PATH_MANUAL_OUTBASE)/refentry.kmk
+ ifdef VBOX_ONLY_DOCS
+  include $(VBOX_PATH_MANUAL_OUTBASE)/refentry.kmk
 
- $(VBOX_PATH_MANUAL_OUTBASE)/refentry.kmk: \
-	$(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES) \
-	,$(VBOX_PATH_MANUAL_OUTBASE)/refentry_$(lang).kmk)
+  $(VBOX_PATH_MANUAL_OUTBASE)/refentry.kmk: \
+  		$(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES) \
+  			,$(VBOX_PATH_MANUAL_OUTBASE)/refentry_$(lang).kmk)
 	$(QUIET)$(RM) -f -- "$@"
 	$(APPEND) -tn "$@" '# refentry.kmk'
 	$(APPEND) -n "$@" $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),'include $(VBOX_PATH_MANUAL_OUTBASE)/refentry_$(lang).kmk')
 	$(APPEND) -n "$@" '# done'
 
- ## Include file for all language specific refentry files.
- # @param 1    Language
- define def_vbox_refentry_lang_kmk
-  $$(VBOX_PATH_MANUAL_OUTBASE)/refentry_$(1).kmk: \
-  	$$(addsuffix .kmk,$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1)))
+  ## Include file for all language specific refentry files.
+  # @param 1    Language
+  define def_vbox_refentry_lang_kmk
+   $$(VBOX_PATH_MANUAL_OUTBASE)/refentry_$(1).kmk: \
+   		$$(addsuffix .kmk,$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1)))
 	$$(QUIET)$$(RM) -f -- "$$@"
 	$$(APPEND) -tn "$$@" '# refentry_$(1).kmk'
 	$$(APPEND) -n "$$@" $$(addprefix 'include ,$$(addsuffix .kmk',$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1))))
 	$$(APPEND) -n "$$@" '# done'
 
- endef # def_vbox_refentry_lang_kmk
+  endef # def_vbox_refentry_lang_kmk
 
- $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES) \
- 	,$(evalcall2 def_vbox_refentry_lang_kmk,$(lang)))
+  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES) \
+  	,$(evalcall2 def_vbox_refentry_lang_kmk,$(lang)))
+ endif
 
  # Run conversion testcase.
  refentry-to-dita-test:
