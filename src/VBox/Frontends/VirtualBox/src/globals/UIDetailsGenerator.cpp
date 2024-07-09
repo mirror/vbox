@@ -576,7 +576,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
     foreach (const CStorageController &comController, comMachine.GetStorageControllers())
     {
         /* Add controller information: */
-        const QString strControllerName = QApplication::translate("UIMachineSettingsStorage", "Controller: %1");
+        const QString strControllerName = QApplication::translate("UIStorageSettingsEditor", "Controller: %1");
         table << UITextTableLine(strControllerName.arg(comController.GetName()), QString());
         /* Populate map (its sorted!): */
         QMap<StorageSlot, QString> attachmentsMap;

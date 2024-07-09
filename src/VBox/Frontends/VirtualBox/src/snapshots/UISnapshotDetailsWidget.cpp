@@ -1898,7 +1898,7 @@ QPair<QStringList, QList<QMap<QString, QString> > > UISnapshotDetailsWidget::sto
     foreach (const CStorageController &comController, comMachine.GetStorageControllers())
     {
         /* Append controller information: */
-        aControllers << QApplication::translate("UIMachineSettingsStorage", "Controller: %1").arg(comController.GetName());
+        aControllers << QApplication::translate("UIStorageSettingsEditor", "Controller: %1").arg(comController.GetName());
 
         /* Prepare attachment information: */
         QMap<QString, QString> mapAttachments;

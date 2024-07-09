@@ -246,22 +246,22 @@ QUuid UIMediumTools::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumTy
         case UIMediumDeviceType_HardDisk:
         {
             filters = HDDBackends(gpGlobalSession->virtualBox());
-            strTitle = QApplication::translate("UICommon", "Please choose a virtual hard disk file");
-            allType = QApplication::translate("UICommon", "All virtual hard disk files (%1)");
+            strTitle = QApplication::translate("UIMediumTools", "Please choose a virtual hard disk file");
+            allType = QApplication::translate("UIMediumTools", "All virtual hard disk files (%1)");
             break;
         }
         case UIMediumDeviceType_DVD:
         {
             filters = DVDBackends(gpGlobalSession->virtualBox());
-            strTitle = QApplication::translate("UICommon", "Please choose a virtual optical disk file");
-            allType = QApplication::translate("UICommon", "All virtual optical disk files (%1)");
+            strTitle = QApplication::translate("UIMediumTools", "Please choose a virtual optical disk file");
+            allType = QApplication::translate("UIMediumTools", "All virtual optical disk files (%1)");
             break;
         }
         case UIMediumDeviceType_Floppy:
         {
             filters = FloppyBackends(gpGlobalSession->virtualBox());
-            strTitle = QApplication::translate("UICommon", "Please choose a virtual floppy disk file");
-            allType = QApplication::translate("UICommon", "All virtual floppy disk files (%1)");
+            strTitle = QApplication::translate("UIMediumTools", "Please choose a virtual floppy disk file");
+            allType = QApplication::translate("UIMediumTools", "All virtual floppy disk files (%1)");
             break;
         }
         default:
@@ -282,7 +282,7 @@ QUuid UIMediumTools::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumTy
     }
     if (!prefixes.isEmpty())
         backends.insert(0, allType.arg(prefixes.join(" ").trimmed()));
-    backends << QApplication::translate("UICommon", "All files (*)");
+    backends << QApplication::translate("UIMediumTools", "All files (*)");
     strFilter = backends.join(";;").trimmed();
 
     /* Create open file dialog: */
@@ -359,8 +359,7 @@ void UIMediumTools::prepareStorageMenu(QMenu *pMenu,
                                                           QString(), pListener, pszSlotName);
     pActionOpenExistingMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                           comCurrentAttachment.GetDevice(), enmMediumType)));
-    pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose/Create a disk image..."));
-
+    pActionOpenExistingMedium->setText(QApplication::translate("UIMediumTools", "Choose/Create a disk image..."));
 
     /* Prepare open medium file action: */
     QAction *pActionFileSelector = pMenu->addAction(UIIconPool::iconSet(":/select_file_16px.png"),
@@ -368,8 +367,7 @@ void UIMediumTools::prepareStorageMenu(QMenu *pMenu,
     pActionFileSelector->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                     comCurrentAttachment.GetDevice(), enmMediumType,
                                                                     UIMediumTarget::UIMediumTargetType_WithFileDialog)));
-    pActionFileSelector->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a disk file..."));
-
+    pActionFileSelector->setText(QApplication::translate("UIStorageSettingsEditor", "Choose a disk file..."));
 
     /* Insert separator: */
     pMenu->addSeparator();
@@ -482,7 +480,7 @@ void UIMediumTools::prepareStorageMenu(QMenu *pMenu,
         pActionUnmountMedium->setEnabled(!comCurrentMedium.isNull());
         pActionUnmountMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                          comCurrentAttachment.GetDevice())));
-        pActionUnmountMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Remove disk from virtual drive"));
+        pActionUnmountMedium->setText(QApplication::translate("UIStorageSettingsEditor", "Remove disk from virtual drive"));
         if (enmMediumType == UIMediumDeviceType_DVD)
             pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/cd_unmount_16px.png", ":/cd_unmount_disabled_16px.png"));
         else if (enmMediumType == UIMediumDeviceType_Floppy)
