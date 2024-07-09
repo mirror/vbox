@@ -35,6 +35,11 @@
 
 #include "VBoxDD.h"
 
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/winsock2.h>
+# include <iprt/win/ws2tcpip.h>
+#endif
+
 #include <libslirp.h>
 
 #include <VBox/vmm/dbgf.h>
