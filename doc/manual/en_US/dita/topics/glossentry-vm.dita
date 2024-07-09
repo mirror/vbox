@@ -3,7 +3,7 @@
 <glossentry xml:lang="en-us" id="glossentry-vm">
   <glossterm>VM</glossterm>
   <glossdef>
-    Virtual Machine. A virtual computer that Oracle VM VirtualBox enables
+    Virtual Machine. A virtual computer that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables
     you to run on top of your actual hardware.
     See <xref href="virtintro.dita"/> for details.
   </glossdef>

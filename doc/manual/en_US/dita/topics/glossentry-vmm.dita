@@ -4,7 +4,7 @@
   <glossterm>VMM</glossterm>
   <glossdef>
     Virtual Machine Manager. The component of Oracle VM VirtualBox that controls
-    VM execution. See <xref href="technical-components.dita">Oracle VM VirtualBox Executables and Components</xref>
-    for a list of Oracle VM VirtualBox components.
+    VM execution. See <xref href="technical-components.dita"><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Executables and Components</xref>
+    for a list of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> components.
   </glossdef>
 </glossentry>

@@ -14,9 +14,7 @@
     </p>
     <ol>
       <li>
-        <p>
-          Double-click on the extension package file name.
-        </p>
+        <p> Double-click the extension package file name. </p>
         <p>
           <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension packs have a
           <filepath>.vbox-extpack</filepath> file name extension.
