@@ -3084,13 +3084,40 @@ FNIEMOP_DEF(iemOp_vsubsd_Vsd_Hsd_Wsd)
 
 
 /** Opcode VEX.0F 0x5d - vminps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vminps_Vps_Hps_Wps);
+FNIEMOP_DEF(iemOp_vminps_Vps_Hps_Wps)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VMINPS, vminps, Vps, Hps, Wps, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    IEMOPMEDIAF3_INIT_VARS(          vminps);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
+
+
 /** Opcode VEX.66.0F 0x5d - vminpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vminpd_Vpd_Hpd_Wpd);
+FNIEMOP_DEF(iemOp_vminpd_Vpd_Hpd_Wpd)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VMINPD, vminpd, Vpd, Hpd, Wpd, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    IEMOPMEDIAF3_INIT_VARS(          vminpd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
+
+
 /** Opcode VEX.F3.0F 0x5d - vminss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vminss_Vss_Hss_Wss);
+FNIEMOP_DEF(iemOp_vminss_Vss_Hss_Wss)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VMINSS, vminss, Vps, Hps, Wss, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    return FNIEMOP_CALL_1(iemOpCommonAvx_Vx_Hx_R32,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vminss_u128_r32, iemAImpl_vminss_u128_r32_fallback));
+}
+
+
 /** Opcode VEX.F2.0F 0x5d - vminsd Vsd, Hsd, Wsd */
-FNIEMOP_STUB(iemOp_vminsd_Vsd_Hsd_Wsd);
+FNIEMOP_DEF(iemOp_vminsd_Vsd_Hsd_Wsd)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VMINSD, vminsd, Vpd, Hpd, Wsd, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    return FNIEMOP_CALL_1(iemOpCommonAvx_Vx_Hx_R64,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vminsd_u128_r64, iemAImpl_vminsd_u128_r64_fallback));
+}
+
 
 /** Opcode VEX.0F 0x5e - vdivps Vps, Hps, Wps */
 FNIEMOP_STUB(iemOp_vdivps_Vps_Hps_Wps);
