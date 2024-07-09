@@ -70,6 +70,7 @@
 #include "CMedium.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
+#include "CNvramStore.h"
 #include "CPlatform.h"
 #include "CPlatformX86.h"
 #include "CPlatformProperties.h"
@@ -77,6 +78,7 @@
 #include "CSharedFolder.h"
 #include "CStorageController.h"
 #include "CTrustedPlatformModule.h"
+#include "CUefiVariableStore.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
@@ -1396,6 +1398,32 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                 ++iRowCount;
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "EFI", "details (system)"),
                                                          empReport(strEfiState, strEfiStateOld));
+            }
+
+            /* Secure Boot? */
+            CNvramStore comStoreLvl1 = comMachine.GetNonVolatileStore();
+            QString strSecureBootStatus;
+            if (comStoreLvl1.isNotNull())
+            {
+                CUefiVariableStore comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
+                if (   comStoreLvl2.isNotNull()
+                    && comStoreLvl2.GetSecureBootEnabled())
+                    strSecureBootStatus = QApplication::translate("UIDetails", "Enabled", "details (system/secure boot)");
+            }
+            CNvramStore comStoreLvl1Old = comMachineOld.GetNonVolatileStore();
+            QString strSecureBootStatusOld;
+            if (comStoreLvl1Old.isNotNull())
+            {
+                CUefiVariableStore comStoreLvl2Old = comStoreLvl1Old.GetUefiVariableStore();
+                if (   comStoreLvl2Old.isNotNull()
+                    && comStoreLvl2Old.GetSecureBootEnabled())
+                    strSecureBootStatusOld = QApplication::translate("UIDetails", "Enabled", "details (system/secure boot)");
+            }
+            if (!strSecureBootStatus.isNull())
+            {
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Secure Boot", "details (system)"),
+                                                         empReport(strSecureBootStatus, strSecureBootStatusOld));
             }
 
             /* Acceleration? */
