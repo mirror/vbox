@@ -147,6 +147,71 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, PCIEMOPMEDIAF3, pImpl)
 
 
 /**
+ * Common worker for scalar AVX/AVX2 instructions on the forms (addss,addsd,etc.):
+ *     - vxxxs{s,d}    xmm0, xmm1, xmm2/mem32
+ *
+ * Exceptions type 4. AVX cpuid check for 128-bit operation.
+ * Ignores VEX.L, from SDM:
+ *     Software should ensure VADDSS is encoded with VEX.L=0.
+ *     Encoding VADDSS with VEX.L=1 may encounter unpredictable behavior
+ *     across different processor generations.
+ */
+FNIEMOP_DEF_1(iemOpCommonAvx_Vx_Hx_R32, PFNIEMAIMPLFPAVXF3U128R32, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_LOCAL(X86XMMREG,             uDst);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,    puDst,  uDst,  0);
+        IEM_MC_ARG(PCX86XMMREG,             puSrc1,        1);
+        IEM_MC_REF_XREG_XMM_CONST(puSrc1,   IEM_GET_EFFECTIVE_VVVV(pVCpu));
+        IEM_MC_ARG(PCRTFLOAT32U,            pr32Src2,      2);
+        IEM_MC_REF_XREG_R32_CONST(pr32Src2, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_AVX_AIMPL_3(pfnU128, puDst, puSrc1, pr32Src2);
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_STORE_XREG_XMM(             IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+        IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_LOCAL(RTFLOAT32U,            r32Src2);
+        IEM_MC_ARG_LOCAL_REF(PCRTFLOAT32U,  pr32Src2, r32Src2,  2);
+        IEM_MC_FETCH_MEM_R32(r32Src2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_LOCAL(X86XMMREG,             uDst);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,    puDst,    uDst,     0);
+        IEM_MC_ARG(PCX86XMMREG,             puSrc1,             1);
+        IEM_MC_REF_XREG_XMM_CONST(puSrc1,   IEM_GET_EFFECTIVE_VVVV(pVCpu));
+        IEM_MC_CALL_AVX_AIMPL_3(pfnU128, puDst, puSrc1, pr32Src2);
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_STORE_XREG_XMM(             IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+        IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
+
+/**
  * Common worker for AVX2 instructions on the forms:
  *     - vpxxx    xmm0, xmm1, xmm2/mem128
  *     - vpxxx    ymm0, ymm1, ymm2/mem256
@@ -2846,7 +2911,14 @@ FNIEMOP_DEF(iemOp_vaddpd_Vpd_Hpd_Wpd)
 
 
 /** Opcode VEX.F3.0F 0x58 - vaddss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vaddss_Vss_Hss_Wss);
+FNIEMOP_DEF(iemOp_vaddss_Vss_Hss_Wss)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VADDSS, vaddss, Vps, Hps, Wss, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    return FNIEMOP_CALL_1(iemOpCommonAvx_Vx_Hx_R32,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vaddss_u128_r32, iemAImpl_vaddss_u128_r32_fallback));
+}
+
+
 /** Opcode VEX.F2.0F 0x58 - vaddsd Vsd, Hsd, Wsd */
 FNIEMOP_STUB(iemOp_vaddsd_Vsd_Hsd_Wsd);
 

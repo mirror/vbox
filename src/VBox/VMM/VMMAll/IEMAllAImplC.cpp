@@ -15957,7 +15957,7 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vaddps_u256_fallback,(uint32_t uMxCsrIn, PX
 
 
 /**
- * ADDSS
+ * [V]ADDSS
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_addss_u128_r32,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
@@ -15968,6 +15968,15 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_addss_u128_r32,(uint32_t uMxCsrIn, PX86XMMR
     return iemAImpl_addps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc1->ar32[0], pr32Src2);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vaddss_u128_r32_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
+{
+    pResult->ar32[1] = puSrc1->ar32[1];
+    pResult->ar32[2] = puSrc1->ar32[2];
+    pResult->ar32[3] = puSrc1->ar32[3];
+    return iemAImpl_addps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc1->ar32[0], pr32Src2);
+}
 
 
 /**
