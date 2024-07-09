@@ -1287,7 +1287,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  *
  * @note We don't consider the LEN registers here, even if qword isn't
  *       techincally valid for older processors - see
- *       @sdmv3{645,18.2.4,Debug Control Register (DR7)} for details.
+ *       @sdmv3{082,645,18.2.4,Debug Control Register (DR7)} for details.
  */
 # define X86_DR7_ANY_RW_ENABLED(a_uDR7) \
     (   (((a_uDR7) & UINT32_C(0x03)) != 0 && ((a_uDR7) & UINT32_C(0x00030000)) == UINT32_C(0x00030000)) \
@@ -1305,7 +1305,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  *
  * @note We don't consider the LEN registers here, even if qword isn't
  *       techincally valid for older processors - see
- *       @sdmv3{645,18.2.4,Debug Control Register (DR7)} for details.
+ *       @sdmv3{082,645,18.2.4,Debug Control Register (DR7)} for details.
  */
 # define X86_DR7_ANY_W_ENABLED(a_uDR7) \
     (   (((a_uDR7) & UINT32_C(0x03)) != 0 && ((a_uDR7) & UINT32_C(0x00010000)) != 0) \
