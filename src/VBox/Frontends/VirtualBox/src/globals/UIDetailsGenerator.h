@@ -104,7 +104,7 @@ namespace UIDetailsGenerator
                                                        bool &fAdaptersPresent, bool &fCablesDisconnected);
 
     SHARED_LIBRARY_STUFF void acquireUsbStatusInfo(CMachine &comMachine, CConsole &comConsole,
-                                                   QString &strInfo, bool &fUsbEnableds);
+                                                   QString &strInfo, bool &fUsbEnabled, uint &cUsbFilterCount);
 
     SHARED_LIBRARY_STUFF void acquireSharedFoldersStatusInfo(CMachine &comMachine, CConsole &comConsole, CGuest &comGuest,
                                                              QString &strInfo, bool &fFoldersPresent);

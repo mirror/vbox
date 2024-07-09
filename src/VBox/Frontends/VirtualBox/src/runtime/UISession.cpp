@@ -2017,7 +2017,7 @@ void UISession::acquireNetworkStatusInfo(QString &strInfo, bool &fAdaptersPresen
     UIDetailsGenerator::acquireNetworkStatusInfo(comMachine, strInfo, fAdaptersPresent, fCablesDisconnected);
 }
 
-void UISession::acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnableds)
+void UISession::acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnabled, uint &cUsbFilterCount)
 {
     CMachine comMachine = machine();
     if (comMachine.isNull())
@@ -2025,7 +2025,7 @@ void UISession::acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnableds)
     CConsole comConsole = console();
     if (comConsole.isNull())
         return;
-    UIDetailsGenerator::acquireUsbStatusInfo(comMachine, comConsole, strInfo, fUsbEnableds);
+    UIDetailsGenerator::acquireUsbStatusInfo(comMachine, comConsole, strInfo, fUsbEnabled, cUsbFilterCount);
 }
 
 void UISession::acquireSharedFoldersStatusInfo(QString &strInfo, bool &fFoldersPresent)

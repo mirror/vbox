@@ -567,6 +567,8 @@ public:
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorUSB(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_USB, pMachine)
+        , m_fUsbEnabled(false)
+        , m_cUsbFilterCount(0)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/usb_16px.png"));
@@ -590,24 +592,46 @@ protected slots:
     virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
-        bool fUsbEnabled = false;
-        m_pMachine->acquireUsbStatusInfo(strFullData, fUsbEnabled);
+        m_fUsbEnabled = false;
+        m_cUsbFilterCount = 0;
+        m_pMachine->acquireUsbStatusInfo(strFullData, m_fUsbEnabled, m_cUsbFilterCount);
 
         /* Show/hide indicator if there are no attachments
          * and parent is visible already: */
         if (   parentWidget()
             && parentWidget()->isVisible())
-            setVisible(fUsbEnabled);
+            setVisible(m_fUsbEnabled);
 
         /* Update tool-tip: */
         if (!strFullData.isEmpty())
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
-        setState(fUsbEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        setState(m_fUsbEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
 
         /* Retranslate finally: */
         sltRetranslateUI();
     }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        const QString strUsbStatus = m_fUsbEnabled ? tr("USB enabled") : tr("USB disabled");
+        const QString strFilterCount = m_cUsbFilterCount ? tr("%1 USB devices attached").arg(m_cUsbFilterCount)
+                                                         : tr("No USB devices attached", "USB tooltip");
+        m_strDescription = QString("%1, %2, %3").arg(m_strDescription, strUsbStatus, strFilterCount);
+    }
+
+private:
+
+    /** Holds whether USB subsystem is enabled. */
+    bool  m_fUsbEnabled;
+    /** Holds USB device filter count. */
+    uint  m_cUsbFilterCount;
+
 };
 
 

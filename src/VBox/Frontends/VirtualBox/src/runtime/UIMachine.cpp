@@ -926,9 +926,9 @@ void UIMachine::acquireNetworkStatusInfo(QString &strInfo, bool &fAdaptersPresen
     uisession()->acquireNetworkStatusInfo(strInfo, fAdaptersPresent, fCablesDisconnected);
 }
 
-void UIMachine::acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnableds)
+void UIMachine::acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnabled, uint &cUsbFilterCount)
 {
-    uisession()->acquireUsbStatusInfo(strInfo, fUsbEnableds);
+    uisession()->acquireUsbStatusInfo(strInfo, fUsbEnabled, cUsbFilterCount);
 }
 
 void UIMachine::acquireSharedFoldersStatusInfo(QString &strInfo, bool &fFoldersPresent)
