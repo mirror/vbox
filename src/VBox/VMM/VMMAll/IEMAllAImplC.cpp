@@ -16654,9 +16654,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vdivsd_u128_r64_fallback,(uint32_t uMxCsrIn
 
 
 /**
- * MAXPS
+ * [V]MAXPS
  */
-#ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_maxps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1, PCRTFLOAT32U pr32Val2)
 {
     if (RTFLOAT32U_IS_NAN(pr32Val1) || RTFLOAT32U_IS_NAN(pr32Val2))
@@ -16685,6 +16684,7 @@ static uint32_t iemAImpl_maxps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr,
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_maxps_u128,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
     return   iemAImpl_maxps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc1->ar32[0], &puSrc2->ar32[0])
@@ -16695,8 +16695,30 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_maxps_u128,(uint32_t uMxCsrIn, PX86XMMREG p
 #endif
 
 
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vmaxps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    return   iemAImpl_maxps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc1->ar32[0], &puSrc2->ar32[0])
+           | iemAImpl_maxps_u128_worker(&pResult->ar32[1], uMxCsrIn, &puSrc1->ar32[1], &puSrc2->ar32[1])
+           | iemAImpl_maxps_u128_worker(&pResult->ar32[2], uMxCsrIn, &puSrc1->ar32[2], &puSrc2->ar32[2])
+           | iemAImpl_maxps_u128_worker(&pResult->ar32[3], uMxCsrIn, &puSrc1->ar32[3], &puSrc2->ar32[3]);
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vmaxps_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG pResult, PCX86YMMREG puSrc1, PCX86YMMREG puSrc2))
+{
+    return   iemAImpl_maxps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc1->ar32[0], &puSrc2->ar32[0])
+           | iemAImpl_maxps_u128_worker(&pResult->ar32[1], uMxCsrIn, &puSrc1->ar32[1], &puSrc2->ar32[1])
+           | iemAImpl_maxps_u128_worker(&pResult->ar32[2], uMxCsrIn, &puSrc1->ar32[2], &puSrc2->ar32[2])
+           | iemAImpl_maxps_u128_worker(&pResult->ar32[3], uMxCsrIn, &puSrc1->ar32[3], &puSrc2->ar32[3])
+           | iemAImpl_maxps_u128_worker(&pResult->ar32[4], uMxCsrIn, &puSrc1->ar32[4], &puSrc2->ar32[4])
+           | iemAImpl_maxps_u128_worker(&pResult->ar32[5], uMxCsrIn, &puSrc1->ar32[5], &puSrc2->ar32[5])
+           | iemAImpl_maxps_u128_worker(&pResult->ar32[6], uMxCsrIn, &puSrc1->ar32[6], &puSrc2->ar32[6])
+           | iemAImpl_maxps_u128_worker(&pResult->ar32[7], uMxCsrIn, &puSrc1->ar32[7], &puSrc2->ar32[7]);
+}
+
+
 /**
- * MAXSS
+ * [V]MAXSS
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_maxss_u128_r32,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
@@ -16709,10 +16731,18 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_maxss_u128_r32,(uint32_t uMxCsrIn, PX86XMMR
 #endif
 
 
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vmaxss_u128_r32_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
+{
+    pResult->ar32[1] = puSrc1->ar32[1];
+    pResult->ar32[2] = puSrc1->ar32[2];
+    pResult->ar32[3] = puSrc1->ar32[3];
+    return iemAImpl_maxps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc1->ar32[0], pr32Src2);
+}
+
+
 /**
  * MAXPD
  */
-#ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_maxpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Val1, PCRTFLOAT64U pr64Val2)
 {
     if (RTFLOAT64U_IS_NAN(pr64Val1) || RTFLOAT64U_IS_NAN(pr64Val2))
@@ -16741,6 +16771,7 @@ static uint32_t iemAImpl_maxpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr,
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_maxpd_u128,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
     return   iemAImpl_maxpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], &puSrc2->ar64[0])
@@ -16749,8 +16780,24 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_maxpd_u128,(uint32_t uMxCsrIn, PX86XMMREG p
 #endif
 
 
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vmaxpd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
+{
+    return   iemAImpl_maxpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], &puSrc2->ar64[0])
+           | iemAImpl_maxpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc1->ar64[1], &puSrc2->ar64[1]);
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vmaxpd_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG pResult, PCX86YMMREG puSrc1, PCX86YMMREG puSrc2))
+{
+    return   iemAImpl_maxpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], &puSrc2->ar64[0])
+           | iemAImpl_maxpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc1->ar64[1], &puSrc2->ar64[1])
+           | iemAImpl_maxpd_u128_worker(&pResult->ar64[2], uMxCsrIn, &puSrc1->ar64[2], &puSrc2->ar64[2])
+           | iemAImpl_maxpd_u128_worker(&pResult->ar64[3], uMxCsrIn, &puSrc1->ar64[3], &puSrc2->ar64[3]);
+}
+
+
 /**
- * MAXSD
+ * [V]MAXSD
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_maxsd_u128_r64,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT64U pr64Src2))
@@ -16759,6 +16806,13 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_maxsd_u128_r64,(uint32_t uMxCsrIn, PX86XMMR
     return iemAImpl_maxpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], pr64Src2);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vmaxsd_u128_r64_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT64U pr64Src2))
+{
+    pResult->ar64[1] = puSrc1->ar64[1];
+    return iemAImpl_maxpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], pr64Src2);
+}
 
 
 /**
