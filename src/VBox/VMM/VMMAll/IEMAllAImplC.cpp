@@ -17038,7 +17038,7 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsqrtps_u256_fallback,(uint32_t uMxCsrIn, P
 
 
 /**
- * SQRTSS
+ * [V]SQRTSS
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sqrtss_u128_r32,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
@@ -17049,6 +17049,15 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sqrtss_u128_r32,(uint32_t uMxCsrIn, PX86XMM
     return iemAImpl_sqrtps_u128_worker(&pResult->ar32[0], uMxCsrIn, pr32Src2);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsqrtss_u128_r32_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
+{
+    pResult->ar32[1] = puSrc1->ar32[1];
+    pResult->ar32[2] = puSrc1->ar32[2];
+    pResult->ar32[3] = puSrc1->ar32[3];
+    return iemAImpl_sqrtps_u128_worker(&pResult->ar32[0], uMxCsrIn, pr32Src2);
+}
 
 
 /**
@@ -17115,6 +17124,13 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sqrtsd_u128_r64,(uint32_t uMxCsrIn, PX86XMM
     return iemAImpl_sqrtpd_u128_worker(&pResult->ar64[0], uMxCsrIn, pr64Src2);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsqrtsd_u128_r64_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT64U pr64Src2))
+{
+    pResult->ar64[1] = puSrc1->ar64[1];
+    return iemAImpl_sqrtpd_u128_worker(&pResult->ar64[0], uMxCsrIn, pr64Src2);
+}
 
 
 #ifdef IEM_WITHOUT_ASSEMBLY
