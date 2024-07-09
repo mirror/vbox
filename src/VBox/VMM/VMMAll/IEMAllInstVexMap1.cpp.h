@@ -2959,7 +2959,14 @@ FNIEMOP_DEF(iemOp_vsubps_Vps_Hps_Wps)
 
 
 /** Opcode VEX.66.0F 0x5c - vsubpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vsubpd_Vpd_Hpd_Wpd);
+FNIEMOP_DEF(iemOp_vsubpd_Vpd_Hpd_Wpd)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VSUBPD, vsubpd, Vpd, Hpd, Wpd, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    IEMOPMEDIAF3_INIT_VARS(          vsubpd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
+
+
 /** Opcode VEX.F3.0F 0x5c - vsubss Vss, Hss, Wss */
 FNIEMOP_STUB(iemOp_vsubss_Vss_Hss_Wss);
 /** Opcode VEX.F2.0F 0x5c - vsubsd Vsd, Hsd, Wsd */
