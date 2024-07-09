@@ -1165,7 +1165,10 @@ void UIDetailsElement::popupNetworkAttachmentTypeEditor(const QString &strValue)
             pEditor->setValueNames(KNetworkAttachmentType_NATNetwork, UINetworkAttachmentEditor::natNetworks());
 #ifdef VBOX_WITH_CLOUD_NET
             pEditor->setValueNames(KNetworkAttachmentType_Cloud, UINetworkAttachmentEditor::cloudNetworks());
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
+#ifdef VBOX_WITH_VMNET
+            pEditor->setValueNames(KNetworkAttachmentType_HostOnlyNetwork, UINetworkAttachmentEditor::hostOnlyNetworks());
+#endif
             pEditor->setValueType(static_cast<KNetworkAttachmentType>(strValue.section(';', 1, 1).toInt()));
             pEditor->setValueName(pEditor->valueType(), strValue.section(';', 2, 2));
             connect(pEditor, &UINetworkAttachmentEditor::sigValidChanged,

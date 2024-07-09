@@ -2060,6 +2060,12 @@ QStringList UISnapshotDetailsWidget::networkReport(CMachine comMachine)
                                                                   .arg(comAdapter.GetCloudNetwork()));
                     break;
 #endif
+#ifdef VBOX_WITH_VMNET
+                case KNetworkAttachmentType_HostOnlyNetwork:
+                    strInfo = strInfo.arg(QApplication::translate("UIDetails", "Host-only Network, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetHostOnlyNetwork()));
+                    break;
+#endif
                 default:
                     strInfo = strInfo.arg(gpConverter->toString(enmType));
                     break;

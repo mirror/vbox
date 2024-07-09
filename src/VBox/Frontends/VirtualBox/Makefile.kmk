@@ -120,6 +120,9 @@ VirtualBox_DEFS.solaris   += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEA
 VirtualBox_DEFS.freebsd   += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
 VirtualBox_DEFS.darwin    += VBOX_WITH_TRANSLUCENT_SEAMLESS # VBOX_WITH_MASKED_SEAMLESS
 VirtualBox_DEFS.win       += VBOX_WITH_MASKED_SEAMLESS # VBOX_WITH_TRANSLUCENT_SEAMLESS
+ifdef VBOX_WITH_VMNET
+ VirtualBox_DEFS.darwin += VBOX_WITH_VMNET
+endif
 ifndef VBOX_WITH_QT6 # qt6: The UICocoaSpecialControls needs restructuring because QMacCocoaViewContainer is gone. Too lazy for now.
  VirtualBox_DEFS.darwin   += VBOX_DARWIN_USE_NATIVE_CONTROLS
 endif
