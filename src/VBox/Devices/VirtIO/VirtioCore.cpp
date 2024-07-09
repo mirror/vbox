@@ -1079,7 +1079,10 @@ DECLHIDDEN(int) virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVir
 
     size_t cbCopy = 0, cbTotal = 0, cbRemain = 0;
 
-    if (pSgVirtReturn)
+    /** @todo r=aeichner Check whether VirtIO should return an error if the device wants to return data but
+     *                   the guest didn't set up an IN buffer. */
+    if (   pSgVirtReturn
+        && pSgPhysReturn)
     {
         size_t cbTarget = virtioCoreGCPhysChainCalcBufSize(pSgPhysReturn);
         cbRemain = cbTotal = RTSgBufCalcTotalLength(pSgVirtReturn);
@@ -1116,7 +1119,9 @@ DECLHIDDEN(int) virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVir
     virtioWriteUsedElem(pDevIns, pVirtio, pVirtq, pVirtq->uUsedIdxShadow++, pVirtqBuf->uHeadIdx, (uint32_t)cbTotal);
 
 #ifdef LOG_ENABLED
-    if (LogIs6Enabled() && pSgVirtReturn)
+    if (   LogIs6Enabled()
+        && pSgVirtReturn
+        && pSgPhysReturn)
     {
 
         LogFunc(("     ... %d segs, %zu bytes, copied to %u byte buf@offset=%u. Residual: %zu bytes\n",
