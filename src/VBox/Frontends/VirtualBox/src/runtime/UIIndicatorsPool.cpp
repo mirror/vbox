@@ -26,7 +26,6 @@
  */
 
 /* Qt includes: */
-#include <QApplication>
 #include <QAccessibleWidget>
 #include <QHBoxLayout>
 #include <QPainter>
@@ -1039,29 +1038,27 @@ protected slots:
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
     {
-        const QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                           "Indicates whether the host mouse pointer is "
-                                                           "captured by the guest OS:%1", "Mouse tooltip");
+        const QString strToolTip = tr("Indicates whether the host mouse pointer is "
+                                      "captured by the guest OS:%1", "Mouse tooltip");
         QString strFullData;
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/mouse_disabled_16px.png/>"))
-            .arg(QApplication::translate("UIIndicatorsPool", "pointer is not captured", "Mouse tooltip"));
+            .arg(tr("pointer is not captured", "Mouse tooltip"));
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/mouse_16px.png/>"))
-            .arg(QApplication::translate("UIIndicatorsPool", "pointer is captured", "Mouse tooltip"));
+            .arg(tr("pointer is captured", "Mouse tooltip"));
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/mouse_seamless_16px.png/>"))
-            .arg(QApplication::translate("UIIndicatorsPool", "mouse integration (MI) is On", "Mouse tooltip"));
+            .arg(tr("mouse integration (MI) is On", "Mouse tooltip"));
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/mouse_can_seamless_16px.png/>"))
-            .arg(QApplication::translate("UIIndicatorsPool", "MI is Off, pointer is captured", "Mouse tooltip"));
+            .arg(tr("MI is Off, pointer is captured", "Mouse tooltip"));
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/mouse_can_seamless_uncaptured_16px.png/>"))
-            .arg(QApplication::translate("UIIndicatorsPool", "MI is Off, pointer is not captured", "Mouse tooltip"));
+            .arg(tr("MI is Off, pointer is not captured", "Mouse tooltip"));
         strFullData = s_strTable.arg(strFullData);
-        strFullData += QApplication::translate("UIIndicatorsPool",
-                                               "Note that the mouse integration feature requires Guest "
-                                               "Additions to be installed in the guest OS.", "Mouse tooltip");
+        strFullData += tr("Note that the mouse integration feature requires Guest "
+                          "Additions to be installed in the guest OS.", "Mouse tooltip");
 
         /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
@@ -1121,16 +1118,15 @@ protected slots:
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
     {
-        const QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                           "Indicates whether the host keyboard is "
-                                                           "captured by the guest OS:%1", "Keyboard tooltip");
+        const QString strToolTip = tr("Indicates whether the host keyboard is "
+                                      "captured by the guest OS:%1", "Keyboard tooltip");
         QString strFullData;
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/hostkey_16px.png/>"))
-            .arg(QApplication::translate("UIIndicatorsPool", "keyboard is not captured", "Keyboard tooltip"));
+            .arg(tr("keyboard is not captured", "Keyboard tooltip"));
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/hostkey_captured_16px.png/>"))
-            .arg(QApplication::translate("UIIndicatorsPool", "keyboard is captured", "Keyboard tooltip"));
+            .arg(tr("keyboard is captured", "Keyboard tooltip"));
         strFullData = s_strTable.arg(strFullData);
 
         /* Update tool-tip: */
@@ -1175,11 +1171,10 @@ protected slots:
     /** Retranslation routine. */
     void sltRetranslateUI()
     {
-        setToolTip(QApplication::translate("UIMachineWindowNormal",
-                                           "Shows the currently assigned Host key.<br>"
-                                           "This key, when pressed alone, toggles the keyboard and mouse "
-                                           "capture state. It can also be used in combination with other keys "
-                                           "to quickly perform actions from the main menu."));
+        setToolTip(tr("Shows the currently assigned Host key.<br>"
+                      "This key, when pressed alone, toggles the keyboard and mouse "
+                      "capture state. It can also be used in combination with other keys "
+                      "to quickly perform actions from the main menu."));
     }
 };
 

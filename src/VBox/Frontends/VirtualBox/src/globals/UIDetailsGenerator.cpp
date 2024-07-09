@@ -1360,16 +1360,16 @@ void UIDetailsGenerator::acquireNetworkStatusInfo(CMachine &comMachine, QString 
                 fCablesDisconnected = false;
             /* Append adapter data: */
             strInfo += e_strTableRow1
-                .arg(QApplication::translate("UIIndicatorsPool", "Adapter %1 (%2)", "Network tooltip")
+                .arg(QApplication::translate("UIIndicatorNetwork", "Adapter %1 (%2)")
                         .arg(uSlot + 1).arg(gpConverter->toString(comAdapter.GetAttachmentType())));
             if (!strGuestIp.isEmpty())
                 strInfo += e_strTableRow3
-                    .arg(QApplication::translate("UIIndicatorsPool", "IP", "Network tooltip"), strGuestIp);
+                    .arg(QApplication::translate("UIIndicatorNetwork", "IP"), strGuestIp);
             strInfo += e_strTableRow3
-                .arg(QApplication::translate("UIIndicatorsPool", "Cable", "Network tooltip"))
+                .arg(QApplication::translate("UIIndicatorNetwork", "Cable"))
                 .arg(fCableConnected ?
-                     QApplication::translate("UIIndicatorsPool", "Connected", "cable (Network tooltip)") :
-                     QApplication::translate("UIIndicatorsPool", "Disconnected", "cable (Network tooltip)"));
+                     QApplication::translate("UIIndicatorNetwork", "Connected", "cable") :
+                     QApplication::translate("UIIndicatorNetwork", "Disconnected", "cable"));
         }
     }
 }
@@ -1392,7 +1392,7 @@ void UIDetailsGenerator::acquireUsbStatusInfo(CMachine &comMachine, CConsole &co
         /* Handle 'no-usb-devices' case: */
         if (strInfo.isNull())
             strInfo = e_strTableRow1
-                .arg(QApplication::translate("UIIndicatorsPool", "No USB devices attached", "USB tooltip"));
+                .arg(QApplication::translate("UIIndicatorUSB", "No USB devices attached"));
     }
 }
 
@@ -1420,7 +1420,7 @@ void UIDetailsGenerator::acquireSharedFoldersStatusInfo(CMachine &comMachine, CC
     /* Handle 'no-folders' case: */
     if (!fFoldersPresent)
         strInfo = e_strTableRow1
-            .arg(QApplication::translate("UIIndicatorsPool", "No shared folders", "Shared folders tooltip"));
+            .arg(QApplication::translate("UIIndicatorSharedFolders", "No shared folders"));
 }
 
 void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString &strInfo,
@@ -1433,7 +1433,7 @@ void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString 
     const ULONG uVRAMSize = comGraphics.GetVRAMSize();
     const QString strVRAMSize = QApplication::translate("UICommon", "<nobr>%1 MB</nobr>", "details report").arg(uVRAMSize);
     strInfo += e_strTableRow2
-        .arg(QApplication::translate("UIIndicatorsPool", "Video memory", "Display tooltip"), strVRAMSize);
+        .arg(QApplication::translate("UIIndicatorDisplay", "Video memory"), strVRAMSize);
 
     /* Monitor Count: */
     const ULONG uMonitorCount = comGraphics.GetMonitorCount();
@@ -1441,7 +1441,7 @@ void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString 
     {
         const QString strMonitorCount = QString::number(uMonitorCount);
         strInfo += e_strTableRow2
-            .arg(QApplication::translate("UIIndicatorsPool", "Screens", "Display tooltip"), strMonitorCount);
+            .arg(QApplication::translate("UIIndicatorDisplay", "Screens"), strMonitorCount);
     }
 
     /* 3D acceleration: */
@@ -1452,7 +1452,7 @@ void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString 
             ? QApplication::translate("UICommon", "Enabled", "details report (3D Acceleration)")
             : QApplication::translate("UICommon", "Disabled", "details report (3D Acceleration)");
         strInfo += e_strTableRow2
-            .arg(QApplication::translate("UIIndicatorsPool", "3D acceleration", "Display tooltip"), strAcceleration3D);
+            .arg(QApplication::translate("UIIndicatorDisplay", "3D acceleration"), strAcceleration3D);
     }
 }
 
@@ -1472,11 +1472,11 @@ void UIDetailsGenerator::acquireRecordingStatusInfo(CMachine &comMachine, QStrin
         /* Compose tool-tip: */
         QString strToolTip;
         if (fVideoEnabled && fAudioEnabled)
-            strToolTip = QApplication::translate("UIIndicatorsPool", "Video/audio recording file", "Recording tooltip");
+            strToolTip = QApplication::translate("UIIndicatorRecording", "Video/audio recording file");
         else if (fAudioEnabled)
-            strToolTip = QApplication::translate("UIIndicatorsPool", "Audio recording file", "Recording tooltip");
+            strToolTip = QApplication::translate("UIIndicatorRecording", "Audio recording file");
         else if (fVideoEnabled)
-            strToolTip = QApplication::translate("UIIndicatorsPool", "Video recording file", "Recording tooltip");
+            strToolTip = QApplication::translate("UIIndicatorRecording", "Video recording file");
         strInfo += e_strTableRow2
             .arg(strToolTip)
             .arg(comRecordingScreen0Settings.GetFilename());
@@ -1485,7 +1485,7 @@ void UIDetailsGenerator::acquireRecordingStatusInfo(CMachine &comMachine, QStrin
     else
     {
         strInfo += e_strTableRow1
-            .arg(QApplication::translate("UIIndicatorsPool", "Recording disabled", "Recording tooltip"));
+            .arg(QApplication::translate("UIIndicatorRecording", "Recording disabled"));
     }
 }
 
