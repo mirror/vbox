@@ -125,6 +125,7 @@ ifndef VBOX_WITH_QT6 # qt6: The UICocoaSpecialControls needs restructuring becau
 endif
 VirtualBox_DEFS.win       += UNICODE QT_DLL
 VirtualBox_DEFS           += \
+	$(if $(VBOX_WITH_CLOUD_NET),VBOX_WITH_CLOUD_NET) \
 	$(if $(VBOX_WITH_ADDITIONS_AUTOUPDATE_UI),VBOX_WITH_ADDITIONS_AUTOUPDATE_UI) \
 	$(if $(VBOX_WITH_UPDATE_REQUEST),VBOX_WITH_UPDATE_REQUEST) \
 	$(if $(VBOX_WITH_NETFLT)$(eq $(KBUILD_TARGET),freebsd),VBOX_WITH_NETFLT) \

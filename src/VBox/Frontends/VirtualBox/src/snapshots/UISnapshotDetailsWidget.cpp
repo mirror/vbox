@@ -2054,6 +2054,12 @@ QStringList UISnapshotDetailsWidget::networkReport(CMachine comMachine)
                     strInfo = strInfo.arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
                                                                   .arg(comAdapter.GetNATNetwork()));
                     break;
+#ifdef VBOX_WITH_CLOUD_NET
+                case KNetworkAttachmentType_Cloud:
+                    strInfo = strInfo.arg(QApplication::translate("UIDetails", "Cloud Network, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetCloudNetwork()));
+                    break;
+#endif
                 default:
                     strInfo = strInfo.arg(gpConverter->toString(enmType));
                     break;
