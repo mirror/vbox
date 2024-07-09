@@ -4356,11 +4356,27 @@ FNIEMOP_DEF(iemOp_vhaddps_Vps_Hps_Wps)
 
 
 /*  Opcode VEX.0F 0x7d - invalid */
+
+
 /** Opcode VEX.66.0F 0x7d - vhsubpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vhsubpd_Vpd_Hpd_Wpd);
+FNIEMOP_DEF(iemOp_vhsubpd_Vpd_Hpd_Wpd)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VHSUBPD, vhsubpd, Vps, Hps, Wps, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    IEMOPMEDIAF3_INIT_VARS(           vhsubpd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.F3.0F 0x7d - invalid */
+
+
 /** Opcode VEX.F2.0F 0x7d - vhsubps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vhsubps_Vps_Hps_Wps);
+FNIEMOP_DEF(iemOp_vhsubps_Vps_Hps_Wps)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VHSUBPS, vhsubps, Vps, Hps, Wps, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    IEMOPMEDIAF3_INIT_VARS(           vhsubps);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
 
 
 /*  Opcode VEX.0F 0x7e - invalid */
