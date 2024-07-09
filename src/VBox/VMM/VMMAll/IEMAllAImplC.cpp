@@ -16163,7 +16163,7 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsubps_u256_fallback,(uint32_t uMxCsrIn, PX
 
 
 /**
- * SUBSS
+ * [V]SUBSS
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_subss_u128_r32,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
@@ -16174,6 +16174,15 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_subss_u128_r32,(uint32_t uMxCsrIn, PX86XMMR
     return iemAImpl_subps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc1->ar32[0], pr32Src2);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsubss_u128_r32_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
+{
+    pResult->ar32[1] = puSrc1->ar32[1];
+    pResult->ar32[2] = puSrc1->ar32[2];
+    pResult->ar32[3] = puSrc1->ar32[3];
+    return iemAImpl_subps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc1->ar32[0], pr32Src2);
+}
 
 
 /**
