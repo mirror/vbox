@@ -982,10 +982,14 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const UIExtraDataM
     QString strResult;
     switch (enmDetailsElementOptionTypeGeneral)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name:     strResult = QApplication::translate("UICommon", "Name"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS:       strResult = QApplication::translate("UICommon", "OS"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location: strResult = QApplication::translate("UICommon", "Location"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups:   strResult = QApplication::translate("UICommon", "Groups"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name:
+            strResult = QApplication::translate("UIDetails", "Name", "details (general)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS:
+            strResult = QApplication::translate("UIDetails", "Operating System", "details (general)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location:
+            strResult = QApplication::translate("UIDetails", "Settings File Location", "details (general)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups:
+            strResult = QApplication::translate("UIDetails", "Groups", "details (general)"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeGeneral));
@@ -1035,15 +1039,24 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const UIExtraDataM
     QString strResult;
     switch (enmDetailsElementOptionTypeSystem)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM:             strResult = QApplication::translate("UICommon", "RAM"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount:        strResult = QApplication::translate("UICommon", "CPU Count"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUExecutionCap: strResult = QApplication::translate("UICommon", "CPU Execution Cap"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder:       strResult = QApplication::translate("UICommon", "Boot Order"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType:     strResult = QApplication::translate("UICommon", "Chipset Type"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_TpmType:         strResult = QApplication::translate("UICommon", "TPM Type"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware:        strResult = QApplication::translate("UICommon", "Firmware"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_SecureBoot:      strResult = QApplication::translate("UICommon", "Secure Boot"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration:    strResult = QApplication::translate("UICommon", "Acceleration"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM:
+            strResult = QApplication::translate("UIDetails", "Base Memory", "details (system)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount:
+            strResult = QApplication::translate("UIDetails", "Processors", "details (system)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUExecutionCap:
+            strResult = QApplication::translate("UIDetails", "Execution Cap", "details (system)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder:
+            strResult = QApplication::translate("UIDetails", "Boot Order", "details (system)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType:
+            strResult = QApplication::translate("UIDetails", "Chipset Type", "details (system)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_TpmType:
+            strResult = QApplication::translate("UIDetails", "TPM Type", "details (system)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware:
+            strResult = QApplication::translate("UIDetails", "EFI", "details (system)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_SecureBoot:
+            strResult = QApplication::translate("UIDetails", "Secure Boot", "details (system)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration:
+            strResult = QApplication::translate("UIDetails", "Acceleration", "details (system)"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSystem));
@@ -1108,13 +1121,20 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const UIExtraDataM
     QString strResult;
     switch (enmDetailsElementOptionTypeDisplay)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM:               strResult = QApplication::translate("UICommon", "VRAM"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount:        strResult = QApplication::translate("UICommon", "Screen Count"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor:        strResult = QApplication::translate("UICommon", "Scale Factor"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController: strResult = QApplication::translate("UICommon", "Graphics Controller"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration:       strResult = QApplication::translate("UICommon", "Acceleration"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE:               strResult = QApplication::translate("UICommon", "VRDE"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording:          strResult = QApplication::translate("UICommon", "Recording"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM:
+            strResult = QApplication::translate("UIDetails", "Video Memory", "details (display)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount:
+            strResult = QApplication::translate("UIDetails", "Screens", "details (display)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor:
+            strResult = QApplication::translate("UIDetails", "Scale-factor", "details (display)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController:
+            strResult = QApplication::translate("UIDetails", "Graphics Controller", "details (display)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration:
+            strResult = QApplication::translate("UIDetails", "Acceleration", "details (display)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE:
+            strResult = QApplication::translate("UIDetails", "Remote Desktop Server", "details (display/vrde)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording:
+            strResult = QApplication::translate("UIDetails", "Recording", "details (display/recording)"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeDisplay));
@@ -1173,9 +1193,12 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const UIExtraDataM
     QString strResult;
     switch (enmDetailsElementOptionTypeStorage)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks:      strResult = QApplication::translate("UICommon", "Hard Disks"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_OpticalDevices: strResult = QApplication::translate("UICommon", "Optical Devices"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_FloppyDevices:  strResult = QApplication::translate("UICommon", "Floppy Devices"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks:
+            strResult = QApplication::translate("UIDetails", "Hard Disks", "details (storage)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_OpticalDevices:
+            strResult = QApplication::translate("UIDetails", "Optical Devices", "details (storage)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_FloppyDevices:
+            strResult = QApplication::translate("UIDetails", "Floppy Devices", "details (storage)"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeStorage));
@@ -1222,9 +1245,12 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const UIExtraDataM
     QString strResult;
     switch (enmDetailsElementOptionTypeAudio)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver:     strResult = QApplication::translate("UICommon", "Driver"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller: strResult = QApplication::translate("UICommon", "Controller"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO:         strResult = QApplication::translate("UICommon", "Input/Output"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver:
+            strResult = QApplication::translate("UIDetails", "Host Driver", "details (audio)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller:
+            strResult = QApplication::translate("UIDetails", "Controller", "details (audio)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO:
+            strResult = QApplication::translate("UIDetails", "Input/Output", "details (audio)"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeAudio));
@@ -1271,18 +1297,27 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const UIExtraDataM
     QString strResult;
     switch (enmDetailsElementOptionTypeNetwork)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached:     strResult = QApplication::translate("UICommon", "Not Attached", "network adapter"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT:             strResult = QApplication::translate("UICommon", "NAT"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgedAdapter:  strResult = QApplication::translate("UICommon", "Bridged Adapter"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork: strResult = QApplication::translate("UICommon", "Internal Network"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter: strResult = QApplication::translate("UICommon", "Host Only Adapter"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:   strResult = QApplication::translate("UICommon", "Generic Driver"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork:      strResult = QApplication::translate("UICommon", "NAT Network"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached:
+            strResult = QApplication::translate("UIDetails", "Not Attached", "details (network adapter)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT:
+            strResult = QApplication::translate("UIDetails", "NAT", "details (network)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgedAdapter:
+            strResult = QApplication::translate("UIDetails", "Bridged Adapter", "details (network)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork:
+            strResult = QApplication::translate("UIDetails", "Internal Network", "details (network)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter:
+            strResult = QApplication::translate("UIDetails", "Host-only Adapter", "details (network)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:
+            strResult = QApplication::translate("UIDetails", "Generic Driver", "details (network)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork:
+            strResult = QApplication::translate("UIDetails", "NAT Network", "details (network)"); break;
 #ifdef VBOX_WITH_CLOUD_NET
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_CloudNetwork:    strResult = QApplication::translate("UICommon", "Cloud Network"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_CloudNetwork:
+            strResult = QApplication::translate("UIDetails", "Cloud Network", "details (network)"); break;
 #endif
 #ifdef VBOX_WITH_VMNET
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyNetwork: strResult = QApplication::translate("UICommon", "Host Only Network"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyNetwork:
+            strResult = QApplication::translate("UIDetails", "Host-only Network", "details (network)"); break;
 #endif
         default:
         {
@@ -1356,11 +1391,16 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const UIExtraDataM
     QString strResult;
     switch (enmDetailsElementOptionTypeSerial)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected: strResult = QApplication::translate("UICommon", "Disconnected", "serial port"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe:     strResult = QApplication::translate("UICommon", "Host Pipe"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice:   strResult = QApplication::translate("UICommon", "Host Device"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile:      strResult = QApplication::translate("UICommon", "Raw File"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP:          strResult = QApplication::translate("UICommon", "TCP"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected:
+            strResult = QApplication::translate("UIDetails", "Disconnected", "details (serial port)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe:
+            strResult = QApplication::translate("UIDetails", "Host Pipe", "details (serial)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice:
+            strResult = QApplication::translate("UIDetails", "Host Device", "details (serial)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile:
+            strResult = QApplication::translate("UIDetails", "Raw File", "details (serial)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP:
+            strResult = QApplication::translate("UIDetails", "TCP", "details (serial)"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSerial));
@@ -1413,8 +1453,10 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const UIExtraDataM
     QString strResult;
     switch (enmDetailsElementOptionTypeUsb)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller:    strResult = QApplication::translate("UICommon", "Controller"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_DeviceFilters: strResult = QApplication::translate("UICommon", "Device Filters"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller:
+            strResult = QApplication::translate("UIDetails", "USB Controller", "details (usb)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_DeviceFilters:
+            strResult = QApplication::translate("UIDetails", "Device Filters", "details (usb)"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeUsb));
@@ -1496,10 +1538,14 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const UIExtraDataM
     QString strResult;
     switch (enmDetailsElementOptionTypeUserInterface)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_VisualState: strResult = QApplication::translate("UICommon", "Visual State"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar:     strResult = QApplication::translate("UICommon", "Menu Bar"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar:   strResult = QApplication::translate("UICommon", "Status Bar"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar: strResult = QApplication::translate("UICommon", "Mini Toolbar"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_VisualState:
+            strResult = QApplication::translate("UIDetails", "Visual State", "details (user interface)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar:
+            strResult = QApplication::translate("UIDetails", "Menu-bar", "details (user interface)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar:
+            strResult = QApplication::translate("UIDetails", "Status-bar", "details (user interface)"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar:
+            strResult = QApplication::translate("UIDetails", "Mini-toolbar", "details (user interface)"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeUserInterface));
