@@ -3021,7 +3021,13 @@ FNIEMOP_DEF(iemOp_vmulss_Vss_Hss_Wss)
 
 
 /** Opcode VEX.F2.0F 0x59 - vmulsd Vsd, Hsd, Wsd */
-FNIEMOP_STUB(iemOp_vmulsd_Vsd_Hsd_Wsd);
+FNIEMOP_DEF(iemOp_vmulsd_Vsd_Hsd_Wsd)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VMULSD, vmulsd, Vpd, Hpd, Wsd, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    return FNIEMOP_CALL_1(iemOpCommonAvx_Vx_Hx_R64,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAvx, iemAImpl_vmulsd_u128_r64, iemAImpl_vmulsd_u128_r64_fallback));
+}
+
 
 /** Opcode VEX.0F 0x5a - vcvtps2pd Vpd, Wps */
 FNIEMOP_STUB(iemOp_vcvtps2pd_Vpd_Wps);
