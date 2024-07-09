@@ -540,7 +540,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                         value = strTmp; break;
                     }
                     case KVirtualSystemDescriptionType_OS:               value = gpGlobalSession->guestOSTypeManager().getDescription(m_strConfigValue); break;
-                    case KVirtualSystemDescriptionType_Memory:           value = m_strConfigValue + " " + QApplication::translate("UICommon", "MB", "size suffix MBytes=1024 KBytes"); break;
+                    case KVirtualSystemDescriptionType_Memory:           value = m_strConfigValue + " " + QApplication::translate("UITranslator", "MB", "size suffix MBytes=1024 KBytes"); break;
                     case KVirtualSystemDescriptionType_SoundCard:        value = gpConverter->toString(static_cast<KAudioControllerType>(m_strConfigValue.toInt())); break;
                     case KVirtualSystemDescriptionType_NetworkAdapter:   value = gpConverter->toString(static_cast<KNetworkAdapterType>(m_strConfigValue.toInt())); break;
                     case KVirtualSystemDescriptionType_CloudInstanceShape:
@@ -826,7 +826,7 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
             {
                 QSpinBox *pSpinBox = new QSpinBox(pParent);
                 pSpinBox->setRange(UIApplianceEditorWidget::minGuestRAM(), UIApplianceEditorWidget::maxGuestRAM());
-                pSpinBox->setSuffix(" " + QApplication::translate("UICommon", "MB", "size suffix MBytes=1024 KBytes"));
+                pSpinBox->setSuffix(" " + QApplication::translate("UITranslator", "MB", "size suffix MBytes=1024 KBytes"));
                 pEditor = pSpinBox;
                 break;
             }

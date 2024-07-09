@@ -244,7 +244,7 @@ QString UIDetailsGenerator::generateFormValueInformation(const CFormValue &comFo
             CRangedIntegerFormValue comValue(comFormValue);
             strResult = QString("%1 %2")
                             .arg(comValue.GetInteger())
-                            .arg(QApplication::translate("UICommon", comValue.GetSuffix().toUtf8().constData()));
+                            .arg(QApplication::translate("UITranslator", comValue.GetSuffix().toUtf8().constData()));
             break;
         }
         case KFormValueType_RangedInteger64:
@@ -252,7 +252,7 @@ QString UIDetailsGenerator::generateFormValueInformation(const CFormValue &comFo
             CRangedInteger64FormValue comValue(comFormValue);
             strResult = QString("%1 %2")
                             .arg(comValue.GetInteger())
-                            .arg(QApplication::translate("UICommon", comValue.GetSuffix().toUtf8().constData()));
+                            .arg(QApplication::translate("UITranslator", comValue.GetSuffix().toUtf8().constData()));
             break;
         }
         default:
