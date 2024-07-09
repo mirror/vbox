@@ -76,6 +76,7 @@
 #include "CSerialPort.h"
 #include "CSharedFolder.h"
 #include "CStorageController.h"
+#include "CTrustedPlatformModule.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
@@ -1372,6 +1373,19 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                 strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Chipset Type", "details (system)"),
                                                          empReport(gpConverter->toString(enmChipsetType),
                                                                    gpConverter->toString(enmChipsetTypeOld)));
+            }
+
+            /* TPM Type? */
+            const CTrustedPlatformModule comModule = comMachine.GetTrustedPlatformModule();
+            const KTpmType enmTpmType = comModule.GetType();
+            const CTrustedPlatformModule comModuleOld = comMachineOld.GetTrustedPlatformModule();
+            const KTpmType enmTpmTypeOld = comModuleOld.GetType();
+            if (enmTpmType != KTpmType_None)
+            {
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "TPM Type", "details (system)"),
+                                                         empReport(gpConverter->toString(enmTpmType),
+                                                                   gpConverter->toString(enmTpmTypeOld)));
             }
 
             /* EFI? */
