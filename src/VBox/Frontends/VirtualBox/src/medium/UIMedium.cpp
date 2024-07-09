@@ -171,7 +171,7 @@ void UIMedium::refresh()
     //m_strKey = nullID();
 
     /* Reset name/location/description/size parameters: */
-    m_strName = QApplication::translate("UICommon", "Empty", "medium");
+    m_strName = QApplication::translate("UIMedium", "Empty", "medium");
     m_strLocation = m_strSize = m_strLogicalSize = QString("--");
     m_strDescription = QString();
     m_uSize = m_uLogicalSize = 0;
@@ -226,9 +226,9 @@ void UIMedium::refresh()
         if (!m_fHostDrive)
             m_strName = m_medium.GetName();
         else if (m_strDescription.isEmpty())
-            m_strName = QApplication::translate("UICommon", "Host Drive '%1'", "medium").arg(QDir::toNativeSeparators(m_medium.GetLocation()));
+            m_strName = QApplication::translate("UIMedium", "Host Drive '%1'").arg(QDir::toNativeSeparators(m_medium.GetLocation()));
         else
-            m_strName = QApplication::translate("UICommon", "Host Drive %1 (%2)", "medium").arg(m_strDescription, m_medium.GetName());
+            m_strName = QApplication::translate("UIMedium", "Host Drive %1 (%2)").arg(m_strDescription, m_medium.GetName());
         /* Refresh medium location: */
         if (!m_fHostDrive)
             m_strLocation = QDir::toNativeSeparators(m_medium.GetLocation());
@@ -406,16 +406,16 @@ void UIMedium::refresh()
         m_strToolTip = m_sstrRow.arg(QString("<p style=white-space:pre><b>%1</b></p>").arg(m_fHostDrive ? m_strName : m_strLocation));
         if (m_type == UIMediumDeviceType_HardDisk)
         {
-            m_strToolTip += m_sstrRow.arg(QApplication::translate("UICommon", "<p style=white-space:pre>Type (Format):  %1 (%2)</p>", "medium")
+            m_strToolTip += m_sstrRow.arg(QApplication::translate("UIMedium", "<p style=white-space:pre>Type (Format):  %1 (%2)</p>", "medium")
                                                                   .arg(m_strHardDiskType).arg(m_strHardDiskFormat));
         }
-        m_strToolTip += m_sstrRow.arg(QApplication::translate("UICommon", "<p>Attached to:  %1</p>", "image")
-                                                              .arg(m_strUsage.isNull() ? QApplication::translate("UICommon", "<i>Not Attached</i>", "image") : m_strUsage));
+        m_strToolTip += m_sstrRow.arg(QApplication::translate("UIMedium", "<p>Attached to:  %1</p>", "to machines")
+                                                              .arg(m_strUsage.isNull() ? QApplication::translate("UIMedium", "<i>Not Attached</i>", "to machines") : m_strUsage));
         switch (m_state)
         {
             case KMediumState_NotCreated:
             {
-                m_strToolTip += m_sstrRow.arg(QApplication::translate("UICommon", "<i>Checking accessibility...</i>", "medium"));
+                m_strToolTip += m_sstrRow.arg(QApplication::translate("UIMedium", "<i>Checking accessibility...</i>", "medium"));
                 break;
             }
             case KMediumState_Inaccessible:
@@ -428,7 +428,7 @@ void UIMedium::refresh()
                 else
                 {
                     /* Accessibility check (eg GetState()) itself failed: */
-                    m_strToolTip += m_sstrRow.arg("<hr>") + m_sstrRow.arg(QApplication::translate("UICommon", "Failed to check accessibility of disk image files.", "medium")) +
+                    m_strToolTip += m_sstrRow.arg("<hr>") + m_sstrRow.arg(QApplication::translate("UIMedium", "Failed to check accessibility of disk image files.")) +
                                     m_sstrRow.arg(UIErrorString::formatErrorInfo(m_result) + ".");
                 }
                 break;
@@ -468,10 +468,10 @@ QString UIMedium::toolTip(bool fNoDiffs /* = false */, bool fCheckRO /* = false 
 
     if (m_medium.isNull())
     {
-        strTip = fNullAllowed ? m_sstrRow.arg(QApplication::translate("UICommon", "<b>No disk image file selected</b>", "medium")) +
-                                m_sstrRow.arg(QApplication::translate("UICommon", "You can also change this while the machine is running.")) :
-                                m_sstrRow.arg(QApplication::translate("UICommon", "<b>No disk image files available</b>", "medium")) +
-                                m_sstrRow.arg(QApplication::translate("UICommon", "You can create or add disk image files in the virtual machine settings."));
+        strTip = fNullAllowed ? m_sstrRow.arg(QApplication::translate("UIMedium", "<b>No disk image file selected</b>")) +
+                                m_sstrRow.arg(QApplication::translate("UIMedium", "You can also change this while the machine is running.")) :
+                                m_sstrRow.arg(QApplication::translate("UIMedium", "<b>No disk image files available</b>")) +
+                                m_sstrRow.arg(QApplication::translate("UIMedium", "You can create or add disk image files in the virtual machine settings."));
     }
     else
     {
@@ -481,9 +481,9 @@ QString UIMedium::toolTip(bool fNoDiffs /* = false */, bool fCheckRO /* = false 
 
         if (fCheckRO && m_fReadOnly)
             strTip += m_sstrRow.arg("<hr>") +
-                      m_sstrRow.arg(QApplication::translate("UICommon",
+                      m_sstrRow.arg(QApplication::translate("UIMedium",
                                                             "Attaching this hard disk will be performed indirectly using "
-                                                            "a newly created differencing hard disk.", "medium"));
+                                                            "a newly created differencing hard disk."));
     }
 
     return m_sstrTable.arg(strTip);
@@ -558,7 +558,7 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
 
         /* Add encryption status: */
         if (m_fEncrypted)
-            strDetails += QString("%1, ").arg(QApplication::translate("UICommon", "Encrypted", "medium"));
+            strDetails += QString("%1, ").arg(QApplication::translate("UIMedium", "Encrypted", "medium"));
     }
 
     /// @todo prepend the details with the warning/error icon when not accessible
@@ -566,11 +566,11 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
     switch (eState)
     {
         case KMediumState_NotCreated:
-            strText = QApplication::translate("UICommon", "Checking...", "medium");
+            strText = QApplication::translate("UIMedium", "Checking...", "medium");
             strDetails += fUseHTML ? QString("<i>%1</i>").arg(strText) : strText;
             break;
         case KMediumState_Inaccessible:
-            strText = QApplication::translate("UICommon", "Inaccessible", "medium");
+            strText = QApplication::translate("UIMedium", "Inaccessible", "medium");
             strDetails += fUseHTML ? QString("<b>%1</b>").arg(strText) : strText;
             break;
         default:
@@ -644,10 +644,10 @@ void UIMedium::checkNoDiffs(bool fNoDiffs)
             m_noDiffs.state = parentMedium.m_state;
 
             if (m_noDiffs.toolTip.isNull())
-                m_noDiffs.toolTip = m_sstrRow.arg(QApplication::translate("UICommon",
+                m_noDiffs.toolTip = m_sstrRow.arg(QApplication::translate("UIMedium",
                                                                           "Some of the files in this hard disk chain "
                                                                           "are inaccessible. Please use the Virtual Medium "
-                                                                          "Manager to inspect these files.", "medium"));
+                                                                          "Manager to inspect these files."));
 
             if (!parentMedium.m_result.isOk())
             {
@@ -661,9 +661,9 @@ void UIMedium::checkNoDiffs(bool fNoDiffs)
     {
         m_noDiffs.toolTip = root().tip() +
                             m_sstrRow.arg("<hr>") +
-                            m_sstrRow.arg(QApplication::translate("UICommon",
+                            m_sstrRow.arg(QApplication::translate("UIMedium",
                                                                   "This base hard disk is indirectly attached using "
-                                                                  "the following differencing hard disk:", "medium")) +
+                                                                  "the following differencing hard disk:")) +
                             m_strToolTip + m_noDiffs.toolTip;
     }
 
@@ -679,7 +679,7 @@ QString UIMedium::mediumTypeToString(const CMedium &comMedium)
     if (!comMedium.GetParent().isNull())
     {
         Assert(comMedium.GetType() == KMediumType_Normal);
-        return QApplication::translate("UICommon", "Differencing", "MediumType");
+        return QApplication::translate("UIMedium", "Differencing", "medium");
     }
     return gpConverter->toString(comMedium.GetType());
 }

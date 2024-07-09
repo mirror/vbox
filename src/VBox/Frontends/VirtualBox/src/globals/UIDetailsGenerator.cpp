@@ -606,7 +606,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
             QString strAttachmentInfo = UIMediumTools::storageDetails(attachment.GetMedium(), false, false);
             /* That hack makes sure 'Inaccessible' word is always bold: */
             { // hack
-                const QString strInaccessibleString(QApplication::translate("UICommon", "Inaccessible", "medium"));
+                const QString strInaccessibleString(QApplication::translate("UIMedium", "Inaccessible", "medium"));
                 const QString strBoldInaccessibleString(QString("<b>%1</b>").arg(strInaccessibleString));
                 strAttachmentInfo.replace(strInaccessibleString, strBoldInaccessibleString);
             } // hack
