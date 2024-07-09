@@ -161,7 +161,7 @@ typedef struct VUSBURBHCITDINT
     /** The address of the TD. */
     RTGCPHYS        TdAddr;
     /** A copy of the TD. */
-    uint32_t        TdCopy[16];
+    uint32_t        TdCopy[18];
 } VUSBURBHCITDINT;
 
 /**
@@ -526,19 +526,25 @@ typedef const EHCI_ITD *PEHCI_CITD;
 AssertCompileSize(EHCI_ITD, 0x40);
 /** @} */
 
-/* ITD with extra padding to add 8th 'Buffer' entry. The PG member of
+/* ITD with extra padding to add 8th and 9th 'Buffer' entry. The PG member of
  * EHCI_ITD_TRANSACTION can contain values in the 0-7 range, but only values
  * 0-6 are valid. The extra padding is added to avoid cluttering the code
  * with range checks; ehciR3ReadItd() initializes the pad with a safe value.
  * The EHCI 1.0 specification explicitly says using PG value of 7 yields
- * undefined behavior.
+ * undefined behavior. Two pad entries are needed because initial PG value
+ * of 7 (already 'wrong') can cross to the next page (8).
  */
 typedef struct
 {
-    EHCI_ITD         itd;
-    EHCI_BUFFER_PTR  pad;
+    EHCI_TD_PTR             Next;
+    EHCI_ITD_TRANSACTION    Transaction[EHCI_NUM_ITD_TRANSACTIONS];
+    union
+    {
+        EHCI_ITD_MISC       Misc;
+        EHCI_BUFFER_PTR     Buffer[EHCI_NUM_ITD_PAGES + 2];
+    } Buffer;
 } EHCI_ITD_PAD, *PEHCI_ITD_PAD;
-AssertCompileSize(EHCI_ITD_PAD, 0x44);
+AssertCompileSize(EHCI_ITD_PAD, 0x48);
 
 /** @name Split Transaction Isochronous Transfer Descriptor (siTD)
  * @{ */
@@ -1471,7 +1477,8 @@ DECLINLINE(void) ehciR3ReadTDPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, EHCI_TD_PT
 DECLINLINE(void) ehciR3ReadItd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_ITD_PAD pPItd)
 {
     ehciGetDWords(pDevIns, GCPhys, (uint32_t *)pPItd, sizeof(EHCI_ITD) >> 2);
-    pPItd->pad.Pointer = 0xFFFFF;   /* Direct accesses at the last page under 4GB (ROM). */
+    pPItd->Buffer.Buffer[7].Pointer = 0xFFFFF;  /* Direct ill-defined accesses to the last page under 4GB (ROM). */
+    pPItd->Buffer.Buffer[8].Pointer = 0xFFFFF;
 }
 
 DECLINLINE(void) ehciR3ReadSitd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_SITD pSitd)
@@ -1479,7 +1486,7 @@ DECLINLINE(void) ehciR3ReadSitd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_SITD 
     ehciGetDWords(pDevIns, GCPhys, (uint32_t *)pSitd, sizeof(*pSitd) >> 2);
 }
 
-DECLINLINE(void) ehciR3WriteItd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_ITD pItd)
+DECLINLINE(void) ehciR3WriteItd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_ITD_PAD pItd)
 {
     /** @todo might need to be careful about write order in async io thread */
     /*
@@ -1490,7 +1497,7 @@ DECLINLINE(void) ehciR3WriteItd(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_ITD p
     uint32_t offDWordsWrite = offWrite / sizeof(uint32_t);
     Assert(!(offWrite % sizeof(uint32_t)));
 
-    ehciPutDWords(pDevIns, GCPhys + offWrite, (uint32_t *)pItd + offDWordsWrite,  (sizeof(*pItd) >> 2) - offDWordsWrite);
+    ehciPutDWords(pDevIns, GCPhys + offWrite, (uint32_t *)pItd + offDWordsWrite,  (sizeof(EHCI_ITD) >> 2) - offDWordsWrite);
 }
 
 DECLINLINE(void) ehciR3ReadQHD(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_QHD pQHD)
@@ -1758,7 +1765,7 @@ DECLINLINE(void) ehciR3DumpITD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysHead, bool fLi
 
         /* Read the whole ITD */
         EHCI_ITD_PAD    PaddedItd;
-        PEHCI_ITD       pItd = &PaddedItd.itd;
+        PEHCI_ITD_PAD   pItd = &PaddedItd;
         ehciR3ReadItd(pDevIns, GCPhys, &PaddedItd);
 
         Log2(("Addr=%x EndPt=%x Dir=%s MaxSize=%x Mult=%d}\n", pItd->Buffer.Misc.DeviceAddress, pItd->Buffer.Misc.EndPt, (pItd->Buffer.Misc.DirectionIn) ? "in" : "out", pItd->Buffer.Misc.MaxPacket, pItd->Buffer.Misc.Multi));
@@ -2028,7 +2035,7 @@ static int ehciR3InFlightRemoveUrb(PEHCI pThis, PEHCICC pThisCC, PVUSBURB pUrb)
  * @param   pUrb        The URB in question.
  * @param   pItd        The ITD pointer.
  */
-static bool ehciR3ItdHasUrbBeenCanceled(PEHCICC pThisCC, PVUSBURB pUrb, PEHCI_ITD pItd)
+static bool ehciR3ItdHasUrbBeenCanceled(PEHCICC pThisCC, PVUSBURB pUrb, PEHCI_ITD_PAD pItd)
 {
     RT_NOREF(pThisCC);
     Assert(pItd);
@@ -2252,7 +2259,7 @@ static void ehciR3RhXferCompleteITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pTh
 {
     /* Read the whole ITD */
     EHCI_ITD_PAD  PaddedItd;
-    PEHCI_ITD     pItd = &PaddedItd.itd;
+    PEHCI_ITD_PAD pItd = &PaddedItd;
     ehciR3ReadItd(pDevIns, pUrb->paTds[0].TdAddr, &PaddedItd);
 
     /*
@@ -2323,7 +2330,7 @@ static void ehciR3RhXferCompleteITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pTh
 
                             ehciPhysWrite(pDevIns, GCPhysBuf, pb, cb1);
                             if ((pg + 1) >= EHCI_NUM_ITD_PAGES)
-                               LogRelMax(10, ("EHCI: Crossing to undefined page %d in iTD at %RGp on completion.\n", pg + 1, pUrb->paTds[0].TdAddr));
+                               LogRelMax(10, ("EHCI: Crossing to nonstandard page %d in iTD at %RGp on completion.\n", pg + 1, pUrb->paTds[0].TdAddr));
 
                             GCPhysBuf = (RTGCPHYS)pItd->Buffer.Buffer[pg + 1].Pointer << EHCI_BUFFER_PTR_SHIFT;
                             ehciPhysWrite(pDevIns, GCPhysBuf, pb + cb1, cb2);
@@ -2790,7 +2797,7 @@ static bool ehciR3SubmitQTD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC, RT
  * @returns false on failure to submit.
  */
 static bool ehciR3SubmitITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
-                            PEHCI_ITD pItd, RTGCPHYS ITdAddr, const unsigned iFrame)
+                            PEHCI_ITD_PAD pItd, RTGCPHYS ITdAddr, const unsigned iFrame)
 {
     /*
      * Determine the endpoint direction.
@@ -2875,7 +2882,7 @@ static bool ehciR3SubmitITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
 
                     ehciPhysRead(pDevIns, GCPhysBuf, &pUrb->abData[curOffset], cb1);
                     if ((pg + 1) >= EHCI_NUM_ITD_PAGES)
-                       LogRelMax(10, ("EHCI: Crossing to undefined page %d in iTD at %RGp on submit.\n", pg + 1, pUrb->paTds[0].TdAddr));
+                       LogRelMax(10, ("EHCI: Crossing to nonstandard page %d in iTD at %RGp on submit.\n", pg + 1, pUrb->paTds[0].TdAddr));
 
                     GCPhysBuf = (RTGCPHYS)pItd->Buffer.Buffer[pg + 1].Pointer << EHCI_BUFFER_PTR_SHIFT;
                     ehciPhysRead(pDevIns, GCPhysBuf, &pUrb->abData[curOffset + cb1], cb2);
@@ -2932,7 +2939,7 @@ static void ehciR3ServiceITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
     RT_NOREF(enmServiceType);
     bool          fAnyActive = false;
     EHCI_ITD_PAD  PaddedItd;
-    PEHCI_ITD     pItd = &PaddedItd.itd;
+    PEHCI_ITD_PAD pItd = &PaddedItd;
 
     if (ehciR3IsTdInFlight(pThisCC, GCPhys))
         return;
@@ -2953,7 +2960,7 @@ static void ehciR3ServiceITD(PPDMDEVINS pDevIns, PEHCI pThis, PEHCICC pThisCC,
                 /* Using out of range PG value (7) yields undefined behavior. We will attempt
                  * the last page below 4GB (which is ROM, not writable).
                  */
-                LogRelMax(10, ("EHCI: Illegal page value %d in iTD at %RGp.\n", pItd->Transaction[i].PG, (RTGCPHYS)GCPhys));
+                LogRelMax(10, ("EHCI: Nonstandard page value %d in iTD at %RGp.\n", pItd->Transaction[i].PG, (RTGCPHYS)GCPhys));
             }
 
             Log2(("      T%d Len=%x Offset=%x PG=%d IOC=%d Buffer=%x\n", i, pItd->Transaction[i].Length, pItd->Transaction[i].Offset, pItd->Transaction[i].PG, pItd->Transaction[i].IOC,
