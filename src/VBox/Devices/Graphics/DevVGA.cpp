@@ -1076,8 +1076,9 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
                     ||  !pThis->vbe_regs[VBE_DISPI_INDEX_YRES]
                     ||  cb > pThis->vram_size)
                 {
-                    AssertMsgFailed(("VIRT WIDTH=%d YRES=%d cb=%d vram_size=%d\n",
-                                     pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH], pThis->vbe_regs[VBE_DISPI_INDEX_YRES], cb, pThis->vram_size));
+                    ASSERT_GUEST_MSG_FAILED(("VIRT WIDTH=%d YRES=%d cb=%d vram_size=%d\n",
+                                             pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH], pThis->vbe_regs[VBE_DISPI_INDEX_YRES],
+                                             cb, pThis->vram_size));
                     return VINF_SUCCESS; /* Note: silent failure like before */
                 }
 
@@ -3185,8 +3186,7 @@ vgaIoPortWriteVbeData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 #endif
     if (cb == 2 || cb == 4)
         return vbe_ioport_write_data(pDevIns, pThis, pThisCC, offPort, u32);
-    AssertMsgFailed(("vgaIoPortWriteVbeData: offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32));
-
+    ASSERT_GUEST_MSG_FAILED(("vgaIoPortWriteVbeData: offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32));
     return VINF_SUCCESS;
 }
 
@@ -3259,7 +3259,7 @@ vgaIoPortReadVbeData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
             *pu32 = pThis->vram_size; /* Quick hack for getting the vram size. */
         return VINF_SUCCESS;
     }
-    AssertMsgFailed(("vgaIoPortReadVbeData: offPort=%#x cb=%d\n", offPort, cb));
+    ASSERT_GUEST_MSG_FAILED(("vgaIoPortReadVbeData: offPort=%#x cb=%d\n", offPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -3293,7 +3293,7 @@ vgaIoPortReadVbeIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
         *pu32 = vbe_ioport_read_index(pThis, offPort);
         return VINF_SUCCESS;
     }
-    AssertMsgFailed(("vgaIoPortReadVbeIndex: offPort=%#x cb=%d\n", offPort, cb));
+    ASSERT_GUEST_MSG_FAILED(("vgaIoPortReadVbeIndex: offPort=%#x cb=%d\n", offPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
