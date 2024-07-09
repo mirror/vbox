@@ -4129,8 +4129,16 @@ FNIEMOP_DEF(iemOp_vzeroupperv__vzeroallv)
 /** Opcode VEX.66.0F 0x7c - vhaddpd Vpd, Hpd, Wpd */
 FNIEMOP_STUB(iemOp_vhaddpd_Vpd_Hpd_Wpd);
 /*  Opcode VEX.F3.0F 0x7c - invalid */
+
+
 /** Opcode VEX.F2.0F 0x7c - vhaddps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vhaddps_Vps_Hps_Wps);
+FNIEMOP_DEF(iemOp_vhaddps_Vps_Hps_Wps)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VHADDPS, vhaddps, Vps, Hps, Wps, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
+    IEMOPMEDIAF3_INIT_VARS(           vhaddps);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
+
 
 /*  Opcode VEX.0F 0x7d - invalid */
 /** Opcode VEX.66.0F 0x7d - vhsubpd Vpd, Hpd, Wpd */
