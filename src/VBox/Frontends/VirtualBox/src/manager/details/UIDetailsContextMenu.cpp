@@ -810,6 +810,11 @@ void UIDetailsContextMenu::populateOptions()
                 if (   enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid
                     || enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default)
                     continue;
+#ifndef VBOX_WITH_AUDIO_INOUT_INFO
+                /* Skip audio input/output stuff if not allowed: */
+                if (enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO)
+                    continue;
+#endif /* VBOX_WITH_AUDIO_INOUT_INFO */
                 /* And create list-widget item of it: */
                 QListWidgetItem *pOptionItem = createOptionItem();
                 if (pOptionItem)
@@ -935,6 +940,12 @@ void UIDetailsContextMenu::populateOptions()
                 if (   enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid
                     || enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Default)
                     continue;
+#ifdef VBOX_WS_MAC
+                /* Skip menu-bar and mini-toolbar types on macOS: */
+                if (   enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar
+                    || enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar)
+                    continue;
+#endif /* VBOX_WS_MAC */
                 /* And create list-widget item of it: */
                 QListWidgetItem *pOptionItem = createOptionItem();
                 if (pOptionItem)
