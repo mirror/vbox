@@ -16271,9 +16271,7 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_subpd_u128,(uint32_t uMxCsrIn, PX86XMMREG p
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsubpd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
     return   iemAImpl_subpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], &puSrc2->ar64[0])
-           | iemAImpl_subpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc1->ar64[1], &puSrc2->ar64[1])
-           | iemAImpl_subpd_u128_worker(&pResult->ar64[2], uMxCsrIn, &puSrc1->ar64[2], &puSrc2->ar64[2])
-           | iemAImpl_subpd_u128_worker(&pResult->ar64[3], uMxCsrIn, &puSrc1->ar64[3], &puSrc2->ar64[3]);
+           | iemAImpl_subpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc1->ar64[1], &puSrc2->ar64[1]);
 }
 
 
@@ -16282,11 +16280,7 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsubpd_u256_fallback,(uint32_t uMxCsrIn, PX
     return   iemAImpl_subpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], &puSrc2->ar64[0])
            | iemAImpl_subpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc1->ar64[1], &puSrc2->ar64[1])
            | iemAImpl_subpd_u128_worker(&pResult->ar64[2], uMxCsrIn, &puSrc1->ar64[2], &puSrc2->ar64[2])
-           | iemAImpl_subpd_u128_worker(&pResult->ar64[3], uMxCsrIn, &puSrc1->ar64[3], &puSrc2->ar64[3])
-           | iemAImpl_subpd_u128_worker(&pResult->ar64[4], uMxCsrIn, &puSrc1->ar64[4], &puSrc2->ar64[4])
-           | iemAImpl_subpd_u128_worker(&pResult->ar64[5], uMxCsrIn, &puSrc1->ar64[5], &puSrc2->ar64[5])
-           | iemAImpl_subpd_u128_worker(&pResult->ar64[6], uMxCsrIn, &puSrc1->ar64[6], &puSrc2->ar64[6])
-           | iemAImpl_subpd_u128_worker(&pResult->ar64[7], uMxCsrIn, &puSrc1->ar64[7], &puSrc2->ar64[7]);
+           | iemAImpl_subpd_u128_worker(&pResult->ar64[3], uMxCsrIn, &puSrc1->ar64[3], &puSrc2->ar64[3]);
 }
 
 
@@ -16448,11 +16442,7 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vminpd_u256_fallback,(uint32_t uMxCsrIn, PX
     return   iemAImpl_minpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], &puSrc2->ar64[0])
            | iemAImpl_minpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc1->ar64[1], &puSrc2->ar64[1])
            | iemAImpl_minpd_u128_worker(&pResult->ar64[2], uMxCsrIn, &puSrc1->ar64[2], &puSrc2->ar64[2])
-           | iemAImpl_minpd_u128_worker(&pResult->ar64[3], uMxCsrIn, &puSrc1->ar64[3], &puSrc2->ar64[3])
-           | iemAImpl_minpd_u128_worker(&pResult->ar64[4], uMxCsrIn, &puSrc1->ar64[4], &puSrc2->ar64[4])
-           | iemAImpl_minpd_u128_worker(&pResult->ar64[5], uMxCsrIn, &puSrc1->ar64[5], &puSrc2->ar64[5])
-           | iemAImpl_minpd_u128_worker(&pResult->ar64[6], uMxCsrIn, &puSrc1->ar64[6], &puSrc2->ar64[6])
-           | iemAImpl_minpd_u128_worker(&pResult->ar64[7], uMxCsrIn, &puSrc1->ar64[7], &puSrc2->ar64[7]);
+           | iemAImpl_minpd_u128_worker(&pResult->ar64[3], uMxCsrIn, &puSrc1->ar64[3], &puSrc2->ar64[3]);
 }
 
 
@@ -16626,11 +16616,7 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vdivpd_u256_fallback,(uint32_t uMxCsrIn, PX
     return   iemAImpl_divpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc1->ar64[0], &puSrc2->ar64[0])
            | iemAImpl_divpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc1->ar64[1], &puSrc2->ar64[1])
            | iemAImpl_divpd_u128_worker(&pResult->ar64[2], uMxCsrIn, &puSrc1->ar64[2], &puSrc2->ar64[2])
-           | iemAImpl_divpd_u128_worker(&pResult->ar64[3], uMxCsrIn, &puSrc1->ar64[3], &puSrc2->ar64[3])
-           | iemAImpl_divpd_u128_worker(&pResult->ar64[4], uMxCsrIn, &puSrc1->ar64[4], &puSrc2->ar64[4])
-           | iemAImpl_divpd_u128_worker(&pResult->ar64[5], uMxCsrIn, &puSrc1->ar64[5], &puSrc2->ar64[5])
-           | iemAImpl_divpd_u128_worker(&pResult->ar64[6], uMxCsrIn, &puSrc1->ar64[6], &puSrc2->ar64[6])
-           | iemAImpl_divpd_u128_worker(&pResult->ar64[7], uMxCsrIn, &puSrc1->ar64[7], &puSrc2->ar64[7]);
+           | iemAImpl_divpd_u128_worker(&pResult->ar64[3], uMxCsrIn, &puSrc1->ar64[3], &puSrc2->ar64[3]);
 }
 
 
