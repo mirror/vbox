@@ -3433,8 +3433,10 @@ typedef IEMVMM256 *PCIEMVMM256;
  * @{ */
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF2U64,(PCX86FXSTATE pFpuState, uint64_t *puDst, uint64_t const *puSrc));
 typedef FNIEMAIMPLMEDIAF2U64   *PFNIEMAIMPLMEDIAF2U64;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF2U128,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc));
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLMEDIAF2U128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc));
 typedef FNIEMAIMPLMEDIAF2U128  *PFNIEMAIMPLMEDIAF2U128;
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLMEDIAF2U256,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86YMMREG puSrc));
+typedef FNIEMAIMPLMEDIAF2U256  *PFNIEMAIMPLMEDIAF2U256;
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLMEDIAF3U128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2));
 typedef FNIEMAIMPLMEDIAF3U128  *PFNIEMAIMPLMEDIAF3U128;
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLMEDIAF3U256,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86YMMREG puSrc1, PCX86YMMREG puSrc2));
@@ -4300,6 +4302,43 @@ typedef IEMOPMEDIAF3 const *PCIEMOPMEDIAF3;
     IEMOPMEDIAF3_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_u256),\
                               RT_CONCAT3(iemAImpl_,a_InstrNm,_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_u256_fallback))
 
+
+/**
+ * Function table for media instruction taking one full sized media source
+ * registers and one full sized destination register (AVX).
+ */
+typedef struct IEMOPMEDIAF2
+{
+    PFNIEMAIMPLMEDIAF2U128 pfnU128;
+    PFNIEMAIMPLMEDIAF2U256 pfnU256;
+} IEMOPMEDIAF2;
+/** Pointer to a media operation function table for 2 full sized ops (AVX). */
+typedef IEMOPMEDIAF2 const *PCIEMOPMEDIAF2;
+
+/** @def IEMOPMEDIAF2_INIT_VARS_EX
+ * Declares a s_Host (x86 & amd64 only) and a s_Fallback variable with the
+ * given functions as initializers.  For use in AVX functions where a pair of
+ * functions are only used once and the function table need not be public. */
+#ifndef TST_IEM_CHECK_MC
+# if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
+#  define IEMOPMEDIAF2_INIT_VARS_EX(a_pfnHostU128, a_pfnHostU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPMEDIAF2 const s_Host     = { a_pfnHostU128,     a_pfnHostU256 }; \
+    static IEMOPMEDIAF2 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# else
+#  define IEMOPMEDIAF2_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) \
+    static IEMOPMEDIAF2 const s_Fallback = { a_pfnFallbackU128, a_pfnFallbackU256 }
+# endif
+#else
+# define IEMOPMEDIAF2_INIT_VARS_EX(a_pfnU128, a_pfnU256, a_pfnFallbackU128, a_pfnFallbackU256) (void)0
+#endif
+/** @def IEMOPMEDIAF2_INIT_VARS
+ * Generate AVX function tables for the @a a_InstrNm instruction.
+ * @sa IEMOPMEDIAF2_INIT_VARS_EX */
+#define IEMOPMEDIAF2_INIT_VARS(a_InstrNm) \
+    IEMOPMEDIAF2_INIT_VARS_EX(RT_CONCAT3(iemAImpl_,a_InstrNm,_u128),           RT_CONCAT3(iemAImpl_,a_InstrNm,_u256),\
+                              RT_CONCAT3(iemAImpl_,a_InstrNm,_u128_fallback),  RT_CONCAT3(iemAImpl_,a_InstrNm,_u256_fallback))
+
+
 /**
  * Function table for media instruction taking two full sized media source
  * registers and one full sized destination register, but no additional state
@@ -4570,8 +4609,8 @@ FNIEMAIMPLMEDIAF3U128 iemAImpl_vhaddps_u128, iemAImpl_vhaddps_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vhaddpd_u128, iemAImpl_vhaddpd_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vhsubps_u128, iemAImpl_vhsubps_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vhsubpd_u128, iemAImpl_vhsubpd_u128_fallback;
-FNIEMAIMPLFPAVXF3U128 iemAImpl_vsqrtps_u128, iemAImpl_vsqrtps_u128_fallback;
-FNIEMAIMPLFPAVXF3U128 iemAImpl_vsqrtpd_u128, iemAImpl_vsqrtpd_u128_fallback;
+FNIEMAIMPLMEDIAF2U128 iemAImpl_vsqrtps_u128, iemAImpl_vsqrtps_u128_fallback;
+FNIEMAIMPLMEDIAF2U128 iemAImpl_vsqrtpd_u128, iemAImpl_vsqrtpd_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vaddsubps_u128, iemAImpl_vaddsubps_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vaddsubpd_u128, iemAImpl_vaddsubpd_u128_fallback;
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vcvtpd2ps_u128, iemAImpl_vcvtpd2ps_u128_fallback;
@@ -4612,6 +4651,8 @@ FNIEMAIMPLMEDIAF3U256 iemAImpl_vaddsubps_u256, iemAImpl_vaddsubps_u256_fallback;
 FNIEMAIMPLMEDIAF3U256 iemAImpl_vaddsubpd_u256, iemAImpl_vaddsubpd_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vcvtpd2ps_u256, iemAImpl_vcvtpd2ps_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vcvtps2pd_u256, iemAImpl_vcvtps2pd_u256_fallback;
+FNIEMAIMPLMEDIAF2U256 iemAImpl_vsqrtps_u256, iemAImpl_vsqrtps_u256_fallback;
+FNIEMAIMPLMEDIAF2U256 iemAImpl_vsqrtpd_u256, iemAImpl_vsqrtpd_u256_fallback;
 /** @} */
 
 /** @name C instruction implementations for anything slightly complicated.

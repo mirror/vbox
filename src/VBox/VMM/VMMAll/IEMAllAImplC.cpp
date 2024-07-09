@@ -16978,9 +16978,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vhsubpd_u256_fallback,(uint32_t uMxCsrIn, P
 
 
 /**
- * SQRTPS
+ * [V]SQRTPS
  */
-#ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_sqrtps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val)
 {
     if (iemSseUnaryValIsNaNR32(pr32Res, pr32Val, &fMxcsr))
@@ -17005,6 +17004,7 @@ static uint32_t iemAImpl_sqrtps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sqrtps_u128,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
     RT_NOREF(puSrc1);
@@ -17015,6 +17015,28 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sqrtps_u128,(uint32_t uMxCsrIn, PX86XMMREG 
            | iemAImpl_sqrtps_u128_worker(&pResult->ar32[3], uMxCsrIn, &puSrc2->ar32[3]);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsqrtps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc))
+{
+    return   iemAImpl_sqrtps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc->ar32[0])
+           | iemAImpl_sqrtps_u128_worker(&pResult->ar32[1], uMxCsrIn, &puSrc->ar32[1])
+           | iemAImpl_sqrtps_u128_worker(&pResult->ar32[2], uMxCsrIn, &puSrc->ar32[2])
+           | iemAImpl_sqrtps_u128_worker(&pResult->ar32[3], uMxCsrIn, &puSrc->ar32[3]);
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsqrtps_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG pResult, PCX86YMMREG puSrc))
+{
+    return   iemAImpl_sqrtps_u128_worker(&pResult->ar32[0], uMxCsrIn, &puSrc->ar32[0])
+           | iemAImpl_sqrtps_u128_worker(&pResult->ar32[1], uMxCsrIn, &puSrc->ar32[1])
+           | iemAImpl_sqrtps_u128_worker(&pResult->ar32[2], uMxCsrIn, &puSrc->ar32[2])
+           | iemAImpl_sqrtps_u128_worker(&pResult->ar32[3], uMxCsrIn, &puSrc->ar32[3])
+           | iemAImpl_sqrtps_u128_worker(&pResult->ar32[4], uMxCsrIn, &puSrc->ar32[4])
+           | iemAImpl_sqrtps_u128_worker(&pResult->ar32[5], uMxCsrIn, &puSrc->ar32[5])
+           | iemAImpl_sqrtps_u128_worker(&pResult->ar32[6], uMxCsrIn, &puSrc->ar32[6])
+           | iemAImpl_sqrtps_u128_worker(&pResult->ar32[7], uMxCsrIn, &puSrc->ar32[7]);
+}
 
 
 /**
@@ -17032,9 +17054,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sqrtss_u128_r32,(uint32_t uMxCsrIn, PX86XMM
 
 
 /**
- * SQRTPD
+ * [V]SQRTPD
  */
-#ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_sqrtpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT64U pr64Val)
 {
     if (iemSseUnaryValIsNaNR64(pr64Res, pr64Val, &fMxcsr))
@@ -17059,6 +17080,7 @@ static uint32_t iemAImpl_sqrtpd_u128_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sqrtpd_u128,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
     RT_NOREF(puSrc1);
@@ -17067,6 +17089,22 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_sqrtpd_u128,(uint32_t uMxCsrIn, PX86XMMREG 
            | iemAImpl_sqrtpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc2->ar64[1]);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsqrtpd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc))
+{
+    return   iemAImpl_sqrtpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc->ar64[0])
+           | iemAImpl_sqrtpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc->ar64[1]);
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsqrtpd_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG pResult, PCX86YMMREG puSrc))
+{
+    return   iemAImpl_sqrtpd_u128_worker(&pResult->ar64[0], uMxCsrIn, &puSrc->ar64[0])
+           | iemAImpl_sqrtpd_u128_worker(&pResult->ar64[1], uMxCsrIn, &puSrc->ar64[1])
+           | iemAImpl_sqrtpd_u128_worker(&pResult->ar64[2], uMxCsrIn, &puSrc->ar64[2])
+           | iemAImpl_sqrtpd_u128_worker(&pResult->ar64[3], uMxCsrIn, &puSrc->ar64[3]);
+}
 
 
 /**
