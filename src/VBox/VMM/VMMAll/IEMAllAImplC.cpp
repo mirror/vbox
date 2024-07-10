@@ -17133,9 +17133,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vsqrtsd_u128_r64_fallback,(uint32_t uMxCsrI
 }
 
 
-#ifdef IEM_WITHOUT_ASSEMBLY
 /**
- * RSQRTPS
+ * [V]RSQRTPS
  */
 static uint32_t iemAImpl_rsqrt_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val)
 {
@@ -17161,6 +17160,7 @@ static uint32_t iemAImpl_rsqrt_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, PCRT
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_rsqrtps_u128,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
     RT_NOREF(puSrc1);
@@ -17170,11 +17170,35 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_rsqrtps_u128,(uint32_t uMxCsrIn, PX86XMMREG
            | iemAImpl_rsqrt_worker(&pResult->ar32[2], uMxCsrIn, &puSrc2->ar32[2])
            | iemAImpl_rsqrt_worker(&pResult->ar32[3], uMxCsrIn, &puSrc2->ar32[3]);
 }
+#endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vrsqrtps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc))
+{
+    return   iemAImpl_rsqrt_worker(&pResult->ar32[0], uMxCsrIn, &puSrc->ar32[0])
+           | iemAImpl_rsqrt_worker(&pResult->ar32[1], uMxCsrIn, &puSrc->ar32[1])
+           | iemAImpl_rsqrt_worker(&pResult->ar32[2], uMxCsrIn, &puSrc->ar32[2])
+           | iemAImpl_rsqrt_worker(&pResult->ar32[3], uMxCsrIn, &puSrc->ar32[3]);
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vrsqrtps_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG pResult, PCX86YMMREG puSrc))
+{
+    return   iemAImpl_rsqrt_worker(&pResult->ar32[0], uMxCsrIn, &puSrc->ar32[0])
+           | iemAImpl_rsqrt_worker(&pResult->ar32[1], uMxCsrIn, &puSrc->ar32[1])
+           | iemAImpl_rsqrt_worker(&pResult->ar32[2], uMxCsrIn, &puSrc->ar32[2])
+           | iemAImpl_rsqrt_worker(&pResult->ar32[3], uMxCsrIn, &puSrc->ar32[3])
+           | iemAImpl_rsqrt_worker(&pResult->ar32[4], uMxCsrIn, &puSrc->ar32[4])
+           | iemAImpl_rsqrt_worker(&pResult->ar32[5], uMxCsrIn, &puSrc->ar32[5])
+           | iemAImpl_rsqrt_worker(&pResult->ar32[6], uMxCsrIn, &puSrc->ar32[6])
+           | iemAImpl_rsqrt_worker(&pResult->ar32[7], uMxCsrIn, &puSrc->ar32[7]);
+}
 
 
 /**
  * RSQRTSS
  */
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_rsqrtss_u128_r32,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
 {
     pResult->ar32[1] = puSrc1->ar32[1];
@@ -17183,6 +17207,15 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_rsqrtss_u128_r32,(uint32_t uMxCsrIn, PX86XM
     return iemAImpl_rsqrt_worker(&pResult->ar32[0], uMxCsrIn, pr32Src2);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vrsqrtss_u128_r32_fallback,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
+{
+    pResult->ar32[1] = puSrc1->ar32[1];
+    pResult->ar32[2] = puSrc1->ar32[2];
+    pResult->ar32[3] = puSrc1->ar32[3];
+    return iemAImpl_rsqrt_worker(&pResult->ar32[0], uMxCsrIn, pr32Src2);
+}
 
 
 /**
