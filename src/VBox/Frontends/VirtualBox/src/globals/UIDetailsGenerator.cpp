@@ -540,10 +540,8 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
                                      .arg(comRecordingScreen0Settings.GetVideoFPS()).arg(comRecordingScreen0Settings.GetVideoRate()));
         }
         else
-        {
             table << UITextTableLine(QApplication::translate("UIDetails", "Recording", "details (display/recording)"),
                                      QApplication::translate("UIDetails", "Disabled", "details (display/recording)"));
-        }
     }
 
     return table;
@@ -1440,9 +1438,9 @@ void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString 
 
     /* Video Memory: */
     const ULONG uVRAMSize = comGraphics.GetVRAMSize();
-    const QString strVRAMSize = QApplication::translate("UICommon", "<nobr>%1 MB</nobr>", "details report").arg(uVRAMSize);
+    const QString strVRAMSize = QApplication::translate("UIIndicatorDisplay", "<nobr>%1 MB</nobr>").arg(uVRAMSize);
     strInfo += e_strTableRow2
-        .arg(QApplication::translate("UIIndicatorDisplay", "Video memory"), strVRAMSize);
+        .arg(QApplication::translate("UIDetails", "Video Memory", "details (display)"), strVRAMSize);
 
     /* Monitor Count: */
     const ULONG uMonitorCount = comGraphics.GetMonitorCount();
@@ -1450,7 +1448,7 @@ void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString 
     {
         const QString strMonitorCount = QString::number(uMonitorCount);
         strInfo += e_strTableRow2
-            .arg(QApplication::translate("UIIndicatorDisplay", "Screens"), strMonitorCount);
+            .arg(QApplication::translate("UIDetails", "Screens", "details (display)"), strMonitorCount);
     }
 
     /* 3D acceleration: */
@@ -1520,19 +1518,19 @@ void UIDetailsGenerator::acquireFeaturesStatusInfo(CMachine &comMachine, QString
             enmEngine = KVMExecutionEngine_NotSet;
             RT_FALL_THRU();
         case KVMExecutionEngine_NotSet:
-            strExecutionEngine = QApplication::translate("UICommon", "not set", "details report (execution engine)");
+            strExecutionEngine = QApplication::translate("UIIndicatorFeatures", "not set", "Execution engine");
             break;
     }
 
     /* Nested Paging feature: */
     const QString strNestedPaging = fNestedPagingEnabled
-                                  ? QApplication::translate("UICommon", "Active", "details report (Nested Paging)")
-                                  : QApplication::translate("UICommon", "Inactive", "details report (Nested Paging)");
+                                  ? QApplication::translate("UIIndicatorFeatures", "Active", "Nested paging")
+                                  : QApplication::translate("UIIndicatorFeatures", "Inactive", "Nested paging");
 
     /* Unrestricted Execution feature: */
     const QString strUnrestrictExec = fUxEnabled
-                                    ? QApplication::translate("UICommon", "Active", "details report (Unrestricted Execution)")
-                                    : QApplication::translate("UICommon", "Inactive", "details report (Unrestricted Execution)");
+                                    ? QApplication::translate("UIIndicatorFeatures", "Active", "Unrestricted execution")
+                                    : QApplication::translate("UIIndicatorFeatures", "Inactive", "Unrestricted execution");
 
     /* CPU Execution Cap feature: */
     const QString strCPUExecCap = QString::number(comMachine.GetCPUExecutionCap());
@@ -1541,16 +1539,16 @@ void UIDetailsGenerator::acquireFeaturesStatusInfo(CMachine &comMachine, QString
     const QString strParavirt = gpConverter->toString(enmProvider);
 
     /* Compose tool-tip: */
-    strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Execution engine", "details report"),             strExecutionEngine);
-    strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Nested Paging"),                                  strNestedPaging);
-    strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Unrestricted Execution"),                         strUnrestrictExec);
-    strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Execution Cap", "details report"),                strCPUExecCap);
-    strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Paravirtualization Interface", "details report"), strParavirt);
+    strInfo += e_strTableRow2.arg(QApplication::translate("UIIndicatorFeatures", "Execution Engine"), strExecutionEngine);
+    strInfo += e_strTableRow2.arg(QApplication::translate("UIDetails", "Nested Paging", "details (system)"), strNestedPaging);
+    strInfo += e_strTableRow2.arg(QApplication::translate("UIIndicatorFeatures", "Unrestricted Execution"), strUnrestrictExec);
+    strInfo += e_strTableRow2.arg(QApplication::translate("UIDetails", "Execution Cap", "details (system)"), strCPUExecCap);
+    strInfo += e_strTableRow2.arg(QApplication::translate("UIIndicatorFeatures", "Paravirtualization Interface"), strParavirt);
 
     /* Add CPU count optional info: */
     const int cCpuCount = comMachine.GetCPUCount();
     if (cCpuCount > 1)
-        strInfo += e_strTableRow2.arg(QApplication::translate("UICommon", "Processors", "details report"), QString::number(cCpuCount));
+        strInfo += e_strTableRow2.arg(QApplication::translate("UIIndicatorFeatures", "Processors", "details report"), QString::number(cCpuCount));
 }
 
 QString UIDetailsGenerator::summarizeGenericProperties(const CNetworkAdapter &comAdapter)
