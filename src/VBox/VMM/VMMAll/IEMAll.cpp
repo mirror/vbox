@@ -739,7 +739,7 @@ DECLINLINE(void) iemTlbInvalidatePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPT
      * much less of a problem, in that the guest would also have to flip the
      * G bit to accomplish this.
      */
-    bool fMaybeLargePage = true;
+    int fMaybeLargePage = -1;
     if (pTlb->aEntries[idxEven].uTag == (GCPtrTag | pTlb->uTlbRevision))
     {
         pTlb->aEntries[idxEven].uTag = 0;
@@ -785,17 +785,33 @@ DECLINLINE(void) iemTlbInvalidatePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPT
             {
                 if ((pTlb->aEntries[idxEven].uTag & GCPtrTagMask) == GCPtrTag)
                 {
-                    Assert(pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); /* bad guest */
-                    pTlb->aEntries[idxEven].uTag = 0;
-                    if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
-                        pVCpu->iem.s.cbInstrBufTotal = 0;
+                    if (pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE)
+                    {
+                        pTlb->aEntries[idxEven].uTag = 0;
+                        if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
+                            pVCpu->iem.s.cbInstrBufTotal = 0;
+                        fMaybeLargePage = true;
+                    }
+                    else
+                    {
+                        Assert(fMaybeLargePage == -1);
+                        break;
+                    }
                 }
                 if ((pTlb->aEntries[idxEven + 1].uTag & GCPtrTagMask) == GCPtrTagGlob)
                 {
-                    Assert(pTlb->aEntries[idxEven + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); /* bad guest */
-                    pTlb->aEntries[idxEven + 1].uTag = 0;
-                    if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
-                        pVCpu->iem.s.cbInstrBufTotal = 0;
+                    if (pTlb->aEntries[idxEven + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE)
+                    {
+                        pTlb->aEntries[idxEven + 1].uTag = 0;
+                        if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
+                            pVCpu->iem.s.cbInstrBufTotal = 0;
+                        fMaybeLargePage = true;
+                    }
+                    else
+                    {
+                        Assert(fMaybeLargePage == -1);
+                        break;
+                    }
                 }
                 GCPtrTag++;
                 GCPtrTagGlob++;
@@ -822,17 +838,33 @@ DECLINLINE(void) iemTlbInvalidatePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPT
             {
                 if ((pTlb->aEntries[idxEven].uTag & GCPtrTagMask) == GCPtrTag)
                 {
-                    Assert(pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); /* bad guest */
-                    pTlb->aEntries[idxEven].uTag = 0;
-                    if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
-                        pVCpu->iem.s.cbInstrBufTotal = 0;
+                    if (pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE)
+                    {
+                        pTlb->aEntries[idxEven].uTag = 0;
+                        if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
+                            pVCpu->iem.s.cbInstrBufTotal = 0;
+                        fMaybeLargePage = true;
+                    }
+                    else
+                    {
+                        Assert(fMaybeLargePage == -1);
+                        break;
+                    }
                 }
                 if ((pTlb->aEntries[idxEven + 1].uTag & GCPtrTagMask) == GCPtrTagGlob)
                 {
-                    Assert(pTlb->aEntries[idxEven + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); /* bad guest */
-                    pTlb->aEntries[idxEven + 1].uTag = 0;
-                    if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
-                        pVCpu->iem.s.cbInstrBufTotal = 0;
+                    if (pTlb->aEntries[idxEven + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE)
+                    {
+                        pTlb->aEntries[idxEven + 1].uTag = 0;
+                        if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
+                            pVCpu->iem.s.cbInstrBufTotal = 0;
+                        fMaybeLargePage = true;
+                    }
+                    else
+                    {
+                        Assert(fMaybeLargePage == -1);
+                        break;
+                    }
                 }
                 GCPtrTag++;
                 GCPtrTagGlob++;
