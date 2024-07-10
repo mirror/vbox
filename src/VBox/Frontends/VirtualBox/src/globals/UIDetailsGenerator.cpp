@@ -356,11 +356,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
                 break;
             }
             default:
-            {
-                // For NLS purpose:
-                QApplication::translate("UIDetails", "Disabled", "details (system/EFI)");
                 break;
-            }
         }
     }
 

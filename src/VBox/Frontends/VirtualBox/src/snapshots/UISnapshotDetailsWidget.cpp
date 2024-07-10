@@ -1795,10 +1795,7 @@ QString UISnapshotDetailsWidget::efiStateReport(const CMachine &comMachine)
             break;
         }
         default:
-        {
-            /* strReport = */ QApplication::translate("UIDetails", "Disabled", "details (system/EFI)");
             break;
-        }
     }
     /* Return report: */
     return strReport;
