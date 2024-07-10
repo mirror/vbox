@@ -12312,7 +12312,7 @@
 
   <interface
     name="IHost" extends="$unknown"
-    uuid="e54f6256-97a7-4947-8a78-10c013ddf4b8"
+    uuid="89b05229-cecf-4ef6-816f-c0c13f2c4da3"
     wsmap="managed"
     rest="managed"
     reservedMethods="6" reservedAttributes="12"
@@ -12796,6 +12796,23 @@
     <attribute name="updateGuestAdditions" type="IUpdateAgent" readonly="yes">
         <desc>Checks for new Guest Additions versions.</desc>
     </attribute>
+
+    <method name="isExecutionEngineSupported">
+      <desc>
+        Returns whether the given execution engine is supported on the host.
+        This is primarily to check whether the native API is supported (think
+        of Hyper-V not being available due to not running in a Hyper-V root partition).
+      </desc>
+      <param name="cpuArchitecture" type="CPUArchitecture" dir="in">
+        <desc>The guest CPU architecture to check the execution engine for.</desc>
+      </param>
+      <param name="executionEngine" type="VMExecutionEngine" dir="in">
+        <desc>The execution engine to check.</desc>
+      </param>
+      <param name="isSupported" type="boolean" dir="return">
+        <desc>Flag indicating whether the given execution engine is supported on the host.</desc>
+      </param>
+    </method>
 
   </interface>
 
