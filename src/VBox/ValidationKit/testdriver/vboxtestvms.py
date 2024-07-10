@@ -1896,7 +1896,16 @@ class TestVmSet(object):
                     enmCpuArch = vboxcon.CPUArchitecture_ARMv8_32;
 
             try:
-                aenmExecEngines = oTestDrv.oVBox.systemProperties.getExecutionEnginesForVmCpuArchitecture(enmCpuArch);
+                #
+                # Get the list of theoretically supported execution engines and then filter
+                # out the ones the host doesn't support.
+                #
+                aenmExecEnginesTmp = oTestDrv.oVBox.systemProperties.getExecutionEnginesForVmCpuArchitecture(enmCpuArch);
+
+                aenmExecEngines = [];
+                for enmExecEngine in aenmExecEnginesTmp:
+                    if oTestDrv.oVBox.host.isExecutionEngineSupported(enmCpuArch, enmExecEngine):
+                        aenmExecEngines.append(enmExecEngine);
 
                 if 'raw' in asVirtModesWanted and not oTestDrv.hasRawModeSupport():
                     reporter.log('Raw-mode virtualization is not available in this build (or perhaps for this host), skipping it.');
@@ -1911,7 +1920,8 @@ class TestVmSet(object):
                     reporter.log('Nested paging not supported by the host, skipping it.');
                     asVirtModesWanted.remove('hwvirt-np');
 
-                if 'native-api' in asVirtModesWanted and not vboxcon.VMExecutionEngine_NativeApi in aenmExecEngines:
+                if 'native-api' in asVirtModesWanted and (   not vboxcon.VMExecutionEngine_NativeApi in aenmExecEngines \
+                                                          or not oTestDrv.oVBox.host.isExecutionEngineSupported(enmCpuArch, vboxcon.VMExecutionEngine_NativeApi)):
                     reporter.log('Native API (aka NEM) virtualization is not available in this build (or perhaps for this host) and VM CPU architecture, skipping it.');
                     asVirtModesWanted.remove('native-api');
 

@@ -161,13 +161,12 @@ typedef SOLARISFIXEDDISK *PSOLARISFIXEDDISK;
 #include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/system.h>
-#ifndef RT_OS_WINDOWS
-# include <iprt/path.h>
-#endif
+#include <iprt/path.h>
 #include <iprt/time.h>
 #ifdef RT_OS_WINDOWS
 # include <iprt/dir.h>
 # include <iprt/vfs.h>
+# include <iprt/utf16.h>
 #endif
 
 #ifdef VBOX_WITH_HOSTNETIF_API
@@ -2082,6 +2081,77 @@ HRESULT  Host::getHostDrives(std::vector<ComPtr<IHostDrive> > &aHostDrives)
         }
     }
     return hrc;
+}
+
+
+HRESULT Host::isExecutionEngineSupported(CPUArchitecture_T enmCpuArchitecture, VMExecutionEngine_T enmExecutionEngine, BOOL *pfIsSupported)
+{
+    *pfIsSupported = FALSE;
+
+    /* No need to lock anything as this is constant. */
+    switch (enmCpuArchitecture)
+    {
+        case CPUArchitecture_x86:
+        case CPUArchitecture_AMD64:
+        {
+            switch (enmExecutionEngine)
+            {
+                case VMExecutionEngine_Default:
+                case VMExecutionEngine_Interpreter:
+                    *pfIsSupported = TRUE;
+                    break;
+                case VMExecutionEngine_Recompiler:
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+                    *pfIsSupported = TRUE;
+#endif
+                    break;
+#ifdef RT_ARCH_AMD64
+# ifndef VBOX_WITH_DRIVERLESS_FORCED
+                case VMExecutionEngine_HwVirt:
+                    *pfIsSupported = TRUE; /** @todo Check whether our driver is actually accessible?. */
+                    break;
+# endif
+# ifdef VBOX_WITH_NATIVE_NEM
+                case VMExecutionEngine_NativeApi:
+                    *pfIsSupported = i_HostIsNativeApiSupported();
+                    break;
+# endif
+#endif
+                default:
+                    break;
+            }
+            break;
+        }
+
+        case CPUArchitecture_ARMv8_64:
+        {
+#ifdef VBOX_WITH_VIRT_ARMV8
+            switch (enmExecutionEngine)
+            {
+#ifdef RT_ARCH_ARM64
+# ifdef VBOX_WITH_NATIVE_NEM
+                case VMExecutionEngine_NativeApi:
+                    *pfIsSupported = i_HostIsNativeApiSupported();
+                    break;
+# endif
+#endif
+                default:
+                    break;
+            }
+#endif
+            break;
+        }
+
+        /* Not supported at all right now. */
+        case CPUArchitecture_ARMv8_32:
+            break;
+
+        default:
+            AssertFailed();
+            break;
+    }
+
+    return S_OK;
 }
 
 
@@ -4190,5 +4260,72 @@ HRESULT Host::i_getDrivesPathsList(std::list<std::pair<com::Utf8Str, com::Utf8St
     return E_NOTIMPL;
 #endif
 }
+
+
+#ifdef VBOX_WITH_NATIVE_NEM
+BOOL Host::i_HostIsNativeApiSupported()
+{
+# ifdef RT_OS_WINDOWS
+    WCHAR wszPath[MAX_PATH + 64];
+    UINT  cwcPath = GetSystemDirectoryW(wszPath, MAX_PATH);
+    if (cwcPath >= MAX_PATH || cwcPath < 2)
+        return FALSE;
+
+    if (wszPath[cwcPath - 1] != '\\' || wszPath[cwcPath - 1] != '/')
+        wszPath[cwcPath++] = '\\';
+    RTUtf16CopyAscii(&wszPath[cwcPath], RT_ELEMENTS(wszPath) - cwcPath, "WinHvPlatform.dll");
+    if (GetFileAttributesW(wszPath) == INVALID_FILE_ATTRIBUTES)
+        return FALSE;
+
+#  ifdef RT_ARCH_AMD64
+    /*
+     * Check that we're in a VM and that the hypervisor identifies itself as Hyper-V.
+     */
+    if (!ASMHasCpuId())
+        return FALSE;
+    if (!RTX86IsValidStdRange(ASMCpuId_EAX(0)))
+        return FALSE;
+    if (!(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_HVP))
+        return FALSE;
+
+    uint32_t cMaxHyperLeaf = 0;
+    uint32_t uEbx = 0;
+    uint32_t uEcx = 0;
+    uint32_t uEdx = 0;
+    ASMCpuIdExSlow(0x40000000, 0, 0, 0, &cMaxHyperLeaf, &uEbx, &uEcx, &uEdx);
+    if (!RTX86IsValidHypervisorRange(cMaxHyperLeaf))
+        return FALSE;
+    if (   uEbx != UINT32_C(0x7263694d) /* Micr */
+        || uEcx != UINT32_C(0x666f736f) /* osof */
+        || uEdx != UINT32_C(0x76482074) /* t Hv */)
+        return FALSE;
+    if (cMaxHyperLeaf >= UINT32_C(0x40000005))
+        return TRUE;
+#  endif
+# elif defined(RT_OS_LINUX)
+    int fdKvm = open("/dev/kvm", O_RDWR | O_CLOEXEC);
+    if (fdKvm >= 0)
+    {
+        /** @todo Do we need to do anything else here? */
+        close(fdKvm);
+        return TRUE;
+    }
+# elif defined(RT_OS_DARWIN)
+    /*
+     * The kern.hv_support parameter indicates support for the hypervisor API
+     * in the kernel.
+     */
+    int32_t fHvSupport = 0;
+    size_t  cbOld = sizeof(fHvSupport);
+    if (sysctlbyname("kern.hv_support", &fHvSupport, &cbOld, NULL, 0) == 0)
+    {
+        if (fHvSupport != 0)
+            return TRUE;
+    }
+# endif
+    return FALSE;
+}
+#endif
+
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

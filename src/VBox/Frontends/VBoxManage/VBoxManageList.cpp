@@ -2133,6 +2133,87 @@ static HRESULT listHostDrives(const ComPtr<IVirtualBox> pVirtualBox, bool fOptLo
 }
 
 
+static HRESULT listExecutionEnginesForCpuArchitecture(CPUArchitecture_T enmCpuArchitecture, const ComPtr<ISystemProperties> ptrSysProps, const ComPtr<IHost> pHost,
+                                                      HRESULT hrc)
+{
+    const char *pszArchitecture = "???";
+    switch (enmCpuArchitecture)
+    {
+        case CPUArchitecture_x86:      pszArchitecture = "x86"; break;
+        case CPUArchitecture_AMD64:    pszArchitecture = "AMD64"; break;
+        case CPUArchitecture_ARMv8_32: pszArchitecture = "ARMv8 (32-bit only)"; break;
+        case CPUArchitecture_ARMv8_64: pszArchitecture = "ARMv8 (64-bit)"; break;
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case CPUArchitecture_32BitHack:
+#endif
+        case CPUArchitecture_Any:
+            break;
+    }
+
+    /* Query all possible execution engines supported by the build. */
+    com::SafeArray<VMExecutionEngine_T> aExecutionEngines;
+    CHECK_ERROR2I_RET(ptrSysProps, GetExecutionEnginesForVmCpuArchitecture(enmCpuArchitecture,
+                                                                           ComSafeArrayAsOutParam(aExecutionEngines)), hrcCheck);
+
+    /* Don't dump anything if the architecture is not supported at all. */
+    if (aExecutionEngines.size())
+    {
+        /* Now filter out the ones the host actually supports. */
+        std::vector<VMExecutionEngine_T> vecExecEnginesSupported;
+        for (size_t i = 0; i < aExecutionEngines.size(); i++)
+        {
+            BOOL fSupported = FALSE;
+            CHECK_ERROR2I_RET(pHost, IsExecutionEngineSupported(enmCpuArchitecture, aExecutionEngines[i], &fSupported), hrcCheck);
+            if (fSupported)
+                vecExecEnginesSupported.push_back(aExecutionEngines[i]);
+        }
+
+        RTPrintf(List::tr("CPU Architecture: %s\n"), pszArchitecture);
+
+        /* Print what we've got. */
+        for (size_t i = 0; i < vecExecEnginesSupported.size(); i++)
+        {
+            const char *pszExecEngine = "???";
+            switch (vecExecEnginesSupported[i])
+            {
+                case VMExecutionEngine_Default:     pszExecEngine = "Default";     break;
+                case VMExecutionEngine_HwVirt:      pszExecEngine = "HwVirt";      break;
+                case VMExecutionEngine_NativeApi:   pszExecEngine = "NativeApi";   break;
+                case VMExecutionEngine_Interpreter: pszExecEngine = "Interpreter"; break;
+                case VMExecutionEngine_Recompiler:  pszExecEngine = "Recompiler";  break;
+                default: break;
+            }
+
+            RTPrintf("  #%02zu: %s\n", i, pszExecEngine);
+        }
+    }
+
+    return hrc;
+}
+
+
+/**
+ * List all execution engines supported by the host.
+ *
+ * @returns See produceList.
+ * @param   ptrVirtualBox       Reference to the smart IVirtualBox pointer.
+ */
+static HRESULT listExecutionEngines(const ComPtr<IVirtualBox> &ptrVirtualBox)
+{
+    ComPtr<ISystemProperties> ptrSysProps;
+    CHECK_ERROR2I_RET(ptrVirtualBox, COMGETTER(SystemProperties)(ptrSysProps.asOutParam()), hrcCheck);
+    ComPtr<IHost> pHost;
+    CHECK_ERROR2I_RET(ptrVirtualBox, COMGETTER(Host)(pHost.asOutParam()), hrcCheck);
+
+    HRESULT hrc = listExecutionEnginesForCpuArchitecture(CPUArchitecture_x86,      ptrSysProps, pHost, S_OK);
+            hrc = listExecutionEnginesForCpuArchitecture(CPUArchitecture_AMD64,    ptrSysProps, pHost, hrc);
+            hrc = listExecutionEnginesForCpuArchitecture(CPUArchitecture_ARMv8_32, ptrSysProps, pHost, hrc);
+            hrc = listExecutionEnginesForCpuArchitecture(CPUArchitecture_ARMv8_64, ptrSysProps, pHost, hrc);
+
+    return hrc;
+}
+
+
 /**
  * The type of lists we can produce.
  */
@@ -2177,7 +2258,8 @@ enum ListType_T
     kListCloudProviders,
     kListCloudProfiles,
     kListCPUProfiles,
-    kListHostDrives
+    kListHostDrives,
+    kListExecutionEngines
 };
 
 
@@ -2532,6 +2614,11 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
         case kListHostDrives:
             hrc = listHostDrives(pVirtualBox, fOptLong);
             break;
+
+        case kListExecutionEngines:
+            hrc = listExecutionEngines(pVirtualBox);
+            break;
+
         /* No default here, want gcc warnings. */
 
     } /* end switch */
@@ -2603,6 +2690,7 @@ RTEXITCODE handleList(HandlerArg *a)
         { "cloudprofiles",      kListCloudProfiles,      RTGETOPT_REQ_NOTHING },
         { "cpu-profiles",       kListCPUProfiles,        RTGETOPT_REQ_NOTHING },
         { "hostdrives",         kListHostDrives,         RTGETOPT_REQ_NOTHING },
+        { "execution-engines",  kListExecutionEngines,   RTGETOPT_REQ_NOTHING },
     };
 
     int                 ch;
@@ -2674,6 +2762,7 @@ RTEXITCODE handleList(HandlerArg *a)
             case kListCloudProfiles:
             case kListCPUProfiles:
             case kListHostDrives:
+            case kListExecutionEngines:
                 enmOptCommand = (enum ListType_T)ch;
                 if (fOptMultiple)
                 {
