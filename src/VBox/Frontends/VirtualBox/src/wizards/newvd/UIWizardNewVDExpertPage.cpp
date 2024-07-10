@@ -195,6 +195,8 @@ bool UIWizardNewVDExpertPage::isComplete() const
         return false;
     if (pWizard->mediumSize() > m_uMediumSizeMax || pWizard->mediumSize() < m_uMediumSizeMin)
         return false;
+    if (!m_pSizeAndPathGroup->filePathUnique() || !m_pSizeAndPathGroup->pathExists())
+        return false;
     return true;
 }
 

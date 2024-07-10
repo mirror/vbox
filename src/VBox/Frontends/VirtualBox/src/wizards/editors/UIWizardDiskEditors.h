@@ -136,7 +136,8 @@ public:
     qulonglong mediumSize() const;
     void setMediumSize(qulonglong uSize);
 
-    bool isComplete() const;
+    bool filePathUnique() const;
+    bool pathExists() const;
 
 private slots:
 

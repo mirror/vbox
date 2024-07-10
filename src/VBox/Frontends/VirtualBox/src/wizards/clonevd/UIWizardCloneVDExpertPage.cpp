@@ -181,16 +181,22 @@ void UIWizardCloneVDExpertPage::initializePage()
 
 bool UIWizardCloneVDExpertPage::isComplete() const
 {
-    bool fResult = true;
+    AssertReturn(m_pFormatComboBox, false);
+    AssertReturn(m_pVariantWidget, false);
+    AssertReturn(m_pMediumSizePathGroupBox, false);
 
-    if (m_pFormatComboBox)
-        fResult = m_pFormatComboBox->mediumFormat().isNull();
-    if (m_pVariantWidget)
-        fResult = m_pVariantWidget->isComplete();
-    if (m_pMediumSizePathGroupBox)
-        fResult =  m_pMediumSizePathGroupBox->isComplete();
+    if (m_pFormatComboBox->mediumFormat().isNull())
+        return false;
 
-    return fResult;
+    if (!m_pVariantWidget->isComplete())
+        return false;
+
+    if (!m_pMediumSizePathGroupBox->pathExists())
+        return false;
+    if (!m_pMediumSizePathGroupBox->filePathUnique())
+        return false;
+
+    return true;
 }
 
 bool UIWizardCloneVDExpertPage::validatePage()

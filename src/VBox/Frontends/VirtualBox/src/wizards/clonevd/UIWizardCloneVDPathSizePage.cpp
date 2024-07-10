@@ -99,7 +99,11 @@ void UIWizardCloneVDPathSizePage::initializePage()
 bool UIWizardCloneVDPathSizePage::isComplete() const
 {
     AssertReturn(m_pMediumSizePathGroupBox, false);
-    return m_pMediumSizePathGroupBox->isComplete();
+    if (!m_pMediumSizePathGroupBox->pathExists())
+        return false;
+    if (!m_pMediumSizePathGroupBox->filePathUnique())
+        return false;
+    return true;
 }
 
 bool UIWizardCloneVDPathSizePage::validatePage()

@@ -645,6 +645,10 @@ bool UIWizardNewVMExpertPage::isComplete() const
                                          UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("Invalid disk size"));
             fIsComplete = false;
         }
+        /* Check only the uniqueness of the file and not path existence since the vm folder (default medium path)
+         * has not been created yet: */
+        if (!m_pSizeAndLocationGroup->filePathUnique())
+            fIsComplete = false;
     }
     return fIsComplete;
 }
