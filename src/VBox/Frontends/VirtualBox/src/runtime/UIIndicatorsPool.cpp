@@ -543,9 +543,11 @@ protected slots:
         UISessionStateStatusBarIndicator::sltRetranslateUI();
 
         /* Append description with more info: */
-        const QString strAdaptersStatus = m_fAdaptersPresent ? tr("Adapters present") : tr("No network adapters");
-        const QString strCablesStatus = m_fCablesDisconnected ? tr("All cables disconnected") : QString();
-        m_strDescription = QString("%1, %2, %3").arg(m_strDescription, strAdaptersStatus, strCablesStatus);
+        QStringList info;
+        info << (m_fAdaptersPresent ? tr("Adapters present") : tr("No network adapters"));
+        if (m_fCablesDisconnected)
+            info << tr("All cables disconnected");
+        m_strDescription = QString("%1, %2").arg(m_strDescription, info.join(", "));
     }
 
 private:
@@ -716,6 +718,9 @@ public:
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorDisplay(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_Display, pMachine)
+        , m_uVRAMSize(0)
+        , m_cMonitorCount(0)
+        , m_fAcceleration3D(false)
     {
         /* Assign state-icons: */
         setStateIcon(DisplayState_Unavailable, UIIconPool::iconSet(":/display_software_disabled_16px.png"));
@@ -734,8 +739,10 @@ protected slots:
     virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
-        bool fAcceleration3D = false;
-        m_pMachine->acquireDisplayStatusInfo(strFullData, fAcceleration3D);
+        m_uVRAMSize = 0;
+        m_cMonitorCount = 0;
+        m_fAcceleration3D = false;
+        m_pMachine->acquireDisplayStatusInfo(strFullData, m_uVRAMSize, m_cMonitorCount, m_fAcceleration3D);
 
         /* Update tool-tip: */
         if (!strFullData.isEmpty())
@@ -744,7 +751,7 @@ protected slots:
         DisplayState enmState = DisplayState_Unavailable;
         if (m_pMachine->machineState() != KMachineState_Null)
         {
-            if (!fAcceleration3D)
+            if (!m_fAcceleration3D)
                 enmState = DisplayState_Software;
             else
                 enmState = DisplayState_Hardware;
@@ -754,6 +761,31 @@ protected slots:
         /* Retranslate finally: */
         sltRetranslateUI();
     }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        QStringList info;
+        info << tr("%1 MB").arg(m_uVRAMSize);
+        if (m_cMonitorCount > 1)
+            info << tr("%1 monitors connected").arg(m_cMonitorCount);
+        if (m_fAcceleration3D)
+            info << tr("3D acceleration enabled");
+        m_strDescription = QString("%1, %2").arg(m_strDescription, info.join(", "));
+    }
+
+private:
+
+    /** Holds the VRAM size. */
+    uint  m_uVRAMSize;
+    /** Holds the monitor count. */
+    uint  m_cMonitorCount;
+    /** Holds whether 3D acceleration is enabled. */
+    bool  m_fAcceleration3D;
 };
 
 

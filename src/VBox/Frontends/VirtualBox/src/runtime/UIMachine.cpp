@@ -936,9 +936,9 @@ void UIMachine::acquireSharedFoldersStatusInfo(QString &strInfo, uint &cFoldersC
     uisession()->acquireSharedFoldersStatusInfo(strInfo, cFoldersCount);
 }
 
-void UIMachine::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D)
+void UIMachine::acquireDisplayStatusInfo(QString &strInfo, uint &uVRAMSize, uint &cMonitorCount, bool &fAcceleration3D)
 {
-    uisession()->acquireDisplayStatusInfo(strInfo, fAcceleration3D);
+    uisession()->acquireDisplayStatusInfo(strInfo, uVRAMSize, cMonitorCount, fAcceleration3D);
 }
 
 void UIMachine::acquireRecordingStatusInfo(QString &strInfo, bool &fRecordingEnabled, bool &fMachinePaused)

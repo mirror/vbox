@@ -110,7 +110,7 @@ namespace UIDetailsGenerator
                                                              QString &strInfo, uint &cFoldersCount);
 
     SHARED_LIBRARY_STUFF void acquireDisplayStatusInfo(CMachine &comMachine, QString &strInfo,
-                                                       bool &fAcceleration3D);
+                                                       uint &uVRAMSize, uint &cMonitorCount, bool &fAcceleration3D);
 
     SHARED_LIBRARY_STUFF void acquireRecordingStatusInfo(CMachine &comMachine, QString &strInfo,
                                                          bool &fRecordingEnabled);
