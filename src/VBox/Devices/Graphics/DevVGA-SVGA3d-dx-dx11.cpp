@@ -848,6 +848,23 @@ static int vmsvgaDXCheckFormatSupportPreDX(PVMSVGA3DSTATE pState, SVGA3dSurfaceF
     return rc;
 }
 
+static int dxFormatAllowMultisample(DXGI_FORMAT dxgiFormat)
+{
+    /* Windows 11 guest does not allow multisample flag for a number of formats.
+     * D3D11 implementation on non-Windows hosts might return such flag.
+     */
+    switch (dxgiFormat)
+    {
+        case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+        case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+        case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+        case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+            return false;
+        default: break;
+    }
+    return true;
+}
+
 static int vmsvgaDXCheckFormatSupport(PVMSVGA3DSTATE pState, SVGA3dSurfaceFormat enmFormat, uint32_t *pu32DevCap)
 {
     int rc = VINF_SUCCESS;
@@ -892,7 +909,7 @@ static int vmsvgaDXCheckFormatSupport(PVMSVGA3DSTATE pState, SVGA3dSurfaceFormat
             {
                 UINT NumQualityLevels;
                 hr = pDevice->CheckMultisampleQualityLevels(dxgiFormat, 2, &NumQualityLevels);
-                if (SUCCEEDED(hr) && NumQualityLevels != 0)
+                if (SUCCEEDED(hr) && NumQualityLevels != 0 && dxFormatAllowMultisample(dxgiFormat))
                     *pu32DevCap |= SVGA3D_DXFMT_MULTISAMPLE;
             }
         }
