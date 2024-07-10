@@ -597,6 +597,12 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
             pbCodeBuf[off++] = RT_BYTE1(offPage); \
         } while (0)
 
+# ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+#  define NEAR_JMP_SIZE 5
+# else
+#  define NEAR_JMP_SIZE 6
+# endif
+
 # define CHECK_OPCODES_CMP_JMP() /* cost: 7 bytes first time, then 2 bytes */ do { \
             if (offConsolidatedJump != UINT32_MAX) \
             { \
@@ -607,8 +613,8 @@ iemNativeEmitBltInCheckOpcodes(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIE
             } \
             else \
             { \
-                pbCodeBuf[off++] = 0x74; /* jz near +6 */ \
-                pbCodeBuf[off++] = 0x06 + BP_ON_OBSOLETION; \
+                pbCodeBuf[off++] = 0x74; /* jz near +NEAR_JMP_SIZE */ \
+                pbCodeBuf[off++] = NEAR_JMP_SIZE + BP_ON_OBSOLETION; \
                 offConsolidatedJump = off; \
                 if (BP_ON_OBSOLETION) pbCodeBuf[off++] = 0xcc; \
                 off = iemNativeEmitTbExitEx(pReNative, pbCodeBuf, off, kIemNativeExitReason_ObsoleteTb); \

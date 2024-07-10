@@ -1402,7 +1402,7 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
 # ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
             case IEMTB_F_TYPE_NATIVE:
                 pHlp->pfnPrintf(pHlp, "PC=%RGp fFlags=%#x on #%u: %p - native\n", GCPhysPc, fFlags, pVCpu->idCpu, pTb);
-                iemNativeDisassembleTb(pTb, pHlp);
+                iemNativeDisassembleTb(pVCpu, pTb, pHlp);
                 break;
 # endif
 

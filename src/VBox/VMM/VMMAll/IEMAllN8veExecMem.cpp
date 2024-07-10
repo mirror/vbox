@@ -225,6 +225,10 @@ typedef struct IEMEXECMEMCHUNK
     void                   *pvChunkRw;
     /** Pointer to the readable/executable view of the memory chunk. */
     void                   *pvChunkRx;
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+    /** Pointer to the context structure detailing the per chunk common code. */
+    PCIEMNATIVEPERCHUNKCTX  pCtx;
+#endif
 #ifdef IN_RING3
     /**
      * Pointer to the unwind information.
@@ -346,6 +350,7 @@ typedef  IEMEXECMEMALLOCHDR *PIEMEXECMEMALLOCHDR;
 
 static int iemExecMemAllocatorGrow(PVMCPUCC pVCpu, PIEMEXECMEMALLOCATOR pExecMemAllocator);
 
+
 #ifdef IEMEXECMEM_ALT_SUB_WITH_ALT_PRUNING
 /**
  * Frees up executable memory when we're out space.
@@ -460,7 +465,8 @@ static void iemExecMemAllocatorPrune(PVMCPU pVCpu, PIEMEXECMEMALLOCATOR pExecMem
  */
 static void *
 iemExecMemAllocatorAllocInChunkInt(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint64_t *pbmAlloc, uint32_t idxFirst,
-                                   uint32_t cToScan, uint32_t cReqUnits, uint32_t idxChunk, PIEMTB pTb, void **ppvExec)
+                                   uint32_t cToScan, uint32_t cReqUnits, uint32_t idxChunk, PIEMTB pTb,
+                                   void **ppvExec, PCIEMNATIVEPERCHUNKCTX *ppChunkCtx)
 {
     /*
      * Shift the bitmap to the idxFirst bit so we can use ASMBitFirstClear.
@@ -497,6 +503,9 @@ iemExecMemAllocatorAllocInChunkInt(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint6
             void * const pvMemRw = (uint8_t *)pChunk->pvChunkRw
                                  + ((idxFirst + (uint32_t)iBit) << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT);
 
+            if (ppChunkCtx)
+                *ppChunkCtx = pChunk->pCtx;
+
             /*
              * Initialize the header and return.
              */
@@ -528,9 +537,9 @@ iemExecMemAllocatorAllocInChunkInt(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint6
 }
 
 
-static void *
+static PIEMNATIVEINSTR
 iemExecMemAllocatorAllocInChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint32_t idxChunk, uint32_t cbReq, PIEMTB pTb,
-                                void **ppvExec)
+                                PIEMNATIVEINSTR *ppaExec, PCIEMNATIVEPERCHUNKCTX *ppChunkCtx)
 {
     /*
      * Figure out how much to allocate.
@@ -549,13 +558,14 @@ iemExecMemAllocatorAllocInChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint32_t
         {
             void *pvRet = iemExecMemAllocatorAllocInChunkInt(pExecMemAllocator, pbmAlloc, idxHint,
                                                              pExecMemAllocator->cUnitsPerChunk - idxHint,
-                                                             cReqUnits, idxChunk, pTb, ppvExec);
+                                                             cReqUnits, idxChunk, pTb, (void **)ppaExec, ppChunkCtx);
             if (pvRet)
-                return pvRet;
+                return (PIEMNATIVEINSTR)pvRet;
         }
-        return iemExecMemAllocatorAllocInChunkInt(pExecMemAllocator, pbmAlloc, 0,
-                                                  RT_MIN(pExecMemAllocator->cUnitsPerChunk, RT_ALIGN_32(idxHint + cReqUnits, 64)),
-                                                  cReqUnits, idxChunk, pTb, ppvExec);
+        return (PIEMNATIVEINSTR)iemExecMemAllocatorAllocInChunkInt(pExecMemAllocator, pbmAlloc, 0,
+                                                                   RT_MIN(pExecMemAllocator->cUnitsPerChunk,
+                                                                          RT_ALIGN_32(idxHint + cReqUnits, 64)),
+                                                                   cReqUnits, idxChunk, pTb, (void **)ppaExec, ppChunkCtx);
     }
     return NULL;
 }
@@ -566,13 +576,17 @@ iemExecMemAllocatorAllocInChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint32_t
  *
  * @returns Pointer to the readable/writeable memory, NULL if out of memory or other problem
  *          encountered.
- * @param   pVCpu   The cross context virtual CPU structure of the calling
- *                  thread.
- * @param   cbReq   How many bytes are required.
- * @param   pTb     The translation block that will be using the allocation.
- * @param   ppvExec Where to return the pointer to executable view of the allocated memory, optional.
+ * @param   pVCpu       The cross context virtual CPU structure of the
+ *                      calling thread.
+ * @param   cbReq       How many bytes are required.
+ * @param   pTb         The translation block that will be using the allocation.
+ * @param   ppaExec     Where to return the pointer to executable view of
+ *                      the allocated memory, optional.
+ * @param   ppChunkCtx  Where to return the per chunk attached context
+ *                      if available, optional.
  */
-DECLHIDDEN(void *) iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq, PIEMTB pTb, void **ppvExec) RT_NOEXCEPT
+DECLHIDDEN(PIEMNATIVEINSTR) iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq, PIEMTB pTb,
+                                                     PIEMNATIVEINSTR *ppaExec, PCIEMNATIVEPERCHUNKCTX *ppChunkCtx) RT_NOEXCEPT
 {
     PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
     AssertReturn(pExecMemAllocator && pExecMemAllocator->uMagic == IEMEXECMEMALLOCATOR_MAGIC, NULL);
@@ -587,20 +601,22 @@ DECLHIDDEN(void *) iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq, PIEMTB
             uint32_t const idxChunkHint = pExecMemAllocator->idxChunkHint < cChunks ? pExecMemAllocator->idxChunkHint : 0;
             for (uint32_t idxChunk = idxChunkHint; idxChunk < cChunks; idxChunk++)
             {
-                void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq, pTb, ppvExec);
-                if (pvRet)
+                PIEMNATIVEINSTR const pRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq, pTb,
+                                                                             ppaExec, ppChunkCtx);
+                if (pRet)
                 {
                     STAM_PROFILE_STOP(&pExecMemAllocator->StatAlloc, a);
-                    return pvRet;
+                    return pRet;
                 }
             }
             for (uint32_t idxChunk = 0; idxChunk < idxChunkHint; idxChunk++)
             {
-                void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq, pTb, ppvExec);
-                if (pvRet)
+                PIEMNATIVEINSTR const pRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq, pTb,
+                                                                             ppaExec, ppChunkCtx);
+                if (pRet)
                 {
                     STAM_PROFILE_STOP(&pExecMemAllocator->StatAlloc, a);
-                    return pvRet;
+                    return pRet;
                 }
             }
         }
@@ -614,11 +630,12 @@ DECLHIDDEN(void *) iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq, PIEMTB
             AssertLogRelRCReturn(rc, NULL);
 
             uint32_t const idxChunk = pExecMemAllocator->cChunks - 1;
-            void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq, pTb, ppvExec);
-            if (pvRet)
+            PIEMNATIVEINSTR const pRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq, pTb,
+                                                                         ppaExec, ppChunkCtx);
+            if (pRet)
             {
                 STAM_PROFILE_STOP(&pExecMemAllocator->StatAlloc, a);
-                return pvRet;
+                return pRet;
             }
             AssertFailed();
         }
@@ -658,6 +675,7 @@ DECLHIDDEN(void) iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t
     /* sys_dcache_flush(pv, cb); - not necessary */
     sys_icache_invalidate(pv, cb);
     RT_NOREF(pVCpu);
+
 #elif defined(RT_OS_LINUX)
     RT_NOREF(pVCpu);
 
@@ -672,6 +690,7 @@ DECLHIDDEN(void) iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t
         asm volatile ("ic ivau, %0" : : "r" (pb) : "memory");
 
     asm volatile ("dsb ish\n\t isb\n\t" : : : "memory");
+
 #else
     RT_NOREF(pVCpu, pv, cb);
 #endif
@@ -747,6 +766,42 @@ DECLHIDDEN(void) iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb) RT_N
 }
 
 
+/**
+ * Interface used by iemNativeRecompileAttachExecMemChunkCtx and unwind info
+ * generators.
+ */
+DECLHIDDEN(PIEMNATIVEINSTR)
+iemExecMemAllocatorAllocFromChunk(PVMCPU pVCpu, uint32_t idxChunk, uint32_t cbReq, PIEMNATIVEINSTR *ppaExec)
+{
+    PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
+    AssertReturn(idxChunk < pExecMemAllocator->cChunks, NULL);
+    Assert(cbReq < _1M);
+    return iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq, NULL /*pTb*/, ppaExec, NULL /*ppChunkCtx*/);
+}
+
+
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+/**
+ * For getting the per-chunk context detailing common code for a TB.
+ *
+ * This is for use by the disassembler.
+ */
+DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemExecMemGetTbChunkCtx(PVMCPU pVCpu, PCIEMTB pTb)
+{
+    PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
+    if ((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE)
+    {
+        uintptr_t const uAddress = (uintptr_t)pTb->Native.paInstructions;
+        uint32_t const  cbChunk  = pExecMemAllocator->cbChunk;
+        uint32_t        idxChunk = pExecMemAllocator->cChunks;
+        while (idxChunk-- > 0)
+            if (uAddress - (uintptr_t)pExecMemAllocator->aChunks[idxChunk].pvChunkRx < cbChunk)
+                return pExecMemAllocator->aChunks[idxChunk].pCtx;
+    }
+    return NULL;
+}
+#endif
+
 
 #ifdef IN_RING3
 # ifdef RT_OS_WINDOWS
@@ -813,7 +868,7 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PVMCPUCC pVCpu, PIEMEXECMEM
     unsigned const cbUnwindInfo     = sizeof(s_aOpcodes) + RT_UOFFSETOF(IMAGE_UNWIND_INFO, aOpcodes);
     unsigned const cbNeeded         = sizeof(IMAGE_RUNTIME_FUNCTION_ENTRY) * cFunctionEntries + cbUnwindInfo;
     PIMAGE_RUNTIME_FUNCTION_ENTRY const paFunctions
-        = (PIMAGE_RUNTIME_FUNCTION_ENTRY)iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbNeeded, NULL, NULL);
+        = (PIMAGE_RUNTIME_FUNCTION_ENTRY)iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbNeeded, NULL, NULL, NULL);
     AssertReturn(paFunctions, VERR_INTERNAL_ERROR_5);
     pExecMemAllocator->aChunks[idxChunk].pvUnwindInfo = paFunctions;
 
@@ -1049,7 +1104,7 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PVMCPUCC pVCpu, PIEMEXECMEM
      * This seems to work best with ET_DYN.
      */
     GDBJITSYMFILE * const pSymFile = (GDBJITSYMFILE *)iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk,
-                                                                                      sizeof(GDBJITSYMFILE), NULL, NULL);
+                                                                                      sizeof(GDBJITSYMFILE), NULL, NULL, NULL);
     AssertReturn(pSymFile, VERR_INTERNAL_ERROR_5);
     unsigned const offSymFileInChunk = (uintptr_t)pSymFile - (uintptr_t)pvChunk;
 
@@ -1392,33 +1447,41 @@ static int iemExecMemAllocatorGrow(PVMCPUCC pVCpu, PIEMEXECMEMALLOCATOR pExecMem
      * chunk readable/executable somewhere else so we can save us the hassle of switching between
      * protections when exeuctable memory is allocated.
      */
+    int               rc           = VERR_NO_EXEC_MEMORY;
     mach_port_t       hPortTask    = mach_task_self();
     mach_vm_address_t AddrChunk    = (mach_vm_address_t)pvChunk;
     mach_vm_address_t AddrRemapped = 0;
-    vm_prot_t ProtCur, ProtMax;
+    vm_prot_t         ProtCur      = 0;
+    vm_prot_t         ProtMax      = 0;
     kern_return_t krc = mach_vm_remap(hPortTask, &AddrRemapped, pExecMemAllocator->cbChunk, 0,
                                       VM_FLAGS_ANYWHERE | VM_FLAGS_RETURN_DATA_ADDR,
                                       hPortTask, AddrChunk, FALSE, &ProtCur, &ProtMax,
                                       VM_INHERIT_NONE);
-    if (krc != KERN_SUCCESS)
+    if (krc == KERN_SUCCESS)
     {
-        RTMemPageFree(pvChunk, pExecMemAllocator->cbChunk);
-        AssertLogRelFailed();
-        return VERR_NO_EXEC_MEMORY;
+        krc = mach_vm_protect(mach_task_self(), AddrRemapped, pExecMemAllocator->cbChunk, FALSE, VM_PROT_READ | VM_PROT_EXECUTE);
+        if (krc == KERN_SUCCESS)
+            rc = VINF_SUCCESS;
+        else
+        {
+            AssertLogRelMsgFailed(("mach_vm_protect -> %d (%#x)\n", krc, krc));
+            krc = mach_vm_deallocate(hPortTask, AddrRemapped, pExecMemAllocator->cbChunk);
+            Assert(krc == KERN_SUCCESS);
+        }
     }
-
-    krc = mach_vm_protect(mach_task_self(), AddrRemapped, pExecMemAllocator->cbChunk, FALSE, VM_PROT_READ | VM_PROT_EXECUTE);
-    if (krc != KERN_SUCCESS)
+    else
+        AssertLogRelMsgFailed(("mach_vm_remap -> %d (%#x)\n", krc, krc));
+    if (RT_FAILURE(rc))
     {
-        krc = mach_vm_deallocate(hPortTask, AddrRemapped, pExecMemAllocator->cbChunk);
-        Assert(krc == KERN_SUCCESS);
         RTMemPageFree(pvChunk, pExecMemAllocator->cbChunk);
-        AssertLogRelFailed();
-        return VERR_NO_EXEC_MEMORY;
+        return rc;
     }
 
     void *pvChunkRx = (void *)AddrRemapped;
 #else
+# if defined(IN_RING3) || defined(IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE)
+    int   rc        = VINF_SUCCESS;
+# endif
     void *pvChunkRx = pvChunk;
 #endif
 
@@ -1444,12 +1507,21 @@ static int iemExecMemAllocatorGrow(PVMCPUCC pVCpu, PIEMEXECMEMALLOCATOR pExecMem
     pExecMemAllocator->cbTotal     += pExecMemAllocator->cbChunk;
     pExecMemAllocator->cbFree      += pExecMemAllocator->cbChunk;
 
+    /* If there is a chunk context init callback call it. */
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+    pExecMemAllocator->aChunks[idxChunk].pCtx = iemNativeRecompileAttachExecMemChunkCtx(pVCpu, idxChunk);
+    if (pExecMemAllocator->aChunks[idxChunk].pCtx)
+#endif
+    {
 #ifdef IN_RING3
-    /*
-     * Initialize the unwind information (this cannot really fail atm).
-     * (This sets pvUnwindInfo.)
-     */
-    int rc = iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(pVCpu, pExecMemAllocator, pvChunkRx, idxChunk);
+        /*
+         * Initialize the unwind information (this cannot really fail atm).
+         * (This sets pvUnwindInfo.)
+         */
+        rc = iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(pVCpu, pExecMemAllocator, pvChunkRx, idxChunk);
+#endif
+    }
+#if defined(IN_RING3) || defined(IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE)
     if (RT_SUCCESS(rc))
     { /* likely */ }
     else
@@ -1463,16 +1535,17 @@ static int iemExecMemAllocatorGrow(PVMCPUCC pVCpu, PIEMEXECMEMALLOCATOR pExecMem
         pExecMemAllocator->aChunks[idxChunk].pvChunkRw  = NULL;
         pExecMemAllocator->aChunks[idxChunk].cFreeUnits = 0;
 
-#ifdef RT_OS_DARWIN
+# ifdef RT_OS_DARWIN
         krc = mach_vm_deallocate(mach_task_self(), (mach_vm_address_t)pExecMemAllocator->aChunks[idxChunk].pvChunkRx,
                                  pExecMemAllocator->cbChunk);
         Assert(krc == KERN_SUCCESS);
-#endif
+# endif
 
         RTMemPageFree(pvChunk, pExecMemAllocator->cbChunk);
         return rc;
     }
 #endif
+
     return VINF_SUCCESS;
 }
 
@@ -1522,6 +1595,14 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
                 cbChunk = RT_BIT_32(ASMBitLastSetU32(cbChunk));
         }
     }
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+# if   defined(RT_OS_AMD64)
+    Assert(cbChunk <= _2G);
+# elif defined(RT_OS_ARM64)
+    if (cbChunk > _128M)
+        cbChunk = _128M; /* Max relative branch distance is +/-2^(25+2) = +/-0x8000000 (134 217 728). */
+# endif
+#endif
 
     if (cbChunk > cbMax)
         cbMax = cbChunk;

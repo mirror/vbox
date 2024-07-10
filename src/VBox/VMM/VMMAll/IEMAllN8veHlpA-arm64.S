@@ -94,28 +94,6 @@ BEGINPROC_HIDDEN iemNativeTbEntry
          */
         br      x2
 
-#ifdef IEMNATIVE_WITH_RECOMPILER_EPILOGUE_SINGLETON
-/**
- * This is the common epilog for all TBs, restoring all volatile registers
- * and cleaning up the stack frame. This is a direct jump target and not a
- * real function to call using bl/blr.
- */
-ALIGNCODE(IEM_HLP_FUNCTION_ALIGNMENT)
-BEGINPROC_HIDDEN iemNativeTbEpilog
-        ldp     x19, x20, [sp, #IEMNATIVE_FRAME_VAR_SIZE]!
-        ldp     x21, x22, [sp, #0x10]
-        ldp     x23, x24, [sp, #0x20]
-        ldp     x25, x26, [sp, #0x30]
-        ldp     x27, x28, [sp, #0x40]
-        ldp     x29, x30, [sp, #0x50]
-        add     sp, sp, #IEMNATIVE_FRAME_SAVE_REG_SIZE
-# ifdef RT_OS_DARWIN
-        retab
-# else
-        ret
-# endif
-#endif
-
 
 /**
  * This does the epilogue of a TB, given the RBP for the frame and eax value to return.

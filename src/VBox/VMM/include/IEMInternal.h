@@ -6377,13 +6377,19 @@ bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb);
 bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb);
 
 /* Native recompiler public bits: */
+
 DECLHIDDEN(PIEMTB)  iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT;
-DECLHIDDEN(void)    iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEXCEPT;
+DECLHIDDEN(void)    iemNativeDisassembleTb(PVMCPU pVCpu, PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEXCEPT;
 int                 iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, uint32_t cbChunk) RT_NOEXCEPT;
-DECLHIDDEN(void *)  iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq, PIEMTB pTb, void **ppvExec) RT_NOEXCEPT;
+DECLHIDDEN(PIEMNATIVEINSTR) iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq, PIEMTB pTb, PIEMNATIVEINSTR *ppaExec,
+                                                     struct IEMNATIVEPERCHUNKCTX const **ppChunkCtx) RT_NOEXCEPT;
+DECLHIDDEN(PIEMNATIVEINSTR) iemExecMemAllocatorAllocFromChunk(PVMCPU pVCpu, uint32_t idxChunk, uint32_t cbReq,
+                                                              PIEMNATIVEINSTR *ppaExec);
 DECLHIDDEN(void)    iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t cb) RT_NOEXCEPT;
 void                iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb) RT_NOEXCEPT;
 DECLASM(DECL_NO_RETURN(void)) iemNativeTbLongJmp(void *pvFramePointer, int rc) RT_NOEXCEPT;
+DECLHIDDEN(struct IEMNATIVEPERCHUNKCTX const *) iemExecMemGetTbChunkCtx(PVMCPU pVCpu, PCIEMTB pTb);
+DECLHIDDEN(struct IEMNATIVEPERCHUNKCTX const *) iemNativeRecompileAttachExecMemChunkCtx(PVMCPU pVCpu, uint32_t idxChunk);
 
 #endif /* !RT_IN_ASSEMBLER - ASM-NOINC-END */
 

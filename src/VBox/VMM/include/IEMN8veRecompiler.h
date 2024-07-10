@@ -58,7 +58,6 @@
 # define IEMNATIVE_WITH_EFLAGS_SKIPPING
 #endif
 
-
 /** @def IEMNATIVE_STRICT_EFLAGS_SKIPPING
  * Enables strict consistency checks around EFLAGS skipping.
  * @note Only defined when IEMNATIVE_WITH_EFLAGS_SKIPPING is also defined. */
@@ -81,11 +80,12 @@
 # define IEMNATIVE_WITH_RECOMPILER_PROLOGUE_SINGLETON
 #endif
 
-/** @def IEMNATIVE_WITH_RECOMPILER_EPILOGUE_SINGLETON
- * Enables having only a single epilogue for native TBs. */
-#if defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
-# define IEMNATIVE_WITH_RECOMPILER_EPILOGUE_SINGLETON
+/** @def IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+ * Enable this to use common epilogue and tail code for all TBs in a chunk. */
+#if 1 || defined(DOXYGEN_RUNNING)
+# define IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
 #endif
+
 
 /** @name Stack Frame Layout
  *
@@ -465,7 +465,6 @@ typedef enum
     kIemNativeExitReason_ObsoleteTb,
     kIemNativeExitReason_NeedCsLimChecking,
     kIemNativeExitReason_CheckBranchMiss,
-    kIemNativeExitReason_Return, /** @todo Eliminate (needed for the compile assertion below). */
     kIemNativeExitReason_ReturnBreak,
     kIemNativeExitReason_ReturnBreakFF,
     kIemNativeExitReason_ReturnBreakViaLookup,
@@ -474,6 +473,8 @@ typedef enum
     kIemNativeExitReason_ReturnBreakViaLookupWithTlbAndIrq,
     kIemNativeExitReason_ReturnWithFlags,
     kIemNativeExitReason_NonZeroRetOrPassUp,
+    kIemNativeExitReason_Return,                /**< This is a little bit special, but needs to be included here. */
+    kIemNativeExitReason_Max
 } IEMNATIVEEXITREASON;
 
 
@@ -502,7 +503,6 @@ typedef enum
     kIemNativeLabelType_CheckBranchMiss,
     kIemNativeLabelType_LastSimple = kIemNativeLabelType_CheckBranchMiss,
     /* Manually defined labels. */
-    kIemNativeLabelType_Return,
     kIemNativeLabelType_ReturnBreak,
     kIemNativeLabelType_ReturnBreakFF,
     kIemNativeLabelType_ReturnBreakViaLookup,
@@ -511,8 +511,13 @@ typedef enum
     kIemNativeLabelType_ReturnBreakViaLookupWithTlbAndIrq,
     kIemNativeLabelType_ReturnWithFlags,
     kIemNativeLabelType_NonZeroRetOrPassUp,
-    /** The last fixup for branches that can span almost the whole TB length. */
-    kIemNativeLabelType_LastWholeTbBranch = kIemNativeLabelType_NonZeroRetOrPassUp,
+    kIemNativeLabelType_Return,
+    /** The last fixup for branches that can span almost the whole TB length.
+     * @note Whether kIemNativeLabelType_Return needs to be one of these is
+     *       a bit questionable, since nobody jumps to it except other tail code. */
+    kIemNativeLabelType_LastWholeTbBranch = kIemNativeLabelType_Return,
+    /** The last fixup for branches that exits the TB. */
+    kIemNativeLabelType_LastTbExit        = kIemNativeLabelType_Return,
 
     /*
      * Labels with data, potentially multiple instances per TB:
@@ -530,8 +535,13 @@ typedef enum
     kIemNativeLabelType_End
 } IEMNATIVELABELTYPE;
 
-/* Temporary kludge until all jumps to TB exit labels are converted to the new TB exiting style,
- * see @bugref{10677}. */
+/** Temporary kludge until all jumps to TB exit labels are converted to the new TB exiting style,
+ * see @bugref{10677}.
+ * @note update bird: This won't happen, unfortunately, since we'll keep using
+ *       the local labels on arm64 so we can avoid inverting branch conditions
+ *       and inserting extra of unconditional branches in order to reach the
+ *       common code.  Instead we'll have everyone jump to the same tail lable
+ *       which then jumps to the common (per chunk) code. */
 #define IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(a_Reason) \
     ((int)kIemNativeLabelType_ ## a_Reason == (int)kIemNativeExitReason_ ## a_Reason)
 AssertCompile(   IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseDe)
@@ -546,7 +556,6 @@ AssertCompile(   IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseDe)
               && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ObsoleteTb)
               && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(NeedCsLimChecking)
               && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(CheckBranchMiss)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(Return)
               && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreak)
               && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakFF)
               && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookup)
@@ -554,7 +563,9 @@ AssertCompile(   IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseDe)
               && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookupWithTlb)
               && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookupWithTlbAndIrq)
               && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnWithFlags)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(NonZeroRetOrPassUp));
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(NonZeroRetOrPassUp)
+              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(Return));
+AssertCompile((int)kIemNativeExitReason_Max == (int)kIemNativeLabelType_LastTbExit + 1);
 
 
 /** Native code generator label definition. */
@@ -604,6 +615,34 @@ typedef struct IEMNATIVEFIXUP
 } IEMNATIVEFIXUP;
 /** Pointer to a native code generator fixup. */
 typedef IEMNATIVEFIXUP *PIEMNATIVEFIXUP;
+
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+
+/** Native code generator fixup to per chunk TB tail code. */
+typedef struct IEMNATIVEEXITFIXUP
+{
+    /** Code offset of the fixup location. */
+    uint32_t    off;
+    /** The exit reason (IEMNATIVEEXITREASON). */
+    uint32_t    enmExitReason;
+} IEMNATIVEEXITFIXUP;
+/** Pointer to a native code generator TB exit fixup. */
+typedef IEMNATIVEEXITFIXUP *PIEMNATIVEEXITFIXUP;
+
+/**
+ * Per executable memory chunk context with addresses for common code.
+ */
+typedef struct IEMNATIVEPERCHUNKCTX
+{
+    /** Pointers to the exit labels */
+    PIEMNATIVEINSTR apExitLabels[kIemNativeExitReason_Max];
+} IEMNATIVEPERCHUNKCTX;
+/** Pointer to per-chunk recompiler context. */
+typedef IEMNATIVEPERCHUNKCTX *PIEMNATIVEPERCHUNKCTX;
+/** Pointer to const per-chunk recompiler context. */
+typedef const IEMNATIVEPERCHUNKCTX *PCIEMNATIVEPERCHUNKCTX;
+
+#endif /* IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE */
 
 
 /**
@@ -1425,6 +1464,15 @@ typedef struct IEMRECOMPILERSTATE
     /** Buffer used by the recompiler for recording fixups when generating code. */
     PIEMNATIVEFIXUP             paFixups;
 
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+    /** Actual number of fixups in paTbExitFixups. */
+    uint32_t                    cTbExitFixups;
+    /** Max number of entries allowed in paTbExitFixups before reallocating it. */
+    uint32_t                    cTbExitFixupsAlloc;
+    /** Buffer used by the recompiler for recording fixups when generating code. */
+    PIEMNATIVEEXITFIXUP         paTbExitFixups;
+#endif
+
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
     /** Number of debug info entries allocated for pDbgInfo. */
     uint32_t                    cDbgInfoAlloc;
@@ -1637,6 +1685,9 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, 
 DECL_HIDDEN_THROW(void)     iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, uint32_t idxLabel, uint32_t offWhere);
 DECL_HIDDEN_THROW(void)     iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idxLabel,
                                               IEMNATIVEFIXUPTYPE enmType, int8_t offAddend = 0);
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+DECL_HIDDEN_THROW(void)     iemNativeAddTbExitFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, IEMNATIVEEXITREASON enmExitReason);
+#endif
 DECL_HIDDEN_THROW(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t cInstrReq);
 
 DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, bool fPreferVolatile = true);
@@ -1778,6 +1829,9 @@ IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseDe,(PVMCPUCC pVCpu));
 IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpObsoleteTb,(PVMCPUCC pVCpu));
 IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpNeedCsLimChecking,(PVMCPUCC pVCpu));
 IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpCheckBranchMiss,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseAvxRelated,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseSseRelated,(PVMCPUCC pVCpu));
+IEM_DECL_NATIVE_HLP_PROTO(int,      iemNativeHlpExecRaiseSseAvxFpRelated,(PVMCPUCC pVCpu));
 
 IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
 IEM_DECL_NATIVE_HLP_PROTO(uint64_t, iemNativeHlpMemFetchDataU8_Sx_U16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg));
@@ -2582,12 +2636,6 @@ extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeTbEntry, (PVMCPUCC pVCpu, uintp
 # elif defined(RT_ARCH_ARM64)
 extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeTbEntry, (PVMCPUCC pVCpu, PCPUMCTX pCpumCtx, uintptr_t pfnTbBody));
 # endif
-#endif
-
-#ifdef IEMNATIVE_WITH_RECOMPILER_EPILOGUE_SINGLETON
-/** The common epilog jumped to from a TB.
- * @note This is not a callable function! */
-extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeTbEpilog, (void));
 #endif
 
 #endif /* !RT_IN_ASSEMBLER - ASM-NOINC-END */
