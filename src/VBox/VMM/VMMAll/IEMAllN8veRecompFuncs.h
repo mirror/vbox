@@ -7143,6 +7143,12 @@ AssertCompileSize(X86XMMREG, sizeof(RTUINT128U));
                                                sizeof(RTUINT128U), sizeof(RTUINT128U) - 1, kIemNativeEmitMemOp_Fetch, \
                                                (uintptr_t)iemNativeHlpMemFetchDataU128NoAc, pCallEntry->idxInstr)
 
+#define IEM_MC_FETCH_MEM_XMM_NO_AC(a_u128Dst, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u128Dst, a_iSeg, a_GCPtrMem, \
+                                               sizeof(X86XMMREG), sizeof(X86XMMREG) - 1, kIemNativeEmitMemOp_Fetch, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU128NoAc, pCallEntry->idxInstr)
+
+
 /* 128-bit flat: */
 #define IEM_MC_FETCH_MEM_FLAT_U128(a_u128Dst, a_GCPtrMem) \
     off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u128Dst, UINT8_MAX, a_GCPtrMem, \
@@ -7186,6 +7192,11 @@ AssertCompileSize(X86XMMREG, sizeof(RTUINT128U));
     off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u256Dst, a_iSeg, a_GCPtrMem, sizeof(RTUINT256U), \
                                                (sizeof(RTUINT256U) - 1U) | IEM_MEMMAP_F_ALIGN_GP, kIemNativeEmitMemOp_Fetch, \
                                                (uintptr_t)iemNativeHlpMemFetchDataU256AlignedAvx, pCallEntry->idxInstr)
+
+#define IEM_MC_FETCH_MEM_YMM_NO_AC(a_u256Dst, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u256Dst, a_iSeg, a_GCPtrMem, \
+                                               sizeof(X86YMMREG), sizeof(X86YMMREG) - 1, kIemNativeEmitMemOp_Fetch, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU256NoAc, pCallEntry->idxInstr)
 
 
 /* 256-bit flat: */
