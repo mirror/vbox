@@ -3540,6 +3540,14 @@ typedef union X86YMMREG
     uint32_t    au32[8];
     /** 64-bit view. */
     uint64_t    au64[4];
+    /** Signed 8-bit view. */
+    int8_t      ai8[32];
+    /** Signed 16-bit view. */
+    int16_t     ai16[16];
+    /** Signed 32-bit view. */
+    int32_t     ai32[8];
+    /** Signed 64-bit view. */
+    int64_t     ai64[4];
     /** 128-bit view. (yeah, very helpful) */
     uint128_t   au128[2];
     /** Single precision floating point view. */
@@ -3570,6 +3578,14 @@ typedef union X86ZMMREG
     uint32_t    au32[16];
     /** 64-bit view. */
     uint64_t    au64[8];
+    /** Signed 8-bit view. */
+    int8_t      ai8[64];
+    /** Signed 16-bit view. */
+    int16_t     ai16[32];
+    /** Signed 32-bit view. */
+    int32_t     ai32[16];
+    /** Signed 64-bit view. */
+    int64_t     ai64[8];
     /** 128-bit view. (yeah, very helpful) */
     uint128_t   au128[4];
     /** Single precision floating point view. */
