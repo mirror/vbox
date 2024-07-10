@@ -2028,7 +2028,7 @@ void UISession::acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnabled, uint &
     UIDetailsGenerator::acquireUsbStatusInfo(comMachine, comConsole, strInfo, fUsbEnabled, cUsbFilterCount);
 }
 
-void UISession::acquireSharedFoldersStatusInfo(QString &strInfo, bool &fFoldersPresent)
+void UISession::acquireSharedFoldersStatusInfo(QString &strInfo, uint &cFoldersCount)
 {
     CMachine comMachine = machine();
     if (comMachine.isNull())
@@ -2039,7 +2039,7 @@ void UISession::acquireSharedFoldersStatusInfo(QString &strInfo, bool &fFoldersP
     CGuest comGuest = guest();
     if (comGuest.isNull())
         return;
-    UIDetailsGenerator::acquireSharedFoldersStatusInfo(comMachine, comConsole, comGuest, strInfo, fFoldersPresent);
+    UIDetailsGenerator::acquireSharedFoldersStatusInfo(comMachine, comConsole, comGuest, strInfo, cFoldersCount);
 }
 
 void UISession::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D)

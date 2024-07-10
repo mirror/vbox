@@ -621,7 +621,7 @@ protected slots:
         /* Append description with more info: */
         const QString strUsbStatus = m_fUsbEnabled ? tr("USB enabled") : tr("USB disabled");
         const QString strFilterCount = m_cUsbFilterCount ? tr("%1 USB devices attached").arg(m_cUsbFilterCount)
-                                                         : tr("No USB devices attached", "USB tooltip");
+                                                         : tr("No USB devices attached");
         m_strDescription = QString("%1, %2, %3").arg(m_strDescription, strUsbStatus, strFilterCount);
     }
 
@@ -631,7 +631,6 @@ private:
     bool  m_fUsbEnabled;
     /** Holds USB device filter count. */
     uint  m_cUsbFilterCount;
-
 };
 
 
@@ -645,6 +644,7 @@ public:
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorSharedFolders(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_SharedFolders, pMachine)
+        , m_cFoldersCount(0)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/sf_16px.png"));
@@ -666,18 +666,35 @@ protected slots:
     virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
-        bool fFoldersPresent = false;
-        m_pMachine->acquireSharedFoldersStatusInfo(strFullData, fFoldersPresent);
+        m_cFoldersCount = 0;
+        m_pMachine->acquireSharedFoldersStatusInfo(strFullData, m_cFoldersCount);
 
         /* Update tool-tip: */
         if (!strFullData.isEmpty())
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
-        setState(fFoldersPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        setState(m_cFoldersCount ? KDeviceActivity_Idle : KDeviceActivity_Null);
 
         /* Retranslate finally: */
         sltRetranslateUI();
     }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        const QString strFoldersCount = m_cFoldersCount ? tr("%1 shared folders").arg(m_cFoldersCount)
+                                                         : tr("No shared folders");
+        m_strDescription = QString("%1, %2").arg(m_strDescription, strFoldersCount);
+    }
+
+private:
+
+    /** Holds the amount of folders. */
+    uint  m_cFoldersCount;
 };
 
 

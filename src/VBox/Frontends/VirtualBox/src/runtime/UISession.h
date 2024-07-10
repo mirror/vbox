@@ -518,7 +518,7 @@ public:
         /** Acquires status info for USB indicator. */
         void acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnabled, uint &cUsbFilterCount);
         /** Acquires status info for Shared Folders indicator. */
-        void acquireSharedFoldersStatusInfo(QString &strInfo, bool &fFoldersPresent);
+        void acquireSharedFoldersStatusInfo(QString &strInfo, uint &cFoldersCount);
         /** Acquires status info for Display indicator. */
         void acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D);
         /** Acquires status info for Recording indicator. */

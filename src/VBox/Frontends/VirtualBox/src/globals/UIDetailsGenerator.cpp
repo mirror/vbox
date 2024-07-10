@@ -1404,7 +1404,7 @@ void UIDetailsGenerator::acquireUsbStatusInfo(CMachine &comMachine, CConsole &co
 }
 
 void UIDetailsGenerator::acquireSharedFoldersStatusInfo(CMachine &comMachine, CConsole &comConsole, CGuest &comGuest,
-                                                        QString &strInfo, bool &fFoldersPresent)
+                                                        QString &strInfo, uint &cFoldersCount)
 {
     /* Enumerate all the folders: */
     QMap<QString, QString> folders;
@@ -1412,7 +1412,7 @@ void UIDetailsGenerator::acquireSharedFoldersStatusInfo(CMachine &comMachine, CC
         folders.insert(comPermanentFolder.GetName(), comPermanentFolder.GetHostPath());
     foreach (const CSharedFolder &comTemporaryFolder, comConsole.GetSharedFolders())
         folders.insert(comTemporaryFolder.GetName(), comTemporaryFolder.GetHostPath());
-    fFoldersPresent = !folders.isEmpty();
+    cFoldersCount = folders.size();
 
     /* Append attachment data: */
     for (QMap<QString, QString>::const_iterator it = folders.constBegin(); it != folders.constEnd(); ++it)
@@ -1425,7 +1425,7 @@ void UIDetailsGenerator::acquireSharedFoldersStatusInfo(CMachine &comMachine, CC
     }
 
     /* Handle 'no-folders' case: */
-    if (!fFoldersPresent)
+    if (!cFoldersCount)
         strInfo = e_strTableRow1
             .arg(QApplication::translate("UIIndicatorSharedFolders", "No shared folders"));
 }

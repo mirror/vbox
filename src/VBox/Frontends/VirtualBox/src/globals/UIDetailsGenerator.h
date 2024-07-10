@@ -107,7 +107,7 @@ namespace UIDetailsGenerator
                                                    QString &strInfo, bool &fUsbEnabled, uint &cUsbFilterCount);
 
     SHARED_LIBRARY_STUFF void acquireSharedFoldersStatusInfo(CMachine &comMachine, CConsole &comConsole, CGuest &comGuest,
-                                                             QString &strInfo, bool &fFoldersPresent);
+                                                             QString &strInfo, uint &cFoldersCount);
 
     SHARED_LIBRARY_STUFF void acquireDisplayStatusInfo(CMachine &comMachine, QString &strInfo,
                                                        bool &fAcceleration3D);

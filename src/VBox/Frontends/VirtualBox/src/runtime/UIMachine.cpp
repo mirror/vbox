@@ -931,9 +931,9 @@ void UIMachine::acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnabled, uint &
     uisession()->acquireUsbStatusInfo(strInfo, fUsbEnabled, cUsbFilterCount);
 }
 
-void UIMachine::acquireSharedFoldersStatusInfo(QString &strInfo, bool &fFoldersPresent)
+void UIMachine::acquireSharedFoldersStatusInfo(QString &strInfo, uint &cFoldersCount)
 {
-    uisession()->acquireSharedFoldersStatusInfo(strInfo, fFoldersPresent);
+    uisession()->acquireSharedFoldersStatusInfo(strInfo, cFoldersCount);
 }
 
 void UIMachine::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D)
