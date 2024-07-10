@@ -1487,13 +1487,17 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                                                      empReport(strGc, strGcOld));
 
             /* Acceleration? */
-            const QString strAcceleration = displayAccelerationReport(comGraphics);
-            const QString strAccelerationOld = displayAccelerationReport(comGraphicsOld);
-            if (!strAcceleration.isNull())
+            const QString str3DAccelerationStatus = comGraphics.GetAccelerate3DEnabled()
+                                                  ? QApplication::translate("UIDetails", "Enabled", "details (display/3D Acceleration)")
+                                                  : QString();
+            const QString str3DAccelerationStatusOld = comGraphicsOld.GetAccelerate3DEnabled()
+                                                     ? QApplication::translate("UIDetails", "Enabled", "details (display/3D Acceleration)")
+                                                     : QString();
+            if (!str3DAccelerationStatus.isNull())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Acceleration", "details (display)"),
-                                                         empReport(strAcceleration, strAccelerationOld));
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "3D Acceleration", "details (display)"),
+                                                         empReport(str3DAccelerationStatus, str3DAccelerationStatusOld));
             }
 
             /* Remote Desktop Server: */
@@ -1873,18 +1877,6 @@ double UISnapshotDetailsWidget::scaleFactorReport(CMachine comMachine)
         dReport = 1.0;
     /* Return report: */
     return dReport;
-}
-
-/* static */
-QString UISnapshotDetailsWidget::displayAccelerationReport(CGraphicsAdapter comGraphics)
-{
-    /* Prepare report: */
-    QStringList aReport;
-    /* 3D Acceleration? */
-    if (comGraphics.GetAccelerate3DEnabled())
-        aReport << QApplication::translate("UIDetails", "3D", "details (display)");
-    /* Compose and return report: */
-    return aReport.isEmpty() ? QString() : aReport.join(", ");
 }
 
 /* static */

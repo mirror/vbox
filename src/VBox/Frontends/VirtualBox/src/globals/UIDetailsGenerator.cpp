@@ -499,16 +499,12 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
                                      .arg(gpConverter->toString(enmType)));
     }
 
-    /* Acceleration: */
+    /* 3D acceleration: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration)
     {
-        QStringList acceleration;
-        /* 3D acceleration: */
         if (comGraphics.GetAccelerate3DEnabled())
-            acceleration << QApplication::translate("UIDetails", "3D", "details (display)");
-        if (!acceleration.isEmpty())
-            table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (display)"),
-                                     acceleration.join(", "));
+            table << UITextTableLine(QApplication::translate("UIDetails", "3D Acceleration", "details (display)"),
+                                     QApplication::translate("UIDetails", "Enabled", "details (display/3D Acceleration)"));
     }
 
     /* Remote desktop server: */
@@ -1460,13 +1456,9 @@ void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString 
     /* 3D acceleration: */
     fAcceleration3D = comGraphics.GetAccelerate3DEnabled();
     if (fAcceleration3D)
-    {
-        const QString strAcceleration3D = fAcceleration3D
-            ? QApplication::translate("UICommon", "Enabled", "details report (3D Acceleration)")
-            : QApplication::translate("UICommon", "Disabled", "details report (3D Acceleration)");
         strInfo += e_strTableRow2
-            .arg(QApplication::translate("UIIndicatorDisplay", "3D acceleration"), strAcceleration3D);
-    }
+            .arg(QApplication::translate("UIDetails", "3D Acceleration", "details (display)"),
+                 QApplication::translate("UIDetails", "Enabled", "details (display/3D Acceleration)"));
 }
 
 void UIDetailsGenerator::acquireRecordingStatusInfo(CMachine &comMachine, QString &strInfo,

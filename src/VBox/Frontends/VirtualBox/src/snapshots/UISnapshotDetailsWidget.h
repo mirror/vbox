@@ -183,8 +183,6 @@ private:
     static QString accelerationReport(const CMachine &comMachine);
     /** Acquires @a comMachine scale-factor report. */
     static double scaleFactorReport(CMachine comMachine);
-    /** Acquires @a comMachine display acceleration report. */
-    static QString displayAccelerationReport(CGraphicsAdapter comGraphics);
     /** Acquires @a comMachine VRDE server report. */
     static QStringList vrdeServerReport(CMachine comMachine);
     /** Acquires @a comMachine recording report. */
