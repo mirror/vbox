@@ -401,15 +401,14 @@ int RecordingStream::process(const RecordingBlockSet &streamBlocks, RecordingBlo
  * @param   rcWait              Result of the encoding thread's wait operation.
  *                              Can be used for figuring out if the encoder has to perform some
  *                              worked based on that result.
+ * @param   msTimestamp         Timestamp to use for PTS calculation (absolute).
  * @param   commonBlocks        Common blocks multiplexed to all recording streams.
  *
  * @note    Runs in encoding thread.
  */
-int RecordingStream::ThreadMain(int rcWait, RecordingBlockMap &commonBlocks)
+int RecordingStream::ThreadMain(int rcWait, uint64_t msTimestamp, RecordingBlockMap &commonBlocks)
 {
-    Log3Func(("uScreenID=%RU16, rcWait=%Rrc\n", m_uScreenID, rcWait));
-
-    uint64_t const msTimestamp = m_pCtx->GetCurrentPTS();
+    Log3Func(("uScreenID=%RU16, msTimestamp=%RU64, rcWait=%Rrc\n", m_uScreenID, msTimestamp, rcWait));
 
     /* No new data arrived within time? Feed the encoder with the last frame we built.
      *

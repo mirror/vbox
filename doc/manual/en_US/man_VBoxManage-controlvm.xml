@@ -480,6 +480,34 @@
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
+<!--
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-start">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">recording start</arg>
+      <arg><replaceable>wait</replaceable></arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-stop">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">recording stop</arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-attach">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">recording attach</arg>
+    </cmdsynopsis>-->
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-screens">
       <command>VBoxManage controlvm</command>
@@ -1496,6 +1524,36 @@
         value is <literal>off</literal>.
       </para>
     </refsect2>
+<!--
+    <refsect2 id="vboxmanage-controlvm-recording-start">
+      <title>Starts the Recording of a Virtual Machine Session</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> recording start</command> command
+        starts the recording of a VM session into a
+        WebM/VP8 file.
+      </para>
+    </refsect2>
+    <refsect2 id="vboxmanage-controlvm-recording-stop">
+      <title>Stops the Recording of a Virtual Machine Session</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> recording stop</command> command
+        stops the recording of a VM session.
+      </para>
+    </refsect2>
+    <refsect2 id="vboxmanage-controlvm-recording-attach">
+      <title>Attaches to a running Recording of a Virtual Machine Session</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> recording attach</command> command
+        attaches to a running recording of a VM session.
+      </para>
+    </refsect2>
+-->
     <refsect2 id="vboxmanage-controlvm-recording-screens">
       <title>Specify the Virtual Machine Screens to Record</title>
       <remark role="help-copy-synopsis"/>

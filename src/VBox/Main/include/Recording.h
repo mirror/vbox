@@ -35,6 +35,7 @@
 #include <VBox/settings.h>
 
 #include "RecordingStream.h"
+#include "ProgressImpl.h"
 
 class Console;
 
@@ -122,8 +123,6 @@ public:
 
     RecordingContext();
 
-    RecordingContext(Console *ptrConsole, const settings::RecordingSettings &Settings);
-
     virtual ~RecordingContext(void);
 
 public:
@@ -135,11 +134,13 @@ public:
     PRECORDINGCODEC GetCodecAudio(void) { return &this->m_CodecAudio; }
 #endif
 
-    int Create(Console *pConsole, const settings::RecordingSettings &Settings);
+    int Create(Console *pConsole, const settings::RecordingSettings &Settings, ComPtr<IProgress> &pProgress);
     void Destroy(void);
 
     int Start(void);
     int Stop(void);
+
+    int SetError(int rc, const com::Utf8Str &strText);
 
     int SendAudioFrame(const void *pvData, size_t cbData, uint64_t uTimestampMs);
     int SendVideoFrame(uint32_t uScreen, PRECORDINGVIDEOFRAME pFrame, uint64_t msTimestamp);
@@ -166,7 +167,8 @@ public:
 
 protected:
 
-    int createInternal(Console *ptrConsole, const settings::RecordingSettings &Settings);
+    int createInternal(Console *ptrConsole, const settings::RecordingSettings &Settings, ComPtr<IProgress> &pProgress);
+    void reset(void);
     int startInternal(void);
     int stopInternal(void);
 
@@ -182,6 +184,13 @@ protected:
 
     int onLimitReached(uint32_t uScreen, int vrc);
 
+    bool progressIsCanceled(void) const;
+    bool progressIsCompleted(void) const;
+    int progressCreate(const settings::RecordingSettings &Settings, ComObjPtr<Progress> &pProgress);
+    int progressNotifyComplete(HRESULT hrc = S_OK, IVirtualBoxErrorInfo *pErrorInfo = NULL);
+    int progressSet(uint32_t uOp, const Bstr &strDesc);
+    int progressSet(uint64_t msTimestamp);
+
     static DECLCALLBACK(int) threadMain(RTTHREAD hThreadSelf, void *pvUser);
 
     int threadNotify(void);
@@ -190,7 +199,13 @@ protected:
 
     int audioInit(const settings::RecordingScreenSettings &screenSettings);
 
-    static DECLCALLBACK(int) audioCodecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags, void *pvUser);
+protected:
+
+    static DECLCALLBACK(void) s_progressCancelCallback(void *pvUser);
+
+    static DECLCALLBACK(void) s_recordingStateChangedCallback(RecordingContext *pCtx, RECORDINGSTS enmSts, uint32_t uScreen, int vrc, void *pvUser);
+
+    static DECLCALLBACK(int)  s_audioCodecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags, void *pvUser);
 
 protected:
 
@@ -206,6 +221,13 @@ protected:
     RTCRITSECT                   m_CritSect;
     /** Semaphore to signal the encoding worker thread. */
     RTSEMEVENT                   m_WaitEvent;
+    /** Current operation of progress. Set to 0 if not started yet, >= 1 if started. */
+    ULONG                        m_ulCurOp;
+    /** Number of progress operations. Always >= 1. */
+    ULONG                        m_cOps;
+    /** The progress object assigned to this context.
+     *  Might be NULL if not being used. */
+    const ComObjPtr<Progress>    m_pProgress;
     /** Shutdown indicator. */
     bool                         m_fShutdown;
     /** Encoding worker thread. */
@@ -235,7 +257,7 @@ protected:
      *  the encoded data to all affected recording streams.
      *
      *  This avoids doing the (expensive) encoding + multiplexing work in other
-     *  threads like EMT / audio async I/O..
+     *  threads like EMT / audio async I/O.
      *
      *  For now this only affects audio, e.g. all recording streams
      *  need to have the same audio data at a specific point in time. */

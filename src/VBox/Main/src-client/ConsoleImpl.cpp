@@ -6093,124 +6093,139 @@ HRESULT Console::i_sendACPIMonitorHotPlugEvent()
  * Enables or disables recording of a VM.
  *
  * @returns VBox status code.
- * @retval  VERR_NO_CHANGE if the recording state has not been changed.
+ * @retval  VINF_NO_CHANGE if the recording state has not been changed.
  * @param   fEnable             Whether to enable or disable the recording.
  * @param   pAutoLock           Pointer to auto write lock to use for attaching/detaching required driver(s) at runtime.
+ * @param   pProgress           Progress object to use. Optional and can be NULL.
  */
-int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
+int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock, ComPtr<IProgress> &pProgress)
 {
     AssertPtrReturn(pAutoLock, VERR_INVALID_POINTER);
+
+    bool const fIsEnabled = mRecording.mCtx.IsStarted();
+
+    if (RT_BOOL(fEnable) == fIsEnabled) /* No change? Bail out. */
+        return VINF_NO_CHANGE;
 
     int vrc = VINF_SUCCESS;
 
     Display *pDisplay = i_getDisplay();
-    if (pDisplay)
+    AssertPtrReturn(pDisplay, VERR_INVALID_POINTER);
+
+    LogRel(("Recording: %s\n", fEnable ? "Enabling" : "Disabling"));
+
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
     {
-        bool const fIsEnabled = mRecording.mCtx.IsStarted();
-
-        if (RT_BOOL(fEnable) != fIsEnabled)
+        if (fEnable)
         {
-            LogRel(("Recording: %s\n", fEnable ? "Enabling" : "Disabling"));
-
-            SafeVMPtrQuiet ptrVM(this);
-            if (ptrVM.isOk())
+            vrc = i_recordingCreate(pProgress);
+            if (RT_SUCCESS(vrc))
             {
-                if (fEnable)
-                {
-                    vrc = i_recordingCreate();
-                    if (RT_SUCCESS(vrc))
-                    {
 # ifdef VBOX_WITH_AUDIO_RECORDING
-                        /* Attach the video recording audio driver if required. */
-                        if (   mRecording.mCtx.IsFeatureEnabled(RecordingFeature_Audio)
-                            && mRecording.mAudioRec)
-                        {
-                            vrc = mRecording.mAudioRec->applyConfiguration(mRecording.mCtx.GetConfig());
-                            if (RT_SUCCESS(vrc))
-                                vrc = mRecording.mAudioRec->doAttachDriverViaEmt(ptrVM.rawUVM(), ptrVM.vtable(), pAutoLock);
-
-                            if (RT_FAILURE(vrc))
-                                setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Attaching to audio recording driver failed (%Rrc) -- please consult log file for details"), vrc);
-                        }
-# endif
-                        if (   RT_SUCCESS(vrc)
-                            && mRecording.mCtx.IsReady()) /* Any video recording (audio and/or video) feature enabled? */
-                        {
-                            vrc = i_recordingStart(pAutoLock);
-                            if (RT_FAILURE(vrc))
-                                setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Recording start failed (%Rrc) -- please consult log file for details"), vrc);
-                        }
-                    }
-                    else
-                        setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Recording initialization failed (%Rrc) -- please consult log file for details"), vrc);
+                /* Attach the video recording audio driver if required. */
+                if (   mRecording.mCtx.IsFeatureEnabled(RecordingFeature_Audio)
+                    && mRecording.mAudioRec)
+                {
+                    vrc = mRecording.mAudioRec->applyConfiguration(mRecording.mCtx.GetConfig());
+                    if (RT_SUCCESS(vrc))
+                        vrc = mRecording.mAudioRec->doAttachDriverViaEmt(ptrVM.rawUVM(), ptrVM.vtable(), pAutoLock);
 
                     if (RT_FAILURE(vrc))
-                        LogRel(("Recording: Failed to enable with %Rrc\n", vrc));
+                        mRecording.mCtx.SetError(vrc, Utf8StrFmt(tr("Attaching audio recording driver failed (%Rrc)"), vrc));
                 }
-                else
-                {
-                    vrc = i_recordingStop(pAutoLock);
-                    if (RT_SUCCESS(vrc))
-                    {
-# ifdef VBOX_WITH_AUDIO_RECORDING
-                        if (mRecording.mAudioRec)
-                            mRecording.mAudioRec->doDetachDriverViaEmt(ptrVM.rawUVM(), ptrVM.vtable(), pAutoLock);
 # endif
-                        i_recordingDestroy();
-                    }
-                    else
-                       setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Recording stop failed (%Rrc) -- please consult log file for details"), vrc);
+                if (   RT_SUCCESS(vrc)
+                    && mRecording.mCtx.IsReady()) /* Any video recording (audio and/or video) feature enabled? */
+                {
+                    vrc = i_recordingStart(pAutoLock);
                 }
             }
-            else
-                vrc = VERR_VM_INVALID_VM_STATE;
 
             if (RT_FAILURE(vrc))
-                LogRel(("Recording: %s failed with %Rrc\n", fEnable ? "Enabling" : "Disabling", vrc));
+                LogRel(("Recording: Failed to enable with %Rrc\n", vrc));
         }
-        else /* Should not happen. */
+        else /* Disable */
         {
-            vrc = VERR_NO_CHANGE;
-            setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Recording already %s"), fIsEnabled ? tr("enabled") : tr("disabled"));
+            vrc = i_recordingStop(pAutoLock);
+            if (RT_SUCCESS(vrc))
+            {
+# ifdef VBOX_WITH_AUDIO_RECORDING
+                if (mRecording.mAudioRec)
+                {
+                    vrc = mRecording.mAudioRec->doDetachDriverViaEmt(ptrVM.rawUVM(), ptrVM.vtable(), pAutoLock);
+                    if (RT_FAILURE(vrc))
+                        mRecording.mCtx.SetError(vrc, Utf8StrFmt(tr("Detaching audio recording driver failed (%Rrc) -- please consult log file for details"), vrc));
+                }
+# endif
+                i_recordingDestroy();
+            }
         }
     }
+    else
+        vrc = VERR_VM_INVALID_VM_STATE;
+
+    if (RT_FAILURE(vrc))
+        LogRel(("Recording: %s failed with %Rrc\n", fEnable ? "Enabling" : "Disabling", vrc));
 
     return vrc;
 }
 #endif /* VBOX_WITH_RECORDING */
 
 /**
- * Called by IInternalSessionControl::OnRecordingChange().
+ * Called by IInternalSessionControl::OnRecordingStateChange().
  */
-HRESULT Console::i_onRecordingChange(BOOL fEnabled)
+HRESULT Console::i_onRecordingStateChange(BOOL aEnable, ComPtr<IProgress> &aProgress)
 {
-    AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.hrc());
+#ifdef VBOX_WITH_RECORDING
+    HRESULT hrc = S_OK;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT hrc = S_OK;
-#ifdef VBOX_WITH_RECORDING
+    LogRel2(("Recording: State changed (%s)\n", aEnable ? "enabled" : "disabled"));
+
     /* Don't trigger recording changes if the VM isn't running. */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
-        LogFlowThisFunc(("fEnabled=%RTbool\n", RT_BOOL(fEnabled)));
+        ComPtr<IVirtualBoxErrorInfo> pErrorInfo;
 
-        int vrc = i_recordingEnable(fEnabled, &alock);
-        if (RT_SUCCESS(vrc))
+        int vrc = i_recordingEnable(aEnable, &alock, aProgress);
+        if (RT_FAILURE(vrc))
         {
-            alock.release();
-            ::FireRecordingChangedEvent(mEventSource);
+            /* If available, get the error information from the progress object and fire it via the event below. */
+            if (aProgress.isNotNull())
+            {
+                hrc = aProgress->COMGETTER(ErrorInfo(pErrorInfo.asOutParam()));
+                AssertComRCReturn(hrc, hrc);
+            }
         }
-        else /* Error set via ErrorInfo within i_recordingEnable() already. */
-            hrc = VBOX_E_IPRT_ERROR;
+
+        alock.release(); /* Release lock before firing event. */
+
+        if (vrc != VINF_NO_CHANGE)
+            ::FireRecordingStateChangedEvent(mEventSource, aEnable, pErrorInfo);
+
+        if (RT_FAILURE(vrc))
+            hrc = VBOX_E_RECORDING_ERROR;
+
         ptrVM.release();
     }
-#else
-    RT_NOREF(fEnabled);
-#endif /* VBOX_WITH_RECORDING */
+
     return hrc;
+#else
+    RT_NOREF(aEnabled, aProgress);
+    ReturnComNotImplemented();
+#endif /* VBOX_WITH_RECORDING */
+}
+
+/**
+ * Called by IInternalSessionControl::OnRecordingScreenStateChange().
+ */
+HRESULT Console::i_onRecordingScreenStateChange(BOOL aEnable, ULONG aScreen)
+{
+    RT_NOREF(aEnable, aScreen);
+    ReturnComNotImplemented();
 }
 
 /**
@@ -7603,22 +7618,15 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
  *
  * @returns VBox status code.
  */
-int Console::i_recordingCreate(void)
+int Console::i_recordingCreate(ComPtr<IProgress> &pProgress)
 {
     settings::RecordingSettings recordingSettings;
     int vrc = i_recordingGetSettings(recordingSettings);
     if (RT_SUCCESS(vrc))
-    {
-        vrc = mRecording.mCtx.Create(this, recordingSettings);
-        if (RT_SUCCESS(vrc))
-        {
-            RecordingContext::CALLBACKS Callbacks;
-            RT_ZERO(Callbacks);
-            Callbacks.pfnStateChanged = Console::s_recordingOnStateChangedCallback;
+        vrc = mRecording.mCtx.Create(this, recordingSettings, pProgress);
 
-            mRecording.mCtx.SetCallbacks(&Callbacks, this /* pvUser */);
-        }
-    }
+    if (RT_FAILURE(vrc))
+        setErrorBoth(VBOX_E_RECORDING_ERROR, vrc, tr("Recording initialization failed (%Rrc) -- please consult log file for details"), vrc);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -7630,29 +7638,6 @@ int Console::i_recordingCreate(void)
 void Console::i_recordingDestroy(void)
 {
     mRecording.mCtx.Destroy();
-}
-
-/** @copydoc RecordingContext::CALLBACKS::pfnStateChanged */
-DECLCALLBACK(void) Console::s_recordingOnStateChangedCallback(RecordingContext *pCtx,
-                                                              RECORDINGSTS enmSts, uint32_t uScreen, int vrc, void *pvUser)
-{
-    RT_NOREF(pCtx, vrc);
-
-    Console *pThis = (Console *)pvUser;
-    AssertPtrReturnVoid(pThis);
-
-    switch (enmSts)
-    {
-        case RECORDINGSTS_LIMIT_REACHED:
-        {
-            if (uScreen == UINT32_MAX) /* Limit for all screens reached? Disable recording. */
-                pThis->i_onRecordingChange(FALSE /* Disable */);
-            break;
-        }
-
-        default:
-            break;
-    }
 }
 
 /**
@@ -7667,11 +7652,12 @@ int Console::i_recordingStart(util::AutoWriteLock *pAutoLock /* = NULL */)
     if (mRecording.mCtx.IsStarted())
         return VINF_SUCCESS;
 
-    LogRel(("Recording: Starting ...\n"));
-
     int vrc = mRecording.mCtx.Start();
     if (RT_SUCCESS(vrc))
         vrc = mDisplay->i_recordingStart();
+
+    if (RT_FAILURE(vrc))
+        mRecording.mCtx.SetError(vrc, Utf8StrFmt(tr("Recording start failed (%Rrc)"), vrc).c_str());
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -7688,11 +7674,12 @@ int Console::i_recordingStop(util::AutoWriteLock *)
     if (!mRecording.mCtx.IsStarted())
         return VINF_SUCCESS;
 
-    LogRel(("Recording: Stopping ...\n"));
-
     int vrc = mRecording.mCtx.Stop();
     if (RT_SUCCESS(vrc))
         vrc = mDisplay->i_recordingStop();
+
+    if (RT_FAILURE(vrc))
+        setErrorBoth(VBOX_E_RECORDING_ERROR, vrc, tr("Recording stop failed (%Rrc)"), vrc);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -11393,35 +11380,41 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                  */
                 pConsole->i_consoleVRDPServer()->EnableConnections();
 
+                /* Release the lock before a lengthy operation. */
+                alock.release();
+
 #ifdef VBOX_WITH_RECORDING
                 /*
-                 * Enable recording if configured.
+                 * Start recording if configured.
                  */
-                BOOL fRecordingEnabled = FALSE;
-                {
-                    ComPtr<IRecordingSettings> ptrRecordingSettings;
-                    hrc = pConsole->mMachine->COMGETTER(RecordingSettings)(ptrRecordingSettings.asOutParam());
-                    AssertComRCBreak(hrc, RT_NOTHING);
+                ComPtr<IRecordingSettings> pRecordingSettings;
+                hrc = pConsole->mMachine->COMGETTER(RecordingSettings)(pRecordingSettings.asOutParam());
+                AssertComRCBreak(hrc, RT_NOTHING);
 
-                    hrc = ptrRecordingSettings->COMGETTER(Enabled)(&fRecordingEnabled);
-                    AssertComRCBreak(hrc, RT_NOTHING);
-                }
+                BOOL fRecordingEnabled = FALSE;
+                hrc = pRecordingSettings->COMGETTER(Enabled)(&fRecordingEnabled);
+                AssertComRCBreak(hrc, RT_NOTHING);
+
                 if (fRecordingEnabled)
                 {
-                    vrc = pConsole->i_recordingEnable(fRecordingEnabled, &alock);
-                    if (RT_SUCCESS(vrc))
-                        ::FireRecordingChangedEvent(pConsole->mEventSource);
-                    else
+                    ComPtr<IProgress> pProgress;
+                    hrc = pRecordingSettings->Start(pProgress.asOutParam());
+                    if (FAILED(hrc))
                     {
-                        LogRel(("Recording: Failed with %Rrc on VM power up\n", vrc));
-                        vrc = VINF_SUCCESS; /* do not fail with broken recording */
+                        com::ErrorInfoKeeper eik;
+                        ComPtr<IVirtualBoxErrorInfo> pErrorInfo = eik.takeError();
+                        Bstr strMsg;
+                        hrc = pErrorInfo->COMGETTER(Text)(strMsg.asOutParam());
+                        AssertComRCBreak(hrc, RT_NOTHING);
+                        LONG lRc;
+                        hrc = pErrorInfo->COMGETTER(ResultCode)(&lRc);
+                        AssertComRCBreak(hrc, RT_NOTHING);
+
+                        LogRel(("Recording: Failed to start on VM power up: %ls (%Rrc)\n",
+                                strMsg.raw(), lRc));
                     }
                 }
 #endif
-
-                /* release the lock before a lengthy operation */
-                alock.release();
-
                 /*
                  * Capture USB devices.
                  */

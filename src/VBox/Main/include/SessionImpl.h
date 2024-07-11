@@ -119,7 +119,8 @@ private:
                         BOOL aAdd);
     HRESULT onCPUExecutionCapChange(ULONG aExecutionCap);
     HRESULT onVRDEServerChange(BOOL aRestart);
-    HRESULT onRecordingChange(BOOL aEnable);
+    HRESULT onRecordingStateChange(BOOL aEnable, ComPtr<IProgress> &aProgress);
+    HRESULT onRecordingScreenStateChange(BOOL aEnable, ULONG aScreen);
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange(BOOL aGlobal);
     HRESULT onGuestDebugControlChange(const ComPtr<IGuestDebugControl> &aGuestDebugControl);

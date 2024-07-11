@@ -2898,7 +2898,17 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         ComPtr<IRecordingSettings> recordingSettings;
         CHECK_ERROR_RET(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()), hrc);
 
-        BOOL  fEnabled;
+        BOOL fStarted = FALSE;
+        ComPtr<IProgress> progress;
+        hrc = recordingSettings->COMGETTER(Progress)(progress.asOutParam());
+        if (SUCCEEDED(hrc))
+        {
+            hrc = progress->COMGETTER(Completed)(&fStarted);
+            fStarted = !fStarted;
+        }
+        SHOW_BOOL_VALUE_EX("recording_started", Info::tr("Recording status:"), fStarted, Info::tr("started"), Info::tr("stopped"));
+
+        BOOL fEnabled;
         CHECK_ERROR_RET(recordingSettings, COMGETTER(Enabled)(&fEnabled), hrc);
         SHOW_BOOL_VALUE_EX("recording_enabled", Info::tr("Recording enabled:"), fEnabled, Info::tr("yes"), Info::tr("no"));
 

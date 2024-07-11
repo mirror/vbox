@@ -553,6 +553,8 @@ public:
     virtual HRESULT i_onSerialPortChange(ISerialPort * /* serialPort */) { return S_OK; }
     virtual HRESULT i_onParallelPortChange(IParallelPort * /* parallelPort */) { return S_OK; }
     virtual HRESULT i_onVRDEServerChange(BOOL /* aRestart */) { return S_OK; }
+    virtual HRESULT i_onRecordingStateChange(BOOL /* aEnable */, IProgress **) { return S_OK; }
+    virtual HRESULT i_onRecordingScreenStateChange(BOOL /* aEnable */, ULONG /* aScreen */) { return S_OK; }
     virtual HRESULT i_onUSBControllerChange() { return S_OK; }
     virtual HRESULT i_onStorageControllerChange(const com::Guid & /* aMachineId */, const com::Utf8Str & /* aControllerName */) { return S_OK; }
     virtual HRESULT i_onCPUChange(ULONG /* aCPU */, BOOL /* aRemove */) { return S_OK; }
@@ -566,7 +568,6 @@ public:
     virtual HRESULT i_onBandwidthGroupChange(IBandwidthGroup * /* aBandwidthGroup */) { return S_OK; }
     virtual HRESULT i_onStorageDeviceChange(IMediumAttachment * /* mediumAttachment */, BOOL /* remove */,
                                             BOOL /* silent */) { return S_OK; }
-    virtual HRESULT i_onRecordingChange(BOOL /* aEnable */) { return S_OK; }
     virtual HRESULT i_onGuestDebugControlChange(IGuestDebugControl * /* guestDebugControl */) { return S_OK; }
 
 
@@ -1392,7 +1393,8 @@ public:
     HRESULT i_onParallelPortChange(IParallelPort *parallelPort) RT_OVERRIDE;
     HRESULT i_onCPUChange(ULONG aCPU, BOOL aRemove) RT_OVERRIDE;
     HRESULT i_onVRDEServerChange(BOOL aRestart) RT_OVERRIDE;
-    HRESULT i_onRecordingChange(BOOL aEnable) RT_OVERRIDE;
+    HRESULT i_onRecordingStateChange(BOOL aEnable, IProgress **aProgress) RT_OVERRIDE;
+    HRESULT i_onRecordingScreenStateChange(BOOL aEnable, ULONG aScreen) RT_OVERRIDE;
     HRESULT i_onUSBControllerChange() RT_OVERRIDE;
     HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice,
                                 IVirtualBoxErrorInfo *aError,

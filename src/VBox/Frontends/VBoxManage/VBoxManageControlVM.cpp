@@ -1796,6 +1796,9 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         else if (   !strcmp(a->argv[1], "recording")
                  || !strcmp(a->argv[1], "videocap") /* legacy command */)
         {
+            if (!strcmp(a->argv[1], "videocap"))
+                RTMsgWarning(ControlVM::tr("Sub command 'videocap' is deprecated -- please use 'recording' instead ."));
+
             if (a->argc < 3)
             {
                 errorSyntax(ControlVM::tr("Incorrect number of parameters."));
@@ -1814,15 +1817,46 @@ RTEXITCODE handleControlVM(HandlerArg *a)
 
             /* Note: For now all screens have the same configuration. */
 
-            /*
-             * Note: Commands starting with "vcp" are the deprecated versions and are
-             *       kept to ensure backwards compatibility.
-             */
             bool fEnabled;
             if (RT_SUCCESS(parseBool(a->argv[2], &fEnabled)))
             {
-                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING);
+                //setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING);
                 CHECK_ERROR_RET(recordingSettings, COMSETTER(Enabled)(fEnabled), RTEXITCODE_FAILURE);
+
+                if (fEnabled)
+                    RTPrintf(ControlVM::tr("Recording enabled. Use 'start' to start recording.\n"));
+            }
+            else if (!strcmp(a->argv[2], "start"))
+            {
+                //setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_START);
+                bool fWait = false;
+                if (a->argc >= 4 && !strcmp(a->argv[3], "--wait"))
+                    fWait = true;
+
+                ComPtr<IProgress> progress;
+                CHECK_ERROR_BREAK(recordingSettings, Start(progress.asOutParam()));
+
+                if (fWait)
+                {
+                    hrc = showProgress(progress, SHOW_PROGRESS_OPS);
+                    CHECK_PROGRESS_ERROR(progress, (ControlVM::tr("Recording failed.")));
+                }
+                else
+                    RTPrintf(ControlVM::tr("Recording started (detacted).\n"));
+            }
+            else if (!strcmp(a->argv[2], "stop"))
+            {
+                //setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_STOP);
+                ComPtr<IProgress> progress;
+                CHECK_ERROR_BREAK(recordingSettings, COMGETTER(Progress)(progress.asOutParam()));
+                CHECK_ERROR_BREAK(progress, Cancel());
+            }
+            else if (!strcmp(a->argv[2], "attach"))
+            {
+                //setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_ATTACH);
+                ComPtr<IProgress> progress;
+                CHECK_ERROR_BREAK(recordingSettings, COMGETTER(Progress)(progress.asOutParam()));
+                hrc = showProgress(progress, SHOW_PROGRESS_OPS);
             }
             else if (!strcmp(a->argv[2], "screens"))
             {

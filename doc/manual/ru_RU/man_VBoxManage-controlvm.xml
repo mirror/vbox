@@ -456,7 +456,35 @@
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
+<!--
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-start">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">recording start</arg>
+      <arg><replaceable>wait</replaceable></arg>
+    </cmdsynopsis>
 
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-stop">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">recording stop</arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-attach">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">recording attach</arg>
+    </cmdsynopsis>
+-->
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-screens">
       <command>VBoxManage controlvm</command>
       <group choice="req">

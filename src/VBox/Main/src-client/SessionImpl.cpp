@@ -772,7 +772,7 @@ HRESULT Session::onVRDEServerChange(BOOL aRestart)
 #endif
 }
 
-HRESULT Session::onRecordingChange(BOOL aEnable)
+HRESULT Session::onRecordingStateChange(BOOL aEnable, ComPtr<IProgress> &aProgress)
 {
     LogFlowThisFunc(("\n"));
 
@@ -782,7 +782,24 @@ HRESULT Session::onRecordingChange(BOOL aEnable)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->i_onRecordingChange(aEnable);
+    return mConsole->i_onRecordingStateChange(aEnable, aProgress);
+#else
+    RT_NOREF(aEnable);
+    return S_OK;
+#endif
+}
+
+HRESULT Session::onRecordingScreenStateChange(BOOL aEnable, ULONG aScreen)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
+    AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->i_onRecordingScreenStateChange(aEnable, aScreen);
 #else
     RT_NOREF(aEnable);
     return S_OK;

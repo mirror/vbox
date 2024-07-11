@@ -526,7 +526,9 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording)
     {
         CRecordingSettings comRecordingSettings = comMachine.GetRecordingSettings();
-        if (comRecordingSettings.GetEnabled())
+        CProgress comProgress = comRecordingSettings.GetProgress(); /** @todo r=andy Revamp this. */
+        /** @r=andy Check if recording is running: if not completed AND not canceled. */
+        if (comProgress.isOk() && !comProgress.GetCompleted() && !comProgress.GetCanceled())
         {
             /* For now all screens have the same config: */
             const CRecordingScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
@@ -1461,7 +1463,9 @@ void UIDetailsGenerator::acquireRecordingStatusInfo(CMachine &comMachine, QStrin
 {
     /* Get recording settings: */
     CRecordingSettings comRecordingSettings = comMachine.GetRecordingSettings();
-    fRecordingEnabled = comRecordingSettings.GetEnabled();
+    CProgress comProgress = comRecordingSettings.GetProgress(); /** r=andy Revamp this. */
+    /** @r=andy Check if recording is running: if not completed AND not canceled. */
+    fRecordingEnabled = comProgress.isOk() && !comProgress.GetCompleted() && !comProgress.GetCanceled();
     if (fRecordingEnabled)
     {
         /* For now all screens have the same config: */

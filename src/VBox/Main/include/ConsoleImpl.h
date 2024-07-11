@@ -197,14 +197,13 @@ public:
     AudioVRDE *i_getAudioVRDE() const { return mAudioVRDE; }
 #endif
 #ifdef VBOX_WITH_RECORDING
-    int i_recordingCreate(void);
+    int i_recordingCreate(ComPtr<IProgress> &pProgress);
     void i_recordingDestroy(void);
-    int i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock);
+    int i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock, ComPtr<IProgress> &pProgress);
     int i_recordingGetSettings(settings::RecordingSettings &recording);
     int i_recordingStart(util::AutoWriteLock *pAutoLock = NULL);
     int i_recordingStop(util::AutoWriteLock *pAutoLock = NULL);
     int i_recordingCursorShapeChange(bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot, uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, uint32_t cbShape);
-    static DECLCALLBACK(void) s_recordingOnStateChangedCallback(RecordingContext *pCtx, RECORDINGSTS enmSts, uint32_t uScreen, int vrc, void *pvUser);
 # ifdef VBOX_WITH_AUDIO_RECORDING
     AudioVideoRec *i_recordingGetAudioDrv(void) const { return mRecording.mAudioRec; }
 # endif
@@ -244,7 +243,8 @@ public:
     HRESULT i_onClipboardFileTransferModeChange(bool aEnabled);
     HRESULT i_onDnDModeChange(DnDMode_T aDnDMode);
     HRESULT i_onVRDEServerChange(BOOL aRestart);
-    HRESULT i_onRecordingChange(BOOL fEnable);
+    HRESULT i_onRecordingStateChange(BOOL aEnable, ComPtr<IProgress> &aProgress);
+    HRESULT i_onRecordingScreenStateChange(BOOL aEnable, ULONG aScreen);
     HRESULT i_onUSBControllerChange();
     HRESULT i_onSharedFolderChange(BOOL aGlobal);
     HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs,
@@ -1247,6 +1247,7 @@ private:
     ComPtr<IEventListener> mVmListener;
 
 #ifdef VBOX_WITH_RECORDING
+    /** Structure for keeping recording-related stuff. */
     struct Recording
     {
         Recording()
@@ -1255,6 +1256,8 @@ private:
 # endif
         { }
 
+        /** The recording progress object to use. */
+        ComObjPtr<IProgress>  mProgress;
         /** The recording context. */
         RecordingContext      mCtx;
 # ifdef VBOX_WITH_AUDIO_RECORDING

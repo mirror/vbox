@@ -1938,12 +1938,9 @@ bool UISession::acquireWhetherRecordingSettingsEnabled(bool &fEnabled)
         UINotificationMessage::cannotAcquireMachineParameter(comMachine);
     else
     {
-        const BOOL fSettingsEnabled = comSettings.GetEnabled();
-        fSuccess = comSettings.isOk();
-        if (!fSuccess)
-            UINotificationMessage::cannotAcquireRecordingSettingsParameter(comSettings);
-        else
-            fEnabled = fSettingsEnabled == TRUE;
+        /** @todo r=andy Revamp this. */
+        CProgress comProgress = comSettings.GetProgress();
+        fEnabled = comProgress.isOk() && !comProgress.GetCompleted() && !comProgress.GetCanceled();
     }
     return fSuccess;
 }
@@ -1957,10 +1954,25 @@ bool UISession::setRecordingSettingsEnabled(bool fEnabled)
         UINotificationMessage::cannotAcquireMachineParameter(comMachine);
     else
     {
-        comSettings.SetEnabled(fEnabled);
-        fSuccess = comSettings.isOk();
-        if (!fSuccess)
-            UINotificationMessage::cannotToggleRecording(comSettings, machineName(), fEnabled);
+        /** @todo r=andy Revamp this function to better use the progress object.
+         *               Probably also needs a bit of refactoring of the overall handling within FE/Qt. */
+        CProgress comProgress;
+        if (fEnabled)
+        {
+            comProgress = comSettings.Start();
+            fSuccess = comSettings.isOk();
+            if (!fSuccess)
+                UINotificationMessage::cannotToggleRecording(comSettings, machineName(), fEnabled);
+        }
+        else
+        {
+            comProgress = comSettings.GetProgress();
+            if (comProgress.isOk())
+                comProgress.Cancel();
+            else
+                UINotificationMessage::cannotToggleRecording(comSettings, machineName(), fEnabled);
+        }
+
     }
     return fSuccess;
 }

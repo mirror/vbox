@@ -3169,6 +3169,8 @@
  */
 /** Codec was not found. */
 #define VERR_RECORDING_CODEC_NOT_FOUND              (-6900)
+/** Recording initialization failed. */
+#define VERR_RECORDING_INIT_FAILED                  (-6901)
 /** Codec initialization failed. */
 #define VERR_RECORDING_CODEC_INIT_FAILED            (-6902)
 /** Codec is not supported. */

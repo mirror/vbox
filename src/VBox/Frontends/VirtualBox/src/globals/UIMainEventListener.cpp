@@ -480,7 +480,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
             emit sigVRDEChange();
             break;
         }
-        case KVBoxEventType_OnRecordingChanged:
+        case KVBoxEventType_OnRecordingStateChanged:
         {
             emit sigRecordingChange();
             break;

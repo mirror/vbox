@@ -52,6 +52,7 @@
 /* COM includes: */
 #include "CExtPackManager.h"
 #include "CGraphicsAdapter.h"
+#include "CProgress.h" /* For starting recording. */
 #include "CRecordingScreenSettings.h"
 #include "CRecordingSettings.h"
 #include "CVRDEServer.h"
@@ -1328,7 +1329,6 @@ bool UIMachineSettingsDisplay::saveRecordingData()
                     comRecordingScreenSettings.SetEnabled(newDisplayData.m_vecRecordingScreens[iScreenIndex]);
                     fSuccess = comRecordingScreenSettings.isOk();
                 }
-
                 if (!fSuccess)
                 {
                     if (!comRecordingScreenSettings.isOk())
@@ -1343,6 +1343,13 @@ bool UIMachineSettingsDisplay::saveRecordingData()
             {
                 recordingSettings.SetEnabled(newDisplayData.m_fRecordingEnabled);
                 fSuccess = recordingSettings.isOk();
+                if (fSuccess)
+                {
+                    /* Start recording when recording got enabled. */
+                    /** @todo r=andy Not sure if this is the right place for it. */
+                    CProgress comProgress = recordingSettings.Start();
+                    fSuccess = recordingSettings.isOk();
+                }
             }
         }
     }

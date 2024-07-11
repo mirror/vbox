@@ -128,7 +128,7 @@ public:
     int Init(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings);
     int Uninit(void);
 
-    int ThreadMain(int rcWait, RecordingBlockMap &commonBlocks);
+    int ThreadMain(int rcWait, uint64_t msTimestamp, RecordingBlockMap &commonBlocks);
     int SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp);
     int SendCursorPos(uint8_t idCursor, PRECORDINGPOS pPos, uint64_t msTimestamp);
     int SendCursorShape(uint8_t idCursor, PRECORDINGVIDEOFRAME pShape, uint64_t msTimestamp);

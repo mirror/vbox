@@ -49,6 +49,8 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 
+#include <iprt/cpp/utils.h>
+
 #include <VBox/err.h>
 #include <VBox/com/VirtualBox.h>
 
@@ -58,6 +60,7 @@
 #include "RecordingStream.h"
 #include "RecordingUtils.h"
 #include "WebMWriter.h"
+#include "VirtualBoxErrorInfoImpl.h"
 
 using namespace com;
 
@@ -187,28 +190,6 @@ RecordingContext::RecordingContext(void)
         throw vrc;
 }
 
-/**
- * Recording context constructor.
- *
- * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
- * @param   Settings            Reference to recording settings to use for creation.
- *
- * @note    Will throw vrc when unable to create.
- */
-RecordingContext::RecordingContext(Console *ptrConsole, const settings::RecordingSettings &Settings)
-    : m_pConsole(NULL)
-    , m_enmState(RECORDINGSTS_UNINITIALIZED)
-    , m_cStreamsEnabled(0)
-{
-    int vrc = RTCritSectInit(&m_CritSect);
-    if (RT_FAILURE(vrc))
-        throw vrc;
-
-    vrc = RecordingContext::createInternal(ptrConsole, Settings);
-    if (RT_FAILURE(vrc))
-        throw vrc;
-}
-
 RecordingContext::~RecordingContext(void)
 {
     destroyInternal();
@@ -218,9 +199,211 @@ RecordingContext::~RecordingContext(void)
 }
 
 /**
- * Worker thread for all streams of a recording context.
+ * Returns whether the recording progress object has been canceled or not.
  *
- * For video frames, this also does the RGB/YUV conversion and encoding.
+ * @returns \c true if canceled, or \c false if not.
+ */
+bool RecordingContext::progressIsCanceled(void) const
+{
+    if (m_pProgress.isNull())
+        return true;
+
+    BOOL fCanceled;
+    HRESULT const hrc = m_pProgress->COMGETTER(Canceled(&fCanceled));
+    AssertComRC(hrc);
+    return RT_BOOL(fCanceled);
+}
+
+/**
+ * Returns whether the recording progress object has been completed or not.
+ *
+ * @returns \c true if completed, or \c false if not.
+ */
+bool RecordingContext::progressIsCompleted(void) const
+{
+    if (m_pProgress.isNull())
+        return true;
+
+    BOOL fCompleted;
+    HRESULT const hrc = m_pProgress->COMGETTER(Completed(&fCompleted));
+    AssertComRC(hrc);
+    return RT_BOOL(fCompleted);
+}
+
+/**
+ * Creates a progress object based on the given recording settings.
+ *
+ * @returns VBox status code.
+ * @param   Settings            Recording settings to use for creation.
+ * @param   pProgress           Where to return the created progress object on success.
+ */
+int RecordingContext::progressCreate(const settings::RecordingSettings &Settings, ComObjPtr<Progress> &pProgress)
+{
+    /* Determine the number of operations the recording progress has.
+     * We use the maximum time (in s) of each screen as the overall progress indicator.
+     * If one screen is configured to be recorded indefinitely (until manually stopped),
+     * the operation count gets reset to 1. */
+    ULONG cOperations;
+    settings::RecordingScreenSettingsMap::const_iterator itScreen = Settings.mapScreens.begin();
+    while (itScreen != Settings.mapScreens.end())
+    {
+        settings::RecordingScreenSettings const &screenSettings = itScreen->second;
+        if (screenSettings.ulMaxTimeS == 0)
+        {
+            cOperations = 1; /* Screen will be recorded indefinitely, reset operation count and bail out.  */
+            break;
+        }
+        else
+            cOperations = RT_MAX(cOperations, screenSettings.ulMaxTimeS);
+        ++itScreen;
+    }
+
+    HRESULT hrc = pProgress.createObject();
+    if (SUCCEEDED(hrc))
+    {
+        hrc = pProgress->init(m_pConsole, Utf8Str("Recording"),
+                              TRUE /* aCancelable */, cOperations, cOperations /* ulTotalOperationsWeight */,
+                              Utf8Str("Starting"), 1 /* ulFirstOperationWeight */);
+        if (SUCCEEDED(hrc))
+            pProgress->i_setCancelCallback(RecordingContext::s_progressCancelCallback, this /* pvUser */);
+    }
+
+    return SUCCEEDED(hrc) ? VINF_SUCCESS : VERR_COM_UNEXPECTED;
+}
+
+/**
+ * Sets the current progress based on the operation.
+ *
+ * @returns VBox status code.
+ * @param   uOp                 Operation index to set (zero-based).
+ * @param   strDesc             Description of the operation.
+ */
+int RecordingContext::progressSet(uint32_t uOp, const Bstr &strDesc)
+{
+    if (m_pProgress.isNull())
+        return VINF_SUCCESS;
+
+    if (   uOp     == m_ulCurOp /* No change? */
+        || uOp + 1  > m_cOps    /* Done? */
+        || m_cOps == 1)         /* Indefinitely recording until canceled? Skip. */
+        return VINF_SUCCESS;
+
+    Assert(uOp > m_ulCurOp);
+
+    ComPtr<IInternalProgressControl> pProgressControl(m_pProgress);
+    AssertReturn(!!pProgressControl, VERR_COM_UNEXPECTED);
+
+    /* hrc ignored */ pProgressControl->SetNextOperation(strDesc.raw(), 1 /* Weight */);
+    /* Might be E_FAIL if already canceled. */
+
+    m_ulCurOp = uOp;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Sets the current progress based on a timestamp (PTS).
+ *
+ * @returns VBox status code.
+ * @param   msTimestamp         Timestamp to use (absolute, PTS).
+ */
+int RecordingContext::progressSet(uint64_t msTimestamp)
+{
+    /* Run until stopped / canceled? */
+    if (m_cOps == 1)
+        return VINF_SUCCESS;
+
+    ULONG const nextOp = (ULONG)msTimestamp / RT_MS_1SEC; /* Each operation equals 1s (same weight). */
+    if (nextOp <= m_ulCurOp) /* If next operation still is the current operation, bail out early. */
+        return VINF_SUCCESS;
+
+    /* Format the recording time as a human-readable time (HH:MM:SS) and set it as current progress operation text. */
+    char  szDesc[32];
+    szDesc[0] = '\0';
+    char *psz = szDesc;
+    RTTIMESPEC TimeSpec;
+    RTTIME Time;
+    RTTimeExplode(&Time, RTTimeSpecSetMilli(&TimeSpec, msTimestamp));
+    psz += RTStrFormatNumber(psz, Time.u8Hour,   10, 2, 0, RTSTR_F_ZEROPAD);
+    *psz++ = ':';
+    psz += RTStrFormatNumber(psz, Time.u8Minute, 10, 2, 0, RTSTR_F_ZEROPAD);
+    *psz++ = ':';
+    psz += RTStrFormatNumber(psz, Time.u8Second, 10, 2, 0, RTSTR_F_ZEROPAD);
+
+    /* All operations have the same weight. */
+    uint8_t const uPercent = (100 * nextOp + m_cOps / 2) / m_cOps;
+
+    LogRel2(("Recording: Progress %s (%RU32 / %RU32) -- %RU8%%\n", szDesc, nextOp, m_cOps, uPercent));
+
+    psz += RTStrPrintf2(psz, psz - szDesc, " (%RU8%%)", uPercent);
+
+    return progressSet(nextOp, Bstr(szDesc));
+}
+
+/**
+ * Notifies the progress object about completion.
+ *
+ * @returns VBox status code.
+ * @param   hrc                 Completion result to set.
+ * @param   pErrorInfo          Error info to set in case \a hrc indicates an error. Optional and can be NULL.
+ */
+int RecordingContext::progressNotifyComplete(HRESULT hrc /* = S_OK */, IVirtualBoxErrorInfo *pErrorInfo /* = NULL */)
+{
+    if (m_pProgress.isNull())
+        return VINF_SUCCESS;
+
+    BOOL fCompleted;
+    HRESULT hrc2 = m_pProgress->COMGETTER(Completed)(&fCompleted);
+    AssertComRC(hrc2);
+
+    if (!fCompleted)
+    {
+        ComPtr<IInternalProgressControl> pProgressControl(m_pProgress);
+        AssertReturn(!!pProgressControl, VERR_COM_UNEXPECTED);
+
+        pProgressControl->NotifyComplete(hrc, pErrorInfo);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Reports an error condition to the recording context.
+ *
+ * @returns VBox status code.
+ * @param   rc                  Error code to set.
+ * @param   strText             Error description to set.
+ */
+int RecordingContext::SetError(int rc, const com::Utf8Str &strText)
+{
+    lock();
+
+    if (   m_pProgress.isNull()
+        || !m_pConsole)
+    {
+        unlock();
+        return VINF_SUCCESS;
+    }
+
+    ComObjPtr<VirtualBoxErrorInfo> pErrorInfo;
+    HRESULT hrc = pErrorInfo.createObject();
+    AssertComRC(hrc);
+    hrc = pErrorInfo->initEx(VBOX_E_RECORDING_ERROR, (LONG)rc,
+                             m_pConsole->getStaticClassIID(), m_pConsole->getStaticComponentName(), strText);
+    AssertComRC(hrc);
+
+    unlock();
+
+    LogRel(("Recording: An error occurred: %s (%Rrc)\n", strText.c_str(), rc));
+
+    hrc = m_pProgress->NotifyComplete(VBOX_E_RECORDING_ERROR, pErrorInfo);
+    AssertComRC(hrc);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Worker thread for all streams of a recording context.
  */
 DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUser)
 {
@@ -235,10 +418,22 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
     {
         int vrcWait = RTSemEventWait(pThis->m_WaitEvent, RT_MS_1SEC);
 
+        if (ASMAtomicReadBool(&pThis->m_fShutdown))
+        {
+            LogRel2(("Recording: Thread is shutting down ...\n"));
+            break;
+        }
+
         Log2Func(("Processing %zu streams (wait = %Rrc)\n", pThis->m_vecStreams.size(), vrcWait));
 
+        uint64_t const msTimestamp = pThis->GetCurrentPTS();
+
+        /* Set the overall progress. */
+        int vrc = pThis->progressSet(msTimestamp);
+        AssertRC(vrc);
+
         /* Process common raw blocks (data which not has been encoded yet). */
-        int vrc = pThis->processCommonData(pThis->m_mapBlocksRaw, 100 /* ms timeout */);
+        vrc = pThis->processCommonData(pThis->m_mapBlocksRaw, 100 /* ms timeout */);
 
         /** @todo r=andy This is inefficient -- as we already wake up this thread
          *               for every screen from Main, we here go again (on every wake up) through
@@ -249,7 +444,7 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
             RecordingStream *pStream = (*itStream);
 
             /* Hand-in common encoded blocks. */
-            vrc = pStream->ThreadMain(vrcWait, pThis->m_mapBlocksEncoded);
+            vrc = pStream->ThreadMain(vrcWait, msTimestamp, pThis->m_mapBlocksEncoded);
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Recording: Processing stream #%RU16 failed (%Rrc)\n", pStream->GetID(), vrc));
@@ -263,12 +458,6 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
             LogRel(("Recording: Encoding thread failed (%Rrc)\n", vrc));
 
         /* Keep going in case of errors. */
-
-        if (ASMAtomicReadBool(&pThis->m_fShutdown))
-        {
-            LogFunc(("Thread is shutting down ...\n"));
-            break;
-        }
 
     } /* for */
 
@@ -467,7 +656,7 @@ int RecordingContext::writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCO
  * @copydoc RECORDINGCODECCALLBACKS::pfnWriteData
  */
 /* static */
-DECLCALLBACK(int) RecordingContext::audioCodecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
+DECLCALLBACK(int) RecordingContext::s_audioCodecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
                                                                 uint64_t msAbsPTS, uint32_t uFlags, void *pvUser)
 {
     RecordingContext *pThis = (RecordingContext *)pvUser;
@@ -492,7 +681,7 @@ int RecordingContext::audioInit(const settings::RecordingScreenSettings &screenS
 
     RECORDINGCODECCALLBACKS Callbacks;
     Callbacks.pvUser       = this;
-    Callbacks.pfnWriteData = RecordingContext::audioCodecWriteDataCallback;
+    Callbacks.pfnWriteData = RecordingContext::s_audioCodecWriteDataCallback;
 
     int vrc = recordingCodecCreateAudio(&m_CodecAudio, enmCodec);
     if (RT_SUCCESS(vrc))
@@ -503,16 +692,69 @@ int RecordingContext::audioInit(const settings::RecordingScreenSettings &screenS
 #endif /* VBOX_WITH_AUDIO_RECORDING */
 
 /**
+ * Progress canceled callback.
+ *
+ * @param   pvUser              User-supplied pointer. Points to the RecordingContext instance.
+ */
+/* static */
+DECLCALLBACK(void) RecordingContext::s_progressCancelCallback(void *pvUser)
+{
+    RecordingContext *pThis = (RecordingContext *)pvUser;
+
+    LogRel(("Recording: Canceled\n"));
+
+    if (pThis->m_pConsole)
+    {
+        ComPtr<IProgress> pProgressIgnored;
+        pThis->m_pConsole->i_onRecordingStateChange(FALSE /* Disable */, pProgressIgnored);
+    }
+}
+
+/** @copydoc RecordingContext::CALLBACKS::pfnStateChanged */
+DECLCALLBACK(void) RecordingContext::s_recordingStateChangedCallback(RecordingContext *pCtx,
+                                                                     RECORDINGSTS enmSts, uint32_t uScreen, int vrc, void *pvUser)
+{
+    RT_NOREF(vrc, pvUser);
+
+    Log2Func(("enmSts=%0x, uScreen=%RU32, vrc=%Rrc\n", enmSts, uScreen, vrc));
+
+    switch (enmSts)
+    {
+        case RECORDINGSTS_LIMIT_REACHED:
+        {
+            if (uScreen == UINT32_MAX) /* Limit for all screens reached? Disable recording. */
+            {
+                ComPtr<IProgress> pProgressIgnored;
+                pCtx->m_pConsole->i_onRecordingStateChange(FALSE /* Disable */, pProgressIgnored);
+
+                pCtx->lock();
+
+                /* Make sure to complete the progress object (if not already done so). */
+                pCtx->progressNotifyComplete(S_OK);
+
+                pCtx->unlock();
+            }
+            else if (pCtx->m_pConsole)
+                pCtx->m_pConsole->i_onRecordingScreenStateChange(FALSE /* Disable */, uScreen);
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
+/**
  * Creates a recording context.
  *
  * @returns VBox status code.
  * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
  * @param   Settings            Reference to recording settings to use for creation.
+ * @param   pProgress           Progress object returned on success.
  */
-int RecordingContext::createInternal(Console *ptrConsole, const settings::RecordingSettings &Settings)
+int RecordingContext::createInternal(Console *ptrConsole, const settings::RecordingSettings &Settings,
+                                     ComPtr<IProgress> &pProgress)
 {
-    int vrc = VINF_SUCCESS;
-
     /* Copy the settings to our context. */
     m_Settings = Settings;
 
@@ -523,7 +765,7 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
     /* We always use the audio settings from screen 0, as we multiplex the audio data anyway. */
     settings::RecordingScreenSettings const &screen0Settings = itScreen0->second;
 
-    vrc = this->audioInit(screen0Settings);
+    int vrc = this->audioInit(screen0Settings);
     if (RT_FAILURE(vrc))
         return vrc;
 #endif
@@ -559,16 +801,23 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
         ++itScreen;
     }
 
+    ComObjPtr<Progress> pThisProgress;
+    vrc = progressCreate(m_Settings, pThisProgress);
     if (RT_SUCCESS(vrc))
     {
-        m_tsStartMs = 0;
-        m_enmState  = RECORDINGSTS_CREATED;
-        m_fShutdown = false;
-
         vrc = RTSemEventCreate(&m_WaitEvent);
         AssertRCReturn(vrc, vrc);
 
-        RT_ZERO(m_Callbacks);
+        RecordingContext::CALLBACKS Callbacks;
+        RT_ZERO(Callbacks);
+        Callbacks.pfnStateChanged = RecordingContext::s_recordingStateChangedCallback;
+
+        SetCallbacks(&Callbacks, this /* pvUser */);
+
+        reset();
+
+        unconst(m_pProgress) = pThisProgress;
+        pThisProgress.queryInterfaceTo(pProgress.asOutParam());
     }
 
     if (RT_FAILURE(vrc))
@@ -594,6 +843,19 @@ void RecordingContext::SetCallbacks(RecordingContext::CALLBACKS *pCallbacks, voi
 }
 
 /**
+ * Resets a recording context.
+ */
+void RecordingContext::reset(void)
+{
+    m_tsStartMs       = 0;
+    m_enmState        = RECORDINGSTS_CREATED;
+    m_fShutdown       = false;
+    m_cStreamsEnabled = 0;
+
+    unconst(m_pProgress).setNull();
+}
+
+/**
  * Starts a recording context by creating its worker thread.
  *
  * @returns VBox status code.
@@ -605,7 +867,16 @@ int RecordingContext::startInternal(void)
 
     Assert(m_enmState == RECORDINGSTS_CREATED);
 
+    LogRel2(("Recording: Starting ...\n"));
+
     m_tsStartMs = RTTimeMilliTS();
+
+    m_ulCurOp = 0;
+    if (m_pProgress.isNotNull())
+    {
+        HRESULT hrc = m_pProgress->COMGETTER(OperationCount)(&m_cOps);
+        AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    }
 
     int vrc = RTThreadCreate(&m_Thread, RecordingContext::threadMain, (void *)this, 0,
                              RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "Record");
@@ -619,7 +890,7 @@ int RecordingContext::startInternal(void)
         m_enmState  = RECORDINGSTS_STARTED;
     }
     else
-        Log(("Recording: Failed to start (%Rrc)\n", vrc));
+        LogRel(("Recording: Failed to start (%Rrc)\n", vrc));
 
     return vrc;
 }
@@ -634,7 +905,7 @@ int RecordingContext::stopInternal(void)
     if (m_enmState != RECORDINGSTS_STARTED)
         return VINF_SUCCESS;
 
-    LogThisFunc(("Shutting down thread ...\n"));
+    LogRel2(("Recording: Stopping ...\n"));
 
     /* Set shutdown indicator. */
     ASMAtomicWriteBool(&m_fShutdown, true);
@@ -648,12 +919,15 @@ int RecordingContext::stopInternal(void)
 
     if (RT_SUCCESS(vrc))
     {
+        if (m_pProgress.isNotNull())
+            progressNotifyComplete();
+
         LogRel(("Recording: Stopped\n"));
-        m_tsStartMs = 0;
-        m_enmState  = RECORDINGSTS_CREATED;
+
+        reset();
     }
     else
-        Log(("Recording: Failed to stop (%Rrc)\n", vrc));
+        LogRel(("Recording: Failed to stop (%Rrc)\n", vrc));
 
     unlock();
 
@@ -703,6 +977,8 @@ void RecordingContext::destroyInternal(void)
     Assert(m_mapBlocksEncoded.size() == 0);
 
     m_enmState = RECORDINGSTS_UNINITIALIZED;
+
+    unconst(m_pProgress).setNull();
 
     unlock();
 }
@@ -790,10 +1066,11 @@ size_t RecordingContext::GetStreamCount(void) const
  * @returns VBox status code.
  * @param   ptrConsole          Pointer to console object this context is bound to (weak pointer).
  * @param   Settings            Reference to recording settings to use for creation.
+ * @param   pProgress           Progress object returned on success.
  */
-int RecordingContext::Create(Console *ptrConsole, const settings::RecordingSettings &Settings)
+int RecordingContext::Create(Console *ptrConsole, const settings::RecordingSettings &Settings, ComPtr<IProgress> &pProgress)
 {
-    return createInternal(ptrConsole, Settings);
+    return createInternal(ptrConsole, Settings, pProgress);
 }
 
 /**
@@ -1011,17 +1288,19 @@ bool RecordingContext::NeedsUpdate(uint32_t uScreen, uint64_t msTimestamp)
  */
 int RecordingContext::onLimitReached(uint32_t uScreen, int vrc)
 {
-    LogFlowThisFunc(("Stream %RU32 has reached its limit (%Rrc)\n", uScreen, vrc));
-
     lock();
 
-    Assert(m_cStreamsEnabled);
+    LogRel2(("Recording: Active streams: %RU16\n", m_cStreamsEnabled));
+
     if (m_cStreamsEnabled)
         m_cStreamsEnabled--;
 
     bool const fAllDisabled = m_cStreamsEnabled == 0;
 
-    LogFlowThisFunc(("cStreamsEnabled=%RU16\n", m_cStreamsEnabled));
+    if (fAllDisabled)
+        LogRel(("Recording: All set limits have been reached\n"));
+    else
+        LogRel(("Recording: Set limit for screen #%RU32 has been reached\n", uScreen));
 
     unlock(); /* Leave the lock before invoking callbacks. */
 
@@ -1174,6 +1453,10 @@ int RecordingContext::SendCursorShapeChange(bool fVisible, bool fAlpha, uint32_t
         int vrc2 = pStream->SendCursorShape(0 /* idCursor */, &m_Cursor.m_Shape, msTimestamp);
         if (RT_SUCCESS(vrc))
             vrc = vrc2;
+
+        /* Bail out as soon as possible when the shutdown flag is set. */
+        if (ASMAtomicReadBool(&m_fShutdown))
+            break;
 
         ++it;
     }

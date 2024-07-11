@@ -304,8 +304,8 @@ tstRecording_SOURCES  = \
 	tstRecording.cpp \
 	../src-client/RecordingUtils.cpp
 tstRecording_INCS     = \
-	../include
-
+	../include \
+	$(VBOX_MAIN_APIWRAPPER_INCS)
 
 #
 # tstSettings
