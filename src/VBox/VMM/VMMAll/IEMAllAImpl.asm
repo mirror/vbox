@@ -6596,6 +6596,12 @@ struc IEMMEDIAF2XMMSRC
 endstruc
 
 
+struc IEMMEDIAF2YMMSRC
+    .uSrc1        resd 8
+    .uSrc2        resd 8
+endstruc
+
+
 ;
 ; CMPPS (SSE)
 ;
@@ -6675,9 +6681,11 @@ IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmppd
 IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpss
 IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpsd
 
+
 ;;
-; SSE instructions with 8-bit immediates of the form
+; SSE/AVX instructions with 2 full sized perands and an 8-bit immediate of the form
 ;    xxx xmm1, xmm2, imm8.
+;   vxxx xmm1, xmm2, imm8
 ; where the instruction encoding takes up 6 bytes and we need to load and save the MXCSR
 ; register.
 ;
@@ -6686,10 +6694,106 @@ IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpsd
 ; @return   R0_32   The new MXCSR value of the guest.
 ; @param    A0_32   The guest's MXCSR register value to use (input).
 ; @param    A1      Pointer to the first media register size operand (output).
-; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC (input).
+; @param    A2      Pointer to the second media register size operand (input).
 ; @param    A3      The 8-bit immediate (input).
 ;
-%macro IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 1
+%macro IEMIMPL_MEDIA_SSE_AVX_INSN_F2_IMM8_MXCSR_6 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movzx   A3, A3_8                ; must clear top bits
+        movdqu  xmm1, [A2]
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
+        movdqu  [A1], xmm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        %1      xmm0, xmm1, bImm
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movzx   A3, A3_8                ; must clear top bits
+        movdqu  xmm1, [A2]
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
+        movdqu  [A1], xmm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        v%1     xmm0, xmm1, bImm
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_v %+ %1 %+ _u128
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movzx   A3, A3_8                ; must clear top bits
+        vmovdqu ymm1, [A2]
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
+        vmovdqu [A1], ymm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        v%1     ymm0, ymm1, bImm
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_v %+ %1 %+ _u256
+%endmacro
+
+IEMIMPL_MEDIA_SSE_AVX_INSN_F2_IMM8_MXCSR_6 roundps
+IEMIMPL_MEDIA_SSE_AVX_INSN_F2_IMM8_MXCSR_6 roundpd
+
+
+;;
+; SSE/AVX instructions with 3 full sized perands and an 8-bit immediate of the form
+;    xxx xmm1, xmm2, imm8.
+;   vxxx xmm1, xmm2, xmm3, imm8
+; where the instruction encoding takes up 6 bytes and we need to load and save the MXCSR
+; register.
+;
+; @param    1       The instruction name.
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use (input).
+; @param    A1      Pointer to the first media register size operand (output).
+; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC/IEMMEDIAF2YMMSRC (input).
+; @param    A3      The 8-bit immediate (input).
+;
+%macro IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
@@ -6717,12 +6821,10 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
-IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 roundps
-IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 roundpd
-IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 roundss
-IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 roundsd
-IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 dpps
-IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_6 dppd
+IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 roundss
+IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 roundsd
+IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 dpps
+IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 dppd
 
 
 ;;

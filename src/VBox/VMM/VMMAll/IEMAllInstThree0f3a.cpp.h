@@ -161,7 +161,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
  *
  * @sa  iemOpCommonSse41_FullFullImm8_To_Full
  */
-FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullFullImm8_To_Full, PFNIEMAIMPLMXCSRF2XMMIMM8, pfnU128)
+FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAF3XMMIMM8, pfnU128)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
@@ -212,6 +212,67 @@ FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullFullImm8_To_Full, PFNIEMAIMPLMXCSRF2XMMIMM8
         IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), Dst);
 
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
+
+/**
+ * Common worker for SSE 4.1 instructions of the form:
+ *      xxx     xmm1, xmm2/mem128, imm8
+ *
+ * Proper alignment of the 128-bit operand is enforced.
+ * MXCSR is used as input and output.
+ * Exceptions type 4. SSE 4.1 cpuid checks.
+ *
+ * @sa  iemOpCommonSse41_FullFullImm8_To_Full
+ */
+FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullImm8_To_Full, PFNIEMAIMPLMEDIAF2XMMIMM8, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * XMM, XMM, imm8.
+         */
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse41);
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_LOCAL(X86XMMREG,                     uDst);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            puDst,         uDst,    0);
+        IEM_MC_ARG(          PCX86XMMREG,           puSrc,                  1);
+        IEM_MC_REF_XREG_XMM_CONST(puSrc,        IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    2);
+        IEM_MC_CALL_SSE_AIMPL_3(pfnU128, puDst, puSrc, bImmArg);
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * XMM, [mem128], imm8.
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_LOCAL(RTGCPTR,                       GCPtrEffSrc);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    2);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse41);
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_LOCAL(X86XMMREG,                     uSrc);
+        IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_LOCAL(X86XMMREG,                     uDst);
+        IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            puDst,          uDst,    0);
+        IEM_MC_ARG_LOCAL_REF(PCX86XMMREG,           puSrc,          uSrc,    1);
+        IEM_MC_CALL_SSE_AIMPL_3(pfnU128, puDst, puSrc, bImmArg);
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
@@ -290,7 +351,7 @@ FNIEMOP_DEF_1(iemOpCommonAesNi_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
 FNIEMOP_DEF(iemOp_roundps_Vx_Wx_Ib)
 {
     IEMOP_MNEMONIC3(RMI, ROUNDPS, roundps, Vx, Wx, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSse41Fp_FullFullImm8_To_Full,
+    return FNIEMOP_CALL_1(iemOpCommonSse41Fp_FullImm8_To_Full,
                           IEM_SELECT_HOST_OR_FALLBACK(fSse41, iemAImpl_roundps_u128, iemAImpl_roundps_u128_fallback));
 }
 
@@ -299,7 +360,7 @@ FNIEMOP_DEF(iemOp_roundps_Vx_Wx_Ib)
 FNIEMOP_DEF(iemOp_roundpd_Vx_Wx_Ib)
 {
     IEMOP_MNEMONIC3(RMI, ROUNDPD, roundpd, Vx, Wx, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSse41Fp_FullFullImm8_To_Full,
+    return FNIEMOP_CALL_1(iemOpCommonSse41Fp_FullImm8_To_Full,
                           IEM_SELECT_HOST_OR_FALLBACK(fSse41, iemAImpl_roundpd_u128, iemAImpl_roundpd_u128_fallback));
 }
 

@@ -154,6 +154,111 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Ib_Opt, PCIEMOPMEDIAOPTF3IMM8, pImpl)
 
 /**
  * Common worker for AVX instructions on the forms:
+ *     - vxxxp{s,d}    xmm0, xmm1/mem128, imm8
+ *     - vxxxp{s,d}    ymm0, ymm1/mem256, imm8
+ *
+ * Exceptions type 4. AVX cpuid check for both 128-bit and 256-bit operation.
+ */
+FNIEMOP_DEF_1(iemOpCommonAvxAvx_Vx_Wx_Ib, PCIEMOPMEDIAF2IMM8, pImpl)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        if (pVCpu->iem.s.uVexLength)
+        {
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+            IEM_MC_LOCAL(X86YMMREG,             uDst);
+            IEM_MC_ARG_LOCAL_REF(PX86YMMREG,    puDst,  uDst,         0);
+            IEM_MC_LOCAL(X86YMMREG,             uSrc);
+            IEM_MC_ARG_LOCAL_REF(PCX86YMMREG,   puSrc,  uSrc,         1);
+            IEM_MC_FETCH_YREG_YMM(uSrc,        IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_ARG_CONST(uint8_t,           bImmArg, /*=*/ bImm,  2);
+            IEM_MC_CALL_AVX_AIMPL_3(pImpl->pfnU256, puDst, puSrc, bImmArg);
+            IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_STORE_YREG_YMM_ZX_VLMAX(    IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+            IEM_MC_LOCAL(X86XMMREG,             uDst);
+            IEM_MC_ARG_LOCAL_REF(PX86XMMREG,    puDst,  uDst,         0);
+            IEM_MC_ARG(PCX86XMMREG,             puSrc,                1);
+            IEM_MC_REF_XREG_XMM_CONST(puSrc,   IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_ARG_CONST(uint8_t,           bImmArg, /*=*/ bImm,  2);
+            IEM_MC_CALL_AVX_AIMPL_3(pImpl->pfnU128, puDst, puSrc, bImmArg);
+            IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_STORE_XREG_XMM(             IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+            IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
+            IEM_MC_END();
+        }
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        if (pVCpu->iem.s.uVexLength)
+        {
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+            IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
+            uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+            IEM_MC_LOCAL(X86YMMREG,             uDst);
+            IEM_MC_ARG_LOCAL_REF(PX86YMMREG,    puDst,          uDst, 0);
+            IEM_MC_LOCAL(X86YMMREG,             uSrc);
+            IEM_MC_ARG_LOCAL_REF(PCX86YMMREG,   puSrc,          uSrc, 1);
+            IEM_MC_ARG_CONST(uint8_t,           bImmArg, /*=*/ bImm,  2);
+            IEM_MC_FETCH_MEM_YMM_NO_AC(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_CALL_AVX_AIMPL_3(pImpl->pfnU256, puDst, puSrc, bImmArg);
+            IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_STORE_YREG_YMM_ZX_VLMAX(    IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+            IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
+            uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+            IEM_MC_LOCAL(X86XMMREG,             uDst);
+            IEM_MC_ARG_LOCAL_REF(PX86XMMREG,    puDst,  uDst,         0);
+            IEM_MC_LOCAL(X86XMMREG,             uSrc);
+            IEM_MC_ARG_LOCAL_REF(PCX86XMMREG,   puSrc, uSrc,          1);
+            IEM_MC_ARG_CONST(uint8_t,           bImmArg, /*=*/ bImm,  2);
+            IEM_MC_FETCH_MEM_XMM_NO_AC(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_CALL_AVX_AIMPL_3(pImpl->pfnU128, puDst, puSrc, bImmArg);
+            IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+            IEM_MC_STORE_XREG_XMM(             IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+            IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ADVANCE_RIP_AND_FINISH();
+            IEM_MC_END();
+        }
+    }
+}
+
+
+/**
+ * Common worker for AVX instructions on the forms:
  *     - vpermilps/d    xmm0, xmm1/mem128, imm8
  *     - vpermilps/d    ymm0, ymm1/mem256, imm8
  *
@@ -479,10 +584,26 @@ FNIEMOP_DEF(iemOp_vperm2f128_Vqq_Hqq_Wqq_Ib)
 
 
 /*  Opcode VEX.66.0F3A 0x07 - invalid */
+
+
 /** Opcode VEX.66.0F3A 0x08. */
-FNIEMOP_STUB(iemOp_vroundps_Vx_Wx_Ib);
+FNIEMOP_DEF(iemOp_vroundps_Vx_Wx_Ib)
+{
+    IEMOP_MNEMONIC3(VEX_RMI, VROUNDPS, vroundps, Vx_WO, Wx, Ib, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_V_ZERO);
+    IEMOPMEDIAF2IMM8_INIT_VARS(        vroundps);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Wx_Ib, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
+
+
 /** Opcode VEX.66.0F3A 0x09. */
-FNIEMOP_STUB(iemOp_vroundpd_Vx_Wx_Ib);
+FNIEMOP_DEF(iemOp_vroundpd_Vx_Wx_Ib)
+{
+    IEMOP_MNEMONIC3(VEX_RMI, VROUNDPD, vroundpd, Vx_WO, Wx, Ib, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_V_ZERO);
+    IEMOPMEDIAF2IMM8_INIT_VARS(        vroundpd);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx_Vx_Wx_Ib, IEM_SELECT_HOST_OR_FALLBACK(fAvx, &s_Host, &s_Fallback));
+}
+
+
 /** Opcode VEX.66.0F3A 0x0a. */
 FNIEMOP_STUB(iemOp_vroundss_Vss_Wss_Ib);
 /** Opcode VEX.66.0F3A 0x0b. */

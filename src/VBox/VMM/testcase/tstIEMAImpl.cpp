@@ -7836,17 +7836,17 @@ static void SseCompareEflR64R64Test(void)
 /** Maximum immediate to try to keep the testdata size under control (at least a little bit)- */
 #define SSE_COMPARE_F2_XMM_IMM8_MAX 0x1f
 
-TYPEDEF_SUBTEST_TYPE(SSE_COMPARE_F2_XMM_IMM8_T, SSE_COMPARE_F2_XMM_IMM8_TEST_T, PFNIEMAIMPLMXCSRF2XMMIMM8);
+TYPEDEF_SUBTEST_TYPE(SSE_COMPARE_F3_XMM_IMM8_T, SSE_COMPARE_F3_XMM_IMM8_TEST_T, PFNIEMAIMPLMEDIAF3XMMIMM8);
 
-static SSE_COMPARE_F2_XMM_IMM8_T g_aSseCompareF2XmmR32Imm8[] =
+static SSE_COMPARE_F3_XMM_IMM8_T g_aSseCompareF3XmmR32Imm8[] =
 {
     ENTRY_BIN(cmpps_u128),
     ENTRY_BIN(cmpss_u128)
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-DUMP_ALL_FN(SseCompareF2XmmR32Imm8, g_aSseCompareF2XmmR32Imm8)
-static RTEXITCODE SseCompareF2XmmR32Imm8Generate(uint32_t cTests, const char * const *papszNameFmts)
+DUMP_ALL_FN(SseCompareF3XmmR32Imm8, g_aSseCompareF3XmmR32Imm8)
+static RTEXITCODE SseCompareF3XmmR32Imm8Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -7864,17 +7864,17 @@ static RTEXITCODE SseCompareF2XmmR32Imm8Generate(uint32_t cTests, const char * c
     };
 
     uint32_t cMinNormalPairs       = (cTests - 144) / 4;
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareF2XmmR32Imm8); iFn++)
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareF3XmmR32Imm8); iFn++)
     {
-        PFNIEMAIMPLMXCSRF2XMMIMM8 const pfn = g_aSseCompareF2XmmR32Imm8[iFn].pfnNative ? g_aSseCompareF2XmmR32Imm8[iFn].pfnNative : g_aSseCompareF2XmmR32Imm8[iFn].pfn;
+        PFNIEMAIMPLMEDIAF3XMMIMM8 const pfn = g_aSseCompareF3XmmR32Imm8[iFn].pfnNative ? g_aSseCompareF3XmmR32Imm8[iFn].pfnNative : g_aSseCompareF3XmmR32Imm8[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseCompareF2XmmR32Imm8[iFn]), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseCompareF3XmmR32Imm8[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
-            SSE_COMPARE_F2_XMM_IMM8_TEST_T TestData; RT_ZERO(TestData);
+            SSE_COMPARE_F3_XMM_IMM8_TEST_T TestData; RT_ZERO(TestData);
 
             TestData.InVal1.ar32[0] = iTest < cTests ? RandR32Src(iTest) : s_aSpecials[iTest - cTests].Val1;
             TestData.InVal1.ar32[1] = iTest < cTests ? RandR32Src(iTest) : s_aSpecials[iTest - cTests].Val1;
@@ -7979,17 +7979,17 @@ static RTEXITCODE SseCompareF2XmmR32Imm8Generate(uint32_t cTests, const char * c
 }
 #endif
 
-static void SseCompareF2XmmR32Imm8Test(void)
+static void SseCompareF3XmmR32Imm8Test(void)
 {
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareF2XmmR32Imm8); iFn++)
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareF3XmmR32Imm8); iFn++)
     {
-        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseCompareF2XmmR32Imm8[iFn]))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseCompareF3XmmR32Imm8[iFn]))
             continue;
 
-        SSE_COMPARE_F2_XMM_IMM8_TEST_T const * const    paTests = g_aSseCompareF2XmmR32Imm8[iFn].paTests;
-        uint32_t const                                  cTests  = g_aSseCompareF2XmmR32Imm8[iFn].cTests;
-        PFNIEMAIMPLMXCSRF2XMMIMM8                       pfn     = g_aSseCompareF2XmmR32Imm8[iFn].pfn;
-        uint32_t const                                  cVars   = COUNT_VARIATIONS(g_aSseCompareF2XmmR32Imm8[iFn]);
+        SSE_COMPARE_F3_XMM_IMM8_TEST_T const * const    paTests = g_aSseCompareF3XmmR32Imm8[iFn].paTests;
+        uint32_t const                                  cTests  = g_aSseCompareF3XmmR32Imm8[iFn].cTests;
+        PFNIEMAIMPLMEDIAF3XMMIMM8                       pfn     = g_aSseCompareF3XmmR32Imm8[iFn].pfn;
+        uint32_t const                                  cVars   = COUNT_VARIATIONS(g_aSseCompareF3XmmR32Imm8[iFn]);
         if (!cTests) RTTestSkipped(g_hTest, "no tests");
         for (uint32_t iVar = 0; iVar < cVars; iVar++)
         {
@@ -8029,7 +8029,7 @@ static void SseCompareF2XmmR32Imm8Test(void)
             }
         }
 
-        FREE_DECOMPRESSED_TESTS(g_aSseCompareF2XmmR32Imm8[iFn]);
+        FREE_DECOMPRESSED_TESTS(g_aSseCompareF3XmmR32Imm8[iFn]);
     }
 }
 
@@ -8037,15 +8037,15 @@ static void SseCompareF2XmmR32Imm8Test(void)
 /*
  * Compare SSE operations on packed and single double-precision floating point values - outputting a mask.
  */
-static SSE_COMPARE_F2_XMM_IMM8_T g_aSseCompareF2XmmR64Imm8[] =
+static SSE_COMPARE_F3_XMM_IMM8_T g_aSseCompareF3XmmR64Imm8[] =
 {
     ENTRY_BIN(cmppd_u128),
     ENTRY_BIN(cmpsd_u128)
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-DUMP_ALL_FN(SseCompareF2XmmR64Imm8, g_aSseCompareF2XmmR64Imm8)
-static RTEXITCODE SseCompareF2XmmR64Imm8Generate(uint32_t cTests, const char * const *papszNameFmts)
+DUMP_ALL_FN(SseCompareF3XmmR64Imm8, g_aSseCompareF3XmmR64Imm8)
+static RTEXITCODE SseCompareF3XmmR64Imm8Generate(uint32_t cTests, const char * const *papszNameFmts)
 {
     cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
 
@@ -8063,17 +8063,17 @@ static RTEXITCODE SseCompareF2XmmR64Imm8Generate(uint32_t cTests, const char * c
     };
 
     uint32_t cMinNormalPairs       = (cTests - 144) / 4;
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareF2XmmR64Imm8); iFn++)
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareF3XmmR64Imm8); iFn++)
     {
-        PFNIEMAIMPLMXCSRF2XMMIMM8 const pfn = g_aSseCompareF2XmmR64Imm8[iFn].pfnNative ? g_aSseCompareF2XmmR64Imm8[iFn].pfnNative : g_aSseCompareF2XmmR64Imm8[iFn].pfn;
+        PFNIEMAIMPLMEDIAF3XMMIMM8 const pfn = g_aSseCompareF3XmmR64Imm8[iFn].pfnNative ? g_aSseCompareF3XmmR64Imm8[iFn].pfnNative : g_aSseCompareF3XmmR64Imm8[iFn].pfn;
 
         IEMBINARYOUTPUT BinOut;
-        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseCompareF2XmmR64Imm8[iFn]), RTEXITCODE_FAILURE);
+        AssertReturn(GENERATE_BINARY_OPEN(&BinOut, papszNameFmts, g_aSseCompareF3XmmR64Imm8[iFn]), RTEXITCODE_FAILURE);
 
         uint32_t cNormalInputPairs  = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
-            SSE_COMPARE_F2_XMM_IMM8_TEST_T TestData; RT_ZERO(TestData);
+            SSE_COMPARE_F3_XMM_IMM8_TEST_T TestData; RT_ZERO(TestData);
 
             TestData.InVal1.ar64[0] = iTest < cTests ? RandR64Src(iTest) : s_aSpecials[iTest - cTests].Val1;
             TestData.InVal1.ar64[1] = iTest < cTests ? RandR64Src(iTest) : s_aSpecials[iTest - cTests].Val1;
@@ -8170,17 +8170,17 @@ static RTEXITCODE SseCompareF2XmmR64Imm8Generate(uint32_t cTests, const char * c
 }
 #endif
 
-static void SseCompareF2XmmR64Imm8Test(void)
+static void SseCompareF3XmmR64Imm8Test(void)
 {
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareF2XmmR64Imm8); iFn++)
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSseCompareF3XmmR64Imm8); iFn++)
     {
-        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseCompareF2XmmR64Imm8[iFn]))
+        if (!SUBTEST_CHECK_IF_ENABLED_AND_DECOMPRESS(g_aSseCompareF3XmmR64Imm8[iFn]))
             continue;
 
-        SSE_COMPARE_F2_XMM_IMM8_TEST_T const * const    paTests = g_aSseCompareF2XmmR64Imm8[iFn].paTests;
-        uint32_t const                                  cTests  = g_aSseCompareF2XmmR64Imm8[iFn].cTests;
-        PFNIEMAIMPLMXCSRF2XMMIMM8                       pfn     = g_aSseCompareF2XmmR64Imm8[iFn].pfn;
-        uint32_t const                                  cVars   = COUNT_VARIATIONS(g_aSseCompareF2XmmR64Imm8[iFn]);
+        SSE_COMPARE_F3_XMM_IMM8_TEST_T const * const    paTests = g_aSseCompareF3XmmR64Imm8[iFn].paTests;
+        uint32_t const                                  cTests  = g_aSseCompareF3XmmR64Imm8[iFn].cTests;
+        PFNIEMAIMPLMEDIAF3XMMIMM8                       pfn     = g_aSseCompareF3XmmR64Imm8[iFn].pfn;
+        uint32_t const                                  cVars   = COUNT_VARIATIONS(g_aSseCompareF3XmmR64Imm8[iFn]);
         if (!cTests) RTTestSkipped(g_hTest, "no tests");
         for (uint32_t iVar = 0; iVar < cVars; iVar++)
         {
@@ -8213,7 +8213,7 @@ static void SseCompareF2XmmR64Imm8Test(void)
             }
         }
 
-        FREE_DECOMPRESSED_TESTS(g_aSseCompareF2XmmR64Imm8[iFn]);
+        FREE_DECOMPRESSED_TESTS(g_aSseCompareF3XmmR64Imm8[iFn]);
     }
 }
 
@@ -10236,8 +10236,8 @@ int main(int argc, char **argv)
 
         GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseCompareEflR32R32,    "tstIEMAImplDataSseCompare-%s.bin.gz", 0),
         GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseCompareEflR64R64,    "tstIEMAImplDataSseCompare-%s.bin.gz", 0),
-        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseCompareF2XmmR32Imm8, "tstIEMAImplDataSseCompare-%s.bin.gz", 0),
-        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseCompareF2XmmR64Imm8, "tstIEMAImplDataSseCompare-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseCompareF3XmmR32Imm8, "tstIEMAImplDataSseCompare-%s.bin.gz", 0),
+        GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseCompareF3XmmR64Imm8, "tstIEMAImplDataSseCompare-%s.bin.gz", 0),
 
         GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseConvertXmmI32R32,    "tstIEMAImplDataSseConvert-%s.bin.gz", 0),
         GROUP_ENTRY(CATEGORY_SSE_FP_OTHER,  SseConvertXmmR32I32,    "tstIEMAImplDataSseConvert-%s.bin.gz", 0),

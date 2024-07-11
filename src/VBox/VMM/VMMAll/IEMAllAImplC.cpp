@@ -19399,7 +19399,7 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmpsd_u128,(uint32_t uMxCsrIn, PX86XMMREG p
 
 
 /**
- * ROUNDPS / ROUNDPD / ROUNDSS / ROUNDSD
+ * [V]ROUNDPS / [V]ROUNDPD / ROUNDSS / ROUNDSD
  */
 
 #define X86_SSE_ROUNDXX_IMM_RC_MASK    UINT8_C(0x03)
@@ -19446,6 +19446,7 @@ static RTFLOAT64U iemAImpl_round_worker_r64(uint32_t *pfMxcsr, PCRTFLOAT64U pr64
     return r64Dst;
 }
 
+
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundss_u128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
@@ -19464,26 +19465,73 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundsd_u128,(uint32_t uMxCsrIn, PX86XMMREG
 }
 #endif
 
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc, uint8_t bImm))
 {
     for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar32); i++)
     {
-        puDst->ar32[i] = iemAImpl_round_worker_r32(&uMxCsrIn, &pSrc->uSrc2.ar32[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+        puDst->ar32[i] = iemAImpl_round_worker_r32(&uMxCsrIn, &puSrc->ar32[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
     }
 
     return uMxCsrIn;
 }
 
 
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundpd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundpd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc, uint8_t bImm))
 {
     for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar64); i++)
     {
-        puDst->ar64[i] = iemAImpl_round_worker_r64(&uMxCsrIn, &pSrc->uSrc2.ar64[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+        puDst->ar64[i] = iemAImpl_round_worker_r64(&uMxCsrIn, &puSrc->ar64[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
     }
 
     return uMxCsrIn;
 }
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vroundps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc, uint8_t bImm))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar32); i++)
+    {
+        puDst->ar32[i] = iemAImpl_round_worker_r32(&uMxCsrIn, &puSrc->ar32[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+    }
+
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vroundpd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc, uint8_t bImm))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar64); i++)
+    {
+        puDst->ar64[i] = iemAImpl_round_worker_r64(&uMxCsrIn, &puSrc->ar64[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+    }
+
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vroundps_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86YMMREG puSrc, uint8_t bImm))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar32); i++)
+    {
+        puDst->ar32[i] = iemAImpl_round_worker_r32(&uMxCsrIn, &puSrc->ar32[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+    }
+
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vroundpd_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86YMMREG puSrc, uint8_t bImm))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar64); i++)
+    {
+        puDst->ar64[i] = iemAImpl_round_worker_r64(&uMxCsrIn, &puSrc->ar64[i], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+    }
+
+    return uMxCsrIn;
+}
+
+
 
 /**
  * CVTPD2PI

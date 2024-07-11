@@ -472,7 +472,7 @@ typedef struct SSE_COMPARE_EFL_R64_R64_TEST_T
     RTFLOAT64U              r64ValIn2;
 } SSE_COMPARE_EFL_R64_R64_TEST_T;
 
-typedef struct SSE_COMPARE_F2_XMM_IMM8_TEST_T
+typedef struct SSE_COMPARE_F3_XMM_IMM8_TEST_T
 {
     uint32_t                fMxcsrIn;
     uint32_t                fMxcsrOut;
@@ -482,7 +482,7 @@ typedef struct SSE_COMPARE_F2_XMM_IMM8_TEST_T
     X86XMMREG               InVal1;
     X86XMMREG               InVal2;
     X86XMMREG               OutVal;
-} SSE_COMPARE_F2_XMM_IMM8_TEST_T;
+} SSE_COMPARE_F3_XMM_IMM8_TEST_T;
 
 typedef struct SSE_CONVERT_XMM_TEST_T
 {
@@ -1003,10 +1003,10 @@ TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_EFL_R64_R64_TEST_T, vuco
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_EFL_R64_R64_TEST_T, comisd_u128          );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_EFL_R64_R64_TEST_T, vcomisd_u128         );
 
-TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_F2_XMM_IMM8_TEST_T, cmpps_u128           );
-TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_F2_XMM_IMM8_TEST_T, cmppd_u128           );
-TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_F2_XMM_IMM8_TEST_T, cmpss_u128           );
-TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_F2_XMM_IMM8_TEST_T, cmpsd_u128           );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_F3_XMM_IMM8_TEST_T, cmpps_u128           );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_F3_XMM_IMM8_TEST_T, cmppd_u128           );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_F3_XMM_IMM8_TEST_T, cmpss_u128           );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SseCompare,   SSE_COMPARE_F3_XMM_IMM8_TEST_T, cmpsd_u128           );
 
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseConvert,   SSE_CONVERT_XMM_TEST_T,         cvtdq2ps_u128        );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseConvert,   SSE_CONVERT_XMM_TEST_T,         cvtps2dq_u128        );
