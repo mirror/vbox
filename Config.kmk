@@ -1259,7 +1259,7 @@ endif
 #
 # Branding
 #
-VBOX_BRAND_BIOS_LOGO                 := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/puel_logo.bmp
+VBOX_BRAND_BIOS_LOGO                 := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/vbox_bios_splash_oracle.bmp
 VBOX_BRAND_LICENSE_HTML              := $(PATH_ROOT)/doc/License-gpl-3.0.html
 VBOX_BRAND_LICENSE_RTF               := $(PATH_ROOT)/doc/License-gpl-3.0.rtf
 VBOX_BRAND_LICENSE_TXT               := $(PATH_ROOT)/doc/License-gpl-3.0.txt
@@ -1571,7 +1571,7 @@ ifdef VBOX_OSE
  VBOX_BRAND_LICENSE_RTF              := $(PATH_ROOT)/doc/License-gpl-3.0.rtf
  VBOX_BRAND_LICENSE_TXT              := $(PATH_ROOT)/doc/License-gpl-3.0.txt
  VBOX_BRAND_LICENSE_VER              :=
- VBOX_BRAND_BIOS_LOGO                := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/ose_logo.bmp
+ VBOX_BRAND_BIOS_LOGO                := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/vbox_bios_splash.bmp
  VBOX_BRAND_GUI_ABOUT_PNG            := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/about.png
  VBOX_BRAND_GUI_ABOUT_X2_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/about_x2.png
  VBOX_BRAND_GUI_ABOUT_X3_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/about_x3.png
