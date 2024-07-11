@@ -19251,9 +19251,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcomisd_u128_fallback,(uint32_t uMxCsrIn, u
 
 
 /**
- * CMPPS / CMPPD / CMPSS / CMPSD
+ * [V]CMPPS / [V]CMPPD / [V]CMPSS / [V]CMPSD
  */
-#ifdef IEM_WITHOUT_ASSEMBLY
 /**
  * A compare truth table entry.
  */
@@ -19286,7 +19285,31 @@ static const CMPTRUTHTBLENTRY g_aCmpTbl[] =
     /* 05H (NLT_US)  */     {  true,            true,           true,       false,          true            },
     /* 06H (NLE_US)  */     {  true,            true,           false,      false,          true            },
     /* 07H (ORQ_Q)   */     {  false,           false,          true,       true,           true            },
-    /** @todo AVX variants. */
+    /* Entries supported by the AVX variants. */
+    /* 08H (EQ_UQ)   */     {  false,           true,           true,       false,          false           },
+    /* 09H (NGE_US)  */     {  true,            true,           false,      true,           false           },
+    /* 0aH (NGT_US)  */     {  true,            true,           true,       true,           false           },
+    /* 0bH (FALSE_OQ)*/     {  false,           false,          false,      false,          false           },
+    /* 0cH (NEQ_OQ)  */     {  false,           false,          false,      true,           true            },
+    /* 0dH (GE_OS)   */     {  true,            false,          true,       false,          true            },
+    /* 0eH (GT_OS)   */     {  true,            false,          false,      false,          true            },
+    /* 0fH (TRUE_UQ) */     {  false,           true,           true,       true,           true            },
+    /* 10H (EQ_OS)   */     {  true,            false,          true,       false,          false           },
+    /* 11H (LT_OQ)   */     {  false,           false,          false,      true,           false           },
+    /* 12H (LE_OQ)   */     {  false,           false,          true,       true,           false           },
+    /* 13H (UNORD_S) */     {  true,            true,           false,      false,          false           },
+    /* 14H (NEQ_US)  */     {  true,            true,           false,      true,           true            },
+    /* 15H (NLT_UQ)  */     {  false,           true,           true,       false,          true            },
+    /* 16H (NLE_UQ)  */     {  false,           true,           false,      false,          true            },
+    /* 17H (ORD_S)   */     {  true,            false,          true,       true,           true            },
+    /* 18H (EQ_US)   */     {  true,            true,           true,       false,          false           },
+    /* 19H (NGE_UQ)  */     {  false,           true,           false,      true,           false           },
+    /* 1aH (NGT_UQ)  */     {  false,           true,           true,       true,           false           },
+    /* 1bH (FALSE_OS)*/     {  true,            false,          false,      false,          false           },
+    /* 1cH (NEQ_OS)  */     {  true,            false,          false,      true,           true            },
+    /* 1dH (GE_OQ)   */     {  false,           false,          true,       false,          true            },
+    /* 1eH (GT_OQ)   */     {  false,           false,          false,      false,          true            },
+    /* 1fH (TRUE_US) */     {  true,            true,           true,       true,           true            },
 };
 
 
@@ -19368,6 +19391,7 @@ static bool iemAImpl_cmp_worker_r64(uint32_t *pfMxcsr, PCRTFLOAT64U pr64Src1, PC
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmpps_u128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
 {
     for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar32); i++)
@@ -19420,6 +19444,87 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cmpsd_u128,(uint32_t uMxCsrIn, PX86XMMREG p
     return uMxCsrIn;
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcmpps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar32); i++)
+    {
+        if (iemAImpl_cmp_worker_r32(&uMxCsrIn, &pSrc->uSrc1.ar32[i], &pSrc->uSrc2.ar32[i], bEvil & 0x1f))
+            puDst->au32[i] = UINT32_MAX;
+        else
+            puDst->au32[i] = 0;
+    }
+
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcmpps_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCIEMMEDIAF2YMMSRC pSrc, uint8_t bEvil))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar32); i++)
+    {
+        if (iemAImpl_cmp_worker_r32(&uMxCsrIn, &pSrc->uSrc1.ar32[i], &pSrc->uSrc2.ar32[i], bEvil & 0x1f))
+            puDst->au32[i] = UINT32_MAX;
+        else
+            puDst->au32[i] = 0;
+    }
+
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcmppd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar64); i++)
+    {
+        if (iemAImpl_cmp_worker_r64(&uMxCsrIn, &pSrc->uSrc1.ar64[i], &pSrc->uSrc2.ar64[i], bEvil & 0x1f))
+            puDst->au64[i] = UINT64_MAX;
+        else
+            puDst->au64[i] = 0;
+    }
+
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcmppd_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCIEMMEDIAF2YMMSRC pSrc, uint8_t bEvil))
+{
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->ar64); i++)
+    {
+        if (iemAImpl_cmp_worker_r64(&uMxCsrIn, &pSrc->uSrc1.ar64[i], &pSrc->uSrc2.ar64[i], bEvil & 0x1f))
+            puDst->au64[i] = UINT64_MAX;
+        else
+            puDst->au64[i] = 0;
+    }
+
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcmpss_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+{
+    if (iemAImpl_cmp_worker_r32(&uMxCsrIn, &pSrc->uSrc1.ar32[0], &pSrc->uSrc2.ar32[0], bEvil & 0x1f))
+        puDst->au32[0] = UINT32_MAX;
+    else
+        puDst->au32[0] = 0;
+
+    puDst->au32[1] = pSrc->uSrc1.au32[1];
+    puDst->au64[1] = pSrc->uSrc1.au64[1];
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcmpsd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bEvil))
+{
+    if (iemAImpl_cmp_worker_r64(&uMxCsrIn, &pSrc->uSrc1.ar64[0], &pSrc->uSrc2.ar64[0], bEvil & 0x1f))
+        puDst->au64[0] = UINT64_MAX;
+    else
+        puDst->au64[0] = 0;
+
+    puDst->au64[1] = pSrc->uSrc1.au64[1];
+    return uMxCsrIn;
+}
 
 
 /**

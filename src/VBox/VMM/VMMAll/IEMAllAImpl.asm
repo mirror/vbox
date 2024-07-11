@@ -6706,8 +6706,15 @@ struc IEMMEDIAF2YMMSRC
 endstruc
 
 
+;;
+; SSE/AVX instructions with 8-bit immediates of the form
+;    xxx xmm1, xmm2, imm8.
+;   vxxx xmm1, xmm2, xmm3, imm8.
+; and we need to load and save the MXCSR register.
 ;
-; CMPPS (SSE)
+; @param    1       The instruction name.
+; @param    2       Flag whether this instruction has a 256-bit AVX variant (1) or not (0).
+; @param    3       Number of bytes for the encoding of the SSE variant + ret instruction (AVX is fixed to 6).
 ;
 ; @return   R0_32   The new MXCSR value of the guest.
 ; @param    A0_32   The guest's MXCSR register value to use (input).
@@ -6715,7 +6722,8 @@ endstruc
 ; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC (input).
 ; @param    A3      The 8-bit immediate (input).
 ;
-BEGINPROC_FASTCALL iemAImpl_cmpps_u128, 16
+%macro IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR 3
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
@@ -6723,7 +6731,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpps_u128, 16
         movzx   A3, A3_8                ; must clear top bits
         movdqu  xmm0, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
         movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
-        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 5
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, %3
         movdqu  [A1], xmm0
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
@@ -6733,29 +6741,15 @@ BEGINPROC_FASTCALL iemAImpl_cmpps_u128, 16
  %rep 256
 .imm %+ bImm:
         IBT_ENDBRxx_WITHOUT_NOTRACK
-        cmpps   xmm0, xmm1, bImm
+        %1      xmm0, xmm1, bImm
         ret
   %assign bImm bImm + 1
  %endrep
 .immEnd:
-ENDPROC iemAImpl_cmpps_u128
+ENDPROC iemAImpl_ %+ %1 %+ _u128
 
-;;
-; SSE instructions with 8-bit immediates of the form
-;    xxx xmm1, xmm2, imm8.
-; where the instruction encoding takes up 5 bytes and we need to load and save the MXCSR
-; register.
-;
-; @param    1       The instruction name.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use (input).
-; @param    A1      Pointer to the first media register size operand (output).
-; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC (input).
-; @param    A3      The 8-bit immediate (input).
-;
-%macro IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 1
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
@@ -6773,17 +6767,45 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
  %rep 256
 .imm %+ bImm:
         IBT_ENDBRxx_WITHOUT_NOTRACK
-        %1      xmm0, xmm1, bImm
+        v %+ %1     xmm0, xmm0, xmm1, bImm
         ret
   %assign bImm bImm + 1
  %endrep
 .immEnd:
-ENDPROC iemAImpl_ %+ %1 %+ _u128
+ENDPROC iemAImpl_v %+ %1 %+ _u128
+
+ %if %2 == 1
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movzx   A3, A3_8                ; must clear top bits
+        vmovdqu ymm0, [A2 + IEMMEDIAF2YMMSRC.uSrc1]
+        vmovdqu ymm1, [A2 + IEMMEDIAF2YMMSRC.uSrc2]
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 6
+        vmovdqu [A1], ymm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        v %+ %1     ymm0, ymm0, ymm1, bImm
+        ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_v %+ %1 %+ _u256
+ %endif
 %endmacro
 
-IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmppd
-IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpss
-IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR_5 cmpsd
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR cmpps, 1, 5
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR cmppd, 1, 6
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR cmpss, 0, 6
+IEMIMPL_MEDIA_SSE_INSN_IMM8_MXCSR cmpsd, 0, 6
 
 
 ;;

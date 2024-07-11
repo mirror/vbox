@@ -83,6 +83,7 @@ g_kdTypeInfo2 = {
     'X86XMMREG':        (  128,   False, 'X86XMMREG',       ),
     'X86YMMREG':        (  256,   False, 'X86YMMREG',       ),
     'IEMMEDIAF2XMMSRC': (  256,   False, 'IEMMEDIAF2XMMSRC',),
+    'IEMMEDIAF2YMMSRC': (  512,   False, 'IEMMEDIAF2YMMSRC',),
     'RTUINT256U':       (  256,   False, 'RTUINT256U',      ),
     'IEMPCMPISTRXSRC':  (  256,   False, 'IEMPCMPISTRXSRC', ),
     'IEMPCMPESTRXSRC':  (  384,   False, 'IEMPCMPESTRXSRC', ),
@@ -887,6 +888,7 @@ class ThreadedFunctionVariation(object):
             (  2, 'IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128_AND_RAX_RDX_U64' ),
         'IEM_MC_FETCH_MEM_U128_AND_XREG_U128_AND_EAX_EDX_U32_SX_U64':
             (  2, 'IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128_AND_EAX_EDX_U32_SX_U64' ),
+        'IEM_MC_FETCH_MEM_YMM_ALIGN_AVX_AND_YREG_YMM':  (  2, 'IEM_MC_FETCH_MEM_FLAT_YMM_ALIGN_AVX_AND_YREG_YMM' ),
         'IEM_MC_STORE_MEM_U8':                    (  0, 'IEM_MC_STORE_MEM_FLAT_U8' ),
         'IEM_MC_STORE_MEM_U16':                   (  0, 'IEM_MC_STORE_MEM_FLAT_U16' ),
         'IEM_MC_STORE_MEM_U32':                   (  0, 'IEM_MC_STORE_MEM_FLAT_U32' ),
