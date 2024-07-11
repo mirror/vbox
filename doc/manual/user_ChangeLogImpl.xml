@@ -118,6 +118,11 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+       <para>VBoxManage: Added ability to show and (re-)attach to a (video) recording progress
+         of a VM</para>
+      </listitem>
+
+      <listitem>
        <para>VBoxManage: Added the ability to query the guest's mount points via a new "mount"
          Guest Control sub command. Requires at least 7.1 Guest Additions</para>
       </listitem>
