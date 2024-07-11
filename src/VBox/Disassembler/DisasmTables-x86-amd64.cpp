@@ -3523,7 +3523,7 @@ const DISOPCODE g_aDisasVexMap1[] =
     /* c */
     INVALID_OPCODE,
     INVALID_OPCODE,
-    OPVEX("vcmpss %Vps,%Hps,%Wps,%Ib",      IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       IDX_ParseImmByte,   OP_VCMPSS,          OP_PARM_Vps,  OP_PARM_Hps,  OP_PARM_Wps,  OP_PARM_Ib,   DISOPTYPE_HARMLESS),
+    OPVEX("vcmpps %Vps,%Hps,%Wps,%Ib",      IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       IDX_ParseImmByte,   OP_VCMPPS,          OP_PARM_Vps,  OP_PARM_Hps,  OP_PARM_Wps,  OP_PARM_Ib,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -3662,7 +3662,7 @@ static const DISOPCODE g_aDisasVexMap1_66[] =
     /* c   format string,                   parse param #1,     parse param #2,     parse param #3,     parse param #4,     opcode,             param #1,     param #2,     param #3,     param #4,     flags */
     INVALID_OPCODE,
     INVALID_OPCODE,
-    OPVEX("vcmpps %Vpd,%Hpd,%Wpd,%Ib",      IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       IDX_ParseImmByte,   OP_VCMPSS,          OP_PARM_Vpd,  OP_PARM_Hpd,  OP_PARM_Wpd,  OP_PARM_Ib,   DISOPTYPE_HARMLESS),
+    OPVEX("vcmppd %Vpd,%Hpd,%Wpd,%Ib",      IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       IDX_ParseImmByte,   OP_VCMPPS,          OP_PARM_Vpd,  OP_PARM_Hpd,  OP_PARM_Wpd,  OP_PARM_Ib,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     // vpinsrw Vdq,Hdq,Ry/Mw,Ib
     OPVEX("vpinsrw %Vdq,%Hdq,%Ey,%Ib",      IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       IDX_ParseImmByte,   OP_VPINSRW,         OP_PARM_Vdq,  OP_PARM_Hdq,  OP_PARM_Ey,   OP_PARM_Ib,   DISOPTYPE_HARMLESS),
@@ -3990,7 +3990,7 @@ static const DISOPCODE g_aDisasVexMap1F3[] =
     /* c */
     INVALID_OPCODE,
     INVALID_OPCODE,
-    OPVEX("vcmpps %Vss,%Hss,%Wss,%Ib",      IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       IDX_ParseImmByte,   OP_VCMPSS,          OP_PARM_Vss,  OP_PARM_Hss,  OP_PARM_Wss,  OP_PARM_Ib,    DISOPTYPE_HARMLESS),
+    OPVEX("vcmpss %Vss,%Hss,%Wss,%Ib",      IDX_ParseModRM,     IDX_ParseVexDest,   IDX_UseModRM,       IDX_ParseImmByte,   OP_VCMPSS,          OP_PARM_Vss,  OP_PARM_Hss,  OP_PARM_Wss,  OP_PARM_Ib,    DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
