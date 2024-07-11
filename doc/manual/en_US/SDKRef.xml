@@ -4917,7 +4917,7 @@ AuthResult AUTHCALL AuthEntry(
             </listitem>
 
             <listitem><para>The event <computeroutput>IVideoCaptureChangedEvent</computeroutput> was renamed into
-              <link linkend="IRecordingChangedEvent">IRecordingChangedEvent</link>.</para>
+              <computeroutput>IRecordingChangedEvent</computeroutput>.</para>
             </listitem>
 
           </itemizedlist>
