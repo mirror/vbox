@@ -4173,22 +4173,22 @@ FNIEMAIMPLMEDIAF3XMMIMM8 iemAImpl_dpps_u128,     iemAImpl_dpps_u128_fallback;
 FNIEMAIMPLMEDIAF3XMMIMM8 iemAImpl_dppd_u128,     iemAImpl_dppd_u128_fallback;
 
 
-typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLMEDIAF2XMMIMM8,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc, uint8_t bEvil));
-typedef FNIEMAIMPLMEDIAF2XMMIMM8 *PFNIEMAIMPLMEDIAF2XMMIMM8;
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLMEDIAF2U128IMM8,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc, uint8_t bEvil));
+typedef FNIEMAIMPLMEDIAF2U128IMM8 *PFNIEMAIMPLMEDIAF2U128IMM8;
 
 
-typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLMEDIAF2YMMIMM8,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86YMMREG puSrc, uint8_t bEvil));
-typedef FNIEMAIMPLMEDIAF2YMMIMM8 *PFNIEMAIMPLMEDIAF2YMMIMM8;
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLMEDIAF2U256IMM8,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86YMMREG puSrc, uint8_t bEvil));
+typedef FNIEMAIMPLMEDIAF2U256IMM8 *PFNIEMAIMPLMEDIAF2U256IMM8;
 
 
-FNIEMAIMPLMEDIAF2XMMIMM8 iemAImpl_roundps_u128,  iemAImpl_roundps_u128_fallback;
-FNIEMAIMPLMEDIAF2XMMIMM8 iemAImpl_roundpd_u128,  iemAImpl_roundpd_u128_fallback;
+FNIEMAIMPLMEDIAF2U128IMM8 iemAImpl_roundps_u128,  iemAImpl_roundps_u128_fallback;
+FNIEMAIMPLMEDIAF2U128IMM8 iemAImpl_roundpd_u128,  iemAImpl_roundpd_u128_fallback;
 
-FNIEMAIMPLMEDIAF2XMMIMM8 iemAImpl_vroundps_u128, iemAImpl_vroundps_u128_fallback;
-FNIEMAIMPLMEDIAF2XMMIMM8 iemAImpl_vroundpd_u128, iemAImpl_vroundpd_u128_fallback;
+FNIEMAIMPLMEDIAF2U128IMM8 iemAImpl_vroundps_u128, iemAImpl_vroundps_u128_fallback;
+FNIEMAIMPLMEDIAF2U128IMM8 iemAImpl_vroundpd_u128, iemAImpl_vroundpd_u128_fallback;
 
-FNIEMAIMPLMEDIAF2YMMIMM8 iemAImpl_vroundps_u256, iemAImpl_vroundps_u256_fallback;
-FNIEMAIMPLMEDIAF2YMMIMM8 iemAImpl_vroundpd_u256, iemAImpl_vroundpd_u256_fallback;
+FNIEMAIMPLMEDIAF2U256IMM8 iemAImpl_vroundps_u256, iemAImpl_vroundps_u256_fallback;
+FNIEMAIMPLMEDIAF2U256IMM8 iemAImpl_vroundpd_u256, iemAImpl_vroundpd_u256_fallback;
 
 
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLMXCSRU64U128,(uint32_t fMxCsrIn, uint64_t *pu64Dst, PCX86XMMREG pSrc));
@@ -4440,8 +4440,8 @@ typedef IEMOPMEDIAOPTF2 const *PCIEMOPMEDIAOPTF2;
  */
 typedef struct IEMOPMEDIAF2IMM8
 {
-    PFNIEMAIMPLMEDIAF2XMMIMM8 pfnU128;
-    PFNIEMAIMPLMEDIAF2YMMIMM8 pfnU256;
+    PFNIEMAIMPLMEDIAF2U128IMM8 pfnU128;
+    PFNIEMAIMPLMEDIAF2U256IMM8 pfnU256;
 } IEMOPMEDIAF2IMM8;
 /** Pointer to a media operation function table for 2 full sized ops (AVX). */
 typedef IEMOPMEDIAF2IMM8 const *PCIEMOPMEDIAF2IMM8;
