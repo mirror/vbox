@@ -624,8 +624,22 @@ void UIMachineSettingsSystem::sltRetranslateUI()
 void UIMachineSettingsSystem::handleFilterChange()
 {
     /* Update some stuff: */
-    updateOptionSet();
     updateMinimumLayoutHint();
+
+    /* Some options hidden for ARM machines: */
+    const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
+                                        ? optionalFlags().value("arch").value<KPlatformArchitecture>()
+                                        : KPlatformArchitecture_x86;
+    const bool fARMMachine = enmArch == KPlatformArchitecture_ARM;
+    if (fARMMachine)
+    {
+        if (m_pEditorChipset)
+            m_pEditorChipset->hide();
+        if (m_pEditorTpm)
+            m_pEditorTpm->hide();
+        if (m_pEditorProcessorFeatures)
+            m_pEditorProcessorFeatures->hide();
+    }
 }
 
 void UIMachineSettingsSystem::polishPage()
@@ -659,9 +673,6 @@ void UIMachineSettingsSystem::polishPage()
         m_pEditorAccelerationFeatures->setEnableNestedPagingAvailable(   (systemData.m_fSupportedNestedPaging && isMachineOffline())
                                                                       || (systemData.m_fEnabledNestedPaging && isMachineOffline()));
     }
-
-    /* Update option set: */
-    updateOptionSet();
 }
 
 void UIMachineSettingsSystem::prepare()
@@ -673,9 +684,6 @@ void UIMachineSettingsSystem::prepare()
     /* Prepare everything: */
     prepareWidgets();
     prepareConnections();
-
-    /* Update option set: */
-    updateOptionSet();
 
     /* Apply language settings: */
     sltRetranslateUI();
@@ -894,22 +902,6 @@ void UIMachineSettingsSystem::prepareConnections()
     if (m_pEditorAccelerationFeatures)
         connect(m_pEditorAccelerationFeatures, &UIAccelerationFeaturesEditor::sigChangedNestedPaging,
                 this, &UIMachineSettingsSystem::revalidate);
-}
-
-void UIMachineSettingsSystem::updateOptionSet()
-{
-    /* Load currently propagated arch type: */
-    const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
-                                        ? optionalFlags().value("arch").value<KPlatformArchitecture>()
-                                        : KPlatformArchitecture_x86;
-
-    /* Some options visible only for x86 machines: */
-    const bool fx86 = enmArch == KPlatformArchitecture_x86;
-    if (m_pEditorChipset)
-        m_pEditorChipset->setVisible(fx86);
-    if (m_pEditorTpm)
-        m_pEditorTpm->setVisible(fx86);
-    m_pEditorProcessorFeatures->setVisible(fx86);
 }
 
 void UIMachineSettingsSystem::cleanup()

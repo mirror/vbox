@@ -137,8 +137,6 @@ private:
     void prepareTabAcceleration();
     /** Prepares connections. */
     void prepareConnections();
-    /** Updates option set. */
-    void updateOptionSet();
     /** Cleanups all. */
     void cleanup();
 
