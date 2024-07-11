@@ -243,7 +243,7 @@ int RecordingContext::progressCreate(const settings::RecordingSettings &Settings
      * We use the maximum time (in s) of each screen as the overall progress indicator.
      * If one screen is configured to be recorded indefinitely (until manually stopped),
      * the operation count gets reset to 1. */
-    ULONG cOperations;
+    ULONG cOperations = 1; /* Always start at 1. */
     settings::RecordingScreenSettingsMap::const_iterator itScreen = Settings.mapScreens.begin();
     while (itScreen != Settings.mapScreens.end())
     {
@@ -755,6 +755,8 @@ DECLCALLBACK(void) RecordingContext::s_recordingStateChangedCallback(RecordingCo
 int RecordingContext::createInternal(Console *ptrConsole, const settings::RecordingSettings &Settings,
                                      ComPtr<IProgress> &pProgress)
 {
+    int vrc = VINF_SUCCESS;
+
     /* Copy the settings to our context. */
     m_Settings = Settings;
 
@@ -765,7 +767,7 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
     /* We always use the audio settings from screen 0, as we multiplex the audio data anyway. */
     settings::RecordingScreenSettings const &screen0Settings = itScreen0->second;
 
-    int vrc = this->audioInit(screen0Settings);
+    vrc = this->audioInit(screen0Settings);
     if (RT_FAILURE(vrc))
         return vrc;
 #endif

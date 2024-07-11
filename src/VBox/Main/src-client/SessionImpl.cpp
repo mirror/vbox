@@ -784,7 +784,7 @@ HRESULT Session::onRecordingStateChange(BOOL aEnable, ComPtr<IProgress> &aProgre
 
     return mConsole->i_onRecordingStateChange(aEnable, aProgress);
 #else
-    RT_NOREF(aEnable);
+    RT_NOREF(aEnable, aProgress);
     return S_OK;
 #endif
 }
@@ -801,7 +801,7 @@ HRESULT Session::onRecordingScreenStateChange(BOOL aEnable, ULONG aScreen)
 
     return mConsole->i_onRecordingScreenStateChange(aEnable, aScreen);
 #else
-    RT_NOREF(aEnable);
+    RT_NOREF(aEnable, aScreen);
     return S_OK;
 #endif
 }
