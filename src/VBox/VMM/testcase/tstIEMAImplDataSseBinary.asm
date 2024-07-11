@@ -155,6 +155,12 @@ IEM_TEST_DATA pcmpistrm_u128,       "tstIEMAImplDataSsePcmpxstrx-pcmpistrm_u128.
 IEM_TEST_DATA pcmpestri_u128,       "tstIEMAImplDataSsePcmpxstrx-pcmpestri_u128.bin.gz"
 IEM_TEST_DATA pcmpestrm_u128,       "tstIEMAImplDataSsePcmpxstrx-pcmpestrm_u128.bin.gz"
 
+IEM_TEST_DATA vpcmpistri_u128,       "tstIEMAImplDataSsePcmpxstrx-vpcmpistri_u128.bin.gz"
+IEM_TEST_DATA vpcmpistrm_u128,       "tstIEMAImplDataSsePcmpxstrx-vpcmpistrm_u128.bin.gz"
+IEM_TEST_DATA vpcmpestri_u128,       "tstIEMAImplDataSsePcmpxstrx-vpcmpestri_u128.bin.gz"
+IEM_TEST_DATA vpcmpestrm_u128,       "tstIEMAImplDataSsePcmpxstrx-vpcmpestrm_u128.bin.gz"
+
+
 ;
 ; Integer stuff.
 ; dir tstIEMAImplDataInt*bin.gz /b | sed -e 's/tstIEMAImplDataInt-\([^.]*\)\.bin\.gz$/IEM_TEST_DATA \1, "tstIEMAImplDataInt-\1.bin.gz"/'

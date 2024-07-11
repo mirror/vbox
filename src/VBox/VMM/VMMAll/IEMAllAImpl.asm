@@ -5968,7 +5968,9 @@ struc IEMPCMPESTRXSRC
 endstruc
 
 ;;
-; The pcmpistri instruction.
+; The pcmpistri/vcmpistri instruction.
+;
+; @param    1       The instruction name
 ;
 ; @return   R0_32   The new ECX value.
 ; @param    A0      Pointer to the EFLAGS register.
@@ -5976,7 +5978,8 @@ endstruc
 ; @param    A2      Pointer to the second operand (input).
 ; @param    A3      The 8-bit immediate
 ;
-BEGINPROC_FASTCALL iemAImpl_pcmpistri_u128, 16
+%macro IEMIMPL_MEDIA_V_CMPISTRI 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
 
@@ -5995,16 +5998,23 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistri_u128, 16
  %rep 256
 .imm %+ bImm:
         IBT_ENDBRxx_WITHOUT_NOTRACK
-        pcmpistri xmm0, xmm1, bImm
+        %1 xmm0, xmm1, bImm
         ret
         int3
   %assign bImm bImm + 1
  %endrep
 .immEnd:
-ENDPROC iemAImpl_pcmpistri_u128
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+%endmacro
+
+IEMIMPL_MEDIA_V_CMPISTRI pcmpistri
+IEMIMPL_MEDIA_V_CMPISTRI vpcmpistri
+
 
 ;;
 ; The pcmpestri instruction.
+;
+; @param    1       The instruction name
 ;
 ; @param    A0      Pointer to the ECX register to store the result to (output).
 ; @param    A1      Pointer to the EFLAGS register.
@@ -6044,15 +6054,63 @@ BEGINPROC_FASTCALL iemAImpl_pcmpestri_u128, 16
 .immEnd:
 ENDPROC iemAImpl_pcmpestri_u128
 
+
 ;;
-; The pcmpistrm instruction template.
+; The vpcmpestri instruction.
+;
+; @param    1       The instruction name
+;
+; @param    A0      Pointer to the ECX register to store the result to (output).
+; @param    A1      Pointer to the EFLAGS register.
+; @param    A2      Pointer to the structure containing the source operands (input).
+; @param    A3      The 8-bit immediate
+;
+BEGINPROC_FASTCALL iemAImpl_vpcmpestri_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movzx   A3, A3_8                ; must clear top bits
+        movdqu  xmm0, [A2 + IEMPCMPESTRXSRC.uSrc1]
+        movdqu  xmm1, [A2 + IEMPCMPESTRXSRC.uSrc2]
+        mov     T2, A0                  ; A0 can be ecx/rcx in some calling conventions which gets overwritten later (T2 only available on AMD64)
+        IEMIMPL_JUMP_TABLE_TARGET T1, A3, 8
+        push    xDX                                 ; xDX can be A1 or A2 depending on the calling convention
+        mov     xAX, [A2 + IEMPCMPESTRXSRC.u64Rax]  ; T0 is rax, so only overwrite it after we're done using it
+        mov     xDX, [A2 + IEMPCMPESTRXSRC.u64Rdx]
+        IBT_NOTRACK
+        call    T1
+
+        pop     xDX
+        IEM_SAVE_FLAGS_OLD A1, X86_EFL_CF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF, 0, X86_EFL_AF | X86_EFL_PF
+        mov    [T2], ecx
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        db 0xc4, 0xe3, 0xf9, 0x61, 0xc1, bImm ; vpcmpestri xmm0,xmm1,0x1 with VEX.W set
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_vpcmpestri_u128
+
+
+;;
+; The pcmpistrm/vpcmpistrm instruction template.
+;
+; @param    1       The instruction name
 ;
 ; @param    A0      Pointer to the XMM0 register to store the result to (output).
 ; @param    A1      Pointer to the EFLAGS register.
 ; @param    A2      Pointer to the structure containing the source operands (input).
 ; @param    A3      The 8-bit immediate
 ;
-BEGINPROC_FASTCALL iemAImpl_pcmpistrm_u128, 16
+%macro IEMIMPL_MEDIA_V_CMPISTRM 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
 
@@ -6070,16 +6128,21 @@ BEGINPROC_FASTCALL iemAImpl_pcmpistrm_u128, 16
  %rep 256
 .imm %+ bImm:
         IBT_ENDBRxx_WITHOUT_NOTRACK
-        pcmpistrm xmm1, xmm2, bImm
+        %1 xmm1, xmm2, bImm
         ret
         int3
   %assign bImm bImm + 1
  %endrep
 .immEnd:
-ENDPROC iemAImpl_pcmpistrm_u128
+ENDPROC iemAImpl_ %+ %1 %+ _u128
+%endmacro
+
+IEMIMPL_MEDIA_V_CMPISTRM pcmpistrm
+IEMIMPL_MEDIA_V_CMPISTRM vpcmpistrm
+
 
 ;;
-; The pcmpestrm instruction template.
+; The pcmpestrm instruction.
 ;
 ; @param    A0      Pointer to the XMM0 register to store the result to (output).
 ; @param    A1      Pointer to the EFLAGS register.
@@ -6117,6 +6180,47 @@ BEGINPROC_FASTCALL iemAImpl_pcmpestrm_u128, 16
  %endrep
 .immEnd:
 ENDPROC iemAImpl_pcmpestrm_u128
+
+
+;;
+; The vpcmpestrm instruction.
+;
+; @param    A0      Pointer to the XMM0 register to store the result to (output).
+; @param    A1      Pointer to the EFLAGS register.
+; @param    A2      Pointer to the structure containing the source operands (input).
+; @param    A3      The 8-bit immediate
+;
+BEGINPROC_FASTCALL iemAImpl_vpcmpestrm_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movzx   A3, A3_8                ; must clear top bits
+        movdqu  xmm1, [A2 + IEMPCMPESTRXSRC.uSrc1]
+        movdqu  xmm2, [A2 + IEMPCMPESTRXSRC.uSrc2]
+        IEMIMPL_JUMP_TABLE_TARGET T1, A3, 8
+        push    xDX                                 ; xDX can be A1 or A2 depending on the calling convention
+        mov     xAX, [A2 + IEMPCMPESTRXSRC.u64Rax]  ; T0 is rax, so only overwrite it after we're done using it
+        mov     xDX, [A2 + IEMPCMPESTRXSRC.u64Rdx]
+        IBT_NOTRACK
+        call    T1
+
+        pop     xDX
+        IEM_SAVE_FLAGS_OLD A1, X86_EFL_CF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF, 0, X86_EFL_AF | X86_EFL_PF
+        movdqu  [A0], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        db 0xc4, 0xe3, 0xf9, 0x60, 0xca, bImm ; vpcmpestrm xmm1, xmm2, bImm with VEX.W set
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_vpcmpestrm_u128
 
 
 ;;

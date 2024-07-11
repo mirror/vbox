@@ -18697,6 +18697,12 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pEFlags,
 }
 
 
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vpcmpistri_u128_fallback,(uint32_t *pEFlags, PCRTUINT128U pSrc1, PCRTUINT128U pSrc2, uint8_t bEvil))
+{
+    return iemAImpl_pcmpistri_u128_fallback(pEFlags, pSrc1, pSrc2, bEvil);
+}
+
+
 /**
  * [V]PCMPESTRI
  */
@@ -18708,6 +18714,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128_fallback,(uint32_t *pu32Ecx, uin
 
     uint16_t u16Result = iemAImpl_pcmpxstrx_worker(pEFlags, &pSrc->uSrc1, &pSrc->uSrc2, cLen1, cLen2, bEvil);
     *pu32Ecx = iemAImpl_pcmpxstri_set_result_index(u16Result, cElems, bEvil);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpestri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil))
+{
+    iemAImpl_pcmpestri_u128_fallback(pu32Ecx, pEFlags, pSrc, bEvil);
 }
 
 
@@ -18755,6 +18767,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uin
 }
 
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpistrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil))
+{
+    iemAImpl_pcmpistrm_u128_fallback(puDst, pEFlags, pSrc, bEvil);
+}
+
+
 /**
  * [V]PCMPESTRM
  */
@@ -18766,6 +18784,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestrm_u128_fallback,(PRTUINT128U puDst, uin
 
     uint16_t u16Result = iemAImpl_pcmpxstrx_worker(pEFlags, &pSrc->uSrc1, &pSrc->uSrc2, cLen1, cLen2, bEvil);
     iemAImpl_pcmpxstrm_set_result_mask(puDst, u16Result, cElems, bEvil);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpcmpestrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil))
+{
+    iemAImpl_pcmpestrm_u128_fallback(puDst, pEFlags, pSrc, bEvil);
 }
 
 
