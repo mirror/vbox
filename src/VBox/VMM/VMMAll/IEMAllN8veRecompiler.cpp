@@ -2513,8 +2513,10 @@ iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idx
  * @param   enmExitReason   The exit reason to jump to.
  */
 DECL_HIDDEN_THROW(void)
-iemNativeAddTbExitFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, IEMNATIVEEXITREASON enmExitReason)
+iemNativeAddTbExitFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, IEMNATIVELABELTYPE enmExitReason)
 {
+    Assert(IEMNATIVELABELTYPE_IS_EXIT_REASON(enmExitReason));
+
     /*
      * Make sure we've room.
      */
@@ -2539,7 +2541,7 @@ iemNativeAddTbExitFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, IEMNAT
      * Add the fixup.
      */
     paTbExitFixups[cTbExitFixups].off            = offWhere;
-    paTbExitFixups[cTbExitFixups].enmExitReason  = (uint32_t)enmExitReason;
+    paTbExitFixups[cTbExitFixups].enmExitReason  = enmExitReason;
     pReNative->cTbExitFixups = cTbExitFixups + 1;
 }
 #endif
@@ -6235,7 +6237,7 @@ iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     /* Jump to non-zero status return path. */
-    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeExitReason_NonZeroRetOrPassUp);
+    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeLabelType_NonZeroRetOrPassUp);
 
     /* done. */
 
@@ -6253,7 +6255,7 @@ iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     pu32CodeBuf[off++] = Armv8A64MkInstrOrr(ARMV8_A64_REG_X4, ARMV8_A64_REG_X3, ARMV8_A64_REG_X0, false /*f64Bit*/);
 
     off = iemNativeEmitTestIfGprIsNotZeroAndTbExitEx(pReNative, pu32CodeBuf, off, ARMV8_A64_REG_X4, true /*f64Bit*/,
-                                                     kIemNativeExitReason_NonZeroRetOrPassUp);
+                                                     kIemNativeLabelType_NonZeroRetOrPassUp);
 
 #else
 # error "port me"
@@ -6301,7 +6303,7 @@ iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint3
     off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 32);
     off = iemNativeEmitAddGpr32Imm(pReNative, off, iTmpReg, (int32_t)0x8000);
     off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 16);
-    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeExitReason_RaiseGp0);
+    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
 
     iemNativeRegFreeTmp(pReNative, iTmpReg);
 
@@ -6320,7 +6322,7 @@ iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint3
     off = iemNativeEmitLoadGprImm64(pReNative, off, iTmpReg, UINT64_C(0x800000000000));
     off = iemNativeEmitAddTwoGprs(pReNative, off, iTmpReg, idxAddrReg);
     off = iemNativeEmitCmpArm64(pReNative, off, ARMV8_A64_REG_XZR, iTmpReg, true /*f64Bit*/, 48 /*cShift*/, kArmv8A64InstrShift_Lsr);
-    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeExitReason_RaiseGp0);
+    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
 
     iemNativeRegFreeTmp(pReNative, iTmpReg);
 
@@ -6363,7 +6365,7 @@ iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNat
                                                                 kIemNativeGstRegUse_ReadOnly);
 
     off = iemNativeEmitCmpGpr32WithGpr(pReNative, off, idxAddrReg, idxRegCsLim);
-    off = iemNativeEmitJaTbExit(pReNative, off, kIemNativeExitReason_RaiseGp0);
+    off = iemNativeEmitJaTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
 
     iemNativeRegFreeTmp(pReNative, idxRegCsLim);
     return off;
@@ -9659,7 +9661,7 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
 # else
 #  error "port me"
 # endif
-    uint32_t aoffLabels[kIemNativeExitReason_Max] = {0};
+    uint32_t aoffLabels[kIemNativeLabelType_LastTbExit + 1] = {0};
     int      rc  = VINF_SUCCESS;
     uint32_t off = 0;
 
@@ -9668,7 +9670,7 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
         /*
          * Emit the epilog code.
          */
-        aoffLabels[kIemNativeExitReason_Return] = off;
+        aoffLabels[kIemNativeLabelType_Return] = off;
         off = iemNativeEmitCoreEpilog(pReNative, off);
 
         /*
@@ -9676,14 +9678,14 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
          */
         static struct
         {
-            IEMNATIVEEXITREASON  enmExitReason;
-            uint32_t (*pfnEmitCore)(PIEMRECOMPILERSTATE pReNative, uint32_t off);
+            IEMNATIVELABELTYPE enmExitReason;
+            uint32_t         (*pfnEmitCore)(PIEMRECOMPILERSTATE pReNative, uint32_t off);
         } const s_aSpecialWithEpilogs[] =
         {
-            { kIemNativeExitReason_NonZeroRetOrPassUp,    iemNativeEmitCoreRcFiddling           },
-            { kIemNativeExitReason_ReturnBreak,           iemNativeEmitCoreReturnBreak          },
-            { kIemNativeExitReason_ReturnBreakFF,         iemNativeEmitCoreReturnBreakFF        },
-            { kIemNativeExitReason_ReturnWithFlags,       iemNativeEmitCoreReturnWithFlags      },
+            { kIemNativeLabelType_NonZeroRetOrPassUp,   iemNativeEmitCoreRcFiddling           },
+            { kIemNativeLabelType_ReturnBreak,          iemNativeEmitCoreReturnBreak          },
+            { kIemNativeLabelType_ReturnBreakFF,        iemNativeEmitCoreReturnBreakFF        },
+            { kIemNativeLabelType_ReturnWithFlags,      iemNativeEmitCoreReturnWithFlags      },
         };
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aSpecialWithEpilogs); i++)
         {
@@ -9699,20 +9701,20 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
          */
         static struct
         {
-            IEMNATIVEEXITREASON  enmExitReason;
+            IEMNATIVELABELTYPE   enmExitReason;
             uintptr_t            pfnHelper;
         } const s_aViaLookup[] =
         {
-            {   kIemNativeExitReason_ReturnBreakViaLookup,
+            {   kIemNativeLabelType_ReturnBreakViaLookup,
                 (uintptr_t)iemNativeHlpReturnBreakViaLookup<false /*a_fWithIrqCheck*/>          },
-            {   kIemNativeExitReason_ReturnBreakViaLookupWithIrq,
+            {   kIemNativeLabelType_ReturnBreakViaLookupWithIrq,
                 (uintptr_t)iemNativeHlpReturnBreakViaLookup<true /*a_fWithIrqCheck*/>           },
-            {   kIemNativeExitReason_ReturnBreakViaLookupWithTlb,
+            {   kIemNativeLabelType_ReturnBreakViaLookupWithTlb,
                 (uintptr_t)iemNativeHlpReturnBreakViaLookupWithTlb<false /*a_fWithIrqCheck*/>   },
-            {   kIemNativeExitReason_ReturnBreakViaLookupWithTlbAndIrq,
+            {   kIemNativeLabelType_ReturnBreakViaLookupWithTlbAndIrq,
                 (uintptr_t)iemNativeHlpReturnBreakViaLookupWithTlb<true /*a_fWithIrqCheck*/>    },
         };
-        uint32_t const offReturnBreak = aoffLabels[kIemNativeExitReason_ReturnBreak]; Assert(offReturnBreak != 0);
+        uint32_t const offReturnBreak = aoffLabels[kIemNativeLabelType_ReturnBreak]; Assert(offReturnBreak != 0);
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aViaLookup); i++)
         {
             off = iemNativeRecompileEmitAlignmentPadding(pReNative, off, fAlignMask);
@@ -9728,23 +9730,23 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
         typedef IEM_DECL_NATIVE_HLP_PTR(int, PFNIEMNATIVESIMPLETAILLABELCALL,(PVMCPUCC pVCpu));
         static struct
         {
-            IEMNATIVEEXITREASON             enmExitReason;
+            IEMNATIVELABELTYPE              enmExitReason;
             bool                            fWithEpilog;
             PFNIEMNATIVESIMPLETAILLABELCALL pfnCallback;
         } const s_aSimpleTailLabels[] =
         {
-            {   kIemNativeExitReason_RaiseDe,               false, iemNativeHlpExecRaiseDe },
-            {   kIemNativeExitReason_RaiseUd,               false, iemNativeHlpExecRaiseUd },
-            {   kIemNativeExitReason_RaiseSseRelated,       false, iemNativeHlpExecRaiseSseRelated },
-            {   kIemNativeExitReason_RaiseAvxRelated,       false, iemNativeHlpExecRaiseAvxRelated },
-            {   kIemNativeExitReason_RaiseSseAvxFpRelated,  false, iemNativeHlpExecRaiseSseAvxFpRelated },
-            {   kIemNativeExitReason_RaiseNm,               false, iemNativeHlpExecRaiseNm },
-            {   kIemNativeExitReason_RaiseGp0,              false, iemNativeHlpExecRaiseGp0 },
-            {   kIemNativeExitReason_RaiseMf,               false, iemNativeHlpExecRaiseMf },
-            {   kIemNativeExitReason_RaiseXf,               false, iemNativeHlpExecRaiseXf },
-            {   kIemNativeExitReason_ObsoleteTb,            true,  iemNativeHlpObsoleteTb },
-            {   kIemNativeExitReason_NeedCsLimChecking,     true,  iemNativeHlpNeedCsLimChecking },
-            {   kIemNativeExitReason_CheckBranchMiss,       true,  iemNativeHlpCheckBranchMiss },
+            {   kIemNativeLabelType_RaiseDe,                false, iemNativeHlpExecRaiseDe },
+            {   kIemNativeLabelType_RaiseUd,                false, iemNativeHlpExecRaiseUd },
+            {   kIemNativeLabelType_RaiseSseRelated,        false, iemNativeHlpExecRaiseSseRelated },
+            {   kIemNativeLabelType_RaiseAvxRelated,        false, iemNativeHlpExecRaiseAvxRelated },
+            {   kIemNativeLabelType_RaiseSseAvxFpRelated,   false, iemNativeHlpExecRaiseSseAvxFpRelated },
+            {   kIemNativeLabelType_RaiseNm,                false, iemNativeHlpExecRaiseNm },
+            {   kIemNativeLabelType_RaiseGp0,               false, iemNativeHlpExecRaiseGp0 },
+            {   kIemNativeLabelType_RaiseMf,                false, iemNativeHlpExecRaiseMf },
+            {   kIemNativeLabelType_RaiseXf,                false, iemNativeHlpExecRaiseXf },
+            {   kIemNativeLabelType_ObsoleteTb,             true,  iemNativeHlpObsoleteTb },
+            {   kIemNativeLabelType_NeedCsLimChecking,      true,  iemNativeHlpNeedCsLimChecking },
+            {   kIemNativeLabelType_CheckBranchMiss,        true,  iemNativeHlpCheckBranchMiss },
         };
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aSimpleTailLabels); i++)
         {
@@ -9758,7 +9760,7 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
 
             /* jump back to the return sequence / generate a return sequence. */
             if (!s_aSimpleTailLabels[i].fWithEpilog)
-                off = iemNativeEmitJmpToFixed(pReNative, off, aoffLabels[kIemNativeExitReason_Return]);
+                off = iemNativeEmitJmpToFixed(pReNative, off, aoffLabels[kIemNativeLabelType_Return]);
             else
                 off = iemNativeEmitCoreEpilog(pReNative, off);
         }
@@ -9766,8 +9768,8 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
 
 # ifdef VBOX_STRICT
         /* Make sure we've generate code for all labels. */
-        for (uint32_t i = kIemNativeExitReason_Invalid + 1; i < RT_ELEMENTS(aoffLabels); i++)
-            Assert(aoffLabels[i] != 0 || i == kIemNativeExitReason_Return);
+        for (uint32_t i = kIemNativeLabelType_Invalid + 1; i < RT_ELEMENTS(aoffLabels); i++)
+            Assert(aoffLabels[i] != 0 || i == kIemNativeLabelType_Return);
 #endif
     }
     IEMNATIVE_CATCH_LONGJMP_BEGIN(pReNative, rc);
@@ -9801,12 +9803,12 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
     /*
      * Initialize the context.
      */
-    AssertCompile(kIemNativeExitReason_Invalid == 0);
+    AssertCompile(kIemNativeLabelType_Invalid == 0);
     AssertCompile(RT_ELEMENTS(pCtx->apExitLabels) == RT_ELEMENTS(aoffLabels));
-    pCtx->apExitLabels[kIemNativeExitReason_Invalid] = 0;
-    for (uint32_t i = kIemNativeExitReason_Invalid + 1; i < RT_ELEMENTS(pCtx->apExitLabels); i++)
+    pCtx->apExitLabels[kIemNativeLabelType_Invalid] = 0;
+    for (uint32_t i = kIemNativeLabelType_Invalid + 1; i < RT_ELEMENTS(pCtx->apExitLabels); i++)
     {
-        Assert(aoffLabels[i] != 0 || i == kIemNativeExitReason_Return);
+        Assert(aoffLabels[i] != 0 || i == kIemNativeLabelType_Return);
         pCtx->apExitLabels[i] = &paFinalCommonCodeRx[aoffLabels[i]];
         Log10(("    apExitLabels[%u]=%p %s\n", i, pCtx->apExitLabels[i], iemNativeGetLabelName((IEMNATIVELABELTYPE)i, true)));
     }
@@ -10067,7 +10069,7 @@ l_profile_again:
          * Jump to the common per-chunk epilog code.
          */
         //off = iemNativeEmitBrk(pReNative, off, 0x1227);
-        off = iemNativeEmitTbExit(pReNative, off, kIemNativeExitReason_Return);
+        off = iemNativeEmitTbExit(pReNative, off, kIemNativeLabelType_Return);
 #endif
 
 #ifndef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
@@ -10171,7 +10173,7 @@ l_profile_again:
                 uint32_t const idxLabel = iemNativeLabelFind(pReNative, enmLabel);
                 AssertContinue(idxLabel != UINT32_MAX);
                 iemNativeLabelDefine(pReNative, idxLabel, off);
-                off = iemNativeEmitTbExit(pReNative, off, (IEMNATIVEEXITREASON)enmLabel);
+                off = iemNativeEmitTbExit(pReNative, off, enmLabel);
             } while (fTailLabels);
         }
 # else
@@ -10291,8 +10293,7 @@ l_profile_again:
     for (uint32_t i = 0; i < cTbExitFixups; i++)
     {
         Assert(paTbExitFixups[i].off < off);
-        Assert(   paTbExitFixups[i].enmExitReason < kIemNativeExitReason_Max
-               && paTbExitFixups[i].enmExitReason > kIemNativeExitReason_Invalid);
+        Assert(IEMNATIVELABELTYPE_IS_EXIT_REASON(paTbExitFixups[i].enmExitReason));
         RTPTRUNION const Ptr = { &paFinalInstrBuf[paTbExitFixups[i].off] };
 
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)

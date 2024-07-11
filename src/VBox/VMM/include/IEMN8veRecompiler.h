@@ -449,41 +449,12 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #ifndef RT_IN_ASSEMBLER /* ASM-NOINC-START - the rest of the file */
 
 
-/** TB exit reasons. */
-typedef enum
-{
-    kIemNativeExitReason_Invalid = 0,
-    kIemNativeExitReason_RaiseDe,                /**< Raise (throw) X86_XCPT_DE (00h). */
-    kIemNativeExitReason_RaiseUd,                /**< Raise (throw) X86_XCPT_UD (06h). */
-    kIemNativeExitReason_RaiseSseRelated,        /**< Raise (throw) X86_XCPT_UD or X86_XCPT_NM according to cr0 & cr4. */
-    kIemNativeExitReason_RaiseAvxRelated,        /**< Raise (throw) X86_XCPT_UD or X86_XCPT_NM according to xcr0, cr0 & cr4. */
-    kIemNativeExitReason_RaiseSseAvxFpRelated,   /**< Raise (throw) X86_XCPT_UD or X86_XCPT_XF according to c4. */
-    kIemNativeExitReason_RaiseNm,                /**< Raise (throw) X86_XCPT_NM (07h). */
-    kIemNativeExitReason_RaiseGp0,               /**< Raise (throw) X86_XCPT_GP (0dh) w/ errcd=0. */
-    kIemNativeExitReason_RaiseMf,                /**< Raise (throw) X86_XCPT_MF (10h). */
-    kIemNativeExitReason_RaiseXf,                /**< Raise (throw) X86_XCPT_XF (13h). */
-    kIemNativeExitReason_ObsoleteTb,
-    kIemNativeExitReason_NeedCsLimChecking,
-    kIemNativeExitReason_CheckBranchMiss,
-    kIemNativeExitReason_ReturnBreak,
-    kIemNativeExitReason_ReturnBreakFF,
-    kIemNativeExitReason_ReturnBreakViaLookup,
-    kIemNativeExitReason_ReturnBreakViaLookupWithIrq,
-    kIemNativeExitReason_ReturnBreakViaLookupWithTlb,
-    kIemNativeExitReason_ReturnBreakViaLookupWithTlbAndIrq,
-    kIemNativeExitReason_ReturnWithFlags,
-    kIemNativeExitReason_NonZeroRetOrPassUp,
-    kIemNativeExitReason_Return,                /**< This is a little bit special, but needs to be included here. */
-    kIemNativeExitReason_Max
-} IEMNATIVEEXITREASON;
-
-
 /** Native code generator label types. */
 typedef enum
 {
     kIemNativeLabelType_Invalid = 0,
     /*
-     * Labels w/o data, only once instance per TB.
+     * Labels w/o data, only once instance per TB - aka exit reasons.
      *
      * Note! Jumps to these requires instructions that are capable of spanning
      *       the max TB length.
@@ -535,37 +506,8 @@ typedef enum
     kIemNativeLabelType_End
 } IEMNATIVELABELTYPE;
 
-/** Temporary kludge until all jumps to TB exit labels are converted to the new TB exiting style,
- * see @bugref{10677}.
- * @note update bird: This won't happen, unfortunately, since we'll keep using
- *       the local labels on arm64 so we can avoid inverting branch conditions
- *       and inserting extra of unconditional branches in order to reach the
- *       common code.  Instead we'll have everyone jump to the same tail lable
- *       which then jumps to the common (per chunk) code. */
-#define IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(a_Reason) \
-    ((int)kIemNativeLabelType_ ## a_Reason == (int)kIemNativeExitReason_ ## a_Reason)
-AssertCompile(   IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseDe)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseUd)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseSseRelated)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseAvxRelated)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseSseAvxFpRelated)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseNm)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseGp0)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseMf)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(RaiseXf)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ObsoleteTb)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(NeedCsLimChecking)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(CheckBranchMiss)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreak)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakFF)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookup)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookupWithIrq)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookupWithTlb)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnBreakViaLookupWithTlbAndIrq)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(ReturnWithFlags)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(NonZeroRetOrPassUp)
-              && IEM_N8VE_RECOMP_LABELTYPE_EQ_EXITREASON(Return));
-AssertCompile((int)kIemNativeExitReason_Max == (int)kIemNativeLabelType_LastTbExit + 1);
+#define IEMNATIVELABELTYPE_IS_EXIT_REASON(a_enmLabel) \
+    ((a_enmLabel) <= kIemNativeLabelType_LastTbExit && (a_enmLabel) > kIemNativeLabelType_Invalid)
 
 
 /** Native code generator label definition. */
@@ -622,9 +564,9 @@ typedef IEMNATIVEFIXUP *PIEMNATIVEFIXUP;
 typedef struct IEMNATIVEEXITFIXUP
 {
     /** Code offset of the fixup location. */
-    uint32_t    off;
-    /** The exit reason (IEMNATIVEEXITREASON). */
-    uint32_t    enmExitReason;
+    uint32_t            off;
+    /** The exit reason. */
+    IEMNATIVELABELTYPE  enmExitReason;
 } IEMNATIVEEXITFIXUP;
 /** Pointer to a native code generator TB exit fixup. */
 typedef IEMNATIVEEXITFIXUP *PIEMNATIVEEXITFIXUP;
@@ -635,7 +577,7 @@ typedef IEMNATIVEEXITFIXUP *PIEMNATIVEEXITFIXUP;
 typedef struct IEMNATIVEPERCHUNKCTX
 {
     /** Pointers to the exit labels */
-    PIEMNATIVEINSTR apExitLabels[kIemNativeExitReason_Max];
+    PIEMNATIVEINSTR apExitLabels[kIemNativeLabelType_LastTbExit + 1];
 } IEMNATIVEPERCHUNKCTX;
 /** Pointer to per-chunk recompiler context. */
 typedef IEMNATIVEPERCHUNKCTX *PIEMNATIVEPERCHUNKCTX;
@@ -1686,7 +1628,7 @@ DECL_HIDDEN_THROW(void)     iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, 
 DECL_HIDDEN_THROW(void)     iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idxLabel,
                                               IEMNATIVEFIXUPTYPE enmType, int8_t offAddend = 0);
 #ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
-DECL_HIDDEN_THROW(void)     iemNativeAddTbExitFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, IEMNATIVEEXITREASON enmExitReason);
+DECL_HIDDEN_THROW(void)     iemNativeAddTbExitFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, IEMNATIVELABELTYPE enmExitReason);
 #endif
 DECL_HIDDEN_THROW(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t cInstrReq);
 
