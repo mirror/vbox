@@ -6214,7 +6214,7 @@ HRESULT Console::i_onRecordingStateChange(BOOL aEnable, ComPtr<IProgress> &aProg
 
     return hrc;
 #else
-    RT_NOREF(aEnabled, aProgress);
+    RT_NOREF(aEnable, aProgress);
     ReturnComNotImplemented();
 #endif /* VBOX_WITH_RECORDING */
 }
