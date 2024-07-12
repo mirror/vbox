@@ -570,6 +570,29 @@ typedef struct IEMTLB
      * Same as uTlbRevision, but only increased for global flushes. */
     uint64_t            uTlbRevisionGlobal;
 
+    /** Large page tag range.
+     *
+     * This is used to avoid scanning a large page's worth of TLB entries for each
+     * INVLPG instruction, and only to do so iff we've loaded any and when the
+     * address is in this range.  This is kept up to date when we loading new TLB
+     * entries.
+     */
+    struct LARGEPAGERANGE
+    {
+        /** The lowest large page address tag, UINT64_MAX if none. */
+        uint64_t        uFirstTag;
+        /** The highest large page address tag (with offset mask part set), 0 if none. */
+        uint64_t        uLastTag;
+    }
+    /** Large page range for non-global pages. */
+                        NonGlobalLargePageRange,
+    /** Large page range for global pages. */
+                        GlobalLargePageRange;
+    /** Number of non-global entries for large pages loaded since last TLB flush. */
+    uint32_t            cTlbNonGlobalLargePageCurLoads;
+    /** Number of global entries for large pages loaded since last TLB flush. */
+    uint32_t            cTlbGlobalLargePageCurLoads;
+
     /* Statistics: */
 
     /** TLB hits in IEMAll.cpp code (IEM_WITH_TLB_STATISTICS only; both).
@@ -629,7 +652,7 @@ typedef struct IEMTLB
     /** Physical revision rollovers. */
     uint32_t            cTlbPhysRevRollovers;
 
-    uint32_t            au32Padding[10];
+    /*uint32_t            au32Padding[2];*/
 
     /** The TLB entries.
      * Even entries are for PTE.G=0 and uses uTlbRevision.

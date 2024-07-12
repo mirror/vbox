@@ -205,6 +205,12 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal = pVCpu->iem.s.DataTlb.uTlbRevisionGlobal = uInitialTlbRevision;
 #endif
         pVCpu->iem.s.CodeTlb.uTlbPhysRev        = pVCpu->iem.s.DataTlb.uTlbPhysRev        = uInitialTlbPhysRev;
+#ifndef VBOX_VMM_TARGET_ARMV8
+        pVCpu->iem.s.CodeTlb.NonGlobalLargePageRange.uFirstTag = UINT64_MAX;
+        pVCpu->iem.s.CodeTlb.GlobalLargePageRange.uFirstTag    = UINT64_MAX;
+        pVCpu->iem.s.DataTlb.NonGlobalLargePageRange.uFirstTag = UINT64_MAX;
+        pVCpu->iem.s.DataTlb.GlobalLargePageRange.uFirstTag    = UINT64_MAX;
+#endif
 
         /*
          * Host and guest CPU information.
@@ -342,6 +348,20 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbPhysRevRollovers, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Code TLB revision rollovers",                  "/IEM/CPU%u/Tlb/Code/PhysicalRevisionRollovers", idCpu);
 
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbGlobalLargePageCurLoads,  STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB global large page loads since flush", "/IEM/CPU%u/Tlb/Code/LargePageGlobalCurLoads", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.GlobalLargePageRange.uFirstTag, STAMTYPE_X64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB global large page range: lowest tag", "/IEM/CPU%u/Tlb/Code/LargePageGlobalFirstTag", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.GlobalLargePageRange.uLastTag, STAMTYPE_X64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB global large page range: last tag",   "/IEM/CPU%u/Tlb/Code/LargePageGlobalLastTag", idCpu);
+
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbNonGlobalLargePageCurLoads,  STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB non-global large page loads since flush", "/IEM/CPU%u/Tlb/Code/LargePageNonGlobalCurLoads", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.NonGlobalLargePageRange.uFirstTag, STAMTYPE_X64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB non-global large page range: lowest tag", "/IEM/CPU%u/Tlb/Code/LargePageNonGlobalFirstTag", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.NonGlobalLargePageRange.uLastTag, STAMTYPE_X64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB non-global large page range: last tag",   "/IEM/CPU%u/Tlb/Code/LargePageNonGlobalLastTag", idCpu);
+
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbCoreMisses,      STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Code TLB misses",                              "/IEM/CPU%u/Tlb/Code/Misses", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbCoreGlobalLoads, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
@@ -415,6 +435,20 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Data TLB revision flushes",                    "/IEM/CPU%u/Tlb/Data/PhysicalRevisionFlushes", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbPhysRevRollovers, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Data TLB revision rollovers",                  "/IEM/CPU%u/Tlb/Data/PhysicalRevisionRollovers", idCpu);
+
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbGlobalLargePageCurLoads,  STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB global large page loads since flush", "/IEM/CPU%u/Tlb/Data/LargePageGlobalCurLoads", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.GlobalLargePageRange.uFirstTag, STAMTYPE_X64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB global large page range: lowest tag", "/IEM/CPU%u/Tlb/Data/LargePageGlobalFirstTag", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.GlobalLargePageRange.uLastTag, STAMTYPE_X64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB global large page range: last tag",   "/IEM/CPU%u/Tlb/Data/LargePageGlobalLastTag", idCpu);
+
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbNonGlobalLargePageCurLoads,  STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB non-global large page loads since flush", "/IEM/CPU%u/Tlb/Data/LargePageNonGlobalCurLoads", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.NonGlobalLargePageRange.uFirstTag, STAMTYPE_X64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB non-global large page range: lowest tag", "/IEM/CPU%u/Tlb/Data/LargePageNonGlobalFirstTag", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.NonGlobalLargePageRange.uLastTag, STAMTYPE_X64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB non-global large page range: last tag",   "/IEM/CPU%u/Tlb/Data/LargePageNonGlobalLastTag", idCpu);
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbCoreMisses,      STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB core misses (iemMemMap, direct iemMemMapJmp (not safe path))",
