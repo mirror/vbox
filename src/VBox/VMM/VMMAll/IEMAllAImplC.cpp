@@ -19595,7 +19595,7 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcmpsd_u128_fallback,(uint32_t uMxCsrIn, PX
 
 
 /**
- * [V]ROUNDPS / [V]ROUNDPD / ROUNDSS / ROUNDSD
+ * [V]ROUNDPS / [V]ROUNDPD / [V]ROUNDSS / [V]ROUNDSD
  */
 
 #define X86_SSE_ROUNDXX_IMM_RC_MASK    UINT8_C(0x03)
@@ -19660,6 +19660,23 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundsd_u128,(uint32_t uMxCsrIn, PX86XMMREG
     return uMxCsrIn;
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vroundss_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+{
+    puDst->ar32[0] = iemAImpl_round_worker_r32(&uMxCsrIn, &pSrc->uSrc2.ar32[0], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+    puDst->au32[1] = pSrc->uSrc1.au32[1];
+    puDst->au64[1] = pSrc->uSrc1.au64[1];
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vroundsd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+{
+    puDst->ar64[0] = iemAImpl_round_worker_r64(&uMxCsrIn, &pSrc->uSrc2.ar64[0], bImm & X86_SSE_ROUNDXX_IMM_MASK);
+    puDst->au64[1] = pSrc->uSrc1.au64[1];
+    return uMxCsrIn;
+}
 
 
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_roundps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc, uint8_t bImm))

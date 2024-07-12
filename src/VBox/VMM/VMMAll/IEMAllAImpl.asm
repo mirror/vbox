@@ -6974,6 +6974,7 @@ IEMIMPL_MEDIA_SSE_AVX_INSN_F2_IMM8_MXCSR_6 roundpd
 ; register.
 ;
 ; @param    1       The instruction name.
+; @param    2       Flag whether to emit a 256-bit AVX variant (1) or not (0).
 ;
 ; @return   R0_32   The new MXCSR value of the guest.
 ; @param    A0_32   The guest's MXCSR register value to use (input).
@@ -6981,7 +6982,7 @@ IEMIMPL_MEDIA_SSE_AVX_INSN_F2_IMM8_MXCSR_6 roundpd
 ; @param    A2      Pointer to the two media register sized inputs - IEMMEDIAF2XMMSRC/IEMMEDIAF2YMMSRC (input).
 ; @param    A3      The 8-bit immediate (input).
 ;
-%macro IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 1
+%macro IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 2
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
@@ -7007,12 +7008,68 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
  %endrep
 .immEnd:
 ENDPROC iemAImpl_ %+ %1 %+ _u128
+
+
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movzx   A3, A3_8                ; must clear top bits
+        movdqu  xmm1, [A2 + IEMMEDIAF2XMMSRC.uSrc1]
+        movdqu  xmm2, [A2 + IEMMEDIAF2XMMSRC.uSrc2]
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
+        movdqu  [A1], xmm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        v %+ %1 xmm0, xmm1, xmm2, bImm
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_v %+ %1 %+ _u128
+
+
+ %if %2 == 1
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movzx   A3, A3_8                ; must clear top bits
+        vmovdqu ymm1, [A2 + IEMMEDIAF2YMMSRC.uSrc1]
+        vmovdqu ymm2, [A2 + IEMMEDIAF2YMMSRC.uSrc2]
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A3, 8
+        vmovdqu [A1], ymm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        v %+ %1 ymm0, ymm1, ymm2, bImm
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_v %+ %1 %+ _u256
+ %endif
 %endmacro
 
-IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 roundss
-IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 roundsd
-IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 dpps
-IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 dppd
+IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 roundss, 0
+IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 roundsd, 0
+IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 dpps,    1
+IEMIMPL_MEDIA_SSE_AVX_INSN_F3_IMM8_MXCSR_6 dppd,    0
 
 
 ;;
