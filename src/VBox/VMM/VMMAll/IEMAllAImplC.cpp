@@ -18338,10 +18338,22 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_aeskeygenassist_u128_fallback,(PRTUINT128U puDs
 }
 
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vaeskeygenassist_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bImm))
+{
+    iemAImpl_aeskeygenassist_u128_fallback(puDst, puSrc, bImm);
+}
+
+
 /**
  * [V]AESIMC
  */
 IEM_DECL_IMPL_DEF(void, iemAImpl_aesimc_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    *puDst = iemAImpl_aes_inv_mix_col(puSrc);   /* Src = Key. */
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vaesimc_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
     *puDst = iemAImpl_aes_inv_mix_col(puSrc);   /* Src = Key. */
 }
@@ -18364,6 +18376,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_aesenc_u128_fallback,(PRTUINT128U puDst, PCRTUI
 }
 
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vaesenc_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U  uTmp;
+
+    uTmp = iemAImpl_aes_shift_rows(puSrc1, iemAImpl_aes_shift_rows_tbl); /* Dst = state. */
+    uTmp = iemAImpl_aes_sub_bytes(&uTmp, iemAImpl_aes_sbox);
+    uTmp = iemAImpl_aes_mix_col(&uTmp);
+    uTmp.au64[0] ^= puSrc2->au64[0];  /* Src = Round Key. */
+    uTmp.au64[1] ^= puSrc2->au64[1];
+
+    *puDst = uTmp;
+}
+
+
 /**
  * [V]AESENCLAST
  */
@@ -18375,6 +18401,19 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_aesenclast_u128_fallback,(PRTUINT128U puDst, PC
     uTmp = iemAImpl_aes_sub_bytes(&uTmp, iemAImpl_aes_sbox);
     uTmp.au64[0] ^= puSrc->au64[0];  /* Src = Round Key. */
     uTmp.au64[1] ^= puSrc->au64[1];
+
+    *puDst = uTmp;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vaesenclast_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U  uTmp;
+
+    uTmp = iemAImpl_aes_shift_rows(puSrc1, iemAImpl_aes_shift_rows_tbl); /* Dst = state. */
+    uTmp = iemAImpl_aes_sub_bytes(&uTmp, iemAImpl_aes_sbox);
+    uTmp.au64[0] ^= puSrc2->au64[0];  /* Src = Round Key. */
+    uTmp.au64[1] ^= puSrc2->au64[1];
 
     *puDst = uTmp;
 }
@@ -18397,6 +18436,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_aesdec_u128_fallback,(PRTUINT128U puDst, PCRTUI
 }
 
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vaesdec_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U  uTmp;
+
+    uTmp = iemAImpl_aes_shift_rows(puSrc1, iemAImpl_aes_inv_shift_rows_tbl); /* Dst = state. */
+    uTmp = iemAImpl_aes_sub_bytes(&uTmp, iemAImpl_aes_inv_sbox);
+    uTmp = iemAImpl_aes_inv_mix_col(&uTmp);
+    uTmp.au64[0] ^= puSrc2->au64[0];  /* Src = Round Key. */
+    uTmp.au64[1] ^= puSrc2->au64[1];
+
+    *puDst = uTmp;
+}
+
+
 /**
  * [V]AESDECLAST
  */
@@ -18411,6 +18464,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_aesdeclast_u128_fallback,(PRTUINT128U puDst, PC
 
     *puDst = uTmp;
 }
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vaesdeclast_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    RTUINT128U  uTmp;
+
+    uTmp = iemAImpl_aes_shift_rows(puSrc1, iemAImpl_aes_inv_shift_rows_tbl); /* Dst = state. */
+    uTmp = iemAImpl_aes_sub_bytes(&uTmp, iemAImpl_aes_inv_sbox);
+    uTmp.au64[0] ^= puSrc2->au64[0];  /* Src = Round Key. */
+    uTmp.au64[1] ^= puSrc2->au64[1];
+
+    *puDst = uTmp;
+}
+
 
 
 /**

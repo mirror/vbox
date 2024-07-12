@@ -33,6 +33,68 @@
  * @{
  */
 
+/**
+ * Common worker for AESNI/AVX instructions on the forms:
+ *     - vaesxxx  xmm0, xmm1, xmm2/mem128
+ *
+ * Exceptions type 4. AVX and AESNI cpuid check for 128-bit operation.
+ */
+FNIEMOP_DEF_1(iemOpCommonAvxAesNi_Vx_Hx_Wx, PFNIEMAIMPLMEDIAOPTF3U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX_2(fAvx, fAesNi);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_LOCAL(RTUINT128U,            uDst);
+        IEM_MC_ARG_LOCAL_REF(PRTUINT128U,   puDst,  uDst,  0);
+        IEM_MC_ARG(PCRTUINT128U,            puSrc1, 1);
+        IEM_MC_REF_XREG_U128_CONST(puSrc1, IEM_GET_EFFECTIVE_VVVV(pVCpu));
+        IEM_MC_ARG(PCRTUINT128U,            puSrc2, 2);
+        IEM_MC_REF_XREG_U128_CONST(puSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_3(pfnU128, puDst, puSrc1, puSrc2);
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_STORE_XREG_U128(            IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+        IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX_2(fAvx, fAesNi);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_LOCAL(RTUINT128U,            uDst);
+        IEM_MC_ARG_LOCAL_REF(PRTUINT128U,   puDst,  uDst,  0);
+        IEM_MC_LOCAL(RTUINT128U,            uSrc2);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,  puSrc2, uSrc2, 2);
+        IEM_MC_FETCH_MEM_U128_NO_AC(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_ARG(PCRTUINT128U,            puSrc1,        1);
+        IEM_MC_REF_XREG_U128_CONST(puSrc1,  IEM_GET_EFFECTIVE_VVVV(pVCpu));
+
+        IEM_MC_CALL_VOID_AIMPL_3(pfnU128, puDst, puSrc1, puSrc2);
+        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
+        IEM_MC_STORE_XREG_U128(            IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
+        IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
+
 /*  Opcode VEX.0F38 0x00 - invalid. */
 
 
@@ -2224,16 +2286,91 @@ FNIEMOP_STUB(iemOp_vfnmsub231ss_d_Vx_Hx_Wx);
 /*  Opcode VEX.66.0F38 0xd8 - invalid. */
 /*  Opcode VEX.66.0F38 0xd9 - invalid. */
 /*  Opcode VEX.66.0F38 0xda - invalid. */
+
+
 /** Opcode VEX.66.0F38 0xdb. */
-FNIEMOP_STUB(iemOp_vaesimc_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_vaesimc_Vdq_Wdq)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV_EX_2(fAvx, fAesNi);
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc, 1);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_vaesimc_u128, iemAImpl_vaesimc_u128_fallback), puDst, puSrc);
+        IEM_MC_CLEAR_YREG_128_UP(          IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV_EX_2(fAvx, fAesNi);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_AVX_USAGE();
+        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_vaesimc_u128, iemAImpl_vaesimc_u128_fallback), puDst, puSrc);
+        IEM_MC_CLEAR_YREG_128_UP(   IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
+
 /** Opcode VEX.66.0F38 0xdc. */
-FNIEMOP_STUB(iemOp_vaesenc_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_vaesenc_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VAESENC, vaesenc, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAesNi_Vx_Hx_Wx,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_vaesenc_u128, iemAImpl_vaesenc_u128_fallback)); /* ASSUMES fAesNi on the host implies fAvx. */
+}
+
+
 /** Opcode VEX.66.0F38 0xdd. */
-FNIEMOP_STUB(iemOp_vaesenclast_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_vaesenclast_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VAESENCLAST, vaesenclast, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAesNi_Vx_Hx_Wx,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_vaesenclast_u128, iemAImpl_vaesenclast_u128_fallback)); /* ASSUMES fAesNi on the host implies fAvx. */
+}
+
+
 /** Opcode VEX.66.0F38 0xde. */
-FNIEMOP_STUB(iemOp_vaesdec_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_vaesdec_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VAESDEC, vaesdec, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAesNi_Vx_Hx_Wx,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_vaesdec_u128, iemAImpl_vaesdec_u128_fallback)); /* ASSUMES fAesNi on the host implies fAvx. */
+}
+
+
 /** Opcode VEX.66.0F38 0xdf. */
-FNIEMOP_STUB(iemOp_vaesdeclast_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_vaesdeclast_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VAESDECLAST, vaesdeclast, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAesNi_Vx_Hx_Wx,
+                          IEM_SELECT_HOST_OR_FALLBACK(fAesNi, iemAImpl_vaesdeclast_u128, iemAImpl_vaesdeclast_u128_fallback)); /* ASSUMES fAesNi on the host implies fAvx. */
+}
+
 
 /*  Opcode VEX.66.0F38 0xe0 - invalid. */
 /*  Opcode VEX.66.0F38 0xe1 - invalid. */

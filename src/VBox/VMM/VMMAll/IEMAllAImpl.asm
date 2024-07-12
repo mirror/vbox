@@ -4387,6 +4387,7 @@ IEMIMPL_MEDIA_OPT_F2 sha1msg2,   0
 IEMIMPL_MEDIA_OPT_F2 sha256msg1, 0
 IEMIMPL_MEDIA_OPT_F2 sha256msg2, 0
 
+
 ;;
 ; Media instruction working on one full sized and one half sized register (lower half).
 ;
@@ -4775,12 +4776,13 @@ ENDPROC iemAImpl_ %+ %1 %+ _u256
 ; but no XSAVE state pointer argument.
 ;
 ; @param    1       The instruction
+; @param    2       Flag whether to add a 256-bit variant (1) or not (0).
 ;
 ; @param    A0      Pointer to the destination media register size operand (output).
 ; @param    A1      Pointer to the first source media register size operand (input).
 ; @param    A2      Pointer to the second source media register size operand (input).
 ;
-%macro IEMIMPL_MEDIA_OPT_F3 1
+%macro IEMIMPL_MEDIA_OPT_F3 2
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         PROLOGUE_3_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -4794,6 +4796,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 12
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 
+ %if %2 == 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 12
         PROLOGUE_3_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -4806,85 +4809,144 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 12
         IEMIMPL_AVX_PROLOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u256
+ %endif
 %endmacro
 
-IEMIMPL_MEDIA_OPT_F3 vpshufb
-IEMIMPL_MEDIA_OPT_F3 vpand
-IEMIMPL_MEDIA_OPT_F3 vpminub
-IEMIMPL_MEDIA_OPT_F3 vpminuw
-IEMIMPL_MEDIA_OPT_F3 vpminud
-IEMIMPL_MEDIA_OPT_F3 vpminsb
-IEMIMPL_MEDIA_OPT_F3 vpminsw
-IEMIMPL_MEDIA_OPT_F3 vpminsd
-IEMIMPL_MEDIA_OPT_F3 vpmaxub
-IEMIMPL_MEDIA_OPT_F3 vpmaxuw
-IEMIMPL_MEDIA_OPT_F3 vpmaxud
-IEMIMPL_MEDIA_OPT_F3 vpmaxsb
-IEMIMPL_MEDIA_OPT_F3 vpmaxsw
-IEMIMPL_MEDIA_OPT_F3 vpmaxsd
-IEMIMPL_MEDIA_OPT_F3 vpandn
-IEMIMPL_MEDIA_OPT_F3 vpor
-IEMIMPL_MEDIA_OPT_F3 vpxor
-IEMIMPL_MEDIA_OPT_F3 vpcmpeqb
-IEMIMPL_MEDIA_OPT_F3 vpcmpeqw
-IEMIMPL_MEDIA_OPT_F3 vpcmpeqd
-IEMIMPL_MEDIA_OPT_F3 vpcmpeqq
-IEMIMPL_MEDIA_OPT_F3 vpcmpgtb
-IEMIMPL_MEDIA_OPT_F3 vpcmpgtw
-IEMIMPL_MEDIA_OPT_F3 vpcmpgtd
-IEMIMPL_MEDIA_OPT_F3 vpcmpgtq
-IEMIMPL_MEDIA_OPT_F3 vpaddb
-IEMIMPL_MEDIA_OPT_F3 vpaddw
-IEMIMPL_MEDIA_OPT_F3 vpaddd
-IEMIMPL_MEDIA_OPT_F3 vpaddq
-IEMIMPL_MEDIA_OPT_F3 vpsubb
-IEMIMPL_MEDIA_OPT_F3 vpsubw
-IEMIMPL_MEDIA_OPT_F3 vpsubd
-IEMIMPL_MEDIA_OPT_F3 vpsubq
-IEMIMPL_MEDIA_OPT_F3 vpacksswb
-IEMIMPL_MEDIA_OPT_F3 vpackssdw
-IEMIMPL_MEDIA_OPT_F3 vpackuswb
-IEMIMPL_MEDIA_OPT_F3 vpackusdw
-IEMIMPL_MEDIA_OPT_F3 vpmullw
-IEMIMPL_MEDIA_OPT_F3 vpmulld
-IEMIMPL_MEDIA_OPT_F3 vpmulhw
-IEMIMPL_MEDIA_OPT_F3 vpmulhuw
-IEMIMPL_MEDIA_OPT_F3 vpavgb
-IEMIMPL_MEDIA_OPT_F3 vpavgw
-IEMIMPL_MEDIA_OPT_F3 vpsignb
-IEMIMPL_MEDIA_OPT_F3 vpsignw
-IEMIMPL_MEDIA_OPT_F3 vpsignd
-IEMIMPL_MEDIA_OPT_F3 vphaddw
-IEMIMPL_MEDIA_OPT_F3 vphaddd
-IEMIMPL_MEDIA_OPT_F3 vphsubw
-IEMIMPL_MEDIA_OPT_F3 vphsubd
-IEMIMPL_MEDIA_OPT_F3 vphaddsw
-IEMIMPL_MEDIA_OPT_F3 vphsubsw
-IEMIMPL_MEDIA_OPT_F3 vpmaddubsw
-IEMIMPL_MEDIA_OPT_F3 vpmulhrsw
-IEMIMPL_MEDIA_OPT_F3 vpsadbw
-IEMIMPL_MEDIA_OPT_F3 vpmuldq
-IEMIMPL_MEDIA_OPT_F3 vpmuludq
-IEMIMPL_MEDIA_OPT_F3 vunpcklps
-IEMIMPL_MEDIA_OPT_F3 vunpcklpd
-IEMIMPL_MEDIA_OPT_F3 vunpckhps
-IEMIMPL_MEDIA_OPT_F3 vunpckhpd
-IEMIMPL_MEDIA_OPT_F3 vpsubsb
-IEMIMPL_MEDIA_OPT_F3 vpsubsw
-IEMIMPL_MEDIA_OPT_F3 vpsubusb
-IEMIMPL_MEDIA_OPT_F3 vpsubusw
-IEMIMPL_MEDIA_OPT_F3 vpaddusb
-IEMIMPL_MEDIA_OPT_F3 vpaddusw
-IEMIMPL_MEDIA_OPT_F3 vpaddsb
-IEMIMPL_MEDIA_OPT_F3 vpaddsw
-IEMIMPL_MEDIA_OPT_F3 vpermilps
-IEMIMPL_MEDIA_OPT_F3 vpermilpd
-IEMIMPL_MEDIA_OPT_F3 vpmaddwd
-IEMIMPL_MEDIA_OPT_F3 vpsrlvd
-IEMIMPL_MEDIA_OPT_F3 vpsrlvq
-IEMIMPL_MEDIA_OPT_F3 vpsravd
-IEMIMPL_MEDIA_OPT_F3 vpsllvd
-IEMIMPL_MEDIA_OPT_F3 vpsllvq
+IEMIMPL_MEDIA_OPT_F3 vpshufb,    1
+IEMIMPL_MEDIA_OPT_F3 vpand,      1
+IEMIMPL_MEDIA_OPT_F3 vpminub,    1
+IEMIMPL_MEDIA_OPT_F3 vpminuw,    1
+IEMIMPL_MEDIA_OPT_F3 vpminud,    1
+IEMIMPL_MEDIA_OPT_F3 vpminsb,    1
+IEMIMPL_MEDIA_OPT_F3 vpminsw,    1
+IEMIMPL_MEDIA_OPT_F3 vpminsd,    1
+IEMIMPL_MEDIA_OPT_F3 vpmaxub,    1
+IEMIMPL_MEDIA_OPT_F3 vpmaxuw,    1
+IEMIMPL_MEDIA_OPT_F3 vpmaxud,    1
+IEMIMPL_MEDIA_OPT_F3 vpmaxsb,    1
+IEMIMPL_MEDIA_OPT_F3 vpmaxsw,    1
+IEMIMPL_MEDIA_OPT_F3 vpmaxsd,    1
+IEMIMPL_MEDIA_OPT_F3 vpandn,     1
+IEMIMPL_MEDIA_OPT_F3 vpor,       1
+IEMIMPL_MEDIA_OPT_F3 vpxor,      1
+IEMIMPL_MEDIA_OPT_F3 vpcmpeqb,   1
+IEMIMPL_MEDIA_OPT_F3 vpcmpeqw,   1
+IEMIMPL_MEDIA_OPT_F3 vpcmpeqd,   1
+IEMIMPL_MEDIA_OPT_F3 vpcmpeqq,   1
+IEMIMPL_MEDIA_OPT_F3 vpcmpgtb,   1
+IEMIMPL_MEDIA_OPT_F3 vpcmpgtw,   1
+IEMIMPL_MEDIA_OPT_F3 vpcmpgtd,   1
+IEMIMPL_MEDIA_OPT_F3 vpcmpgtq,   1
+IEMIMPL_MEDIA_OPT_F3 vpaddb,     1
+IEMIMPL_MEDIA_OPT_F3 vpaddw,     1
+IEMIMPL_MEDIA_OPT_F3 vpaddd,     1
+IEMIMPL_MEDIA_OPT_F3 vpaddq,     1
+IEMIMPL_MEDIA_OPT_F3 vpsubb,     1
+IEMIMPL_MEDIA_OPT_F3 vpsubw,     1
+IEMIMPL_MEDIA_OPT_F3 vpsubd,     1
+IEMIMPL_MEDIA_OPT_F3 vpsubq,     1
+IEMIMPL_MEDIA_OPT_F3 vpacksswb,  1
+IEMIMPL_MEDIA_OPT_F3 vpackssdw,  1
+IEMIMPL_MEDIA_OPT_F3 vpackuswb,  1
+IEMIMPL_MEDIA_OPT_F3 vpackusdw,  1
+IEMIMPL_MEDIA_OPT_F3 vpmullw,    1
+IEMIMPL_MEDIA_OPT_F3 vpmulld,    1
+IEMIMPL_MEDIA_OPT_F3 vpmulhw,    1
+IEMIMPL_MEDIA_OPT_F3 vpmulhuw,   1
+IEMIMPL_MEDIA_OPT_F3 vpavgb,     1
+IEMIMPL_MEDIA_OPT_F3 vpavgw,     1
+IEMIMPL_MEDIA_OPT_F3 vpsignb,    1
+IEMIMPL_MEDIA_OPT_F3 vpsignw,    1
+IEMIMPL_MEDIA_OPT_F3 vpsignd,    1
+IEMIMPL_MEDIA_OPT_F3 vphaddw,    1
+IEMIMPL_MEDIA_OPT_F3 vphaddd,    1
+IEMIMPL_MEDIA_OPT_F3 vphsubw,    1
+IEMIMPL_MEDIA_OPT_F3 vphsubd,    1
+IEMIMPL_MEDIA_OPT_F3 vphaddsw,   1
+IEMIMPL_MEDIA_OPT_F3 vphsubsw,   1
+IEMIMPL_MEDIA_OPT_F3 vpmaddubsw, 1
+IEMIMPL_MEDIA_OPT_F3 vpmulhrsw,  1
+IEMIMPL_MEDIA_OPT_F3 vpsadbw,    1
+IEMIMPL_MEDIA_OPT_F3 vpmuldq,    1
+IEMIMPL_MEDIA_OPT_F3 vpmuludq,   1
+IEMIMPL_MEDIA_OPT_F3 vunpcklps,  1
+IEMIMPL_MEDIA_OPT_F3 vunpcklpd,  1
+IEMIMPL_MEDIA_OPT_F3 vunpckhps,  1
+IEMIMPL_MEDIA_OPT_F3 vunpckhpd,  1
+IEMIMPL_MEDIA_OPT_F3 vpsubsb,    1
+IEMIMPL_MEDIA_OPT_F3 vpsubsw,    1
+IEMIMPL_MEDIA_OPT_F3 vpsubusb,   1
+IEMIMPL_MEDIA_OPT_F3 vpsubusw,   1
+IEMIMPL_MEDIA_OPT_F3 vpaddusb,   1
+IEMIMPL_MEDIA_OPT_F3 vpaddusw,   1
+IEMIMPL_MEDIA_OPT_F3 vpaddsb,    1
+IEMIMPL_MEDIA_OPT_F3 vpaddsw,    1
+IEMIMPL_MEDIA_OPT_F3 vpermilps,  1
+IEMIMPL_MEDIA_OPT_F3 vpermilpd,  1
+IEMIMPL_MEDIA_OPT_F3 vpmaddwd,   1
+IEMIMPL_MEDIA_OPT_F3 vpsrlvd,    1
+IEMIMPL_MEDIA_OPT_F3 vpsrlvq,    1
+IEMIMPL_MEDIA_OPT_F3 vpsravd,    1
+IEMIMPL_MEDIA_OPT_F3 vpsllvd,    1
+IEMIMPL_MEDIA_OPT_F3 vpsllvq,    1
+
+IEMIMPL_MEDIA_OPT_F3 vaesenc,     0
+IEMIMPL_MEDIA_OPT_F3 vaesenclast, 0
+IEMIMPL_MEDIA_OPT_F3 vaesdec,     0
+IEMIMPL_MEDIA_OPT_F3 vaesdeclast, 0
+
+
+;;
+; VAESIMC instruction.
+;
+; @param    A0      Pointer to the first media register size operand (output).
+; @param    A1      Pointer to the second media register size operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vaesimc_u128, 8
+        PROLOGUE_2_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu   xmm0, [A0]
+        movdqu   xmm1, [A1]
+        vaesimc  xmm0, xmm1
+        movdqu   [A0], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_2_ARGS
+ENDPROC iemAImpl_vaesimc_u128
+
+
+;;
+; VAESKEYGENASSIST instruction.
+;
+; @param    A0      Pointer to the first media register size operand (output).
+; @param    A1      Pointer to the second media register size operand (input).
+; @param    A2      8-bit immediate for the round constant.
+;
+BEGINPROC_FASTCALL iemAImpl_vaeskeygenassist_u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movzx   A2, A2_8                ; must clear top bits
+        movdqu  xmm0, [A0]
+        movdqu  xmm1, [A1]
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 8
+        movdqu  [A0], xmm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        vaeskeygenassist xmm0, xmm1, bImm
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_vaeskeygenassist_u128
+
 
 ;;
 ; Media instruction working on one full sized source register, one full sized destination
