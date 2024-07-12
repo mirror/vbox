@@ -30,6 +30,7 @@
 #include <QAccessibleWidget>
 #include <QHBoxLayout>
 #include <QPainter>
+#include <QRegularExpression>
 #include <QStyle>
 #include <QTimer>
 
@@ -1043,13 +1044,13 @@ protected slots:
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
     {
-        QString strFullData;
+        m_strFullData.clear();
         KVMExecutionEngine enmEngine = KVMExecutionEngine_NotSet;
-        m_pMachine->acquireFeaturesStatusInfo(strFullData, enmEngine);
+        m_pMachine->acquireFeaturesStatusInfo(m_strFullData, enmEngine);
 
         /* Update tool-tip: */
-        if (!strFullData.isEmpty())
-            setToolTip(s_strTable.arg(strFullData));
+        if (!m_strFullData.isEmpty())
+            setToolTip(s_strTable.arg(m_strFullData));
         /* Update indicator state: */
         setState(enmEngine);
 
@@ -1062,6 +1063,20 @@ protected slots:
 
         /* Retranslate finally: */
         sltRetranslateUI();
+    }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        QString strFullData = m_strFullData;
+        strFullData.remove(QRegularExpression("<tr>|<td>|<nobr>"));
+        strFullData.replace("</nobr></td></tr>", ", ");
+        strFullData.replace("</nobr></td>", " ");
+        m_strDescription = QString("%1, %2").arg(m_strDescription, strFullData);
     }
 
 private slots:
@@ -1080,6 +1095,9 @@ private:
 
     /** Holds the effective CPU load. Expected to be in range [0, 100] */
     ulong  m_uEffectiveCPULoad;
+
+    /** Holds the serialized tool-tip data. */
+    QString  m_strFullData;
 };
 
 
