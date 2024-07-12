@@ -84,6 +84,7 @@ style:
         # TODO: Could we get an SVG logo? Or at least a higher resolution one (this is 512x512, I think).
         background-image:   en_US/images/vboxlogo.png
         background-repeat:  no-repeat
+        background-position-horizontal: center
 
     cover-title:
         color:              $brand-color-primary
