@@ -6725,6 +6725,31 @@ BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i32, 16
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsi2sd_r64_i32
 
+
+;;
+; vcvtsi2sd instruction - 32-bit variant.
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
+; @param    A3      Pointer to the third operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vcvtsi2sd_u128_i32, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movdqu    xmm0, [A2]
+        vcvtsi2sd xmm0, xmm0, dword [A3]
+        movdqu    [A1], xmm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_vcvtsi2sd_u128_i32
+
+
 ;;
 ; cvtsi2sd instruction - 64-bit variant.
 ;
@@ -6745,6 +6770,30 @@ BEGINPROC_FASTCALL iemAImpl_cvtsi2sd_r64_i64, 16
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtsi2sd_r64_i64
+
+
+;;
+; vcvtsi2sd instruction - 64-bit variant.
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
+; @param    A3      Pointer to the third operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vcvtsi2sd_u128_i64, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movdqu    xmm0, [A2]
+        vcvtsi2sd xmm0, xmm0, qword [A3]
+        movdqu    [A1], xmm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_vcvtsi2sd_u128_i64
 
 
 ;
