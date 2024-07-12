@@ -19112,7 +19112,7 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtsi2sd_r64_i64,(uint32_t uMxCsrIn, PRTFLO
 
 
 /**
- * CVTSI2SS
+ * [V]CVTSI2SS
  */
 #ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtsi2ss_r32_i32,(uint32_t uMxCsrIn, PRTFLOAT32U pr32Dst, const int32_t *pi32Src))
@@ -19130,6 +19130,28 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtsi2ss_r32_i64,(uint32_t uMxCsrIn, PRTFLO
     return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Res, pr32Dst, uMxCsrIn);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtsi2ss_u128_i32_fallback, (uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc1, const int32_t *pi32Src2))
+{
+    puDst->au32[1] = puSrc1->au32[1];
+    puDst->au64[1] = puSrc1->au64[1];
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(uMxCsrIn);
+    float32_t r32Res = i32_to_f32(*pi32Src2, &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Res, &puDst->ar32[0], uMxCsrIn);
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtsi2ss_u128_i64_fallback, (uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc1, const int64_t *pi64Src2))
+{
+    puDst->au32[1] = puSrc1->au32[1];
+    puDst->au64[1] = puSrc1->au64[1];
+
+    softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(uMxCsrIn);
+    float32_t r32Res = i64_to_f32(*pi64Src2, &SoftState);
+    return iemSseSoftStateAndR32ToMxcsrAndIprtResult(&SoftState, r32Res, &puDst->ar32[0], uMxCsrIn);
+}
 
 
 /**
