@@ -135,10 +135,10 @@ def parse_param_tag(line):
 def parse_object_tag(lines, index):
     """
     look at next two lines. they are supposed to look like the following
-         <param name="Name" value="Oracle VM VirtualBox">
+         <param name="Name" value="Oracle VirtualBox">
          <param name="Local" value="index.html">
     parse out value fields and return
-    title="Oracle VM VirtualBox" ref="index.html
+    title="Oracle VirtualBox" ref="index.html
     """
     result = ''
     if index + 2 > len(lines):
