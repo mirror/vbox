@@ -2,15 +2,11 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-create-cloud-profile">
   <title>Creating a Cloud Profile</title>
-
+  
   <body>
-    <p>
-        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses a <i>cloud profile</i> to
-        connect to <ph conkeyref="vbox-conkeyref-phrases/oci"/>. A cloud profile is a text file that contains
-        details of your key files and Oracle Cloud Identifier (OCID)
-        resource identifiers for your cloud account, such as the
-        following:
-      </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses a <i>cloud profile</i> to connect to <ph
+        conkeyref="vbox-conkeyref-phrases/oci"/>. A cloud profile is a text file that contains details of your key files
+      and Oracle Cloud Identifier (OCID) resource identifiers for your cloud account, such as the following: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Fingerprint of the public

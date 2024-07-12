@@ -4,18 +4,12 @@
   <title>Unattended Installation</title>
   
   <body>
-    <p> To perform a noninteractive installation of <ph
-        conkeyref="vbox-conkeyref-phrases/product-name"/> you can use the command line version of
-      the installer application. </p>
-    <p>
-        Mount the <filepath>dmg</filepath> disk image file, as described
-        in the installation procedure, or use the following command
-        line:
-      </p>
+    <p>To perform a noninteractive installation of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> you can use the
+      command line version of the installer application. </p>
+    <p>Mount the <filepath>dmg</filepath> disk image file, as described in the installation procedure, or use the
+      following command line: </p>
     <pre xml:space="preserve">hdiutil attach /path/to/VirtualBox-xyz.dmg</pre>
-    <p>
-        Open a terminal session and run the following command:
-      </p>
+    <p>Open a terminal session and run the following command: </p>
     <pre xml:space="preserve">sudo installer -pkg /Volumes/VirtualBox/VirtualBox.pkg -target /Volumes/Macintosh\ HD</pre>
   </body>
   

@@ -4,14 +4,8 @@
   <title>The Machine List</title>
   
   <body>
-    <p>
-        The list of virtual machines in the left pane is called the
-        <i>machine list</i>.
-      </p>
-    <p>
-        The following methods can be used to control and configure
-        virtual machines in the machine list:
-      </p>
+    <p>The list of virtual machines in the left pane is called the <i>machine list</i>. </p>
+    <p>The following methods can be used to control and configure virtual machines in the machine list: </p>
     <ul>
       <li>
         <p> Right-click the virtual machine name, to display menu options. </p>
@@ -21,10 +15,7 @@
             href="gui-tools-machine.dita#gui-tools-machine"/>. </p>
       </li>
       <li>
-        <p>
-            Click a button in the toolbar in the Details pane. See
-            <xref href="gui-details.dita#gui-details"/>.
-          </p>
+        <p>Click a button in the toolbar in the Details pane. See <xref href="gui-details.dita#gui-details"/>. </p>
       </li>
     </ul>
   </body>

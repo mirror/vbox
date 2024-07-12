@@ -108,44 +108,28 @@
             </p>
             <ul>
               <li>
-                <p>
-                  On a Windows host, data will be sent and received
-                  through a named pipe. The pipe name must be in the
-                  format
-                  <filepath>\\.\pipe\<varname>name</varname>
-                                    </filepath>
-                  where <varname>name</varname> should identify
-                  the virtual machine but may be freely chosen.
-                </p>
+                <p>On a Windows host, data will be sent and received through a named pipe. The pipe name must be in the
+                  format <filepath>\\.\pipe\<varname>name</varname>
+                  </filepath> where <varname>name</varname> should identify the virtual machine but may be freely
+                  chosen. </p>
               </li>
               <li>
-                <p>
-                  On a Mac OS, Linux, or Oracle Solaris host, a local
-                  domain socket is used instead. The socket filename
-                  must be chosen such that the user running
-                  <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has sufficient privileges to create and
-                  write to it. The <filepath>/tmp</filepath> directory
-                  is often a good candidate.
-                </p>
-                <p>
-                  On Linux there are various tools which can connect to
-                  a local domain socket or create one in server mode.
-                  The most flexible tool is <userinput>socat</userinput> and
-                  is available as part of many distributions.
-                </p>
+                <p>On a Mac OS, Linux, or Oracle Solaris host, a local domain socket is used instead. The socket
+                  filename must be chosen such that the user running <ph conkeyref="vbox-conkeyref-phrases/product-name"
+                  /> has sufficient privileges to create and write to it. The <filepath>/tmp</filepath> directory is
+                  often a good candidate. </p>
+                <p>On Linux there are various tools which can connect to a local domain socket or create one in server
+                  mode. The most flexible tool is <userinput>socat</userinput> and is available as part of many
+                  distributions. </p>
               </li>
             </ul>
-            <p> In this case, you can configure whether <ph
-                conkeyref="vbox-conkeyref-phrases/product-name"/> should create the named pipe, or
-              the local domain socket on non-Windows hosts, itself or whether <ph
-                conkeyref="vbox-conkeyref-phrases/product-name"/> should assume that the pipe or
-              socket exists already. With the <userinput>VBoxManage</userinput> command-line
-              options, this is referred to as server mode or client mode, respectively. </p>
-            <p>
-              For a direct connection between two virtual machines,
-              corresponding to a null-modem cable, simply configure one
-              VM to create a pipe or socket and another to attach to it.
-            </p>
+            <p>In this case, you can configure whether <ph conkeyref="vbox-conkeyref-phrases/product-name"/> should
+              create the named pipe, or the local domain socket on non-Windows hosts, itself or whether <ph
+                conkeyref="vbox-conkeyref-phrases/product-name"/> should assume that the pipe or socket exists already.
+              With the <userinput>VBoxManage</userinput> command-line options, this is referred to as server mode or
+              client mode, respectively. </p>
+            <p>For a direct connection between two virtual machines, corresponding to a null-modem cable, simply
+              configure one VM to create a pipe or socket and another to attach to it. </p>
           </li>
           <li>
             <p><b outputclass="bold">Raw File:</b> Send the
@@ -174,12 +158,8 @@
                   systems you will have to use a port a number greater
                   than 1024 for regular users.
                 </p>
-                <p>
-                  The client can use software such as
-                  <userinput>PuTTY</userinput> or the
-                  <userinput>telnet</userinput> command line tool to access
-                  the TCP Server.
-                </p>
+                <p>The client can use software such as <userinput>PuTTY</userinput> or the <userinput>telnet</userinput>
+                  command line tool to access the TCP Server. </p>
               </li>
               <li>
                 <p><b outputclass="bold">TCP Client:</b> To create
@@ -197,13 +177,9 @@
         </ul>
       </li>
     </ol>
-    <p>
-      Up to four serial ports can be configured per virtual machine, but
-      you can pick any port numbers out of the above. However, serial
-      ports cannot reliably share interrupts. If both ports are to be
-      used at the same time, they must use different interrupt levels,
-      for example COM1 and COM2, but not COM1 and COM3.
-    </p>
+    <p>Up to four serial ports can be configured per virtual machine, but you can pick any port numbers out of the
+      above. However, serial ports cannot reliably share interrupts. If both ports are to be used at the same time, they
+      must use different interrupt levels, for example COM1 and COM2, but not COM1 and COM3. </p>
   </body>
-
+  
 </topic>

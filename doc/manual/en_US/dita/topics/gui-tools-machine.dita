@@ -4,20 +4,11 @@
   <title>Machine Tools</title>
   
   <body>
-    <p>
-          In the machine list in the left pane of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window,
-          select a virtual machine.
-        </p>
-    <p>
-          Click the <b outputclass="bold">Menu</b> icon to the
-          right of the virtual machine name. The
-          <b outputclass="bold">Machine Tools</b> menu is
-          displayed.
-        </p>
-    <p>
-          A drop-down list enables you to select from the following
-          machine tools:
-        </p>
+    <p>In the machine list in the left pane of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window, select a
+      virtual machine. </p>
+    <p>Click the <b outputclass="bold">Menu</b> icon to the right of the virtual machine name. The <b outputclass="bold"
+        >Machine Tools</b> menu is displayed. </p>
+    <p>A drop-down list enables you to select from the following machine tools: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Details.</b> Displays the

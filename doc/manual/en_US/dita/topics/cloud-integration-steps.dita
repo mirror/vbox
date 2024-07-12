@@ -4,10 +4,8 @@
   <title>Preparing for <ph conkeyref="vbox-conkeyref-phrases/oci"/> Integration</title>
   
   <body>
-    <p>
-        Perform the following configuration steps before using
-        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to integrate with your <ph conkeyref="vbox-conkeyref-phrases/oci"/> account.
-      </p>
+    <p>Perform the following configuration steps before using <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to
+      integrate with your <ph conkeyref="vbox-conkeyref-phrases/oci"/> account. </p>
     <ol>
       <li>
         <p><b outputclass="bold">Install the Extension Pack.</b>
@@ -21,11 +19,8 @@
             an API signing key pair that is used for API requests to
             <ph conkeyref="vbox-conkeyref-phrases/oci"/>. See <xref href="cloud-create-api-keypair.dita#cloud-create-api-keypair"/>.
           </p>
-        <p>
-            Upload the public key of the key pair from your client
-            device to the cloud service. See
-            <xref href="cloud-upload-public-key.dita#cloud-upload-public-key"/>.
-          </p>
+        <p>Upload the public key of the key pair from your client device to the cloud service. See <xref
+            href="cloud-upload-public-key.dita#cloud-upload-public-key"/>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Create a cloud profile.</b> The

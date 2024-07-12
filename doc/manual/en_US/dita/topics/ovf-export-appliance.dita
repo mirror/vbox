@@ -2,46 +2,27 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="ovf-export-appliance">
   <title>Exporting an Appliance in OVF Format</title>
-
+  
   <body>
-    <p>
-        The following steps show how to export an appliance in OVF
-        format.
-      </p>
+    <p>The following steps show how to export an appliance in OVF format. </p>
     <ol>
       <li>
-        <p>
-            Select <b outputclass="bold">File</b>,
-            <b outputclass="bold"> Export Appliance</b> to
-            display the <b outputclass="bold">Export Virtual
-            Appliance</b> wizard.
-          </p>
-        <p>
-            On the initial <b outputclass="bold">Virtual
-            Machines</b> page, you can combine several VMs into
-            an OVF appliance.
-          </p>
-        <p>
-            Select one or more VMs to export, and click
-            <b outputclass="bold">Next</b>.
-          </p>
+        <p>Select <b outputclass="bold">File</b>, <b outputclass="bold"> Export Appliance</b> to display the <b
+            outputclass="bold">Export Virtual Appliance</b> wizard. </p>
+        <p>On the initial <b outputclass="bold">Virtual Machines</b> page, you can combine several VMs into an OVF
+          appliance. </p>
+        <p>Select one or more VMs to export, and click <b outputclass="bold">Next</b>. </p>
       </li>
       <li>
-        <p>
-            The <b outputclass="bold">Format Settings</b> page
-            enables you to configure the following settings:
-          </p>
+        <p>The <b outputclass="bold">Format Settings</b> page enables you to configure the following settings: </p>
         <ul>
           <li>
             <p><b outputclass="bold">Format:</b> Selects the
                 <b outputclass="bold">Open Virtualization
                 Format</b> value for the output files.
               </p>
-            <p>
-                The <b outputclass="bold"><ph conkeyref="vbox-conkeyref-phrases/oci"/></b> value exports
-                the appliance to <ph conkeyref="vbox-conkeyref-phrases/oci"/>. See
-                <xref href="cloud-export-oci.dita#cloud-export-oci"/>.
-              </p>
+            <p>The <b outputclass="bold"><ph conkeyref="vbox-conkeyref-phrases/oci"/></b> value exports the appliance to
+                <ph conkeyref="vbox-conkeyref-phrases/oci"/>. See <xref href="cloud-export-oci.dita#cloud-export-oci"/>. </p>
           </li>
           <li>
             <p><b outputclass="bold">File:</b> Selects the

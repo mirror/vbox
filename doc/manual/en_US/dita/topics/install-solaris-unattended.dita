@@ -4,18 +4,14 @@
   <title>Unattended Installation</title>
   
   <body>
-    <p> To perform a noninteractive installation of <ph
-        conkeyref="vbox-conkeyref-phrases/product-name"/> there is a response file named
-        <filepath>autoresponse</filepath>. The installer uses this for responses to inputs, rather
+    <p>To perform a noninteractive installation of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> there is a
+      response file named <filepath>autoresponse</filepath>. The installer uses this for responses to inputs, rather
       than prompting the user. </p>
-    <p>
-        Extract the tar.gz package as described in
-        <xref href="install-solaris-performing.dita#install-solaris-performing"/>. Then open a root
-        terminal session and run the following command:
-      </p>
+    <p>Extract the tar.gz package as described in <xref
+        href="install-solaris-performing.dita#install-solaris-performing"/>. Then open a root terminal session and run
+      the following command: </p>
     <pre xml:space="preserve">pkgadd -d VirtualBox-<varname>version-number</varname>-SunOS-x86 -n -a autoresponse SUNWvbox</pre>
-    <p> To perform a noninteractive uninstallation, open a root terminal session and run the
-      following command: </p>
+    <p>To perform a noninteractive uninstallation, open a root terminal session and run the following command: </p>
     <pre xml:space="preserve">pkgrm -n -a /opt/VirtualBox/autoresponse SUNWvbox</pre>
   </body>
   

@@ -4,55 +4,32 @@
   <title>Importing an Instance: Overview of Events</title>
   
   <body>
-    <p>
-          The following describes the sequence of events when you import
-          an instance from <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
-        </p>
+    <p>The following describes the sequence of events when you import an instance from <ph
+        conkeyref="vbox-conkeyref-phrases/oci"/>. </p>
     <ul>
       <li>
-        <p>
-              A custom image is created from the boot volume of the
-              instance.
-            </p>
+        <p>A custom image is created from the boot volume of the instance. </p>
       </li>
       <li>
-        <p>
-              The custom image is exported to an <ph conkeyref="vbox-conkeyref-phrases/oci"/> object and is
-              stored using Object Storage in the bucket specified by the
-              user.
-            </p>
+        <p>The custom image is exported to an <ph conkeyref="vbox-conkeyref-phrases/oci"/> object and is stored using
+          Object Storage in the bucket specified by the user. </p>
       </li>
       <li>
-        <p>
-              The <ph conkeyref="vbox-conkeyref-phrases/oci"/> object is downloaded to the local host. The
-              object is a TAR archive which contains a boot volume of
-              the instance in QCOW2 format and a JSON file containing
-              metadata related to the instance.
-            </p>
+        <p>The <ph conkeyref="vbox-conkeyref-phrases/oci"/> object is downloaded to the local host. The object is a TAR
+          archive which contains a boot volume of the instance in QCOW2 format and a JSON file containing metadata
+          related to the instance. </p>
       </li>
       <li>
-        <p>
-              The boot volume of the instance is extracted from the
-              archive and a new VMDK image is created by converting the
-              boot volume into the VMDK format. The VMDK image is
-              registered with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
-            </p>
+        <p>The boot volume of the instance is extracted from the archive and a new VMDK image is created by converting
+          the boot volume into the VMDK format. The VMDK image is registered with <ph
+            conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
       </li>
       <li>
-        <p>
-              A new VM is created using the VMDK image for the cloud
-              instance.
-            </p>
-        <p>
-              By default, the new VM is not started after import from
-              <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
-            </p>
+        <p>A new VM is created using the VMDK image for the cloud instance. </p>
+        <p>By default, the new VM is not started after import from <ph conkeyref="vbox-conkeyref-phrases/oci"/>. </p>
       </li>
       <li>
-        <p>
-              The downloaded TAR archive is deleted after a successful
-              import.
-            </p>
+        <p>The downloaded TAR archive is deleted after a successful import. </p>
       </li>
     </ul>
   </body>

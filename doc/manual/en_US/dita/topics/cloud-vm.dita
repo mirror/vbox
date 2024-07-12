@@ -3,22 +3,14 @@
 <topic xml:lang="en-us" id="cloud-vm">
   <title>Using Cloud Virtual Machines</title>
   <body>
-    <p>
-        A cloud virtual machine (<i>cloud VM</i>) is a
-        type of VM that represents an instance on a cloud service. Cloud
-        VMs are shown in the machine list in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, in the same way
-        as local VMs are.
-      </p>
-    <p>
-        By using cloud VMs you can create, manage, and control your
-        <ph conkeyref="vbox-conkeyref-phrases/oci"/> instances from <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
-      </p>
+    <p>A cloud virtual machine (<i>cloud VM</i>) is a type of VM that represents an instance on a cloud service. Cloud
+      VMs are shown in the machine list in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, in the same way as local
+      VMs are. </p>
+    <p>By using cloud VMs you can create, manage, and control your <ph conkeyref="vbox-conkeyref-phrases/oci"/>
+      instances from <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. </p>
     <note>
-      <p>
-          Cloud VMs do not install, export, or import instances to the
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> host. All operations are done remotely on the
-          cloud service.
-        </p>
+      <p>Cloud VMs do not install, export, or import instances to the <ph
+          conkeyref="vbox-conkeyref-phrases/product-name"/> host. All operations are done remotely on the cloud service. </p>
     </note>
     <fig id="fig-cloud-vm-overview">
       <title>Cloud VMs, Shown With Local VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></title>
@@ -31,9 +23,7 @@
         <alt>Cloud VMs, Shown With Local VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></alt>
       </image>
     </fig>
-    <p>
-        Cloud VMs can be used to do the following tasks in <ph conkeyref="vbox-conkeyref-phrases/oci"/>:
-      </p>
+    <p>Cloud VMs can be used to do the following tasks in <ph conkeyref="vbox-conkeyref-phrases/oci"/>: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Create a new <ph conkeyref="vbox-conkeyref-phrases/oci"/>

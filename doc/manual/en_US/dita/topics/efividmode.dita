@@ -4,24 +4,15 @@
   <title>Video Modes in EFI</title>
   
   <body>
-    <p>
-        EFI provides two distinct video interfaces: GOP (Graphics Output
-        Protocol) and UGA (Universal Graphics Adapter). Modern OSes,
-        such as Mac OS X, generally use GOP, while some older ones still
-        use UGA. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a configuration option to
-        control the graphics resolution for both interfaces, making the
-        difference mostly irrelevant for users.
-      </p>
-    <p>
-        The default resolution is 1024x768. To select a graphics
-        resolution for EFI, use the following
-        <userinput>VBoxManage</userinput> command:
-      </p>
+    <p>EFI provides two distinct video interfaces: GOP (Graphics Output Protocol) and UGA (Universal Graphics Adapter).
+      Modern OSes, such as Mac OS X, generally use GOP, while some older ones still use UGA. <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> provides a configuration option to control the graphics
+      resolution for both interfaces, making the difference mostly irrelevant for users. </p>
+    <p>The default resolution is 1024x768. To select a graphics resolution for EFI, use the following
+        <userinput>VBoxManage</userinput> command: </p>
     <pre xml:space="preserve">VBoxManage setextradata "VM name" VBoxInternal2/EfiGraphicsResolution HxV</pre>
-    <p>
-        Determine the horizontal resolution H and the vertical
-        resolution V from the following list of default resolutions:
-      </p>
+    <p>Determine the horizontal resolution H and the vertical resolution V from the following list of default
+      resolutions: </p>
     <dl>
       <dlentry>
         <dt>
@@ -334,17 +325,10 @@
         </dd>
       </dlentry>
     </dl>
-    <p>
-        If this list of default resolution does not cover your needs,
-        see <xref href="customvesa.dita">Custom VESA Resolutions</xref>. Note that the color depth
-        value specified in a custom video mode must be specified. Color
-        depths of 8, 16, 24, and 32 are accepted. EFI assumes a color
-        depth of 32 by default.
-      </p>
-    <p>
-        The EFI default video resolution settings can only be changed
-        when the VM is powered off.
-      </p>
+    <p>If this list of default resolution does not cover your needs, see <xref href="customvesa.dita">Custom VESA
+        Resolutions</xref>. Note that the color depth value specified in a custom video mode must be specified. Color
+      depths of 8, 16, 24, and 32 are accepted. EFI assumes a color depth of 32 by default. </p>
+    <p>The EFI default video resolution settings can only be changed when the VM is powered off. </p>
   </body>
   
 </topic>

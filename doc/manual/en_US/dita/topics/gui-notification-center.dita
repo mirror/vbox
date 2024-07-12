@@ -4,21 +4,11 @@
   <title>Notification Center</title>
   
   <body>
-    <p>
-          Notification messages may be shown in a sliding panel on the
-          right of the Details pane, called the
-          <b outputclass="bold">Notification Center</b>. Click
-          the warning triangle to show the notification messages.
-        </p>
-    <p>
-          Most system messages that do not require user interaction are
-          displayed in the Notification Center, including task failure
-          alerts.
-        </p>
-    <p>
-          The progress of some tasks can be observed and stopped using
-          the Notification Center.
-        </p>
+    <p>Notification messages may be shown in a sliding panel on the right of the Details pane, called the <b
+        outputclass="bold">Notification Center</b>. Click the warning triangle to show the notification messages. </p>
+    <p>Most system messages that do not require user interaction are displayed in the Notification Center, including
+      task failure alerts. </p>
+    <p>The progress of some tasks can be observed and stopped using the Notification Center. </p>
   </body>
   
 </topic>

@@ -4,36 +4,22 @@
   <title>Configuring Virtual Machines</title>
   
   <body>
-    <p>
-    This chapter provides detailed steps for configuring an
-    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> virtual machine (VM). For an introduction to
-    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and steps to get your first virtual machine running,
-    see <xref href="Introduction.dita#Introduction"/>.
-  </p>
-    <p>
-    You have considerable latitude when deciding what virtual hardware
-    to provide to the guest. Use virtual hardware to communicate with
-    the host system or with other guests. For example, you can use
-    virtual hardware in the following ways:
-  </p>
+    <p>This chapter provides detailed steps for configuring an <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
+      virtual machine (VM). For an introduction to <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and steps to
+      get your first virtual machine running, see <xref href="Introduction.dita#Introduction"/>. </p>
+    <p>You have considerable latitude when deciding what virtual hardware to provide to the guest. Use virtual hardware
+      to communicate with the host system or with other guests. For example, you can use virtual hardware in the
+      following ways: </p>
     <ul>
       <li>
-        <p>
-        Have <ph conkeyref="vbox-conkeyref-phrases/product-name"/> present an ISO CD-ROM image to a guest
-        system as if it were a physical CD-ROM.
-      </p>
+        <p>Have <ph conkeyref="vbox-conkeyref-phrases/product-name"/> present an ISO CD-ROM image to a guest system as
+          if it were a physical CD-ROM. </p>
       </li>
       <li>
-        <p>
-        Provide a guest system access to the physical network through
-        its virtual network card.
-      </p>
+        <p>Provide a guest system access to the physical network through its virtual network card. </p>
       </li>
       <li>
-        <p>
-        Provide the host system, other guests, and computers on the
-        Internet access to the guest system.
-      </p>
+        <p>Provide the host system, other guests, and computers on the Internet access to the guest system. </p>
       </li>
     </ul>
   </body>

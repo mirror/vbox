@@ -4,27 +4,18 @@
   <title>Updating and Uninstalling <ph conkeyref="vbox-conkeyref-phrases/product-name"/></title>
   
   <body>
-    <p>
-          Before updating or uninstalling <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, you must
-          terminate any virtual machines which are currently running and
-          exit the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> or VBoxSVC applications. To update
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, simply run the installer of the updated
-          version. To uninstall <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, run the installer as
-          follows:
-        </p>
+    <p>Before updating or uninstalling <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, you must terminate any
+      virtual machines which are currently running and exit the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> or
+      VBoxSVC applications. To update <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, simply run the installer of
+      the updated version. To uninstall <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, run the installer as
+      follows: </p>
     <pre xml:space="preserve">sudo ./VirtualBox.run uninstall</pre>
-    <p>
-          As root, you can use the following command:
-        </p>
+    <p>As root, you can use the following command: </p>
     <pre xml:space="preserve">./VirtualBox.run uninstall</pre>
-    <p>
-          You can uninstall the .run package as follows:
-        </p>
+    <p>You can uninstall the .run package as follows: </p>
     <pre xml:space="preserve">/opt/VirtualBox/uninstall.sh</pre>
-    <p>
-          To manually uninstall <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, perform the manual
-          installation steps in reverse order.
-        </p>
+    <p>To manually uninstall <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, perform the manual installation
+      steps in reverse order. </p>
   </body>
   
 </topic>

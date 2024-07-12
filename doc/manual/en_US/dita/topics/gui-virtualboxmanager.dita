@@ -4,19 +4,14 @@
   <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></title>
   
   <body>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> is the user interface for <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. You can use
-      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to create, configure, and manage your virtual machines.
-    </p>
-    <p>
-      This section describes the main features of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user
-      interface. Subsequent sections and chapters describe how to use
-      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to perform tasks in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
-    </p>
-    <p>
-      When you start <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, the
-      <b outputclass="bold"><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></b> window is displayed.
-    </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> is the user interface for <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/>. You can use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>
+      to create, configure, and manage your virtual machines. </p>
+    <p>This section describes the main features of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user interface.
+      Subsequent sections and chapters describe how to use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to perform
+      tasks in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
+    <p>When you start <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, the <b outputclass="bold"><ph
+          conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></b> window is displayed. </p>
     <p><xref href="#gui-virtualboxmanager/fig-vbox-manager-initial"/> shows <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> the
       first time you start <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, before you have created any
       virtual machines.
@@ -47,9 +42,7 @@
         <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Window, After Creating Virtual Machines</alt>
       </image>
     </fig>
-    <p>
-      The main components of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window are as follows:
-    </p>
+    <p>The main components of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window are as follows: </p>
     <ul>
       <li>
         <p><b outputclass="bold">The machine list.</b> The left

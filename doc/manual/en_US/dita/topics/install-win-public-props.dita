@@ -4,70 +4,36 @@
   <title>Public Properties</title>
   
   <body>
-    <p>
-        Public properties can be specified with the MSI API, to control
-        additional behavior and features of the Windows host installer.
-        Use either of the following commands:
-      </p>
+    <p>Public properties can be specified with the MSI API, to control additional behavior and features of the Windows
+      host installer. Use either of the following commands: </p>
     <pre xml:space="preserve">VirtualBox.exe -msiparams NAME=VALUE [...]</pre>
     <pre xml:space="preserve">msiexec /i VirtualBox-&lt;version&gt;-Win.msi NAME=VALUE [...]</pre>
-    <p>
-        The following public properties are available.
-      </p>
+    <p>The following public properties are available. </p>
     <ul>
       <li>
-        <p>
-            VBOX_INSTALLDESKTOPSHORTCUT
-          </p>
-        <p>
-            Specifies whether or not an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> icon on the
-            desktop should be created.
-          </p>
-        <p>
-            Set to <codeph>1</codeph> to enable, <codeph>0</codeph>
-            to disable. Default is 1.
-          </p>
+        <p>VBOX_INSTALLDESKTOPSHORTCUT </p>
+        <p>Specifies whether or not an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> icon on the desktop should
+          be created. </p>
+        <p>Set to <codeph>1</codeph> to enable, <codeph>0</codeph> to disable. Default is 1. </p>
       </li>
       <li>
-        <p>
-            VBOX_INSTALLQUICKLAUNCHSHORTCUT
-          </p>
-        <p>
-            Specifies whether or not an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> icon in the Quick
-            Launch Bar should be created.
-          </p>
-        <p>
-            Set to <codeph>1</codeph> to enable, <codeph>0</codeph>
-            to disable. Default is 1.
-          </p>
+        <p>VBOX_INSTALLQUICKLAUNCHSHORTCUT </p>
+        <p>Specifies whether or not an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> icon in the Quick Launch
+          Bar should be created. </p>
+        <p>Set to <codeph>1</codeph> to enable, <codeph>0</codeph> to disable. Default is 1. </p>
       </li>
       <li>
-        <p>
-            VBOX_REGISTERFILEEXTENSIONS
-          </p>
-        <p>
-            Specifies whether or not the file extensions .vbox,
-            .vbox-extpack, .ovf, .ova, .vdi, .vmdk, .vhd and .vdd should
-            be associated with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. Files of these types then
-            will be opened with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
-          </p>
-        <p>
-            Set to <codeph>1</codeph> to enable, <codeph>0</codeph>
-            to disable. Default is 1.
-          </p>
+        <p>VBOX_REGISTERFILEEXTENSIONS </p>
+        <p>Specifies whether or not the file extensions .vbox, .vbox-extpack, .ovf, .ova, .vdi, .vmdk, .vhd and .vdd
+          should be associated with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. Files of these types then
+          will be opened with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
+        <p>Set to <codeph>1</codeph> to enable, <codeph>0</codeph> to disable. Default is 1. </p>
       </li>
       <li>
-        <p>
-            VBOX_START
-          </p>
-        <p>
-            Specifies whether to start <ph conkeyref="vbox-conkeyref-phrases/product-name"/> right after
-            successful installation.
-          </p>
-        <p>
-            Set to <codeph>1</codeph> to enable, <codeph>0</codeph>
-            to disable. Default is 1.
-          </p>
+        <p>VBOX_START </p>
+        <p>Specifies whether to start <ph conkeyref="vbox-conkeyref-phrases/product-name"/> right after successful
+          installation. </p>
+        <p>Set to <codeph>1</codeph> to enable, <codeph>0</codeph> to disable. Default is 1. </p>
       </li>
     </ul>
   </body>

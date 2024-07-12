@@ -4,9 +4,7 @@
   <title>Controlling a Cloud VM</title>
   <!-- 7.1: OCI instance reset feature-->
   <body>
-    <p>
-          You can use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to control a cloud VM as follows:
-        </p>
+    <p>You can use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to control a cloud VM as follows: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Start.</b> Use the
@@ -31,22 +29,15 @@
               <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> toolbar.
             </p>
         <note type="caution">
-          <p>
-                This action deletes the instance from <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
-              </p>
+          <p>This action deletes the instance from <ph conkeyref="vbox-conkeyref-phrases/oci"/>. </p>
         </note>
       </li>
     </ul>
-    <p>
-          When you control a cloud VM in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> the machine list is
-          updated automatically with the current instance state, such as
-          <b outputclass="bold">Stopped</b> or <b outputclass="bold">Running</b>.
-        </p>
-    <p>
-          When you control an instance using the <ph conkeyref="vbox-conkeyref-phrases/oci"/> console,
-          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> updates the status for the corresponding cloud VM
-          automatically.
-        </p>
+    <p>When you control a cloud VM in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> the machine list is updated
+      automatically with the current instance state, such as <b outputclass="bold">Stopped</b> or <b outputclass="bold"
+        >Running</b>. </p>
+    <p>When you control an instance using the <ph conkeyref="vbox-conkeyref-phrases/oci"/> console, <ph
+        conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> updates the status for the corresponding cloud VM automatically. </p>
   </body>
   
 </topic>

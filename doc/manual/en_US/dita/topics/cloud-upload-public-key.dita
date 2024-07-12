@@ -4,45 +4,23 @@
   <title>Uploading the Public Key to <ph conkeyref="vbox-conkeyref-phrases/oci"/></title>
   
   <body>
-    <p>
-        Use the following steps to upload your public key to <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
-      </p>
+    <p>Use the following steps to upload your public key to <ph conkeyref="vbox-conkeyref-phrases/oci"/>. </p>
     <ol>
       <li>
-        <p>
-            Log in to the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console.
-          </p>
+        <p>Log in to the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console. </p>
       </li>
       <li>
-        <p>
-            Display the <b outputclass="bold">User Settings</b>
-            page.
-          </p>
-        <p>
-            Click <b outputclass="bold">Profile</b>,
-            <b outputclass="bold">User Settings</b>.
-          </p>
+        <p>Display the <b outputclass="bold">User Settings</b> page. </p>
+        <p>Click <b outputclass="bold">Profile</b>, <b outputclass="bold">User Settings</b>. </p>
       </li>
       <li>
-        <p>
-            Display your current API signing keys.
-          </p>
-        <p>
-            Click <b outputclass="bold">Resources</b>,
-            <b outputclass="bold">API Keys</b>.
-          </p>
+        <p>Display your current API signing keys. </p>
+        <p>Click <b outputclass="bold">Resources</b>, <b outputclass="bold">API Keys</b>. </p>
       </li>
       <li>
-        <p>
-            Upload the public key.
-          </p>
-        <p>
-            Click <b outputclass="bold">Add Public Key</b>.
-          </p>
-        <p>
-            The <b outputclass="bold">Add Public Key</b> dialog
-            is displayed.
-          </p>
+        <p>Upload the public key. </p>
+        <p>Click <b outputclass="bold">Add Public Key</b>. </p>
+        <p>The <b outputclass="bold">Add Public Key</b> dialog is displayed. </p>
         <fig id="fig-upload-key-oci">
           <title>Upload Public Key Dialog in <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console</title>
           <xref href="images/upload-key.png" format="png" platform="htmlhelp">
@@ -54,9 +32,7 @@
             <alt>Upload Public Key Dialog in <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console</alt>
           </image>
         </fig>
-        <p>
-            Select one of the following options:
-          </p>
+        <p>Select one of the following options: </p>
         <ul>
           <li>
             <p><b outputclass="bold">Choose Public Key File.</b>
@@ -71,10 +47,7 @@
               </p>
           </li>
         </ul>
-        <p>
-            Click <b outputclass="bold">Add</b> to upload the
-            public key.
-          </p>
+        <p>Click <b outputclass="bold">Add</b> to upload the public key. </p>
       </li>
     </ol>
   </body>

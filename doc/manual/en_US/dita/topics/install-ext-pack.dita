@@ -4,32 +4,21 @@
   <title>Installing an Extension Pack</title>
   
   <body>
-    <p>
-      Extension packs provide extra functionality to the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
-      base package, such as extended USB device support and cloud
-      integration features. See <xref href="intro-installing.dita#intro-installing"/>.
-    </p>
-    <p>
-      To install an <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/>, do the following:
-    </p>
+    <p>Extension packs provide extra functionality to the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> base
+      package, such as extended USB device support and cloud integration features. See <xref
+        href="intro-installing.dita#intro-installing"/>. </p>
+    <p>To install an <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/>, do the following: </p>
     <ol>
       <li>
         <p> Double-click the extension package file name. </p>
-        <p>
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension packs have a
-          <filepath>.vbox-extpack</filepath> file name extension.
-        </p>
+        <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension packs have a
+            <filepath>.vbox-extpack</filepath> file name extension. </p>
       </li>
       <li>
-        <p>
-          Follow the on-screen instructions to install the extension
-          pack.
-        </p>
+        <p>Follow the on-screen instructions to install the extension pack. </p>
       </li>
     </ol>
-    <p>
-      You can also use the Extension Pack Manager tool to install an
-      extension pack. See <xref href="install-ext-pack-manager.dita#install-ext-pack-manager"/>.
-    </p>
+    <p>You can also use the Extension Pack Manager tool to install an extension pack. See <xref
+        href="install-ext-pack-manager.dita#install-ext-pack-manager"/>. </p>
   </body>
 </topic>

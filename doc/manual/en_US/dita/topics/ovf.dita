@@ -4,10 +4,8 @@
   <title>Importing and Exporting Virtual Machines</title>
   
   <body>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can import and export virtual machines in the
-      following formats:
-    </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> can import and export virtual machines in the following
+      formats: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Open Virtualization Format

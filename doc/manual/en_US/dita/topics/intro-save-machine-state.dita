@@ -3,10 +3,10 @@
 <topic xml:lang="en-us" id="intro-save-machine-state">
   <title>Saving the State of the Machine</title>
   <body>
-    <p> When you click the <b outputclass="bold">Close</b> button of your virtual machine window, at
-      the top right of the window, just like you would close any other window on your system, <ph
-        conkeyref="vbox-conkeyref-phrases/product-name"/> asks you whether you want to save or power
-      off the VM. As a shortcut, you can also press <b outputclass="bold">Host key + Q</b>. </p>
+    <p>When you click the <b outputclass="bold">Close</b> button of your virtual machine window, at the top right of the
+      window, just like you would close any other window on your system, <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> asks you whether you want to save or power off the VM. As a
+      shortcut, you can also press <b outputclass="bold">Host key + Q</b>. </p>
     <fig id="fig-vm-close">
       <title>Closing Down a Virtual Machine</title>
       <xref href="images/vm-close.png" format="png" platform="htmlhelp">
@@ -29,13 +29,9 @@
             <i>freezes</i> the virtual machine by
             completely saving its state to your local disk.
           </p>
-        <p>
-            When you start the VM again later, you will find that the VM
-            continues exactly where it was left off. All your programs
-            will still be open, and your computer resumes operation.
-            Saving the state of a virtual machine is thus in some ways
-            similar to suspending a laptop computer by closing its lid.
-          </p>
+        <p>When you start the VM again later, you will find that the VM continues exactly where it was left off. All
+          your programs will still be open, and your computer resumes operation. Saving the state of a virtual machine
+          is thus in some ways similar to suspending a laptop computer by closing its lid. </p>
       </li>
       <li>
         <p><b outputclass="bold">Send the shutdown signal.</b>
@@ -51,33 +47,20 @@
             machine, but <i>without</i> saving its state.
           </p>
         <note type="caution">
-          <p>
-              This is equivalent to pulling the power plug on a real
-              computer without shutting it down properly. If you start
-              the machine again after powering it off, your OS will have
-              to reboot completely and may begin a lengthy check of its
-              virtual system disks. As a result, this should not
-              normally be done, since it can potentially cause data loss
-              or an inconsistent state of the guest system on disk.
-            </p>
+          <p>This is equivalent to pulling the power plug on a real computer without shutting it down properly. If you
+            start the machine again after powering it off, your OS will have to reboot completely and may begin a
+            lengthy check of its virtual system disks. As a result, this should not normally be done, since it can
+            potentially cause data loss or an inconsistent state of the guest system on disk. </p>
         </note>
-        <p>
-            As an exception, if your virtual machine has any snapshots,
-            see <xref href="snapshots.dita#snapshots"/>, you can use this option to
-            quickly <b outputclass="bold">restore the current
-            snapshot</b> of the virtual machine. In that case,
-            powering off the machine will discard the current state and
-            any changes made since the previous snapshot was taken will
-            be lost.
-          </p>
+        <p>As an exception, if your virtual machine has any snapshots, see <xref href="snapshots.dita#snapshots"/>, you
+          can use this option to quickly <b outputclass="bold">restore the current snapshot</b> of the virtual machine.
+          In that case, powering off the machine will discard the current state and any changes made since the previous
+          snapshot was taken will be lost. </p>
       </li>
     </ul>
-    <p>
-        The <b outputclass="bold">Discard</b> button in the
-        <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window discards a virtual machine's saved state. This
-        has the same effect as powering it off, and the same warnings
-        apply.
-      </p>
+    <p>The <b outputclass="bold">Discard</b> button in the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window
+      discards a virtual machine's saved state. This has the same effect as powering it off, and the same warnings
+      apply. </p>
   </body>
   
 </topic>

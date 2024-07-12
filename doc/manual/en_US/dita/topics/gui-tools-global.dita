@@ -4,17 +4,10 @@
   <title>Global Tools</title>
   <!-- 7.1: May be best to remove screen shots of menus. Too much of a maintenance headache. -->
   <body>
-    <p>
-          In the left pane of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window, click the
-          <b outputclass="bold">Menu</b> icon in the
-          <b outputclass="bold">Tools</b> banner located above
-          the machine list. The <b outputclass="bold">Global
-          Tools</b> menu is displayed.
-        </p>
-    <p>
-          A drop-down list enables you to select from the following
-          global tools:
-        </p>
+    <p>In the left pane of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window, click the <b outputclass="bold"
+        >Menu</b> icon in the <b outputclass="bold">Tools</b> banner located above the machine list. The <b
+        outputclass="bold">Global Tools</b> menu is displayed. </p>
+    <p>A drop-down list enables you to select from the following global tools: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Welcome.</b> Displays the
@@ -65,11 +58,8 @@
             </p>
       </li>
     </ul>
-    <p>
-          The <b outputclass="bold">Pin</b> icon is used to keep
-          the <b outputclass="bold">Tools</b> banner visible as
-          you scroll down the entries in the machine list.
-        </p>
+    <p>The <b outputclass="bold">Pin</b> icon is used to keep the <b outputclass="bold">Tools</b> banner visible as you
+      scroll down the entries in the machine list. </p>
     <note>
       <p>The available tools may vary, depending on the selected experience level for the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user interface.</p>
       <p>See <xref href="ui-experience-level.dita#gui-experience-level"/>.</p>

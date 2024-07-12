@@ -4,9 +4,7 @@
   <title>Starting <ph conkeyref="vbox-conkeyref-phrases/product-name"/></title>
   
   <body>
-    <p>
-      After installation, you can start <ph conkeyref="vbox-conkeyref-phrases/product-name"/> as follows:
-    </p>
+    <p>After installation, you can start <ph conkeyref="vbox-conkeyref-phrases/product-name"/> as follows: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Windows hosts.</b> In the <b outputclass="bold">Programs</b> menu,
@@ -30,10 +28,9 @@
         </p>
       </li>
     </ul>
-    <p>
-      When you start <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> interface is shown.
-      See <xref href="gui-virtualboxmanager.dita#gui-virtualboxmanager"/>.
-    </p>
+    <p>When you start <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, the <ph
+        conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> interface is shown. See <xref
+        href="gui-virtualboxmanager.dita#gui-virtualboxmanager"/>. </p>
   </body>
   
 </topic>

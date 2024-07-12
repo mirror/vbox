@@ -4,10 +4,8 @@
   <title>Processor Tab</title>
   
   <body>
-    <p>
-        On the <b outputclass="bold">Processor</b> tab, you can
-        configure settings for the CPU used by the virtual machine.
-      </p>
+    <p>On the <b outputclass="bold">Processor</b> tab, you can configure settings for the CPU used by the virtual
+      machine. </p>
     <ul>
       <li>
         <p><b outputclass="bold">Processor(s):</b> Sets the
@@ -59,11 +57,8 @@
           </p>
       </li>
     </ul>
-    <p>
-        With virtual machines running modern server OSes, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
-        also supports CPU hot-plugging. For details, see
-        <xref href="cpuhotplug.dita">CPU Hot-Plugging</xref>.
-      </p>
+    <p>With virtual machines running modern server OSes, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also
+      supports CPU hot-plugging. For details, see <xref href="cpuhotplug.dita">CPU Hot-Plugging</xref>. </p>
   </body>
   
 </topic>

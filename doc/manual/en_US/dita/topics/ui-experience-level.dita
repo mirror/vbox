@@ -3,9 +3,8 @@
 <topic xml:lang="en-us" id="gui-experience-level">
   <title>Experience Levels for VirtualBox Manager</title>
   <body>
-    <p> When you use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to configure settings for virtual
-      machines, you can select an <i>experience level</i> for the user interface. The following
-      experience levels are available:</p> 
+    <p>When you use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to configure settings for virtual machines, you
+      can select an <i>experience level</i> for the user interface. The following experience levels are available:</p> 
     <ul>
       <li>
         <p><b>Basic.</b> Only a limited number of settings and tools are shown. This is the

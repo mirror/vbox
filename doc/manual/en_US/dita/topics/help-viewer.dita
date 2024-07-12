@@ -4,24 +4,15 @@
   <title>Help Viewer</title>
   
   <body>
-    <p>
-        The Help Viewer is a window that displays context-sensitive help
-        to assist you in completing common <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> tasks. You can
-        display the Help Viewer in the following ways:
-      </p>
+    <p>The Help Viewer is a window that displays context-sensitive help to assist you in completing common <ph
+        conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> tasks. You can display the Help Viewer in the following ways: </p>
     <ul>
       <li>
-        <p>
-            In a <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> wizard or dialog, click
-            <b outputclass="bold">Help</b> to display the
-            relevant help topic.
-          </p>
+        <p>In a <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> wizard or dialog, click <b outputclass="bold">Help</b>
+          to display the relevant help topic. </p>
       </li>
       <li>
-        <p>
-            In <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> or from a guest VM, do either of the
-            following:
-          </p>
+        <p>In <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> or from a guest VM, do either of the following: </p>
         <ul>
           <li>
             <p>
@@ -33,18 +24,13 @@
             <p>
                 Press the <b outputclass="bold">F1</b> button.
               </p>
-            <p>
-                The keyboard shortcut used to access the Help Viewer can
-                be configured in the
-                <b outputclass="bold">Preferences</b> window.
-              </p>
+            <p>The keyboard shortcut used to access the Help Viewer can be configured in the <b outputclass="bold"
+                >Preferences</b> window. </p>
           </li>
         </ul>
       </li>
     </ul>
-    <p>
-        The Help Viewer has the following features:
-      </p>
+    <p>The Help Viewer has the following features: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Navigation tools.</b> The left

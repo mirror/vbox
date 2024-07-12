@@ -4,17 +4,12 @@
   <title>Remote Display Tab</title>
   
   <body>
-    <p>
-        On the <b outputclass="bold">Remote Display</b> tab, if
-        the VirtualBox Remote Display Extension (VRDE) is installed, you
-        can enable the VRDP server that is built into <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
-        This enables you to connect to the console of the virtual
-        machine remotely with any standard RDP viewer, such as
-        <userinput>mstsc.exe</userinput> that comes with Microsoft Windows.
-        On Linux and Oracle Solaris systems you can use the standard
-        open source <userinput>rdesktop</userinput> program. These features
-        are described in <xref href="vrde.dita">Remote Display (VRDP Support)</xref>.
-      </p>
+    <p>On the <b outputclass="bold">Remote Display</b> tab, if the VirtualBox Remote Display Extension (VRDE) is
+      installed, you can enable the VRDP server that is built into <ph conkeyref="vbox-conkeyref-phrases/product-name"
+      />. This enables you to connect to the console of the virtual machine remotely with any standard RDP viewer, such
+      as <userinput>mstsc.exe</userinput> that comes with Microsoft Windows. On Linux and Oracle Solaris systems you can
+      use the standard open source <userinput>rdesktop</userinput> program. These features are described in <xref
+        href="vrde.dita">Remote Display (VRDP Support)</xref>. </p>
     <ul>
       <li>
         <p><b outputclass="bold">Enable Server:</b> Select this

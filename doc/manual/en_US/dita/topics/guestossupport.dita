@@ -4,15 +4,10 @@
   <title>Supported Guest Operating Systems</title>
   
   <body>
-    <p>
-      Because <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is designed to provide a generic
-      virtualization environment for x86 systems, it can run guest
-      operating systems (OSes) of any kind.
-    </p>
+    <p>Because <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is designed to provide a generic virtualization
+      environment for x86 systems, it can run guest operating systems (OSes) of any kind. </p>
     <!-- 7.1: Require info on supported aarch64 guest OSes -->
-    <p>
-      The following guest OS platforms are supported:
-    </p>
+    <p>The following guest OS platforms are supported: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Platforms With Full Support.</b>

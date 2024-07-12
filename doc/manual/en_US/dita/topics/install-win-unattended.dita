@@ -4,10 +4,7 @@
   <title>Unattended Installation</title>
   
   <body>
-    <p>
-        Unattended installations can be performed using the standard MSI
-        support.
-      </p>
+    <p>Unattended installations can be performed using the standard MSI support. </p>
   </body>
   
 </topic>

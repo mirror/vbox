@@ -14,37 +14,20 @@
           runs on a large number of 64-bit host operating systems. See
           <xref href="hostossupport.dita#hostossupport"/>.
         </p>
-        <p>
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is a so-called <i>hosted</i>
-          hypervisor, sometimes referred to as a <i>type
-          2</i> hypervisor. Whereas a
-          <i>bare-metal</i> or <i>type 1</i>
-          hypervisor runs directly on the hardware, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
-          requires an existing OS to be installed. It can thus run
-          alongside existing applications on that host.
-        </p>
-        <p>
-          To a very large degree, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is functionally
-          identical on all of the host platforms, and the same file and
-          image formats are used. This enables you to run virtual
-          machines created on one host on another host with a different
-          host OS. For example, you can create a virtual machine on
-          Windows and then run it on Linux.
-        </p>
-        <p>
-          In addition, virtual machines can easily be imported and
-          exported using the Open Virtualization Format (OVF), an
-          industry standard created for this purpose. You can even
-          import OVFs that were created with a different virtualization
-          software. See <xref href="ovf.dita#ovf"/>.
-        </p>
-        <p>
-          For users of <ph conkeyref="vbox-conkeyref-phrases/oci"/> the functionality extends to exporting and
-          importing virtual machines to and from the cloud. This
-          simplifies development of applications and deployment to the
-          production environment. See
-          <xref href="cloud-export-oci.dita#cloud-export-oci"/>.
-        </p>
+        <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> is a so-called <i>hosted</i> hypervisor, sometimes
+          referred to as a <i>type 2</i> hypervisor. Whereas a <i>bare-metal</i> or <i>type 1</i> hypervisor runs
+          directly on the hardware, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> requires an existing OS to be
+          installed. It can thus run alongside existing applications on that host. </p>
+        <p>To a very large degree, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is functionally identical on
+          all of the host platforms, and the same file and image formats are used. This enables you to run virtual
+          machines created on one host on another host with a different host OS. For example, you can create a virtual
+          machine on Windows and then run it on Linux. </p>
+        <p>In addition, virtual machines can easily be imported and exported using the Open Virtualization Format (OVF),
+          an industry standard created for this purpose. You can even import OVFs that were created with a different
+          virtualization software. See <xref href="ovf.dita#ovf"/>. </p>
+        <p>For users of <ph conkeyref="vbox-conkeyref-phrases/oci"/> the functionality extends to exporting and
+          importing virtual machines to and from the cloud. This simplifies development of applications and deployment
+          to the production environment. See <xref href="cloud-export-oci.dita#cloud-export-oci"/>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Guest Additions: shared folders,
@@ -58,12 +41,8 @@
           accelerated 3D graphics and more. See
           <xref href="guestadditions.dita#guestadditions"/>.
         </p>
-        <p>
-          In particular, Guest Additions provide for <i>shared
-          folders</i>, which let you access files on the host
-          system from within a guest machine. See
-          <xref href="sharedfolders.dita#sharedfolders"/>.
-        </p>
+        <p>In particular, Guest Additions provide for <i>shared folders</i>, which let you access files on the host
+          system from within a guest machine. See <xref href="sharedfolders.dita#sharedfolders"/>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Comprehensive hardware
@@ -174,14 +153,11 @@
           machine from the command line, or even remotely. See
           <xref href="frontends.dita#frontends"/>.
         </p>
-        <p>
-          Due to its modular architecture, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can also
-          expose its full functionality and configurability through a
-          comprehensive <b outputclass="bold">software development kit
-          (SDK),</b> which enables integration of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
-          with other software systems. See
-          <xref href="VirtualBoxAPI.dita"><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Programming Interfaces</xref>.
-        </p>
+        <p>Due to its modular architecture, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can also expose its
+          full functionality and configurability through a comprehensive <b outputclass="bold">software development kit
+            (SDK),</b> which enables integration of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> with other
+          software systems. See <xref href="VirtualBoxAPI.dita"><ph conkeyref="vbox-conkeyref-phrases/product-name"/>
+            Programming Interfaces</xref>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Remote machine display.</b> The
@@ -191,18 +167,12 @@
           originally built into Microsoft Windows, with special
           additions for full client USB support.
         </p>
-        <p>
-          The VRDE does not rely on the RDP server that is built into
-          Microsoft Windows. Instead, the VRDE is plugged directly into
-          the virtualization layer. As a result, it works with guest
-          OSes other than Windows, even in text mode, and does not
-          require application support in the virtual machine either. The
-          VRDE is described in detail in <xref href="vrde.dita">Remote Display (VRDP Support)</xref>.
-        </p>
-        <p>
-          On top of this special capacity, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> offers you
-          more unique features:
-        </p>
+        <p>The VRDE does not rely on the RDP server that is built into Microsoft Windows. Instead, the VRDE is plugged
+          directly into the virtualization layer. As a result, it works with guest OSes other than Windows, even in text
+          mode, and does not require application support in the virtual machine either. The VRDE is described in detail
+          in <xref href="vrde.dita">Remote Display (VRDP Support)</xref>. </p>
+        <p>On top of this special capacity, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> offers you more unique
+          features: </p>
         <ul>
           <li>
             <p><b outputclass="bold">Extensible RDP

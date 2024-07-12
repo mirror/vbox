@@ -4,18 +4,12 @@
   <title>Preparing a VM for Export to <ph conkeyref="vbox-conkeyref-phrases/oci"/></title>
   
   <body>
-    <p>
-          <ph conkeyref="vbox-conkeyref-phrases/oci"/> provides the option to import a custom Linux image.
-          Before an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> image can be exported to <ph conkeyref="vbox-conkeyref-phrases/oci"/>, the
-          custom image needs to be prepared to ensure that instances
-          launched from the custom image can boot correctly and that
-          network connections will work. This section provides advice on
-          how to prepare a Linux image for export from <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
-        </p>
-    <p>
-          The following list shows some tasks to consider when preparing
-          an Oracle Linux VM for export:
-        </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/oci"/> provides the option to import a custom Linux image. Before an <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> image can be exported to <ph
+        conkeyref="vbox-conkeyref-phrases/oci"/>, the custom image needs to be prepared to ensure that instances
+      launched from the custom image can boot correctly and that network connections will work. This section provides
+      advice on how to prepare a Linux image for export from <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
+    <p>The following list shows some tasks to consider when preparing an Oracle Linux VM for export: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Use DHCP for network
@@ -30,11 +24,8 @@
               address.</b> The network interface configuration
               for the VM must not specify the MAC address.
             </p>
-        <p>
-              Remove the HWADDR setting from the
-              <filepath>/etc/sysconfig/ifcfg-<varname>devicename</varname></filepath>
-              network script.
-            </p>
+        <p>Remove the HWADDR setting from the <filepath>/etc/sysconfig/ifcfg-<varname>devicename</varname></filepath>
+          network script. </p>
       </li>
       <li>
         <p><b outputclass="bold">Disable persistent network device
@@ -43,31 +34,17 @@
             </p>
         <ol>
           <li>
-            <p>
-                  Change the GRUB kernel parameters.
-                </p>
-            <p>
-                  Add <codeph>net.ifnames=0</codeph> and
-                  <codeph>biosdevname=0</codeph> as kernel parameter
-                  values to the <codeph>GRUB_CMDLINE_LINUX</codeph>
-                  variable.
-                </p>
+            <p>Change the GRUB kernel parameters. </p>
+            <p>Add <codeph>net.ifnames=0</codeph> and <codeph>biosdevname=0</codeph> as kernel parameter values to the
+                <codeph>GRUB_CMDLINE_LINUX</codeph> variable. </p>
           </li>
           <li>
-            <p>
-                  Update the GRUB configuration.
-                </p>
+            <p>Update the GRUB configuration. </p>
             <pre xml:space="preserve"># grub2-mkconfig -o /boot/grub2/grub.cfg</pre>
           </li>
           <li>
-            <p>
-                  Disable any <codeph>udev</codeph> rules for network
-                  device naming.
-                </p>
-            <p>
-                  For example, if an automated <codeph>udev</codeph>
-                  rule exists for <codeph>net-persistence</codeph>:
-                </p>
+            <p>Disable any <codeph>udev</codeph> rules for network device naming. </p>
+            <p>For example, if an automated <codeph>udev</codeph> rule exists for <codeph>net-persistence</codeph>: </p>
             <pre xml:space="preserve"># cd /etc/udev/rules.d
 # rm -f 70-persistent-net.rules
 # ln -s /dev/null /etc/udev/rules.d/70-persistent-net.rules</pre>
@@ -81,56 +58,33 @@
             </p>
         <ol>
           <li>
-            <p>
-                  Edit the <filepath>/etc/default/grub</filepath> file,
-                  as follows:
-                </p>
+            <p>Edit the <filepath>/etc/default/grub</filepath> file, as follows: </p>
             <ul>
               <li>
-                <p>
-                      Remove the <codeph>resume</codeph> setting from
-                      the kernel parameters. This setting slows down
-                      boot time significantly.
-                    </p>
+                <p>Remove the <codeph>resume</codeph> setting from the kernel parameters. This setting slows down boot
+                  time significantly. </p>
               </li>
               <li>
-                <p>
-                      Replace <codeph>GRUB_TERMINAL="gfxterm"</codeph>
-                      with <codeph>GRUB_TERMINAL="console
-                      serial"</codeph>. This configures use of the
-                      serial console instead of a graphical terminal.
-                    </p>
+                <p>Replace <codeph>GRUB_TERMINAL="gfxterm"</codeph> with <codeph>GRUB_TERMINAL="console
+                  serial"</codeph>. This configures use of the serial console instead of a graphical terminal. </p>
               </li>
               <li>
-                <p>
-                      Add <codeph>GRUB_SERIAL_COMMAND="serial --unit=0
-                      --speed=115200"</codeph>. This configures the
-                      serial connection.
-                    </p>
+                <p>Add <codeph>GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"</codeph>. This configures the serial
+                  connection. </p>
               </li>
               <li>
-                <p>
-                      Add <codeph>console=tty0
-                      console=ttyS0,115200</codeph> to the
-                      <codeph>GRUB_CMDLINE_LINUX</codeph> variable.
-                      This adds the serial console to the Linux kernel
-                      boot parameters.
-                    </p>
+                <p>Add <codeph>console=tty0 console=ttyS0,115200</codeph> to the <codeph>GRUB_CMDLINE_LINUX</codeph>
+                  variable. This adds the serial console to the Linux kernel boot parameters. </p>
               </li>
             </ul>
           </li>
           <li>
-            <p>
-                  Regenerate the GRUB configuration.
-                </p>
+            <p>Regenerate the GRUB configuration. </p>
             <pre xml:space="preserve"># grub2-mkconfig -o /boot/grub2/grub.cfg</pre>
           </li>
           <li>
-            <p>
-                  To verify the changes, reboot the machine and run the
-                  <userinput>dmesg</userinput> command to look for the
-                  updated kernel parameters.
-                </p>
+            <p>To verify the changes, reboot the machine and run the <userinput>dmesg</userinput> command to look for
+              the updated kernel parameters. </p>
             <pre xml:space="preserve"># dmesg |grep console=ttyS0</pre>
           </li>
         </ol>
@@ -143,35 +97,24 @@
             </p>
         <ol>
           <li>
-            <p>
-                  This procedure works only on machines with a Linux
-                  kernel of version 3.4 or later. Check that the VM is
-                  running a supported kernel:
-                </p>
+            <p>This procedure works only on machines with a Linux kernel of version 3.4 or later. Check that the VM is
+              running a supported kernel: </p>
             <pre xml:space="preserve"># uname -a</pre>
           </li>
           <li>
-            <p>
-                  Use the <codeph>dracut</codeph> tool to rebuild
-                  <codeph>initrd</codeph>. Add the
-                  <codeph>qemu</codeph> module, as follows:
-                </p>
+            <p>Use the <codeph>dracut</codeph> tool to rebuild <codeph>initrd</codeph>. Add the <codeph>qemu</codeph>
+              module, as follows: </p>
             <pre xml:space="preserve"># dracut –-logfile /var/log/Dracut.log --force --add qemu</pre>
           </li>
           <li>
-            <p>
-                  Verify that the <codeph>virtio</codeph> drivers are
-                  now present in <codeph>initrd</codeph>.
-                </p>
+            <p>Verify that the <codeph>virtio</codeph> drivers are now present in <codeph>initrd</codeph>. </p>
             <pre xml:space="preserve"> # lsinitrd |grep virtio</pre>
           </li>
         </ol>
       </li>
     </ul>
-    <p>
-          For more information about importing a custom Linux image into
-          <ph conkeyref="vbox-conkeyref-phrases/oci"/>, see also:
-        </p>
+    <p>For more information about importing a custom Linux image into <ph conkeyref="vbox-conkeyref-phrases/oci"/>, see
+      also: </p>
     <p>
       <ph>https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/importingcustomimagelinux.htm</ph>
     </p>

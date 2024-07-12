@@ -4,16 +4,10 @@
   <title>Installing on Oracle Solaris Hosts</title>
   
   <body>
-    <p>
-      For the specific versions of Oracle Solaris that are supported as
-      host operating systems, see <xref href="hostossupport.dita#hostossupport"/>.
-    </p>
-    <p>
-      If you have a previously installed instance of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on
-      your Oracle Solaris host, please uninstall it first before
-      installing a new instance. See
-      <xref href="uninstall-solaris-host.dita#uninstall-solaris-host"/> for uninstall
-      instructions.
-    </p>
+    <p>For the specific versions of Oracle Solaris that are supported as host operating systems, see <xref
+        href="hostossupport.dita#hostossupport"/>. </p>
+    <p>If you have a previously installed instance of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on your
+      Oracle Solaris host, please uninstall it first before installing a new instance. See <xref
+        href="uninstall-solaris-host.dita#uninstall-solaris-host"/> for uninstall instructions. </p>
   </body>
 </topic>

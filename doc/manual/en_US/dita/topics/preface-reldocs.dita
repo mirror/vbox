@@ -4,10 +4,7 @@
   <title>Related Documents</title>
   
   <body>
-    <p>
-                The documentation for this product is available at:
-              </p>
-    <p>
+    <p>The documentation for this product is available at:
       <xref href="https://docs.oracle.com/en/virtualization/virtualbox/index.html" scope="external" format="html"/>
     </p>
   </body>

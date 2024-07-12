@@ -4,24 +4,17 @@
   <title>Removing a Cloud VM</title>
   
   <body>
-    <p>
-          You can use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to remove a cloud VM as follows:
-        </p>
+    <p>You can use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to remove a cloud VM as follows: </p>
     <p> Right-click the cloud VM name and select <b outputclass="bold">Remove</b>. </p>
     <ul>
       <li>
-        <p>
-              Click <b outputclass="bold">Remove Only</b> to
-              remove the cloud VM from the machine list in VirtualBox
-              Manager.
-            </p>
+        <p>Click <b outputclass="bold">Remove Only</b> to remove the cloud VM from the machine list in VirtualBox
+          Manager. </p>
       </li>
       <li>
-        <p>
-              Click <b outputclass="bold">Delete Everything</b>
-              to remove the cloud VM from <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> and also to delete
-              the <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance and any associated boot volumes.
-            </p>
+        <p>Click <b outputclass="bold">Delete Everything</b> to remove the cloud VM from <ph
+            conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> and also to delete the <ph
+            conkeyref="vbox-conkeyref-phrases/oci"/> instance and any associated boot volumes. </p>
       </li>
     </ul>
   </body>

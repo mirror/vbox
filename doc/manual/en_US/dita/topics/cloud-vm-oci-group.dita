@@ -4,18 +4,11 @@
   <title>About the OCI VM Group</title>
   
   <body>
-    <p>
-          All cloud VMs are shown in the machine list in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, in
-          a special VM group called
-          <b outputclass="bold">OCI</b>.
-        </p>
-    <p>
-          Cloud VMs are further grouped according to the cloud profile
-          used to connect to them. The cloud profile identifies the user
-          and compartment for the cloud VM and includes details of the
-          key pair used to connect to cloud instances. See
-          <xref href="cloud-create-cloud-profile.dita#cloud-create-cloud-profile"/>.
-        </p>
+    <p>All cloud VMs are shown in the machine list in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, in a special VM
+      group called <b outputclass="bold">OCI</b>. </p>
+    <p>Cloud VMs are further grouped according to the cloud profile used to connect to them. The cloud profile
+      identifies the user and compartment for the cloud VM and includes details of the key pair used to connect to cloud
+      instances. See <xref href="cloud-create-cloud-profile.dita#cloud-create-cloud-profile"/>. </p>
     <fig id="fig-cloud-vm-oci-group">
       <title>OCI Group, Containing Cloud VMs</title>
       <xref href="images/cloudvm-oci-group.png" format="png" platform="htmlhelp">
@@ -27,20 +20,12 @@
         <alt>OCI Group, Containing Cloud VMs</alt>
       </image>
     </fig>
-    <p>
-          All cloud profiles registered with <ph conkeyref="vbox-conkeyref-phrases/product-name"/> are listed
-          automatically in the OCI group.
-        </p>
-    <p>
-          To enable or disable listing of cloud VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> for a
-          specific cloud profile, do the following:
-        </p>
-    <p>
-          Display the <b outputclass="bold">Cloud Profile
-          Manager</b> and select or deselect the
-          <b outputclass="bold">List VMs</b> check box for each
-          cloud profile.
-        </p>
+    <p>All cloud profiles registered with <ph conkeyref="vbox-conkeyref-phrases/product-name"/> are listed automatically
+      in the OCI group. </p>
+    <p>To enable or disable listing of cloud VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> for a specific
+      cloud profile, do the following: </p>
+    <p>Display the <b outputclass="bold">Cloud Profile Manager</b> and select or deselect the <b outputclass="bold">List
+        VMs</b> check box for each cloud profile. </p>
   </body>
   
 </topic>

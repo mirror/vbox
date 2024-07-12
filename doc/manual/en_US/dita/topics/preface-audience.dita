@@ -4,12 +4,9 @@
   <title>Audience</title>
   
   <body>
-    <p>
-      This document is intended for administrators with previous
-      experience of using <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. It is assumed that readers are
-      familiar with Web technologies and have a general understanding of
-      Windows and UNIX platforms.
-    </p>
+    <p>This document is intended for administrators with previous experience of using <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/>. It is assumed that readers are familiar with Web technologies
+      and have a general understanding of Windows and UNIX platforms. </p>
   </body>
   
 </topic>

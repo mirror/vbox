@@ -4,10 +4,8 @@
   <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Tools</title>
   
   <body>
-    <p>
-        <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> provides two types of user tools, to enable you to
-        perform common tasks easily.
-      </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> provides two types of user tools, to enable you to perform
+      common tasks easily. </p>
     <ul>
       <li>
         <p><b outputclass="bold">Global Tools.</b> These tools

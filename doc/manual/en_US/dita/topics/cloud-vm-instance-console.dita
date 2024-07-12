@@ -4,48 +4,27 @@
   <title>Creating an Instance Console Connection for a Cloud VM</title>
   
   <body>
-    <p>
-          To create a instance console connection, the cloud VM must be
-          in <b outputclass="bold">Running</b> state.
-        </p>
+    <p>To create a instance console connection, the cloud VM must be in <b outputclass="bold">Running</b> state. </p>
     <ol>
+      <li>Right-click the cloud VM name and select <b outputclass="bold">Console</b>, <b outputclass="bold">Create
+          Connection</b>. </li>
       <li>
-        <p> Right-click the cloud VM name and select <b outputclass="bold">Console</b>, <b
-            outputclass="bold">Create Connection</b>. </p>
+        <p>The <b outputclass="bold">Public Key</b> dialog is displayed. Paste the public key used for the instance
+          connection into the dialog and click <b outputclass="bold">OK</b>. </p>
+        <p>By default, either the first entry in your SSH keys folder or the public key used for your previous instance
+          console connection is used. </p>
       </li>
       <li>
-        <p>
-              The <b outputclass="bold">Public Key</b> dialog is
-              displayed. Paste the public key used for the instance
-              connection into the dialog and click
-              <b outputclass="bold">OK</b>.
-            </p>
-        <p>
-              By default, either the first entry in your SSH keys folder
-              or the public key used for your previous instance console
-              connection is used.
-            </p>
+        <p>Click <b outputclass="bold">Connect</b> to connect to the instance. An instance console is displayed
+          automatically on the host. </p>
       </li>
       <li>
-        <p>
-              Click <b outputclass="bold">Connect</b> to connect
-              to the instance. An instance console is displayed
-              automatically on the host.
-            </p>
-      </li>
-      <li>
-        <p>
-              (Optional) Click <b outputclass="bold">Show Log</b>
-              to display log messages for the instance console
-              connection.
-            </p>
+        <p>(Optional) Click <b outputclass="bold">Show Log</b> to display log messages for the instance console
+          connection. </p>
       </li>
     </ol>
-    <p>
-          See the <ph conkeyref="vbox-conkeyref-phrases/oci"/> documentation for details about how you can use
-          an instance console connection to troubleshoot instance
-          problems.
-        </p>
+    <p>See the <ph conkeyref="vbox-conkeyref-phrases/oci"/> documentation for details about how you can use an instance
+      console connection to troubleshoot instance problems. </p>
   </body>
   
 </topic>

@@ -4,15 +4,11 @@
   <title>Installing <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and Extension Packs</title>
   
   <body>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> comes in many different packages, and installation
-      depends on your host OS. If you have installed software before,
-      installation should be straightforward. On each host platform,
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the installation method that is most common
-      and easy to use. If you run into trouble or have special
-      requirements, see <xref href="installation.dita#installation"/> for details
-      about the various installation methods.
-    </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> comes in many different packages, and installation depends
+      on your host OS. If you have installed software before, installation should be straightforward. On each host
+      platform, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the installation method that is most common
+      and easy to use. If you run into trouble or have special requirements, see <xref
+        href="installation.dita#installation"/> for details about the various installation methods. </p>
     <p>
       <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is split into the following components:
     </p>
@@ -62,8 +58,7 @@
             </p>
           </li>
         </ul>
-        <p>
-          For details of how to install an extension pack, see
+        <p>For details of how to install an extension pack, see
           <xref href="install-ext-pack.dita"/>.
         </p>
       </li>

@@ -4,16 +4,9 @@
   <title>Preview Window</title>
   
   <body>
-    <p>
-          The virtual machine display is shown in a small window.
-        </p>
-    <p>
-          You can use the Preview window to check if your virtual
-          machine has finished booting up.
-        </p>
-    <p>
-          Click the arrow icon to hide or show the Preview window.
-        </p>
+    <p>The virtual machine display is shown in a small window. </p>
+    <p>You can use the Preview window to check if your virtual machine has finished booting up. </p>
+    <p>Click the arrow icon to hide or show the Preview window. </p>
   </body>
   
 </topic>

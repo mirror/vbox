@@ -4,11 +4,8 @@
   <title>Kernel Modules and UEFI Secure Boot</title>
   
   <body>
-    <p>
-          If you are running on a system using UEFI (Unified Extensible
-          Firmware Interface) Secure Boot, you may need to sign the
-          following kernel modules before you can load them:
-        </p>
+    <p>If you are running on a system using UEFI (Unified Extensible Firmware Interface) Secure Boot, you may need to
+      sign the following kernel modules before you can load them: </p>
     <ul>
       <li>
         <p>
@@ -31,10 +28,7 @@
         </p>
       </li>
     </ul>
-    <p>
-          See your system documentation for details of the kernel module
-          signing process.
-        </p>
+    <p>See your system documentation for details of the kernel module signing process. </p>
   </body>
   
 </topic>

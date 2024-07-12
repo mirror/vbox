@@ -4,43 +4,23 @@
   <title>Capturing and Releasing Keyboard and Mouse</title>
   
   <body>
-    <p>
-        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a virtual USB tablet device to new
-        virtual machines through which mouse events are communicated to
-        the guest OS. If you are running a modern guest OS that can
-        handle such devices, mouse support may work out of the box
-        without the mouse being <i>captured</i> as
-        described below. See <xref href="settings-motherboard.dita#settings-motherboard"/>.
-      </p>
-    <p>
-        Otherwise, if the virtual machine detects only standard PS/2
-        mouse and keyboard devices, since the OS in the virtual machine
-        does not know that it is not running on a real computer, it
-        expects to have exclusive control over your keyboard and mouse.
-        But unless you are running the VM in full screen mode, your VM
-        needs to share keyboard and mouse with other applications and
-        possibly other VMs on your host.
-      </p>
-    <p>
-        After installing a guest OS and before you install the Guest
-        Additions, described in <xref href="guestadditions.dita#guestadditions"/>, either
-        your VM or the rest of your computer can
-        <i>own</i> the keyboard and the mouse. Both cannot
-        own the keyboard and mouse at the same time. You will see a
-        <i>second</i> mouse pointer which is always
-        confined to the limits of the VM window. You activate the VM by
-        clicking inside it.
-      </p>
-    <p>
-        To return ownership of keyboard and mouse to your host OS,
-        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> reserves a special key on your keyboard: the
-        <i>Host key</i>. By default, this is the
-        <i>right Ctrl key</i> on your keyboard. On a Mac
-        host, the default Host key is the left Command key. You can
-        change this default using the Preferences window. See
-        <xref href="preferences.dita#preferences"/>. The current setting for the Host
-        key is always displayed at the bottom right of your VM window.
-      </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a virtual USB tablet device to new virtual
+      machines through which mouse events are communicated to the guest OS. If you are running a modern guest OS that
+      can handle such devices, mouse support may work out of the box without the mouse being <i>captured</i> as
+      described below. See <xref href="settings-motherboard.dita#settings-motherboard"/>. </p>
+    <p>Otherwise, if the virtual machine detects only standard PS/2 mouse and keyboard devices, since the OS in the
+      virtual machine does not know that it is not running on a real computer, it expects to have exclusive control over
+      your keyboard and mouse. But unless you are running the VM in full screen mode, your VM needs to share keyboard
+      and mouse with other applications and possibly other VMs on your host. </p>
+    <p>After installing a guest OS and before you install the Guest Additions, described in <xref
+        href="guestadditions.dita#guestadditions"/>, either your VM or the rest of your computer can <i>own</i> the
+      keyboard and the mouse. Both cannot own the keyboard and mouse at the same time. You will see a <i>second</i>
+      mouse pointer which is always confined to the limits of the VM window. You activate the VM by clicking inside it. </p>
+    <p>To return ownership of keyboard and mouse to your host OS, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
+      reserves a special key on your keyboard: the <i>Host key</i>. By default, this is the <i>right Ctrl key</i> on
+      your keyboard. On a Mac host, the default Host key is the left Command key. You can change this default using the
+      Preferences window. See <xref href="preferences.dita#preferences"/>. The current setting for the Host key is
+      always displayed at the bottom right of your VM window. </p>
     <fig id="fig-host-key">
       <title>Host Key Setting on the Virtual Machine Status Bar</title>
       <xref href="images/vm-hostkey.png" format="png" platform="htmlhelp">

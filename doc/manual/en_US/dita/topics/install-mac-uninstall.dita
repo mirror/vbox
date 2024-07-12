@@ -4,8 +4,8 @@
   <title>Uninstallation</title>
   
   <body>
-    <p> To uninstall <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, open the disk image
-        <filepath>dmg</filepath> file and double-click the uninstall icon shown. </p>
+    <p>To uninstall <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, open the disk image <filepath>dmg</filepath>
+      file and double-click the uninstall icon shown. </p>
   </body>
   
 </topic>

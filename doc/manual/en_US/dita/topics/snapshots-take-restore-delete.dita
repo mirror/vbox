@@ -85,82 +85,45 @@
                            <alt>Snapshots List For a Virtual Machine</alt>
                          </image>
                        </fig>
-                        <p>
-            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> imposes no limits on the number of snapshots
-            you can take. The only practical limitation is disk space on
-            your host. Each snapshot stores the state of the virtual
-            machine and thus occupies some disk space. See
-            <xref href="snapshots-contents.dita#snapshots-contents"/> for details on what is
-            stored in a snapshot.
-          </p>
+                        <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> imposes no limits on the number of
+          snapshots you can take. The only practical limitation is disk space on your host. Each snapshot stores the
+          state of the virtual machine and thus occupies some disk space. See <xref
+            href="snapshots-contents.dita#snapshots-contents"/> for details on what is stored in a snapshot. </p>
                      </li>
                      <li>
-                        <p>
-                           <b outputclass="bold">Restore a snapshot.</b> In the
-            Snapshots window, select the snapshot you have taken and
-            click <b outputclass="bold">Restore</b> in the
-            toolbar. By restoring a snapshot, you go back or forward in
-            time. The current state of the machine is lost, and the
-            machine is restored to the exact state it was in when the
-            snapshot was taken.
-          </p>
+                        <p><b outputclass="bold">Restore a snapshot.</b> In the Snapshots window, select the snapshot
+          you have taken and click <b outputclass="bold">Restore</b> in the toolbar. By restoring a snapshot, you go
+          back or forward in time. The current state of the machine is lost, and the machine is restored to the exact
+          state it was in when the snapshot was taken. </p>
                         <note>
-                           <p>
-              Restoring a snapshot will affect the virtual hard drives
-              that are connected to your VM, as the entire state of the
-              virtual hard drive will be reverted as well. This means
-              also that all files that have been created since the
-              snapshot and all other file changes <i>will be
-              lost. </i>In order to prevent such data loss while
-              still making use of the snapshot feature, it is possible
-              to add a second hard drive in
-              <i>write-through</i> mode using the
-              <userinput>VBoxManage</userinput> interface and use it to
-              store your data. As write-through hard drives are
-              <i>not</i> included in snapshots, they
-              remain unaltered when a machine is reverted. See
-              <xref href="hdimagewrites.dita#hdimagewrites"/>.
-            </p>
+                           <p>Restoring a snapshot will affect the virtual hard drives that are connected to your VM, as
+            the entire state of the virtual hard drive will be reverted as well. This means also that all files that
+            have been created since the snapshot and all other file changes <i>will be lost. </i>In order to prevent
+            such data loss while still making use of the snapshot feature, it is possible to add a second hard drive in
+              <i>write-through</i> mode using the <userinput>VBoxManage</userinput> interface and use it to store your
+            data. As write-through hard drives are <i>not</i> included in snapshots, they remain unaltered when a
+            machine is reverted. See <xref href="hdimagewrites.dita#hdimagewrites"/>. </p>
                         </note>
-                        <p>
-            To avoid losing the current state when restoring a snapshot,
-            you can create a new snapshot before the restore operation.
-          </p>
-                        <p>
-            By restoring an earlier snapshot and taking more snapshots
-            from there, it is even possible to create a kind of
-            alternate reality and to switch between these different
-            histories of the virtual machine. This can result in a whole
-            tree of virtual machine snapshots.
-          </p>
+                        <p>To avoid losing the current state when restoring a snapshot, you can create a new snapshot
+          before the restore operation. </p>
+                        <p>By restoring an earlier snapshot and taking more snapshots from there, it is even possible to
+          create a kind of alternate reality and to switch between these different histories of the virtual machine.
+          This can result in a whole tree of virtual machine snapshots. </p>
                      </li>
                      <li>
-                        <p>
-                           <b outputclass="bold">Delete a snapshot.</b> This
-            does not affect the state of the virtual machine, but only
-            releases the files on disk that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> used to store
-            the snapshot data, thus freeing disk space. To delete a
-            snapshot, select the snapshot name in the Snapshots window
-            and click <b outputclass="bold">Delete</b> in the
-            toolbar. Snapshots can be deleted even while a machine is
-            running.
-          </p>
+                        <p><b outputclass="bold">Delete a snapshot.</b> This does not affect the state of the virtual
+          machine, but only releases the files on disk that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> used
+          to store the snapshot data, thus freeing disk space. To delete a snapshot, select the snapshot name in the
+          Snapshots window and click <b outputclass="bold">Delete</b> in the toolbar. Snapshots can be deleted even
+          while a machine is running. </p>
                         <note>
-                           <p>
-              Whereas taking and restoring snapshots are fairly quick
-              operations, deleting a snapshot can take a considerable
-              amount of time since large amounts of data may need to be
-              copied between several disk image files. Temporary disk
-              files may also need large amounts of disk space while the
-              operation is in progress.
-            </p>
+                           <p>Whereas taking and restoring snapshots are fairly quick operations, deleting a snapshot
+            can take a considerable amount of time since large amounts of data may need to be copied between several
+            disk image files. Temporary disk files may also need large amounts of disk space while the operation is in
+            progress. </p>
                         </note>
-                        <p>
-            There are some situations which cannot be handled while a VM
-            is running, and you will get an appropriate message that you
-            need to perform this snapshot deletion when the VM is shut
-            down.
-          </p>
+                        <p>There are some situations which cannot be handled while a VM is running, and you will get an
+          appropriate message that you need to perform this snapshot deletion when the VM is shut down. </p>
                      </li>
                   </ol>
                </body>

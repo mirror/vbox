@@ -4,10 +4,7 @@
   <title>Advanced Tab</title>
   
   <body>
-    <p>
-        The following settings are available in the
-        <b outputclass="bold">Advanced</b> tab:
-      </p>
+    <p>The following settings are available in the <b outputclass="bold">Advanced</b> tab: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Snapshot Folder:</b> By
@@ -29,18 +26,11 @@
             <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will only ever copy clipboard data in one
             direction.
           </p>
-        <p>
-            Clipboard sharing requires that the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest
-            Additions be installed. In such a case, this setting has no
-            effect. See <xref href="guestadditions.dita#guestadditions"/>.
-          </p>
-        <p>
-            For security reasons, the shared clipboard is disabled by
-            default. This setting can be changed at any time using the
-            <b outputclass="bold">Shared Clipboard</b> menu item
-            in the <b outputclass="bold">Devices</b> menu of the
-            virtual machine.
-          </p>
+        <p>Clipboard sharing requires that the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions be
+          installed. In such a case, this setting has no effect. See <xref href="guestadditions.dita#guestadditions"/>. </p>
+        <p>For security reasons, the shared clipboard is disabled by default. This setting can be changed at any time
+          using the <b outputclass="bold">Shared Clipboard</b> menu item in the <b outputclass="bold">Devices</b> menu
+          of the virtual machine. </p>
         <!--7.1: r159813: checkbox added to the Shared Clipboard menu? -->
       </li>
       <li>
@@ -50,22 +40,13 @@
             on the guest or host. Multiple drag and drop modes for a VM
             enable restricting of access in either direction.
           </p>
-        <p>
-            For drag and drop to work the Guest Additions need to be
-            installed on the guest.
-          </p>
+        <p>For drag and drop to work the Guest Additions need to be installed on the guest. </p>
         <note>
-          <p>
-              Drag and drop is disabled by default. This setting can be
-              changed at any time using the <b outputclass="bold">Drag
-              and Drop</b> menu item in the
-              <b outputclass="bold">Devices</b> menu of the
-              virtual machine.
-            </p>
+          <p>Drag and drop is disabled by default. This setting can be changed at any time using the <b
+              outputclass="bold">Drag and Drop</b> menu item in the <b outputclass="bold">Devices</b> menu of the
+            virtual machine. </p>
         </note>
-        <p>
-            See <xref href="guestadd-dnd.dita#guestadd-dnd"/>.
-          </p>
+        <p>See <xref href="guestadd-dnd.dita#guestadd-dnd"/>. </p>
       </li>
     </ul>
   </body>

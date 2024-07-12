@@ -6,50 +6,32 @@
   <!-- 7.1: metrics info for OCI instances-->  
   <!-- 7.1: Add pic for cloud VM Activity info? -->
                <body>
-                  <p>
-        The Session Information dialog includes multiple tabs which show
-        important configuration and runtime information for the guest
-        system. The tabs of the dialog are as follows:
-      </p>
+                  <p>The Session Information dialog includes multiple tabs which show important configuration and
+      runtime information for the guest system. The tabs of the dialog are as follows: </p>
                   <ul>
                      <li>
-                        <p>
-                           <b outputclass="bold">Configuration Details.</b>
-            Displays the system configuration of the virtual machine in
-            a tabular format. The displayed information includes details
-            such as storage configuration and audio settings.
-          </p>
+                        <p><b outputclass="bold">Configuration Details.</b> Displays the system configuration of the
+          virtual machine in a tabular format. The displayed information includes details such as storage configuration
+          and audio settings. </p>
                      </li>
                      <li>
-                        <p>
-                           <b outputclass="bold">Runtime Information.</b>
-            Displays runtime information for the guest session in a
-            tabular format similar to the Configuration Details tab.
-          </p>
+                        <p><b outputclass="bold">Runtime Information.</b> Displays runtime information for the guest
+          session in a tabular format similar to the Configuration Details tab. </p>
                      </li>
                      <li>
-                        <p>
-                           <b outputclass="bold">VM Activity.</b> Includes
-            several time series charts which monitor guest resource
-            usage including CPU, RAM, Disk I/O, and Network. Note that
-            the RAM chart requires the Guest Additions to be running on
-            the guest system. The VM Activity tab can also be accessed
-            directly from the VM Activity Overview tool. See
-            <xref href="vm-activity-overview.dita#vm-activity-overview"/>.
-          </p>
+                        <p><b outputclass="bold">VM Activity.</b> Includes several time series charts which monitor
+          guest resource usage including CPU, RAM, Disk I/O, and Network. Note that the RAM chart requires the Guest
+          Additions to be running on the guest system. The VM Activity tab can also be accessed directly from the VM
+          Activity Overview tool. See <xref href="vm-activity-overview.dita#vm-activity-overview"/>. </p>
                      </li>
                      <li>
-                        <p>
-                           <b outputclass="bold">Guest Control</b>. Details of
-            processes used by the Guest Control File Manager. See
-            <xref href="guestadd-gc-file-manager.dita#guestadd-gc-file-manager"/>.
-          </p>
+                        <p><b outputclass="bold">Guest Control</b>. Details of processes used by the Guest Control File
+          Manager. See <xref href="guestadd-gc-file-manager.dita#guestadd-gc-file-manager"/>. </p>
                      </li>
                   </ul>
                  <note><p>For cloud VMs, only the VM Activity tab is shown.</p></note>
-                  <p> To display session information for a guest virtual machine or a cloud VM,
-      select the VM name in the machine list and click <b>Activity</b> in the machine tools
-      menu.</p>
+                  <p>To display session information for a guest virtual machine or a cloud VM, select the VM name in the
+      machine list and click <b>Activity</b> in the machine tools menu.</p>
                  <fig id="fig-vm-session-information">
                    <title>Session Information Dialog, Showing VM Activity Tab</title>
                    <xref href="images/session-information.png" format="png" platform="htmlhelp">

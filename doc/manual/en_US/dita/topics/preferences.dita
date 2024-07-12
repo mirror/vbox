@@ -4,33 +4,23 @@
   <title>Preferences</title>
   
   <body>
-    <p>
-      The Preferences window offers a selection of settings, which apply
-      to all virtual machines of the current user.
-    </p>
+    <p>The Preferences window offers a selection of settings, which apply to all virtual machines of the current user. </p>
     <note>
       <p>The available Preferences settings depend on the selected experience level. To display all
         Preference settings, ensure the experience level is set to <b>Expert</b>.</p>
     <p>See <xref href="ui-experience-level.dita#gui-experience-level"/>.</p>
     </note>
-    <p>
-      To display the Preferences window, do either of the following:
-    </p>
+    <p>To display the Preferences window, do either of the following: </p>
     <ul>
       <li>
-        <p>
-          Select <b outputclass="bold">File</b>,
-          <b outputclass="bold">Preferences</b>.
-        </p>
+        <p>Select <b outputclass="bold">File</b>, <b outputclass="bold">Preferences</b>. </p>
       </li>
       <li>
         <p> Click <b outputclass="bold">Preferences</b> on the Welcome screen in <ph
             conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. </p>
       </li>
     </ul>
-    <p>
-      The following settings are available:
-    </p>
+    <p>The following settings are available: </p>
     <ul>
       <li>
         <p><b outputclass="bold">General.</b> Enables you to
@@ -73,9 +63,7 @@
         <p><b outputclass="bold">Interface.</b> Enables you to select a color theme for the <ph
             conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user interface. </p>
         <note>
-          <p>
-            This setting is only available on Windows host platforms.
-          </p>
+          <p>This setting is only available on Windows host platforms. </p>
         </note>
       </li>
     </ul>

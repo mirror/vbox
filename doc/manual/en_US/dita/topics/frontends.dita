@@ -3,18 +3,14 @@
 <topic xml:lang="en-us" id="frontends">
   <title>Alternative Front Ends</title>
   <body>
-    <p>
-      As briefly mentioned in <xref href="features-overview.dita#features-overview"/>,
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has a very flexible internal design that enables
-      you to use multiple interfaces to control the same virtual
-      machines. For example, you can start a virtual machine with the
-      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window and then stop it from the command line. With
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s support for the Remote Desktop Protocol (RDP),
-      you can even run virtual machines remotely on a headless server
-      and have all the graphical output redirected over the network.
-    </p>
-    <p> The following front ends are shipped in the standard <ph
-        conkeyref="vbox-conkeyref-phrases/product-name"/> package:</p>
+    <p>As briefly mentioned in <xref href="features-overview.dita#features-overview"/>, <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> has a very flexible internal design that enables you to use
+      multiple interfaces to control the same virtual machines. For example, you can start a virtual machine with the
+        <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window and then stop it from the command line. With <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/>'s support for the Remote Desktop Protocol (RDP), you can even
+      run virtual machines remotely on a headless server and have all the graphical output redirected over the network. </p>
+    <p>The following front ends are shipped in the standard <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
+      package:</p>
     <ul>
       <li>
         <p><b outputclass="bold">VirtualBox.</b> This is the <ph
@@ -45,12 +41,11 @@
           but does not require VRDE or an RDP viewer. See <xref href="vboxheadless-separate-mode.dita">Separate Mode</xref>.</p>
       </li>
     </ul>
-    <p> If the above front ends still do not satisfy your particular needs, it is possible to create
-      yet another front end to the complex virtualization engine that is the core of <ph
-        conkeyref="vbox-conkeyref-phrases/product-name"/>, as the <ph
-        conkeyref="vbox-conkeyref-phrases/product-name"/> core neatly exposes all of its features in
-      a clean API. See <xref href="VirtualBoxAPI.dita"><ph
-          conkeyref="vbox-conkeyref-phrases/product-name"/> Programming Interfaces</xref>. </p>
+    <p>If the above front ends still do not satisfy your particular needs, it is possible to create yet another front
+      end to the complex virtualization engine that is the core of <ph conkeyref="vbox-conkeyref-phrases/product-name"
+      />, as the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> core neatly exposes all of its features in a
+      clean API. See <xref href="VirtualBoxAPI.dita"><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Programming
+        Interfaces</xref>. </p>
   </body>
   
 </topic>

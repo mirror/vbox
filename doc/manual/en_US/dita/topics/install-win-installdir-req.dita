@@ -4,30 +4,28 @@
   <title>Windows Installation Directory Security Requirements</title>
 
   <body>
-    <p> The installation directory on Windows hosts must meet certain security requirements, in
-      order to be accepted by the Windows installer. </p>
-    <p>
-      This also applies for upgrades of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
-      </p>
-    <p> For example, when installing <ph conkeyref="vbox-conkeyref-phrases/product-name"/> into a
-      custom location at X:\Data\MyPrograms\<ph conkeyref="vbox-conkeyref-phrases/product-name"/>,
-      all parent directories of this path (namely X:\Data and X:\Data\MyPrograms) must meet the
-      following Discretionary Access Control List (DACL). <pre xml:space="preserve">
+    <p>The installation directory on Windows hosts must meet certain security requirements, in order to be accepted by
+      the Windows installer. </p>
+    <p>This also applies for upgrades of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
+    <p>For example, when installing <ph conkeyref="vbox-conkeyref-phrases/product-name"/> into a custom location at
+        X:\Data\MyPrograms\<ph conkeyref="vbox-conkeyref-phrases/product-name"/>, all parent directories of this path
+      (namely X:\Data and X:\Data\MyPrograms) must meet the following Discretionary Access Control List (DACL).
+      <pre xml:space="preserve">
         Users               S-1-5-32-545:(OI)(CI)(RX)
         Users               S-1-5-32-545:(DE,WD,AD,WEA,WA)
         Authenticated Users S-1-5-11:(OI)(CI)(RX)
         Authenticated Users S-1-5-11:(DE,WD,AD,WEA,WA)
       </pre> Directory inheritance must also be disabled for all parent directories. </p>
-    <p> You can use the <codeph>icacls</codeph> Windows command line tool to modify a directory to
-      meet the security requirements. For example: <pre xml:space="preserve">
+    <p>You can use the <codeph>icacls</codeph> Windows command line tool to modify a directory to meet the security
+      requirements. For example: <pre xml:space="preserve">
       icacls &lt;Directory&gt; /reset /t /c
       icacls &lt;Directory&gt; /inheritance:d /t /c
       icacls &lt;Directory&gt; /grant *S-1-5-32-545:(OI)(CI)(RX)
       icacls &lt;Directory&gt; /deny  *S-1-5-32-545:(DE,WD,AD,WEA,WA)
       icacls &lt;Directory&gt; /grant *S-1-5-11:(OI)(CI)(RX)
       icacls &lt;Directory&gt; /deny  *S-1-5-11:(DE,WD,AD,WEA,WA)
-      </pre> Note that these commands must be repeated for all parent directories (X:\Data and
-      X:\Data\MyPrograms in this example).</p>
+      </pre>Note that these commands must be repeated for all parent directories (X:\Data and X:\Data\MyPrograms
+      in this example).</p>
   </body>
 
 </topic>

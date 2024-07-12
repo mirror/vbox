@@ -42,19 +42,15 @@
         <alt>Windows Server 2016 Virtual Machine, Displayed on a macOS Host</alt>
       </image>
     </fig>
-    <p>
-    In this User Manual, we will begin simply with a quick introduction
-    to virtualization and how to get your first virtual machine running
-    with the easy-to-use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> graphical user interface.
-    Subsequent chapters will go into much more detail covering more
-    powerful tools and features, but fortunately, it is not necessary to
-    read the entire User Manual before you can use <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
-  </p>
-    <p>
-    You can find a summary of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s capabilities in
-    <xref href="features-overview.dita#features-overview"/>. For existing <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
-    users who just want to find out what is new in this release, see the
-    <xref href="https://docs.oracle.com/en/virtualization/virtualbox/7.0/relnotes/relnotes-ChangeLog.html" format="html" scope="external">Change Log</xref>.
-  </p>
+    <p>In this User Manual, we will begin simply with a quick introduction to virtualization and how to get your first
+      virtual machine running with the easy-to-use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> graphical user
+      interface. Subsequent chapters will go into much more detail covering more powerful tools and features, but
+      fortunately, it is not necessary to read the entire User Manual before you can use <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
+    <p>You can find a summary of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s capabilities in <xref
+        href="features-overview.dita#features-overview"/>. For existing <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> users who just want to find out what is new in this release,
+      see the <xref href="https://docs.oracle.com/en/virtualization/virtualbox/7.0/relnotes/relnotes-ChangeLog.html"
+        format="html" scope="external">Change Log</xref>. </p>
   </body>
 </topic>

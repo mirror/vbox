@@ -4,30 +4,23 @@
   <title>Performing the Installation</title>
   
   <body>
-    <p>
-        For macOS hosts, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> ships in a
-        <filepath>dmg</filepath> disk image file. Perform the following
-        steps to install on a macOS host:
-      </p>
+    <p>For macOS hosts, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> ships in a <filepath>dmg</filepath> disk
+      image file. Perform the following steps to install on a macOS host: </p>
     <ol>
       <li>
         <p> Double-click the <filepath>dmg</filepath> file, to mount the contents. </p>
       </li>
       <li>
-        <p> A window opens, prompting you to double-click the <filepath>VirtualBox.pkg</filepath>
-          installer file displayed in that window. </p>
+        <p>A window opens, prompting you to double-click the <filepath>VirtualBox.pkg</filepath> installer file
+          displayed in that window. </p>
       </li>
       <li>
-        <p>
-            This starts the installer, which enables you to select where
-            to install <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
-          </p>
+        <p>This starts the installer, which enables you to select where to install <ph
+            conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
       </li>
       <li>
-        <p>
-            An <ph conkeyref="vbox-conkeyref-phrases/product-name"/> icon is added to the
-            <filepath>Applications</filepath> folder in the Finder.
-          </p>
+        <p>An <ph conkeyref="vbox-conkeyref-phrases/product-name"/> icon is added to the
+            <filepath>Applications</filepath> folder in the Finder. </p>
       </li>
     </ol>
   </body>

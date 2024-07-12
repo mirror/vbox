@@ -52,11 +52,8 @@
           Preview release. This package represents a work in progress project and the performance is
           very modest. </p>
         <note>
-          <p>
-            Developer Preview is a public release for developers, which
-            provides early access to unsupported software release and
-            features.
-          </p>
+          <p>Developer Preview is a public release for developers, which provides early access to unsupported software
+            release and features. </p>
         </note>
       </li>
       <li>
@@ -92,9 +89,7 @@
           installation. See <xref href="install-linux-host.dita#install-linux-host"/>. However, the
           formally tested and supported Linux distributions are those for which we offer a dedicated
           package. </p>
-        <p>
-          Note that Linux 2.4-based host OSes are no longer supported.
-        </p>
+        <p>Note that Linux 2.4-based host OSes are no longer supported. </p>
       </li>
       <li>
         <p><b outputclass="bold">Oracle Solaris hosts (64-bit
@@ -110,10 +105,7 @@
         </ul>
       </li>
     </ul>
-    <p>
-      Note that any feature which is marked as
-      <i>experimental</i> is not supported. Feedback and
-      suggestions about such features are welcome.
-    </p>
+    <p>Note that any feature which is marked as <i>experimental</i> is not supported. Feedback and suggestions about
+      such features are welcome. </p>
   </body>
 </topic>

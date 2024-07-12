@@ -2,13 +2,10 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="settings-motherboard">
   <title>Motherboard Tab</title>
-
+  
   <body>
-    <p>
-        On the <b outputclass="bold">Motherboard</b> tab, you can
-        configure virtual hardware that would normally be on the
-        motherboard of a real computer.
-      </p>
+    <p>On the <b outputclass="bold">Motherboard</b> tab, you can configure virtual hardware that would normally be on
+      the motherboard of a real computer. </p>
     <ul>
       <li>
         <p><b outputclass="bold">Base Memory:</b> Sets the
@@ -21,11 +18,8 @@
             <b outputclass="bold">New Virtual Machine</b> wizard,
             as described in <xref href="create-vm-wizard.dita#create-vm-wizard"/>.
           </p>
-        <p>
-            Generally, it is possible to change the memory size after
-            installing the guest OS. But you must not reduce the memory
-            to an amount where the OS would no longer boot.
-          </p>
+        <p>Generally, it is possible to change the memory size after installing the guest OS. But you must not reduce
+          the memory to an amount where the OS would no longer boot. </p>
       </li>
       <li>
         <p><b outputclass="bold">Boot Order:</b> Determines the
@@ -76,16 +70,11 @@
             Tablet</b>, which is suitable for guests running
             Windows 8 or later.
           </p>
-        <p>
-            Using the virtual USB tablet has the advantage that
-            movements are reported in absolute coordinates, instead of
-            as relative position changes. This enables <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to
-            translate mouse events over the VM window into tablet events
-            without having to "capture" the mouse in the guest as
-            described in <xref href="keyb_mouse_normal.dita#keyb_mouse_normal"/>. This
-            makes using the VM less tedious even if Guest Additions are
-            not installed.
-          </p>
+        <p>Using the virtual USB tablet has the advantage that movements are reported in absolute coordinates, instead
+          of as relative position changes. This enables <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to
+          translate mouse events over the VM window into tablet events without having to "capture" the mouse in the
+          guest as described in <xref href="keyb_mouse_normal.dita#keyb_mouse_normal"/>. This makes using the VM less
+          tedious even if Guest Additions are not installed. </p>
       </li>
       <li>
         <p><b outputclass="bold">Enable I/O APIC:</b> Advanced
@@ -96,27 +85,16 @@
             for improved reliability.
           </p>
         <note>
-          <p>
-              Enabling the I/O APIC is <i>required</i>,
-              especially for 64-bit Windows guest OSes. It is also
-              required if you want to use more than one virtual CPU in a
-              virtual machine.
-            </p>
+          <p>Enabling the I/O APIC is <i>required</i>, especially for 64-bit Windows guest OSes. It is also required if
+            you want to use more than one virtual CPU in a virtual machine. </p>
         </note>
-        <p>
-            However, software support for I/O APICs has been unreliable
-            with some OSes other than Windows. Also, the use of an I/O
-            APIC slightly increases the overhead of virtualization and
-            therefore slows down the guest OS a little.
-          </p>
+        <p>However, software support for I/O APICs has been unreliable with some OSes other than Windows. Also, the use
+          of an I/O APIC slightly increases the overhead of virtualization and therefore slows down the guest OS a
+          little. </p>
         <note>
-          <p>
-              All Windows OSes install different kernels, depending on
-              whether an I/O APIC is available. As with ACPI, the I/O
-              APIC therefore <i>must not be turned off after
-              installation</i> of a Windows guest OS. Turning it
-              on after installation will have no effect however.
-            </p>
+          <p>All Windows OSes install different kernels, depending on whether an I/O APIC is available. As with ACPI,
+            the I/O APIC therefore <i>must not be turned off after installation</i> of a Windows guest OS. Turning it on
+            after installation will have no effect however. </p>
         </note>
       </li>
       <li>

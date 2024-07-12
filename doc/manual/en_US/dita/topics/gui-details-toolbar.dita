@@ -4,14 +4,9 @@
   <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Toolbar</title>
   
   <body>
-    <p>
-          A toolbar at the top of the Details pane contains buttons that
-          enable you to configure the selected virtual machine, or to
-          create a new virtual machine.
-        </p>
-    <p>
-          The toolbar includes the following buttons:
-        </p>
+    <p>A toolbar at the top of the Details pane contains buttons that enable you to configure the selected virtual
+      machine, or to create a new virtual machine. </p>
+    <p>The toolbar includes the following buttons: </p>
     <ul>
       <li>
         <p><b outputclass="bold">New.</b> Creates a new

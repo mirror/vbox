@@ -10,20 +10,12 @@
           virtual graphics card available to the guest, in megabytes. As with the main memory, the
           specified amount will be allocated from the host's resident memory. Based on the amount of
           video memory, higher resolutions and color depths may be available. </p>
-        <p>
-            <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> will show a warning if the amount of video memory
-            is too small to be able to switch the VM into full screen
-            mode. The minimum value depends on the number of virtual
-            monitors, the screen resolution and the color depth of the
-            host display as well as on the use of <i>3D
-            acceleration</i> and <i>2D video
-            acceleration</i>. A rough estimate is
-            (<i>color depth</i> / 8) x <i>vertical
-            pixels</i> x <i>horizontal pixels</i> x
-            <i>number of screens</i> = <i>number of
-            bytes</i>. Extra memory may be required if display
-            acceleration is used.
-          </p>
+        <p><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> will show a warning if the amount of video memory is too
+          small to be able to switch the VM into full screen mode. The minimum value depends on the number of virtual
+          monitors, the screen resolution and the color depth of the host display as well as on the use of <i>3D
+            acceleration</i> and <i>2D video acceleration</i>. A rough estimate is (<i>color depth</i> / 8) x
+            <i>vertical pixels</i> x <i>horizontal pixels</i> x <i>number of screens</i> = <i>number of bytes</i>. Extra
+          memory may be required if display acceleration is used. </p>
       </li>
       <li>
         <p><b outputclass="bold">Monitor Count:</b> With this
@@ -33,25 +25,14 @@
             multiple virtual monitors are present. Up to eight such
             virtual monitors are supported.
           </p>
-        <p>
-            The output of the multiple monitors are displayed on the
-            host in multiple VM windows which are running side by side.
-            However, in full screen and seamless mode, they use the
-            available physical monitors attached to the host. As a
-            result, for full screen and seamless modes to work with
-            multiple monitors, you will need at least as many physical
-            monitors as you have virtual monitors configured, or
-            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will report an error.
-          </p>
-        <p>
-            You can configure the relationship between guest and host
-            monitors using the <b outputclass="bold">View</b>
-            menu by pressing Host key + Home when you are in full screen
-            or seamless mode.
-          </p>
-        <p>
-            See also <xref href="KnownIssues.dita">Known Limitations</xref>.
-          </p>
+        <p>The output of the multiple monitors are displayed on the host in multiple VM windows which are running side
+          by side. However, in full screen and seamless mode, they use the available physical monitors attached to the
+          host. As a result, for full screen and seamless modes to work with multiple monitors, you will need at least
+          as many physical monitors as you have virtual monitors configured, or <ph
+            conkeyref="vbox-conkeyref-phrases/product-name"/> will report an error. </p>
+        <p>You can configure the relationship between guest and host monitors using the <b outputclass="bold">View</b>
+          menu by pressing Host key + Home when you are in full screen or seamless mode. </p>
+        <p>See also <xref href="KnownIssues.dita">Known Limitations</xref>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Scale Factor:</b> Enables
@@ -60,11 +41,8 @@
             globally for all of the monitors. Use the slider to select a
             scaling factor up to 200%.
           </p>
-        <p>
-            You can set a default scale factor for all VMs. Use the
-            <b outputclass="bold">Display</b> tab in the
-            Preferences window.
-          </p>
+        <p>You can set a default scale factor for all VMs. Use the <b outputclass="bold">Display</b> tab in the
+          Preferences window. </p>
       </li>
       <li>
         <p><b outputclass="bold">Graphics Controller:</b>
@@ -79,10 +57,7 @@
                 graphics controller for new VMs that use Windows 7 or
                 later.
               </p>
-            <p>
-                This graphics controller improves performance and 3D
-                support when compared to the legacy VBoxVGA option.
-              </p>
+            <p>This graphics controller improves performance and 3D support when compared to the legacy VBoxVGA option. </p>
           </li>
           <li>
             <p><b outputclass="bold">VBoxVGA:</b> Use this
@@ -90,10 +65,7 @@
                 default graphics controller for Windows versions before
                 Windows 7 and for Oracle Solaris.
               </p>
-            <p>
-                3D acceleration is not supported for this graphics
-                controller.
-              </p>
+            <p>3D acceleration is not supported for this graphics controller. </p>
           </li>
           <li>
             <p><b outputclass="bold">VMSVGA:</b> Use this

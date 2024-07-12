@@ -4,38 +4,21 @@
   <title>Settings</title>
   
   <body>
-    <p>
-          A summary of settings is shown for the virtual machine.
-        </p>
+    <p>A summary of settings is shown for the virtual machine. </p>
     <note>
       <p>Settings shown may vary, depending on the selected experience level for the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user interface.</p>
       <p>See <xref href="ui-experience-level.dita#gui-experience-level"/>.</p>
     </note>
-    <p>
-          You can change some virtual machine settings, by clicking on
-          the setting in the Details pane.
-        </p>
+    <p>You can change some virtual machine settings, by clicking on the setting in the Details pane. </p>
     <note>
-      <p>
-            If a virtual machine is running, some settings cannot be
-            altered. You must stop the virtual machine first in order to
-            change the setting.
-          </p>
+      <p>If a virtual machine is running, some settings cannot be altered. You must stop the virtual machine first in
+        order to change the setting. </p>
     </note>
-    <p>
-          Virtual machine settings can also be changed using the
-          <b outputclass="bold">Settings</b> button on the
-          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> toolbar.
-        </p>
-    <p>
-          The virtual machine settings on the Details pane are organized
-          in sections that correspond to those used in the
-          <b outputclass="bold">Settings</b> window. See
-          <xref href="BasicConcepts.dita#BasicConcepts"/>.
-        </p>
-    <p>
-          Click the arrow icon to hide or show each section.
-        </p>
+    <p>Virtual machine settings can also be changed using the <b outputclass="bold">Settings</b> button on the <ph
+        conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> toolbar. </p>
+    <p>The virtual machine settings on the Details pane are organized in sections that correspond to those used in the
+        <b outputclass="bold">Settings</b> window. See <xref href="BasicConcepts.dita#BasicConcepts"/>. </p>
+    <p>Click the arrow icon to hide or show each section. </p>
   </body>
   
 </topic>

@@ -4,10 +4,8 @@
   <title>Virtual Machine Status Bar</title>
  <!-- 7.1: Processor icon updated --> 
   <body>
-    <p>
-       A status bar is displayed at the bottom of the virtual machine window. The status bar contains icons 
-       that enable you to view and change settings for the virtual machine, as follows:
-      </p>
+    <p>A status bar is displayed at the bottom of the virtual machine window. The status bar contains icons that enable
+      you to view and change settings for the virtual machine, as follows: </p>
     <ul>
       <li><p>Highlight an icon to show details of the current settings.</p></li>
       <li><p>Right-click an icon to change a setting.</p>

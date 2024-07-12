@@ -25,16 +25,10 @@
           machine settings file. This file has a <filepath>.vbox</filepath> file extension. </p>
       </li>
     </ul>
-    <p>
-      Starting a virtual machine displays a new window, and the virtual
-      machine which you selected will boot up. Everything which would
-      normally be seen on the virtual system's monitor is shown in the
-      window. See <xref href="Introduction.dita#Introduction/fig-win2016-intro"/>.
-    </p>
-    <p>
-      In general, you can use the virtual machine as you would use a
-      real computer. The following topics describe a few points to note
-      when running a VM.
-    </p>
+    <p>Starting a virtual machine displays a new window, and the virtual machine which you selected will boot up.
+      Everything which would normally be seen on the virtual system's monitor is shown in the window. See <xref
+        href="Introduction.dita#Introduction/fig-win2016-intro"/>. </p>
+    <p>In general, you can use the virtual machine as you would use a real computer. The following topics describe a few
+      points to note when running a VM. </p>
   </body>
 </topic>
