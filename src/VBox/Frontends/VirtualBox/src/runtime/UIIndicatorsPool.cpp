@@ -813,6 +813,7 @@ public:
         : UISessionStateStatusBarIndicator(IndicatorType_Recording, pMachine)
         , m_pAnimation(0)
         , m_dRotationAngle(0)
+        , m_enmState(RecordingState_Unavailable)
     {
         /* Assign state-icons: */
         setStateIcon(RecordingState_Unavailable, UIIconPool::iconSet(":/video_capture_disabled_16px.png"));
@@ -873,20 +874,40 @@ protected slots:
         if (!strFullData.isEmpty())
             setToolTip(s_strTable.arg(strFullData));
         /* Set initial indicator state: */
-        RecordingState enmState = RecordingState_Unavailable;
+        m_enmState = RecordingState_Unavailable;
         if (m_pMachine->machineState() != KMachineState_Null)
         {
             if (!fRecordingEnabled)
-                enmState = RecordingState_Disabled;
+                m_enmState = RecordingState_Disabled;
             else if (!fMachinePaused)
-                enmState = RecordingState_Enabled;
+                m_enmState = RecordingState_Enabled;
             else
-                enmState = RecordingState_Paused;
+                m_enmState = RecordingState_Paused;
         }
-        setState(enmState);
+        setState(m_enmState);
 
         /* Retranslate finally: */
         sltRetranslateUI();
+    }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        switch (m_enmState)
+        {
+            case RecordingState_Disabled:
+                m_strDescription = QString("%1, %2").arg(m_strDescription, tr("Recording stopped")); break;
+            case RecordingState_Enabled:
+                m_strDescription = QString("%1, %2").arg(m_strDescription, tr("Recording started")); break;
+            case RecordingState_Paused:
+                m_strDescription = QString("%1, %2").arg(m_strDescription, tr("Recording paused")); break;
+            default:
+                break;
+        }
     }
 
 private slots:
@@ -928,7 +949,10 @@ private:
     /** Holds the rotation animation instance. */
     UIAnimationLoop *m_pAnimation;
     /** Holds current rotation angle. */
-    double  m_dRotationAngle;
+    double           m_dRotationAngle;
+
+    /** Holds the recording state. */
+    RecordingState  m_enmState;
 };
 
 
