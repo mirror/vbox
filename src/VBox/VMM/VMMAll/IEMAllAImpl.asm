@@ -5011,6 +5011,48 @@ ENDPROC iemAImpl_vpermpd_u256
 
 
 ;;
+; VPERMPS instruction.
+;
+; @param    A0      Pointer to the first media register size operand (output).
+; @param    A1      Pointer to the second media register size operand (input).
+; @param    A2      Pointer to the third media register size operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vpermps_u256, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  ymm0, [A1]
+        vmovdqu  ymm1, [A2]
+        vpermps  ymm0, ymm0, ymm1
+        vmovdqu  [A0], ymm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_vpermps_u256
+
+
+;;
+; VPERMD instruction.
+;
+; @param    A0      Pointer to the first media register size operand (output).
+; @param    A1      Pointer to the second media register size operand (input).
+; @param    A2      Pointer to the third media register size operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vpermd_u256, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        vmovdqu  ymm0, [A1]
+        vmovdqu  ymm1, [A2]
+        vpermd   ymm0, ymm0, ymm1
+        vmovdqu  [A0], ymm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_vpermd_u256
+
+
+;;
 ; Media instruction working on one full sized source register, one full sized destination
 ; register, and one no-larger-than-XMM register (in the vps{ll,ra,rl}[dwq] instructions,
 ; this is actually used to retrieve a 128-bit load, from which a 64-bit shift length is

@@ -20439,3 +20439,35 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpermpd_u256_fallback,(PRTUINT256U puDst, PCRTU
     puDst->au64[2] = puSrc->au64[(bImm >> 4) & 0x3];
     puDst->au64[3] = puSrc->au64[(bImm >> 6) & 0x3];
 }
+
+
+/**
+ * VPERMD
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermd_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->au32[0] = puSrc2->au32[puSrc1->au32[0] & 0x3];
+    puDst->au32[1] = puSrc2->au32[puSrc1->au32[1] & 0x3];
+    puDst->au32[2] = puSrc2->au32[puSrc1->au32[2] & 0x3];
+    puDst->au32[3] = puSrc2->au32[puSrc1->au32[3] & 0x3];
+    puDst->au32[4] = puSrc2->au32[puSrc1->au32[4] & 0x3];
+    puDst->au32[5] = puSrc2->au32[puSrc1->au32[5] & 0x3];
+    puDst->au32[6] = puSrc2->au32[puSrc1->au32[6] & 0x3];
+    puDst->au32[7] = puSrc2->au32[puSrc1->au32[7] & 0x3];
+}
+
+
+/**
+ * VPERMPS
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpermps_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->au32[0] = puSrc2->au32[puSrc1->au32[0] & 0x3];
+    puDst->au32[1] = puSrc2->au32[puSrc1->au32[1] & 0x3];
+    puDst->au32[2] = puSrc2->au32[puSrc1->au32[2] & 0x3];
+    puDst->au32[3] = puSrc2->au32[puSrc1->au32[3] & 0x3];
+    puDst->au32[4] = puSrc2->au32[puSrc1->au32[4] & 0x3];
+    puDst->au32[5] = puSrc2->au32[puSrc1->au32[5] & 0x3];
+    puDst->au32[6] = puSrc2->au32[puSrc1->au32[6] & 0x3];
+    puDst->au32[7] = puSrc2->au32[puSrc1->au32[7] & 0x3];
+}
