@@ -849,38 +849,29 @@ DECLINLINE(void) iemTlbInvalidatePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPT
 {
     /*
      * Flush the entry pair.
-     *
-     * We ASSUME that the guest hasn't tricked us into loading one of these
-     * from a large page and the other from a regular 4KB page.  This is made
-     * much less of a problem, in that the guest would also have to flip the
-     * G bit to accomplish this.
      */
-    int fMaybeLargePage = -1;
     if (pTlb->aEntries[idxEven].uTag == (GCPtrTag | pTlb->uTlbRevision))
     {
         pTlb->aEntries[idxEven].uTag = 0;
-        fMaybeLargePage = RT_BOOL(pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE);
         if (!a_fDataTlb && GCPtrTag == IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc))
             pVCpu->iem.s.cbInstrBufTotal = 0;
     }
     if (pTlb->aEntries[idxEven + 1].uTag == (GCPtrTag | pTlb->uTlbRevisionGlobal))
     {
         pTlb->aEntries[idxEven + 1].uTag = 0;
-        fMaybeLargePage = RT_BOOL(pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE);
         if (!a_fDataTlb && GCPtrTag == IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc))
             pVCpu->iem.s.cbInstrBufTotal = 0;
     }
 
     /*
-     * If we cannot rule out a large page, we have to scan all the 4K TLB
-     * entries such a page covers to ensure we evict all relevant entries.
-     * ASSUMES that tag calculation is a right shift by GUEST_PAGE_SHIFT.
+     * If there are (or has been) large pages in the TLB, we must check if the
+     * address being flushed may involve one of those, as then we'd have to
+     * scan for entries relating to the same page and flush those as well.
      */
-    if (   fMaybeLargePage
 # if 0 /** @todo do accurate counts or currently loaded large stuff and we can use those  */
-        && (pTlb->cTlbGlobalLargePageCurLoads || pTlb->cTlbNonGlobalLargePageCurLoads))
+    if (pTlb->cTlbGlobalLargePageCurLoads || pTlb->cTlbNonGlobalLargePageCurLoads)
 # else
-        && (pTlb->GlobalLargePageRange.uLastTag || pTlb->NonGlobalLargePageRange.uLastTag))
+    if (pTlb->GlobalLargePageRange.uLastTag || pTlb->NonGlobalLargePageRange.uLastTag)
 # endif
     {
         RTGCPTR const GCPtrInstrBufPcTag = a_fDataTlb ? 0 : IEMTLB_CALC_TAG_NO_REV(pVCpu->iem.s.uInstrBufPc);
