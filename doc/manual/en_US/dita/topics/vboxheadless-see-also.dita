@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic rev="refsect1" id="vboxheadless-see-also">
-  <title>See Also</title>
-  <body>
-    <p rev="para"><xref href="vboxmanage-list.dita#vboxmanage-list"/>,
-      <xref href="vboxmanage-startvm.dita#vboxmanage-startvm"/></p>
-  </body>
-</topic>
