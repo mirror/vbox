@@ -177,7 +177,7 @@
 #define BS3_FP64_NORMAL_VAL_0(a_Sign)         RTFLOAT64U_INIT_C(a_Sign, 0xacc01adec0de5, 0x30c)
 #define BS3_FP64_NORMAL_VAL_1(a_Sign)         RTFLOAT64U_INIT_C(a_Sign, 0xf10a7ab1ec01a, 0x4bc)
 #define BS3_FP64_NORMAL_VAL_2(a_Sign)         RTFLOAT64U_INIT_C(a_Sign, 0xca5cadea1b1ed, 0x3ae)
-#define BS3_FP64_NORMAL_VAL_3(a_Sign)         RTFLOAT64U_INIT_C(a_Sign, 0xb5b5b5b5b5b5b, 0xffe)
+#define BS3_FP64_NORMAL_VAL_3(a_Sign)         RTFLOAT64U_INIT_C(a_Sign, 0xb5b5b5b5b5b5b, 0x7fe)
 /* The maximum integer value (all 52 + 1 implied bit of the fraction part set) without losing precision. */
 #define BS3_FP64_NORMAL_SAFE_INT_MAX(a_Sign)  RTFLOAT64U_INIT_C(a_Sign, BS3_FP64_FRACTION_NORMAL_MAX, BS3_FP64_EXP_SAFE_INT_MAX)
 /* The minimum integer value without losing precision. */
@@ -3537,6 +3537,45 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulpd(uint8_t bMode)
              /*mask     */ X86_MXCSR_XCPT_MASK,
              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_DOWN,
              /*flags    */ 0, 0 },
+    /*
+     * Infinity.
+     */
+    /* 7*/{ { /*src2     */ { BS3_FP64_INF(0), BS3_FP64_ZERO(0), BS3_FP64_INF(1), BS3_FP64_ZERO(0) } },
+            { /*src1     */ { BS3_FP64_INF(1), BS3_FP64_ZERO(0), BS3_FP64_INF(0), BS3_FP64_ZERO(0) } },
+            { /* =>      */ { BS3_FP64_INF(1), BS3_FP64_ZERO(0), BS3_FP64_INF(1), BS3_FP64_ZERO(0) } },
+              /*mask     */ ~X86_MXCSR_IM,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP64_INF(0), BS3_FP64_INF(0), BS3_FP64_INF(1), BS3_FP64_INF(1) } },
+            { /*src1     */ { BS3_FP64_INF(1), BS3_FP64_INF(0), BS3_FP64_INF(1), BS3_FP64_INF(0) } },
+            { /* =>      */ { BS3_FP64_INF(1), BS3_FP64_INF(0), BS3_FP64_INF(0), BS3_FP64_INF(1) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP64_INF(0), BS3_FP64_INF(1), BS3_FP64_ZERO(1), BS3_FP64_INF(0) } },
+            { /*src1     */ { BS3_FP64_INF(1), BS3_FP64_INF(0), BS3_FP64_ZERO(1), BS3_FP64_INF(0) } },
+            { /* =>      */ { BS3_FP64_INF(1), BS3_FP64_INF(1), BS3_FP64_ZERO(0), BS3_FP64_INF(0) } },
+              /*mask     */ ~X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP64_INF(0), BS3_FP64_INF(1), BS3_FP64_ZERO(1), BS3_FP64_INF(0) } },
+            { /*src1     */ { BS3_FP64_INF(1), BS3_FP64_INF(0), BS3_FP64_ZERO(1), BS3_FP64_INF(0) } },
+            { /* =>      */ { BS3_FP64_INF(1), BS3_FP64_INF(1), BS3_FP64_ZERO(0), BS3_FP64_INF(0) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP64_INF(0), BS3_FP64_INF(0),          BS3_FP64_ONE(0), BS3_FP64_INF(0)          } },
+            { /*src1     */ { BS3_FP64_ONE(0), BS3_FP64_NORMAL_VAL_0(0), BS3_FP64_INF(0), BS3_FP64_NORMAL_VAL_1(0) } },
+            { /* =>      */ { BS3_FP64_INF(0), BS3_FP64_INF(0),          BS3_FP64_INF(0), BS3_FP64_INF(0)          } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_DOWN,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP64_INF(1), BS3_FP64_INF(0),          BS3_FP64_NORMAL_VAL_3(0), BS3_FP64_INF(1)          } },
+            { /*src1     */ { BS3_FP64_ONE(1), BS3_FP64_NORMAL_VAL_3(1), BS3_FP64_INF(1),          BS3_FP64_NORMAL_VAL_1(1) } },
+            { /* =>      */ { BS3_FP64_INF(0), BS3_FP64_INF(1),          BS3_FP64_INF(1),          BS3_FP64_INF(0)          } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
+              /*flags    */ 0, 0 },
     };
 
     static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
