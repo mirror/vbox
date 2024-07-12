@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxheadless-separate-mode">
+  <title>Separate Mode</title> 
+  <body>
+    <!-- 7.1: Include this topic? Get feedback during doc review -->
+    <p>Separate mode is an alternative front end for local and remote virtual machines. Separate
+      mode is based on the <userinput>VBoxHeadless</userinput> front end but uses the <ph
+        conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user interface to control and display virtual
+      machines, rather than an RDP viewer program. The VirtualBox Remote Desktop Extension (VRDE) is
+      not required for separate mode.</p>  
+    <p>Separate mode enables the guest graphical user interface to easily attach to and detach from
+      a running VM. Users with several running VMs can use separate mode to display the required VM,
+      while keeping all other VMs in the background until they are needed. </p>
+    <p>Separate mode has some security advantages, compared to using the <userinput>VBoxHeadless</userinput> front end.</p>
+  
+   <section id="vbox-headless-separate-mode-using">
+     <title>Using Separate Mode</title>
+     <!-- Any pre-configuration/activation steps required? -->
+     <p>The following list describes some typical operations in separate mode.</p>
+     <ul>
+       <li>
+         <p>To <b>start</b> a virtual machine in separate mode:</p>
+         <p>Right-click the VM name in the machine list in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> and select 
+           <b>Detachable Start</b> in the <b>Start</b> submenu.</p>
+       </li>
+       <li>
+        <p>To <b>detach</b> from a virtual machine in separate mode:</p>
+        <p>On the virtual machine's <b>Machine</b> menu, select <b>Detach GUI</b>.</p>
+       </li>
+       <li>
+         <p>To <b>attach</b> to a virtual machine in separate mode:</p>
+         <p>Right-click the VM name in the machine list in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> and select 
+           <b>Show</b>.</p>
+       </li>
+        <li>
+            <p>To <b>stop</b> a virtual machine that is running in separate mode:</p>
+             <p>Right-click the VM name in the machine list in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> and select 
+               an option in the <b>Stop</b> menu.</p>
+              </li>     
+     </ul>
+   </section>
+  </body>
+  
+</topic>

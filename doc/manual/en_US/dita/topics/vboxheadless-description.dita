@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic rev="refsect1" id="vboxheadless-description"><title>Description</title><body>
+    
+    <p rev="para">
+      The <userinput rev="command"><cmdname rev="command/text">VBoxHeadless</cmdname></userinput> command is an alternate front
+      end that enables you to remotely manage virtual machines (VMs).
+      The front end is a CLI rather than the VirtualBox Manager
+      graphical user interface (GUI).
+    </p>
+    <p rev="para">
+      For information about using this command, see
+      <xref href="vboxheadless.dita#vboxheadless"/>.
+    </p>
+    
+  </body></topic>

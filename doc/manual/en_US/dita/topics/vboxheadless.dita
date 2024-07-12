@@ -18,19 +18,17 @@
         system on your server at all.
       </p>
     <p>
-        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> therefore comes with a front-end called
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> therefore comes with a front end called
         <userinput>VBoxHeadless</userinput>, which produces no visible
         output on the host at all, but still can optionally deliver VRDP
-        data. This front-end has no dependencies on the X Window system
+        data. This front end has no dependencies on the X Window system
         on Linux and Oracle Solaris hosts.
       </p>
     <note>
-      <p>
-          In legacy releases of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, the headless server was
-          called <userinput>VBoxVRDP</userinput>. For backwards
-          compatibility, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> installation still includes
-          an executable with that name.
-        </p>
+      <p> In legacy releases of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, the headless
+        server was called <userinput>VBoxVRDP</userinput>. For backward compatibility, the <ph
+          conkeyref="vbox-conkeyref-phrases/product-name"/> installation still includes an
+        executable with that name. </p>
     </note>
     <p>
         To start a virtual machine with <userinput>VBoxHeadless</userinput>,
@@ -44,8 +42,8 @@
         <pre xml:space="preserve">$ VBoxManage startvm <varname>VM-name</varname> --type headless</pre>
         <p>
             The <codeph>--type</codeph> option causes <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to
-            use <userinput>VBoxHeadless</userinput> as the front-end to the
-            internal virtualization engine, instead of the Qt front-end.
+            use <userinput>VBoxHeadless</userinput> as the front end to the
+            internal virtualization engine, instead of the Qt front end.
           </p>
       </li>
       <li>
@@ -63,8 +61,7 @@
             startvm</userinput> is preferred, since it runs the VM
             directly as a background process which has to be done
             explicitly when directly starting with
-            <userinput>VBoxHeadless</userinput>. <!--The full documentation of
-            the command is in <xref href="man_vboxheadless.dita#man_vboxheadless"/>.-->
+            <userinput>VBoxHeadless</userinput>.
           </p>
       </li>
       <li>
@@ -90,7 +87,7 @@
     <pre xml:space="preserve">VBoxHeadless --startvm <varname>uuid</varname>|<varname>vmname</varname> --vrde off</pre>
     <p>
         To have the VRDP server enabled depending on the VM
-        configuration, as for other front-ends:
+        configuration, as for other front ends:
       </p>
     <pre xml:space="preserve">VBoxHeadless --startvm <varname>uuid</varname>|<varname>vmname</varname> --vrde config</pre>
     <p>
