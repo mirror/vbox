@@ -322,6 +322,7 @@ HRESULT RecordingSettings::getScreens(std::vector<ComPtr<IRecordingScreenSetting
 HRESULT RecordingSettings::getProgress(ComPtr<IProgress> &aProgress)
 {
 #ifndef VBOX_WITH_RECORDING
+    RT_NOREF(aProgress);
     ReturnComNotImplemented();
 #else
     /* the machine needs to be mutable */
@@ -368,6 +369,7 @@ HRESULT RecordingSettings::getScreenSettings(ULONG uScreenId, ComPtr<IRecordingS
 HRESULT RecordingSettings::start(ComPtr<IProgress> &aProgress)
 {
 #ifndef VBOX_WITH_RECORDING
+    RT_NOREF(aProgress);
     ReturnComNotImplemented();
 #else
     /* the machine needs to be mutable */
