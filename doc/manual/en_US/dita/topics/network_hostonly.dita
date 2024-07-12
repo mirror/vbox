@@ -72,10 +72,9 @@
         </p>
       </li>
       <li>
-        <p>
-          On the command line, use <userinput>VBoxManage modifyvm vmname --nic
-          <varname>x</varname> hostonly</userinput>. See <xref href="vboxmanage-modifyvm.dita"/>.
-        </p>
+        <p> On the command line, use <userinput>VBoxManage modifyvm vmname --nic
+              <varname>x</varname> hostonly</userinput>. See <xref href="vboxmanage-modifyvm.dita"
+          />. </p>
       </li>
     </ul>
     <p>

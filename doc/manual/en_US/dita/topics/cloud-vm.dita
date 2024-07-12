@@ -31,7 +31,7 @@
           </p>
       </li>
       <li>
-        <p><b outputclass="bold"> Use an existing <ph conkeyref="vbox-conkeyref-phrases/oci"/>
+        <p><b outputclass="bold">Use an existing <ph conkeyref="vbox-conkeyref-phrases/oci"/>
             instance.</b> See <xref href="cloud-vm-add.dita#cloud-vm-add"/>.
           </p>
       </li>

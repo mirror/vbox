@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="natforward">
   <title>Configuring Port Forwarding with NAT</title>
-
+  
   <body>
     <p>
         As the virtual machine is connected to a private network
@@ -34,10 +34,8 @@
         Here, you can map host ports to guest ports to allow network
         traffic to be routed to a specific port in the guest.
       </p>
-    <p>
-        Alternatively, the command line tool <userinput>VBoxManage</userinput> can be used. See
-        <xref href="vboxmanage-modifyvm.dita"/>.
-    </p>
+    <p> Alternatively, the command line tool <userinput>VBoxManage</userinput> can be used. See
+        <xref href="vboxmanage-modifyvm.dita"/>. </p>
     <p>
         You will need to know which ports on the guest the service uses
         and to decide which ports to use on the host. You may want to
@@ -86,10 +84,8 @@
         interface at 127.0.0.1 through port 2222 to port 22 in the
         guest.
       </p>
-    <p>
-        It is possible to configure incoming NAT connections while the VM is running, see <xref
-        href="vboxmanage-controlvm.dita"/>.
-    </p>
+    <p> It is possible to configure incoming NAT connections while the VM is running, see <xref
+        href="vboxmanage-controlvm.dita"/>. </p>
   </body>
-
+  
 </topic>

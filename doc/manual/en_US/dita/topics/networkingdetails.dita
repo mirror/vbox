@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="networkingdetails">
   <title>Virtual Networking</title>
-
+  
   <body>
     <p>
     As mentioned in <xref href="settings-network.dita#settings-network"/>, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
@@ -23,12 +23,10 @@
       </p>
       </li>
     </ul>
-    <p>
-      Four of the network cards can be configured in the <b outputclass="bold">Network</b> section
+    <p> Four of the network cards can be configured in the <b outputclass="bold">Network</b> section
       of the <b outputclass="bold">Settings</b> window in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. You can configure all
       eight network cards on the command line using <userinput>VBoxManage modifyvm</userinput>. See
-      <xref href="vboxmanage-modifyvm.dita"/>.
-    </p>
+        <xref href="vboxmanage-modifyvm.dita"/>. </p>
     <p>
     This chapter explains the various networking settings in more
     detail.

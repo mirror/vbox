@@ -5,75 +5,42 @@
                <title>Taking, Restoring, and Deleting Snapshots</title>
                
                <body>
-                  <p>
-        There are three operations related to snapshots, as follows:
-      </p>
+                  <p>There are three operations related to snapshots, as follows: </p>
                   <ol>
                      <li>
-                        <p>
-                           <b outputclass="bold">Take a snapshot.</b> This makes
-            a copy of the machine's current state, to which you can go
-            back at any given time later.
-          </p>
+                        <p><b outputclass="bold">Take a snapshot.</b> This makes a copy of the machine's current state,
+          to which you can go back at any given time later. </p>
                         <ul>
                            <li>
-                              <p>
-                If your VM is running:
-              </p>
-                              <p>
-                Select <b outputclass="bold">Take Snapshot</b>
-                from the <b outputclass="bold">Machine</b> menu
-                in the VM window.
-              </p>
-                              <p>
-                The VM is paused while the snapshot is being created.
-                After snapshot creation, the VM continues to run as
-                normal.
-              </p>
+                              <p>If your VM is running: </p>
+                              <p>Select <b outputclass="bold">Take Snapshot</b> from the <b outputclass="bold"
+                >Machine</b> menu in the VM window. </p>
+                              <p>The VM is paused while the snapshot is being created. After snapshot creation, the VM
+              continues to run as normal. </p>
                            </li>
                            <li>
-                              <p>
-                If your VM is in either the Saved or the Powered Off
-                state, as displayed next to the VM name in the machine
-                list:
-              </p>
-                              <p>
-                Display the Snapshots window and do one of the
-                following:
-              </p>
+                              <p>If your VM is in either the Saved or the Powered Off state, as displayed next to the VM
+              name in the machine list: </p>
+                              <p>Display the Snapshots window and do one of the following: </p>
                               <ul>
                                  <li>
-                                    <p>
-                    Click <b outputclass="bold">Take</b> in the
-                    Snapshots window toolbar.
-                  </p>
+                                    <p>Click <b outputclass="bold">Take</b> in the Snapshots window toolbar. </p>
                                  </li>
                                  <li>
-                                    <p> Right-click the <b outputclass="bold">Current State</b> item
-                  in the list and select <b outputclass="bold">Take</b>. </p>
+                                    <p>Right-click the <b outputclass="bold">Current State</b> item in the list and
+                  select <b outputclass="bold">Take</b>. </p>
                                  </li>
                               </ul>
                            </li>
                         </ul>
-                        <p>
-            A dialog is displayed, prompting you for a snapshot name.
-            This name is purely for reference purposes, to help you
-            remember the state of the snapshot. For example, a useful
-            name would be "Fresh installation from scratch, no Guest
-            Additions", or "Service Pack 3 just installed". You can also
-            add a longer text description in the
-            <b outputclass="bold">Snapshot Description</b> field.
-          </p>
-                        <p>
-            Your new snapshot will then appear in the snapshots list.
-            Underneath your new snapshot, you will see an item called
-            <b outputclass="bold">Current State</b>, signifying
-            that the current state of your VM is a variation based on
-            the snapshot you took earlier. If you later take another
-            snapshot, you will see that they are displayed in sequence,
-            and that each subsequent snapshot is derived from an earlier
-            one.
-          </p>
+                        <p>A dialog is displayed, prompting you for a snapshot name. This name is purely for reference
+          purposes, to help you remember the state of the snapshot. For example, a useful name would be <i>Fresh
+            installation from scratch, no Guest Additions</i>, or <i>Service Pack 3 just installed</i>. You can also add
+          a longer text description in the <b outputclass="bold">Snapshot Description</b> field. </p>
+                        <p>Your new snapshot will then appear in the snapshots list. Underneath your new snapshot, you
+          will see an item called <b outputclass="bold">Current State</b>, signifying that the current state of your VM
+          is a variation based on the snapshot you took earlier. If you later take another snapshot, you will see that
+          they are displayed in sequence, and that each subsequent snapshot is derived from an earlier one. </p>
                        <fig id="fig-snapshots-list">
                          <title>Snapshots List For a Virtual Machine</title>
                          <xref href="images/snapshots-2.png" format="png" platform="htmlhelp">

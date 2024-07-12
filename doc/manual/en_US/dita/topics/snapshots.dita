@@ -9,7 +9,7 @@
       you can revert to that state, even though you may have changed the VM considerably since then. A snapshot of a
       virtual machine is thus similar to a machine in Saved state, but there can be many of them, and these saved states
       are preserved. </p>
-               <p> To see the snapshots of a virtual machine, click the machine name in <ph
+               <p>To see the snapshots of a virtual machine, click the machine name in <ph
         conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. In the machine tools menu for the VM, click <b outputclass="bold"
         >Snapshots</b>. The Snapshots tool is displayed. </p>
               <fig id="fig-snapshots-tool">

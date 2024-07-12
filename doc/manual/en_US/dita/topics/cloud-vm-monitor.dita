@@ -19,7 +19,7 @@
       <p>See also <xref href="vm-info.dita"/>.</p>
     </li>
       <li>
-        <p> Use the <cmdname>VBoxManage cloud instance</cmdname> command, as follows:</p>
+        <p>Use the <cmdname>VBoxManage cloud instance</cmdname> command, as follows:</p>
         <ul><li><p><cmdname>VBoxManage cloud instance metriclist</cmdname> shows the available metrics for an
               instance.</p></li>
         <li><p><cmdname>VBoxManage cloud instance metricdata</cmdname> shows metrics data for an instance.</p></li></ul>
