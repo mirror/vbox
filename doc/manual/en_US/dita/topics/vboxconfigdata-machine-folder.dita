@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vboxconfigdata-machine-folder">
   <title>The Machine Folder</title>
-
+  
   <body>
     <p>
         By default, each virtual machine has a directory on your host
@@ -88,13 +88,12 @@
         <filepath>Snapshots</filepath> subfolder. For each VM, you can
         change the location of its snapshots folder in the VM settings.
       </p>
-    <p>
-        You can change the default machine folder by selecting <b outputclass="bold">Preferences</b>
-        from the <b outputclass="bold">File</b> menu in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> main window. Then, in
-        the displayed window, click on the <b outputclass="bold">General</b> tab. Alternatively, use
-        the <userinput>VBoxManage setproperty machinefolder</userinput> command. See
-        <xref href="vboxmanage-setproperty.dita">VBoxManage setproperty</xref>.
-    </p>
+    <p> You can change the default machine folder by selecting <b outputclass="bold">Preferences</b>
+      from the <b outputclass="bold">File</b> menu in the <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> main window. Then, in the displayed
+      window, click the <b outputclass="bold">General</b> tab. Alternatively, use the
+        <userinput>VBoxManage setproperty machinefolder</userinput> command. See <xref
+        href="vboxmanage-setproperty.dita">VBoxManage setproperty</xref>. </p>
   </body>
-
+  
 </topic>

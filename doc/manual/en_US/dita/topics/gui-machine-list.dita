@@ -8,10 +8,10 @@
     <p>The following methods can be used to control and configure virtual machines in the machine list: </p>
     <ul>
       <li>
-        <p> Right-click the virtual machine name, to display menu options. </p>
+        <p>Right-click the virtual machine name, to display menu options. </p>
       </li>
       <li>
-        <p> Click the Machine Tools menu icon, to the right of the virtual machine name. See <xref
+        <p>Click the Machine Tools menu icon, to the right of the virtual machine name. See <xref
             href="gui-tools-machine.dita#gui-tools-machine"/>. </p>
       </li>
       <li>

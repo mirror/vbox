@@ -10,7 +10,7 @@
     <p>Perform the following steps to add a cloud VM: </p>
     <ol>
       <li>
-        <p> Click a cloud profile in the <b outputclass="bold">OCI</b> group. </p>
+        <p>Click a cloud profile in the <b outputclass="bold">OCI</b> group. </p>
         <p>The cloud VMs for the selected cloud profile are displayed. </p>
       </li>
       <li>

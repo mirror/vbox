@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="harddiskcontrollers">
   <title>Hard Disk Controllers</title>
-
+  
   <body>
     <p>
       In a computing device, hard disks and CD/DVD drives are connected
@@ -108,10 +108,8 @@
           separate PCI device in the virtual machine, and you can add
           virtual disks to it.
         </p>
-        <p>
-            To change the IDE compatibility mode settings for the SATA controller, see <xref
-            href="vboxmanage-storagectl.dita"/>.
-        </p>
+        <p> To change the IDE compatibility mode settings for the SATA controller, see <xref
+            href="vboxmanage-storagectl.dita"/>. </p>
       </li>
       <li>
         <p><b outputclass="bold">SCSI</b> is another established
@@ -297,5 +295,5 @@
       with existing hardware and other hypervisors.
     </p>
   </body>
-
+  
 </topic>

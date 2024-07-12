@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="nested-virt">
   <title>Nested Virtualization</title>
-
+  
   <body>
     <p>
       <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports <i>nested
@@ -31,13 +31,11 @@
         </p>
       </li>
       <li>
-        <p>
-          Use the <codeph>--nested-hw-virt</codeph> option of the <userinput>VBoxManage
-          modifyvm</userinput> command to enable or disable nested virtualization. See
-          <xref href="vboxmanage-modifyvm.dita">VBoxManage modifyvm</xref>.
-        </p>
+        <p> Use the <codeph>--nested-hw-virt</codeph> option of the <userinput>VBoxManage
+            modifyvm</userinput> command to enable or disable nested virtualization. See <xref
+            href="vboxmanage-modifyvm.dita">VBoxManage modifyvm</xref>. </p>
       </li>
     </ul>
   </body>
-
+  
 </topic>

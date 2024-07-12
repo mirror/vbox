@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="collect-debug-info">
   <title>Collecting Debugging Information</title>
-
+  
   <body>
     <p>
         For problem determination, it is often important to collect
@@ -55,10 +55,8 @@
       </p>
     <p><ph>http://www.virtualbox.org/wiki/Core_dump</ph>.
       </p>
-    <p>
-        You can also use <userinput>VBoxManage debugvm</userinput> to create a dump of a complete
-        virtual machine. See <xref href="vboxmanage-debugvm.dita">VBoxManage debugvm</xref>.
-    </p>
+    <p> You can also use <userinput>VBoxManage debugvm</userinput> to create a dump of a complete
+      virtual machine. See <xref href="vboxmanage-debugvm.dita">VBoxManage debugvm</xref>. </p>
     <p>
         For network related problems, it is often helpful to capture a
         trace of network traffic. If the traffic is routed through an
@@ -80,5 +78,5 @@
         with Wireshark.
       </p>
   </body>
-
+  
 </topic>

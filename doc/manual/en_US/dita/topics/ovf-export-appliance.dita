@@ -50,32 +50,18 @@
         </ul>
       </li>
       <li>
-        <p>
-            Click <b outputclass="bold">Next</b> to show the
-            <b outputclass="bold">Appliance Settings</b> page.
-          </p>
-        <p>
-            You can edit settings for the virtual appliance. For
-            example, you can change the name of the virtual appliance or
-            add product information, such as vendor details or license
-            text.
-          </p>
-        <p>
-            Double-click the appropriate field to change its value.
-          </p>
+        <p>Click <b outputclass="bold">Next</b> to show the <b outputclass="bold">Appliance Settings</b> page. </p>
+        <p>You can edit settings for the virtual appliance. For example, you can change the name of the virtual
+          appliance or add product information, such as vendor details or license text. </p>
+        <p>Double-click the appropriate field to change its value. </p>
       </li>
       <li>
-        <p>
-            Click <b outputclass="bold">Finish</b> to begin the
-            export process. Note that this operation might take several
-            minutes.
-          </p>
+        <p>Click <b outputclass="bold">Finish</b> to begin the export process. Note that this operation might take
+          several minutes. </p>
       </li>
     </ol>
-    <p>
-      You can use the <userinput>VBoxManage export</userinput> command to export an appliance. See
-      <xref href="vboxmanage-export.dita"/>.
-    </p>
+    <p>You can use the <userinput>VBoxManage export</userinput> command to export an appliance. See <xref
+        href="vboxmanage-export.dita"/>. </p>
   </body>
-
+  
 </topic>

@@ -4,7 +4,7 @@
   <title>Arm Platform Host Limitations</title>
   <!-- 7.1: Arm platform limitations -->
   <body>
-    <p> The following limitations apply when using an Arm platform host:</p>
+    <p>The following limitations apply when using an Arm platform host:</p>
     <ul><li><p>Virtual machines must use an Arm-based guest operating system. Running an x86-based guest operating 
       system on an Arm host platform is not supported. </p></li>
     <li><p>Sound emulation is not available.</p></li>

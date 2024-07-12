@@ -77,38 +77,21 @@
               </p>
           </li>
         </ul>
-        <p>
-            Click <b outputclass="bold">Finish</b> to continue.
-          </p>
+        <p>Click <b outputclass="bold">Finish</b> to continue. </p>
       </li>
       <li>
-        <p>
-            (Optional) Depending on the selection in the
-            <b outputclass="bold">Machine Creation</b> field, the
-            <b outputclass="bold">Appliance Settings</b> page may
-            be displayed before or after export. This screen enables you
-            to configure settings for the cloud instance, such as Shape
-            and Disk Size.
-          </p>
-        <p>
-            Click <b outputclass="bold">Finish</b>. The VM is
-            exported to <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
-          </p>
-        <p>
-            Depending on the <b outputclass="bold">Machine
-            Creation</b> setting, a cloud instance may be started
-            after upload to <ph conkeyref="vbox-conkeyref-phrases/oci"/> is completed.
-          </p>
+        <p>(Optional) Depending on the selection in the <b outputclass="bold">Machine Creation</b> field, the <b
+            outputclass="bold">Appliance Settings</b> page may be displayed before or after export. This screen enables
+          you to configure settings for the cloud instance, such as Shape and Disk Size. </p>
+        <p>Click <b outputclass="bold">Finish</b>. The VM is exported to <ph conkeyref="vbox-conkeyref-phrases/oci"/>. </p>
+        <p>Depending on the <b outputclass="bold">Machine Creation</b> setting, a cloud instance may be started after
+          upload to <ph conkeyref="vbox-conkeyref-phrases/oci"/> is completed. </p>
       </li>
       <li>
-        <p>
-            Monitor the export process by using the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console.
-          </p>
+        <p>Monitor the export process by using the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console. </p>
       </li>
     </ol>
-    <p>
-        You can also use the <userinput>VBoxManage export</userinput> command to export a VM to
-        <ph conkeyref="vbox-conkeyref-phrases/oci"/>. See <xref href="vboxmanage-export.dita"/>.
-    </p>
+    <p>You can also use the <userinput>VBoxManage export</userinput> command to export a VM to <ph
+        conkeyref="vbox-conkeyref-phrases/oci"/>. See <xref href="vboxmanage-export.dita"/>. </p>
   </body>
 </topic>

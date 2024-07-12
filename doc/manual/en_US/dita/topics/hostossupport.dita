@@ -83,7 +83,7 @@
             <p>openSUSE Leap 15.3, 15.4 and 15.5</p>
           </li>
         </ul>
-        <p> It should be possible to use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on
+        <p>It should be possible to use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on
           most systems based on Linux kernel 2.6 or later, using either the <ph
             conkeyref="vbox-conkeyref-phrases/product-name"/> installer or by doing a manual
           installation. See <xref href="install-linux-host.dita#install-linux-host"/>. However, the

@@ -70,51 +70,30 @@
       </p>
     <ul>
       <li>
-        <p>
-            Automatically, by using the <b outputclass="bold">Cloud
-            Profile Manager</b>. See
-            <xref href="cloud-using-cloud-profile-manager.dita#cloud-using-cloud-profile-manager"/>.
-          </p>
-        <p>
-            The Cloud Profile Manager is a <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> tool that enables
-            you to create, edit, and manage cloud profiles for your
-            cloud service accounts.
-          </p>
+        <p>Automatically, by using the <b outputclass="bold">Cloud Profile Manager</b>. See <xref
+            href="cloud-using-cloud-profile-manager.dita#cloud-using-cloud-profile-manager"/>. </p>
+        <p>The Cloud Profile Manager is a <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> tool that enables you to
+          create, edit, and manage cloud profiles for your cloud service accounts. </p>
       </li>
       <li>
-        <p>
-          Automatically, by using the <userinput>VBoxManage cloudprofile</userinput> command. See
-          <xref href="vboxmanage-cloudprofile.dita"/>.
-        </p>
+        <p>Automatically, by using the <userinput>VBoxManage cloudprofile</userinput> command. See <xref
+            href="vboxmanage-cloudprofile.dita"/>. </p>
       </li>
       <li>
-        <p>
-            Manually, by creating an <filepath>oci_config</filepath>
-            file in your <ph conkeyref="vbox-conkeyref-phrases/product-name"/> global configuration directory.
-            For example, this is
-            <filepath>$HOME/.config/VirtualBox/oci_config</filepath> on
-            a Linux host.
-          </p>
+        <p>Manually, by creating an <filepath>oci_config</filepath> file in your <ph
+            conkeyref="vbox-conkeyref-phrases/product-name"/> global configuration directory. For example, this is
+            <filepath>$HOME/.config/VirtualBox/oci_config</filepath> on a Linux host. </p>
       </li>
       <li>
-        <p>
-            Manually, by creating a <filepath>config</filepath> file in
-            your <ph conkeyref="vbox-conkeyref-phrases/oci"/> configuration directory. For example, this is
-            <filepath>$HOME/.oci/config</filepath> on a Linux host.
-          </p>
-        <p>
-            This is the same file that is used by the <ph conkeyref="vbox-conkeyref-phrases/oci"/> command line
-            interface.
-          </p>
-        <p>
-            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> automatically uses the
-            <filepath>config</filepath> file if no cloud profile file is
-            present in your global configuration directory.
-            Alternatively, you can import this file manually into the
-            Cloud Profile Manager.
-          </p>
+        <p>Manually, by creating a <filepath>config</filepath> file in your <ph conkeyref="vbox-conkeyref-phrases/oci"/>
+          configuration directory. For example, this is <filepath>$HOME/.oci/config</filepath> on a Linux host. </p>
+        <p>This is the same file that is used by the <ph conkeyref="vbox-conkeyref-phrases/oci"/> command line
+          interface. </p>
+        <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> automatically uses the <filepath>config</filepath> file
+          if no cloud profile file is present in your global configuration directory. Alternatively, you can import this
+          file manually into the Cloud Profile Manager. </p>
       </li>
     </ul>
   </body>
-
+  
 </topic>

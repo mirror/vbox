@@ -4,8 +4,8 @@
   <glossterm>VRDE</glossterm>
   <glossdef>
     VirtualBox Remote Desktop Extension. This interface is built into
-        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to allow <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension packages 
-        to supply remote access to virtual machines. An <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension 
+    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to allow <ph conkeyref="vbox-conkeyref-phrases/product-name"/> 
+    extension packages to supply remote access to virtual machines. An <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension 
     package by Oracle provides VRDP support.
     See <xref href="vrde.dita">Remote Display (VRDP Support)</xref>.
   </glossdef>

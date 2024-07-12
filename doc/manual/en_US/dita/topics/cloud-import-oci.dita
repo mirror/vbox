@@ -32,20 +32,14 @@
             <alt>Import Cloud Instance Wizard: Appliance Settings</alt>
           </image>
         </fig>
-        <p>
-            Click <b outputclass="bold">Finish</b> to import the
-            instance from <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
-          </p>
+        <p>Click <b outputclass="bold">Finish</b> to import the instance from <ph conkeyref="vbox-conkeyref-phrases/oci"
+          />. </p>
       </li>
       <li>
-        <p>
-            Monitor the import process by using the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console.
-          </p>
+        <p>Monitor the import process by using the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console. </p>
       </li>
     </ol>
-    <p>
-        You can also use the <userinput>VBoxManage import</userinput> command to import an instance
-        from <ph conkeyref="vbox-conkeyref-phrases/oci"/>. See <xref href="vboxmanage-import.dita"/>.
-    </p>
+    <p>You can also use the <userinput>VBoxManage import</userinput> command to import an instance from <ph
+        conkeyref="vbox-conkeyref-phrases/oci"/>. See <xref href="vboxmanage-import.dita"/>. </p>
   </body>
 </topic>
