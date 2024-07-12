@@ -4198,6 +4198,12 @@ FNIEMAIMPLSSEF2R64I64 iemAImpl_cvtsi2sd_r64_i64;
 FNIEMAIMPLAVXF3XMMI32 iemAImpl_vcvtsi2sd_u128_i32, iemAImpl_vcvtsi2sd_u128_i32_fallback;
 FNIEMAIMPLAVXF3XMMI64 iemAImpl_vcvtsi2sd_u128_i64, iemAImpl_vcvtsi2sd_u128_i64_fallback;
 
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtps2pd_u128_u64,(uint32_t uMxCsrIn, PX86XMMREG puDst, const uint64_t *pu64Src)); /* Actually two single precision floating point values. */
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtps2pd_u128_u64_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst,  const uint64_t *pu64Src)); /* Actually two single precision floating point values. */
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtps2pd_u256_u128,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86XMMREG puSrc));
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtps2pd_u256_u128_fallback,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86XMMREG puSrc));
+
+
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLF2EFLMXCSRR32R32,(uint32_t uMxCsrIn, uint32_t *pfEFlags, RTFLOAT32U uSrc1, RTFLOAT32U uSrc2));
 typedef FNIEMAIMPLF2EFLMXCSRR32R32 *PFNIEMAIMPLF2EFLMXCSRR32R32;
 
