@@ -496,6 +496,12 @@ BEGINPROC TestProc64
         vcmpss xmm1, xmm2, xmm3, 1
         vcmpsd xmm1, xmm2, xmm3, 1
 
+        vcvtsi2ss xmm0, xmm1, ecx
+        vcvtsi2ss xmm0, xmm1, rcx
+        vcvtsi2sd xmm0, xmm1, ecx
+        vcvtsi2sd xmm0, xmm1, rcx
+
+
         ; group 7 stuff.
         vmcall
         vmlaunch
