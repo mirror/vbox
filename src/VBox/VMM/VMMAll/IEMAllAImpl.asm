@@ -6441,175 +6441,95 @@ IEMIMPL_MEDIA_MOVMSK_P movmskpd, vmovmskpd
 
 
 ;;
-; cvttsd2si instruction - 32-bit variant.
+; Template for [v]cvttss2si/[v]cvtss2si instructions.
+;
+; @param    1       Instruction name.
+; @param    2       AVX or SSE
 ;
 ; @return   R0_32   The new MXCSR value of the guest.
 ; @param    A0_32   The guest's MXCSR register value to use.
 ; @param    A1      Pointer to the result operand (output).
 ; @param    A2      Pointer to the second operand (input).
 ;
-BEGINPROC_FASTCALL iemAImpl_cvttsd2si_i32_r64, 16
-        PROLOGUE_4_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_AVX_LD_MXCSR A0_32
-
-        cvttsd2si T0_32, [A2]
-        mov       dword [A1], T0_32
-
-        SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_4_ARGS
-ENDPROC iemAImpl_cvttsd2si_i32_r64
-
-;;
-; cvttsd2si instruction - 64-bit variant.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use.
-; @param    A1      Pointer to the result operand (output).
-; @param    A2      Pointer to the second operand (input).
-;
-BEGINPROC_FASTCALL iemAImpl_cvttsd2si_i64_r64, 16
+%macro IEMIMPL_MEDIA_V_CVTXSS2SI 2
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _i32_r32, 16
         PROLOGUE_3_ARGS
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_ %+ %2 %+ _PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        cvttsd2si T0, [A2]
-        mov       qword [A1], T0
+        %1  T0_32, [A2]
+        mov dword [A1], T0_32
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_SSE_EPILOGUE
+        IEMIMPL_ %+ %2 %+ _EPILOGUE
         EPILOGUE_3_ARGS
-ENDPROC iemAImpl_cvttsd2si_i64_r64
+ENDPROC iemAImpl_ %+ %1 %+ _i32_r32
 
 
-;;
-; cvtsd2si instruction - 32-bit variant.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use.
-; @param    A1      Pointer to the result operand (output).
-; @param    A2      Pointer to the second operand (input).
-;
-BEGINPROC_FASTCALL iemAImpl_cvtsd2si_i32_r64, 16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _i64_r32, 16
         PROLOGUE_3_ARGS
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_ %+ %2 %+ _PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        cvtsd2si  T0_32, [A2]
-        mov       dword [A1], T0_32
+        %1  T0, [A2]
+        mov qword [A1], T0
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_SSE_EPILOGUE
+        IEMIMPL_ %+ %2 %+ _EPILOGUE
         EPILOGUE_3_ARGS
-ENDPROC iemAImpl_cvtsd2si_i32_r64
+ENDPROC iemAImpl_ %+ %1 %+ _i64_r32
+%endmacro
 
-;;
-; cvtsd2si instruction - 64-bit variant.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use.
-; @param    A1      Pointer to the result operand (output).
-; @param    A2      Pointer to the second operand (input).
-;
-BEGINPROC_FASTCALL iemAImpl_cvtsd2si_i64_r64, 16
-        PROLOGUE_3_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_AVX_LD_MXCSR A0_32
-
-        cvtsd2si  T0, [A2]
-        mov       qword [A1], T0
-
-        SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
-ENDPROC iemAImpl_cvtsd2si_i64_r64
+IEMIMPL_MEDIA_V_CVTXSS2SI cvttss2si,  SSE
+IEMIMPL_MEDIA_V_CVTXSS2SI vcvttss2si, AVX
+IEMIMPL_MEDIA_V_CVTXSS2SI cvtss2si,   SSE
+IEMIMPL_MEDIA_V_CVTXSS2SI vcvtss2si,  AVX
 
 
 ;;
-; cvttss2si instruction - 32-bit variant.
+; Template for [v]cvttsd2si/[v]cvtsd2si instructions.
+;
+; @param    1       Instruction name.
+; @param    2       AVX or SSE
 ;
 ; @return   R0_32   The new MXCSR value of the guest.
 ; @param    A0_32   The guest's MXCSR register value to use.
 ; @param    A1      Pointer to the result operand (output).
 ; @param    A2      Pointer to the second operand (input).
 ;
-BEGINPROC_FASTCALL iemAImpl_cvttss2si_i32_r32, 16
+%macro IEMIMPL_MEDIA_V_CVTXSD2SI 2
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _i32_r64, 16
         PROLOGUE_3_ARGS
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_ %+ %2 %+ _PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        cvttss2si T0_32, [A2]
-        mov       dword [A1], T0_32
+        %1  T0_32, [A2]
+        mov dword [A1], T0_32
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_SSE_EPILOGUE
+        IEMIMPL_ %+ %2 %+ _EPILOGUE
         EPILOGUE_3_ARGS
-ENDPROC iemAImpl_cvttss2si_i32_r32
+ENDPROC iemAImpl_ %+ %1 %+ _i32_r64
 
-;;
-; cvttss2si instruction - 64-bit variant.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use.
-; @param    A1      Pointer to the result operand (output).
-; @param    A2      Pointer to the second operand (input).
-;
-BEGINPROC_FASTCALL iemAImpl_cvttss2si_i64_r32, 16
+
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _i64_r64, 16
         PROLOGUE_3_ARGS
-        IEMIMPL_SSE_PROLOGUE
+        IEMIMPL_ %+ %2 %+ _PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        cvttss2si T0, [A2]
-        mov       qword [A1], T0
+        %1  T0, [A2]
+        mov qword [A1], T0
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_SSE_EPILOGUE
+        IEMIMPL_ %+ %2 %+ _EPILOGUE
         EPILOGUE_3_ARGS
-ENDPROC iemAImpl_cvttss2si_i64_r32
+ENDPROC iemAImpl_ %+ %1 %+ _i64_r64
+%endmacro
 
-
-;;
-; cvtss2si instruction - 32-bit variant.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use.
-; @param    A1      Pointer to the result operand (output).
-; @param    A2      Pointer to the second operand (input).
-;
-BEGINPROC_FASTCALL iemAImpl_cvtss2si_i32_r32, 16
-        PROLOGUE_3_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_AVX_LD_MXCSR A0_32
-
-        cvtss2si  T0_32, [A2]
-        mov       dword [A1], T0_32
-
-        SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
-ENDPROC iemAImpl_cvtss2si_i32_r32
-
-;;
-; cvtss2si instruction - 64-bit variant.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use.
-; @param    A1      Pointer to the result operand (output).
-; @param    A2      Pointer to the second operand (input).
-;
-BEGINPROC_FASTCALL iemAImpl_cvtss2si_i64_r32, 16
-        PROLOGUE_3_ARGS
-        IEMIMPL_SSE_PROLOGUE
-        SSE_AVX_LD_MXCSR A0_32
-
-        cvtss2si  T0, [A2]
-        mov       qword [A1], T0
-
-        SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_SSE_EPILOGUE
-        EPILOGUE_3_ARGS
-ENDPROC iemAImpl_cvtss2si_i64_r32
+IEMIMPL_MEDIA_V_CVTXSD2SI cvttsd2si,  SSE
+IEMIMPL_MEDIA_V_CVTXSD2SI vcvttsd2si, AVX
+IEMIMPL_MEDIA_V_CVTXSD2SI cvtsd2si,   SSE
+IEMIMPL_MEDIA_V_CVTXSD2SI vcvtsd2si,  AVX
 
 
 ;;

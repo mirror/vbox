@@ -4280,7 +4280,10 @@ iemNativeEmitStoreGregU32Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 #define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value) \
     off = iemNativeEmitStoreGregU32(pReNative, off, a_iGReg, a_u32Value)
 
-/** Emits code for IEM_MC_STORE_GREG_U32. */
+#define IEM_MC_STORE_GREG_I32(a_iGReg, a_i32Value) \
+    off = iemNativeEmitStoreGregU32(pReNative, off, a_iGReg, a_i32Value)
+
+/** Emits code for IEM_MC_STORE_GREG_U32/IEM_MC_STORE_GREG_I32. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitStoreGregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint8_t idxValueVar)
 {

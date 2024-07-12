@@ -715,6 +715,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        do { CHK_GREG_IDX(a_iGReg); CHK_VAR(a_u8Value);  CHK_TYPE(uint8_t, a_u8Value); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)      do { CHK_GREG_IDX(a_iGReg); CHK_VAR(a_u16Value); CHK_TYPE(uint16_t, a_u16Value); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)      do { CHK_GREG_IDX(a_iGReg); CHK_VAR(a_u32Value); (void)fMcBegin; } while (0)
+#define IEM_MC_STORE_GREG_I32(a_iGReg, a_i32Value)      do { CHK_GREG_IDX(a_iGReg); CHK_VAR(a_i32Value); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value)      do { CHK_GREG_IDX(a_iGReg); CHK_VAR(a_u64Value); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_GREG_I64(a_iGReg, a_i64Value)      do { CHK_GREG_IDX(a_iGReg); CHK_VAR(a_i64Value); (void)fMcBegin; } while (0)
 #define IEM_MC_STORE_GREG_U8_CONST(a_iGReg, a_u8C)      do { CHK_GREG_IDX(a_iGReg); uint8_t  const uTmp = (a_u8C);  RT_NOREF_PV(uTmp); (void)fMcBegin; } while (0)

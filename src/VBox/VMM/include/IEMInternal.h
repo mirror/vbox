@@ -4129,6 +4129,14 @@ typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I32U32,(uint32_t uMxCsrIn, i
 typedef FNIEMAIMPLSSEF2I32U32 *PFNIEMAIMPLSSEF2I32U32;
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I64U32,(uint32_t uMxCsrIn, int64_t *pi64Dst, const uint32_t *pu32Src)); /* pu32Src is a single precision floating point. */
 typedef FNIEMAIMPLSSEF2I64U32 *PFNIEMAIMPLSSEF2I64U32;
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I32R32,(uint32_t uMxCsrIn, int32_t *pi32Dst, PCRTFLOAT32U pr32Src));
+typedef FNIEMAIMPLSSEF2I32R32 *PFNIEMAIMPLSSEF2I32R32;
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I64R32,(uint32_t uMxCsrIn, int64_t *pi64Dst, PCRTFLOAT32U pr32Src));
+typedef FNIEMAIMPLSSEF2I64R32 *PFNIEMAIMPLSSEF2I64R32;
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I32R64,(uint32_t uMxCsrIn, int32_t *pi32Dst, PCRTFLOAT64U pr64Src));
+typedef FNIEMAIMPLSSEF2I32R64 *PFNIEMAIMPLSSEF2I32R64;
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2I64R64,(uint32_t uMxCsrIn, int64_t *pi64Dst, PCRTFLOAT64U pr64Src));
+typedef FNIEMAIMPLSSEF2I64R64 *PFNIEMAIMPLSSEF2I64R64;
 
 FNIEMAIMPLSSEF2I32U64 iemAImpl_cvttsd2si_i32_r64;
 FNIEMAIMPLSSEF2I32U64 iemAImpl_cvtsd2si_i32_r64;
@@ -4141,6 +4149,26 @@ FNIEMAIMPLSSEF2I32U32 iemAImpl_cvtss2si_i32_r32;
 
 FNIEMAIMPLSSEF2I64U32 iemAImpl_cvttss2si_i64_r32;
 FNIEMAIMPLSSEF2I64U32 iemAImpl_cvtss2si_i64_r32;
+
+FNIEMAIMPLSSEF2I32R32 iemAImpl_vcvttss2si_i32_r32, iemAImpl_vcvttss2si_i32_r32_fallback;
+FNIEMAIMPLSSEF2I64R32 iemAImpl_vcvttss2si_i64_r32, iemAImpl_vcvttss2si_i64_r32_fallback;
+FNIEMAIMPLSSEF2I32R32 iemAImpl_vcvtss2si_i32_r32,  iemAImpl_vcvtss2si_i32_r32_fallback;
+FNIEMAIMPLSSEF2I64R32 iemAImpl_vcvtss2si_i64_r32,  iemAImpl_vcvtss2si_i64_r32_fallback;
+
+FNIEMAIMPLSSEF2I32R64 iemAImpl_vcvttss2si_i32_r64, iemAImpl_vcvttss2si_i32_r64_fallback;
+FNIEMAIMPLSSEF2I64R64 iemAImpl_vcvttss2si_i64_r64, iemAImpl_vcvttss2si_i64_r64_fallback;
+FNIEMAIMPLSSEF2I32R64 iemAImpl_vcvtss2si_i32_r64,  iemAImpl_vcvtss2si_i32_r64_fallback;
+FNIEMAIMPLSSEF2I64R64 iemAImpl_vcvtss2si_i64_r64,  iemAImpl_vcvtss2si_i64_r64_fallback;
+
+FNIEMAIMPLSSEF2I32R32 iemAImpl_vcvttsd2si_i32_r32, iemAImpl_vcvttsd2si_i32_r32_fallback;
+FNIEMAIMPLSSEF2I64R32 iemAImpl_vcvttsd2si_i64_r32, iemAImpl_vcvttsd2si_i64_r32_fallback;
+FNIEMAIMPLSSEF2I32R32 iemAImpl_vcvtsd2si_i32_r32,  iemAImpl_vcvtsd2si_i32_r32_fallback;
+FNIEMAIMPLSSEF2I64R32 iemAImpl_vcvtsd2si_i64_r32,  iemAImpl_vcvtsd2si_i64_r32_fallback;
+
+FNIEMAIMPLSSEF2I32R64 iemAImpl_vcvttsd2si_i32_r64, iemAImpl_vcvttsd2si_i32_r64_fallback;
+FNIEMAIMPLSSEF2I64R64 iemAImpl_vcvttsd2si_i64_r64, iemAImpl_vcvttsd2si_i64_r64_fallback;
+FNIEMAIMPLSSEF2I32R64 iemAImpl_vcvtsd2si_i32_r64,  iemAImpl_vcvtsd2si_i32_r64_fallback;
+FNIEMAIMPLSSEF2I64R64 iemAImpl_vcvtsd2si_i64_r64,  iemAImpl_vcvtsd2si_i64_r64_fallback;
 
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSSEF2R32I32,(uint32_t uMxCsrIn, PRTFLOAT32U pr32Dst, const int32_t *pi32Src));
 typedef FNIEMAIMPLSSEF2R32I32 *PFNIEMAIMPLSSEF2R32I32;

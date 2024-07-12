@@ -574,6 +574,7 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 
 #define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)                  IEM_LIVENESS_GPR_MODIFY(a_iGReg)
 #define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)                  IEM_LIVENESS_GPR_CLOBBER(a_iGReg)
+#define IEM_MC_STORE_GREG_I32(a_iGReg, a_i32Value)                  IEM_LIVENESS_GPR_CLOBBER(a_iGReg)
 #define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value)                  IEM_LIVENESS_GPR_CLOBBER(a_iGReg)
 #define IEM_MC_STORE_GREG_I64(a_iGReg, a_i64Value)                  IEM_LIVENESS_GPR_CLOBBER(a_iGReg)
 #define IEM_MC_STORE_GREG_U16_CONST(a_iGReg, a_u16Const)            IEM_LIVENESS_GPR_MODIFY(a_iGReg)
