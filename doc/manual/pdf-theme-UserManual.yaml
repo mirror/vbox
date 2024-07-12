@@ -194,7 +194,7 @@ style:
     toc-1:
         color:          $brand-color-primary
         font-family:    $pdf2-font-sans
-        start-indent:   0
+        start-indent:   0pt
 
     toc-2:
         color:          black
