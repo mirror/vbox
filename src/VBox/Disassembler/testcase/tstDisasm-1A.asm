@@ -501,6 +501,30 @@ BEGINPROC TestProc64
         vcvtsi2sd xmm0, xmm1, ecx
         vcvtsi2sd xmm0, xmm1, rcx
 
+        vcvttss2si ecx, xmm0
+        vcvttss2si ecx, [rax]
+        vcvttss2si ecx, [eax]
+        vcvttss2si rcx, xmm0
+        vcvttss2si rcx, [rax]
+        vcvttss2si rcx, [eax]
+        vcvtss2si  ecx, xmm0
+        vcvtss2si  ecx, [rax]
+        vcvtss2si  ecx, [eax]
+        vcvtss2si  rcx, xmm0
+        vcvtss2si  rcx, [rax]
+        vcvtss2si  rcx, [eax]
+        vcvttsd2si ecx, xmm0
+        vcvttsd2si ecx, [rax]
+        vcvttsd2si ecx, [eax]
+        vcvttsd2si rcx, xmm0
+        vcvttsd2si rcx, [rax]
+        vcvttsd2si rcx, [eax]
+        vcvtsd2si  ecx, xmm0
+        vcvtsd2si  ecx, [rax]
+        vcvtsd2si  ecx, [eax]
+        vcvtsd2si  rcx, xmm0
+        vcvtsd2si  rcx, [rax]
+        vcvtsd2si  rcx, [eax]
 
         ; group 7 stuff.
         vmcall
