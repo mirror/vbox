@@ -15,7 +15,7 @@
         Users               S-1-5-32-545:(DE,WD,AD,WEA,WA)
         Authenticated Users S-1-5-11:(OI)(CI)(RX)
         Authenticated Users S-1-5-11:(DE,WD,AD,WEA,WA)
-      </pre> Directory inheritance must also be disabled for all parent directories. </p>
+      </pre>Directory inheritance must also be disabled for all parent directories. </p>
     <p>You can use the <codeph>icacls</codeph> Windows command line tool to modify a directory to meet the security
       requirements. For example: <pre xml:space="preserve">
       icacls &lt;Directory&gt; /reset /t /c

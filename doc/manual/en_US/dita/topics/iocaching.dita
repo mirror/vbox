@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="iocaching">
   <title>Host Input/Output Caching</title>
-
+  
   <body>
     <p>
       <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can optionally disable the I/O caching that the
@@ -87,13 +87,11 @@
       cache for a virtual storage controller:
     </p>
     <pre xml:space="preserve">VBoxManage storagectl "VM name" --name &lt;controllername&gt; --hostiocache off</pre>
-    <p>
-      See <xref href="vboxmanage-storagectl.dita"/>.
-    </p>
+    <p> See <xref href="vboxmanage-storagectl.dita"/>. </p>
     <p>
       For the above reasons, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses SATA controllers by
       default for new virtual machines.
     </p>
   </body>
-
+  
 </topic>

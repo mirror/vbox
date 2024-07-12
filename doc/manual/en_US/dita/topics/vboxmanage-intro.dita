@@ -5,19 +5,12 @@
             <title>Introduction</title>
             
             <body>
-               <p>
-      As briefly mentioned in <xref href="frontends.dita#frontends"/>,
-      <userinput>VBoxManage</userinput> is the command-line interface to
-      Oracle VM VirtualBox. With it, you can completely control Oracle VM VirtualBox
-      from the command line of your host operating system.
-      <userinput>VBoxManage</userinput> supports all the features that the
-      graphical user interface gives you access to, but it supports a
-      lot more than that. It exposes all the features of the
-      virtualization engine, even those that cannot be accessed from the
-      GUI.
-    </p>
-               <p>
-      You will need to use the command line if you want to do the
+               <p>As briefly mentioned in <xref href="frontends.dita#frontends"/>, <userinput>VBoxManage</userinput> is
+      the command-line interface to <ph conkeyref = "vbox-conkeyref-phrases/product-name"/>. With it, you can completely control <ph conkeyref = "vbox-conkeyref-phrases/product-name"/> from the
+      command line of your host operating system. <userinput>VBoxManage</userinput> supports all the features that the
+      graphical user interface gives you access to, but it supports a lot more than that. It exposes all the features of
+      the virtualization engine, even those that cannot be accessed from the GUI. </p>
+               <p>You will need to use the command line if you want to do the
       following:
     </p>
                <ul>
@@ -34,25 +27,18 @@
         </p>
                   </li>
                </ul>
-               <p>
-      There are two main things to keep in mind when using
-      <userinput>VBoxManage</userinput>. First,
-      <userinput>VBoxManage</userinput> must always be used with a specific
-      subcommand, such as <userinput>list</userinput> or
-      <userinput>createvm</userinput> or <userinput>startvm</userinput>. All the
-      subcommands that <userinput>VBoxManage</userinput> supports are
-      described in detail in <xref href="vboxmanage.dita#vboxmanage"/>.
-    </p>
-               <p>
-      Second, most of these subcommands require that you specify a
-      particular virtual machine after the subcommand. There are two
-      ways you can do this:
-    </p>
+               <p>There are two main things to keep in mind when using <userinput>VBoxManage</userinput>. First,
+        <userinput>VBoxManage</userinput> must always be used with a specific subcommand, such as
+        <userinput>list</userinput> or <userinput>createvm</userinput> or <userinput>startvm</userinput>. All the
+      subcommands that <userinput>VBoxManage</userinput> supports are described in detail in <xref
+        href="vboxmanage.dita#vboxmanage"/>. </p>
+               <p>Second, most of these subcommands require that you specify a particular virtual machine after the
+      subcommand. There are two ways you can do this: </p>
                <ul>
                   <li>
                      <p>
           You can specify the VM name, as it is shown in the
-          Oracle VM VirtualBox GUI. Note that if that name contains spaces,
+          <ph conkeyref = "vbox-conkeyref-phrases/product-name"/> GUI. Note that if that name contains spaces,
           then you must enclose the entire name in double quotes. This
           is always required with command line arguments that contain
           spaces. For example:
@@ -62,7 +48,7 @@
                   <li>
                      <p>
           You can specify the UUID, which is the internal unique
-          identifier that Oracle VM VirtualBox uses to refer to the virtual
+          identifier that <ph conkeyref = "vbox-conkeyref-phrases/product-name"/> uses to refer to the virtual
           machine. Assuming that the VM called "Windows XP" has the UUID
           shown below, the following command has the same effect as the
           previous example:
@@ -76,14 +62,14 @@
       their respective names and UUIDs.
     </p>
                <p>
-      Some typical examples of how to control Oracle VM VirtualBox from the
+      Some typical examples of how to control <ph conkeyref = "vbox-conkeyref-phrases/product-name"/> from the
       command line are listed below:
     </p>
                <ul>
                   <li>
                      <p>
           To create a new virtual machine from the command line and
-          immediately register it with Oracle VM VirtualBox, use
+          immediately register it with <ph conkeyref = "vbox-conkeyref-phrases/product-name"/>, use
           <userinput>VBoxManage createvm</userinput> with the
           <!--option not processed within -->--register option, as follows:
         </p>

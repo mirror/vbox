@@ -7,7 +7,7 @@
     <p>The following steps show how to import an appliance in OVF format. </p>
     <ol>
       <li>
-        <p> Double-click the OVF or OVA file. </p>
+        <p>Double-click the OVF or OVA file. </p>
         <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates file type associations automatically for any
           OVF and OVA files on your host OS. </p>
         <p>The <b outputclass="bold">Appliance Settings</b> page of the <b outputclass="bold">Import Virtual

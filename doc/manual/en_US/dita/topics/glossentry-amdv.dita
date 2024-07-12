@@ -5,5 +5,6 @@
   <glossdef>
     The hardware virtualization features built into modern AMD processors.
     See <xref href="hwvirt.dita">Hardware Virtualization</xref>.
-  </glossdef>
+    </glossdef>
 </glossentry>
+

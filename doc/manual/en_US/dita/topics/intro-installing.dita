@@ -14,10 +14,8 @@
     </p>
     <ul>
       <li>
-        <p><b outputclass="bold">Base package.</b> The base
-          package consists of all open source components and is licensed
-          under the GNU General Public License V3.
-        </p>
+        <p><b outputclass="bold">Base package.</b> The base package consists of all open source
+          components and is licensed under the GNU General Public License V3. </p>
       </li>
       <li>
         <p><b outputclass="bold">Extension packs.</b> Additional

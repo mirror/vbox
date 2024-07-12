@@ -5,12 +5,9 @@
             <title>Some Terminology</title>
             
             <body>
-               <p>
-      When dealing with virtualization, and also for understanding the
-      following chapters of this documentation, it helps to acquaint
-      oneself with a bit of crucial terminology, especially the
-      following terms:
-    </p>
+               <p>When dealing with virtualization, and also for understanding the following
+      chapters of this documentation, it helps to acquaint yourself with some important terminology,
+      especially the following terms: </p>
                <ul>
                   <li>
                      <p><b outputclass="bold">Host operating system (host OS).</b> This is the OS of the physical
