@@ -4000,6 +4000,9 @@ FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_sha1rnds4_u128,   iemAImpl_sha1rnds4_u128_
 IEM_DECL_IMPL_DEF(void, iemAImpl_sha256rnds2_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, PCRTUINT128U puXmm0Constants));
 IEM_DECL_IMPL_DEF(void, iemAImpl_sha256rnds2_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, PCRTUINT128U puXmm0Constants));
 
+FNIEMAIMPLMEDIAOPTF2U256IMM8 iemAImpl_vpermq_u256,      iemAImpl_vpermq_u256_fallback;
+FNIEMAIMPLMEDIAOPTF2U256IMM8 iemAImpl_vpermpd_u256,     iemAImpl_vpermpd_u256_fallback;
+
 typedef struct IEMPCMPISTRXSRC
 {
     RTUINT128U              uSrc1;

@@ -4949,6 +4949,68 @@ ENDPROC iemAImpl_vaeskeygenassist_u128
 
 
 ;;
+; VPERMQ instruction.
+;
+; @param    A0      Pointer to the first media register size operand (output).
+; @param    A1      Pointer to the second media register size operand (input).
+; @param    A2      8-bit immediate for the round constant.
+;
+BEGINPROC_FASTCALL iemAImpl_vpermq_u256, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movzx   A2, A2_8                ; must clear top bits
+        vmovdqu ymm1, [A1]
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 8
+        vmovdqu [A0], ymm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        vpermq ymm0, ymm1, bImm
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_vpermq_u256
+
+
+;;
+; VPERMPD instruction.
+;
+; @param    A0      Pointer to the first media register size operand (output).
+; @param    A1      Pointer to the second media register size operand (input).
+; @param    A2      8-bit immediate for the round constant.
+;
+BEGINPROC_FASTCALL iemAImpl_vpermpd_u256, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+
+        movzx   A2, A2_8                ; must clear top bits
+        vmovdqu ymm1, [A1]
+        IEMIMPL_CALL_JUMP_TABLE_TARGET T1, A2, 8
+        vmovdqu [A0], ymm0
+
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+        IBT_ENDBRxx_WITHOUT_NOTRACK
+        vpermpd ymm0, ymm1, bImm
+        ret
+        int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:
+ENDPROC iemAImpl_vpermpd_u256
+
+
+;;
 ; Media instruction working on one full sized source register, one full sized destination
 ; register, and one no-larger-than-XMM register (in the vps{ll,ra,rl}[dwq] instructions,
 ; this is actually used to retrieve a 128-bit load, from which a 64-bit shift length is
