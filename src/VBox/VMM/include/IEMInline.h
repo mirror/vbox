@@ -4633,8 +4633,27 @@ DECLINLINE(void) iemMemRollbackAndUnmapWo(PVMCPUCC pVCpu, uint8_t bMapInfo) RT_N
 #undef TMPL_MEM_WITH_STACK
 #undef TMPL_MEM_WITH_ATOMIC_MAPPING
 
+#define TMPL_MEM_NO_MAPPING /* currently sticky */
+
 #define TMPL_MEM_NO_STORE
-#define TMPL_MEM_NO_MAPPING
+#define TMPL_MEM_TYPE       uint32_t
+#define TMPL_MEM_TYPE_ALIGN 0
+#define TMPL_MEM_TYPE_SIZE  4
+#define TMPL_MEM_FN_SUFF    U32NoAc
+#define TMPL_MEM_FMT_TYPE   "%#010x"
+#define TMPL_MEM_FMT_DESC   "dword"
+#include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+
+#define TMPL_MEM_NO_STORE
+#define TMPL_MEM_TYPE       uint64_t
+#define TMPL_MEM_TYPE_ALIGN 0
+#define TMPL_MEM_TYPE_SIZE  8
+#define TMPL_MEM_FN_SUFF    U64NoAc
+#define TMPL_MEM_FMT_TYPE   "%#018RX64"
+#define TMPL_MEM_FMT_DESC   "qword"
+#include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+
+#define TMPL_MEM_NO_STORE
 #define TMPL_MEM_TYPE       uint64_t
 #define TMPL_MEM_TYPE_ALIGN 15
 #define TMPL_MEM_TYPE_SIZE  8
@@ -4643,7 +4662,6 @@ DECLINLINE(void) iemMemRollbackAndUnmapWo(PVMCPUCC pVCpu, uint8_t bMapInfo) RT_N
 #define TMPL_MEM_FMT_DESC   "qword"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
-#undef TMPL_MEM_NO_STORE
 #undef TMPL_MEM_NO_MAPPING
 
 #define TMPL_MEM_TYPE       RTFLOAT80U
