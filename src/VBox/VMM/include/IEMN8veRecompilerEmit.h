@@ -5023,6 +5023,26 @@ iemNativeEmitGpr32EqGprAndImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t 
     }
     else if (iGprDst != iGprSrc)
     {
+        /* If a value greater or equal than 64K isn't more than 16 bits wide,
+           we can use shifting to save an instruction.  We prefer the builtin ctz
+           here to our own, since the compiler can process uImm at compile time
+           if it is a constant value (which is often the case).  This is useful
+           for the TLB looup code. */
+        if (uImm > 0xffffU)
+        {
+#  if defined(__GNUC__)
+            unsigned cTrailingZeros = __builtin_ctz(uImm);
+#  else
+            unsigned cTrailingZeros = ASMBitFirstSetU32(uImm) - 1;
+#  endif
+            if ((uImm >> cTrailingZeros) <= 0xffffU)
+            {
+                pCodeBuf[off++] = Armv8A64MkInstrMovZ(iGprDst, uImm >> cTrailingZeros);
+                pCodeBuf[off++] = Armv8A64MkInstrAnd(iGprDst, iGprSrc,
+                                                     iGprDst, true /*f64Bit*/, cTrailingZeros, kArmv8A64InstrShift_Lsl);
+                return off;
+            }
+        }
         off = iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off, iGprDst, uImm);
         off = iemNativeEmitAndGpr32ByGpr32Ex(pCodeBuf, off, iGprDst, iGprSrc, fSetFlags);
     }
@@ -7876,6 +7896,38 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitJmpImm(PIEMRECOMPILERSTATE pReNative, u
 /*********************************************************************************************************************************
 *   Calls.                                                                                                                       *
 *********************************************************************************************************************************/
+
+/**
+ * Emits a call to a 64-bit address.
+ */
+DECL_FORCE_INLINE(uint32_t) iemNativeEmitCallImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uintptr_t uPfn,
+#ifdef RT_ARCH_AMD64
+                                                   uint8_t idxRegTmp = X86_GREG_xAX
+#elif defined(RT_ARCH_ARM64)
+                                                   uint8_t idxRegTmp = IEMNATIVE_REG_FIXED_TMP0
+#else
+# error "Port me"
+#endif
+                                                   )
+{
+    off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, idxRegTmp, uPfn);
+
+#ifdef RT_ARCH_AMD64
+    /* call idxRegTmp */
+    if (idxRegTmp >= 8)
+        pCodeBuf[off++] = X86_OP_REX_B;
+    pCodeBuf[off++] = 0xff;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, idxRegTmp & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    pCodeBuf[off++] = Armv8A64MkInstrBlr(idxRegTmp);
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
 
 /**
  * Emits a call to a 64-bit address.

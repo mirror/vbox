@@ -256,8 +256,8 @@ SEH64_END_PROLOGUE
 %else
         mov     rdi, [rbp + 10h]
         mov     rsi, [rbp + 18h]
-        mov     ecx, [rbp + 20h]
-        mov     edx, [rbp + 28h]
+        mov     rcx, [rbp + 20h]
+        mov     rdx, [rbp + 28h]
 %endif
         call    NAME(iemNativeHlpCheckTlbLookup)
 

@@ -8670,15 +8670,16 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
 /**
  * This is called via iemNativeHlpAsmSafeWrapCheckTlbLookup.
  */
-DECLASM(void) iemNativeHlpCheckTlbLookup(PVMCPU pVCpu, uintptr_t uResult, uint64_t GCPtr, uint32_t uSegAndSizeAndAccess)
+DECLASM(void) iemNativeHlpCheckTlbLookup(PVMCPU pVCpu, uintptr_t uResult, uint64_t GCPtr, uint64_t uSegAndSizeAndAccessAndDisp)
 {
-    uint8_t const  iSegReg = RT_BYTE1(uSegAndSizeAndAccess);
-    uint8_t const  cbMem   = RT_BYTE2(uSegAndSizeAndAccess);
-    uint32_t const fAccess = uSegAndSizeAndAccess >> 16;
-    Log(("iemNativeHlpCheckTlbLookup: %x:%#RX64 LB %#x fAccess=%#x -> %#RX64\n", iSegReg, GCPtr, cbMem, fAccess, uResult));
+    uint8_t const  iSegReg = RT_BYTE1(uSegAndSizeAndAccessAndDisp);
+    uint8_t const  cbMem   = RT_BYTE2(uSegAndSizeAndAccessAndDisp);
+    uint32_t const fAccess = (uint32_t)uSegAndSizeAndAccessAndDisp >> 16;
+    uint8_t const  offDisp = RT_BYTE5(uSegAndSizeAndAccessAndDisp);
+    Log(("iemNativeHlpCheckTlbLookup: %x:%#RX64+%#x LB %#x fAccess=%#x -> %#RX64\n", iSegReg, GCPtr, offDisp, cbMem, fAccess, uResult));
 
     /* Do the lookup manually. */
-    RTGCPTR const      GCPtrFlat = iSegReg == UINT8_MAX ? GCPtr : GCPtr + pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base;
+    RTGCPTR const      GCPtrFlat = (iSegReg == UINT8_MAX ? GCPtr : GCPtr + pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base) + offDisp;
     uint64_t const     uTagNoRev = IEMTLB_CALC_TAG_NO_REV(GCPtrFlat);
     PCIEMTLBENTRY      pTlbe     = IEMTLB_TAG_TO_EVEN_ENTRY(&pVCpu->iem.s.DataTlb, uTagNoRev);
     if (RT_LIKELY(   pTlbe->uTag               == (uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision)

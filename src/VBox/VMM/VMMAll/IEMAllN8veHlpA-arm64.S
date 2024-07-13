@@ -163,11 +163,8 @@ BEGINPROC_HIDDEN iemNativeHlpAsmSafeWrapLogCpuState
 
         /*
          * Move the pVCpu pointer from the fixed register to the first argument.
-         * @todo This needs syncing with what we use in IEMN8veRecompiler.h
-         *       but we can't include that header right now, would need some #ifndef IN_ASM_CODE...
-         *       in the header or splitting up the header into a asm safe one and a one included from C/C++.
          */
-        mov      x0, x28
+        mov      x0, IEMNATIVE_REG_FIXED_PVMCPU_ASM
 
         /*
          * Call C function to do the actual work.
@@ -196,3 +193,66 @@ BEGINPROC_HIDDEN iemNativeHlpAsmSafeWrapLogCpuState
         ret
 #endif
         brk #1
+
+
+/**
+ * This is wrapper function that saves and restores all volatile registers
+ * so the impact of inserting CheckTlbLookup is minimal to the other TB code.
+ */
+ALIGNCODE(IEM_HLP_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN iemNativeHlpAsmSafeWrapCheckTlbLookup
+#ifdef RT_OS_DARWIN
+        ; pacibsp - see retab comment below.
+#endif
+
+        /*
+         * Save all volatile registers.
+         */
+        stp      x0,  x1, [sp, #-IEMNATIVE_HLP_FRAME_SIZE]!
+        stp      x2,  x3, [sp, #( 1 * 16)]
+        stp      x4,  x5, [sp, #( 2 * 16)]
+        stp      x5,  x6, [sp, #( 3 * 16)]
+        stp      x7,  x8, [sp, #( 4 * 16)]
+        stp      x9, x10, [sp, #( 5 * 16)]
+        stp     x11, x12, [sp, #( 6 * 16)]
+        stp     x13, x14, [sp, #( 7 * 16)]
+        stp     x15, x16, [sp, #( 8 * 16)]
+        stp     x17, x18, [sp, #( 9 * 16)]
+        stp     x29, x30, [sp, #(10 * 16)]                  /* At the top, save BP followed by LR. */
+        add     x29, sp, #(IEMNATIVE_HLP_FRAME_SIZE - 16)   /* x29 (BP) = &SavedBP; Creates a traditional call frame. */
+
+        /*
+         * Load parameters off the stack.
+         */
+        ldp     x0, x1, [x29, #16]
+        ldp     x2, x3, [x29, #32]
+
+        /*
+         * Call C function to do the actual work.
+         */
+        bl      NAME(iemNativeHlpCheckTlbLookup)
+
+        /*
+         * Restore volatile registers and return to the TB code.
+         */
+        ldp     x0,  x1, [sp, #( 0 * 16)]
+        ldp     x2,  x3, [sp, #( 1 * 16)]
+        ldp     x4,  x5, [sp, #( 2 * 16)]
+        ldp     x5,  x6, [sp, #( 3 * 16)]
+        ldp     x7,  x8, [sp, #( 4 * 16)]
+        ldp     x9, x10, [sp, #( 5 * 16)]
+        ldp    x11, x12, [sp, #( 6 * 16)]
+        ldp    x13, x14, [sp, #( 7 * 16)]
+        ldp    x15, x16, [sp, #( 8 * 16)]
+        ldp    x17, x18, [sp, #( 9 * 16)]
+        ldp    x29, x30, [sp, #(10 * 16)]
+        add      sp, sp, #(IEMNATIVE_HLP_FRAME_SIZE + 32)
+
+#ifdef RT_OS_DARWIN
+        ; retab - doesn't work with the wrong SP (+32 compared to the original).
+        ret
+#else
+        ret
+#endif
+        brk #1
+

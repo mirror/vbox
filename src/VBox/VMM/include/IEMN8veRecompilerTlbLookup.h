@@ -886,11 +886,17 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
         AssertCompileMemberAlignment(VMCPUCC, iem.s.CodeTlb.aEntries, 32);
         AssertCompileMemberAlignment(IEMTLB, aEntries, 32);
         AssertCompileSizeAlignment(IEMTLBENTRY, 32);
+#   if IEMTLB_ENTRY_COUNT <= 16384 /*?*/
         AssertCompile(RTASSERT_OFFSET_OF(VMCPUCC, iem.s.CodeTlb.aEntries) < _64K*32U);
-
         pCodeBuf[off++] = Armv8A64MkInstrMovZ(pTlbState->idxReg4, offEntries >> 5);
         pCodeBuf[off++] = Armv8A64MkInstrAddReg(pTlbState->idxReg4, IEMNATIVE_REG_FIXED_PVMCPU, pTlbState->idxReg4,
                                                 true /*64Bit*/, false /*fSetFlags*/, 5 /*cShift*/, kArmv8A64InstrShift_Lsl);
+#   else
+        AssertCompile(RTASSERT_OFFSET_OF(VMCPUCC, iem.s.CodeTlb.aEntries) >= _64K*32U);
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(pTlbState->idxReg4, offEntries & UINT16_MAX);
+        pCodeBuf[off++] = Armv8A64MkInstrMovK(pTlbState->idxReg4, offEntries >> 16, 1);
+        pCodeBuf[off++] = Armv8A64MkInstrAddReg(pTlbState->idxReg4, IEMNATIVE_REG_FIXED_PVMCPU, pTlbState->idxReg4);
+#   endif
     }
     AssertCompile(RTASSERT_OFFSET_OF(IEMTLB, aEntries) < 64U*8U - sizeof(IEMTLBENTRY));
     if (fEvenFirst)
@@ -1163,20 +1169,33 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
 
 # if 0
     /*
-     * To verify the result we call a helper function.
+     * To verify the result we call iemNativeHlpCheckTlbLookup via a wrapper.
      *
      * It's like the state logging, so parameters are passed on the stack.
      * iemNativeHlpAsmSafeWrapCheckTlbLookup(pVCpu, result, addr, seg | (cbMem << 8) | (fAccess << 16))
      */
-#  ifdef RT_ARCH_AMD64
     if (a_fDataTlb)
     {
-        /* push     seg | (cbMem << 8) | (fAccess << 16) */
-        pCodeBuf[off++] = 0x68;
-        pCodeBuf[off++] = iSegReg;
-        pCodeBuf[off++] = cbMem;
-        pCodeBuf[off++] = RT_BYTE1(fAccess);
-        pCodeBuf[off++] = RT_BYTE2(fAccess);
+#  ifdef RT_ARCH_AMD64
+        if (!offDisp && !(fAccess & 0x8000))
+        {
+            /* push     seg | (cbMem << 8) | (fAccess << 16) */
+            pCodeBuf[off++] = 0x68;
+            pCodeBuf[off++] = iSegReg;
+            pCodeBuf[off++] = cbMem;
+            pCodeBuf[off++] = RT_BYTE1(fAccess);
+            pCodeBuf[off++] = RT_BYTE2(fAccess);
+        }
+        else
+        {
+            /* mov   reg1, seg | (cbMem << 8) | (fAccess << 16) | (offDisp << 32) */
+            off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg1,
+                                            iSegReg | ((uint32_t)cbMem << 8) | (fAccess << 16) | ((uint64_t)offDisp << 32));
+            /* push   reg1 */
+            if (pTlbState->idxReg1 >= 8)
+                pCodeBuf[off++] = X86_OP_REX_B;
+            pCodeBuf[off++] = 0x50 + (pTlbState->idxReg1 & 7);
+        }
         /* push     pTlbState->idxRegPtr / immediate address. */
         if (pTlbState->idxRegPtr != UINT8_MAX)
         {
@@ -1197,18 +1216,43 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
         pCodeBuf[off++] = 0x50 + (idxRegMemResult & 7);
         /* push     pVCpu */
         pCodeBuf[off++] = 0x50 + IEMNATIVE_REG_FIXED_PVMCPU;
-        /* mov      reg1, helper */
-        off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg1, (uintptr_t)iemNativeHlpAsmSafeWrapCheckTlbLookup);
-        /* call     [reg1] */
-        pCodeBuf[off++] = X86_OP_REX_W | (pTlbState->idxReg1 < 8 ? 0 : X86_OP_REX_B);
-        pCodeBuf[off++] = 0xff;
-        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, pTlbState->idxReg1 & 7);
-        /* The stack is cleaned up by helper function. */
-    }
+        /* reg1 = helper; call reg1 */
+        off = iemNativeEmitCallImmEx(pCodeBuf, off, (uintptr_t)iemNativeHlpAsmSafeWrapCheckTlbLookup, pTlbState->idxReg1);
+        /* The stack is cleaned up by the helper function. */
+
+#  elif defined(RT_ARCH_ARM64)
+        /* Use the temporary registers for setting up the "call frame" and making the call. */
+        /* reg1 = seg | (cbMem << 8) | (fAccess << 16) */
+        pCodeBuf[off++] = Armv8A64MkInstrMovZ(pTlbState->idxReg1, RT_MAKE_U16(iSegReg, cbMem));
+        pCodeBuf[off++] = Armv8A64MkInstrMovK(pTlbState->idxReg1, RT_LO_U16(fAccess), 1);
+        if (offDisp)
+            pCodeBuf[off++] = Armv8A64MkInstrMovK(pTlbState->idxReg1, offDisp, 2);
+        if (pTlbState->idxRegPtr != UINT8_MAX)
+        {
+            /* stp idxRegPtr, reg1, [sp, #-16]! */
+            pCodeBuf[off++] = Armv8A64MkInstrStPairGpr(pTlbState->idxRegPtr, pTlbState->idxReg1,
+                                                       ARMV8_A64_REG_SP, -2, kArm64InstrStLdPairType_PreIndex);
+        }
+        else
+        {
+            /* reg2 = immediate address */
+            off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, pTlbState->idxReg2, pTlbState->uAbsPtr);
+            /* stp reg2, reg1, [sp, #-16]! */
+            pCodeBuf[off++] = Armv8A64MkInstrStPairGpr(pTlbState->idxReg2, pTlbState->idxReg1,
+                                                       ARMV8_A64_REG_SP, -2, kArm64InstrStLdPairType_PreIndex);
+        }
+        /* stp pVCpu, idxRegMemResult, [sp, #-16]! (we don't need pVCpu, but push it for stack alignment) */
+        pCodeBuf[off++] = Armv8A64MkInstrStPairGpr(IEMNATIVE_REG_FIXED_PVMCPU, idxRegMemResult,
+                                                   ARMV8_A64_REG_SP, -2, kArm64InstrStLdPairType_PreIndex);
+        /* reg1 = helper; brl reg1 */
+        off = iemNativeEmitCallImmEx(pCodeBuf, off, (uintptr_t)iemNativeHlpAsmSafeWrapCheckTlbLookup, pTlbState->idxReg1);
+        /* The stack is cleaned up by the helper function. */
 
 #  else
 #   error "Port me"
 #  endif
+    }
+
 # endif
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
