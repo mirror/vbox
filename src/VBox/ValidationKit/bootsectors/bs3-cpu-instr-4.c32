@@ -3649,6 +3649,12 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulpd(uint8_t bMode)
               /*mask     */ X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
               /*flags    */ 0, X86_MXCSR_DE | X86_MXCSR_UE | X86_MXCSR_PE },
+          { { /*src2     */ { BS3_FP64_DENORMAL_MAX(0), BS3_FP64_DENORMAL_MAX(0), BS3_FP64_DENORMAL_MAX(0), BS3_FP64_DENORMAL_MAX(1) } },
+            { /*src1     */ { BS3_FP64_DENORMAL_MAX(0), BS3_FP64_DENORMAL_MIN(0), BS3_FP64_DENORMAL_MAX(1), BS3_FP64_DENORMAL_MIN(1) } },
+            { /* =>      */ { BS3_FP64_ZERO(0),         BS3_FP64_ZERO(0),         BS3_FP64_ZERO(1),         BS3_FP64_ZERO(0)         } },
+              /*mask     */ ~X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
+              /*flags    */ X86_MXCSR_DE, X86_MXCSR_DE },
     };
 
     static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
