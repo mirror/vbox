@@ -87,7 +87,7 @@
          <topicref href="topics/virtintro.dita"/>
          <topicref href="topics/features-overview.dita"/>
          <topicref href="topics/hostossupport.dita">
-            <topicref href="topics/hostcpurequirements.dita"/>
+            <topicref href="topics/arm-host-limitations.dita"/>
             <topicref href="topics/hostcpurequirements.dita"/>
          </topicref>
          <topicref href="topics/intro-installing.dita"/>
@@ -367,6 +367,7 @@
          <topicref href="topics/rdp-viewers.dita"/>
          <topicref href="topics/vboxheadless.dita"/>
          <topicref href="topics/headless-vm-steps.dita"/>
+         <topicref href="topics/vboxheadless-separate-mode.dita"/>
          <topicref href="topics/usb-over-rdp.dita"/>
          <topicref href="topics/vbox-auth.dita"/>
          <topicref href="topics/vrde-crypt.dita"/>
