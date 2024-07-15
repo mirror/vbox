@@ -1215,6 +1215,20 @@ class UIIndicatorKeyboard : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
 
+    /** Possible indicator states. */
+    enum
+    {
+        State_KeyboardUnavailable           = 0,  // 0000 == KeyboardUnavailable
+        State_KeyboardAvailable             = 1,  // 0001 == KeyboardAvailable
+        State_HostKeyCaptured               = 3,  // 0011 == KeyboardAvailable & KeyboardCaptured
+        State_HostKeyPressed                = 5,  // 0101 == KeyboardAvailable & !KeyboardCaptured & HostKeyPressed
+        State_HostKeyCapturedPressed        = 7,  // 0111 == KeyboardAvailable & KeyboardCaptured & HostKeyPressed
+        State_HostKeyChecked                = 9,  // 1001 == KeyboardAvailable & !KeyboardCaptured & !HostKeyPressed & HostKeyPressedInsertion
+        State_HostKeyCapturedChecked        = 11, // 1011 == KeyboardAvailable & KeyboardCaptured & !HostKeyPressed & HostKeyPressedInsertion
+        State_HostKeyPressedChecked         = 13, // 1101 == KeyboardAvailable & !KeyboardCaptured & HostKeyPressed & HostKeyPressedInsertion
+        State_HostKeyCapturedPressedChecked = 15, // 1111 == KeyboardAvailable & KeyboardCaptured & HostKeyPressed & HostKeyPressedInsertion
+    };
+
 public:
 
     /** Constructor, using @a pMachine for state-update routine. */
@@ -1222,18 +1236,19 @@ public:
         : UISessionStateStatusBarIndicator(IndicatorType_Keyboard, pMachine)
     {
         /* Assign state-icons: */
-        setStateIcon(0, UIIconPool::iconSet(":/hostkey_disabled_16px.png"));
-        setStateIcon(1, UIIconPool::iconSet(":/hostkey_16px.png"));
-        setStateIcon(3, UIIconPool::iconSet(":/hostkey_captured_16px.png"));
-        setStateIcon(5, UIIconPool::iconSet(":/hostkey_pressed_16px.png"));
-        setStateIcon(7, UIIconPool::iconSet(":/hostkey_captured_pressed_16px.png"));
-        setStateIcon(9, UIIconPool::iconSet(":/hostkey_checked_16px.png"));
-        setStateIcon(11, UIIconPool::iconSet(":/hostkey_captured_checked_16px.png"));
-        setStateIcon(13, UIIconPool::iconSet(":/hostkey_pressed_checked_16px.png"));
-        setStateIcon(15, UIIconPool::iconSet(":/hostkey_captured_pressed_checked_16px.png"));
-        /* Configure connection: */
-        connect(m_pMachine, &UIMachine::sigKeyboardStateChange,
-                this, static_cast<void(UIIndicatorKeyboard::*)(int)>(&UIIndicatorKeyboard::setState)); // us to blame ..
+        setStateIcon(State_KeyboardUnavailable,           UIIconPool::iconSet(":/hostkey_disabled_16px.png"));
+        setStateIcon(State_KeyboardAvailable,             UIIconPool::iconSet(":/hostkey_16px.png"));
+        setStateIcon(State_HostKeyCaptured,               UIIconPool::iconSet(":/hostkey_captured_16px.png"));
+        setStateIcon(State_HostKeyPressed,                UIIconPool::iconSet(":/hostkey_pressed_16px.png"));
+        setStateIcon(State_HostKeyCapturedPressed,        UIIconPool::iconSet(":/hostkey_captured_pressed_16px.png"));
+        setStateIcon(State_HostKeyChecked,                UIIconPool::iconSet(":/hostkey_checked_16px.png"));
+        setStateIcon(State_HostKeyCapturedChecked,        UIIconPool::iconSet(":/hostkey_captured_checked_16px.png"));
+        setStateIcon(State_HostKeyPressedChecked,         UIIconPool::iconSet(":/hostkey_pressed_checked_16px.png"));
+        setStateIcon(State_HostKeyCapturedPressedChecked, UIIconPool::iconSet(":/hostkey_captured_pressed_checked_16px.png"));
+
+        /* Configure machine connection: */
+        connect(m_pMachine, &UIMachine::sigKeyboardStateChange, this, &UIIndicatorKeyboard::setState);
+
         /* Update & translate finally: */
         updateAppearance();
     }
@@ -1243,20 +1258,6 @@ protected slots:
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
     {
-        const QString strToolTip = tr("Indicates whether the host keyboard is "
-                                      "captured by the guest OS:%1", "Keyboard tooltip");
-        QString strFullData;
-        strFullData += s_strTableRow3
-            .arg(QString("<img src=:/hostkey_16px.png/>"))
-            .arg(tr("keyboard is not captured", "Keyboard tooltip"));
-        strFullData += s_strTableRow3
-            .arg(QString("<img src=:/hostkey_captured_16px.png/>"))
-            .arg(tr("keyboard is captured", "Keyboard tooltip"));
-        strFullData = s_strTable.arg(strFullData);
-
-        /* Update tool-tip: */
-        setToolTip(strToolTip.arg(strFullData));
-
         /* Retranslate finally: */
         sltRetranslateUI();
     }
@@ -1267,10 +1268,41 @@ protected slots:
         /* Call to base-class: */
         UISessionStateStatusBarIndicator::sltRetranslateUI();
 
+        /* Update tool-tip: */
+        const QString strToolTip = tr("Indicates whether the host keyboard is "
+                                      "captured by the guest OS:%1", "Keyboard tooltip");
+        QString strFullData;
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/hostkey_16px.png/>"))
+            .arg(tr("Keyboard is not captured", "Keyboard tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/hostkey_captured_16px.png/>"))
+            .arg(tr("Keyboard is captured", "Keyboard tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/hostkey_pressed_16px.png/>"))
+            .arg(tr("Keyboard is not captured, host-combo being held", "Keyboard tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/hostkey_captured_pressed_16px.png/>"))
+            .arg(tr("Keyboard is captured, host-combo being held", "Keyboard tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/hostkey_checked_16px.png/>"))
+            .arg(tr("Keyboard is not captured, host-combo to be inserted", "Keyboard tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/hostkey_captured_checked_16px.png/>"))
+            .arg(tr("Keyboard is captured, host-combo to be inserted", "Keyboard tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/hostkey_pressed_checked_16px.png/>"))
+            .arg(tr("Keyboard is not captured, host-combo being held and to be inserted", "Keyboard tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/hostkey_captured_pressed_checked_16px.png/>"))
+            .arg(tr("Keyboard is captured, host-combo being held and to be inserted", "Keyboard tooltip"));
+        strFullData = s_strTable.arg(strFullData);
+        setToolTip(strToolTip.arg(strFullData));
+
         /* Append description with more info: */
         const QString strStatus = state() & UIKeyboardStateType_KeyboardCaptured
-                                ? tr("keyboard is captured", "Keyboard tooltip")
-                                : tr("keyboard is not captured", "Keyboard tooltip");
+                                ? tr("Keyboard is captured", "Keyboard tooltip")
+                                : tr("Keyboard is not captured", "Keyboard tooltip");
         m_strDescription = QString("%1, %2").arg(m_strDescription, strStatus);
     }
 
