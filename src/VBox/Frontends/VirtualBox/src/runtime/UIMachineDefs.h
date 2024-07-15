@@ -57,9 +57,8 @@ enum UIVisualElement
 enum UIMouseStateType
 {
     UIMouseStateType_MouseCaptured         = RT_BIT(0),
-    UIMouseStateType_MouseAbsolute         = RT_BIT(1),
-    UIMouseStateType_MouseAbsoluteDisabled = RT_BIT(2),
-    UIMouseStateType_MouseNeedsHostCursor  = RT_BIT(3)
+    UIMouseStateType_MouseSupportsAbsolute = RT_BIT(1),
+    UIMouseStateType_MouseIntegrated       = RT_BIT(2)
 };
 
 /** Keyboard state types. */

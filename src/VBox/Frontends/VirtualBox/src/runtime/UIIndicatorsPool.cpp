@@ -1106,6 +1106,16 @@ class UIIndicatorMouse : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
 
+    /** Possible indicator states. */
+    enum
+    {
+        State_NotCaptured         = 0, // 000 == !MouseCaptured
+        State_Captured            = 1, // 001 == MouseCaptured
+        State_AbsoluteNotCaptured = 2, // 010 == !MouseCaptured & MouseSupportsAbsolute
+        State_AbsoluteCaptured    = 3, // 011 == MouseCaptured & MouseSupportsAbsolute
+        State_Integrated          = 6, // 110 == MouseSupportsAbsolute & MouseIntegrated
+    };
+
 public:
 
     /** Constructor, using @a pMachine for state-update routine. */
@@ -1113,14 +1123,15 @@ public:
         : UISessionStateStatusBarIndicator(IndicatorType_Mouse, pMachine)
     {
         /* Assign state-icons: */
-        setStateIcon(0, UIIconPool::iconSet(":/mouse_disabled_16px.png"));
-        setStateIcon(1, UIIconPool::iconSet(":/mouse_16px.png"));
-        setStateIcon(2, UIIconPool::iconSet(":/mouse_seamless_16px.png"));
-        setStateIcon(3, UIIconPool::iconSet(":/mouse_can_seamless_16px.png"));
-        setStateIcon(4, UIIconPool::iconSet(":/mouse_can_seamless_uncaptured_16px.png"));
-        /* Configure connection: */
-        connect(m_pMachine, &UIMachine::sigMouseStateChange,
-                this, static_cast<void(UIIndicatorMouse::*)(int)>(&UIIndicatorMouse::setState)); // us to blame ..
+        setStateIcon(State_NotCaptured,         UIIconPool::iconSet(":/mouse_disabled_16px.png"));                // 000
+        setStateIcon(State_Captured,            UIIconPool::iconSet(":/mouse_16px.png"));                         // 001
+        setStateIcon(State_AbsoluteNotCaptured, UIIconPool::iconSet(":/mouse_can_seamless_uncaptured_16px.png")); // 010
+        setStateIcon(State_AbsoluteCaptured,    UIIconPool::iconSet(":/mouse_can_seamless_16px.png"));            // 011
+        setStateIcon(State_Integrated,          UIIconPool::iconSet(":/mouse_seamless_16px.png"));                // 110
+
+        /* Configure machine connection: */
+        connect(m_pMachine, &UIMachine::sigMouseStateChange, this, &UIIndicatorMouse::setState);
+
         /* Update & translate finally: */
         updateAppearance();
     }
@@ -1130,31 +1141,6 @@ protected slots:
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
     {
-        const QString strToolTip = tr("Indicates whether the host mouse pointer is "
-                                      "captured by the guest OS:%1", "Mouse tooltip");
-        QString strFullData;
-        strFullData += s_strTableRow3
-            .arg(QString("<img src=:/mouse_disabled_16px.png/>"))
-            .arg(tr("pointer is not captured", "Mouse tooltip"));
-        strFullData += s_strTableRow3
-            .arg(QString("<img src=:/mouse_16px.png/>"))
-            .arg(tr("pointer is captured", "Mouse tooltip"));
-        strFullData += s_strTableRow3
-            .arg(QString("<img src=:/mouse_seamless_16px.png/>"))
-            .arg(tr("mouse integration (MI) is On", "Mouse tooltip"));
-        strFullData += s_strTableRow3
-            .arg(QString("<img src=:/mouse_can_seamless_16px.png/>"))
-            .arg(tr("MI is Off, pointer is captured", "Mouse tooltip"));
-        strFullData += s_strTableRow3
-            .arg(QString("<img src=:/mouse_can_seamless_uncaptured_16px.png/>"))
-            .arg(tr("MI is Off, pointer is not captured", "Mouse tooltip"));
-        strFullData = s_strTable.arg(strFullData);
-        strFullData += tr("Note that the mouse integration feature requires Guest "
-                          "Additions to be installed in the guest OS.", "Mouse tooltip");
-
-        /* Update tool-tip: */
-        setToolTip(strToolTip.arg(strFullData));
-
         /* Retranslate finally: */
         sltRetranslateUI();
     }
@@ -1165,16 +1151,46 @@ protected slots:
         /* Call to base-class: */
         UISessionStateStatusBarIndicator::sltRetranslateUI();
 
+        /* Update tool-tip: */
+        const QString strToolTip = tr("Indicates whether the host mouse pointer is "
+                                      "captured by the guest OS:%1", "Mouse tooltip");
+        QString strFullData;
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/mouse_disabled_16px.png/>"))
+            .arg(tr("Pointer is not captured", "Mouse tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/mouse_16px.png/>"))
+            .arg(tr("Pointer is captured", "Mouse tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/mouse_can_seamless_uncaptured_16px.png/>"))
+            .arg(tr("Mouse integration is Off, pointer is not captured", "Mouse tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/mouse_can_seamless_16px.png/>"))
+            .arg(tr("Mouse integration is Off, pointer is captured", "Mouse tooltip"));
+        strFullData += s_strTableRow3
+            .arg(QString("<img src=:/mouse_seamless_16px.png/>"))
+            .arg(tr("Mouse integration is On", "Mouse tooltip"));
+        strFullData = s_strTable.arg(strFullData);
+        strFullData += tr("Note that the mouse integration feature requires Guest "
+                          "Additions to be installed in the guest OS.", "Mouse tooltip");
+        setToolTip(strToolTip.arg(strFullData));
+
         /* Append description with more info: */
         QString strState;
         switch (state())
         {
-            case 0: strState = tr("pointer is not captured", "Mouse tooltip"); break;
-            case 1: strState = tr("pointer is captured", "Mouse tooltip"); break;
-            case 2: strState = tr("mouse integration (MI) is On", "Mouse tooltip"); break;
-            case 3: strState = tr("MI is Off, pointer is captured", "Mouse tooltip"); break;
-            case 4: strState = tr("MI is Off, pointer is not captured", "Mouse tooltip"); break;
-            default: break;
+            case State_NotCaptured:
+                strState = tr("Pointer is not captured", "Mouse tooltip"); break;
+            case State_Captured:
+                strState = tr("Pointer is captured", "Mouse tooltip"); break;
+            case State_AbsoluteNotCaptured:
+                strState = tr("Mouse integration is Off, pointer is not captured", "Mouse tooltip"); break;
+            case State_AbsoluteCaptured:
+                strState = tr("Mouse integration is Off, pointer is captured", "Mouse tooltip"); break;
+            case State_Integrated:
+                strState = tr("Mouse integration is On", "Mouse tooltip"); break;
+            default:
+                break;
         }
         if (!strState.isNull())
             m_strDescription = QString("%1, %2").arg(m_strDescription, strState);
@@ -1185,15 +1201,14 @@ private slots:
     /** Handles state change. */
     void setState(int iState) RT_OVERRIDE
     {
-        if ((iState & UIMouseStateType_MouseAbsoluteDisabled) &&
-            (iState & UIMouseStateType_MouseAbsolute) &&
-            !(iState & UIMouseStateType_MouseCaptured))
-            QIStateStatusBarIndicator::setState(4);
-        else
-            QIStateStatusBarIndicator::setState(iState & (UIMouseStateType_MouseAbsolute | UIMouseStateType_MouseCaptured));
-        sltRetranslateUI();
+        /* Call to base-class: */
+        QIStateStatusBarIndicator::setState(iState);
+
+        /* Update everything: */
+        updateAppearance();
     }
 };
+
 
 /** UISessionStateStatusBarIndicator extension for Runtime UI: Keyboard indicator. */
 class UIIndicatorKeyboard : public UISessionStateStatusBarIndicator
@@ -1246,6 +1261,7 @@ protected slots:
         sltRetranslateUI();
     }
 };
+
 
 /** QITextStatusBarIndicator extension for Runtime UI: Keyboard-extension indicator. */
 class UIIndicatorKeyboardExtension : public QITextStatusBarIndicator

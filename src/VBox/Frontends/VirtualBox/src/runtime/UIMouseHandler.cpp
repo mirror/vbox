@@ -257,10 +257,16 @@ void UIMouseHandler::setMouseIntegrationEnabled(bool fEnabled)
 /* Current mouse state: */
 int UIMouseHandler::state() const
 {
-    return uimachine()->machineState() == KMachineState_Null ? 0 :
-           (uimachine()->isMouseCaptured() ? UIMouseStateType_MouseCaptured : 0) |
-           (uimachine()->isMouseSupportsAbsolute() ? UIMouseStateType_MouseAbsolute : 0) |
-           (uimachine()->isMouseIntegrated() ? 0 : UIMouseStateType_MouseAbsoluteDisabled);
+    int iResult = 0;
+    if (uimachine()->isMouseCaptured())
+        iResult |= UIMouseStateType_MouseCaptured;
+    if (uimachine()->isMouseSupportsAbsolute())
+    {
+        iResult |= UIMouseStateType_MouseSupportsAbsolute;
+        if (uimachine()->isMouseIntegrated())
+            iResult |= UIMouseStateType_MouseIntegrated;
+    }
+    return iResult;
 }
 
 bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
