@@ -1159,6 +1159,27 @@ protected slots:
         sltRetranslateUI();
     }
 
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        QString strState;
+        switch (state())
+        {
+            case 0: strState = tr("pointer is not captured", "Mouse tooltip"); break;
+            case 1: strState = tr("pointer is captured", "Mouse tooltip"); break;
+            case 2: strState = tr("mouse integration (MI) is On", "Mouse tooltip"); break;
+            case 3: strState = tr("MI is Off, pointer is captured", "Mouse tooltip"); break;
+            case 4: strState = tr("MI is Off, pointer is not captured", "Mouse tooltip"); break;
+            default: break;
+        }
+        if (!strState.isNull())
+            m_strDescription = QString("%1, %2").arg(m_strDescription, strState);
+    }
+
 private slots:
 
     /** Handles state change. */
@@ -1167,13 +1188,10 @@ private slots:
         if ((iState & UIMouseStateType_MouseAbsoluteDisabled) &&
             (iState & UIMouseStateType_MouseAbsolute) &&
             !(iState & UIMouseStateType_MouseCaptured))
-        {
             QIStateStatusBarIndicator::setState(4);
-        }
         else
-        {
             QIStateStatusBarIndicator::setState(iState & (UIMouseStateType_MouseAbsolute | UIMouseStateType_MouseCaptured));
-        }
+        sltRetranslateUI();
     }
 };
 
