@@ -69,7 +69,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1 id="vboxheadless-description">
+  <refsect1 id="man_vboxheadless-description">
     <title>Description</title>
     <para>
       The <command>VBoxHeadless</command> command is an alternate front
@@ -81,7 +81,7 @@
       For information about using this command, see
       <xref linkend="vboxheadless" />.
     </para>
-    <refsect2 id="vboxmanage-vboxheadless-command-options">
+    <refsect2 id="man_vboxmanage-vboxheadless-command-options">
       <title>Command Options</title>
       <variablelist>
         <varlistentry>
@@ -208,7 +208,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1 id="vboxheadless-examples">
+  <refsect1 id="man_vboxheadless-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>
@@ -228,7 +228,7 @@
 <screen>$ VBoxHeadless --startvm "ol7u6" --capture --filename ol7u6-recording.webm</screen>
   </refsect1>
 
-  <refsect1 id="vboxheadless-see-also">
+  <refsect1 id="man_vboxheadless-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-list" />,
