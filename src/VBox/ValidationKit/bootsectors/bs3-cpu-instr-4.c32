@@ -2644,6 +2644,9 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_subps(uint8_t bMode)
               /*mask     */ X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_DOWN,
               /*flags    */ 0, 0 },
+    /*
+     * Denormals.
+     */
     /*28*/{ { /*src2     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0)         } },
             { /*src1     */ { BS3_FP32_ZERO(0),         BS3_FP32_DENORMAL_MAX(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(1) } },
             { /* =>      */ { BS3_FP32_ZERO(0),         BS3_FP32_DENORMAL_MAX(1), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(1) } },
@@ -2662,10 +2665,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_subps(uint8_t bMode)
               /*mask     */ X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
               /*flags    */ 0, 0 },
-    /*
-     * Denormals.
-     */
-    /*31*/{ { /*src2     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
+          { { /*src2     */ { BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
             { /*src1     */ { BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_DENORMAL_MAX(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
             { /* =>      */ { BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0),         BS3_FP32_ZERO(0), BS3_FP32_ZERO(0), BS3_FP32_ZERO(0) } },
               /*mask     */ ~X86_MXCSR_XCPT_MASK,
@@ -3575,6 +3575,39 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulpd(uint8_t bMode)
             { /* =>      */ { BS3_FP64_INF(0), BS3_FP64_INF(1),          BS3_FP64_INF(1),          BS3_FP64_INF(0)          } },
               /*mask     */ X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
+              /*flags    */ 0, 0 },
+    /*
+     * Normals.
+     */
+    /*13*/{ { /*src2     */ { BS3_FP64_VAL(0, 0xe66f500000000, 0x40d)/*31131.828125*/, BS3_FP64_VAL(0, 0xaf00000000000, 0x406)/*      215.50*/, BS3_FP64_VAL(1, 0x107526e749f80, 0x42b)/*-18723145413791.50*/, BS3_FP64_VAL(0, 0x6fee0e4bd0000, 0x420)/* 12345678999.62500*/ } },
+            { /*src1     */ { BS3_FP64_ONE(0),                                         BS3_FP64_VAL(0, 0x2d69a80000000, 0x413)/*  1234586.50*/, BS3_FP64_VAL(1, 0x4000000000000, 0x400)/*             -2.50*/, BS3_FP64_VAL(0, 0xb800000000000, 0x402)/*          13.75000*/ } },
+            { /* =>      */ { BS3_FP64_VAL(0, 0xe66f500000000, 0x40d)/*31131.828125*/, BS3_FP64_VAL(0, 0xfb74e1d800000, 0x41a)/*266053390.75*/, BS3_FP64_VAL(0, 0x549270a11c760, 0x42c)/* 46807863534478.75*/, BS3_FP64_VAL(0, 0x3c30944926c00, 0x424)/*169753086244.84375*/ } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP64_NORMAL_MAX(1), BS3_FP64_NORMAL_VAL_3(1), BS3_FP64_ONE(0),          BS3_FP64_ONE(1)        } },
+            { /*src1     */ { BS3_FP64_ONE(1),        BS3_FP64_ONE(0),          BS3_FP64_NORMAL_VAL_1(0), BS3_FP64_NORMAL_MIN(1) } },
+            { /* =>      */ { BS3_FP64_NORMAL_MAX(0), BS3_FP64_NORMAL_VAL_3(1), BS3_FP64_NORMAL_VAL_1(0), BS3_FP64_NORMAL_MIN(0) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_DOWN,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP64_VAL(0, 0xbcd80e0108cc0, 0x42e)/*244555555308646.00*/, BS3_FP64_VAL(1, 0x68b83b1ed4000, 0x41e)/*-3025935759.4140625*/, BS3_FP64_VAL(0, 0xbcd80e0108cc0, 0x42e)/*244555555308646*/, BS3_FP64_VAL(0, 0xb88e0395d49b0, 0x42d)/*121098765432102.75*/ } },
+            { /*src1     */ { BS3_FP64_VAL(0, 0x8000000000000, 0x3fe)/*              0.75*/, BS3_FP64_VAL(1, 0,               0x400)/*         -2.0000000*/, BS3_FP64_ONE(0),                                            BS3_FP64_VAL(0, 0x8000000000000, 0x400)/*              3.00*/ } },
+            { /* =>      */ { BS3_FP64_VAL(0, 0x4da20a80c6990, 0x42e)/*183416666481484.50*/, BS3_FP64_VAL(0, 0x68b83b1ed4000, 0x41f)/* 6051871518.8281250*/, BS3_FP64_VAL(0, 0xbcd80e0108cc0, 0x42e)/*244555555308646*/, BS3_FP64_VAL(0, 0x4a6a82b05f744, 0x42f)/*363296296296308.25*/ } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_DOWN,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP64_ONE(0),                 BS3_FP64_ONE(0),                                                              BS3_FP64_NORMAL_SAFE_INT_MIN(0), BS3_FP64_ONE(0)                 } },
+            { /*src1     */ { BS3_FP64_NORMAL_SAFE_INT_MAX(0), BS3_FP64_VAL(0, BS3_FP64_FRACTION_NORMAL_MAX - 1, BS3_FP64_EXP_SAFE_INT_MAX), BS3_FP64_ONE(0),                 BS3_FP64_NORMAL_SAFE_INT_MIN(1) } },
+            { /* =>      */ { BS3_FP64_NORMAL_SAFE_INT_MAX(0), BS3_FP64_VAL(0, BS3_FP64_FRACTION_NORMAL_MAX - 1, BS3_FP64_EXP_SAFE_INT_MAX), BS3_FP64_NORMAL_SAFE_INT_MIN(0), BS3_FP64_NORMAL_SAFE_INT_MIN(1) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
+              /*flags    */ 0, 0 },
+          { { /*src2     */ { BS3_FP64_NORMAL_VAL_0(0), BS3_FP64_NORMAL_VAL_1(1), BS3_FP64_NORMAL_VAL_2(0), BS3_FP64_NORMAL_VAL_3(1) } },
+            { /*src1     */ { BS3_FP64_ONE(0),          BS3_FP64_ONE(1),          BS3_FP64_ONE(1),          BS3_FP64_ONE(1)          } },
+            { /* =>      */ { BS3_FP64_NORMAL_VAL_0(0), BS3_FP64_NORMAL_VAL_1(0), BS3_FP64_NORMAL_VAL_2(1), BS3_FP64_NORMAL_VAL_3(0) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_DOWN,
               /*flags    */ 0, 0 },
     };
 
