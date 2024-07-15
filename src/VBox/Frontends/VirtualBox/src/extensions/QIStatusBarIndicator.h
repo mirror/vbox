@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -34,17 +34,14 @@
 /* Qt includes: */
 #include <QIcon>
 #include <QMap>
+#include <QSize>
 #include <QWidget>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
-class QIcon;
 class QLabel;
-class QSize;
-class QString;
-class QWidget;
 
 
 /** QWidget extension used as status-bar indicator. */
@@ -80,7 +77,7 @@ protected:
     virtual void contextMenuEvent(QContextMenuEvent *pEvent) RT_OVERRIDE;
 
     /** Holds currently cached size. */
-    QSize m_size;
+    QSize  m_size;
 };
 
 
@@ -104,10 +101,8 @@ public:
 
 public slots:
 
-    /** Defines int @a state. */
+    /** Defines int @a iState. */
     virtual void setState(int iState) { m_iState = iState; repaint(); }
-    /** Defines bool @a state. */
-    void setState(bool fState) { setState((int)fState); }
 
 protected:
 
@@ -120,13 +115,13 @@ protected:
 private:
 
     /** Holds current state. */
-    int m_iState;
+    int               m_iState;
     /** Holds cached state icons. */
-    QMap<int, QIcon> m_icons;
+    QMap<int, QIcon>  m_icons;
 };
 
 
-/** QIStatusBarIndicator extension used as status-bar state indicator. */
+/** QIStatusBarIndicator extension used as status-bar text indicator. */
 class SHARED_LIBRARY_STUFF QITextStatusBarIndicator : public QIStatusBarIndicator
 {
     Q_OBJECT;
