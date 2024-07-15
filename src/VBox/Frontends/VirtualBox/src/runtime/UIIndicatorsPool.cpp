@@ -1260,6 +1260,31 @@ protected slots:
         /* Retranslate finally: */
         sltRetranslateUI();
     }
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::sltRetranslateUI();
+
+        /* Append description with more info: */
+        const QString strStatus = state() & UIKeyboardStateType_KeyboardCaptured
+                                ? tr("keyboard is captured", "Keyboard tooltip")
+                                : tr("keyboard is not captured", "Keyboard tooltip");
+        m_strDescription = QString("%1, %2").arg(m_strDescription, strStatus);
+    }
+
+private slots:
+
+    /** Handles state change. */
+    void setState(int iState) RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        QIStateStatusBarIndicator::setState(iState);
+
+        /* Update everything: */
+        updateAppearance();
+    }
 };
 
 
