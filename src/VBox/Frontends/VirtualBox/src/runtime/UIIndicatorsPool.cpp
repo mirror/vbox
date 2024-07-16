@@ -1280,10 +1280,10 @@ protected slots:
             .arg(tr("Keyboard is captured", "Keyboard tooltip"));
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/hostkey_pressed_16px.png/>"))
-            .arg(tr("Keyboard is not captured, host-combo being held", "Keyboard tooltip"));
+            .arg(tr("Keyboard is not captured, host-combo being pressed", "Keyboard tooltip"));
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/hostkey_captured_pressed_16px.png/>"))
-            .arg(tr("Keyboard is captured, host-combo being held", "Keyboard tooltip"));
+            .arg(tr("Keyboard is captured, host-combo being pressed", "Keyboard tooltip"));
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/hostkey_checked_16px.png/>"))
             .arg(tr("Keyboard is not captured, host-combo to be inserted", "Keyboard tooltip"));
@@ -1292,10 +1292,10 @@ protected slots:
             .arg(tr("Keyboard is captured, host-combo to be inserted", "Keyboard tooltip"));
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/hostkey_pressed_checked_16px.png/>"))
-            .arg(tr("Keyboard is not captured, host-combo being held and to be inserted", "Keyboard tooltip"));
+            .arg(tr("Keyboard is not captured, host-combo being pressed and to be inserted", "Keyboard tooltip"));
         strFullData += s_strTableRow3
             .arg(QString("<img src=:/hostkey_captured_pressed_checked_16px.png/>"))
-            .arg(tr("Keyboard is captured, host-combo being held and to be inserted", "Keyboard tooltip"));
+            .arg(tr("Keyboard is captured, host-combo being pressed and to be inserted", "Keyboard tooltip"));
         strFullData = s_strTable.arg(strFullData);
         setToolTip(strToolTip.arg(strFullData));
 
