@@ -4204,6 +4204,12 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtps2pd_u256_u128,(uint32_t uMxCsrIn, PX8
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtps2pd_u256_u128_fallback,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86XMMREG puSrc));
 
 
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtdq2pd_u128_u64,(uint32_t uMxCsrIn, PX86XMMREG puDst, const uint64_t *pu64Src)); /* Actually two single precision floating point values. */
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtdq2pd_u128_u64_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst,  const uint64_t *pu64Src)); /* Actually two single precision floating point values. */
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtdq2pd_u256_u128,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86XMMREG puSrc));
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtdq2pd_u256_u128_fallback,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86XMMREG puSrc));
+
+
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLF2EFLMXCSRR32R32,(uint32_t uMxCsrIn, uint32_t *pfEFlags, RTFLOAT32U uSrc1, RTFLOAT32U uSrc2));
 typedef FNIEMAIMPLF2EFLMXCSRR32R32 *PFNIEMAIMPLF2EFLMXCSRR32R32;
 
@@ -4773,7 +4779,6 @@ FNIEMAIMPLMEDIAF2U128 iemAImpl_vrsqrtps_u128,  iemAImpl_vrsqrtps_u128_fallback;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_vrcpps_u128,    iemAImpl_vrcpps_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vaddsubps_u128, iemAImpl_vaddsubps_u128_fallback;
 FNIEMAIMPLMEDIAF3U128 iemAImpl_vaddsubpd_u128, iemAImpl_vaddsubpd_u128_fallback;
-FNIEMAIMPLFPAVXF3U128 iemAImpl_vcvtps2pd_u128, iemAImpl_vcvtps2pd_u128_fallback;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_vcvtdq2ps_u128, iemAImpl_vcvtdq2ps_u128_fallback;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_vcvtps2dq_u128, iemAImpl_vcvtps2dq_u128_fallback;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_vcvttps2dq_u128, iemAImpl_vcvttps2dq_u128_fallback;
@@ -4823,7 +4828,6 @@ FNIEMAIMPLFPAVXF3U256 iemAImpl_vhsubps_u256, iemAImpl_vhsubps_u256_fallback;
 FNIEMAIMPLFPAVXF3U256 iemAImpl_vhsubpd_u256, iemAImpl_vhsubpd_u256_fallback;
 FNIEMAIMPLMEDIAF3U256 iemAImpl_vaddsubps_u256, iemAImpl_vaddsubps_u256_fallback;
 FNIEMAIMPLMEDIAF3U256 iemAImpl_vaddsubpd_u256, iemAImpl_vaddsubpd_u256_fallback;
-FNIEMAIMPLFPAVXF3U256 iemAImpl_vcvtps2pd_u256, iemAImpl_vcvtps2pd_u256_fallback;
 FNIEMAIMPLMEDIAF2U256 iemAImpl_vsqrtps_u256, iemAImpl_vsqrtps_u256_fallback;
 FNIEMAIMPLMEDIAF2U256 iemAImpl_vsqrtpd_u256, iemAImpl_vsqrtpd_u256_fallback;
 FNIEMAIMPLMEDIAF2U256 iemAImpl_vrsqrtps_u256,  iemAImpl_vrsqrtps_u256_fallback;

@@ -5736,6 +5736,51 @@ ENDPROC iemAImpl_vcvtps2pd_u256_u128
 
 
 ;;
+; vcvtdq2pd instruction - 128-bit variant.
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vcvtdq2pd_u128_u64, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        vcvtdq2pd xmm0, qword [A2]
+        movdqu    [A1], xmm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_vcvtdq2pd_u128_u64
+
+
+;;
+; vcvtdq2pd instruction - 256-bit variant.
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vcvtdq2pd_u256_u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movdqu    xmm0, [A2]
+        vcvtdq2pd ymm0, xmm1
+        vmovdqu   [A1], ymm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_vcvtdq2pd_u256_u128
+
+
+;;
 ; shufps instructions with 8-bit immediates.
 ;
 ; @param    A0      Pointer to the destination media register size operand (input/output).
