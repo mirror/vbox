@@ -585,9 +585,9 @@
       <topicref href="topics/nestedpaging.dita"/>
    </chapter>
 
-   <chapter href="topics/VirtualBoxAPI.dita"  chunk="to-content"/>
+   <chapter href="topics/VirtualBoxAPI.dita" chunk="to-content"/>
 
-   <chapter href="topics/Troubleshooting.dita"  chunk="to-content">
+   <chapter href="topics/Troubleshooting.dita" chunk="to-content">
       <topicref href="topics/ts_procs-tools.dita">
          <topicref href="topics/ts_categorize-isolate.dita"/>
          <topicref href="topics/collect-debug-info.dita"/>
