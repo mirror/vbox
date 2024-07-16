@@ -17468,9 +17468,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtps2pd_u256_u128_fallback,(uint32_t fMxC
 
 
 /**
- * CVTDQ2PS
+ * [V]CVTDQ2PS
  */
-#ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_cvtdq2ps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxcsr, int32_t i32Val)
 {
     softfloat_state_t SoftState = IEM_SOFTFLOAT_STATE_INITIALIZER_FROM_MXCSR(fMxcsr);
@@ -17479,6 +17478,7 @@ static uint32_t iemAImpl_cvtdq2ps_u128_worker(PRTFLOAT32U pr32Res, uint32_t fMxc
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtdq2ps_u128,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCX86XMMREG puSrc2))
 {
     RT_NOREF(puSrc1);
@@ -17489,6 +17489,28 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtdq2ps_u128,(uint32_t uMxCsrIn, PX86XMMRE
            | iemAImpl_cvtdq2ps_u128_worker(&pResult->ar32[3], uMxCsrIn, puSrc2->ai32[3]);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtdq2ps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc))
+{
+    return   iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[0], uMxCsrIn, puSrc->ai32[0])
+           | iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[1], uMxCsrIn, puSrc->ai32[1])
+           | iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[2], uMxCsrIn, puSrc->ai32[2])
+           | iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[3], uMxCsrIn, puSrc->ai32[3]);
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtdq2ps_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCX86YMMREG puSrc))
+{
+    return   iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[0], uMxCsrIn, puSrc->ai32[0])
+           | iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[1], uMxCsrIn, puSrc->ai32[1])
+           | iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[2], uMxCsrIn, puSrc->ai32[2])
+           | iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[3], uMxCsrIn, puSrc->ai32[3])
+           | iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[4], uMxCsrIn, puSrc->ai32[4])
+           | iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[5], uMxCsrIn, puSrc->ai32[5])
+           | iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[6], uMxCsrIn, puSrc->ai32[6])
+           | iemAImpl_cvtdq2ps_u128_worker(&puDst->ar32[7], uMxCsrIn, puSrc->ai32[7]);
+}
 
 
 /**
