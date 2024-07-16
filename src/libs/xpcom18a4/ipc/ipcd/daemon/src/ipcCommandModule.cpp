@@ -45,7 +45,7 @@
 
 #include <VBox/log.h>
 
-typedef void FNIPCMMSGHANDLER(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg);
+typedef DECLCALLBACKTYPE(void, FNIPCMMSGHANDLER,(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg));
 /** Pointer to a IPCM message handler. */
 typedef FNIPCMMSGHANDLER *PFNIPCMMSGHANDLER;
 
@@ -222,16 +222,16 @@ static DECLCALLBACK(void) ipcmOnForward(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg) R
 
 DECLHIDDEN(void) IPCM_HandleMsg(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg)
 {
-    static const PFNIPCMMSGHANDLER aHandlers[] =
+    static const struct CLANG11NONSENSE { PFNIPCMMSGHANDLER pfn; } s_aHandlers[] =
     {
-        ipcmOnPing,
-        ipcmOnForward,
-        ipcmOnClientHello,
-        ipcmOnClientAddName,
-        ipcmOnClientDelName,
-        ipcmOnClientAddTarget,
-        ipcmOnClientDelTarget,
-        ipcmOnQueryClientByName
+        { ipcmOnPing              },
+        { ipcmOnForward           },
+        { ipcmOnClientHello       },
+        { ipcmOnClientAddName     },
+        { ipcmOnClientDelName     },
+        { ipcmOnClientAddTarget   },
+        { ipcmOnClientDelTarget   },
+        { ipcmOnQueryClientByName },
     };
 
     uint32_t u32Type = IPCM_GetType(pMsg);
@@ -245,11 +245,11 @@ DECLHIDDEN(void) IPCM_HandleMsg(PIPCDCLIENT pIpcClient, PCIPCMSG pMsg)
 
     u32Type &= ~IPCM_MSG_CLASS_REQ;
     u32Type--;
-    if (u32Type >= RT_ELEMENTS(aHandlers))
+    if (u32Type >= RT_ELEMENTS(s_aHandlers))
     {
         Log(("unknown request -- ignoring message\n"));
         return;
     }
 
-    aHandlers[u32Type](pIpcClient, pMsg);
+    s_aHandlers[u32Type].pfn(pIpcClient, pMsg);
 }
