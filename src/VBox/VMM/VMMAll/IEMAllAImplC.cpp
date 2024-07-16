@@ -20695,7 +20695,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vperm2f128_u256_fallback,(PRTUINT256U puDst, PC
 
 
 /**
- * DPPS
+ * [V]DPPS
  */
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_dpps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
@@ -20705,10 +20705,34 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_dpps_u128_fallback,(uint32_t uMxCsrIn, PX86
 }
 
 
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vdpps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+{
+    RT_NOREF(puDst, pSrc, bImm);
+    AssertReleaseFailed();
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vdpps_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCIEMMEDIAF2YMMSRC pSrc, uint8_t bImm))
+{
+    RT_NOREF(puDst, pSrc, bImm);
+    AssertReleaseFailed();
+    return uMxCsrIn;
+}
+
+
 /**
- * DPPD
+ * [V]DPPD
  */
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_dppd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
+{
+    RT_NOREF(puDst, pSrc, bImm);
+    AssertReleaseFailed();
+    return uMxCsrIn;
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vdppd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
     RT_NOREF(puDst, pSrc, bImm);
     AssertReleaseFailed();
