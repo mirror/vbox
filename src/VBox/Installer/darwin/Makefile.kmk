@@ -1093,7 +1093,7 @@ mount_dmg:
 		$(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg
 	@kmk_builtin_echo ""
 	@kmk_builtin_echo "Successfully mounted within Finder."
-	@kmk_builtin_echo "You may now alter the .dmg image as needed. 
+	@kmk_builtin_echo "You may now alter the .dmg image as needed.
 	@kmk_builtin_echo "To save your changes, unmount via 'kmk unmount'."
 	@kmk_builtin_echo "To discard your changes, unmount directly via Finder (eject icon)."
 
