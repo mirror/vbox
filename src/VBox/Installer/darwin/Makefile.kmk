@@ -1082,7 +1082,7 @@ VBOX_PATH_DMG_MOUNTPOINT := /Volumes/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_S
 # Mounts the created .dmg file within Finder in read-write mode using a shadow storage
 # which holds the modififed content.
 #
-# This is needed in order to modify the styling of the .dmg's DS_Store file (which is a 
+# This is needed in order to modify the styling of the .dmg's DS_Store file (which is a
 # proprietary file format known by Finder). Needs root.
 #
 mount_dmg:
