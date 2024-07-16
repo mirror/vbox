@@ -4777,6 +4777,7 @@ FNIEMAIMPLFPAVXF3U128 iemAImpl_vcvtpd2ps_u128, iemAImpl_vcvtpd2ps_u128_fallback;
 FNIEMAIMPLFPAVXF3U128 iemAImpl_vcvtps2pd_u128, iemAImpl_vcvtps2pd_u128_fallback;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_vcvtdq2ps_u128, iemAImpl_vcvtdq2ps_u128_fallback;
 FNIEMAIMPLMEDIAF2U128 iemAImpl_vcvtps2dq_u128, iemAImpl_vcvtps2dq_u128_fallback;
+FNIEMAIMPLMEDIAF2U128 iemAImpl_vcvttps2dq_u128, iemAImpl_vcvttps2dq_u128_fallback;
 IEM_DECL_IMPL_PROTO(uint32_t, iemAImpl_vcvtpd2ps_u128_u128,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc));
 IEM_DECL_IMPL_PROTO(uint32_t, iemAImpl_vcvtpd2ps_u128_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc));
 
@@ -4827,6 +4828,7 @@ FNIEMAIMPLMEDIAF2U256 iemAImpl_vrsqrtps_u256,  iemAImpl_vrsqrtps_u256_fallback;
 FNIEMAIMPLMEDIAF2U256 iemAImpl_vrcpps_u256,    iemAImpl_vrcpps_u256_fallback;
 FNIEMAIMPLMEDIAF2U256 iemAImpl_vcvtdq2ps_u256,  iemAImpl_vcvtdq2ps_u256_fallback;
 FNIEMAIMPLMEDIAF2U256 iemAImpl_vcvtps2dq_u256,  iemAImpl_vcvtps2dq_u256_fallback;
+FNIEMAIMPLMEDIAF2U256 iemAImpl_vcvttps2dq_u256, iemAImpl_vcvttps2dq_u256_fallback;
 IEM_DECL_IMPL_PROTO(uint32_t, iemAImpl_vcvtpd2ps_u128_u256,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86YMMREG puSrc));
 IEM_DECL_IMPL_PROTO(uint32_t, iemAImpl_vcvtpd2ps_u128_u256_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86YMMREG puSrc));
 /** @} */
