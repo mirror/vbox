@@ -1017,8 +1017,7 @@ static int drvramdiskMediaExIoReqReadWriteProcess(PDRVRAMDISK pThis, PPDMMEDIAEX
            && rc == VINF_SUCCESS)
     {
         if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
-            rc = RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT,
-                                  (PFNRT)drvramdiskIoReqReadWorker, 2, pThis, pIoReq);
+            rc = RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT, (PFNRT)drvramdiskIoReqReadWorker, 2, pThis, pIoReq);
         else
         {
             /* Sync memory buffer from the request initiator. */
@@ -1494,8 +1493,7 @@ static DECLCALLBACK(int) drvramdiskIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAE
     }
 
     ASMAtomicIncU32(&pThis->cIoReqsActive);
-    return RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT,
-                            (PFNRT)drvramdiskIoReqFlushWorker, 2, pThis, pIoReq);
+    return RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT, (PFNRT)drvramdiskIoReqFlushWorker, 2, pThis, pIoReq);
 }
 
 /**
@@ -1536,8 +1534,7 @@ static DECLCALLBACK(int) drvramdiskIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDI
 
         ASMAtomicIncU32(&pThis->cIoReqsActive);
 
-        rc = RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT,
-                              (PFNRT)drvramdiskIoReqDiscardWorker, 2, pThis, pIoReq);
+        rc = RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT, (PFNRT)drvramdiskIoReqDiscardWorker, 2, pThis, pIoReq);
         if (rc == VINF_SUCCESS)
             rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
     }
@@ -1705,8 +1702,7 @@ static DECLCALLBACK(void) drvramdiskDestruct(PPDMDRVINS pDrvIns)
     PDRVRAMDISK pThis = PDMINS_2_DATA(pDrvIns, PDRVRAMDISK);
 
     PRTREQ pReq = NULL;
-    int rc = RTReqQueueCallEx(pThis->hReqQ, &pReq, RT_INDEFINITE_WAIT, RTREQFLAGS_IPRT_STATUS,
-                              (PFNRT)drvramdiskDestructQueue, 0);
+    int rc = RTReqQueueCallEx(pThis->hReqQ, &pReq, RT_INDEFINITE_WAIT, RTREQFLAGS_IPRT_STATUS, (PFNRT)drvramdiskDestructQueue, 0);
     AssertRC(rc);
     RTReqRelease(pReq);
 

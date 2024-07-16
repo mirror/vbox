@@ -418,8 +418,7 @@ static DECLCALLBACK(int) drvCloudTunnelUp_SendBuf(PPDMINETWORKUP pInterface, PPD
     {
         Log2(("%s: submitting TX request (pvSeg=%p, %u bytes) to I/O queue...\n",
               pThis->pszInstance, pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed));
-        rc = RTReqQueueCallEx(pThis->hIoReqQueue, NULL /*ppReq*/, 0 /*cMillies*/,
-                              RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+        rc = RTReqQueueCallEx(pThis->hIoReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                               (PFNRT)drvCloudTunnelSendWorker, 2, pThis, pSgBuf);
 
         if (RT_SUCCESS(rc))
@@ -742,8 +741,7 @@ static int drvCloudTunnelReceiveCallback(ssh_session session, ssh_channel channe
         STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
         return len;
     }
-    int rc = RTReqQueueCallEx(pThis->hDevReqQueue, NULL /*ppReq*/, 0 /*cMillies*/,
-                              RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+    int rc = RTReqQueueCallEx(pThis->hDevReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                               (PFNRT)drvCloudTunnelReceiveWorker, 3, pThis, pvPacket, len);
     if (RT_FAILURE(rc))
     {
@@ -820,8 +818,7 @@ static DECLCALLBACK(int) drvCloudTunnelDevWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD 
 
     /* Wake up device thread. */
     PRTREQ pReq;
-    int rc = RTReqQueueCall(pThis->hDevReqQueue, &pReq, 10000 /*cMillies*/,
-                            (PFNRT)drvCloudTunnelReceiveWakeup, 1, pThis);
+    int rc = RTReqQueueCall(pThis->hDevReqQueue, &pReq, 10000 /*cMillies*/, (PFNRT)drvCloudTunnelReceiveWakeup, 1, pThis);
     if (RT_FAILURE(rc))
         LogRel(("%s: failed to wake up device thread - %Rrc\n", pThis->pszInstance, rc));
     if (RT_SUCCESS(rc))

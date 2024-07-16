@@ -553,8 +553,8 @@ static bool vusbDevStdReqClearFeature(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetu
                 &&  pDev->pUsbIns->pReg->pfnUsbClearHaltedEndpoint)
             {
                 RTCritSectEnter(&pDev->pHub->CritSectDevices);
-                int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)pDev->pUsbIns->pReg->pfnUsbClearHaltedEndpoint,
-                                                 2, pDev->pUsbIns, pSetup->wIndex);
+                int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)pDev->pUsbIns->pReg->pfnUsbClearHaltedEndpoint, 2,
+                                                 pDev->pUsbIns, pSetup->wIndex);
                 RTCritSectLeave(&pDev->pHub->CritSectDevices);
                 return RT_SUCCESS(rc);
             }

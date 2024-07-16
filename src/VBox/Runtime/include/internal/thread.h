@@ -289,7 +289,8 @@ DECLHIDDEN(void)         rtThreadWinTlsDestruction(void); /* in tls-win.cpp */
 # endif
 # ifdef RTTHREAD_POSIX_WITH_CREATE_PRIORITY_PROXY
 DECLHIDDEN(bool) rtThreadPosixPriorityProxyStart(void);
-DECLHIDDEN(int)  rtThreadPosixPriorityProxyCall(PRTTHREADINT pTargetThread, PFNRT pfnFunction, int cArgs, ...);
+DECLHIDDEN(int)  rtThreadPosixPriorityProxyCall(PRTTHREADINT pTargetThread, PFNRT pfnFunction,
+                                                int cArgs, ...) RT_IPRT_CALL_ATTR(2, 3, 4);
 # endif
 #endif
 

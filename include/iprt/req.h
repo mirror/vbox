@@ -166,11 +166,13 @@ RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies);
  *                          wait till it's completed.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Max 9.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on RTReqQueueCallV.
  */
-RTDECL(int) RTReqQueueCall(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
+RTDECL(int) RTReqQueueCall(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies,
+                           PFNRT pfnFunction, unsigned cArgs, ...) RT_IPRT_CALL_ATTR(4, 5, 6);
 
 /**
  * Allocate and queue a call request to a void function.
@@ -192,11 +194,13 @@ RTDECL(int) RTReqQueueCall(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMilli
  *                          wait till it's completed.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Max 9.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on RTReqQueueCallV.
  */
-RTDECL(int) RTReqQueueCallVoid(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
+RTDECL(int) RTReqQueueCallVoid(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies,
+                               PFNRT pfnFunction, unsigned cArgs, ...) RT_IPRT_CALL_ATTR(4, 5, 6);
 
 /**
  * Allocate and queue a call request to a void function.
@@ -221,11 +225,13 @@ RTDECL(int) RTReqQueueCallVoid(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cM
  * @param   fFlags          A combination of the RTREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Max 9.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on RTReqQueueCallV.
  */
-RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags,
+                             PFNRT pfnFunction, unsigned cArgs, ...) RT_IPRT_CALL_ATTR(5, 6, 7);
 
 /**
  * Allocate and queue a call request.
@@ -250,6 +256,7 @@ RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMil
  * @param   fFlags          A combination of the RTREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Max 9.
  * @param   Args            Variable argument vector.
  *
  * @remarks Caveats:
@@ -260,8 +267,17 @@ RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMil
  *                therefore end up with garbage in the bits 63:32 on 64-bit
  *                hosts because 'int' is 32-bit.
  *                Use (void *)NULL or (uintptr_t)0 instead of NULL.
+ *              - The max number of arguments is currently limited to 9, because
+ *                on macOS/arm64 arguments passed on the stack that are 32-bit
+ *                or smaller will not get a full 64-bit stack slot.  So,
+ *                we cannot pretend @a pfnFunction takes a list of @a cArgs
+ *                uintptr_t parameters, unless all parameters above 9 actually
+ *                are more than 32 bits wide.   (This would've kind of worked
+ *                iff the variadict functions didn't use different size round up
+ *                and alignment rules.)  See @bugref{10725}.
  */
-RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
+RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags,
+                            PFNRT pfnFunction, unsigned cArgs, va_list Args) RT_IPRT_CALL_ATTR(5, 6, 0);
 
 /**
  * Checks if the queue is busy or not.

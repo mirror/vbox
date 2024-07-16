@@ -309,8 +309,7 @@ static DECLCALLBACK(int) drvCardReaderDownDisconnect(PPDMICARDREADERDOWN pInterf
                  pvUser, u32Disposition));
     PUSBCARDREADER pThis = RT_FROM_MEMBER(pInterface, USBCARDREADER, ICardReaderDown);
     int vrc = RTReqQueueCallEx(pThis->hReqQCardReaderCmd, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                               (PFNRT)drvCardReaderCmdDisconnect, 3,
-                               pThis, pvUser, u32Disposition);
+                               (PFNRT)drvCardReaderCmdDisconnect, 3, pThis, pvUser, u32Disposition);
     AssertRC(vrc);
     LogFlowFunc(("LEAVE: %Rrc\n", vrc));
     return vrc;
@@ -323,8 +322,7 @@ static DECLCALLBACK(int) drvCardReaderDownEstablishContext(PPDMICARDREADERDOWN p
     LogFlowFunc(("ENTER:\n"));
     PUSBCARDREADER pThis = RT_FROM_MEMBER(pInterface, USBCARDREADER, ICardReaderDown);
     int vrc = RTReqQueueCallEx(pThis->hReqQCardReaderCmd, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                               (PFNRT)drvCardReaderCmdEstablishContext, 1,
-                               pThis);
+                               (PFNRT)drvCardReaderCmdEstablishContext, 1, pThis);
     AssertRC(vrc);
     LogFlowFunc(("LEAVE: %Rrc\n", vrc));
     return vrc;
@@ -346,8 +344,7 @@ static DECLCALLBACK(int) drvCardReaderDownReleaseContext(PPDMICARDREADERDOWN pIn
     }
 
     int vrc = RTReqQueueCallEx(pThis->hReqQCardReaderCmd, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                               (PFNRT)drvCardReaderCmdReleaseContext, 2,
-                               pThis, pvUser);
+                               (PFNRT)drvCardReaderCmdReleaseContext, 2, pThis, pvUser);
     AssertRC(vrc);
     LogFlowFunc(("LEAVE: %Rrc\n", vrc));
     return vrc;
@@ -366,8 +363,7 @@ static DECLCALLBACK(int) drvCardReaderDownStatus(PPDMICARDREADERDOWN pInterface,
     NOREF(cbAtrLen);
     PUSBCARDREADER pThis = RT_FROM_MEMBER(pInterface, USBCARDREADER, ICardReaderDown);
     int vrc = RTReqQueueCallEx(pThis->hReqQCardReaderCmd, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                              (PFNRT)drvCardReaderCmdStatus, 2,
-                              pThis, pvUser);
+                              (PFNRT)drvCardReaderCmdStatus, 2, pThis, pvUser);
     AssertRC(vrc);
     LogFlowFunc(("LEAVE: %Rrc\n", vrc));
     return vrc;
@@ -385,8 +381,7 @@ static DECLCALLBACK(int) drvCardReaderDownGetStatusChange(PPDMICARDREADERDOWN pI
                  pvUser, u32Timeout, cReaderStats));
     PUSBCARDREADER pThis = RT_FROM_MEMBER(pInterface, USBCARDREADER, ICardReaderDown);
     int vrc = RTReqQueueCallEx(pThis->hReqQCardReaderCmd, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                               (PFNRT)drvCardReaderCmdStatusChange, 5,
-                               pThis, pvUser, u32Timeout, paReaderStats, cReaderStats);
+                               (PFNRT)drvCardReaderCmdStatusChange, 5, pThis, pvUser, u32Timeout, paReaderStats, cReaderStats);
     AssertRC(vrc);
     LogFlowFunc(("LEAVE: %Rrc\n", vrc));
     return vrc;
@@ -472,8 +467,7 @@ static DECLCALLBACK(int) drvCardReaderDownGetAttr(PPDMICARDREADERDOWN pInterface
                  pvUser, u32AttribId, cbAttrib));
     PUSBCARDREADER pThis = RT_FROM_MEMBER(pInterface, USBCARDREADER, ICardReaderDown);
     int vrc = RTReqQueueCallEx(pThis->hReqQCardReaderCmd, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                               (PFNRT)drvCardReaderCmdGetAttr, 4,
-                               pThis, pvUser, u32AttribId, cbAttrib);
+                               (PFNRT)drvCardReaderCmdGetAttr, 4, pThis, pvUser, u32AttribId, cbAttrib);
     AssertRC(vrc);
     LogFlowFunc(("LEAVE: %Rrc\n", vrc));
     return vrc;
@@ -498,8 +492,7 @@ static DECLCALLBACK(int) drvCardReaderDownSetAttr(PPDMICARDREADERDOWN pInterface
         AssertPtrReturn(pvAttribCopy, VERR_NO_MEMORY);
     }
     int vrc = RTReqQueueCallEx(pThis->hReqQCardReaderCmd, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                               (PFNRT)drvCardReaderCmdSetAttr, 5,
-                               pThis, pvUser, u32AttribId, pvAttribCopy, cbAttrib);
+                               (PFNRT)drvCardReaderCmdSetAttr, 5, pThis, pvUser, u32AttribId, pvAttribCopy, cbAttrib);
     AssertRC(vrc);
     LogFlowFunc(("LEAVE: %Rrc\n", vrc));
     return vrc;

@@ -1381,8 +1381,7 @@ int Service::notifyHost(const char *pszName, const char *pszValue, uint64_t nsTi
         *pu8++ = 0;
 
         rc = RTReqQueueCallEx(mhReqQNotifyHost, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                              (PFNRT)notifyHostAsyncWorker, 3,
-                              mpfnHostCallback, mpvHostData, pHostCallbackData);
+                              (PFNRT)notifyHostAsyncWorker, 3, mpfnHostCallback, mpvHostData, pHostCallbackData);
         if (RT_FAILURE(rc))
         {
             RTMemFree(pHostCallbackData);

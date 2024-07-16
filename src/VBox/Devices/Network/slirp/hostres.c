@@ -174,8 +174,8 @@ static PDNSMAPPINGENTRY getDNSMapByAddr(PNATState pData, const uint32_t *pu32IpA
 #endif
 
 
-static void hostres_async(struct response *res);
-static void hostres_slirp_reply(struct response *res);
+static DECLCALLBACK(void) hostres_async(struct response *res);
+static DECLCALLBACK(void) hostres_slirp_reply(struct response *res);
 
 
 /*
@@ -204,10 +204,7 @@ hostresolver(PNATState pData, struct mbuf *m, uint32_t src, uint16_t sport)
     m_copydata(m, 0, mlen, (char *)res->buf);
     res->end = res->qlen = mlen;
 
-    rc = slirp_call_hostres(pData->pvUser, NULL, 0,
-                            RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                            (PFNRT)hostres_async, 1, res);
-
+    rc = slirp_call_hostres(pData->pvUser, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT, (PFNRT)hostres_async, 1, res);
     if (RT_FAILURE(rc))
     {
         LogErr(("NAT: hostres: failed to post async request: %Rrc\n", rc));
@@ -340,10 +337,7 @@ hostres_async(struct response *res)
 
     free_labels(res->labels);
 
-    rc = slirp_call(res->pData->pvUser, NULL, 0,
-                    RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                    (PFNRT)hostres_slirp_reply, 1, res);
-
+    rc = slirp_call(res->pData->pvUser, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT, (PFNRT)hostres_slirp_reply, 1, res);
     if (RT_FAILURE(rc))
     {
         LogErr(("NAT: hostres: failed to post async reply: %Rrc\n", rc));

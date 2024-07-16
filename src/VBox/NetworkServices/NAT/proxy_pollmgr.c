@@ -92,7 +92,7 @@ struct pollmgr {
 
 
 static int pollmgr_queue_callback(struct pollmgr_handler *, SOCKET, int);
-static void pollmgr_chan_call_handler(int, void *);
+static DECLCALLBACK(void) pollmgr_chan_call_handler(int, void *);
 
 static void pollmgr_loop(void);
 
@@ -274,10 +274,8 @@ pollmgr_chan_send(int slot, void *buf, size_t nbytes)
 
     ptr = *(void **)buf;
 
-    int rc = RTReqQueueCallEx(pollmgr.queue, NULL, 0,
-                              RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                              (PFNRT)pollmgr_chan_call_handler, 2,
-                              slot, ptr);
+    int rc = RTReqQueueCallEx(pollmgr.queue, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                              (PFNRT)pollmgr_chan_call_handler, 2, slot, ptr);
     if (RT_FAILURE(rc))
     {
         DPRINTF(("Queuing pollmgr_chan_call_handler() on poll manager queue failed with %Rrc\n", rc));

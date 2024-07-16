@@ -609,8 +609,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
     int rc;
     if (pThis->pSlirpThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        rc = RTReqQueueCallEx(pThis->hSlirpReqQueue, NULL /*ppReq*/, 0 /*cMillies*/,
-                              RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+        rc = RTReqQueueCallEx(pThis->hSlirpReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                               (PFNRT)drvNATSendWorker, 2, pThis, pSgBuf);
         if (RT_SUCCESS(rc))
         {
@@ -962,8 +961,7 @@ static DECLCALLBACK(int) drvNATHostResWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     Assert(pThis != NULL);
 
     int rc;
-    rc = RTReqQueueCallEx(pThis->hHostResQueue, NULL /*ppReq*/, 0 /*cMillies*/,
-                          RTREQFLAGS_IPRT_STATUS | RTREQFLAGS_NO_WAIT,
+    rc = RTReqQueueCallEx(pThis->hHostResQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_IPRT_STATUS | RTREQFLAGS_NO_WAIT,
                           (PFNRT)drvNATReqQueueInterrupt, 0);
     return rc;
 }
@@ -1045,8 +1043,7 @@ void slirp_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
 /*
  * Call a function on the slirp thread.
  */
-int slirp_call(void *pvUser, PRTREQ *ppReq, RTMSINTERVAL cMillies,
-               unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+int slirp_call(void *pvUser, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
     Assert(pThis);
@@ -1084,8 +1081,7 @@ int slirp_call_hostres(void *pvUser, PRTREQ *ppReq, RTMSINTERVAL cMillies,
     va_list va;
     va_start(va, cArgs);
 
-    rc = RTReqQueueCallV(pThis->hHostResQueue, ppReq, cMillies, fFlags,
-                         pfnFunction, cArgs, va);
+    rc = RTReqQueueCallV(pThis->hHostResQueue, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
 
     va_end(va);
     return rc;
@@ -1290,8 +1286,7 @@ DECLINLINE(void) drvNATUpdateDNS(PDRVNAT pThis, bool fFlapLink)
              * It's unsafe to to do it directly on non-NAT thread
              * so we schedule the worker and kick the NAT thread.
              */
-            int rc = RTReqQueueCallEx(pThis->hSlirpReqQueue, NULL /*ppReq*/, 0 /*cMillies*/,
-                                      RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+            int rc = RTReqQueueCallEx(pThis->hSlirpReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                                       (PFNRT)drvNATReinitializeHostNameResolving, 1, pThis);
             if (RT_SUCCESS(rc))
                 drvNATNotifyNATThread(pThis, "drvNATUpdateDNS");

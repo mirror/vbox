@@ -2081,8 +2081,9 @@ static DECLCALLBACK(int) vgsvcGstCtrlProcessOnTerm(PVBOXSERVICECTRLPROCESS pThis
 }
 
 
-static int vgsvcGstCtrlProcessRequestExV(PVBOXSERVICECTRLPROCESS pProcess, const PVBGLR3GUESTCTRLCMDCTX pHostCtx, bool fAsync,
-                                         RTMSINTERVAL uTimeoutMS, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+static int vgsvcGstCtrlProcessRequestExV(PVBOXSERVICECTRLPROCESS pProcess, const PVBGLR3GUESTCTRLCMDCTX pHostCtx,
+                                         bool fAsync, RTMSINTERVAL uTimeoutMS,
+                                         PFNRT pfnFunction, unsigned cArgs, va_list Args) RT_IPRT_CALL_ATTR(5, 6, 0)
 {
     RT_NOREF1(pHostCtx);
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
@@ -2142,7 +2143,7 @@ static int vgsvcGstCtrlProcessRequestExV(PVBOXSERVICECTRLPROCESS pProcess, const
 
 
 static int vgsvcGstCtrlProcessRequestAsync(PVBOXSERVICECTRLPROCESS pProcess, const PVBGLR3GUESTCTRLCMDCTX pHostCtx,
-                                           PFNRT pfnFunction, unsigned cArgs, ...)
+                                           PFNRT pfnFunction, unsigned cArgs, ...) RT_IPRT_CALL_ATTR(3, 4, 5)
 {
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
     /* pHostCtx is optional. */
@@ -2181,8 +2182,8 @@ int VGSvcGstCtrlProcessHandleInput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUES
                                    bool fPendingClose, void *pvBuf, uint32_t cbBuf)
 {
     if (!ASMAtomicReadBool(&pProcess->fShutdown) && !ASMAtomicReadBool(&pProcess->fStopped))
-        return vgsvcGstCtrlProcessRequestAsync(pProcess, pHostCtx, (PFNRT)vgsvcGstCtrlProcessOnInput,
-                                               5 /* cArgs */, pProcess, pHostCtx, fPendingClose, pvBuf, cbBuf);
+        return vgsvcGstCtrlProcessRequestAsync(pProcess, pHostCtx, (PFNRT)vgsvcGstCtrlProcessOnInput, 5 /*cArgs*/,
+                                               pProcess, pHostCtx, fPendingClose, pvBuf, cbBuf);
 
     return vgsvcGstCtrlProcessOnInput(pProcess, pHostCtx, fPendingClose, pvBuf, cbBuf);
 }
@@ -2192,8 +2193,8 @@ int VGSvcGstCtrlProcessHandleOutput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUE
                                     uint32_t uHandle, uint32_t cbToRead, uint32_t fFlags)
 {
     if (!ASMAtomicReadBool(&pProcess->fShutdown) && !ASMAtomicReadBool(&pProcess->fStopped))
-        return vgsvcGstCtrlProcessRequestAsync(pProcess, pHostCtx, (PFNRT)vgsvcGstCtrlProcessOnOutput,
-                                               5 /* cArgs */, pProcess, pHostCtx, uHandle, cbToRead, fFlags);
+        return vgsvcGstCtrlProcessRequestAsync(pProcess, pHostCtx, (PFNRT)vgsvcGstCtrlProcessOnOutput, 5 /*cArgs*/,
+                                               pProcess, pHostCtx, uHandle, cbToRead, fFlags);
 
     return vgsvcGstCtrlProcessOnOutput(pProcess, pHostCtx, uHandle, cbToRead, fFlags);
 }
@@ -2202,8 +2203,8 @@ int VGSvcGstCtrlProcessHandleOutput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUE
 int VGSvcGstCtrlProcessHandleTerm(PVBOXSERVICECTRLPROCESS pProcess)
 {
     if (!ASMAtomicReadBool(&pProcess->fShutdown) && !ASMAtomicReadBool(&pProcess->fStopped))
-        return vgsvcGstCtrlProcessRequestAsync(pProcess, NULL /* pHostCtx */, (PFNRT)vgsvcGstCtrlProcessOnTerm,
-                                               1 /* cArgs */, pProcess);
+        return vgsvcGstCtrlProcessRequestAsync(pProcess, NULL /* pHostCtx */, (PFNRT)vgsvcGstCtrlProcessOnTerm, 1 /*cArgs*/,
+                                               pProcess);
 
     return vgsvcGstCtrlProcessOnTerm(pProcess);
 }
