@@ -176,7 +176,7 @@ int CRYPTO_THREAD_compare_id(CRYPTO_THREAD_ID a, CRYPTO_THREAD_ID b)
 /** @callback_method_impl{FNRTONCE,
  * Wrapper that calls the @a init function given CRYPTO_THREAD_run_once().}
  */
-static int32_t cryptoThreadRunOnceWrapper(void *pvUser)
+static DECLCALLBACK(int32_t) cryptoThreadRunOnceWrapper(void *pvUser)
 {
     void (*pfnInit)(void) = (void (*)(void))pvUser;
     pfnInit();
