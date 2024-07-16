@@ -697,7 +697,7 @@ int RecordingContext::audioInit(const settings::RecordingScreenSettings &screenS
  * @param   pvUser              User-supplied pointer. Points to the RecordingContext instance.
  */
 /* static */
-DECLCALLBACK(void) RecordingContext::s_progressCancelCallback(void *pvUser)
+void RecordingContext::s_progressCancelCallback(void *pvUser)
 {
     RecordingContext *pThis = (RecordingContext *)pvUser;
 

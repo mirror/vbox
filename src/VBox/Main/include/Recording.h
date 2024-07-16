@@ -201,7 +201,7 @@ protected:
 
 protected:
 
-    static DECLCALLBACK(void) s_progressCancelCallback(void *pvUser);
+    static void               s_progressCancelCallback(void *pvUser);
 
     static DECLCALLBACK(void) s_recordingStateChangedCallback(RecordingContext *pCtx, RECORDINGSTS enmSts, uint32_t uScreen, int vrc, void *pvUser);
 
