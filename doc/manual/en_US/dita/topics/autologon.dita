@@ -4,12 +4,10 @@
   <title>Automated Guest Logins</title>
   
   <body>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides Guest Addition modules for Windows, Linux,
-      and Oracle Solaris to enable automated logins on the guest.
-    </p>
-    <p> When a guest operating system is running in a virtual machine, it might be required to
-      perform coordinated and automated logins using credentials passed from the host. Credentials
-      are user name, password, and domain name, where each value might be empty. </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides Guest Addition modules for Windows, Linux, and
+      Oracle Solaris to enable automated logins on the guest. </p>
+    <p>When a guest operating system is running in a virtual machine, it might be required to perform coordinated and
+      automated logins using credentials passed from the host. Credentials are user name, password, and domain name,
+      where each value might be empty. </p>
   </body>
 </topic>

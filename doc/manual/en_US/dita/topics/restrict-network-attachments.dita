@@ -4,10 +4,8 @@
   <title>Removing Certain Modes of Networking From the GUI</title>
   
   <body>
-    <p>
-        It is possible to remove networking modes from <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
-        GUI. To do this, use the following command:
-      </p>
+    <p>It is possible to remove networking modes from <ph conkeyref="vbox-conkeyref-phrases/product-name"/> GUI. To do
+      this, use the following command: </p>
     <pre xml:space="preserve">VBoxManage setextradata global GUI/RestrictedNetworkAttachmentTypes <varname>property</varname>[,<varname>property</varname>...]</pre>
     <p><varname>property</varname> is one of the following:
       </p>
@@ -17,10 +15,7 @@
           <codeph>NAT</codeph>
         </dt>
         <dd>
-          <p>
-              Remove the <b outputclass="bold">NAT</b> option
-              from the GUI.
-            </p>
+          <p>Remove the <b outputclass="bold">NAT</b> option from the GUI. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -28,10 +23,7 @@
           <codeph>NATNetwork</codeph>
         </dt>
         <dd>
-          <p>
-              Remove the <b outputclass="bold">NAT network</b>
-              option from the GUI.
-            </p>
+          <p>Remove the <b outputclass="bold">NAT network</b> option from the GUI. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -39,10 +31,7 @@
           <codeph>BridgedAdapter</codeph>
         </dt>
         <dd>
-          <p>
-              Remove the <b outputclass="bold">Bridged
-              networking</b> option from the GUI.
-            </p>
+          <p>Remove the <b outputclass="bold">Bridged networking</b> option from the GUI. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -50,10 +39,7 @@
           <codeph>InternalNetwork</codeph>
         </dt>
         <dd>
-          <p>
-              Remove the <b outputclass="bold">Internal
-              networking</b> option from the GUI.
-            </p>
+          <p>Remove the <b outputclass="bold">Internal networking</b> option from the GUI. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -61,10 +47,7 @@
           <codeph>HostOnlyAdapter</codeph>
         </dt>
         <dd>
-          <p>
-              Remove the <b outputclass="bold">Host Only
-              networking</b> option from the GUI.
-            </p>
+          <p>Remove the <b outputclass="bold">Host Only networking</b> option from the GUI. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -72,18 +55,12 @@
           <codeph>GenericDriver</codeph>
         </dt>
         <dd>
-          <p>
-              Remove the <b outputclass="bold">Generic
-              networking</b> option from the GUI.
-            </p>
+          <p>Remove the <b outputclass="bold">Generic networking</b> option from the GUI. </p>
         </dd>
       </dlentry>
     </dl>
-    <p>
-        This is a global setting. You can specify any combination of
-        properties. To restore the default behavior, use the following
-        command:
-      </p>
+    <p>This is a global setting. You can specify any combination of properties. To restore the default behavior, use the
+      following command: </p>
     <pre xml:space="preserve">VBoxManage setextradata global GUI/RestrictedNetworkAttachmentTypes</pre>
   </body>
   

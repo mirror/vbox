@@ -5,27 +5,18 @@
             <title>iSCSI Servers</title>
             
             <body>
-               <p>
-      iSCSI stands for <i>Internet SCSI</i> and is a
-      standard that supports use of the SCSI protocol over Internet
-      (TCP/IP) connections. Especially with the advent of Gigabit
-      Ethernet, it has become affordable to attach iSCSI storage servers
-      simply as remote hard disks to a computer network. In iSCSI
-      terminology, the server providing storage resources is called an
-      <i>iSCSI target</i>, while the client connecting to
-      the server and accessing its resources is called an
-      <i>iSCSI initiator</i>.
-    </p>
-               <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can transparently present iSCSI remote storage to a
-      virtual machine as a virtual hard disk. The guest OS will not see
-      any difference between a virtual disk image (VDI file) and an
-      iSCSI target. To achieve this, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has an integrated
-      iSCSI initiator.
-    </p>
-               <p> <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s iSCSI support has been developed according to the iSCSI
-      standard and should work with all standard-conforming iSCSI targets. To use an iSCSI target
-      with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, you must use the command line. See <xref
+               <p>iSCSI stands for <i>Internet SCSI</i> and is a standard that supports use of the SCSI protocol over
+      Internet (TCP/IP) connections. Especially with the advent of Gigabit Ethernet, it has become affordable to attach
+      iSCSI storage servers simply as remote hard disks to a computer network. In iSCSI terminology, the server
+      providing storage resources is called an <i>iSCSI target</i>, while the client connecting to the server and
+      accessing its resources is called an <i>iSCSI initiator</i>. </p>
+               <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> can transparently present iSCSI remote storage
+      to a virtual machine as a virtual hard disk. The guest OS will not see any difference between a virtual disk image
+      (VDI file) and an iSCSI target. To achieve this, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has an
+      integrated iSCSI initiator. </p>
+               <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s iSCSI support has been developed according to
+      the iSCSI standard and should work with all standard-conforming iSCSI targets. To use an iSCSI target with <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/>, you must use the command line. See <xref
         href="vboxmanage-storageattach.dita"/>. </p>
             </body>
             

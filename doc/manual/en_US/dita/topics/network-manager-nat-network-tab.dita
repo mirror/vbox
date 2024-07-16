@@ -4,10 +4,7 @@
   <title>NAT Networks Tab</title>
   
   <body>
-    <p>
-        The NAT Networks tab in Network Manager lists all NAT networks
-        that are currently in use.
-      </p>
+    <p>The NAT Networks tab in Network Manager lists all NAT networks that are currently in use. </p>
     <ul>
       <li>
         <p>
@@ -28,25 +25,16 @@
           </p>
       </li>
     </ul>
-    <p>
-        To configure a NAT network, select the network name in the
-        <b outputclass="bold">Name</b> field and do the
-        following:
-      </p>
+    <p>To configure a NAT network, select the network name in the <b outputclass="bold">Name</b> field and do the
+      following: </p>
     <ul>
       <li>
-        <p>
-            Use the <b outputclass="bold">General Options</b> tab
-            to configure the network settings used by the NAT network.
-            For example, the network address and mask of the NAT service
-            interface.
-          </p>
+        <p>Use the <b outputclass="bold">General Options</b> tab to configure the network settings used by the NAT
+          network. For example, the network address and mask of the NAT service interface. </p>
       </li>
       <li>
-        <p>
-            Use the <b outputclass="bold">Port Forwarding</b> tab
-            to configure port forwarding rules used by the NAT network.
-          </p>
+        <p>Use the <b outputclass="bold">Port Forwarding</b> tab to configure port forwarding rules used by the NAT
+          network. </p>
       </li>
     </ul>
   </body>

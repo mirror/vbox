@@ -4,29 +4,18 @@
   <title>Encryption of VMs</title>
   
   <body>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to transparently encrypt the VM data
-      stored in the configuration file, saved state, and EFI boot data
-      for the guest.
-    </p>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the AES algorithm in various modes. The
-      selected mode depends on the encrypting component of the VM.
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports 128-bit or 256-bit data encryption keys
-      (DEK). The DEK is stored encrypted in the VM configuration file
-      and is decrypted during VM startup.
-    </p>
-    <p> Since the DEK is stored as part of the VM configuration file, it is important that the file
-      is kept safe. Losing the DEK means that the data stored in the VM is lost irrecoverably.
-      Having complete and up-to-date backups of all data related to the VM is the responsibility of
-      the user. </p>
-    <p>
-      The VM, even if it is encrypted, may contain media encrypted with
-      different passwords. To deal with this, the password for the VM
-      has a password identifier, in the same way as passwords for media.
-      The password ID is an arbitrary string which uniquely identifies
-      the password in the VM and its media. You can use the same
-      password and ID for both the VM and its media.
-    </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to transparently encrypt the VM data stored in
+      the configuration file, saved state, and EFI boot data for the guest. </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the AES algorithm in various modes. The selected mode
+      depends on the encrypting component of the VM. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports
+      128-bit or 256-bit data encryption keys (DEK). The DEK is stored encrypted in the VM configuration file and is
+      decrypted during VM startup. </p>
+    <p>Since the DEK is stored as part of the VM configuration file, it is important that the file is kept safe. Losing
+      the DEK means that the data stored in the VM is lost irrecoverably. Having complete and up-to-date backups of all
+      data related to the VM is the responsibility of the user. </p>
+    <p>The VM, even if it is encrypted, may contain media encrypted with different passwords. To deal with this, the
+      password for the VM has a password identifier, in the same way as passwords for media. The password ID is an
+      arbitrary string which uniquely identifies the password in the VM and its media. You can use the same password and
+      ID for both the VM and its media. </p>
   </body>
 </topic>

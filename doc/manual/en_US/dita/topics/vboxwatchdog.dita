@@ -4,12 +4,9 @@
   <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Watchdog</title>
   
   <body>
-    <p>
-      The memory ballooning service, formerly known as
-      <userinput>VBoxBalloonCtrl</userinput>, was renamed to VBoxWatchdog.
-      This service now incorporates the following host services that are
-      meant to be run in a server environment:
-    </p>
+    <p>The memory ballooning service, formerly known as <userinput>VBoxBalloonCtrl</userinput>, was renamed to
+      VBoxWatchdog. This service now incorporates the following host services that are meant to be run in a server
+      environment: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Memory ballooning control.</b>
@@ -18,13 +15,9 @@
           service is useful for server environments where VMs may
           dynamically require more or less memory during runtime.
         </p>
-        <p>
-          The service periodically checks a VM's current memory balloon
-          and its free guest RAM and automatically adjusts the current
-          memory balloon by inflating or deflating it accordingly. This
-          handling only applies to running VMs having recent Guest
-          Additions installed.
-        </p>
+        <p>The service periodically checks a VM's current memory balloon and its free guest RAM and automatically
+          adjusts the current memory balloon by inflating or deflating it accordingly. This handling only applies to
+          running VMs having recent Guest Additions installed. </p>
       </li>
       <li>
         <p><b outputclass="bold">Host isolation detection.</b>
@@ -35,13 +28,8 @@
         </p>
       </li>
     </ul>
-    <p>
-      All configuration values can be either specified using the command
-      line or global extradata, whereas command line values always have
-      a higher priority when set. Some of the configuration values also
-      be specified on a per-VM basis. So the overall lookup order is:
-      command line, per-VM basis extradata if available, global
-      extradata.
-    </p>
+    <p>All configuration values can be either specified using the command line or global extradata, whereas command line
+      values always have a higher priority when set. Some of the configuration values also be specified on a per-VM
+      basis. So the overall lookup order is: command line, per-VM basis extradata if available, global extradata. </p>
   </body>
 </topic>

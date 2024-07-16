@@ -4,10 +4,8 @@
   <title>Windows Hosts</title>
   
   <body>
-    <p>
-        When the webcam device is detached from the host, the emulated
-        webcam device is automatically detached from the guest.
-      </p>
+    <p>When the webcam device is detached from the host, the emulated webcam device is automatically detached from the
+      guest. </p>
   </body>
   
 </topic>

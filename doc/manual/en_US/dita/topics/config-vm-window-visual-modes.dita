@@ -4,9 +4,7 @@
   <title>Configure VM Window Visual Modes</title>
   
   <body>
-    <p>
-        You can disable certain VM visual modes:
-      </p>
+    <p>You can disable certain VM visual modes: </p>
     <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> GUI/RestrictedVisualStates <varname>property</varname>[,<varname>property</varname>...]</pre>
     <p><varname>property</varname> is one of the following:
       </p>
@@ -16,9 +14,7 @@
           <codeph>Fullscreen</codeph>
         </dt>
         <dd>
-          <p>
-              Do not allow to switch the VM into full screen mode.
-            </p>
+          <p>Do not allow to switch the VM into full screen mode. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -26,9 +22,7 @@
           <codeph>Seamless</codeph>
         </dt>
         <dd>
-          <p>
-              Do not allow to switch the VM into seamless mode.
-            </p>
+          <p>Do not allow to switch the VM into seamless mode. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -36,17 +30,12 @@
           <codeph>Scale</codeph>
         </dt>
         <dd>
-          <p>
-              Do not allow to switch the VM into scale mode.
-            </p>
+          <p>Do not allow to switch the VM into scale mode. </p>
         </dd>
       </dlentry>
     </dl>
-    <p>
-        This is a per-VM setting. You can specify any combination of
-        properties. To restore the default behavior, use the following
-        command:
-      </p>
+    <p>This is a per-VM setting. You can specify any combination of properties. To restore the default behavior, use the
+      following command: </p>
     <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> GUI/RestrictedVisualStates</pre>
   </body>
   

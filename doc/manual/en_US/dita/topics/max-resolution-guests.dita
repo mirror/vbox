@@ -5,35 +5,24 @@
         Frontend</title>
   
   <body>
-    <p>
-        When guest systems with the Guest Additions installed are
-        started using the graphical frontend, the normal <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
-        application, they will not be allowed to use screen resolutions
-        greater than the host's screen size unless the user manually
-        resizes them by dragging the window, switching to full screen or
-        seamless mode or sending a video mode hint using
-        <userinput>VBoxManage</userinput>. This behavior is what most users
-        will want, but if you have different needs, you can change it by
-        issuing one of the following commands from the command line:
-      </p>
+    <p>When guest systems with the Guest Additions installed are started using the graphical frontend, the normal <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> application, they will not be allowed to use screen
+      resolutions greater than the host's screen size unless the user manually resizes them by dragging the window,
+      switching to full screen or seamless mode or sending a video mode hint using <userinput>VBoxManage</userinput>.
+      This behavior is what most users will want, but if you have different needs, you can change it by issuing one of
+      the following commands from the command line: </p>
     <ul>
       <li>
-        <p>
-            Remove all limits on guest resolutions.
-          </p>
+        <p>Remove all limits on guest resolutions. </p>
         <pre xml:space="preserve">VBoxManage setextradata global GUI/MaxGuestResolution any</pre>
       </li>
       <li>
-        <p>
-            Manually specify a maximum resolution.
-          </p>
+        <p>Manually specify a maximum resolution. </p>
         <pre xml:space="preserve">VBoxManage setextradata global GUI/MaxGuestResolution <varname>width</varname>x<varname>height</varname>
                         </pre>
       </li>
       <li>
-        <p>
-            Restore the default settings to all guest VMs.
-          </p>
+        <p>Restore the default settings to all guest VMs. </p>
         <pre xml:space="preserve">VBoxManage setextradata global GUI/MaxGuestResolution auto</pre>
       </li>
     </ul>

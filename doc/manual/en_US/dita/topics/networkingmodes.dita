@@ -4,10 +4,7 @@
   <title>Introduction to Networking Modes</title>
   
   <body>
-    <p>
-      Each of the networking adapters can be separately configured to
-      operate in one of the following modes:
-    </p>
+    <p>Each of the networking adapters can be separately configured to operate in one of the following modes: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Not attached.</b> In this mode,
@@ -94,10 +91,7 @@
         </ul>
       </li>
     </ul>
-    <p>
-      The following table provides an overview of the most important
-      networking modes.
-    </p>
+    <p>The following table provides an overview of the most important networking modes. </p>
     <table id="table-networking-modes">
       <title>Overview of Networking Modes</title>
       <desc>Overview of Networking Modes</desc>
@@ -304,10 +298,7 @@
         </tbody>
       </tgroup>
     </table>
-    <p>
-      The following sections describe the available network modes in
-      more detail.
-    </p>
+    <p>The following sections describe the available network modes in more detail. </p>
   </body>
   
 </topic>

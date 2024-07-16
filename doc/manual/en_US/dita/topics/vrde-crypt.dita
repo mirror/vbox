@@ -4,14 +4,9 @@
   <title>RDP Encryption</title>
   
   <body>
-    <p>
-        RDP features data stream encryption, which is based on the RC4
-        symmetric cipher, with keys up to 128-bit. The RC4 keys are
-        replaced at regular intervals, every 4096 packets.
-      </p>
-    <p>
-        RDP provides the following different authentication methods:
-      </p>
+    <p>RDP features data stream encryption, which is based on the RC4 symmetric cipher, with keys up to 128-bit. The RC4
+      keys are replaced at regular intervals, every 4096 packets. </p>
+    <p>RDP provides the following different authentication methods: </p>
     <ul>
       <li>
         <p><b outputclass="bold">RDP 4</b> authentication was
@@ -40,8 +35,8 @@
             and, as a part of the TLS handshake, sends the server
             certificate to the client.
           </p>
-        <p> The <codeph>Security/Method</codeph> VRDE property sets the required security method,
-          which is used for a connection. Valid values are as follows: </p>
+        <p>The <codeph>Security/Method</codeph> VRDE property sets the required security method, which is used for a
+          connection. Valid values are as follows: </p>
         <ul>
           <li>
             <p><b outputclass="bold">Negotiate.</b> Both
@@ -65,47 +60,31 @@
               </p>
           </li>
         </ul>
-        <p>
-            For example, the following command enables a client to use
-            either Standard or Enhanced RDP Security connection:
-          </p>
+        <p>For example, the following command enables a client to use either Standard or Enhanced RDP Security
+          connection: </p>
         <pre xml:space="preserve">vboxmanage modifyvm <varname>VM-name</varname> --vrde-property "Security/Method=negotiate"</pre>
-        <p>
-            If the <codeph>Security/Method</codeph> property is set to
-            either Negotiate or TLS, the TLS protocol will be
-            automatically used by the server, if the client supports
-            TLS. However, in order to use TLS the server must possess
-            the Server Certificate, the Server Private Key and the
-            Certificate Authority (CA) Certificate. The following
-            example shows how to generate a server certificate.
-          </p>
+        <p>If the <codeph>Security/Method</codeph> property is set to either Negotiate or TLS, the TLS protocol will be
+          automatically used by the server, if the client supports TLS. However, in order to use TLS the server must
+          possess the Server Certificate, the Server Private Key and the Certificate Authority (CA) Certificate. The
+          following example shows how to generate a server certificate. </p>
         <ol>
           <li>
-            <p>
-                Create a CA self signed certificate.
-              </p>
+            <p>Create a CA self signed certificate. </p>
             <pre xml:space="preserve">openssl req -new -x509 -days 365 -extensions v3_ca \
   -keyout ca_key_private.pem -out ca_cert.pem</pre>
           </li>
           <li>
-            <p>
-                Generate a server private key and a request for signing.
-              </p>
+            <p>Generate a server private key and a request for signing. </p>
             <pre xml:space="preserve">openssl genrsa -out server_key_private.pem
 openssl req -new -key server_key_private.pem -out server_req.pem</pre>
           </li>
           <li>
-            <p>
-                Generate the server certificate.
-              </p>
+            <p>Generate the server certificate. </p>
             <pre xml:space="preserve">openssl x509 -req -days 365 -in server_req.pem \
   -CA ca_cert.pem -CAkey ca_key_private.pem -set_serial 01 -out server_cert.pem</pre>
           </li>
         </ol>
-        <p>
-            The server must be configured to access the required files.
-            For example:
-          </p>
+        <p>The server must be configured to access the required files. For example: </p>
         <pre xml:space="preserve">vboxmanage modifyvm <varname>VM-name</varname> \
   --vrde-property "Security/CACertificate=path/ca_cert.pem"</pre>
         <pre xml:space="preserve">vboxmanage modifyvm <varname>VM-name</varname> \
@@ -114,12 +93,9 @@ openssl req -new -key server_key_private.pem -out server_req.pem</pre>
   --vrde-property "Security/ServerPrivateKey=path/server_key_private.pem"</pre>
       </li>
     </ul>
-    <p>
-        As the client that connects to the server determines what type
-        of encryption will be used, with <userinput>rdesktop</userinput>,
-        the Linux RDP viewer, use the <codeph>-4</codeph> or
-        <codeph>-5</codeph> options.
-      </p>
+    <p>As the client that connects to the server determines what type of encryption will be used, with
+        <userinput>rdesktop</userinput>, the Linux RDP viewer, use the <codeph>-4</codeph> or <codeph>-5</codeph>
+      options. </p>
   </body>
   
 </topic>

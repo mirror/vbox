@@ -4,11 +4,9 @@
   <title>Customizing <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></title>
   
   <body>
-    <p>
-        There are several advanced customization settings for locking
-        down <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. Locking down means removing some features that
-        the user should not see.
-      </p>
+    <p>There are several advanced customization settings for locking down <ph
+        conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. Locking down means removing some features that the user should
+      not see. </p>
     <pre xml:space="preserve">VBoxManage setextradata global GUI/Customizations <varname>property</varname>[,<varname>property</varname> ...]</pre>
     <p><varname>property</varname> is one of the following
         properties:
@@ -46,10 +44,8 @@
         </dd>
       </dlentry>
     </dl>
-    <p>
-        To disable any of these <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> customizations use the
-        following command:
-      </p>
+    <p>To disable any of these <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> customizations use the following
+      command: </p>
     <pre xml:space="preserve">$ VBoxManage setextradata global GUI/Customizations</pre>
   </body>
   

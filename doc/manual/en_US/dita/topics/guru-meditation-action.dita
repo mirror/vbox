@@ -4,15 +4,9 @@
   <title>Action for Handling a Guru Meditation</title>
   
   <body>
-    <p>
-        A VM runs into a Guru Meditation if there is a problem which
-        cannot be fixed by other means than terminating the process. The
-        default is to show a message window which instructs the user to
-        open a bug report.
-      </p>
-    <p>
-        This behavior can be configured as follows:
-      </p>
+    <p>A VM runs into a Guru Meditation if there is a problem which cannot be fixed by other means than terminating the
+      process. The default is to show a message window which instructs the user to open a bug report. </p>
+    <p>This behavior can be configured as follows: </p>
     <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> GUI/GuruMeditationHandler <varname>mode</varname>
                   </pre>
     <p><varname>mode</varname> is one of the following:
@@ -23,10 +17,7 @@
           <codeph>Default</codeph>
         </dt>
         <dd>
-          <p>
-              A message window is shown. After the user confirmed, the
-              VM is terminated.
-            </p>
+          <p>A message window is shown. After the user confirmed, the VM is terminated. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -34,11 +25,8 @@
           <codeph>PowerOff</codeph>
         </dt>
         <dd>
-          <p>
-              The VM is immediately powered-off without showing any
-              message window. The VM logfile will show information about
-              what happened.
-            </p>
+          <p>The VM is immediately powered-off without showing any message window. The VM logfile will show information
+            about what happened. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -46,17 +34,12 @@
           <codeph>Ignore</codeph>
         </dt>
         <dd>
-          <p>
-              The VM is left in stuck mode. Execution is stopped but no
-              message window is shown. The VM has to be powered off
-              manually.
-            </p>
+          <p>The VM is left in stuck mode. Execution is stopped but no message window is shown. The VM has to be powered
+            off manually. </p>
         </dd>
       </dlentry>
     </dl>
-    <p>
-        This is a per-VM setting.
-      </p>
+    <p>This is a per-VM setting. </p>
   </body>
   
 </topic>

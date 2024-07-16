@@ -4,16 +4,11 @@
   <title>Security Considerations</title>
   
   <body>
-    <p>
-        The communication between the server and client is unencrypted
-        and there is no authorization required to access exported
-        devices. An attacker might sniff sensitive data or gain control
-        over a device. To mitigate this risk, the device should be
-        exposed over a local network to which only trusted clients have
-        access. To access the device remotely over a public network, a
-        VPN solution should be used to provide the required level of
-        security protection.
-      </p>
+    <p>The communication between the server and client is unencrypted and there is no authorization required to access
+      exported devices. An attacker might sniff sensitive data or gain control over a device. To mitigate this risk, the
+      device should be exposed over a local network to which only trusted clients have access. To access the device
+      remotely over a public network, a VPN solution should be used to provide the required level of security
+      protection. </p>
   </body>
   
 </topic>

@@ -4,10 +4,7 @@
   <title>NAT Limitations</title>
   
   <body>
-    <p>
-        There are some limitations of NAT mode which users should be
-        aware of, as follows:
-      </p>
+    <p>There are some limitations of NAT mode which users should be aware of, as follows: </p>
     <ul>
       <li>
         <p><b outputclass="bold">ICMP protocol limitations.</b>
@@ -46,10 +43,9 @@
           </p>
       </li>
     </ul>
-    <p> These limitations normally do not affect standard network use. But the presence of NAT has
-      also subtle effects that may interfere with protocols that are normally working. One example
-      is NFS, where the server is often configured to refuse connections from non-privileged ports,
-      which are those ports above 1024. </p>
+    <p>These limitations normally do not affect standard network use. But the presence of NAT has also subtle effects
+      that may interfere with protocols that are normally working. One example is NFS, where the server is often
+      configured to refuse connections from non-privileged ports, which are those ports above 1024. </p>
   </body>
   
 </topic>

@@ -4,21 +4,14 @@
   <title>Requesting Legacy Full-Screen Mode</title>
   
   <body>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses special window manager facilities
-      to switch a multiscreen machine to full-screen on a multimonitor host system. However, not all
-      window managers provide these facilities correctly. <ph
-        conkeyref="vbox-conkeyref-phrases/product-name"/> can be configured to use a legacy method
-      of switching to full-screen mode instead, by using the command: </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses special window manager facilities to switch a
+      multiscreen machine to full-screen on a multimonitor host system. However, not all window managers provide these
+      facilities correctly. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can be configured to use a legacy
+      method of switching to full-screen mode instead, by using the command: </p>
     <pre xml:space="preserve">VBoxManage setextradata global GUI/Fullscreen/LegacyMode true</pre>
-    <p>
-        You can go back to the default method by using the following
-        command:
-      </p>
+    <p>You can go back to the default method by using the following command: </p>
     <pre xml:space="preserve">VBoxManage setextradata global GUI/Fullscreen/LegacyMode</pre>
-    <p>
-        This is a global setting.
-      </p>
+    <p>This is a global setting. </p>
   </body>
   
 </topic>

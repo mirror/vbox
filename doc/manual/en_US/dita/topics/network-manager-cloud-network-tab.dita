@@ -4,35 +4,20 @@
   <title>Cloud Networks Tab</title>
   
   <body>
-    <p>
-        The Cloud Networks tab in Network Manager lists all cloud
-        networks that are currently in use.
-      </p>
+    <p>The Cloud Networks tab in Network Manager lists all cloud networks that are currently in use. </p>
     <ul>
       <li>
-        <p>
-            Click <b outputclass="bold">Create</b> to add a new
-            cloud network to the list.
-          </p>
+        <p>Click <b outputclass="bold">Create</b> to add a new cloud network to the list. </p>
       </li>
       <li>
-        <p>
-            Click <b outputclass="bold">Remove</b> to remove a
-            cloud network from the list.
-          </p>
+        <p>Click <b outputclass="bold">Remove</b> to remove a cloud network from the list. </p>
       </li>
       <li>
-        <p>
-            Click <b outputclass="bold">Properties</b> to show or
-            hide settings for the selected cloud network.
-          </p>
+        <p>Click <b outputclass="bold">Properties</b> to show or hide settings for the selected cloud network. </p>
       </li>
     </ul>
-    <p>
-        To configure a cloud network, select the network name in the
-        <b outputclass="bold">Name</b> field and specify the
-        following:
-      </p>
+    <p>To configure a cloud network, select the network name in the <b outputclass="bold">Name</b> field and specify the
+      following: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Name:</b> The name used for the
@@ -55,12 +40,9 @@
             <b outputclass="bold">Network</b> icon to view the
             subnets on <ph conkeyref="vbox-conkeyref-phrases/oci"/> that are available for tunneling traffic.
           </p>
-        <p>
-            See <xref href="cloud-using-cloud-networks.dita#cloud-using-cloud-networks"/> for details
-            of how you can use the <userinput>VBoxManage cloud</userinput>
-            command to create and configure a virtual cloud network
-            (VCN) on <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
-          </p>
+        <p>See <xref href="cloud-using-cloud-networks.dita#cloud-using-cloud-networks"/> for details of how you can use
+          the <userinput>VBoxManage cloud</userinput> command to create and configure a virtual cloud network (VCN) on
+            <ph conkeyref="vbox-conkeyref-phrases/oci"/>. </p>
       </li>
     </ul>
   </body>

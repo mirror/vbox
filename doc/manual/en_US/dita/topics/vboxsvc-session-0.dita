@@ -4,24 +4,16 @@
   <title>VBoxSVC running in Windows Session 0</title>
   
   <body>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports executing the VBoxSVC in Windows session
-      0. This allows VBoxSVC to run like a regular Windows service,
-      which in turn enables headless VMs to continue running even if the
-      user logs out.
-
-      <note><p>
-          This is currently an experimental feature.
-        </p></note>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports executing the VBoxSVC in Windows session 0. This
+      allows VBoxSVC to run like a regular Windows service, which in turn enables headless VMs to continue running even
+      if the user logs out. <note>
+        <p>This is currently an experimental feature. </p>
+      </note>
                </p>
-    <p>
-      The feature is disabled by default and can be enabled by creating
-      a REG_DWORD value <codeph>ServerSession0</codeph> in the key
-      <codeph>HKEY_LOCAL_MACHINE\Software\Oracle\VirtualBox\VBoxSDS</codeph>
-      of the Windows registry. Specify <codeph>1</codeph> as the
-      value's data to enable the feature, or <codeph>0</codeph> to
-      disable the feature. A host reboot is needed in order to make the
-      change effective.
-    </p>
+    <p>The feature is disabled by default and can be enabled by creating a REG_DWORD value
+        <codeph>ServerSession0</codeph> in the key
+        <codeph>HKEY_LOCAL_MACHINE\Software\Oracle\VirtualBox\VBoxSDS</codeph> of the Windows registry. Specify
+        <codeph>1</codeph> as the value's data to enable the feature, or <codeph>0</codeph> to disable the feature. A
+      host reboot is needed in order to make the change effective. </p>
   </body>
 </topic>

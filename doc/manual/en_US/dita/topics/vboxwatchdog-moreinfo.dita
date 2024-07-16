@@ -4,11 +4,8 @@
   <title>More Information</title>
   
   <body>
-    <p>
-        For more advanced options and parameters like verbose logging
-        check the built-in command line help accessible with
-        <codeph>--help</codeph>.
-      </p>
+    <p>For more advanced options and parameters like verbose logging check the built-in command line help accessible
+      with <codeph>--help</codeph>. </p>
   </body>
   
 </topic>

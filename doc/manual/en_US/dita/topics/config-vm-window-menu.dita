@@ -4,9 +4,7 @@
   <title>Configure VM Window Menu Entries</title>
   
   <body>
-    <p>
-        You can disable certain menu actions in the VM window:
-      </p>
+    <p>You can disable certain menu actions in the VM window: </p>
     <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus OPTION[,OPTION...]</pre>
     <p>
         where <codeph>OPTION</codeph> is one of the following
@@ -18,9 +16,7 @@
           <codeph>All</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show any menu in the VM window.
-            </p>
+          <p>Do not show any menu in the VM window. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -28,11 +24,7 @@
           <codeph>Application</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show
-              <b outputclass="bold">Application/File</b> menu in
-              the VM window.
-            </p>
+          <p>Do not show <b outputclass="bold">Application/File</b> menu in the VM window. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -40,10 +32,7 @@
           <codeph>Machine</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Machine</b>
-              menu in the VM window.
-            </p>
+          <p>Do not show the <b outputclass="bold">Machine</b> menu in the VM window. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -51,10 +40,7 @@
           <codeph>View</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">View</b> menu
-              in the VM window.
-            </p>
+          <p>Do not show the <b outputclass="bold">View</b> menu in the VM window. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -62,10 +48,7 @@
           <codeph>Input</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show <b outputclass="bold">Input</b> menu in
-              the VM window.
-            </p>
+          <p>Do not show <b outputclass="bold">Input</b> menu in the VM window. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -73,10 +56,7 @@
           <codeph>Devices</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Devices</b>
-              menu in the VM window.
-            </p>
+          <p>Do not show the <b outputclass="bold">Devices</b> menu in the VM window. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -84,10 +64,7 @@
           <codeph>Help</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Help</b> menu
-              in the VM window.
-            </p>
+          <p>Do not show the <b outputclass="bold">Help</b> menu in the VM window. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -95,64 +72,39 @@
           <codeph>Debug</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Debug</b>
-              menu in the VM window. The Debug menu is only visible if
-              the GUI was started with special command line parameters
-              or environment variable settings.
-            </p>
+          <p>Do not show the <b outputclass="bold">Debug</b> menu in the VM window. The Debug menu is only visible if
+            the GUI was started with special command line parameters or environment variable settings. </p>
         </dd>
       </dlentry>
     </dl>
-    <p>
-        This is a per-VM or global setting. Any combination of the above
-        is allowed. To restore the default behavior, use the following
-        command:
-      </p>
+    <p>This is a per-VM or global setting. Any combination of the above is allowed. To restore the default behavior, use
+      the following command: </p>
     <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus</pre>
-    <p>
-        You can also disable certain menu actions of certain menus. Use
-        the following command to disable certain actions of the
-        <b outputclass="bold">Application</b> menu. This is only
-        available on macOS hosts.
-      </p>
+    <p>You can also disable certain menu actions of certain menus. Use the following command to disable certain actions
+      of the <b outputclass="bold">Application</b> menu. This is only available on macOS hosts. </p>
     <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeApplicationMenuActions OPTION[,OPTION...]</pre>
-    <p>
-        where <codeph>OPTION</codeph> is one of the following
-        keywords:
-      </p>
+    <p>where <codeph>OPTION</codeph> is one of the following keywords: </p>
     <dl>
       <dlentry>
         <dt>
           <codeph>All</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show any menu item in this menu.
-            </p>
+          <p>Do not show any menu item in this menu. </p>
         </dd>
       </dlentry>
       <dlentry>
         <dt>
           <codeph>About</codeph>
         </dt>
-        <dd>
-          <p>
-              Do not show the <b outputclass="bold">About</b>
-              menu item in this menu.
-            </p>
-        </dd>
+        <dd>Do not show the <b outputclass="bold">About</b> menu item in this menu. </dd>
       </dlentry>
       <dlentry>
         <dt>
           <codeph>Preferences</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the
-              <b outputclass="bold">Preferences</b> menu item in
-              this menu.
-            </p>
+          <p>Do not show the <b outputclass="bold">Preferences</b> menu item in this menu. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -160,10 +112,7 @@
           <codeph>NetworkAccessManager</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Network Operations
-              Manager</b> menu item in this menu.
-            </p>
+          <p>Do not show the <b outputclass="bold">Network Operations Manager</b> menu item in this menu. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -171,10 +120,7 @@
           <codeph>ResetWarnings</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Reset All
-              Warnings</b> menu item in this menu.
-            </p>
+          <p>Do not show the <b outputclass="bold">Reset All Warnings</b> menu item in this menu. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -182,18 +128,12 @@
           <codeph>Close</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Close</b>
-              menu item in this menu.
-            </p>
+          <p>Do not show the <b outputclass="bold">Close</b> menu item in this menu. </p>
         </dd>
       </dlentry>
     </dl>
-    <p>
-        This is a per-VM or global setting. Any combination of the above
-        is allowed. To restore the default behavior, use the following
-        command:
-      </p>
+    <p>This is a per-VM or global setting. Any combination of the above is allowed. To restore the default behavior, use
+      the following command: </p>
     <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus</pre>
     <p>
         Use the following command to disable certain actions of the

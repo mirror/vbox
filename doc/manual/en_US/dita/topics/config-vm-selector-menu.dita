@@ -4,10 +4,7 @@
   <title>Configure VM Selector Menu Entries</title>
   
   <body>
-    <p>
-        You can disable certain entries in the global settings page of
-        the VM selector:
-      </p>
+    <p>You can disable certain entries in the global settings page of the VM selector: </p>
     <pre xml:space="preserve">$ VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages <varname>property</varname>[,<varname>property</varname>...]</pre>
     <p><varname>property</varname> is one of the following:
       </p>
@@ -101,11 +98,8 @@
         </dd>
       </dlentry>
     </dl>
-    <p>
-        This is a global setting. You can specify any combination of
-        properties. To restore the default behavior, use the following
-        command:
-      </p>
+    <p>This is a global setting. You can specify any combination of properties. To restore the default behavior, use the
+      following command: </p>
     <pre xml:space="preserve">$ VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages</pre>
   </body>
   

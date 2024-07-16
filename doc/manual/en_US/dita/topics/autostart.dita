@@ -4,9 +4,6 @@
   <title>Starting Virtual Machines During System Boot</title>
   
   <body>
-    <p>
-      You can start VMs automatically during system boot on Linux,
-      Oracle Solaris, and macOS platforms for all users.
-    </p>
+    <p>You can start VMs automatically during system boot on Linux, Oracle Solaris, and macOS platforms for all users. </p>
   </body>
 </topic>

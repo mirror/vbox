@@ -4,12 +4,9 @@
   <title>Default Action when Terminating the VM</title>
   
   <body>
-    <p>
-        You can define a specific action for terminating a VM. In
-        contrast to the setting decribed in the previous section, this
-        setting allows only one action when the user terminates the VM.
-        No exit menu is shown. Use the following command:
-      </p>
+    <p>You can define a specific action for terminating a VM. In contrast to the setting decribed in the previous
+      section, this setting allows only one action when the user terminates the VM. No exit menu is shown. Use the
+      following command: </p>
     <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> GUI/DefaultCloseAction <varname>action</varname>
                   </pre>
     <p><varname>action</varname> is one of the following:
@@ -20,9 +17,7 @@
           <codeph>SaveState</codeph>
         </dt>
         <dd>
-          <p>
-              Save the VM state before terminating the VM process.
-            </p>
+          <p>Save the VM state before terminating the VM process. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -30,10 +25,7 @@
           <codeph>Shutdown</codeph>
         </dt>
         <dd>
-          <p>
-              The VM is shut down by sending the ACPI power-off event to
-              the guest.
-            </p>
+          <p>The VM is shut down by sending the ACPI power-off event to the guest. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -41,9 +33,7 @@
           <codeph>PowerOff</codeph>
         </dt>
         <dd>
-          <p>
-              The VM is powered off.
-            </p>
+          <p>The VM is powered off. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -51,10 +41,7 @@
           <codeph>PowerOffRestoringSnapshot</codeph>
         </dt>
         <dd>
-          <p>
-              The VM is powered off and the saved state returns to the
-              last snapshot.
-            </p>
+          <p>The VM is powered off and the saved state returns to the last snapshot. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -62,17 +49,12 @@
           <codeph>Detach</codeph>
         </dt>
         <dd>
-          <p>
-              Terminate the frontend but leave the VM process running.
-            </p>
+          <p>Terminate the frontend but leave the VM process running. </p>
         </dd>
       </dlentry>
     </dl>
-    <p>
-        This is a per-VM setting. You can specify any combination of
-        properties. If all properties are specified, the VM cannot be
-        shut down.
-      </p>
+    <p>This is a per-VM setting. You can specify any combination of properties. If all properties are specified, the VM
+      cannot be shut down. </p>
   </body>
   
 </topic>

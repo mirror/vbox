@@ -4,13 +4,9 @@
   <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Greeter for Ubuntu/LightDM</title>
   
   <body>
-    <p>
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> comes with a greeter module, named
-          <userinput>vbox-greeter</userinput>, that can be used with
-          LightDM. LightDM is the default display manager for Ubuntu
-          Linux and therefore can also be used for automated guest
-          logins.
-        </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> comes with a greeter module, named
+        <userinput>vbox-greeter</userinput>, that can be used with LightDM. LightDM is the default display manager for
+      Ubuntu Linux and therefore can also be used for automated guest logins. </p>
     <p><userinput>vbox-greeter</userinput> does not need the
           <userinput>pam_vbox</userinput> module described in
           <xref href="autologon_unix.dita#autologon_unix"/>in order to function. It comes
@@ -18,46 +14,27 @@
           However, to provide maximum flexibility both modules can be
           used together on the same guest.
         </p>
-    <p>
-          As with the <userinput>pam_vbox</userinput> module,
-          <userinput>vbox-greeter</userinput> is shipped as part of the
-          Guest Additions but it is not installed or activated on the
-          guest OS by default. To install
-          <userinput>vbox-greeter</userinput> automatically upon Guest
-          Additions installation, use the
-          <codeph>--with-autologon</codeph> option when starting the
-          <userinput>VBoxLinuxAdditions.run</userinput> file:
-        </p>
+    <p>As with the <userinput>pam_vbox</userinput> module, <userinput>vbox-greeter</userinput> is shipped as part of the
+      Guest Additions but it is not installed or activated on the guest OS by default. To install
+        <userinput>vbox-greeter</userinput> automatically upon Guest Additions installation, use the
+        <codeph>--with-autologon</codeph> option when starting the <userinput>VBoxLinuxAdditions.run</userinput> file: </p>
     <pre xml:space="preserve"># ./VBoxLinuxAdditions.run -- --with-autologon</pre>
-    <p>
-          For manual or postponed installation, copy the
-          <filepath>vbox-greeter.desktop</filepath> file from
-          <filepath>/opt/VBoxGuestAdditions-<varname>version</varname>/other/</filepath>
-          to the <filepath>xgreeters</filepath> directory, which is
-          usually <filepath>/usr/share/xgreeters/</filepath>. See your
-          guest OS documentation for the name of the correct LightDM
-          greeter directory.
-        </p>
-    <p>
-          The <userinput>vbox-greeter</userinput> module is installed by the
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions installer and is located in
-          <filepath>/usr/sbin/</filepath>. To enable
-          <userinput>vbox-greeter</userinput> as the standard greeter
-          module, edit the file
-          <filepath>/etc/lightdm/lightdm.conf</filepath> as follows:
-        </p>
+    <p>For manual or postponed installation, copy the <filepath>vbox-greeter.desktop</filepath> file from
+          <filepath>/opt/VBoxGuestAdditions-<varname>version</varname>/other/</filepath> to the
+        <filepath>xgreeters</filepath> directory, which is usually <filepath>/usr/share/xgreeters/</filepath>. See your
+      guest OS documentation for the name of the correct LightDM greeter directory. </p>
+    <p>The <userinput>vbox-greeter</userinput> module is installed by the <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions installer and is located in
+        <filepath>/usr/sbin/</filepath>. To enable <userinput>vbox-greeter</userinput> as the standard greeter module,
+      edit the file <filepath>/etc/lightdm/lightdm.conf</filepath> as follows: </p>
     <pre xml:space="preserve">[SeatDefaults]
 greeter-session=vbox-greeter</pre>
     <note>
       <ul>
         <li>
-          <p>
-                The LightDM server must be fully restarted in order for
-                <userinput>vbox-greeter</userinput> to be used as the
-                default greeter. As <codeph>root</codeph> on Ubuntu,
-                run <userinput>service lightdm --full-restart</userinput> or
-                restart the guest.
-              </p>
+          <p>The LightDM server must be fully restarted in order for <userinput>vbox-greeter</userinput> to be used as
+            the default greeter. As <codeph>root</codeph> on Ubuntu, run <userinput>service lightdm
+              --full-restart</userinput> or restart the guest. </p>
         </li>
         <li>
           <p><userinput>vbox-greeter</userinput> is independent of the
@@ -69,20 +46,12 @@ greeter-session=vbox-greeter</pre>
         </li>
       </ul>
     </note>
-    <p>
-          There are numerous guest properties which can be used to
-          further customize the login experience. For automatically
-          logging in users, the same guest properties apply as for
-          <userinput>pam_vbox</userinput>. See
-          <xref href="autologon_unix.dita#autologon_unix"/>.
-        </p>
-    <p>
-          In addition to the previously mentioned guest properties,
-          <userinput>vbox-greeter</userinput> enables you to further
-          customize its user interface. The following guest properties
-          are located in the
-          <filepath>/VirtualBox/GuestAdd/Greeter/</filepath> directory:
-        </p>
+    <p>There are numerous guest properties which can be used to further customize the login experience. For
+      automatically logging in users, the same guest properties apply as for <userinput>pam_vbox</userinput>. See <xref
+        href="autologon_unix.dita#autologon_unix"/>. </p>
+    <p>In addition to the previously mentioned guest properties, <userinput>vbox-greeter</userinput> enables you to
+      further customize its user interface. The following guest properties are located in the
+        <filepath>/VirtualBox/GuestAdd/Greeter/</filepath> directory: </p>
     <ul>
       <li>
         <p><codeph>HideRestart</codeph>: Set to 1 if
@@ -141,11 +110,8 @@ greeter-session=vbox-greeter</pre>
       </li>
     </ul>
     <note>
-      <p>
-            The same restrictions for the guest properties above apply
-            as for the ones specified in the <codeph>pam_vbox</codeph>
-            section.
-          </p>
+      <p>The same restrictions for the guest properties above apply as for the ones specified in the
+          <codeph>pam_vbox</codeph> section. </p>
     </note>
   </body>
   

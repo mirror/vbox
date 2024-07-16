@@ -4,20 +4,13 @@
   <title>Configuring Automatic Mouse Capturing</title>
   
   <body>
-    <p>
-        By default, the mouse is captured if the user clicks on the
-        guest window and the guest expects relative mouse coordinates at
-        this time. This happens if the pointing device is configured as
-        PS/2 mouse and the guest has not yet started the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
-        Guest Additions. For instance, the guest is booting or the Guest
-        Additions are not installed, or if the pointing device is
-        configured as a USB tablet but the guest has no USB driver
-        loaded yet. Once the Guest Additions become active or the USB
-        guest driver is started, the mouse capture is automatically
-        released.
-      </p>
-    <p> The default behavior is sometimes not appropriate. Therefore it can be configured as
-      follows: </p>
+    <p>By default, the mouse is captured if the user clicks on the guest window and the guest expects relative mouse
+      coordinates at this time. This happens if the pointing device is configured as PS/2 mouse and the guest has not
+      yet started the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions. For instance, the guest is
+      booting or the Guest Additions are not installed, or if the pointing device is configured as a USB tablet but the
+      guest has no USB driver loaded yet. Once the Guest Additions become active or the USB guest driver is started, the
+      mouse capture is automatically released. </p>
+    <p>The default behavior is sometimes not appropriate. Therefore it can be configured as follows: </p>
     <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> GUI/MouseCapturePolicy <varname>mode</varname>
                   </pre>
     <p><varname>mode</varname> is one of the following:
@@ -28,9 +21,7 @@
           <codeph>Default</codeph>
         </dt>
         <dd>
-          <p>
-              The default behavior as described above.
-            </p>
+          <p>The default behavior as described above. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -38,9 +29,7 @@
           <codeph>HostComboOnly</codeph>
         </dt>
         <dd>
-          <p>
-              The mouse is only captured if the Host Key is toggled.
-            </p>
+          <p>The mouse is only captured if the Host Key is toggled. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -48,16 +37,11 @@
           <codeph>Disabled</codeph>
         </dt>
         <dd>
-          <p>
-              The mouse is never captured, also not by toggling the Host
-              Key
-            </p>
+          <p>The mouse is never captured, also not by toggling the Host Key </p>
         </dd>
       </dlentry>
     </dl>
-    <p>
-        This is a per-VM setting.
-      </p>
+    <p>This is a per-VM setting. </p>
   </body>
   
 </topic>

@@ -5,19 +5,14 @@
          <title>Virtual Storage</title>
          
          <body>
-            <p>
-    As the virtual machine will most probably expect to see a hard disk
-    built into its virtual computer, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> must be able to
-    present real storage to the guest as a virtual hard disk. There are
-    presently three methods by which to achieve this:
-  </p>
+            <p>As the virtual machine will most probably expect to see a hard disk built into its virtual computer, <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> must be able to present real storage to the guest as a virtual
+      hard disk. There are presently three methods by which to achieve this: </p>
             <ul>
                <li>
-                  <p>
-        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can use large image files on a real hard disk and
-        present them to a guest as a virtual hard disk. This is the most
-        common method, described in <xref href="vdidetails.dita#vdidetails"/>.
-      </p>
+                  <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> can use large image files on a real hard disk
+          and present them to a guest as a virtual hard disk. This is the most common method, described in <xref
+            href="vdidetails.dita#vdidetails"/>. </p>
                </li>
                <li>
                   <p>

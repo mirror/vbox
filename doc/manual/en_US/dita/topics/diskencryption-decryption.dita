@@ -4,18 +4,12 @@
   <title>Decrypting Encrypted Images</title>
   
   <body>
-    <p>
-        In some circumstances it might be required to decrypt previously
-        encrypted images. This can be done in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> for a complete
-        VM or using <userinput>VBoxManage</userinput> with the following
-        command:
-      </p>
+    <p>In some circumstances it might be required to decrypt previously encrypted images. This can be done in <ph
+        conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> for a complete VM or using <userinput>VBoxManage</userinput> with
+      the following command: </p>
     <pre xml:space="preserve">VBoxManage encryptmedium <varname>uuid</varname>|<varname>filename</varname> --oldpassword <varname>file</varname>|-</pre>
-    <p>
-        The only required parameter is the password the image was
-        encrypted with. The options are the same as for encrypting
-        images.
-      </p>
+    <p>The only required parameter is the password the image was encrypted with. The options are the same as for
+      encrypting images. </p>
   </body>
   
 </topic>

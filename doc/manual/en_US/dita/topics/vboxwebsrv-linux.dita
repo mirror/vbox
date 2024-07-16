@@ -4,17 +4,11 @@
   <title>Linux: Starting the Web Service With init</title>
   
   <body>
-    <p>
-        On Linux, the web service can be automatically started during
-        host boot by adding appropriate parameters to the file
-        <filepath>/etc/default/virtualbox</filepath>. There is one
-        mandatory parameter, <codeph>VBOXWEB_USER</codeph>, which must
-        be set to the user which will later start the VMs. The
-        parameters in the following table all start with the
-        <codeph>VBOXWEB_</codeph> prefix string. For example:
-        <codeph>VBOXWEB_HOST</codeph> and
-        <codeph>VBOXWEB_PORT</codeph>.
-      </p>
+    <p>On Linux, the web service can be automatically started during host boot by adding appropriate parameters to the
+      file <filepath>/etc/default/virtualbox</filepath>. There is one mandatory parameter,
+      <codeph>VBOXWEB_USER</codeph>, which must be set to the user which will later start the VMs. The parameters in the
+      following table all start with the <codeph>VBOXWEB_</codeph> prefix string. For example:
+        <codeph>VBOXWEB_HOST</codeph> and <codeph>VBOXWEB_PORT</codeph>. </p>
     <table id="table-websrv-config-params">
       <title>Web Service Configuration Parameters</title>
       <desc>Web Service Configuration Parameters</desc>
@@ -302,12 +296,8 @@
         </tbody>
       </tgroup>
     </table>
-    <p>
-        Setting the parameter <codeph>SSL_KEYFILE</codeph> enables the
-        SSL/TLS support. Using encryption is strongly encouraged, as
-        otherwise everything, including passwords, is transferred in
-        clear text.
-      </p>
+    <p>Setting the parameter <codeph>SSL_KEYFILE</codeph> enables the SSL/TLS support. Using encryption is strongly
+      encouraged, as otherwise everything, including passwords, is transferred in clear text. </p>
   </body>
   
 </topic>

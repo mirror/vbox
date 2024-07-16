@@ -4,23 +4,13 @@
   <title>Linux: Starting the Watchdog Service With init</title>
   
   <body>
-    <p>
-        On Linux, the watchdog service can be automatically started
-        during host boot by adding appropriate parameters to the file
-        <filepath>/etc/default/virtualbox</filepath>. There is one
-        mandatory parameter, <codeph>VBOXWATCHDOG_USER</codeph>, which
-        must be set to the user which will later start the VMs. For
-        backward compatibility you can also specify
-        <codeph>VBOXBALLOONCTRL_USER</codeph>.
-      </p>
-    <p>
-        The parameters in the following table all start with the
-        <codeph>VBOXWATCHDOG_</codeph> prefix string. For example:
-        <codeph>VBOXWATCHDOG_BALLOON_INTERVAL</codeph> and
-        <codeph>VBOXWATCHDOG_LOGSIZE</codeph>. Legacy parameters such
-        as <codeph>VBOXBALLOONCTRL_INTERVAL</codeph> can still be
-        used.
-      </p>
+    <p>On Linux, the watchdog service can be automatically started during host boot by adding appropriate parameters to
+      the file <filepath>/etc/default/virtualbox</filepath>. There is one mandatory parameter,
+        <codeph>VBOXWATCHDOG_USER</codeph>, which must be set to the user which will later start the VMs. For backward
+      compatibility you can also specify <codeph>VBOXBALLOONCTRL_USER</codeph>. </p>
+    <p>The parameters in the following table all start with the <codeph>VBOXWATCHDOG_</codeph> prefix string. For
+      example: <codeph>VBOXWATCHDOG_BALLOON_INTERVAL</codeph> and <codeph>VBOXWATCHDOG_LOGSIZE</codeph>. Legacy
+      parameters such as <codeph>VBOXBALLOONCTRL_INTERVAL</codeph> can still be used. </p>
     <table id="table-vboxwatchdog-config-params">
       <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Watchdog Configuration Parameters</title>
       <desc><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Watchdog Configuration Parameters</desc>

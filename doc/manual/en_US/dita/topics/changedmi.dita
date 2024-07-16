@@ -4,18 +4,12 @@
   <title>Configuring the BIOS DMI Information</title>
   
   <body>
-    <p>
-      The DMI data that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides to guests can be changed
-      for a specific VM. Use the following commands to configure the DMI
-      BIOS information. In case your VM is configured to use EFI
-      firmware you need to replace <codeph>pcbios</codeph> by
-      <codeph>efi</codeph> in the keys.
-    </p>
+    <p>The DMI data that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides to guests can be changed for a
+      specific VM. Use the following commands to configure the DMI BIOS information. In case your VM is configured to
+      use EFI firmware you need to replace <codeph>pcbios</codeph> by <codeph>efi</codeph> in the keys. </p>
     <ul>
       <li>
-        <p>
-          DMI BIOS information (type 0)
-        </p>
+        <p>DMI BIOS information (type 0) </p>
         <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSVendor"        "BIOS Vendor"
 $ VBoxManage setextradata <varname>VM-name</varname> \
@@ -32,9 +26,7 @@ $ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSFirmwareMinor" 4</pre>
       </li>
       <li>
-        <p>
-          DMI system information (type 1)
-        </p>
+        <p>DMI system information (type 1) </p>
         <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiSystemVendor"      "System Vendor"
 $ VBoxManage setextradata <varname>VM-name</varname> \
@@ -52,9 +44,7 @@ $ VBoxManage setextradata <varname>VM-name</varname> \
 "9852bf98-b83c-49db-a8de-182c42c7226b"</pre>
       </li>
       <li>
-        <p>
-          DMI board information (type 2)
-        </p>
+        <p>DMI board information (type 2) </p>
         <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiBoardVendor"       "Board Vendor"
 $ VBoxManage setextradata <varname>VM-name</varname> \
@@ -71,9 +61,7 @@ $ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiBoardBoardType"    10</pre>
       </li>
       <li>
-        <p>
-          DMI system enclosure or chassis (type 3)
-        </p>
+        <p>DMI system enclosure or chassis (type 3) </p>
         <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiChassisVendor"     "Chassis Vendor"
 $ VBoxManage setextradata <varname>VM-name</varname> \
@@ -86,51 +74,33 @@ $ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiChassisAssetTag"   "Chassis Tag"</pre>
       </li>
       <li>
-        <p>
-          DMI processor information (type 4)
-        </p>
+        <p>DMI processor information (type 4) </p>
         <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiProcManufacturer"  "GenuineIntel"
 $ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiProcVersion"       "Pentium(R) III"</pre>
       </li>
       <li>
-        <p>
-          DMI OEM strings (type 11)
-        </p>
+        <p>DMI OEM strings (type 11) </p>
         <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiOEMVBoxVer"        "vboxVer_1.2.3"
 $ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiOEMVBoxRev"        "vboxRev_12345"</pre>
       </li>
     </ul>
-    <p>
-      If a DMI string is not set, the default value of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is
-      used. To set an empty string use
-      <codeph>"&lt;EMPTY&gt;"</codeph>.
-    </p>
-    <p>
-      Note that in the above list, all quoted parameters (DmiBIOSVendor,
-      DmiBIOSVersion but not DmiBIOSReleaseMajor) are expected to be
-      strings. If such a string is a valid number, the parameter is
-      treated as number and the VM will most probably refuse to start
-      with an <codeph>VERR_CFGM_NOT_STRING</codeph> error. In that
-      case, use
-      <codeph>"string:<varname>value</varname>"</codeph>. For
-      example:
-    </p>
+    <p>If a DMI string is not set, the default value of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is used.
+      To set an empty string use <codeph>"&lt;EMPTY&gt;"</codeph>. </p>
+    <p>Note that in the above list, all quoted parameters (DmiBIOSVendor, DmiBIOSVersion but not DmiBIOSReleaseMajor)
+      are expected to be strings. If such a string is a valid number, the parameter is treated as number and the VM will
+      most probably refuse to start with an <codeph>VERR_CFGM_NOT_STRING</codeph> error. In that case, use
+          <codeph>"string:<varname>value</varname>"</codeph>. For example: </p>
     <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
 "VBoxInternal/Devices/pcbios/0/Config/DmiSystemSerial"      "string:1234"</pre>
-    <p>
-      Changing this information can be necessary to provide the DMI
-      information of the host to the guest to prevent Windows from
-      asking for a new product key. On Linux hosts, the DMI BIOS
-      information can be obtained with the following command:
-    </p>
+    <p>Changing this information can be necessary to provide the DMI information of the host to the guest to prevent
+      Windows from asking for a new product key. On Linux hosts, the DMI BIOS information can be obtained with the
+      following command: </p>
     <pre xml:space="preserve">$ dmidecode -t0</pre>
-    <p>
-      The DMI system information can be obtained as follows:
-    </p>
+    <p>The DMI system information can be obtained as follows: </p>
     <pre xml:space="preserve">$ dmidecode -t1</pre>
   </body>
   

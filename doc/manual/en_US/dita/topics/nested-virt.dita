@@ -4,36 +4,22 @@
   <title>Nested Virtualization</title>
   
   <body>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports <i>nested
-      virtualization</i>. This feature enables the passthrough of
-      hardware virtualization functions to the guest VM. That means that
-      you can install a hypervisor, such as <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, Oracle VM
-      Server or KVM, on an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> guest. You can then create and
-      run VMs within the guest VM.
-    </p>
-    <p>
-      Hardware virtualization features not present on the host CPU will
-      not be exposed to the guest. In addition, some features such as
-      nested paging are not yet supported for passthrough to the guest.
-    </p>
-    <p>
-      You can enable the nested virtualization feature in one of the
-      following ways:
-    </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports <i>nested virtualization</i>. This feature enables
+      the passthrough of hardware virtualization functions to the guest VM. That means that you can install a
+      hypervisor, such as <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, Oracle VM Server or KVM, on an <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> guest. You can then create and run VMs within the guest VM. </p>
+    <p>Hardware virtualization features not present on the host CPU will not be exposed to the guest. In addition, some
+      features such as nested paging are not yet supported for passthrough to the guest. </p>
+    <p>You can enable the nested virtualization feature in one of the following ways: </p>
     <ul>
       <li>
-        <p>
-          From <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, select the <b outputclass="bold">Enable
-          Nested VT-x/AMD-V</b> check box on the
-          <b outputclass="bold">Processor</b> tab. To disable the
-          feature, deselect the check box.
-        </p>
+        <p>From <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, select the <b outputclass="bold">Enable Nested
+            VT-x/AMD-V</b> check box on the <b outputclass="bold">Processor</b> tab. To disable the feature, deselect
+          the check box. </p>
       </li>
       <li>
-        <p> Use the <codeph>--nested-hw-virt</codeph> option of the <userinput>VBoxManage
-            modifyvm</userinput> command to enable or disable nested virtualization. See <xref
-            href="vboxmanage-modifyvm.dita">VBoxManage modifyvm</xref>. </p>
+        <p>Use the <codeph>--nested-hw-virt</codeph> option of the <userinput>VBoxManage modifyvm</userinput> command to
+          enable or disable nested virtualization. See <xref href="vboxmanage-modifyvm.dita">VBoxManage modifyvm</xref>. </p>
       </li>
     </ul>
   </body>

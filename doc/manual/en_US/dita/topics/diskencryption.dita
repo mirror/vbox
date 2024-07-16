@@ -4,23 +4,15 @@
   <title>Encryption of Disk Images</title>
   
   <body>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to transparently encrypt the data
-      stored in hard disk images for the guest. It does not depend on a
-      specific image format to be used. Images which have the data
-      encrypted are not portable between <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and other
-      virtualization software.
-    </p>
-    <p>
-      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the AES algorithm in XTS mode and supports
-      128-bit or 256-bit data encryption keys (DEK). The DEK is stored
-      encrypted in the medium properties and is decrypted during VM
-      startup by entering a password which was chosen when the image was
-      encrypted.
-    </p>
-    <p> Since the DEK is stored as part of the VM configuration file, it is important that it is
-      kept safe. Losing the DEK means that the data stored in the disk images is lost irrecoverably.
-      Having complete and up-to-date backups of all data related to the VM is the responsibility of
-      the user. </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to transparently encrypt the data stored in
+      hard disk images for the guest. It does not depend on a specific image format to be used. Images which have the
+      data encrypted are not portable between <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and other
+      virtualization software. </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the AES algorithm in XTS mode and supports 128-bit or
+      256-bit data encryption keys (DEK). The DEK is stored encrypted in the medium properties and is decrypted during
+      VM startup by entering a password which was chosen when the image was encrypted. </p>
+    <p>Since the DEK is stored as part of the VM configuration file, it is important that it is kept safe. Losing the
+      DEK means that the data stored in the disk images is lost irrecoverably. Having complete and up-to-date backups of
+      all data related to the VM is the responsibility of the user. </p>
   </body>
 </topic>

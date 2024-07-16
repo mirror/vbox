@@ -44,33 +44,24 @@
               <p><b outputclass="bold">Disk Size</b>. Use the slider to select a maximum size for
                 the hard disk in the new VM. </p>
             </li>
+            <li><p><b outputclass="bold">Pre-Allocate Full Size.</b> This setting determines the type of image file used
+                for the disk image. Select this setting to use a <i>fixed-size file</i> for the disk image. Otherwise,
+                  <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will use a <i>dynamically allocated file</i> for
+                the disk image. </p><p>The different types of image file behave as follows: </p><ul id="ul_j3n_y1r_pbc">
             <li>
-              <p><b outputclass="bold">Pre-Allocate Full Size.</b> This setting determines the type
-                of image file used for the disk image. Select this setting to use a <i>fixed-size
-                  file</i> for the disk image. Otherwise, <ph
-                  conkeyref="vbox-conkeyref-phrases/product-name"/> will use a <i>dynamically
-                  allocated file</i> for the disk image. </p>
-              <p>The different types of image file behave as follows: </p>
-              <ul id="ul_j3n_y1r_pbc">
-                <li>
-                  <p><b outputclass="bold">Dynamically allocated file.</b> This type of image file
-                    only grows in size when the guest actually stores data on its virtual hard disk.
-                    Therefore, this file is small initially. As the drive is filled with data, the
-                    file grows to the specified size. </p>
+                  <p><b outputclass="bold">Dynamically allocated file.</b> This type of image file only grows in size
+                    when the guest actually stores data on its virtual hard disk. Therefore, this file is small
+                    initially. As the drive is filled with data, the file grows to the specified size. </p>
                 </li>
                 <li>
-                  <p><b outputclass="bold">Fixed-size file.</b> This type of image file immediately
-                    occupies the file specified, even if only a fraction of that virtual hard disk
-                    space is actually in use. While occupying much more space, a fixed-size file
-                    incurs less overhead and is therefore slightly faster than a dynamically
-                    allocated file. </p>
+                  <p><b outputclass="bold">Fixed-size file.</b> This type of image file immediately occupies the file
+                    specified, even if only a fraction of that virtual hard disk space is actually in use. While
+                    occupying much more space, a fixed-size file incurs less overhead and is therefore slightly faster
+                    than a dynamically allocated file. </p>
                 </li>
+              </ul>For more details about the differences, see <xref href="vdidetails.dita#vdidetails"/>. </li>
               </ul>
-              <p> For more details about the differences, see <xref
-                  href="vdidetails.dita#vdidetails"/>. </p>
             </li>
-          </ul>
-        </li>
       </ol></p>
     <section id="section_bdq_h1r_pbc">
       <title>Use an Existing Virtual Hard Disk</title>

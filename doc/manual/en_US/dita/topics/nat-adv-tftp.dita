@@ -4,13 +4,10 @@
   <title>Configuring the Boot Server (Next Server) of a NAT Network Interface</title>
   
   <body>
-    <p>
-        For network booting in NAT mode, by default <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses
-        a built-in TFTP server at the IP address 10.0.2.4. This default
-        behavior should work fine for typical remote-booting scenarios.
-        However, it is possible to change the boot server IP and the
-        location of the boot image with the following commands:
-      </p>
+    <p>For network booting in NAT mode, by default <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses a built-in
+      TFTP server at the IP address 10.0.2.4. This default behavior should work fine for typical remote-booting
+      scenarios. However, it is possible to change the boot server IP and the location of the boot image with the
+      following commands: </p>
     <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> \
 --nattftpserver1 10.0.2.2
 $ VBoxManage modifyvm <varname>VM-name</varname> \

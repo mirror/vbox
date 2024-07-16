@@ -4,21 +4,15 @@
   <title>Host Key Customization</title>
   
   <body>
-    <p>
-        To disable all Host key combinations, open the preferences and
-        change the Host key to None. This might be useful when using
-        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> in a kiosk mode.
-      </p>
+    <p>To disable all Host key combinations, open the preferences and change the Host key to None. This might be useful
+      when using <ph conkeyref="vbox-conkeyref-phrases/product-name"/> in a kiosk mode. </p>
     <p>
         To redefine or disable certain Host key actions, use the
         following command:
       </p>
     <pre xml:space="preserve">$ VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=F,...."</pre>
-    <p>
-        The following table shows the possible Host key actions,
-        together with their default Host key shortcut. Setting an action
-        to None will disable that Host key action.
-      </p>
+    <p>The following table shows the possible Host key actions, together with their default Host key shortcut. Setting
+      an action to None will disable that Host key action. </p>
     <table id="table-host-key-customize">
       <title>Host Key Customization</title>
       <desc>Host Key Customization</desc>
@@ -409,10 +403,7 @@
         </tbody>
       </tgroup>
     </table>
-    <p>
-        To disable full screen mode and seamless mode, use the following
-        command:
-      </p>
+    <p>To disable full screen mode and seamless mode, use the following command: </p>
     <pre xml:space="preserve">$ VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=None,SeamlessMode=None"</pre>
   </body>
   

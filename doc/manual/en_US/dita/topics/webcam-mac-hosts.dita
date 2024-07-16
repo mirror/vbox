@@ -4,13 +4,9 @@
   <title>macOS Hosts</title>
   
   <body>
-    <p>
-        When the webcam device is detached from the host, the emulated
-        webcam device remains attached to the guest and must be manually
-        detached using the <userinput>VBoxManage controlvm
-        <varname>VM-name</varname> webcam detach</userinput>
-        command.
-      </p>
+    <p>When the webcam device is detached from the host, the emulated webcam device remains attached to the guest and
+      must be manually detached using the <userinput>VBoxManage controlvm <varname>VM-name</varname> webcam
+        detach</userinput> command. </p>
   </body>
   
 </topic>
