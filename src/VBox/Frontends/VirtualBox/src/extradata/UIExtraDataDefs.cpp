@@ -144,9 +144,6 @@ const char *UIExtraDataDefs::GUI_ExtraDataManager_Geometry = "GUI/ExtraDataManag
 const char *UIExtraDataDefs::GUI_ExtraDataManager_SplitterHints = "GUI/ExtraDataManager/SplitterHints";
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
-/* Wizards: */
-const char *UIExtraDataDefs::GUI_HideDescriptionForWizards = "GUI/HideDescriptionForWizards";
-
 
 /* Virtual Machine: */
 const char *UIExtraDataDefs::GUI_HideFromManager = "GUI/HideFromManager";

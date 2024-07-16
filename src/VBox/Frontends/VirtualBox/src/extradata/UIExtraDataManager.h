@@ -522,14 +522,6 @@ public:
         void setCloudConsolePublicKeyPath(const QString &strPath);
     /** @} */
 
-    /** @name Wizards
-      * @{ */
-        /** Returns mode for wizard of passed @a type. */
-        WizardMode modeForWizardType(WizardType type);
-        /** Defines @a mode for wizard of passed @a type. */
-        void setModeForWizardType(WizardType type, WizardMode mode);
-    /** @} */
-
     /** @name Virtual Machine
       * @{ */
         /** Returns whether machine should be shown in VirtualBox Manager Chooser-pane. */

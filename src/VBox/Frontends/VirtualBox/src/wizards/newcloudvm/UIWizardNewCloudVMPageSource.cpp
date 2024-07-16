@@ -607,9 +607,7 @@ void UIWizardNewCloudVMPageSource::sltHandleProfileButtonClick()
 void UIWizardNewCloudVMPageSource::sltHandleSourceTabBarChange()
 {
     /* Update source type: */
-    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(false);
     populateSourceImages(m_pSourceImageList, m_pSourceTabBar, wizard()->notificationCenter(), wizard()->client());
-    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(true);
     sltHandleSourceImageChange();
 
     /* Notify about changes: */

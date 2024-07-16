@@ -830,13 +830,11 @@ void UIWizardImportAppPageSource::sltHandleSourceComboChange()
 void UIWizardImportAppPageSource::sltHandleProfileComboChange()
 {
     /* Refresh required settings: */
-    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(false);
     refreshCloudProfileInstances(m_pProfileInstanceList,
                                  wizard()->notificationCenter(),
                                  source(m_pSourceComboBox),
                                  profileName(m_pProfileComboBox),
                                  wizard()->isSourceCloudOne());
-    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(true);
 
     /* Notify about changes: */
     emit completeChanged();
@@ -860,7 +858,6 @@ void UIWizardImportAppPageSource::updateCloudStuff()
     /* Create cloud appliance and VSD import form: */
     CAppliance comAppliance;
     CVirtualSystemDescriptionForm comForm;
-    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(false);
     refreshCloudStuff(comAppliance,
                       comForm,
                       wizard(),
@@ -868,7 +865,6 @@ void UIWizardImportAppPageSource::updateCloudStuff()
                       source(m_pSourceComboBox),
                       profileName(m_pProfileComboBox),
                       wizard()->isSourceCloudOne());
-    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(true);
     wizard()->setCloudAppliance(comAppliance);
     wizard()->setVsdImportForm(comForm);
 }

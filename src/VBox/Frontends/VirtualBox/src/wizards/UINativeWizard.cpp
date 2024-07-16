@@ -92,11 +92,10 @@ void UIFrame::paintEvent(QPaintEvent *pEvent)
 
 UINativeWizard::UINativeWizard(QWidget *pParent,
                                WizardType enmType,
-                               WizardMode enmMode /* = WizardMode_Auto */,
                                const QString &strHelpKeyword /* = QString() */)
     : QDialog(pParent, Qt::Window)
     , m_enmType(enmType)
-    , m_enmMode(enmMode == WizardMode_Auto ? gEDataManager->modeForWizardType(m_enmType) : enmMode)
+    , m_enmMode(gEDataManager->isSettingsInExpertMode() ? WizardMode_Expert : WizardMode_Basic)
     , m_strHelpKeyword(strHelpKeyword)
     , m_iLastIndex(-1)
     , m_fClosed(false)
@@ -121,9 +120,7 @@ UINotificationCenter *UINativeWizard::notificationCenter() const
 
 bool UINativeWizard::handleNotificationProgressNow(UINotificationProgress *pProgress)
 {
-    wizardButton(WizardButtonType_Expert)->setEnabled(false);
     const bool fResult = m_pNotificationCenter->handleNow(pProgress);
-    wizardButton(WizardButtonType_Expert)->setEnabled(true);
     return fResult;
 }
 
@@ -205,26 +202,6 @@ void UINativeWizard::sltRetranslateUI()
     {
         pButtonHelp->setText(tr("&Help"));
         pButtonHelp->setToolTip(tr("Open corresponding Help topic."));
-    }
-
-    /* Translate basic/expert button: */
-    QPushButton *pButtonExpert = wizardButton(WizardButtonType_Expert);
-    AssertMsgReturnVoid(pButtonExpert, ("No Expert wizard button found!\n"));
-    switch (m_enmMode)
-    {
-        case WizardMode_Basic:
-            pButtonExpert->setText(tr("&Expert Mode"));
-            pButtonExpert->setToolTip(tr("Switch to the Expert Mode, "
-                                         "a one-page dialog for experienced users."));
-            break;
-        case WizardMode_Expert:
-            pButtonExpert->setText(tr("&Guided Mode"));
-            pButtonExpert->setToolTip(tr("Switch to the Guided Mode, "
-                                         "a step-by-step dialog with detailed explanations."));
-            break;
-        default:
-            AssertMsgFailed(("Invalid wizard mode: %d", m_enmMode));
-            break;
     }
 
     /* Translate Back button: */
@@ -320,16 +297,6 @@ void UINativeWizard::sltCurrentIndexChanged(int iIndex /* = -1 */)
     if (iIndex == -1)
         iIndex = m_pWidgetStack->currentIndex();
 
-    /* Hide/show Expert button (hidden by default): */
-    bool fIsExpertButtonAvailable = false;
-    /* Show Expert button for 1st page: */
-    if (iIndex == 0)
-        fIsExpertButtonAvailable = true;
-    /* Hide/show Expert button finally: */
-    QPushButton *pButtonExpert = wizardButton(WizardButtonType_Expert);
-    AssertMsgReturnVoid(pButtonExpert, ("No Expert wizard button found!\n"));
-    pButtonExpert->setVisible(fIsExpertButtonAvailable);
-
     /* Disable/enable Back button: */
     QPushButton *pButtonBack = wizardButton(WizardButtonType_Back);
     AssertMsgReturnVoid(pButtonBack, ("No Back wizard button found!\n"));
@@ -363,22 +330,6 @@ void UINativeWizard::sltCompleteChanged()
     QPushButton *pButtonNext = wizardButton(WizardButtonType_Next);
     AssertMsgReturnVoid(pButtonNext, ("No Next wizard button found!\n"));
     pButtonNext->setEnabled(pPage->isComplete());
-}
-
-void UINativeWizard::sltExpert()
-{
-    /* Toggle mode: */
-    switch (m_enmMode)
-    {
-        case WizardMode_Basic:  m_enmMode = WizardMode_Expert; break;
-        case WizardMode_Expert: m_enmMode = WizardMode_Basic;  break;
-        default: AssertMsgFailed(("Invalid mode: %d", m_enmMode)); break;
-    }
-    gEDataManager->setModeForWizardType(m_enmType, m_enmMode);
-
-    /* Reinit everything: */
-    deinit();
-    init();
 }
 
 void UINativeWizard::sltPrevious()
@@ -582,8 +533,6 @@ void UINativeWizard::prepare()
                     wizardButton(WizardButtonType_Help)->setShortcut(UIShortcutPool::standardSequence(QKeySequence::HelpContents));
                     uiCommon().setHelpKeyword(this, m_strHelpKeyword);
                 }
-                connect(wizardButton(WizardButtonType_Expert), &QPushButton::clicked,
-                        this, &UINativeWizard::sltExpert);
                 connect(wizardButton(WizardButtonType_Back), &QPushButton::clicked,
                         this, &UINativeWizard::sltPrevious);
                 connect(wizardButton(WizardButtonType_Next), &QPushButton::clicked,

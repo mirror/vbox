@@ -265,12 +265,6 @@ namespace UIExtraDataDefs
     /** @} */
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
-    /** @name Wizards
-      * @{ */
-        /** Holds wizard types for which descriptions should be hidden. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_HideDescriptionForWizards;
-    /** @} */
-
     /** @name Virtual Machine
       * @{ */
         /** Holds whether machine shouldn't be shown in selector-window chooser-pane. */
@@ -939,7 +933,6 @@ enum WizardType
 /** Common UI: Wizard modes. */
 enum WizardMode
 {
-    WizardMode_Auto,
     WizardMode_Basic,
     WizardMode_Expert
 };

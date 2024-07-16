@@ -55,7 +55,6 @@ enum WizardButtonType
 {
     WizardButtonType_Invalid,
     WizardButtonType_Help,
-    WizardButtonType_Expert,
     WizardButtonType_Back,
     WizardButtonType_Next,
     WizardButtonType_Cancel,
@@ -96,11 +95,9 @@ public:
 
     /** Constructs wizard passing @a pParent to the base-class.
       * @param  enmType         Brings the wizard type.
-      * @param  enmMode         Brings the wizard mode.
       * @param  strHelpKeyword  Brings the wizard help keyword. */
     UINativeWizard(QWidget *pParent,
                    WizardType enmType,
-                   WizardMode enmMode = WizardMode_Auto,
                    const QString &strHelpKeyword = QString());
     /** Destructs wizard. */
     virtual ~UINativeWizard() RT_OVERRIDE;
@@ -167,8 +164,6 @@ private slots:
     /** Handles page validity changes. */
     void sltCompleteChanged();
 
-    /** Toggles between basic and expert modes. */
-    void sltExpert();
     /** Switches to previous page. */
     void sltPrevious();
     /** Switches to next page. */

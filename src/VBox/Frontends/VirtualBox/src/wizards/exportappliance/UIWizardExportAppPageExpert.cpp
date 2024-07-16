@@ -828,7 +828,6 @@ void UIWizardExportAppPageExpert::updateCloudStuff()
     CCloudClient comClient;
     CVirtualSystemDescription comDescription;
     CVirtualSystemDescriptionForm comForm;
-    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(false);
     refreshCloudStuff(comAppliance,
                       comClient,
                       comDescription,
@@ -838,7 +837,6 @@ void UIWizardExportAppPageExpert::updateCloudStuff()
                       wizard()->machineIDs(),
                       wizard()->uri(),
                       wizard()->cloudExportMode());
-    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(true);
     wizard()->setCloudAppliance(comAppliance);
     wizard()->setCloudClient(comClient);
     wizard()->setVsd(comDescription);

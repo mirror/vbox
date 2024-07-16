@@ -44,7 +44,7 @@
 
 UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
                                  const QString &strGroup, CSnapshot snapshot /* = CSnapshot() */)
-    : UINativeWizard(pParent, WizardType_CloneVM, WizardMode_Auto, "clone" /* help keyword */)
+    : UINativeWizard(pParent, WizardType_CloneVM, "clone" /* help keyword */)
     , m_machine(machine)
     , m_snapshot(snapshot)
     , m_strGroup(strGroup)

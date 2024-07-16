@@ -65,7 +65,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent,
                              UIActionPool *pActionPool,
                              const QString &strMachineGroup,
                              const QString &strISOFilePath /* = QString() */)
-    : UINativeWizard(pParent, WizardType_NewVM, WizardMode_Auto, "create-vm-wizard" /* help keyword */)
+    : UINativeWizard(pParent, WizardType_NewVM, "create-vm-wizard" /* help keyword */)
     , m_strMachineGroup(strMachineGroup)
     , m_iIDECount(0)
     , m_iSATACount(0)

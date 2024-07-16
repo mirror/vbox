@@ -156,7 +156,7 @@ private:
 UIWizardImportApp::UIWizardImportApp(QWidget *pParent,
                                      bool fImportFromOCIByDefault,
                                      const QString &strFileName)
-    : UINativeWizard(pParent, WizardType_ImportAppliance, WizardMode_Auto, "ovf")
+    : UINativeWizard(pParent, WizardType_ImportAppliance, "ovf")
     , m_fImportFromOCIByDefault(fImportFromOCIByDefault)
     , m_strFileName(strFileName)
     , m_fSourceCloudOne(false)
