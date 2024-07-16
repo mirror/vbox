@@ -53,7 +53,7 @@ struct SharedFolder::Data
     const Utf8Str   strHostPath;
     bool            fWritable;
     bool            fAutoMount;
-    const Utf8Str   strAutoMountPoint;
+    Utf8Str         strAutoMountPoint;
     Utf8Str         strLastAccessError;
     SymlinkPolicy_T enmSymlinkPolicy;
 };
@@ -276,7 +276,7 @@ HRESULT SharedFolder::i_protectedInit(VirtualBoxBase *aParent,
     unconst(m->strHostPath) = hostPath;
     m->fWritable = aWritable;
     m->fAutoMount = aAutoMount;
-    unconst(m->strAutoMountPoint) = aAutoMountPoint;
+    m->strAutoMountPoint = aAutoMountPoint;
     m->enmSymlinkPolicy = enmSymlinkPolicy;
 
     return S_OK;
@@ -355,8 +355,9 @@ HRESULT SharedFolder::getWritable(BOOL *aWritable)
 
 HRESULT SharedFolder::setWritable(BOOL aWritable)
 {
-    RT_NOREF(aWritable);
-    return E_NOTIMPL;
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->fWritable = RT_BOOL(aWritable);
+    return S_OK;
 }
 
 HRESULT SharedFolder::getAutoMount(BOOL *aAutoMount)
@@ -368,8 +369,9 @@ HRESULT SharedFolder::getAutoMount(BOOL *aAutoMount)
 
 HRESULT SharedFolder::setAutoMount(BOOL aAutoMount)
 {
-    RT_NOREF(aAutoMount);
-    return E_NOTIMPL;
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->fAutoMount = RT_BOOL(aAutoMount);
+    return S_OK;
 }
 
 HRESULT SharedFolder::getAutoMountPoint(com::Utf8Str &aAutoMountPoint)
@@ -381,8 +383,9 @@ HRESULT SharedFolder::getAutoMountPoint(com::Utf8Str &aAutoMountPoint)
 
 HRESULT SharedFolder::setAutoMountPoint(com::Utf8Str const &aAutoMountPoint)
 {
-    RT_NOREF(aAutoMountPoint);
-    return E_NOTIMPL;
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->strAutoMountPoint = aAutoMountPoint;
+    return S_OK;
 }
 
 HRESULT SharedFolder::getLastAccessError(com::Utf8Str &aLastAccessError)

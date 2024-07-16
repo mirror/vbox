@@ -1835,14 +1835,20 @@ static RTEXITCODE handleSharedFolderModify(HandlerArg *a)
     {
         { "--name",             'n', RTGETOPT_REQ_STRING },
         { "-name",              'n', RTGETOPT_REQ_STRING },     // deprecated
-        { "--transient",        't', RTGETOPT_REQ_NOTHING },
-        { "-transient",         't', RTGETOPT_REQ_NOTHING },    // deprecated
+        { "--automount",        'a', RTGETOPT_REQ_BOOL },
+        { "-automount",         'a', RTGETOPT_REQ_BOOL },    // deprecated
+        { "--readonly",         'r', RTGETOPT_REQ_BOOL },
+        { "-readonly",          'r', RTGETOPT_REQ_BOOL },    // deprecated
         { "--symlink-policy",   's', RTGETOPT_REQ_STRING },
         { "-symlink-policy",    's', RTGETOPT_REQ_STRING },     // deprecated
+        { "--auto-mount-point", 'm', RTGETOPT_REQ_STRING },
+        { "-auto-mount-point",  'm', RTGETOPT_REQ_STRING },     // deprecated
     };
     const char *pszMachineName    = NULL;
     const char *pszName           = NULL;
-    bool        fTransient        = false;
+    int         fWritable         = -1;
+    int         fAutoMount        = -1;
+    const char *pszAutoMountPoint = NULL;
     SymlinkPolicy_T enmSymlinkPolicy = SymlinkPolicy_None;
 
     RTGETOPTSTATE GetState;
@@ -1856,8 +1862,14 @@ static RTEXITCODE handleSharedFolderModify(HandlerArg *a)
             case 'n':
                 pszName = ValueUnion.psz;
                 break;
-            case 't':
-                fTransient = true;
+            case 'r':
+                fWritable = !ValueUnion.f;
+                break;
+            case 'a':
+                fAutoMount = ValueUnion.f;
+                break;
+            case 'm':
+                pszAutoMountPoint = ValueUnion.psz;
                 break;
             case 's':
                 enmSymlinkPolicy = nameToSymlinkPolicy(ValueUnion.psz);
@@ -1880,9 +1892,8 @@ static RTEXITCODE handleSharedFolderModify(HandlerArg *a)
     if (!pszName)
         return errorSyntax(Misc::tr("No shared folder name (--name) was supplied."));
 
-    /* the only supported option at the moment so it must be set */
-    if (enmSymlinkPolicy == SymlinkPolicy_None)
-        return errorSyntax(Misc::tr("No symbolic link policy (--symlink-policy) was supplied."));
+    if (enmSymlinkPolicy == SymlinkPolicy_None && fWritable == -1 && fAutoMount == -1 && !pszAutoMountPoint)
+        return errorSyntax(Misc::tr("No shared folder attributes specified."));
 
     /*
      * Done parsing, do some real work.
@@ -1892,87 +1903,50 @@ static RTEXITCODE handleSharedFolderModify(HandlerArg *a)
     AssertReturn(ptrMachine.isNotNull(), RTEXITCODE_FAILURE);
 
     HRESULT hrc;
-    if (fTransient)
+    /* Open a session for the VM using an exclusive lock as this is for permanent shared folders.
+     * Support for modifying transient shared folders hasn't been implemented yet. */
+    CHECK_ERROR_RET(ptrMachine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
+
+    /* get the mutable session machine */
+    ComPtr<IMachine> ptrSessionMachine;
+    CHECK_ERROR_RET(a->session, COMGETTER(Machine)(ptrSessionMachine.asOutParam()), RTEXITCODE_FAILURE);
+
+    /* find the desired shared folder to modify */
+    com::SafeIfaceArray <ISharedFolder> sharedFolders;
+    CHECK_ERROR_RET(ptrSessionMachine, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(sharedFolders)), RTEXITCODE_FAILURE);
+    if (sharedFolders.size() == 0)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Machine '%s' has no shared folders configured.\n"),
+                              pszMachineName);
+
+    bool fFound = false;
+    for (size_t i = 0; i < sharedFolders.size(); ++i)
     {
-        /* open an existing session for the VM */
-        CHECK_ERROR_RET(ptrMachine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
-
-        /* get the session machine */
-        ComPtr<IMachine> ptrSessionMachine;
-        CHECK_ERROR_RET(a->session, COMGETTER(Machine)(ptrSessionMachine.asOutParam()), RTEXITCODE_FAILURE);
-
-        /* get the session console */
-        ComPtr<IConsole> ptrConsole;
-        CHECK_ERROR_RET(a->session, COMGETTER(Console)(ptrConsole.asOutParam()), RTEXITCODE_FAILURE);
-        if (ptrConsole.isNull())
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Machine '%s' is not currently running.\n"), pszMachineName);
-
-        /* find the desired transient shared folder to modify */
-        com::SafeIfaceArray <ISharedFolder> sharedFolders;
-        CHECK_ERROR_RET(ptrConsole, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(sharedFolders)), RTEXITCODE_FAILURE);
-        if (sharedFolders.size() == 0)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Machine '%s' has no transient shared folders configured.\n"),
-                                  pszMachineName);
-
-        bool fFound = false;
-        for (size_t i = 0; i < sharedFolders.size(); ++i)
+        ComPtr<ISharedFolder> sharedFolder = sharedFolders[i];
+        Bstr bstrSharedFolderName;
+        CHECK_ERROR_RET(sharedFolder, COMGETTER(Name)(bstrSharedFolderName.asOutParam()), RTEXITCODE_FAILURE);
+        Utf8Str strSharedFolderName(bstrSharedFolderName);
+        if (!RTStrCmp(strSharedFolderName.c_str(), pszName))
         {
-            ComPtr<ISharedFolder> sharedFolder = sharedFolders[i];
-            Bstr bstrSharedFolderName;
-            CHECK_ERROR_RET(sharedFolder, COMGETTER(Name)(bstrSharedFolderName.asOutParam()), RTEXITCODE_FAILURE);
-            Utf8Str strSharedFolderName(bstrSharedFolderName);
-            if (!RTStrCmp(strSharedFolderName.c_str(), pszName))
-            {
+            fFound = true;
+            if (enmSymlinkPolicy != SymlinkPolicy_None)
                 CHECK_ERROR_RET(sharedFolder, COMSETTER(SymlinkPolicy)(enmSymlinkPolicy), RTEXITCODE_FAILURE);
-                fFound = true;
-                break;
-            }
+            if (fWritable != -1)
+                CHECK_ERROR_RET(sharedFolder, COMSETTER(Writable)((BOOL)fWritable), RTEXITCODE_FAILURE);
+            if (fAutoMount != -1)
+                CHECK_ERROR_RET(sharedFolder, COMSETTER(AutoMount)((BOOL)fAutoMount), RTEXITCODE_FAILURE);
+            if (pszAutoMountPoint)
+                CHECK_ERROR_RET(sharedFolder, COMSETTER(AutoMountPoint) (Bstr(pszAutoMountPoint).raw()), RTEXITCODE_FAILURE);
+            break;
         }
-        if (!fFound)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Could not find a transient shared folder named '%s'.\n"),
-                                  pszName);
-
-        CHECK_ERROR_RET(a->session, UnlockMachine(), RTEXITCODE_FAILURE);
     }
-    else
-    {
-        /* open a session for the VM */
-        CHECK_ERROR_RET(ptrMachine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
+    if (!fFound)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Could not find a shared folder named '%s'.\n"), pszName);
 
-        /* get the mutable session machine */
-        ComPtr<IMachine> ptrSessionMachine;
-        CHECK_ERROR_RET(a->session, COMGETTER(Machine)(ptrSessionMachine.asOutParam()), RTEXITCODE_FAILURE);
+    /* commit and close the session */
+    if (SUCCEEDED(hrc))
+        CHECK_ERROR(ptrSessionMachine, SaveSettings());
 
-        /* find the desired shared folder to modify */
-        com::SafeIfaceArray <ISharedFolder> sharedFolders;
-        CHECK_ERROR_RET(ptrSessionMachine, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(sharedFolders)), RTEXITCODE_FAILURE);
-        if (sharedFolders.size() == 0)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Machine '%s' has no shared folders configured.\n"),
-                                  pszMachineName);
-
-        bool fFound = false;
-        for (size_t i = 0; i < sharedFolders.size(); ++i)
-        {
-            ComPtr<ISharedFolder> sharedFolder = sharedFolders[i];
-            Bstr bstrSharedFolderName;
-            CHECK_ERROR_RET(sharedFolder, COMGETTER(Name)(bstrSharedFolderName.asOutParam()), RTEXITCODE_FAILURE);
-            Utf8Str strSharedFolderName(bstrSharedFolderName);
-            if (!RTStrCmp(strSharedFolderName.c_str(), pszName))
-            {
-                CHECK_ERROR_RET(sharedFolder, COMSETTER(SymlinkPolicy)(enmSymlinkPolicy), RTEXITCODE_FAILURE);
-                fFound = true;
-                break;
-            }
-        }
-        if (!fFound)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, Misc::tr("Could not find a shared folder named '%s'.\n"), pszName);
-
-        /* commit and close the session */
-        if (SUCCEEDED(hrc))
-            CHECK_ERROR(ptrSessionMachine, SaveSettings());
-
-        CHECK_ERROR_RET(a->session, UnlockMachine(), RTEXITCODE_FAILURE);
-    }
+    CHECK_ERROR_RET(a->session, UnlockMachine(), RTEXITCODE_FAILURE);
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

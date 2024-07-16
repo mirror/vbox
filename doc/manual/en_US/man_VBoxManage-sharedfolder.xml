@@ -78,6 +78,19 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="req">--name=<replaceable>share-name</replaceable></arg>
+      <arg choice="req">--readonly=
+        <group choice="plain">
+          <arg choice="plain">true</arg>
+          <arg choice="plain">false</arg>
+        </group>
+      </arg>
+      <arg choice="req">--automount=
+        <group choice="plain">
+          <arg choice="plain">true</arg>
+          <arg choice="plain">false</arg>
+        </group>
+      </arg>
+      <arg choice="req">--auto-mount-point=<replaceable>path</replaceable></arg>
       <arg choice="req">--symlink-policy=
         <group choice="plain">
           <arg choice="plain">forbidden</arg>
@@ -93,8 +106,8 @@
     <title>Description</title>
     <para>
       Shared folders enable you to share data between the host system
-      and guests. To use shared folders, you must first install the
-      &product-name; Guest Additions software on the guest OS.
+      and guests. To use shared folders you must first install the
+      &product-name; Guest Additions software in the guest VM.
     </para>
     <para>
       The shared folder is associated with a share name and the full
@@ -107,7 +120,7 @@
       <para>
         The <command>VBoxManage sharedfolder add</command> command
         creates a shared folder. The folder you specify is on the host
-        computer. When configured, the contents of the folder on the
+        computer. When configured the contents of the folder on the
         host system can be shared with the guest OS.
       </para>
       <variablelist>
@@ -139,18 +152,21 @@
               files at the host path.
             </para><para>
               By default, shared folders have read-write access to the
-              files at the host path. However on Linux distributions,
-              shared folders are mounted with 770 file permissions with
-              the <literal>root</literal> user and the
-              <literal>vboxsf</literal> group. By using this option, the
-              file permissions become 700.
+              files mounted from the host. However on Solaris and Linux
+              distributions shared folders are mounted with 770 file
+              permissions with the files owned by the <literal>root</literal>
+              user and the <literal>vboxsf</literal> group which means the
+              files are restricted to members of the <literal>vboxsf</literal>
+              group and the <literal>root</literal> user. If the --readonly
+              option is specified the file permissions become 700 and the
+              files are accessible only to the <literal>root</literal> user.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term>--transient</term>
           <listitem><para>
-              Specifies that the share is transient, which means that it
-              can be added and removed at runtime and does not persist
+              Specifies that the share is transient which means that it
+              is added and removed to a running VM and does not persist
               after the VM stops.
             </para></listitem>
         </varlistentry>
@@ -163,15 +179,15 @@
         <varlistentry>
            <term>--auto-mount-point=<replaceable>path</replaceable></term>
            <listitem><para>
-               Specifies the mount point of the share.  This guest OS specific.
+               Specifies the mount point of the share.  This is guest OS specific.
              </para><para>
-               For Windows and OS/2 guest this must be an unused drive letter.
+               For Windows and OS/2 guests this must be an unused drive letter.
                If left blank (or if the drive letter is already in use), the
                last unused drive letter is used instead (i.e. searching from
                <literal>Z:</literal> thru <literal>A:</literal>).
              </para><para>
-               For Linux, Solaris and other unix guest, it must be an absolute
-               path like <filename>/mnt/mysharedfolder</filename>.  If left
+               For Linux, Solaris and other Unix guests, it must be an absolute
+               path such as <filename>/mnt/mysharedfolder</filename>.  If left
                empty the default location is
                <filename>/media/sf_<replaceable>sharename</replaceable></filename>.
              </para></listitem>
@@ -202,8 +218,8 @@
         <varlistentry>
           <term>--transient</term>
           <listitem><para>
-              Specifies that the share is transient, which means that it
-              can be added and removed at runtime and does not persist
+              Specifies that the share is transient which means that it
+              is added and removed to a running VM and does not persist
               after the VM stops.
             </para></listitem>
         </varlistentry>
@@ -227,7 +243,27 @@
         <varlistentry>
           <term>--name=<replaceable>share-name</replaceable></term>
           <listitem><para>
-              Specifies the name of the share to apply the security policy to.
+              Specifies the name of the shared folder to modify.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>--readonly=<replaceable>true | false</replaceable></term>
+          <listitem><para>
+              Specifies whether the shared folder is to be mounted as read-only.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>--automount=<replaceable>true | false</replaceable></term>
+          <listitem><para>
+              Specifies whether the shared folder is to be mounted automatically
+              when the VM boots.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>--auto-mount-point=<replaceable>path</replaceable></term>
+          <listitem><para>
+              Specifies where to mount the shared folder if it is configured to be
+              be mounted automatically when the VM boots.
             </para></listitem>
         </varlistentry>
         <varlistentry>
