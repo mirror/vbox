@@ -92,7 +92,7 @@ darwin-docs_SOURCES = \
 # The packing.
 #
 PACKING += $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg
-#OTHER_CLEAN = TODO
+OTHER_CLEAN = $(VBOX_DMG_SHADOW_STORAGE)
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
@@ -1078,6 +1078,9 @@ VirtualBox.dmg: $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_
 # Path specifying the .dmg mount point being used with 'kmk mount_dmg' and 'kmk unmount_dmg'.
 VBOX_PATH_DMG_MOUNTPOINT := /Volumes/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV)
 
+# Path to the (temporary) shadow storage, required for editing the .dmg file.
+VBOX_DMG_SHADOW_STORAGE := $(VBOX_PATH_PACK_TMP)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV)-shadow.dmg
+
 #
 # Mounts the created .dmg file within Finder in read-write mode using a shadow storage
 # which holds the modififed content.
@@ -1089,7 +1092,7 @@ mount_dmg:
 	@kmk_builtin_echo "Mounting .dmg file in R/W mode (using shadow storage) ..."
 	@sudo hdiutil attach -quiet -readwrite \
 		-mountpoint $(VBOX_PATH_DMG_MOUNTPOINT) \
-		-shadow $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV)-shadow.dmg \
+		-shadow $(VBOX_DMG_SHADOW_STORAGE) \
 		$(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg
 	@kmk_builtin_echo ""
 	@kmk_builtin_echo "Successfully mounted within Finder."
