@@ -5498,9 +5498,7 @@ IEMIMPL_FP_F2 rcpps,     2
 IEMIMPL_FP_F2 cvtdq2ps,  2
 IEMIMPL_FP_F2 cvtps2dq,  2
 IEMIMPL_FP_F2 cvttps2dq, 2
-IEMIMPL_FP_F2 cvttpd2dq, 0 ; @todo AVX variants due to register size differences missing right now
 IEMIMPL_FP_F2 cvtdq2pd,  0 ; @todo AVX variants due to register size differences missing right now
-IEMIMPL_FP_F2 cvtpd2dq,  0 ; @todo AVX variants due to register size differences missing right now
 
 
 ;;
@@ -5639,30 +5637,28 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u128
 
-BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128, 16
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        vmovdqu xmm0, [A2]
-        vmovdqu xmm1, [A3]
+        vmovdqu xmm1, [A2]
         v %+ %1 xmm0, xmm1
         vmovdqu [A1], xmm0
 
         SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_EPILOGUE
         EPILOGUE_4_ARGS
-ENDPROC iemAImpl_v %+ %1 %+ _u128
+ENDPROC iemAImpl_v %+ %1 %+ _u128_u128
 
-BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 16
+BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u128_u256, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
         SSE_AVX_LD_MXCSR A0_32
 
-        vmovdqu ymm0, [A2]
-        vmovdqu ymm1, [A3]
+        vmovdqu xmm1, [A2]
  %if %2 == 0
-        v %+ %1 xmm0, ymm1
+        v %+ %1 xmm0, xmm1
  %else
         v %+ %1 ymm0, xmm1
  %endif
@@ -5671,10 +5667,13 @@ BEGINPROC_FASTCALL iemAImpl_v %+ %1 %+ _u256, 16
         SSE_AVX_ST_MXCSR R0_32, A0_32
         IEMIMPL_AVX_EPILOGUE
         EPILOGUE_4_ARGS
-ENDPROC iemAImpl_v %+ %1 %+ _u256
+ENDPROC iemAImpl_v %+ %1 %+ _u128_u256
 %endmacro
 
-IEMIMPL_CVT_F2 cvtpd2ps, 0
+IEMIMPL_CVT_F2 cvtpd2ps,  0
+IEMIMPL_CVT_F2 cvttpd2dq, 0
+IEMIMPL_CVT_F2 cvtpd2dq,  0
+
 ;IEMIMPL_CVT_F2 cvtps2pd, 1 - inefficient.
 
 BEGINPROC_FASTCALL iemAImpl_cvtps2pd_u128, 12
@@ -5690,6 +5689,50 @@ BEGINPROC_FASTCALL iemAImpl_cvtps2pd_u128, 12
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_cvtps2pd_u128
 
+
+;;
+; vcvtps2pd instruction - 128-bit variant.
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vcvtps2pd_u128_u64, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        vcvtps2pd xmm0, qword [A2]
+        movdqu    [A1], xmm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_vcvtps2pd_u128_u64
+
+
+;;
+; vcvtps2pd instruction - 256-bit variant.
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vcvtps2pd_u256_u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movdqu    xmm0, [A2]
+        vcvtps2pd ymm0, xmm1
+        vmovdqu   [A1], ymm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_vcvtps2pd_u256_u128
 
 
 ;;
@@ -6714,97 +6757,6 @@ BEGINPROC_FASTCALL iemAImpl_vcvtsi2sd_u128_i64, 16
         IEMIMPL_AVX_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_vcvtsi2sd_u128_i64
-
-
-;;
-; vcvtps2pd instruction - 128-bit variant.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use.
-; @param    A1      Pointer to the result operand (output).
-; @param    A2      Pointer to the second operand (input).
-;
-BEGINPROC_FASTCALL iemAImpl_vcvtps2pd_u128_u64, 16
-        PROLOGUE_3_ARGS
-        IEMIMPL_AVX_PROLOGUE
-        SSE_AVX_LD_MXCSR A0_32
-
-        vcvtps2pd xmm0, qword [A2]
-        movdqu    [A1], xmm0
-
-        SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_AVX_EPILOGUE
-        EPILOGUE_3_ARGS
-ENDPROC iemAImpl_vcvtps2pd_u128_u64
-
-
-;;
-; vcvtps2pd instruction - 256-bit variant.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use.
-; @param    A1      Pointer to the result operand (output).
-; @param    A2      Pointer to the second operand (input).
-;
-BEGINPROC_FASTCALL iemAImpl_vcvtps2pd_u256_u128, 16
-        PROLOGUE_3_ARGS
-        IEMIMPL_AVX_PROLOGUE
-        SSE_AVX_LD_MXCSR A0_32
-
-        movdqu    xmm0, [A2]
-        vcvtps2pd ymm0, xmm1
-        vmovdqu   [A1], ymm0
-
-        SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_AVX_EPILOGUE
-        EPILOGUE_3_ARGS
-ENDPROC iemAImpl_vcvtps2pd_u256_u128
-
-
-;;
-; vcvtpd2ps instruction - 128-bit variant.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use.
-; @param    A1      Pointer to the result operand (output).
-; @param    A2      Pointer to the second operand (input).
-;
-BEGINPROC_FASTCALL iemAImpl_vcvtpd2ps_u128_u128, 16
-        PROLOGUE_3_ARGS
-        IEMIMPL_AVX_PROLOGUE
-        SSE_AVX_LD_MXCSR A0_32
-
-        movdqu    xmm0, [A2]
-        vcvtpd2ps xmm0, xmm0
-        movdqu    [A1], xmm0
-
-        SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_AVX_EPILOGUE
-        EPILOGUE_3_ARGS
-ENDPROC iemAImpl_vcvtpd2ps_u128_u128
-
-
-;;
-; vcvtpd2ps instruction - 256-bit variant.
-;
-; @return   R0_32   The new MXCSR value of the guest.
-; @param    A0_32   The guest's MXCSR register value to use.
-; @param    A1      Pointer to the result operand (output).
-; @param    A2      Pointer to the second operand (input).
-;
-BEGINPROC_FASTCALL iemAImpl_vcvtpd2ps_u128_u256, 16
-        PROLOGUE_3_ARGS
-        IEMIMPL_AVX_PROLOGUE
-        SSE_AVX_LD_MXCSR A0_32
-
-        vmovdqu   ymm0, [A2]
-        vcvtpd2ps xmm0, ymm0
-        movdqu    [A1], xmm0
-
-        SSE_AVX_ST_MXCSR R0_32, A0_32
-        IEMIMPL_AVX_EPILOGUE
-        EPILOGUE_3_ARGS
-ENDPROC iemAImpl_vcvtpd2ps_u128_u256
 
 
 ;
