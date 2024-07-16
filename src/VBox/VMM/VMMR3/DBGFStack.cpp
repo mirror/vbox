@@ -802,10 +802,11 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
                                                 PCDBGFADDRESS pAddrFrame,
                                                 PCDBGFADDRESS pAddrStack,
                                                 PCDBGFADDRESS pAddrPC,
-                                                RTDBGRETURNTYPE enmReturnType,
+                                                RTDBGRETURNTYPE const *penmReturnType,
                                                 PCDBGFSTACKFRAME *ppFirstFrame)
 {
-    DBGFUNWINDCTX UnwindCtx(pUVM, idCpu, pCtx, hAs);
+    RTDBGRETURNTYPE const enmReturnType = *penmReturnType; /* darwin/arm64 fun, see @bugref{10725} */
+    DBGFUNWINDCTX         UnwindCtx(pUVM, idCpu, pCtx, hAs);
 
     /* alloc first frame. */
     PDBGFSTACKFRAME pCur = (PDBGFSTACKFRAME)MMR3HeapAllocZU(pUVM, MM_TAG_DBGF_STACK, sizeof(*pCur));
@@ -1042,9 +1043,9 @@ static int dbgfR3StackWalkBeginCommon(PUVM pUVM,
         default:
             AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
-    return VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3StackWalkCtxFull, 10,
-                                    pUVM, idCpu, pCtx, hAs, enmCodeType,
-                                    pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
+    return VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3StackWalkCtxFull, 10 | VMREQ_F_EXTRA_ARGS_ALL_PTRS,
+                                    pUVM, idCpu, pCtx, hAs, enmCodeType, pAddrFrame, pAddrStack, pAddrPC,
+                                    &enmReturnType, ppFirstFrame);
 }
 
 

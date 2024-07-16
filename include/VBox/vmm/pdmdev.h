@@ -3436,7 +3436,8 @@ typedef struct PDMDEVHLPR3
      *
      * @remarks See remarks on VMR3ReqCallVU.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMReqCallNoWaitV,(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, va_list Args));
+    DECLR3CALLBACKMEMBER(int, pfnVMReqCallNoWaitV,(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs,
+                                                   va_list Args)) RT_IPRT_CALL_ATTR(3, 4, 0);
 
     /**
      * Convenience wrapper for VMR3ReqCallU.
@@ -3457,7 +3458,8 @@ typedef struct PDMDEVHLPR3
      *
      * @remarks See remarks on VMR3ReqCallVU.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVMReqPriorityCallWaitV,(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, va_list Args));
+    DECLR3CALLBACKMEMBER(int, pfnVMReqPriorityCallWaitV,(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs,
+                                                         va_list Args)) RT_IPRT_CALL_ATTR(3, 4, 0);
 
     /**
      * Stops the VM and enters the debugger to look at the guest state.
@@ -7611,7 +7613,8 @@ DECLINLINE(int) PDMDevHlpVMNotifyCpuDeviceReady(PPDMDEVINS pDevIns, VMCPUID idCp
  *
  * @remarks See remarks on VMR3ReqCallVU.
  */
-DECLINLINE(int) PDMDevHlpVMReqCallNoWait(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+DECLINLINE(int) RT_IPRT_CALL_ATTR(3, 4, 5)
+PDMDevHlpVMReqCallNoWait(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list Args;
     va_start(Args, cArgs);
@@ -7639,7 +7642,8 @@ DECLINLINE(int) PDMDevHlpVMReqCallNoWait(PPDMDEVINS pDevIns, VMCPUID idDstCpu, P
  *
  * @remarks See remarks on VMR3ReqCallVU.
  */
-DECLINLINE(int) PDMDevHlpVMReqPriorityCallWait(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+DECLINLINE(int) RT_IPRT_CALL_ATTR(3, 4, 5)
+PDMDevHlpVMReqPriorityCallWait(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list Args;
     va_start(Args, cArgs);

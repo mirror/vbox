@@ -661,7 +661,8 @@ DECLHIDDEN(int) dbgfR3DisasInstrStateEx(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS p
         rc = dbgfR3DisasInstrExOnVCpu(pVM, pVCpu, pAddr->Sel, &pAddr->off, fFlags, pszOutput, cbOutput, NULL, pDisState);
     else
         rc = VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3DisasInstrExOnVCpu, 9,
-                                     pVM, VMMGetCpuById(pVM, idCpu), pAddr->Sel, &pAddr->off, fFlags, pszOutput, cbOutput, NULL, pDisState);
+                                     pVM, VMMGetCpuById(pVM, idCpu), pAddr->Sel, &pAddr->off, fFlags,
+                                     pszOutput, cbOutput, NULL, pDisState);
     return rc;
 }
 

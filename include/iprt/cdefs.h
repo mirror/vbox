@@ -1512,6 +1512,19 @@
 # define RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a_iFmt, a_iArgs)
 #endif
 
+/** @def RT_IPRT_CALL_ATTR
+ * Identifies a function taking an IPRT format string.
+ * @param   a_iFn   The index (1-based) of the function pointer argument.
+ * @param   a_iArgc The index (1-based) of the argument count.
+ * @param   a_iArgs The index (1-based) of the first argument, use 0 for
+ *                  va_list.
+ */
+#if defined(__GNUC__) && defined(WITH_IPRT_CALL_ATTRIBUTE)
+# define RT_IPRT_CALL_ATTR(a_iFn, a_iArgc, a_iArgs)   __attribute__((__iprt_call__(a_iFn, a_iArgc, a_iArgs)))
+#else
+# define RT_IPRT_CALL_ATTR(a_iFn, a_iArgc, a_iArgs)
+#endif
+
 
 /** @def RT_GCC_SUPPORTS_VISIBILITY_HIDDEN
  * Indicates that the "hidden" visibility attribute can be used (GCC) */

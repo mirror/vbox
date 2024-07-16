@@ -329,9 +329,9 @@ static DECLCALLBACK(int) a_BaseName##_9Args(a_Type uArg0, a_Type uArg1, a_Type u
     CHECK_ARG_EX(7, uArg7, a_Type); \
     CHECK_ARG_EX(8, uArg8, a_Type); \
     return VINF_SUCCESS; \
-} \
-\
-\
+}
+
+/* The max is now 9. See @bugref{10725}.
 static DECLCALLBACK(int) a_BaseName##_10Args(a_Type uArg0, a_Type uArg1, a_Type uArg2, a_Type uArg3, a_Type uArg4, \
                                              a_Type uArg5, a_Type uArg6, a_Type uArg7, a_Type uArg8, a_Type uArg9) \
 { \
@@ -457,7 +457,7 @@ static DECLCALLBACK(int) a_BaseName##_15Args(a_Type uArg0, a_Type uArg1, a_Type 
     CHECK_ARG_EX(13, uArg13, a_Type); \
     CHECK_ARG_EX(14, uArg14, a_Type); \
     return VINF_SUCCESS; \
-}
+} */
 
 #if ARCH_BITS == 64
 # define RAND_ARG_UINTPTR(a_Type, a_iArg)   (g_auArgs[a_iArg] = RTRandU64())
@@ -560,7 +560,7 @@ static void doCallWaitTests(PUVM pUVM)
     RTTEST_CHECK_RC(g_hTest, rc, VINF_SUCCESS); \
     cCalled += 1; \
     RTTEST_CHECK(g_hTest, g_cCalled == cCalled); \
-    \
+/* The max is now 9. See @bugref{10725}.
     rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)a_CallbackBaseName##_10Args, 10, \
                           a_fnRandArg(a_Type, 0), a_fnRandArg(a_Type, 1), a_fnRandArg(a_Type, 2), a_fnRandArg(a_Type, 3), \
                           a_fnRandArg(a_Type, 4), a_fnRandArg(a_Type, 5), a_fnRandArg(a_Type, 6), a_fnRandArg(a_Type, 7), \
@@ -610,7 +610,7 @@ static void doCallWaitTests(PUVM pUVM)
                           a_fnRandArg(a_Type, 12), a_fnRandArg(a_Type, 13), a_fnRandArg(a_Type, 14)); \
     RTTEST_CHECK_RC(g_hTest, rc, VINF_SUCCESS); \
     cCalled += 1; \
-    RTTEST_CHECK(g_hTest, g_cCalled == cCalled)
+    RTTEST_CHECK(g_hTest, g_cCalled == cCalled) */
 
 
     /*

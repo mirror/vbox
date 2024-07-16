@@ -1518,8 +1518,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMReqPriorityCallWaitV(PPDMDEVINS pDevIns, 
              pDevIns->pReg->szName, pDevIns->iInstance, idDstCpu, pfnFunction, cArgs));
 
     PVMREQ pReq;
-    int rc = VMR3ReqCallVU(pDevIns->Internal.s.pVMR3->pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS | VMREQFLAGS_PRIORITY,
-                           pfnFunction, cArgs, Args);
+    int rc = VMR3ReqCallVU(pDevIns->Internal.s.pVMR3->pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT,
+                           VMREQFLAGS_VBOX_STATUS | VMREQFLAGS_PRIORITY, pfnFunction, cArgs, Args);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);

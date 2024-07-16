@@ -519,8 +519,8 @@ VMMR3DECL(int) DBGFR3OSQueryNameAndVersion(PUVM pUVM, char *pszName, size_t cchN
     /*
      * Pass it on to EMT(0).
      */
-    return VMR3ReqPriorityCallWaitU(pUVM, 0 /*idDstCpu*/,
-                                   (PFNRT)dbgfR3OSQueryNameAndVersion, 5, pUVM, pszName, cchName, pszVersion, cchVersion);
+    return VMR3ReqPriorityCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3OSQueryNameAndVersion, 5,
+                                    pUVM, pszName, cchName, pszVersion, cchVersion);
 }
 
 

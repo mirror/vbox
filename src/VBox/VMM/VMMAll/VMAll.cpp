@@ -274,15 +274,15 @@ VMMDECL(int) VMSetRuntimeErrorV(PVMCC pVM, uint32_t fFlags, const char *pszError
 
         va_list va2;
         va_copy(va2, va); /* Have to make a copy here or GCC will break. */
-        rc = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY,
-                                     (PFNRT)vmR3SetRuntimeErrorV, 5, pVM, fFlags, pszErrorId, pszFormat, &va2);
+        rc = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)vmR3SetRuntimeErrorV, 5,
+                                     pVM, fFlags, pszErrorId, pszFormat, &va2);
         va_end(va2);
     }
     else
     {
         char *pszMessage = MMR3HeapAPrintfV(pVM, MM_TAG_VM, pszFormat, va);
-        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY,
-                               (PFNRT)vmR3SetRuntimeError, 4, pVM, fFlags, pszErrorId, pszMessage);
+        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY, (PFNRT)vmR3SetRuntimeError, 4,
+                               pVM, fFlags, pszErrorId, pszMessage);
         if (RT_FAILURE(rc))
             MMR3HeapFree(pszMessage);
     }

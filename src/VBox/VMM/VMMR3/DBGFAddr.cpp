@@ -295,8 +295,8 @@ VMMR3DECL(int)  DBGFR3AddrToPhys(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS pAddres
         if (VMCPU_IS_EMT(pVCpu))
             rc = dbgfR3AddrToPhysOnVCpu(pVCpu, pAddress, pGCPhys);
         else
-            rc = VMR3ReqPriorityCallWaitU(pUVM, pVCpu->idCpu,
-                                          (PFNRT)dbgfR3AddrToPhysOnVCpu, 3, pVCpu, pAddress, pGCPhys);
+            rc = VMR3ReqPriorityCallWaitU(pUVM, pVCpu->idCpu, (PFNRT)dbgfR3AddrToPhysOnVCpu, 3,
+                                          pVCpu, pAddress, pGCPhys);
     }
     return rc;
 }

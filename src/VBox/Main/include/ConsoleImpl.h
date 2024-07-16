@@ -811,20 +811,26 @@ private:
                        MachineState_T aMachineState,
                        HRESULT *phrc);
     int i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pfHostIP, bool *pfEncrypted);
+    /** i_reconfigureMediumAttachment has too many problematic arguments for
+     * passing directly to VMR3ReqCallUV, so we pack them up. @bugref{10725} */
+    struct ReconfigureMediumAttachmentArgs
+    {
+        const char *pcszDevice;         /**< The name of the controller type. */
+        unsigned uInstance;             /**< The instance of the controller. */
+        StorageBus_T enmBus;            /**< The storage bus type of the controller. */
+        bool fUseHostIOCache;           /**< Use the host I/O cache (disable async I/O). */
+        bool fBuiltinIOCache;           /**< Use the builtin I/O cache. */
+        bool fInsertDiskIntegrityDrv;   /**< Flag whether to insert the disk integrity driver into the chain for additionalk debugging aids. */
+        bool fSetupMerge;               /**< Whether to set up a medium merge */
+        unsigned uMergeSource;          /**< Merge source image index */
+        unsigned uMergeTarget;          /**< Merge target image index */
+        IMediumAttachment *aMediumAtt;  /**< The medium attachment. */
+        MachineState_T aMachineState;   /**< The current machine state. */
+    };
     static DECLCALLBACK(int) i_reconfigureMediumAttachment(Console *pThis,
                                                            PUVM pUVM,
                                                            PCVMMR3VTABLE pVMM,
-                                                           const char *pcszDevice,
-                                                           unsigned uInstance,
-                                                           StorageBus_T enmBus,
-                                                           bool fUseHostIOCache,
-                                                           bool fBuiltinIoCache,
-                                                           bool fInsertDiskIntegrityDrv,
-                                                           bool fSetupMerge,
-                                                           unsigned uMergeSource,
-                                                           unsigned uMergeTarget,
-                                                           IMediumAttachment *aMediumAtt,
-                                                           MachineState_T aMachineState,
+                                                           ReconfigureMediumAttachmentArgs const *pArgs,
                                                            HRESULT *phrc);
     static DECLCALLBACK(int) i_changeRemovableMedium(Console *pThis,
                                                      PUVM pUVM,
@@ -891,8 +897,8 @@ private:
     HRESULT i_detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice);
 
     static DECLCALLBACK(int) i_usbAttachCallback(Console *that, PUVM pUVM, PCVMMR3VTABLE pVMM, IUSBDevice *aHostDevice,
-                                                 PCRTUUID aUuid, const char *aBackend, const char *aAddress,
-                                                 PCFGMNODE pRemoteCfg, USBConnectionSpeed_T enmSpeed, ULONG aMaskedIfs,
+                                                 PCRTUUID aUuid, const char *aBackend, const char *aAddress, PCFGMNODE pRemoteCfg,
+                                                 USBConnectionSpeed_T *penmSpeed, ULONG *pfMaskedIfs,
                                                  const char *pszCaptureFilename);
     static DECLCALLBACK(int) i_usbDetachCallback(Console *that, PUVM pUVM, PCVMMR3VTABLE pVMM, PCRTUUID aUuid);
     static DECLCALLBACK(PREMOTEUSBCALLBACK) i_usbQueryRemoteUsbBackend(void *pvUser, PCRTUUID pUuid, uint32_t idClient);

@@ -1201,8 +1201,7 @@ VMMR3DECL(int) DBGFR3InfoEx(PUVM pUVM, VMCPUID idCpu, const char *pszName, const
      */
     if (idCpu == NIL_VMCPUID)
         return dbgfR3Info(pUVM, NIL_VMCPUID, pszName, pszArgs, pHlp);
-    return VMR3ReqPriorityCallWaitU(pUVM, idCpu,
-                                    (PFNRT)dbgfR3Info, 5, pUVM, idCpu, pszName, pszArgs, pHlp);
+    return VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3Info, 5, pUVM, idCpu, pszName, pszArgs, pHlp);
 }
 
 

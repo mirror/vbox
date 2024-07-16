@@ -70,6 +70,9 @@ static int  vmR3ReqProcessOne(PVMREQ pReq);
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -107,6 +110,9 @@ VMMR3_INT_DECL(int) VMR3ReqCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -141,6 +147,9 @@ VMMR3DECL(int) VMR3ReqCallWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, 
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -171,6 +180,9 @@ VMMR3DECL(int) VMR3ReqCallNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, u
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -200,6 +212,9 @@ VMMR3DECL(int) VMR3ReqCallNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -232,6 +247,9 @@ VMMR3_INT_DECL(int) VMR3ReqCallVoidWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunc
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -263,6 +281,9 @@ VMMR3DECL(int) VMR3ReqCallVoidWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFuncti
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -299,6 +320,9 @@ VMMR3DECL(int) VMR3ReqCallVoidNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunctio
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -337,6 +361,9 @@ VMMR3DECL(int) VMR3ReqPriorityCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunct
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -371,6 +398,9 @@ VMMR3DECL(int) VMR3ReqPriorityCallWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFu
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -413,6 +443,9 @@ VMMR3DECL(int) VMR3ReqPriorityCallVoidWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT p
  * @param   fFlags          A combination of the VMREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  * @param   ...             Function arguments.
  *
  * @remarks See remarks on VMR3ReqCallVU.
@@ -453,6 +486,9 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTE
  * @param   pfnFunction     Pointer to the function to call.
  * @param   fFlags          A combination of the VMREQFLAGS values.
  * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          The max is VMREQ_MAX_ARGS (9) (ARM64/darwin
+ *                          peculiarities), unless VMREQ_F_EXTRA_ARGS_ALL_PTRS
+ *                          is ORed in.
  *                          Stuff which differs in size from uintptr_t is gonna make trouble, so don't try!
  * @param   Args            Argument vector.
  *
@@ -464,11 +500,19 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTE
  *                therefore end up with garbage in the bits 63:32 on 64-bit
  *                hosts because 'int' is 32-bit.
  *                Use (void *)NULL or (uintptr_t)0 instead of NULL.
+ *              - The max number of arguments is currently limited to 9, because
+ *                on macOS/arm64 arguments passed on the stack that are 32-bit
+ *                or smaller will not get a full 64-bit stack slot.  So,
+ *                we cannot pretend @a pfnFunction takes a list of @a cArgs
+ *                uintptr_t parameters, unless all parameters above 9 actually
+ *                are more than 32 bits wide.   (This would've kind of worked
+ *                iff the variadict functions didn't use different size round up
+ *                and alignment rules.)  See @bugref{10725}.
  */
 VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTERVAL cMillies, uint32_t fFlags,
                              PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
-    LogFlow(("VMR3ReqCallV: idDstCpu=%u cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", idDstCpu, cMillies, fFlags, pfnFunction, cArgs));
+    LogFlow(("VMR3ReqCallV: idDstCpu=%u cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%#x\n", idDstCpu, cMillies, fFlags, pfnFunction, cArgs));
 
     /*
      * Validate input.
@@ -481,14 +525,18 @@ VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINT
         AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
         *ppReq = NULL;
     }
-    PVMREQ pReq = NULL;
-    AssertMsgReturn(cArgs * sizeof(uintptr_t) <= sizeof(pReq->u.Internal.aArgs),
-                    ("cArg=%d\n", cArgs),
+    AssertMsgReturn(   cArgs <= VMREQ_MAX_ARGS
+                    || (   (cArgs & VMREQ_F_EXTRA_ARGS_ALL_PTRS)
+                        && (cArgs & ~(unsigned)VMREQ_F_EXTRA_ARGS_ALL_PTRS) <= VMREQ_MAX_ARGS_EXTENDED),
+                    ("cArgs=%#x\n", cArgs),
                     VERR_TOO_MUCH_DATA);
+    cArgs &= ~(unsigned)VMREQ_F_EXTRA_ARGS_ALL_PTRS;
 
     /*
      * Allocate request
      */
+    PVMREQ pReq = NULL;
+    AssertCompile(VMREQ_MAX_ARGS_EXTENDED * sizeof(uintptr_t) <= sizeof(pReq->u.Internal.aArgs));
     int rc = VMR3ReqAlloc(pUVM, &pReq, VMREQTYPE_INTERNAL, idDstCpu);
     if (RT_FAILURE(rc))
         return rc;
@@ -496,9 +544,9 @@ VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINT
     /*
      * Initialize the request data.
      */
-    pReq->fFlags         = fFlags;
-    pReq->u.Internal.pfn = pfnFunction;
-    pReq->u.Internal.cArgs = cArgs;
+    pReq->fFlags            = fFlags;
+    pReq->u.Internal.pfn    = pfnFunction;
+    pReq->u.Internal.cArgs  = cArgs;
     for (unsigned iArg = 0; iArg < cArgs; iArg++)
         pReq->u.Internal.aArgs[iArg] = va_arg(Args, uintptr_t);
 

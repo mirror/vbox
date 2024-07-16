@@ -2530,8 +2530,7 @@ HRESULT Console::i_doCPURemove(ULONG aCpu, PUVM pUVM, PCVMMR3VTABLE pVMM)
          * using VMR3ReqCall.
          */
         PVMREQ pReq;
-        vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                    (PFNRT)i_unplugCpu, 4,
+        vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS, (PFNRT)i_unplugCpu, 4,
                                     this, pUVM, pVMM, (VMCPUID)aCpu);
 
         if (vrc == VERR_TIMEOUT)
@@ -2635,8 +2634,7 @@ HRESULT Console::i_doCPUAdd(ULONG aCpu, PUVM pUVM, PCVMMR3VTABLE pVMM)
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                    (PFNRT)i_plugCpu, 4,
+    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS, (PFNRT)i_plugCpu, 4,
                                     this, pUVM, pVMM, aCpu);
 
     /* release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
@@ -3804,8 +3802,7 @@ HRESULT Console::i_doMediumChange(IMediumAttachment *aMediumAttachment, bool fFo
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                    (PFNRT)i_changeRemovableMedium, 9,
+    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS, (PFNRT)i_changeRemovableMedium, 9,
                                     this, pUVM, pVMM, pszDevice, uInstance, enmBus, fUseHostIOCache, aMediumAttachment, fForce);
 
     /* release the lock before waiting for a result (EMT might wait for it, @bugref{7648})! */
@@ -3983,8 +3980,7 @@ HRESULT Console::i_doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, P
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                    (PFNRT)i_attachStorageDevice, 9,
+    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS, (PFNRT)i_attachStorageDevice, 9,
                                     this, pUVM, pVMM, pszDevice, uInstance, enmBus, fUseHostIOCache, aMediumAttachment, fSilent);
 
     /* release the lock before waiting for a result (EMT might wait for it, @bugref{7648})! */
@@ -4158,8 +4154,7 @@ HRESULT Console::i_doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, P
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                                    (PFNRT)i_detachStorageDevice, 8,
+    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS, (PFNRT)i_detachStorageDevice, 8,
                                     this, pUVM, pVMM, pszDevice, uInstance, enmBus, aMediumAttachment, fSilent);
 
     /* release the lock before waiting for a result (EMT might wait for it, @bugref{7648})! */
@@ -5211,8 +5206,7 @@ HRESULT Console::i_doNetworkAdapterChange(PUVM pUVM, PCVMMR3VTABLE pVMM, const c
      * using VM3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
      * here to make requests from under the lock in order to serialize them.
      */
-    int vrc = pVMM->pfnVMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/,
-                                        (PFNRT)i_changeNetworkAttachment, 7,
+    int vrc = pVMM->pfnVMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)i_changeNetworkAttachment, 7,
                                         this, pUVM, pVMM, pszDevice, uInstance, uLun, aNetworkAdapter);
 
     if (fResume)
@@ -6921,11 +6915,21 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         fInsertDiskIntegrityDrv = true;
 
     alock.release();
-    vrc = ptrVM.vtable()->pfnVMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
-                                              (PFNRT)i_reconfigureMediumAttachment, 15,
-                                              this, ptrVM.rawUVM(), ptrVM.vtable(), pcszDevice, uInstance, enmBus,
-                                              fUseHostIOCache, fBuiltinIOCache, fInsertDiskIntegrityDrv, true /* fSetupMerge */,
-                                              aSourceIdx, aTargetIdx, aMediumAttachment, mMachineState, &hrc);
+
+    Console::ReconfigureMediumAttachmentArgs Args1;
+    Args1.pcszDevice                = pcszDevice;
+    Args1.uInstance                 = uInstance;
+    Args1.enmBus                    = enmBus;
+    Args1.fUseHostIOCache           = fUseHostIOCache;
+    Args1.fBuiltinIOCache           = fBuiltinIOCache;
+    Args1.fInsertDiskIntegrityDrv   = fInsertDiskIntegrityDrv;
+    Args1.fSetupMerge               = true;
+    Args1.uMergeSource              = aSourceIdx;
+    Args1.uMergeTarget              = aTargetIdx;
+    Args1.aMediumAtt                = aMediumAttachment;
+    Args1.aMachineState             = mMachineState;
+    vrc = ptrVM.vtable()->pfnVMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)i_reconfigureMediumAttachment, 5,
+                                              this, ptrVM.rawUVM(), ptrVM.vtable(), &Args1, &hrc);
     /* error handling is after resuming the VM */
 
     if (fResume)
@@ -6966,11 +6970,20 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     /* Update medium chain and state now, so that the VM can continue. */
     hrc = mControl->FinishOnlineMergeMedium();
 
-    vrc = ptrVM.vtable()->pfnVMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
-                                              (PFNRT)i_reconfigureMediumAttachment, 15,
-                                              this, ptrVM.rawUVM(), ptrVM.vtable(), pcszDevice, uInstance, enmBus,
-                                              fUseHostIOCache, fBuiltinIOCache, fInsertDiskIntegrityDrv, false /* fSetupMerge */,
-                                              0 /* uMergeSource */, 0 /* uMergeTarget */, aMediumAttachment, mMachineState, &hrc);
+    Console::ReconfigureMediumAttachmentArgs Args2;
+    Args2.pcszDevice                = pcszDevice;
+    Args2.uInstance                 = uInstance;
+    Args2.enmBus                    = enmBus;
+    Args2.fUseHostIOCache           = fUseHostIOCache;
+    Args2.fBuiltinIOCache           = fBuiltinIOCache;
+    Args2.fInsertDiskIntegrityDrv   = fInsertDiskIntegrityDrv;
+    Args2.fSetupMerge               = false;
+    Args2.uMergeSource              = 0;
+    Args2.uMergeTarget              = 0;
+    Args2.aMediumAtt                = aMediumAttachment;
+    Args2.aMachineState             = mMachineState;
+    vrc = ptrVM.vtable()->pfnVMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)i_reconfigureMediumAttachment, 5,
+                                              this, ptrVM.rawUVM(), ptrVM.vtable(), &Args2, &hrc);
     /* error handling is after resuming the VM */
 
     if (fResume)
@@ -7052,13 +7065,20 @@ HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMedium
         alock.release();
 
         hrc = S_OK;
-        IMediumAttachment *pAttachment = aAttachments[i];
-        int vrc = ptrVM.vtable()->pfnVMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
-                                                      (PFNRT)i_reconfigureMediumAttachment, 15,
-                                                      this, ptrVM.rawUVM(), ptrVM.vtable(), pcszDevice, lInstance, enmBus,
-                                                      fUseHostIOCache, fBuiltinIOCache, fInsertDiskIntegrityDrv,
-                                                      false /* fSetupMerge */, 0 /* uMergeSource */, 0 /* uMergeTarget */,
-                                                      pAttachment, mMachineState, &hrc);
+        Console::ReconfigureMediumAttachmentArgs Args;
+        Args.pcszDevice                 = pcszDevice;
+        Args.uInstance                  = lInstance;
+        Args.enmBus                     = enmBus;
+        Args.fUseHostIOCache            = fUseHostIOCache;
+        Args.fBuiltinIOCache            = fBuiltinIOCache;
+        Args.fInsertDiskIntegrityDrv    = fInsertDiskIntegrityDrv;
+        Args.fSetupMerge                = false;
+        Args.uMergeSource               = 0;
+        Args.uMergeTarget               = 0;
+        Args.aMediumAtt                 = aAttachments[i];
+        Args.aMachineState              = mMachineState;
+        int vrc = ptrVM.vtable()->pfnVMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)i_reconfigureMediumAttachment, 5,
+                                                      this, ptrVM.rawUVM(), ptrVM.vtable(), &Args, &hrc);
         if (RT_FAILURE(vrc))
             throw setErrorBoth(E_FAIL, vrc, "%Rrc", vrc);
         if (FAILED(hrc))
@@ -10345,10 +10365,11 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs, co
     AssertComRCReturnRC(hrc);
 
     int vrc = ptrVM.vtable()->pfnVMR3ReqCallWaitU(ptrVM.rawUVM(), 0 /* idDstCpu (saved state, see #6232) */,
-                                                  (PFNRT)i_usbAttachCallback, 11,
+                                                  (PFNRT)i_usbAttachCallback, 11 | VMREQ_F_EXTRA_ARGS_ALL_PTRS,
                                                   this, ptrVM.rawUVM(), ptrVM.vtable(), aHostDevice, uuid.raw(),
-                                                  strBackend.c_str(), Address.c_str(), pRemoteCfg, enmSpeed, aMaskedIfs,
-                                                  aCaptureFilename.isEmpty() ? NULL : aCaptureFilename.c_str());
+                                                  strBackend.c_str(), Address.c_str(), pRemoteCfg, /* extra arg (ptrs only): */
+                                                  &enmSpeed, &aMaskedIfs, aCaptureFilename.isEmpty()
+                                                                        ? (const char *)NULL : aCaptureFilename.c_str());
     if (RT_SUCCESS(vrc))
     {
         /* Create a OUSBDevice and add it to the device list */
@@ -10397,8 +10418,8 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs, co
 //static
 DECLCALLBACK(int)
 Console::i_usbAttachCallback(Console *that, PUVM pUVM, PCVMMR3VTABLE pVMM, IUSBDevice *aHostDevice, PCRTUUID aUuid,
-                             const char *pszBackend, const char *aAddress, PCFGMNODE pRemoteCfg, USBConnectionSpeed_T aEnmSpeed,
-                             ULONG aMaskedIfs, const char *pszCaptureFilename)
+                             const char *pszBackend, const char *aAddress, PCFGMNODE pRemoteCfg,
+                             USBConnectionSpeed_T *penmSpeed, ULONG *pfMaskedIfs, const char *pszCaptureFilename)
 {
     RT_NOREF(aHostDevice);
     LogFlowFuncEnter();
@@ -10408,7 +10429,7 @@ Console::i_usbAttachCallback(Console *that, PUVM pUVM, PCVMMR3VTABLE pVMM, IUSBD
     AssertReturn(!that->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
     VUSBSPEED enmSpeed = VUSB_SPEED_UNKNOWN;
-    switch (aEnmSpeed)
+    switch (*penmSpeed)
     {
         case USBConnectionSpeed_Low:        enmSpeed = VUSB_SPEED_LOW;          break;
         case USBConnectionSpeed_Full:       enmSpeed = VUSB_SPEED_FULL;         break;
@@ -10419,7 +10440,7 @@ Console::i_usbAttachCallback(Console *that, PUVM pUVM, PCVMMR3VTABLE pVMM, IUSBD
     }
 
     int vrc = pVMM->pfnPDMR3UsbCreateProxyDevice(pUVM, aUuid, pszBackend, aAddress, pRemoteCfg,
-                                                 enmSpeed, aMaskedIfs, pszCaptureFilename);
+                                                 enmSpeed, *pfMaskedIfs, pszCaptureFilename);
     LogFlowFunc(("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
@@ -10468,8 +10489,7 @@ HRESULT Console::i_detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice)
 
     alock.release();
     int vrc = ptrVM.vtable()->pfnVMR3ReqCallWaitU(ptrVM.rawUVM(), 0 /* idDstCpu (saved state, see #6232) */,
-                                                  (PFNRT)i_usbDetachCallback, 4,
-                                                  this, ptrVM.rawUVM(), ptrVM.vtable(), pUuid);
+                                                  (PFNRT)i_usbDetachCallback, 4, this, ptrVM.rawUVM(), ptrVM.vtable(), pUuid);
     if (RT_SUCCESS(vrc))
     {
         LogFlowFunc(("Detached device {%RTuuid}\n", pUuid));
@@ -11641,18 +11661,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
  * @param   pThis                   Reference to the console object.
  * @param   pUVM                    The VM handle.
  * @param   pVMM                    The VMM vtable.
- * @param   pcszDevice              The name of the controller type.
- * @param   uInstance               The instance of the controller.
- * @param   enmBus                  The storage bus type of the controller.
- * @param   fUseHostIOCache         Use the host I/O cache (disable async I/O).
- * @param   fBuiltinIOCache         Use the builtin I/O cache.
- * @param   fInsertDiskIntegrityDrv Flag whether to insert the disk integrity driver into the chain
- *                                  for additionalk debugging aids.
- * @param   fSetupMerge             Whether to set up a medium merge
- * @param   uMergeSource            Merge source image index
- * @param   uMergeTarget            Merge target image index
- * @param   aMediumAtt              The medium attachment.
- * @param   aMachineState           The current machine state.
+ * @param   pArgs                   Argument package.
  * @param   phrc                    Where to store com error - only valid if we return VERR_GENERAL_FAILURE.
  * @return  VBox status code.
  */
@@ -11660,20 +11669,10 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
 DECLCALLBACK(int) Console::i_reconfigureMediumAttachment(Console *pThis,
                                                          PUVM pUVM,
                                                          PCVMMR3VTABLE pVMM,
-                                                         const char *pcszDevice,
-                                                         unsigned uInstance,
-                                                         StorageBus_T enmBus,
-                                                         bool fUseHostIOCache,
-                                                         bool fBuiltinIOCache,
-                                                         bool fInsertDiskIntegrityDrv,
-                                                         bool fSetupMerge,
-                                                         unsigned uMergeSource,
-                                                         unsigned uMergeTarget,
-                                                         IMediumAttachment *aMediumAtt,
-                                                         MachineState_T aMachineState,
+                                                         Console::ReconfigureMediumAttachmentArgs const *pArgs,
                                                          HRESULT *phrc)
 {
-    LogFlowFunc(("pUVM=%p aMediumAtt=%p phrc=%p\n", pUVM, aMediumAtt, phrc));
+    LogFlowFunc(("pUVM=%p aMediumAtt=%p phrc=%p\n", pUVM, pArgs->aMediumAtt, phrc));
 
     HRESULT         hrc;
     Bstr            bstr;
@@ -11683,22 +11682,22 @@ DECLCALLBACK(int) Console::i_reconfigureMediumAttachment(Console *pThis,
     /* Ignore attachments other than hard disks, since at the moment they are
      * not subject to snapshotting in general. */
     DeviceType_T lType;
-    hrc = aMediumAtt->COMGETTER(Type)(&lType);                                  H();
+    hrc = pArgs->aMediumAtt->COMGETTER(Type)(&lType); H();
     if (lType != DeviceType_HardDisk)
         return VINF_SUCCESS;
 
     /* Update the device instance configuration. */
-    int vrc = pThis->i_configMediumAttachment(pcszDevice,
-                                              uInstance,
-                                              enmBus,
-                                              fUseHostIOCache,
-                                              fBuiltinIOCache,
-                                              fInsertDiskIntegrityDrv,
-                                              fSetupMerge,
-                                              uMergeSource,
-                                              uMergeTarget,
-                                              aMediumAtt,
-                                              aMachineState,
+    int vrc = pThis->i_configMediumAttachment(pArgs->pcszDevice,
+                                              pArgs->uInstance,
+                                              pArgs->enmBus,
+                                              pArgs->fUseHostIOCache,
+                                              pArgs->fBuiltinIOCache,
+                                              pArgs->fInsertDiskIntegrityDrv,
+                                              pArgs->fSetupMerge,
+                                              pArgs->uMergeSource,
+                                              pArgs->uMergeTarget,
+                                              pArgs->aMediumAtt,
+                                              pArgs->aMachineState,
                                               phrc,
                                               true /* fAttachDetach */,
                                               false /* fForceUnmount */,

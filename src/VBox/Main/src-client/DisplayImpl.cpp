@@ -1594,8 +1594,8 @@ HRESULT Display::attachFramebuffer(ULONG aScreenId, const ComPtr<IFramebuffer> &
 
     Console::SafeVMPtrQuiet ptrVM(mParent);
     if (ptrVM.isOk()) /** @todo r=andy This apparently *never* is true at this point? */
-        ptrVM.vtable()->pfnVMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
-                                              3, this, aScreenId, false);
+        ptrVM.vtable()->pfnVMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT, 3,
+                                              this, aScreenId, false);
 
     LogRelFlowFunc(("Attached to %d %RTuuid\n", aScreenId, aId.raw()));
     return S_OK;
@@ -2676,8 +2676,8 @@ HRESULT Display::invalidateAndUpdate()
         /* Have to release the lock when calling EMT.  */
         alock.release();
 
-        int vrc = ptrVM.vtable()->pfnVMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
-                                                        3, this, 0, true);
+        int vrc = ptrVM.vtable()->pfnVMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT, 3,
+                                                        this, 0, true);
         alock.acquire();
 
         if (RT_FAILURE(vrc))
@@ -2696,8 +2696,8 @@ HRESULT Display::invalidateAndUpdateScreen(ULONG aScreenId)
     HRESULT hrc = ptrVM.hrc();
     if (SUCCEEDED(hrc))
     {
-        int vrc = ptrVM.vtable()->pfnVMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
-                                                        3, this, aScreenId, false);
+        int vrc = ptrVM.vtable()->pfnVMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT, 3,
+                                                        this, aScreenId, false);
         if (RT_FAILURE(vrc))
             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not invalidate and update the screen %d (%Rrc)"), aScreenId, vrc);
     }
