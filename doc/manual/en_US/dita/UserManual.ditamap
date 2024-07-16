@@ -82,7 +82,7 @@
          <topicref href="topics/preface-diversity.dita"/>
       </preface>
     </frontmatter>
-      <chapter href="topics/Introduction.dita">
+      <chapter href="topics/Introduction.dita" chunk="to-content">
          <topicref href="topics/virt-why-useful.dita"/>
          <topicref href="topics/virtintro.dita"/>
          <topicref href="topics/features-overview.dita"/>
@@ -175,7 +175,7 @@
          </topicref>
          <topicref href="topics/log-viewer.dita"/>
       </chapter>
-      <chapter href="topics/installation.dita">
+      <chapter href="topics/installation.dita" chunk="to-content">
          <topicref href="topics/installation_windows.dita">
             <topicref href="topics/install-win-prereq.dita"/>
             <topicref href="topics/install-win-installdir-req.dita"/>
@@ -218,7 +218,7 @@
             <topicref href="topics/install-ext-pack-manager.dita"/>
          </topicref>
       </chapter>
-      <chapter href="topics/BasicConcepts.dita">
+      <chapter href="topics/BasicConcepts.dita" chunk="to-content">
          <topicref href="topics/guestossupport.dita">
             <topicref href="topics/intro-macosxguests.dita"/>
             <topicref href="topics/intro-64bitguests.dita"/>
@@ -259,7 +259,7 @@
             <topicref href="topics/efibootargs.dita"/>
          </topicref>
       </chapter>
-      <chapter href="topics/guestadditions.dita">
+      <chapter href="topics/guestadditions.dita" chunk="to-content">
          <topicref href="topics/guestadd-intro.dita"/>
          <topicref href="topics/guestadd-install.dita">
             <topicref href="topics/additions-windows.dita">
@@ -318,7 +318,7 @@
             </topicref>
          </topicref>
       </chapter>
-      <chapter href="topics/storage.dita">
+      <chapter href="topics/storage.dita" chunk="to-content">
          <topicref href="topics/harddiskcontrollers.dita"/>
          <topicref href="topics/vdidetails.dita"/>
          <topicref href="topics/virtual-media-manager.dita">
@@ -338,7 +338,7 @@
             <topicref href="topics/vboximg-mount-steps.dita"/>
          </topicref>
       </chapter>
-      <chapter href="topics/networkingdetails.dita">
+      <chapter href="topics/networkingdetails.dita" chunk="to-content">
          <topicref href="topics/nichardware.dita"/>
          <topicref href="topics/networkingmodes.dita"/>
          <topicref href="topics/network_nat.dita">
@@ -362,7 +362,7 @@
          <topicref href="topics/network_performance.dita"/>
       </chapter>
 
-   <chapter href="topics/remotevm.dita">
+   <chapter href="topics/remotevm.dita" chunk="to-content">
       <topicref href="topics/vrde.dita">
          <topicref href="topics/rdp-viewers.dita"/>
          <topicref href="topics/vboxheadless.dita"/>
@@ -381,7 +381,7 @@
    </chapter>
 
    <!-- VBoxManage Refentry command topics -->
-   <chapter href="topics/vboxmanage.dita">
+   <chapter href="topics/vboxmanage.dita" chunk="to-content">
       <topicref href="topics/vboxmanage-intro.dita"/>
       <!-- Commands Overview -->
       <topicref href="topics/vboxmanage-cmd-overview.dita"/>
@@ -445,7 +445,7 @@
       <topicref format="ditamap" href="topics/man_vboximg-mount.ditamap"/>
    </chapter>
 
-   <chapter href="topics/AdvancedTopics.dita">
+   <chapter href="topics/AdvancedTopics.dita" chunk="to-content">
       <topicref href="topics/autologon.dita">
          <topicref href="topics/autologon_win.dita"/>
          <topicref href="topics/autologon_unix.dita">
@@ -571,7 +571,7 @@
       </topicref>
       <topicref format="ditamap" href="topics/user_isomakercmd-man.ditamap"/>
    </chapter>
-   <chapter href="topics/TechnicalBackground.dita">
+   <chapter href="topics/TechnicalBackground.dita" chunk="to-content">
       <topicref href="topics/vboxconfigdata.dita">
          <topicref href="topics/vboxconfigdata-machine-folder.dita"/>
          <topicref href="topics/vboxconfigdata-global.dita"/>
@@ -585,9 +585,9 @@
       <topicref href="topics/nestedpaging.dita"/>
    </chapter>
 
-   <chapter href="topics/VirtualBoxAPI.dita"/>
+   <chapter href="topics/VirtualBoxAPI.dita"  chunk="to-content"/>
 
-   <chapter href="topics/Troubleshooting.dita">
+   <chapter href="topics/Troubleshooting.dita"  chunk="to-content">
       <topicref href="topics/ts_procs-tools.dita">
          <topicref href="topics/ts_categorize-isolate.dita"/>
          <topicref href="topics/collect-debug-info.dita"/>
@@ -649,7 +649,7 @@
       </topicref>
    </chapter>
 
-   <chapter href="topics/Security.dita">
+   <chapter href="topics/Security.dita" chunk="to-content">
       <topicref href="topics/security-general.dita"/>
       <topicref href="topics/security-secure-install.dita">
          <topicref href="topics/security-secure-install-overview.dita"/>
@@ -681,13 +681,13 @@
       </topicref>
    </chapter>
 
-   <chapter href="topics/KnownIssues.dita">
+   <chapter href="topics/KnownIssues.dita" chunk="to-content">
       <topicref href="topics/ExperimentalFeatures.dita"/>
       <topicref href="topics/KnownProblems.dita"/>
    </chapter>
 
    <!-- Change Log -->
-   <chapter href="topics/ChangeLog.dita">
+   <chapter href="topics/ChangeLog.dita" chunk="to-content">
       <!-- This map file and all the topics it is referencing is generated from user_ChangeLogImpl.xml. -->
       <topicref format="ditamap" href="topics/changelog-versions.ditamap"/>
       <topicref href="topics/changelog-older.dita"/>
@@ -695,7 +695,7 @@
 
    <!-- Third Party Licenses-->
 
-   <chapter href="topics/privacy.dita"/>
+   <chapter href="topics/privacy.dita" chunk="to-content"/>
 
    <chapter href="topics/Glossary.dita" chunk="to-content">
       <topicref toc="no" href="topics/glossentry-acpi.dita"/>
