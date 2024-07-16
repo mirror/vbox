@@ -101,18 +101,6 @@ protected:
 };
 
 
-/* static */
-const QString UISessionStateStatusBarIndicator::s_strTable = QString("<table cellspacing=5 style='white-space:pre'>%1</table>");
-/* static */
-const QString UISessionStateStatusBarIndicator::s_strTableRow1 = QString("<tr><td colspan='2'><nobr><b>%1</b></nobr></td></tr>");
-/* static */
-const QString UISessionStateStatusBarIndicator::s_strTableRow2 = QString("<tr><td><nobr>%1:</nobr></td><td><nobr>%2</nobr></td></tr>");
-/* static */
-const QString UISessionStateStatusBarIndicator::s_strTableRow3 = QString("<tr><td><nobr>%1</nobr></td><td><nobr>%2</nobr></td></tr>");
-/* static */
-const QString UISessionStateStatusBarIndicator::s_strTableRow4 = QString("<tr><td><nobr>&nbsp;%1:</nobr></td><td><nobr>%2</nobr></td></tr>");
-
-
 /** QAccessibleWidget extension used as an accessibility interface for UISessionStateStatusBarIndicator. */
 class QIAccessibilityInterfaceForUISessionStateStatusBarIndicator : public QAccessibleWidget
 {
@@ -151,6 +139,18 @@ private:
 };
 
 
+/* static */
+const QString UISessionStateStatusBarIndicator::s_strTable = QString("<table cellspacing=5 style='white-space:pre'>%1</table>");
+/* static */
+const QString UISessionStateStatusBarIndicator::s_strTableRow1 = QString("<tr><td colspan='2'><nobr><b>%1</b></nobr></td></tr>");
+/* static */
+const QString UISessionStateStatusBarIndicator::s_strTableRow2 = QString("<tr><td><nobr>%1:</nobr></td><td><nobr>%2</nobr></td></tr>");
+/* static */
+const QString UISessionStateStatusBarIndicator::s_strTableRow3 = QString("<tr><td><nobr>%1</nobr></td><td><nobr>%2</nobr></td></tr>");
+/* static */
+const QString UISessionStateStatusBarIndicator::s_strTableRow4 = QString("<tr><td><nobr>&nbsp;%1:</nobr></td><td><nobr>%2</nobr></td></tr>");
+
+
 UISessionStateStatusBarIndicator::UISessionStateStatusBarIndicator(IndicatorType enmType, UIMachine *pMachine)
     : m_enmType(enmType)
     , m_pMachine(pMachine)
@@ -162,6 +162,97 @@ UISessionStateStatusBarIndicator::UISessionStateStatusBarIndicator(IndicatorType
 }
 
 void UISessionStateStatusBarIndicator::sltRetranslateUI()
+{
+    /* Translate description: */
+    m_strDescription = tr("%1 status-bar indicator", "like 'hard-disk status-bar indicator'")
+                         .arg(gpConverter->toString(type()));
+}
+
+
+/** QITextStatusBarIndicator extension for Runtime UI. */
+class UISessionTextStatusBarIndicator : public QITextStatusBarIndicator
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor which remembers passed @a session object. */
+    UISessionTextStatusBarIndicator(IndicatorType enmType);
+
+    /** Returns the indicator type. */
+    IndicatorType type() const { return m_enmType; }
+
+    /** Returns the indicator description. */
+    virtual QString description() const { return m_strDescription; }
+
+public slots:
+
+    /** Abstract update routine. */
+    virtual void updateAppearance() = 0;
+
+protected slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI();
+
+protected:
+
+    /** Holds the indicator type. */
+    const IndicatorType m_enmType;
+
+    /** Holds the indicator description. */
+    QString m_strDescription;
+};
+
+
+/** QAccessibleWidget extension used as an accessibility interface for UISessionTextStatusBarIndicator. */
+class QIAccessibilityInterfaceForUISessionTextStatusBarIndicator : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating UISessionTextStatusBarIndicator accessibility interface: */
+        if (pObject && strClassname == QLatin1String("UISessionTextStatusBarIndicator"))
+            return new QIAccessibilityInterfaceForUISessionTextStatusBarIndicator(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    QIAccessibilityInterfaceForUISessionTextStatusBarIndicator(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::Button)
+    {}
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text /* enmTextRole */) const RT_OVERRIDE
+    {
+        /* Sanity check: */
+        AssertPtrReturn(indicator(), 0);
+
+        /* Return the indicator description: */
+        return indicator()->description();
+    }
+
+private:
+
+    /** Returns corresponding UISessionTextStatusBarIndicator. */
+    UISessionTextStatusBarIndicator *indicator() const { return qobject_cast<UISessionTextStatusBarIndicator*>(widget()); }
+};
+
+
+UISessionTextStatusBarIndicator::UISessionTextStatusBarIndicator(IndicatorType enmType)
+    : m_enmType(enmType)
+{
+    /* Install UISessionTextStatusBarIndicator accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForUISessionTextStatusBarIndicator::pFactory);
+    connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
+            this, &UISessionTextStatusBarIndicator::sltRetranslateUI);
+}
+
+void UISessionTextStatusBarIndicator::sltRetranslateUI()
 {
     /* Translate description: */
     m_strDescription = tr("%1 status-bar indicator", "like 'hard-disk status-bar indicator'")
@@ -1320,8 +1411,8 @@ private slots:
 };
 
 
-/** QITextStatusBarIndicator extension for Runtime UI: Keyboard-extension indicator. */
-class UIIndicatorKeyboardExtension : public QITextStatusBarIndicator
+/** UISessionTextStatusBarIndicator extension for Runtime UI: Keyboard-extension indicator. */
+class UIIndicatorKeyboardExtension : public UISessionTextStatusBarIndicator
 {
     Q_OBJECT;
 
@@ -1329,12 +1420,14 @@ public:
 
     /** Constructor. */
     UIIndicatorKeyboardExtension()
+        : UISessionTextStatusBarIndicator(IndicatorType_KeyboardExtension)
     {
         /* Make sure host-combination label will be updated: */
         connect(gEDataManager, &UIExtraDataManager::sigRuntimeUIHostKeyCombinationChange,
                 this, &UIIndicatorKeyboardExtension::updateAppearance);
         connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI,
                 this, &UIIndicatorKeyboardExtension::sltRetranslateUI);
+
         /* Update & translate finally: */
         updateAppearance();
     }
@@ -1354,10 +1447,17 @@ protected slots:
     /** Retranslation routine. */
     void sltRetranslateUI()
     {
+        /* Call to base-class: */
+        UISessionTextStatusBarIndicator::sltRetranslateUI();
+
         setToolTip(tr("Shows the currently assigned Host key.<br>"
                       "This key, when pressed alone, toggles the keyboard and mouse "
                       "capture state. It can also be used in combination with other keys "
                       "to quickly perform actions from the main menu."));
+
+        /* Host-combo info: */
+        const QString strHostCombo = tr("Host-combo: %1").arg(text());
+        m_strDescription = QString("%1, %2").arg(m_strDescription, strHostCombo);
     }
 };
 

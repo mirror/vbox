@@ -2365,18 +2365,19 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const IndicatorTyp
     QString strResult;
     switch (indicatorType)
     {
-        case IndicatorType_HardDisks:     strResult = QApplication::translate("UICommon", "Hard Disks", "IndicatorType"); break;
-        case IndicatorType_OpticalDisks:  strResult = QApplication::translate("UICommon", "Optical Disks", "IndicatorType"); break;
-        case IndicatorType_FloppyDisks:   strResult = QApplication::translate("UICommon", "Floppy Disks", "IndicatorType"); break;
-        case IndicatorType_Audio:         strResult = QApplication::translate("UICommon", "Audio", "IndicatorType"); break;
-        case IndicatorType_Network:       strResult = QApplication::translate("UICommon", "Network", "IndicatorType"); break;
-        case IndicatorType_USB:           strResult = QApplication::translate("UICommon", "USB", "IndicatorType"); break;
-        case IndicatorType_SharedFolders: strResult = QApplication::translate("UICommon", "Shared Folders", "IndicatorType"); break;
-        case IndicatorType_Display:       strResult = QApplication::translate("UICommon", "Display", "IndicatorType"); break;
-        case IndicatorType_Recording:     strResult = QApplication::translate("UICommon", "Recording", "IndicatorType"); break;
-        case IndicatorType_Features:      strResult = QApplication::translate("UICommon", "Features", "IndicatorType"); break;
-        case IndicatorType_Mouse:         strResult = QApplication::translate("UICommon", "Mouse", "IndicatorType"); break;
-        case IndicatorType_Keyboard:      strResult = QApplication::translate("UICommon", "Keyboard", "IndicatorType"); break;
+        case IndicatorType_HardDisks:         strResult = QApplication::translate("UICommon", "Hard Disks", "IndicatorType"); break;
+        case IndicatorType_OpticalDisks:      strResult = QApplication::translate("UICommon", "Optical Disks", "IndicatorType"); break;
+        case IndicatorType_FloppyDisks:       strResult = QApplication::translate("UICommon", "Floppy Disks", "IndicatorType"); break;
+        case IndicatorType_Audio:             strResult = QApplication::translate("UICommon", "Audio", "IndicatorType"); break;
+        case IndicatorType_Network:           strResult = QApplication::translate("UICommon", "Network", "IndicatorType"); break;
+        case IndicatorType_USB:               strResult = QApplication::translate("UICommon", "USB", "IndicatorType"); break;
+        case IndicatorType_SharedFolders:     strResult = QApplication::translate("UICommon", "Shared Folders", "IndicatorType"); break;
+        case IndicatorType_Display:           strResult = QApplication::translate("UICommon", "Display", "IndicatorType"); break;
+        case IndicatorType_Recording:         strResult = QApplication::translate("UICommon", "Recording", "IndicatorType"); break;
+        case IndicatorType_Features:          strResult = QApplication::translate("UICommon", "Features", "IndicatorType"); break;
+        case IndicatorType_Mouse:             strResult = QApplication::translate("UICommon", "Mouse", "IndicatorType"); break;
+        case IndicatorType_Keyboard:          strResult = QApplication::translate("UICommon", "Keyboard", "IndicatorType"); break;
+        case IndicatorType_KeyboardExtension: strResult = QApplication::translate("UICommon", "Host-combo", "IndicatorType"); break;
         default:
         {
             AssertMsgFailed(("No text for indicator type=%d", indicatorType));
