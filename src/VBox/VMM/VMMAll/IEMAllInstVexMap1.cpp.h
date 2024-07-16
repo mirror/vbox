@@ -5612,20 +5612,19 @@ FNIEMOP_DEF(iemOp_vmovdqu_Wx_Vx)
  * @ optest      op1=0x2083 cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x6
  * @ optest      op1=0x2083 cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x6
  */
-FNIEMOP_STUB_1(iemOp_VGrp15_vldmxcsr, uint8_t, bRm);
-//FNIEMOP_DEF_1(iemOp_VGrp15_vldmxcsr, uint8_t, bRm)
-//{
-//    IEMOP_MNEMONIC1(M_MEM, VLDMXCSR, vldmxcsr, MdRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
-//    IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
-//    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
-//    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
-//    IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV_EX(fAvx);
-//    IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
-//    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,     0);
-//    IEM_MC_CALL_CIMPL_2(iemCImpl_ldmxcsr, iEffSeg, GCPtrEff);
-//    IEM_MC_END();
-//    return VINF_SUCCESS;
-//}
+FNIEMOP_DEF_1(iemOp_VGrp15_vldmxcsr, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC1(M_MEM, VLDMXCSR, vldmxcsr, Md_RO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
+    IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+    IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV_EX(fAvx);
+    IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,     0);
+    IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_FPU, RT_BIT_64(kIemNativeGstReg_MxCsr), iemCImpl_vldmxcsr, iEffSeg, GCPtrEff);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
 
 
 /**

@@ -9327,6 +9327,51 @@ IEM_CIMPL_DEF_2(iemCImpl_ldmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
 
 
 /**
+ * Implements 'VSTMXCSR'.
+ *
+ * @param   iEffSeg         The effective segment register for @a GCPtrEff.
+ * @param   GCPtrEff        The address of the image.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_vldmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
+{
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_XCRx);
+
+    /*
+     * Raise exceptions.
+     */
+    if (   (   !IEM_IS_GUEST_CPU_AMD(pVCpu)
+            ? (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_SSE | XSAVE_C_YMM)) == (XSAVE_C_SSE | XSAVE_C_YMM)
+            : !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM))
+        && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE))
+    {
+        if (!(pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS))
+        {
+            /*
+             * Do the job.
+             */
+            uint32_t fNewMxCsr;
+            VBOXSTRICTRC rcStrict = iemMemFetchDataU32(pVCpu, &fNewMxCsr, iEffSeg, GCPtrEff);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                uint32_t const fMxCsrMask = CPUMGetGuestMxCsrMask(pVCpu->CTX_SUFF(pVM));
+                if (!(fNewMxCsr & ~fMxCsrMask))
+                {
+                    pVCpu->cpum.GstCtx.XState.x87.MXCSR = fNewMxCsr;
+                    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+                }
+                Log(("ldmxcsr: New MXCSR=%#RX32 & ~MASK=%#RX32 = %#RX32 -> #GP(0)\n",
+                     fNewMxCsr, fMxCsrMask, fNewMxCsr & ~fMxCsrMask));
+                return iemRaiseGeneralProtectionFault0(pVCpu);
+            }
+            return rcStrict;
+        }
+        return iemRaiseDeviceNotAvailable(pVCpu);
+    }
+    return iemRaiseUndefinedOpcode(pVCpu);
+}
+
+
+/**
  * Commmon routine for fnstenv and fnsave.
  *
  * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
