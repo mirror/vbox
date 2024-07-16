@@ -6761,6 +6761,52 @@ BEGINPROC_FASTCALL iemAImpl_vcvtps2pd_u256_u128, 16
 ENDPROC iemAImpl_vcvtps2pd_u256_u128
 
 
+;;
+; vcvtpd2ps instruction - 128-bit variant.
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vcvtpd2ps_u128_u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        movdqu    xmm0, [A2]
+        vcvtpd2ps xmm0, xmm0
+        movdqu    [A1], xmm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_vcvtpd2ps_u128_u128
+
+
+;;
+; vcvtpd2ps instruction - 256-bit variant.
+;
+; @return   R0_32   The new MXCSR value of the guest.
+; @param    A0_32   The guest's MXCSR register value to use.
+; @param    A1      Pointer to the result operand (output).
+; @param    A2      Pointer to the second operand (input).
+;
+BEGINPROC_FASTCALL iemAImpl_vcvtpd2ps_u128_u256, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_AVX_PROLOGUE
+        SSE_AVX_LD_MXCSR A0_32
+
+        vmovdqu   ymm0, [A2]
+        vcvtpd2ps xmm0, ymm0
+        movdqu    [A1], xmm0
+
+        SSE_AVX_ST_MXCSR R0_32, A0_32
+        IEMIMPL_AVX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_vcvtpd2ps_u128_u256
+
+
 ;
 ; UCOMISS (SSE)
 ;
