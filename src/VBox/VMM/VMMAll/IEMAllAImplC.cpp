@@ -16800,9 +16800,8 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vmaxsd_u128_r64_fallback,(uint32_t uMxCsrIn
 
 
 /**
- * CVTSS2SD
+ * [V]CVTSS2SD
  */
-#ifdef IEM_WITHOUT_ASSEMBLY
 static uint32_t iemAImpl_cvtss2sd_u128_r32_worker(PRTFLOAT64U pr64Res, uint32_t fMxcsr, PCRTFLOAT32U pr32Val1)
 {
     RTFLOAT32U r32Src1;
@@ -16814,12 +16813,20 @@ static uint32_t iemAImpl_cvtss2sd_u128_r32_worker(PRTFLOAT64U pr64Res, uint32_t 
 }
 
 
+#ifdef IEM_WITHOUT_ASSEMBLY
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_cvtss2sd_u128_r32,(uint32_t uMxCsrIn, PX86XMMREG pResult, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
 {
     pResult->ar64[1] = puSrc1->ar64[1];
     return iemAImpl_cvtss2sd_u128_r32_worker(&pResult->ar64[0], uMxCsrIn, pr32Src2);
 }
 #endif
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vcvtss2sd_u128_r32_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCX86XMMREG puSrc1, PCRTFLOAT32U pr32Src2))
+{
+    puDst->ar64[1] = puSrc1->ar64[1];
+    return iemAImpl_cvtss2sd_u128_r32_worker(&puDst->ar64[0], uMxCsrIn, pr32Src2);
+}
 
 
 /**
