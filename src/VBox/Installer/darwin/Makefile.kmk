@@ -1074,3 +1074,33 @@ VirtualBoxCLI.pkg: $(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg
 VirtualBox.pkg: $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg
 VirtualBox.mpkg: $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg
 VirtualBox.dmg: $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg
+
+# Path specifying the .dmg mount point being used with 'kmk mount_dmg' and 'kmk unmount_dmg'.
+VBOX_PATH_DMG_MOUNTPOINT := /Volumes/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV)
+
+#
+# Mounts the created .dmg file within Finder in read-write mode using a shadow storage
+# which holds the modififed content.
+#
+# This is needed in order to modify the styling of the .dmg's DS_Store file (which is a 
+# proprietary file format known by Finder). Needs root.
+#
+mount_dmg:
+	@kmk_builtin_echo "Mounting .dmg file in R/W mode (using shadow storage) ..."
+	@sudo hdiutil attach -quiet -readwrite \
+		-mountpoint $(VBOX_PATH_DMG_MOUNTPOINT) \
+		-shadow $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV)-shadow.dmg \
+		$(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg
+	@kmk_builtin_echo ""
+	@kmk_builtin_echo "Successfully mounted within Finder."
+	@kmk_builtin_echo "You may now alter the .dmg image as needed. To save your changes, unmount via 'kmk unmount'."
+
+#
+# Unmounts the formerly mounted .dmg file and saves the (eventually) altered .DS_Store file from the
+# shadow storage back into the SVN repo tree. Needs root.
+#
+unmount_dmg:
+	@kmk_builtin_echo "Unmounting .dmg file ..."
+	@kmk_cp $(VBOX_PATH_DMG_MOUNTPOINT)/.DS_Store $(PATH_SUB_CURRENT)/DiskImage/DS_Store
+	@sudo hdiutil detach -quiet $(VBOX_PATH_DMG_MOUNTPOINT)
+	@kmk_builtin_echo "Files have been updated within SVN tree. Check what the changes are."
