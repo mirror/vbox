@@ -1796,6 +1796,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         else if (   !strcmp(a->argv[1], "recording")
                  || !strcmp(a->argv[1], "videocap") /* legacy command */)
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING);
+
             if (!strcmp(a->argv[1], "videocap"))
                 RTMsgWarning(ControlVM::tr("Sub command 'videocap' is deprecated -- please use 'recording' instead ."));
 
@@ -1820,7 +1822,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             bool fEnabled;
             if (RT_SUCCESS(parseBool(a->argv[2], &fEnabled)))
             {
-                //setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING);
                 CHECK_ERROR_RET(recordingSettings, COMSETTER(Enabled)(fEnabled), RTEXITCODE_FAILURE);
 
                 if (fEnabled)
@@ -1828,7 +1829,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "start"))
             {
-                //setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_START);
                 bool fWait = false;
                 if (a->argc >= 4 && !strcmp(a->argv[3], "--wait"))
                     fWait = true;
@@ -1846,21 +1846,18 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "stop"))
             {
-                //setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_STOP);
                 ComPtr<IProgress> progress;
                 CHECK_ERROR_BREAK(recordingSettings, COMGETTER(Progress)(progress.asOutParam()));
                 CHECK_ERROR_BREAK(progress, Cancel());
             }
             else if (!strcmp(a->argv[2], "attach"))
             {
-                //setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_ATTACH);
                 ComPtr<IProgress> progress;
                 CHECK_ERROR_BREAK(recordingSettings, COMGETTER(Progress)(progress.asOutParam()));
                 hrc = showProgress(progress, SHOW_PROGRESS_OPS);
             }
             else if (!strcmp(a->argv[2], "screens"))
             {
-                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_SCREENS);
                 ULONG cMonitors = 64;
                 CHECK_ERROR_BREAK(pGraphicsAdapter, COMGETTER(MonitorCount)(&cMonitors));
                 com::SafeArray<BOOL> saScreens(cMonitors);
@@ -1882,7 +1879,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "filename"))
             {
-                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_FILENAME);
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
@@ -1896,7 +1892,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             else if (   !strcmp(a->argv[2], "videores")
                      || !strcmp(a->argv[2], "videoresolution"))
             {
-                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_VIDEORES);
                 if (a->argc != 5)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
@@ -1930,7 +1925,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "videorate"))
             {
-                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_VIDEORATE);
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
@@ -1952,7 +1946,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "videofps"))
             {
-                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_VIDEOFPS);
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
@@ -1974,7 +1967,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "maxtime"))
             {
-                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_MAXTIME);
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
@@ -1996,7 +1988,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "maxfilesize"))
             {
-                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_MAXFILESIZE);
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));
@@ -2018,9 +2009,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "opts"))
             {
-#if 0 /* Add when the corresponding documentation is enabled. */
-                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_OPTS);
-#endif
                 if (a->argc != 4)
                 {
                     errorSyntax(ControlVM::tr("Incorrect number of parameters."));

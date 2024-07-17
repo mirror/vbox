@@ -455,37 +455,29 @@
         <arg choice="plain">on</arg>
         <arg choice="plain">off</arg>
       </group>
-    </cmdsynopsis>
-<!--
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-start">
+
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">recording start</arg>
-      <arg><replaceable>wait</replaceable></arg>
-    </cmdsynopsis>
+      <arg>--wait</arg>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-stop">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">recording stop</arg>
-    </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-attach">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">recording attach</arg>
-    </cmdsynopsis>
--->
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-screens">
+
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -497,9 +489,7 @@
         <arg choice="plain">none</arg>
         <arg choice="plain"><replaceable>экран</replaceable>,[<replaceable>экран</replaceable>...]</arg>
       </group>
-    </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-filename">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -507,9 +497,7 @@
       </group>
       <arg choice="plain">recording filename</arg>
       <arg choice="req">filename</arg>
-    </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-videores">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -517,9 +505,7 @@
       </group>
       <arg choice="plain">recording videores</arg>
       <arg choice="req"><replaceable>ширина</replaceable>x<replaceable>высота</replaceable></arg>
-    </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-videorate">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -527,9 +513,7 @@
       </group>
       <arg choice="plain">recording videorate</arg>
       <arg choice="req"><replaceable>битрейт</replaceable></arg>
-    </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-videofps">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -537,9 +521,7 @@
       </group>
       <arg choice="plain">recording videofps</arg>
       <arg choice="req"><replaceable>кадров/сек</replaceable></arg>
-    </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-maxtime">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -547,9 +529,7 @@
       </group>
       <arg choice="plain">recording maxtime</arg>
       <arg choice="req"><replaceable>сек</replaceable></arg>
-    </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-maxfilesize">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -1580,7 +1560,7 @@
       </itemizedlist>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-recording">
-      <title>Включить или выключить запись сессии виртуальной машины</title>
+      <title>Recording of a Virtual Machine Session</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Команда <command>VBoxManage controlvm
@@ -1593,10 +1573,26 @@
       <para>
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
-    </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recording-screens">
-      <title>Задать экран виртуальной машины для записи</title>
-      <remark role="help-copy-synopsis"/>
+
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> recording start</command> command
+        starts the recording of a VM session into a
+        WebM/VP8 file.
+      </para>
+
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> recording stop</command> command
+        stops the recording of a VM session.
+      </para>
+
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> recording attach</command> command
+        attaches to a running recording of a VM session.
+      </para>
+
       <para>
         Команда <command>VBoxManage controlvm
         <replaceable>имя-ВМ</replaceable> recording screens</command>
@@ -1619,10 +1615,7 @@
             ВМ для записи.
           </para></listitem>
       </itemizedlist>
-    </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recording-filename">
-      <title>Задать файл для сохранения записанной сессии виртуальной машины</title>
-      <remark role="help-copy-synopsis"/>
+
       <para>
         Команда <command>VBoxManage controlvm
         <replaceable>имя-ВМ</replaceable> recording filename</command>
@@ -1637,10 +1630,7 @@
       <para>
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
-    </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recording-videores">
-      <title>Задать разрешение записанного видео</title>
-      <remark role="help-copy-synopsis"/>
+
       <para>
         Команда <command>VBoxManage controlvm <replaceable>имя-ВМ</replaceable>
         recording videores</command> задает разрешение записанного видео в
@@ -1666,11 +1656,7 @@
             <replaceable>высота</replaceable> задает высоту в пикселах.
           </para></listitem>
       </itemizedlist>
-    </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recording-videorate">
-      <title>Задать битрейт видео</title>
-      <remark role="help-copy-synopsis"/>
-<!-- @todo r=andy Clarify rate. -->
+
       <para>
         Команда <command>VBoxManage controlvm
         <replaceable>имя-ВМ</replaceable> recording videorate</command>
@@ -1687,10 +1673,7 @@
       <para>
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
-    </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recording-videofps">
-      <title>Задать максимальную частоту видео</title>
-      <remark role="help-copy-synopsis"/>
+
       <para>
         Команда <command>VBoxManage controlvm
         <replaceable>имя-ВМ</replaceable> recording videofps</command>
@@ -1710,11 +1693,7 @@
       <para>
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
-    </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recording-maxtime">
-      <title>Задать максимальное время записи видео</title>
-      <remark role="help-copy-synopsis"/>
-<!-- @todo r=andy Clarify time format. -->
+
       <para>
         Команда <command>VBoxManage controlvm
         <replaceable>имя-ВМ</replaceable> recording maxtime</command>
@@ -1726,10 +1705,7 @@
       <para>
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
-    </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recording-maxfilesize">
-      <title>Задать максимальный размер записанного видео</title>
-      <remark role="help-copy-synopsis"/>
+
       <para>
         Команда <command>VBoxManage controlvm
         <replaceable>имя-ВМ</replaceable> recording maxfilesize</command>
@@ -1743,6 +1719,7 @@
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
     </refsect2>
+
     <refsect2 id="vboxmanage-controlvm-setcredentials">
       <title>Задать учетные данные для удаленного входа в виртуальные машины Windows</title>
       <remark role="help-copy-synopsis"/>
