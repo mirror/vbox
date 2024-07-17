@@ -179,6 +179,9 @@ endif
 	@# Change (back) the owner so it can be deleted by the user.
 	sudo chown "$(shell whoami)" "$@"
 	sudo chown -R "$(shell whoami)" $(VBOX_PATH_PACK_TMP)/DiskImage
+	@# Make sure to delete any old shadow storage for the disk image to prevent mounting the newly build disk image
+	@# due to a mismatch.
+	sudo kmk_rm -f $(VBOX_DMG_SHADOW_STORAGE)
 ifdef VBOX_SIGNING_MODE
  ifndef VBOX_WITHOUT_SIGNED_DMG
 	@# Sign the created dmg.
@@ -1097,7 +1100,7 @@ mount_dmg:
 	@kmk_builtin_echo ""
 	@kmk_builtin_echo "Successfully mounted within Finder."
 	@kmk_builtin_echo "You may now alter the .dmg image as needed.
-	@kmk_builtin_echo "To save your changes, unmount via 'kmk unmount'."
+	@kmk_builtin_echo "To save your changes, unmount via 'kmk unmount_dmg'."
 	@kmk_builtin_echo "To discard your changes, unmount directly via Finder (eject icon)."
 
 #
@@ -1108,4 +1111,5 @@ unmount_dmg:
 	@kmk_builtin_echo "Unmounting .dmg file ..."
 	@kmk_cp $(VBOX_PATH_DMG_MOUNTPOINT)/.DS_Store $(PATH_SUB_CURRENT)/DiskImage/DS_Store
 	@sudo hdiutil detach -quiet $(VBOX_PATH_DMG_MOUNTPOINT)
+	@kmk_builtin_echo ""
 	@kmk_builtin_echo "Files have been updated within SVN tree. Check what the changes are."
