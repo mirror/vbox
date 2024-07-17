@@ -48,6 +48,7 @@ extern "C" {
 #include "basic-block.h"
 #include "tree.h"
 #include "tree-pass.h"
+#include "tree-pretty-print.h"
 #if __GNUC__ == 5 && __GNUC_MINOR__ == 4
 # include "tree-ssa-alias.h"
 # include "gimple-expr.h"
@@ -147,12 +148,24 @@ static tree gimple_call_fntype(gimple hStmt)
 
 
 /*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** gimple statement handle.   */
+#if RT_GNUC_PREREQ(6, 0)
+typedef const gimple *MY_GIMPLE_HSTMT_T;
+#else
+typedef gimple        MY_GIMPLE_HSTMT_T;
+#endif
+
+
+/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static bool             MyPassGateCallback(void);
 static unsigned int     MyPassExecuteCallback(void);
 static unsigned int     MyPassExecuteCallbackWithFunction(struct function *pFun);
-static tree             AttributeHandler(tree *, tree, tree, int, bool *);
+static tree             AttributeHandlerFormat(tree *, tree, tree, int, bool *);
+static tree             AttributeHandlerCallReq(tree *, tree, tree, int, bool *);
 
 
 /*********************************************************************************************************************************
@@ -212,7 +225,7 @@ static struct gimple_opt_pass g_MyPass =
     pass:
     {
         type                    : GIMPLE_PASS,
-        name                    : "*iprt-format-checks", /* asterisk = no dump */
+        name                    : "*iprt-format-and-callreq-checks", /* asterisk = no dump */
 # if RT_GNUC_PREREQ(4, 6)
         optinfo_flags           : 0,
 # endif
@@ -256,7 +269,7 @@ static const struct attribute_spec g_aAttribSpecs[] =
 #if RT_GNUC_PREREQ(4, 6) && !(RT_GNUC_PREREQ(6, 3) && !RT_GNUC_PREREQ(8, 0))
         affects_type_identity   : false,
 #endif
-        handler                 : AttributeHandler,
+        handler                 : AttributeHandlerFormat,
 #if RT_GNUC_PREREQ(6, 3) && !RT_GNUC_PREREQ(8, 0)
         affects_type_identity   : false,
 #endif
@@ -274,7 +287,25 @@ static const struct attribute_spec g_aAttribSpecs[] =
 #if RT_GNUC_PREREQ(4, 6) && !(RT_GNUC_PREREQ(6, 3) && !RT_GNUC_PREREQ(8, 0))
         affects_type_identity   : false,
 #endif
-        handler                 : AttributeHandler,
+        handler                 : AttributeHandlerFormat,
+#if RT_GNUC_PREREQ(6, 3) && !RT_GNUC_PREREQ(8, 0)
+        affects_type_identity   : false,
+#endif
+#if RT_GNUC_PREREQ(8, 0)
+        exclude                 : NULL,
+#endif
+    },
+    {
+        name                    : "iprt_callreq",
+        min_length              : 3,
+        max_length              : 3,
+        decl_required           : false,
+        type_required           : true,
+        function_type_required  : true,
+#if RT_GNUC_PREREQ(4, 6) && !(RT_GNUC_PREREQ(6, 3) && !RT_GNUC_PREREQ(8, 0))
+        affects_type_identity   : false,
+#endif
+        handler                 : AttributeHandlerCallReq,
 #if RT_GNUC_PREREQ(6, 3) && !RT_GNUC_PREREQ(8, 0)
         affects_type_identity   : false,
 #endif
@@ -318,12 +349,12 @@ static void dprintDecl(tree hDecl)
     enum tree_code const    enmDeclCode = TREE_CODE(hDecl);
     tree const              hType       = TREE_TYPE(hDecl);
     enum tree_code const    enmTypeCode = hType ? TREE_CODE(hType) : (enum tree_code)-1;
-#if 0
+# if 0
     if (   enmTypeCode == RECORD_TYPE
         && enmDeclCode == TYPE_DECL
         && DECL_ARTIFICIAL(hDecl))
         dprint_class(hType);
-#endif
+# endif
 
     dprintf("%s ", get_tree_code_name(enmDeclCode));
     dprintScope(hDecl);
@@ -635,6 +666,182 @@ static void MyCheckFormatRecursive(PVFMTCHKSTATE pState, tree hFmtArg)
 }
 
 
+/**
+ * Check VMR3ReqCallU stuff.
+ *
+ * @param   pState              The checking state.
+ */
+static void MyCheckCallReq(MY_GIMPLE_HSTMT_T const hStmt, location_t const hStmtLoc,
+                           long const idxFn, long const idxArgc, long const idxArgs, unsigned const cCallArgs)
+{
+#ifdef DEBUG
+    expanded_location const XLoc = expand_location_to_spelling_point(hStmtLoc);
+    dprintf("checker-call: cCallArgs=%#lx - %s:%u\n", cCallArgs, XLoc.file ? XLoc.file : "<nofile>", XLoc.line);
+#endif
+
+    /*
+     * Catch incorrect attribute use.
+     */
+    if (idxFn > cCallArgs)
+    {
+        error_at(hStmtLoc, "Incorrect function argument number (first param) in IPRT call attribute: %lu (max %u)",
+                 idxFn, cCallArgs);
+        return;
+    }
+    if (idxArgc > cCallArgs)
+    {
+        error_at(hStmtLoc, "Incorrect argument count argument number (second param) in IPRT call attribute: %lu (max %u)",
+                 idxArgc, cCallArgs);
+        return;
+    }
+    if (idxArgs > cCallArgs + 1)
+    {
+        error_at(hStmtLoc, "Incorrect arguments argument number (last param) in IPRT call attribute: %lu (max %u)",
+                 idxArgs, cCallArgs + 1);
+        return;
+    }
+
+    /*
+     * Get the argument count argument and check how it compares to cCallArgs if constant.
+     */
+    tree hArgCount = gimple_call_arg(hStmt, idxArgc - 1);
+    if (!hArgCount)
+    {
+        error_at(hStmtLoc, "Failed to get the parameter counter argument (%lu)", idxArgc);
+        return;
+    }
+    HOST_WIDE_INT cArgsValue = -1;
+    if (TREE_CODE(hArgCount) == INTEGER_CST)
+    {
+        if (!MY_DOUBLE_INT_FITS_SHWI(hArgCount))
+            error_at(hStmtLoc, "Unexpected integer overflow in argument count constant");
+        else
+        {
+            cArgsValue = MY_DOUBLE_INT_TO_SHWI(hArgCount);
+            if (   cArgsValue < 0
+                || cArgsValue != (int)cArgsValue)
+                error_at(hStmtLoc, "Unexpected integer argument count constant value: %ld", cArgsValue);
+            else
+            {
+                /* HARD CODED MAX and constants */
+                dprintf("checker-call: cArgsValue=%#lx\n", cArgsValue);
+                if (   cArgsValue <= 9
+                    || ((cArgsValue & 0x8000) && ((unsigned)cArgsValue & ~(unsigned)0x8000) <= 15) )
+                { /* likely */ }
+                else
+                    error_at(hStmtLoc, "Bad integer argument count constant value: %lx (max is 9, or 15 with flag)",
+                             cArgsValue);
+
+                cArgsValue = (unsigned)cArgsValue & ~(unsigned)0x8000;
+                if (idxArgs != 0 && idxArgs + cArgsValue - 1 != (long)cCallArgs)
+                    error_at(hStmtLoc, "Argument count %ld starting at %ld (1-based) does not match argument count: %u",
+                             cArgsValue, idxArgs, cCallArgs);
+            }
+        }
+    }
+
+    /*
+     * Get the function pointer statement and strip any coercion.
+     */
+    tree const hFnArg = gimple_call_arg(hStmt, idxFn - 1);
+    if (!hFnArg)
+    {
+        error_at(hStmtLoc, "Failed to get function argument (%lu)", idxFn);
+        return;
+    }
+    tree hFnType = 0;
+    if (TREE_CODE(hFnArg) == SSA_NAME)
+    {
+        dprintf("  * hFnArg=%p %s(%d) %s (SSA)\n", hFnArg, get_tree_code_name(TREE_CODE(hFnArg)), TREE_CODE(hFnArg),
+                SSA_NAME_IDENTIFIER(hFnArg) ? IDENTIFIER_POINTER(SSA_NAME_IDENTIFIER(hFnArg)) : "<unnamed-ssa-name>");
+        hFnType = TREE_TYPE(hFnArg);
+        if (hFnType && TREE_CODE(hFnType) != POINTER_TYPE)
+        {
+            error_at(hStmtLoc, "Expected pointer_type for hFnType=%p, not %s(%d)",
+                     hFnType, get_tree_code_name(TREE_CODE(hFnType)), TREE_CODE(hFnType));
+            return;
+        }
+        if (hFnType)
+            hFnType = TREE_TYPE(hFnType);
+    }
+    else
+    {
+        dprintf("  * hFnArg=%p %s(%d)\n", hFnArg, get_tree_code_name(TREE_CODE(hFnArg)), TREE_CODE(hFnArg));
+        tree const hFnDecl = gimple_call_addr_fndecl(hFnArg);
+        if (hFnDecl)
+        {
+#ifdef DEBUG
+            dprintDecl(hFnDecl);
+            dprintf("\n");
+#endif
+            hFnType = TREE_TYPE(hFnDecl);
+        }
+    }
+    if (hFnType)
+    {
+        dprintf("  * hFnType=%p %s(%d)\n", hFnType, get_tree_code_name(TREE_CODE(hFnType)), TREE_CODE(hFnType));
+        if (TREE_CODE(hFnType) != FUNCTION_TYPE)
+        {
+            error_at(hStmtLoc, "Expected function_type for hFnType=%p, not %s(%d)",
+                     hFnType, get_tree_code_name(TREE_CODE(hFnType)), TREE_CODE(hFnType));
+            return;
+        }
+
+        /* Count the arguments. */
+        unsigned   cFnTypeArgs = 0;
+        tree const hArgList = TYPE_ARG_TYPES(hFnType);
+        dprintf("  * hArgList=%p %s(%d)\n", hFnType, get_tree_code_name(TREE_CODE(hArgList)), TREE_CODE(hArgList));
+        if (!hArgList)
+            error_at(hStmtLoc, "Using unprototyped function (arg %lu)?", idxFn);
+        else if (hArgList != void_list_node)
+            for (tree hArg = hArgList; hArg && hArg != void_list_node; hArg = TREE_CHAIN(hArg))
+                cFnTypeArgs++;
+
+        /* Check that it matches the argument value. */
+        if ((long)cFnTypeArgs != cArgsValue && cArgsValue >= 0)
+            error_at(hStmtLoc, "Function prototype takes %u arguments, but %u specified in the call request",
+                     cFnTypeArgs, (unsigned)cArgsValue);
+
+        /*
+         * Check that there are no oversized arguments in the function type.
+         * If there are more than 9 arguments, also check the size of the lasts
+         * ones, up to but not including the last argument.
+         */
+        HOST_WIDE_INT const cPtrBits = MY_DOUBLE_INT_TO_SHWI(TYPE_SIZE(TREE_TYPE(null_pointer_node)));
+        HOST_WIDE_INT const cIntBits = MY_DOUBLE_INT_TO_SHWI(TYPE_SIZE(integer_type_node));
+        unsigned  iArg = 0;
+        for (tree hArg = hArgList; hArg && hArg != void_list_node; hArg = TREE_CHAIN(hArg), iArg++)
+        {
+            tree const          hArgType = TREE_VALUE(hArg);
+            HOST_WIDE_INT const cArgBits = MY_DOUBLE_INT_TO_SHWI(TYPE_SIZE(hArgType));
+            if (cArgBits > cPtrBits)
+                error_at(hStmtLoc, "Argument #%u (1-based) is too large: %lu bits, max %lu", iArg + 1, cArgBits, cPtrBits);
+            if (cArgBits != cPtrBits && iArg >= 8 && iArg != cFnTypeArgs - 1)
+                error_at(hStmtLoc, "Argument #%u (1-based) must be pointer sized: %lu bits, expect %lu",
+                         iArg + 1, cArgBits, cPtrBits);
+
+            if (idxArgs > 0)
+            {
+                tree const hArgPassed     = gimple_call_arg(hStmt, idxArgs - 1 + iArg);
+                tree       hArgPassedType = TREE_TYPE(hArgPassed);
+
+                HOST_WIDE_INT const cArgPassedBits = MY_DOUBLE_INT_TO_SHWI(TYPE_SIZE(hArgPassedType));
+                if (   cArgPassedBits != cArgBits
+                    && (   cArgPassedBits != cIntBits /* expected promotion target is INT */
+                        || cArgBits       >  cIntBits /* no promotion required */ ))
+                    error_at(hStmtLoc,
+                             "Argument #%u (1-based) passed to call request differs in size from target type: %lu bits, expect %lu",
+                             iArg + 1, cArgPassedBits, cArgBits);
+            }
+        }
+
+        /** @todo check that the arguments passed in the VMR3ReqXxxx call matches.   */
+    }
+    else if (idxArgs != 0)
+        error_at(hStmtLoc, "Failed to get function declaration (%lu) for non-va_list call", idxFn);
+}
+
+
 #if !RT_GNUC_PREREQ(4, 9)
 /**
  * Execute my pass.
@@ -664,7 +871,9 @@ static unsigned int     MyPassExecuteCallbackWithFunction(struct function *pFun)
 
         /*
          * Enumerate the statements in the current basic block.
-         * We're interested in calls to functions with the __iprt_format__ attribute.
+         *
+         * We're interested in calls to functions with the __iprt_format__,
+         * iprt_format_maybe_null and __iprt_callreq__ attributes.
          */
         for (gimple_stmt_iterator hStmtItr = gsi_start_bb(hBasicBlock); !gsi_end_p(hStmtItr); gsi_next(&hStmtItr))
         {
@@ -714,44 +923,60 @@ static unsigned int     MyPassExecuteCallbackWithFunction(struct function *pFun)
                     if (   hFnDecl == NULL_TREE
                         && gimple_call_internal_p(hStmt) /* va_arg() kludge */)
                         continue;
-                    error_at(gimple_location(hStmt), "Failed to resolve function type [fn=%s fndecl=%s]\n",
+                    error_at(gimple_location(hStmt), "Failed to resolve function type [fn=%s fndecl=%s]",
                              hFn ? get_tree_code_name(TREE_CODE(hFn)) : "<null>",
                              hFnDecl ? get_tree_code_name(TREE_CODE(hFnDecl)) : "<null>");
                 }
                 else if (POINTER_TYPE_P(hFnType))
-                    error_at(gimple_location(hStmt), "Got a POINTER_TYPE when expecting a function type [fn=%s]\n",
+                    error_at(gimple_location(hStmt), "Got a POINTER_TYPE when expecting a function type [fn=%s]",
                              get_tree_code_name(TREE_CODE(hFn)));
                 if (hFnType)
                     dprintf("     hFnType=%p %s(%d) %s\n", hFnType, get_tree_code_name(TREE_CODE(hFnType)), TREE_CODE(hFnType),
                               TYPE_NAME(hFnType) && DECL_NAME(TYPE_NAME(hFnType))
                             ? IDENTIFIER_POINTER(DECL_NAME(TYPE_NAME(hFnType))) : "<unamed>");
 
-                tree const hAttr        = hFnType ? lookup_attribute("iprt_format", TYPE_ATTRIBUTES(hFnType))            : NULL_TREE;
-                tree const hAttrMaybe0  = hFnType ? lookup_attribute("iprt_format_maybe_null", TYPE_ATTRIBUTES(hFnType)) : NULL_TREE;
-                if (hAttr || hAttrMaybe0)
+                tree const hAttrCall      = hFnType ? lookup_attribute("iprt_callreq", TYPE_ATTRIBUTES(hFnType)) : NULL_TREE;
+                tree const hAttrFmt       = hFnType ? lookup_attribute("iprt_format",  TYPE_ATTRIBUTES(hFnType)) : NULL_TREE;
+                tree const hAttrFmtMaybe0 = hFnType ? lookup_attribute("iprt_format_maybe_null", TYPE_ATTRIBUTES(hFnType)) : NULL_TREE;
+                if (hAttrCall || hAttrFmt || hAttrFmtMaybe0)
                 {
                     /*
-                     * Yeah, it has the attribute!
+                     * Yeah, it has one of the attributes!
                      */
-                    tree const hAttrArgs = hAttr ? TREE_VALUE(hAttr) : TREE_VALUE(hAttrMaybe0);
-                    VFMTCHKSTATE State;
-                    State.iFmt          = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(hAttrArgs));
-                    State.iArgs         = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(TREE_CHAIN(hAttrArgs)));
-                    State.pszFmt        = NULL;
-                    State.fMaybeNull    = hAttr == NULL_TREE;
-                    State.hStmt         = hStmt;
-                    State.hFmtLoc       = gimple_location(hStmt);
-                    dprintf("     %s() __iprt_format%s__(iFmt=%ld, iArgs=%ld)\n",
-                            hFnDecl && DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
-                            State.fMaybeNull ? "_maybe_null" : "", State.iFmt, State.iArgs);
-
-                    unsigned cCallArgs = gimple_call_num_args(hStmt);
-                    if (cCallArgs >= State.iFmt)
-                        MyCheckFormatRecursive(&State, gimple_call_arg(hStmt, State.iFmt - 1));
+                    unsigned const cCallArgs = gimple_call_num_args(hStmt);
+                    tree           hAttrArgs;
+                    if (hAttrCall)
+                    {
+                        hAttrArgs          = TREE_VALUE(hAttrCall);
+                        long const idxFn   = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(hAttrArgs));
+                        long const idxArgc = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(TREE_CHAIN(hAttrArgs)));
+                        long const idxArgs  = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(TREE_CHAIN(TREE_CHAIN(hAttrArgs))));
+                        dprintf("     %s() __iprt_callreq__(idxFn=%ld, idxArgc=%ld, idxArgs=%ld)\n",
+                                hFnDecl && DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
+                                idxFn, idxArgc, idxArgs);
+                        MyCheckCallReq(hStmt, gimple_location(hStmt), idxFn, idxArgc, idxArgs, cCallArgs);
+                    }
                     else
-                        error_at(gimple_location(hStmt),
-                                 "Call has only %d arguments; %s() format string is argument #%lu (1-based), thus missing\n",
-                                 cCallArgs, DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>", State.iFmt);
+                    {
+                        hAttrArgs           = hAttrFmt ? TREE_VALUE(hAttrFmt) : TREE_VALUE(hAttrFmtMaybe0);
+                        VFMTCHKSTATE State;
+                        State.hStmt         = hStmt;
+                        State.hFmtLoc       = gimple_location(hStmt);
+                        State.fMaybeNull    = hAttrFmt ? false : true;
+                        State.iFmt          = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(hAttrArgs));
+                        State.iArgs         = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(TREE_CHAIN(hAttrArgs)));
+                        State.pszFmt        = NULL;
+                        dprintf("     %s() __iprt_format%s__(iFmt=%ld, iArgs=%ld)\n",
+                                hFnDecl && DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
+                                State.fMaybeNull ? "_maybe_null" : "", State.iFmt, State.iArgs);
+                        if (cCallArgs >= State.iFmt)
+                            MyCheckFormatRecursive(&State, gimple_call_arg(hStmt, State.iFmt - 1));
+                        else
+                            error_at(gimple_location(hStmt),
+                                     "Call has only %d arguments; %s() format string is argument #%lu (1-based), thus missing",
+                                     cCallArgs, DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
+                                     State.iFmt);
+                    }
                 }
             }
         }
@@ -772,7 +997,7 @@ static bool             MyPassGateCallback(void)
 
 
 /**
- * Validate the use of an attribute.
+ * Validate the use of an format attribute.
  *
  * @returns ??
  * @param   phOnNode        The node the attribute is being used on.
@@ -781,12 +1006,39 @@ static bool             MyPassGateCallback(void)
  * @param   fFlags          Some kind of flags...
  * @param   pfDontAddAttrib Whether to add the attribute to this node or not.
  */
-static tree AttributeHandler(tree *phOnNode, tree hAttrName, tree hAttrArgs, int fFlags, bool *pfDontAddAttrib)
+static tree AttributeHandlerFormat(tree *phOnNode, tree hAttrName, tree hAttrArgs, int fFlags, bool *pfDontAddAttrib)
 {
-    dprintf("AttributeHandler: name=%s fFlags=%#x", IDENTIFIER_POINTER(hAttrName), fFlags);
+    dprintf("AttributeHandlerFormat: name=%s fFlags=%#x", IDENTIFIER_POINTER(hAttrName), fFlags);
     long iFmt  = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(hAttrArgs));
     long iArgs = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(TREE_CHAIN(hAttrArgs)));
     dprintf(" iFmt=%ld iArgs=%ld", iFmt, iArgs);
+
+    tree hType = *phOnNode;
+    dprintf(" hType=%p %s(%d)\n", hType, get_tree_code_name(TREE_CODE(hType)), TREE_CODE(hType));
+
+    if (pfDontAddAttrib)
+        *pfDontAddAttrib = false;
+    return NULL_TREE;
+}
+
+
+/**
+ * Validate the use of an call request attribute.
+ *
+ * @returns ??
+ * @param   phOnNode        The node the attribute is being used on.
+ * @param   hAttrName       The attribute name.
+ * @param   hAttrArgs       The attribute arguments.
+ * @param   fFlags          Some kind of flags...
+ * @param   pfDontAddAttrib Whether to add the attribute to this node or not.
+ */
+static tree AttributeHandlerCallReq(tree *phOnNode, tree hAttrName, tree hAttrArgs, int fFlags, bool *pfDontAddAttrib)
+{
+    dprintf("AttributeHandlerCallReq: name=%s fFlags=%#x", IDENTIFIER_POINTER(hAttrName), fFlags);
+    long iFn   = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(hAttrArgs));
+    long iArgc = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(TREE_CHAIN(hAttrArgs)));
+    long iArgs = MY_DOUBLE_INT_TO_SHWI(TREE_VALUE(TREE_CHAIN(TREE_CHAIN(hAttrArgs))));
+    dprintf(" iFn=%ld iArgc=%ld iArgs=%ld", iFn, iArgc, iArgs);
 
     tree hType = *phOnNode;
     dprintf(" hType=%p %s(%d)\n", hType, get_tree_code_name(TREE_CODE(hType)), TREE_CODE(hType));
@@ -931,7 +1183,7 @@ bool VFmtChkRequirePresentArg(PVFMTCHKSTATE pState, const char *pszLoc, unsigned
         dprintf("arg%u: hArg=%p [%s] hType=%p [%s] cls=%s\n", iArg, hArg, get_tree_code_name(TREE_CODE(hArg)),
                 hType, get_tree_code_name(TREE_CODE(hType)), tree_code_class_strings[TREE_CODE_CLASS(TREE_CODE(hType))]);
         dprintf("      nm=%p\n", TYPE_NAME(hType));
-        dprintf("      cb=%p %s value=%ld\n", TYPE_SIZE(hType), get_tree_code_name(TREE_CODE(TYPE_SIZE(hType))),
+        dprintf("      cBits=%p %s value=%ld\n", TYPE_SIZE(hType), get_tree_code_name(TREE_CODE(TYPE_SIZE(hType))),
                 MY_DOUBLE_INT_TO_SHWI(TYPE_SIZE(hType)) );
         dprintf("      unit=%p %s value=%ld\n", TYPE_SIZE_UNIT(hType), get_tree_code_name(TREE_CODE(TYPE_SIZE_UNIT(hType))),
                 MY_DOUBLE_INT_TO_SHWI(TYPE_SIZE_UNIT(hType)) );
