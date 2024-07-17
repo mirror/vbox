@@ -90,21 +90,45 @@
 #define BS3_FP32_QNAN(a_Sign)                 RTFLOAT32U_INIT_QNAN(a_Sign)
 #define BS3_FP32_QNAN_VAL(a_Sign, a_Val)      RTFLOAT32U_INIT_QNAN_EX(a_Sign, a_Val)
 #define BS3_FP32_SNAN(a_Sign)                 RTFLOAT32U_INIT_SNAN(a_Sign)
-
+#define BS3_FP32_SNAN_VAL(a_Sign, a_Val)      RTFLOAT32U_INIT_SNAN_EX(a_Sign, a_Val)
 
 /*
  * Single-precision floating normals.
  * Fraction - 23 bits, all usable.
  * Exponent - 8 bits, least significant bit MBZ.
  */
-#define BS3_FP32_NORMAL_VAL_0(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x401ac0, 0x78)
-#define BS3_FP32_NORMAL_VAL_1(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x5fcabd, 0xbc)
-#define BS3_FP32_NORMAL_VAL_2(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x7e117a, 0x7e)
-#define BS3_FP32_NORMAL_VAL_3(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x5b5b5b, 0x9a)
-#define BS3_FP32_NORMAL_VAL_4(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x1e0f1f, 0x32)
-#define BS3_FP32_NORMAL_VAL_5(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x012345, 0x56)
-#define BS3_FP32_NORMAL_VAL_6(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x330b3b, 0x90)
-#define BS3_FP32_NORMAL_VAL_7(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, 0x4ebeb4, 0x30)
+#define BS3_FP32_FRACTION_VAL_0               0x401ac0
+#define BS3_FP32_FRACTION_VAL_1               0x5fcabd
+#define BS3_FP32_FRACTION_VAL_2               0x7e117a
+#define BS3_FP32_FRACTION_VAL_3               0x5b5b5b
+#define BS3_FP32_FRACTION_VAL_4               0x1e0f1f
+#define BS3_FP32_FRACTION_VAL_5               0x012345
+#define BS3_FP32_FRACTION_VAL_6               0x330b3b
+#define BS3_FP32_FRACTION_VAL_7               0x4ebeb4
+#define BS3_FP32_EXP_VAL_0                    0x78
+#define BS3_FP32_EXP_VAL_1                    0xbc
+#define BS3_FP32_EXP_VAL_2                    0x7e
+#define BS3_FP32_EXP_VAL_3                    0x9a
+#define BS3_FP32_EXP_VAL_4                    0x32
+#define BS3_FP32_EXP_VAL_5                    0x56
+#define BS3_FP32_EXP_VAL_6                    0x90
+#define BS3_FP32_EXP_VAL_7                    0x30
+AssertCompile(!(BS3_FP32_EXP_VAL_0 & RT_BIT(0)));
+AssertCompile(!(BS3_FP32_EXP_VAL_1 & RT_BIT(0)));
+AssertCompile(!(BS3_FP32_EXP_VAL_2 & RT_BIT(0)));
+AssertCompile(!(BS3_FP32_EXP_VAL_3 & RT_BIT(0)));
+AssertCompile(!(BS3_FP32_EXP_VAL_4 & RT_BIT(0)));
+AssertCompile(!(BS3_FP32_EXP_VAL_5 & RT_BIT(0)));
+AssertCompile(!(BS3_FP32_EXP_VAL_6 & RT_BIT(0)));
+AssertCompile(!(BS3_FP32_EXP_VAL_7 & RT_BIT(0)));
+#define BS3_FP32_NORMAL_VAL_0(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_VAL_0, BS3_FP32_EXP_VAL_0)
+#define BS3_FP32_NORMAL_VAL_1(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_VAL_1, BS3_FP32_EXP_VAL_1)
+#define BS3_FP32_NORMAL_VAL_2(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_VAL_2, BS3_FP32_EXP_VAL_2)
+#define BS3_FP32_NORMAL_VAL_3(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_VAL_3, BS3_FP32_EXP_VAL_3)
+#define BS3_FP32_NORMAL_VAL_4(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_VAL_4, BS3_FP32_EXP_VAL_4)
+#define BS3_FP32_NORMAL_VAL_5(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_VAL_5, BS3_FP32_EXP_VAL_5)
+#define BS3_FP32_NORMAL_VAL_6(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_VAL_6, BS3_FP32_EXP_VAL_6)
+#define BS3_FP32_NORMAL_VAL_7(a_Sign)         RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_VAL_7, BS3_FP32_EXP_VAL_7)
 /* The maximum integer value (all 23 + 1 implied bit of the fraction part set) without losing precision. */
 #define BS3_FP32_NORMAL_SAFE_INT_MAX(a_Sign)  RTFLOAT32U_INIT_C(a_Sign, BS3_FP32_FRACTION_NORMAL_MAX, BS3_FP32_EXP_SAFE_INT_MAX)
 /* The minimum integer value without losing precision. */
@@ -1669,7 +1693,22 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
               /*mask     */ X86_MXCSR_XCPT_MASK,
               /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
               /*flags    */ 0, 0 },
-    /** @todo More denormals; Underflow, Precision; Rounding, FZ etc. */
+    /*
+     * Invalids.
+     */
+    /*32*/{ { /*src2     */ { BS3_FP32_QNAN(0),        BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_NORMAL_MAX), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_0),      BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_1), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_2), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_3), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_4), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_5) } },
+            { /*src1     */ { BS3_FP32_SNAN(0),        BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_NORMAL_MIN), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_NORMAL_MAX), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_2), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_6), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_2), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_1), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_4) } },
+            { /* =>      */ { BS3_FP32_QNAN_VAL(0, 1), BS3_FP32_QNAN_VAL(0, 1),                            BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_NORMAL_MAX), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_2), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_6), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_2), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_1), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_4) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ X86_MXCSR_IE, X86_MXCSR_IE },
+          { { /*src2     */ { BS3_FP32_SNAN(0), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_NORMAL_MIN), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_1), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_1), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_3), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_4), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_5), BS3_FP32_SNAN_VAL(0, BS3_FP32_FRACTION_VAL_6) } },
+            { /*src1     */ { BS3_FP32_QNAN(0), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_NORMAL_MAX), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_6), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_5), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_4), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_3), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_2), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_1) } },
+            { /* =>      */ { BS3_FP32_QNAN(0), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_NORMAL_MAX), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_6), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_5), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_4), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_3), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_2), BS3_FP32_QNAN_VAL(0, BS3_FP32_FRACTION_VAL_1) } },
+              /*mask     */ X86_MXCSR_XCPT_MASK,
+              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
+              /*flags    */ X86_MXCSR_IE, X86_MXCSR_IE },
+    /** @todo Underflow, Precision; Rounding, FZ etc. */
     };
 
     static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
