@@ -4792,6 +4792,10 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
 
+        <listitem><para>Review the Main API changes made for the ARM64 CPU architecture <link linkend="vboxarm">here</link>
+        for incompatible changes to interfaces, methods, and attributes.</para>
+        </listitem>
+
         <listitem><para>The Python API bindings for Python 2.x is now marked as being deprecated and will
           be removed in a future version. Please upgrade your code to use Python 3.</para>
         </listitem>
@@ -4806,7 +4810,6 @@ AuthResult AUTHCALL AuthEntry(
           instead of <computeroutput>install</computeroutput> for housing the bindings installers. This now matches
           the directory layout for the other platforms. Please adapt your scripts if needed.</para>
         </listitem>
-
 
         <listitem><para>Guest process creation requires a new parameter for specifying the current working directory for the new
           guest process. This is optional and can be empty.
@@ -4830,8 +4833,21 @@ AuthResult AUTHCALL AuthEntry(
           added. This requires 7.1 (or newer) Guest Additions to be installed on the guest.</para>
         </listitem>
 
-        <listitem><para>Review the Main API changes made for the ARM64 CPU architecture <link linkend="vboxarm">here</link>
-        for incompatible changes to interfaces, methods, and attributes.</para>
+        <listitem><para>Starting a recording now has to be done via the newly introduced method
+          <link linkend="IRecordingSettings__start">IRecordingSettings::start</link>. This method also will return
+          a recording progress object on success, which also can be retrieved at a later time via the new attribute
+          <link linkend="IRecordingSettings__progress">IRecordingSettings::progress</link>.</para>
+        </listitem>
+
+        <listitem><para>The recording settings attribute
+          <link linkend="IRecordingSettings__enabled">IRecordingSettings::enabled</link> does not implicitly start or stop
+          a recording anymore, but only will indicate that recording for a VM is enabled or disabled.
+          This attribute also will be used to determine if recording will be started automatically on VM start or restore.</para>
+        </listitem>
+
+        <listitem><para>The recording settings now expose a progress object attribute via
+          <link linkend="IRecordingSettings__progress">IRecordingSettings::progress</link>, which can be used to stop an
+          ongoing recording, track the recording progress or getting notified of recording errors.</para>
         </listitem>
 
       </itemizedlist>
