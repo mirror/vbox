@@ -36,12 +36,10 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UITranslationEventListener.h"
 #include "UIVersion.h"
 #include "VBoxAboutDlg.h"
-#ifdef VBOX_WS_MAC
-# include "UIDesktopWidgetWatchdog.h"
-#endif
 
 /* Other VBox includes: */
 #include <iprt/path.h> /* RTPathExecDir */
@@ -81,12 +79,16 @@ void VBoxAboutDlg::showEvent(QShowEvent *pEvent)
     {
         m_fPolished = true;
         setFixedSize(m_size);
-#ifdef VBOX_WS_MAC
-        /* Center according to parent's screen: */
+
         QRect geo = geometry();
+#ifdef VBOX_WS_MAC
+        /* Center according to parent screen: */
         geo.moveCenter(gpDesktop->screenGeometry(m_pPseudoParent).center());
-        setGeometry(geo);
+#else
+        /* Center according to parent widget: */
+        geo.moveCenter(parentWidget()->geometry().center());
 #endif
+        setGeometry(geo);
     }
 }
 
