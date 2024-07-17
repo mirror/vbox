@@ -3,7 +3,7 @@
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 
 <topic xml:lang="en-us" id="soft-keyb">
-  <!-- 7.1: Updated pic added -->
+  <!-- 7.1: pic removed-->
   <title>Soft Keyboard</title>
   <body>
     <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a <i>soft keyboard</i> that enables you to input
@@ -14,17 +14,6 @@
       <p>For best results, ensure that the keyboard layout configured on the guest OS matches the keyboard layout used
         by the soft keyboard. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> does not do this automatically. </p>
     </note>
-    <fig id="fig-soft-keyb">
-      <title>Soft Keyboard in a Guest Virtual Machine</title>
-      <xref href="images/softkeybd.png" format="png" platform="htmlhelp">
-        <image href="images/softkeybd.png" width="14cm" placement="break">
-          <alt>Soft Keyboard in a Guest Virtual Machine</alt>
-        </image>
-      </xref>
-      <image platform="ohc" href="images/softkeybd.png" width="14cm" placement="break">
-        <alt>Soft Keyboard in a Guest Virtual Machine</alt>
-      </image>
-    </fig>
     <p>The soft keyboard can be used in the following scenarios: </p>
     <ul>
       <li>

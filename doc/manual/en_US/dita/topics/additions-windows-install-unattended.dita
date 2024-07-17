@@ -4,18 +4,10 @@
   <title>Unattended Installation of the Windows Guest Additions</title>
   
   <body>
-    <p>
-          You can configure unattended installation of the
-          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions when you create a new VM using
-          the <b outputclass="bold">Create Virtual Machine</b>
-          wizard. Select the <b outputclass="bold">Guest
-          Additions</b> check box on the
-          <b outputclass="bold">Unattended Guest OS Install</b>
-          page of the wizard.
-        </p>
-    <p>
-          Guest Additions are installed automatically, following
-          completion of the guest OS installation.
-        </p>
+    <p>You can configure unattended installation of the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest
+      Additions when you create a new VM using the <b outputclass="bold">Create Virtual Machine</b> wizard. Select the
+        <b outputclass="bold">Guest Additions</b> check box on the <b outputclass="bold">Unattended Guest OS Install</b>
+      page of the wizard. </p>
+    <p>Guest Additions are installed automatically, following completion of the guest OS installation. </p>
   </body>
 </topic>

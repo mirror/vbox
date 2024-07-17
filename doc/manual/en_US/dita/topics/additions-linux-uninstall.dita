@@ -4,29 +4,19 @@
   <title>Uninstalling the Linux Guest Additions</title>
   
   <body>
-    <p> If you have a version of the Guest Additions installed on your virtual machine and want to
-      remove it without installing new ones, you can do so by inserting the Guest Additions CD image
-      into the virtual CD-ROM drive as described above. Then run the installer for the current Guest
-      Additions with the <codeph>uninstall</codeph> parameter from the path that the CD image is
-      mounted on in the guest, as follows: </p>
+    <p>If you have a version of the Guest Additions installed on your virtual machine and want to remove it without
+      installing new ones, you can do so by inserting the Guest Additions CD image into the virtual CD-ROM drive as
+      described above. Then run the installer for the current Guest Additions with the <codeph>uninstall</codeph>
+      parameter from the path that the CD image is mounted on in the guest, as follows: </p>
     <pre xml:space="preserve">sh ./VBoxLinuxAdditions.run uninstall</pre>
-    <p>
-          While this will normally work without issues, you may need to
-          do some manual cleanup of the guest in some cases, especially
-          of the XFree86Config or xorg.conf file. In particular, if the
-          Additions version installed or the guest operating system were
-          very old, or if you made your own changes to the Guest
-          Additions setup after you installed them.
-        </p>
-    <p>
-          You can uninstall the Additions as follows:
-        </p>
+    <p>While this will normally work without issues, you may need to do some manual cleanup of the guest in some cases,
+      especially of the XFree86Config or xorg.conf file. In particular, if the Additions version installed or the guest
+      operating system were very old, or if you made your own changes to the Guest Additions setup after you installed
+      them. </p>
+    <p>You can uninstall the Additions as follows: </p>
     <pre xml:space="preserve">/opt/VBoxGuestAdditions-<varname>version</varname>/uninstall.sh</pre>
-    <p>
-          Replace
-          <filepath>/opt/VBoxGuestAdditions-<varname>version</varname></filepath>
-          with the correct Guest Additions installation directory.
-        </p>
+    <p>Replace <filepath>/opt/VBoxGuestAdditions-<varname>version</varname></filepath> with the correct Guest Additions
+      installation directory. </p>
   </body>
   
 </topic>

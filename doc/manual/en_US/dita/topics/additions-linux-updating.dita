@@ -4,12 +4,9 @@
   <title>Updating the Linux Guest Additions</title>
   
   <body>
-    <p>
-          The Guest Additions can simply be updated by going through the
-          installation procedure again with an updated CD-ROM image.
-          This will replace the drivers with updated versions. You
-          should reboot after updating the Guest Additions.
-        </p>
+    <p>The Guest Additions can simply be updated by going through the installation procedure again with an updated
+      CD-ROM image. This will replace the drivers with updated versions. You should reboot after updating the Guest
+      Additions. </p>
   </body>
   
 </topic>

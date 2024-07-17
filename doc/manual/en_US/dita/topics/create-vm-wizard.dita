@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="create-vm-wizard">
-  <title>Creating Your First Virtual Machine</title>
+  <title>Creating a Virtual Machine</title>
   
   <body>
     <p>In the VirtualBox Manager window, click <b outputclass="bold">New</b>. The <b

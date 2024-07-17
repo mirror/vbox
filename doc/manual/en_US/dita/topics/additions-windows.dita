@@ -4,11 +4,8 @@
   <title>Guest Additions for Windows</title>
   
   <body>
-    <p>
-        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Windows Guest Additions are designed to be
-        installed in a virtual machine running a Windows operating
-        system. The following versions of Windows guests are supported:
-      </p>
+    <p>The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Windows Guest Additions are designed to be installed in
+      a virtual machine running a Windows operating system. The following versions of Windows guests are supported: </p>
     <ul>
       <li>
         <p>
