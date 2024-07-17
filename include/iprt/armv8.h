@@ -583,6 +583,11 @@
 /** TCO - Tag Check Override - ??. */
 #define ARMV8_AARCH64_SYSREG_TCO                    ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 2, 7)
 
+/** FPCR register - RW. */
+#define ARMV8_AARCH64_SYSREG_FPCR                   ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 4, 0)
+/** FPSR register - RW. */
+#define ARMV8_AARCH64_SYSREG_FPSR                   ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 4, 4, 1)
+
 /** TPIDR_EL0 register - RW. */
 #define ARMV8_AARCH64_SYSREG_TPIDR_EL0              ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 13,  0, 2)
 /** TPIDRRO_EL0 register - RO. */
@@ -2361,6 +2366,81 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 # define ARMV8_ID_AA64DFR0_EL1_HPMN0_NOT_IMPL                   0
 /** Setting MDCE_EL2.HPMN to zero has defined behavior (FEAT_HPMN0). */
 # define ARMV8_ID_AA64DFR0_EL1_HPMN0_SUPPORTED                  1
+/** @} */
+
+
+/** @name FPCR - AArch64 Floating Point Control Register.
+ * @{ */
+/** Bit 0 - Flush Inputs to Zero when FEAT_AFP is supported. */
+#define ARMV8_FPCR_FIZ                                          RT_BIT_64(0)
+/** Bit 1 - Alternate Handling of floating-point numbers when FEAT_AFP is supported. */
+#define ARMV8_FPCR_AH                                           RT_BIT_64(1)
+/** Bit 2 - Controls how the output elements other than the lowest element of the vector are determined for
+ * Advanced SIMD scalar instructions, when FEAT_AFP is supported. */
+#define ARMV8_FPCR_NEP                                          RT_BIT_64(2)
+/* Bit 3 - 7 - Reserved.*/
+/** Bit 8 - Invalid Operation floating-point exception trap enable. */
+#define ARMV8_FPCR_IOE                                          RT_BIT_64(8)
+/** Bit 9 - Divide by Zero floating-point exception trap enable. */
+#define ARMV8_FPCR_DZE                                          RT_BIT_64(9)
+/** Bit 10 - Overflow floating-point exception trap enable. */
+#define ARMV8_FPCR_OFE                                          RT_BIT_64(10)
+/** Bit 11 - Underflow floating-point exception trap enable. */
+#define ARMV8_FPCR_UFE                                          RT_BIT_64(11)
+/** Bit 12 - Inexact floating-point exception trap enable. */
+#define ARMV8_FPCR_IXE                                          RT_BIT_64(12)
+/** Bit 13 - Controls numeric behavior of BFloat16 dot productions calculations performed,
+ * supported when FEAT_EBF16 is supported. */
+#define ARMV8_FPCR_EBF                                          RT_BIT_64(13)
+/* Bit 14 - Reserved */
+/** Bit 15 - Input Denormal floating-point exception trap enable. */
+#define ARMV8_FPCR_IDE                                          RT_BIT_64(15)
+/* Bit 16 - 18 - Reserved for AArch64 (Len field for AArch32). */
+/** Bit 19 - Flushing denormalized numbers to zero control bit on half-precision data-processing instructions,
+ * available when FEAT_FP16 is supported. */
+#define ARMV8_FPCR_FZ16                                         RT_BIT_64(19)
+/* Bit 20 - 21 - Reserved for AArch64 (Stride field dor AArch32). */
+/** Bit 22 - 23 - Rounding Mode control field. */
+#define ARMV8_FPCR_RMODE_MASK                                   (RT_BIT_64(22) | RT_BIT_64(23))
+#define ARMV8_FPCR_RMODE_SHIFT                                  22
+/** Round to Nearest (RN) mode. */
+# define ARMV8_FPCR_RMODE_RN                                    0
+/** Round towards Plus Infinity (RP) mode. */
+# define ARMV8_FPCR_RMODE_RP                                    1
+/** Round towards Minus Infinity (RM) mode. */
+# define ARMV8_FPCR_RMODE_RP                                    2
+/** Round towards Zero (RZ) mode. */
+# define ARMV8_FPCR_RMODE_RZ                                    3
+/** Bit 24 - Flushing denormalized numbers to zero control bit. */
+#define ARMV8_FPCR_FZ                                           RT_BIT_64(24)
+/** Bit 25 - Default NaN use for NaN propagation. */
+#define ARMV8_FPCR_DN                                           RT_BIT_64(25)
+/** Bit 26 - Alternative half-precision control bit. */
+#define ARMV8_FPCR_AHP                                          RT_BIT_64(26)
+/* Bit 27 - 63 - Reserved. */
+/** @} */
+
+
+/** @name FPSR - AArch64 Floating Point Status Register.
+ * @{ */
+/** Bit 0 - Invalid Operation cumulative floating-point exception bit. */
+#define ARMV8_FPSR_IOC                                          RT_BIT_64(0)
+/** Bit 1 - Divide by Zero cumulative floating-point exception bit. */
+#define ARMV8_FPSR_DZC                                          RT_BIT_64(1)
+/** Bit 2 - Overflow cumulative floating-point exception bit. */
+#define ARMV8_FPSR_OFC                                          RT_BIT_64(2)
+/** Bit 3 - Underflow cumulative floating-point exception bit. */
+#define ARMV8_FPSR_OFC                                          RT_BIT_64(3)
+/** Bit 4 - Inexact cumulative floating-point exception bit. */
+#define ARMV8_FPSR_IXC                                          RT_BIT_64(4)
+/* Bit 5 - 6 - Reserved. */
+/** Bit 7 - Input Denormal cumulative floating-point exception bit. */
+#define ARMV8_FPSR_IDC                                          RT_BIT_64(7)
+/* Bit 8 - 26 - Reserved. */
+/** Bit 27 - Cumulative saturation bit, Advanced SIMD only. */
+#define ARMV8_FPSR_QC                                           RT_BIT_64(27)
+/* Bit 28 - 31 - NZCV bits for AArch32 floating point operations. */
+/* Bit 32 - 63 - Reserved. */
 /** @} */
 
 
