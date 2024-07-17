@@ -1512,7 +1512,7 @@
 # define RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a_iFmt, a_iArgs)
 #endif
 
-/** @def RT_IPRT_CALREQL_ATTR
+/** @def RT_IPRT_CALLREQ_ATTR
  * Identifies a function taking a function call request with parameter list and
  * everything for asynchronous execution.
  * @param   a_iFn   The index (1-based) of the function pointer argument.
