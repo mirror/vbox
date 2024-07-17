@@ -172,7 +172,7 @@ RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies);
  * @remarks See remarks on RTReqQueueCallV.
  */
 RTDECL(int) RTReqQueueCall(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies,
-                           PFNRT pfnFunction, unsigned cArgs, ...) RT_IPRT_CALL_ATTR(4, 5, 6);
+                           PFNRT pfnFunction, unsigned cArgs, ...) RT_IPRT_CALLREQ_ATTR(4, 5, 6);
 
 /**
  * Allocate and queue a call request to a void function.
@@ -200,7 +200,7 @@ RTDECL(int) RTReqQueueCall(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMilli
  * @remarks See remarks on RTReqQueueCallV.
  */
 RTDECL(int) RTReqQueueCallVoid(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies,
-                               PFNRT pfnFunction, unsigned cArgs, ...) RT_IPRT_CALL_ATTR(4, 5, 6);
+                               PFNRT pfnFunction, unsigned cArgs, ...) RT_IPRT_CALLREQ_ATTR(4, 5, 6);
 
 /**
  * Allocate and queue a call request to a void function.
@@ -231,7 +231,7 @@ RTDECL(int) RTReqQueueCallVoid(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cM
  * @remarks See remarks on RTReqQueueCallV.
  */
 RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags,
-                             PFNRT pfnFunction, unsigned cArgs, ...) RT_IPRT_CALL_ATTR(5, 6, 7);
+                             PFNRT pfnFunction, unsigned cArgs, ...) RT_IPRT_CALLREQ_ATTR(5, 6, 7);
 
 /**
  * Allocate and queue a call request.
@@ -277,7 +277,7 @@ RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMil
  *                and alignment rules.)  See @bugref{10725}.
  */
 RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags,
-                            PFNRT pfnFunction, unsigned cArgs, va_list Args) RT_IPRT_CALL_ATTR(5, 6, 0);
+                            PFNRT pfnFunction, unsigned cArgs, va_list Args) RT_IPRT_CALLREQ_ATTR(5, 6, 0);
 
 /**
  * Checks if the queue is busy or not.
