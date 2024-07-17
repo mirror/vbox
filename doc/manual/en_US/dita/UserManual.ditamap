@@ -265,9 +265,8 @@
             <topicref href="topics/additions-windows.dita">
                <topicref href="topics/mountingadditionsiso.dita"/>
                <topicref href="topics/additions-windows-updating.dita"/>
-               <topicref href="topics/additions-windows-install-unattended.dita">
-                  <topicref href="topics/additions-windows-install-unattended-certs.dita"/>
-               </topicref>
+               <topicref href="topics/additions-windows-install-unattended.dita"/>
+               <topicref href="topics/additions-windows-install-unattended-certs.dita"/>
                <topicref href="topics/windows-guest-file-extraction.dita"/>
             </topicref>
             <topicref href="topics/additions-linux.dita">
