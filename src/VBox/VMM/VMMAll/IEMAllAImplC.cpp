@@ -36,6 +36,7 @@
 #include <iprt/uint128.h>
 #include <iprt/uint256.h>
 #include <iprt/crc.h>
+#include <iprt/string.h>
 
 RT_C_DECLS_BEGIN
 #include <softfloat.h>
@@ -20697,46 +20698,110 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vperm2f128_u256_fallback,(PRTUINT256U puDst, PC
 /**
  * [V]DPPS
  */
+static uint32_t iemAImpl_dpps_u128_worker(PRTFLOAT32U par32Dst, uint32_t fMxcsr, PCRTFLOAT32U par32Src1, PCRTFLOAT32U par32Src2, uint8_t bImm)
+{
+    uint32_t fMxcsrOut = 0;
+
+    RTFLOAT32U ar32Tmp[4]; RT_ZERO(ar32Tmp); /* This will set the values to 0.0 */
+    if (bImm & RT_BIT(4))
+        fMxcsrOut |= iemAImpl_mulps_u128_worker(&ar32Tmp[0], fMxcsr, &par32Src1[0], &par32Src2[0]);
+    if (bImm & RT_BIT(5))
+        fMxcsrOut |= iemAImpl_mulps_u128_worker(&ar32Tmp[1], fMxcsr, &par32Src1[1], &par32Src2[1]);
+    if (bImm & RT_BIT(6))
+        fMxcsrOut |= iemAImpl_mulps_u128_worker(&ar32Tmp[2], fMxcsr, &par32Src1[2], &par32Src2[2]);
+    if (bImm & RT_BIT(7))
+        fMxcsrOut |= iemAImpl_mulps_u128_worker(&ar32Tmp[3], fMxcsr, &par32Src1[3], &par32Src2[3]);
+
+    RTFLOAT32U ar32TmpRes[2];
+    fMxcsrOut |= iemAImpl_addps_u128_worker(&ar32TmpRes[0], fMxcsr, &ar32Tmp[0], &ar32Tmp[1]);
+    fMxcsrOut |= iemAImpl_addps_u128_worker(&ar32TmpRes[1], fMxcsr, &ar32Tmp[2], &ar32Tmp[3]);
+
+    RTFLOAT32U r32Res;
+    fMxcsrOut |= iemAImpl_addps_u128_worker(&r32Res, fMxcsr, &ar32TmpRes[0], &ar32TmpRes[1]);
+
+    if (bImm & RT_BIT(0))
+        par32Dst[0] = r32Res;
+    else
+        par32Dst[0] = RTFLOAT32U_INIT_ZERO(0);
+
+    if (bImm & RT_BIT(1))
+        par32Dst[1] = r32Res;
+    else
+        par32Dst[1] = RTFLOAT32U_INIT_ZERO(0);
+
+    if (bImm & RT_BIT(2))
+        par32Dst[2] = r32Res;
+    else
+        par32Dst[2] = RTFLOAT32U_INIT_ZERO(0);
+
+    if (bImm & RT_BIT(3))
+        par32Dst[3] = r32Res;
+    else
+        par32Dst[3] = RTFLOAT32U_INIT_ZERO(0);
+
+    return fMxcsrOut;
+}
+
+
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_dpps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
-    RT_NOREF(puDst, pSrc, bImm);
-    AssertReleaseFailed();
-    return uMxCsrIn;
+    return iemAImpl_dpps_u128_worker(&puDst->ar32[0], uMxCsrIn, &pSrc->uSrc1.ar32[0], &pSrc->uSrc2.ar32[0], bImm);
 }
 
 
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vdpps_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
-    RT_NOREF(puDst, pSrc, bImm);
-    AssertReleaseFailed();
-    return uMxCsrIn;
+    return iemAImpl_dpps_u128_worker(&puDst->ar32[0], uMxCsrIn, &pSrc->uSrc1.ar32[0], &pSrc->uSrc2.ar32[0], bImm);
 }
 
 
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vdpps_u256_fallback,(uint32_t uMxCsrIn, PX86YMMREG puDst, PCIEMMEDIAF2YMMSRC pSrc, uint8_t bImm))
 {
-    RT_NOREF(puDst, pSrc, bImm);
-    AssertReleaseFailed();
-    return uMxCsrIn;
+    uint32_t fMxcsrOut =  iemAImpl_dpps_u128_worker(&puDst->ar32[0], uMxCsrIn, &pSrc->uSrc1.ar32[0], &pSrc->uSrc2.ar32[0], bImm);
+             fMxcsrOut |= iemAImpl_dpps_u128_worker(&puDst->ar32[4], uMxCsrIn, &pSrc->uSrc1.ar32[4], &pSrc->uSrc2.ar32[4], bImm);
+    return fMxcsrOut;
 }
 
 
 /**
  * [V]DPPD
  */
+static uint32_t iemAImpl_dppd_u128_worker(PRTFLOAT64U par64Dst, uint32_t fMxcsr, PCRTFLOAT64U par64Src1, PCRTFLOAT64U par64Src2, uint8_t bImm)
+{
+    uint32_t fMxcsrOut = 0;
+
+    RTFLOAT64U ar64Tmp[2]; RT_ZERO(ar64Tmp); /* This will set the values to 0.0 */
+    if (bImm & RT_BIT(4))
+        fMxcsrOut |= iemAImpl_mulpd_u128_worker(&ar64Tmp[0], fMxcsr, &par64Src1[0], &par64Src2[0]);
+    if (bImm & RT_BIT(5))
+        fMxcsrOut |= iemAImpl_mulpd_u128_worker(&ar64Tmp[1], fMxcsr, &par64Src1[1], &par64Src2[1]);
+
+    RTFLOAT64U r64Res;
+    fMxcsrOut |= iemAImpl_addpd_u128_worker(&r64Res, fMxcsr, &ar64Tmp[0], &ar64Tmp[1]);
+
+    if (bImm & RT_BIT(0))
+        par64Dst[0] = r64Res;
+    else
+        par64Dst[0] = RTFLOAT64U_INIT_ZERO(0);
+
+    if (bImm & RT_BIT(1))
+        par64Dst[1] = r64Res;
+    else
+        par64Dst[1] = RTFLOAT64U_INIT_ZERO(0);
+
+    return fMxcsrOut;
+}
+
+
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_dppd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
-    RT_NOREF(puDst, pSrc, bImm);
-    AssertReleaseFailed();
-    return uMxCsrIn;
+    return iemAImpl_dppd_u128_worker(&puDst->ar64[0], uMxCsrIn, &pSrc->uSrc1.ar64[0], &pSrc->uSrc2.ar64[0], bImm);
 }
 
 
 IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_vdppd_u128_fallback,(uint32_t uMxCsrIn, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
 {
-    RT_NOREF(puDst, pSrc, bImm);
-    AssertReleaseFailed();
-    return uMxCsrIn;
+    return iemAImpl_dppd_u128_worker(&puDst->ar64[0], uMxCsrIn, &pSrc->uSrc1.ar64[0], &pSrc->uSrc2.ar64[0], bImm);
 }
 
 
