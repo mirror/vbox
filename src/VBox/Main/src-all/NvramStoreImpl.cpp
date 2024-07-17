@@ -93,8 +93,6 @@ struct BackupableNvramStoreData
     /** The key store containing the encrypting DEK */
     com::Utf8Str            strKeyStore;
 #endif
-    /** The NVRAM store. */
-    NvramStoreMap           mapNvram;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -137,6 +135,9 @@ struct NvramStore::Data
 #endif
 
     Backupable<BackupableNvramStoreData> bd;
+
+    /** The NVRAM store. */
+    NvramStoreMap                        mapNvram;
 };
 
 // constructor / destructor
@@ -331,14 +332,14 @@ void NvramStore::uninit()
 #endif
 
     /* Delete the NVRAM content. */
-    NvramStoreIter it = m->bd->mapNvram.begin();
-    while (it != m->bd->mapNvram.end())
+    NvramStoreIter it = m->mapNvram.begin();
+    while (it != m->mapNvram.end())
     {
         RTVfsFileRelease(it->second);
         it++;
     }
 
-    m->bd->mapNvram.clear();
+    m->mapNvram.clear();
     m->bd.free();
 
 #ifdef VBOX_WITH_FULL_VM_ENCRYPTION
@@ -390,7 +391,7 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
     if (!m->pUefiVarStore)
     {
         /* Load the NVRAM file first if it isn't already. */
-        if (!m->bd->mapNvram.size())
+        if (!m->mapNvram.size())
         {
             int vrc = i_loadStore(strPath.c_str());
             if (RT_FAILURE(vrc))
@@ -399,8 +400,8 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
 
         if (SUCCEEDED(hrc))
         {
-            NvramStoreIter it = m->bd->mapNvram.find("efi/nvram");
-            if (it != m->bd->mapNvram.end())
+            NvramStoreIter it = m->mapNvram.find("efi/nvram");
+            if (it != m->mapNvram.end())
             {
                 unconst(m->pUefiVarStore).createObject();
                 m->pUefiVarStore->init(this, m->pParent);
@@ -474,7 +475,7 @@ HRESULT NvramStore::initUefiVariableStore(ULONG aSize)
 
     /* Load the NVRAM file first if it isn't already. */
     HRESULT hrc = S_OK;
-    if (!m->bd->mapNvram.size())
+    if (!m->mapNvram.size())
     {
         int vrc = i_loadStore(strPath.c_str());
         if (RT_FAILURE(vrc))
@@ -485,8 +486,8 @@ HRESULT NvramStore::initUefiVariableStore(ULONG aSize)
     {
         int vrc = VINF_SUCCESS;
         RTVFSFILE hVfsUefiVarStore = NIL_RTVFSFILE;
-        NvramStoreIter it = m->bd->mapNvram.find("efi/nvram");
-        if (it != m->bd->mapNvram.end())
+        NvramStoreIter it = m->mapNvram.find("efi/nvram");
+        if (it != m->mapNvram.end())
             hVfsUefiVarStore = it->second;
         else
         {
@@ -497,7 +498,7 @@ HRESULT NvramStore::initUefiVariableStore(ULONG aSize)
                 /** @todo The size is hardcoded to match what the firmware image uses right now which is a gross hack... */
                 vrc = RTVfsFileSetSize(hVfsUefiVarStore, 540672, RTVFSFILE_SIZE_F_NORMAL);
                 if (RT_SUCCESS(vrc))
-                    m->bd->mapNvram["efi/nvram"] = hVfsUefiVarStore;
+                    m->mapNvram["efi/nvram"] = hVfsUefiVarStore;
                 else
                     RTVfsFileRelease(hVfsUefiVarStore);
             }
@@ -581,7 +582,7 @@ int NvramStore::i_loadStoreFromTar(RTVFSFSSTREAM hVfsFssTar)
                         break;
                     RTVfsIoStrmRelease(hVfsIosEntry);
 
-                    m->bd->mapNvram[Utf8Str(pszName)] = hVfsFileEntry;
+                    m->mapNvram[Utf8Str(pszName)] = hVfsFileEntry;
                     break;
                 }
                 case RTFS_TYPE_DIRECTORY:
@@ -747,7 +748,7 @@ int NvramStore::i_loadStore(const char *pszPath)
                                 AssertRC(vrc);
 
                                 RTVfsFileRetain(hVfsFileNvram); /* Retain a new reference for the map. */
-                                m->bd->mapNvram[Utf8Str("efi/nvram")] = hVfsFileNvram;
+                                m->mapNvram[Utf8Str("efi/nvram")] = hVfsFileNvram;
 
                                 RTVfsRelease(hVfsEfiVarStore);
                             }
@@ -839,9 +840,9 @@ int NvramStore::i_saveStoreAsTar(const char *pszPath)
                                              RTZIPTARFORMAT_GNU, 0 /*fFlags*/, &hVfsFss);
             if (RT_SUCCESS(vrc))
             {
-                NvramStoreIter it = m->bd->mapNvram.begin();
+                NvramStoreIter it = m->mapNvram.begin();
 
-                while (it != m->bd->mapNvram.end())
+                while (it != m->mapNvram.end())
                 {
                     RTVFSFILE hVfsFile = it->second;
 
@@ -926,10 +927,10 @@ int NvramStore::i_saveStore(void)
          * it doesn't belong to the UEFI the tar archive will be created.
          */
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        if (   m->bd->mapNvram.size() == 1
-            && m->bd->mapNvram.begin()->first == "efi/nvram")
+        if (   m->mapNvram.size() == 1
+            && m->mapNvram.begin()->first == "efi/nvram")
         {
-            RTVFSFILE hVfsFileNvram = m->bd->mapNvram.begin()->second;
+            RTVFSFILE hVfsFileNvram = m->mapNvram.begin()->second;
 
             vrc = RTVfsFileSeek(hVfsFileNvram, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
             AssertLogRelRC(vrc);
@@ -969,7 +970,7 @@ int NvramStore::i_saveStore(void)
                 RTVfsIoStrmRelease(hVfsIosDst);
             }
         }
-        else if (m->bd->mapNvram.size())
+        else if (m->mapNvram.size())
             vrc = i_saveStoreAsTar(strTmp.c_str());
         /* else: No NVRAM content to store so we are done here. */
     }
@@ -1066,8 +1067,8 @@ HRESULT NvramStore::i_retainUefiVarStore(PRTVFS phVfs, bool fReadonly)
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT hrc = S_OK;
-    NvramStoreIter it = m->bd->mapNvram.find("efi/nvram");
-    if (it != m->bd->mapNvram.end())
+    NvramStoreIter it = m->mapNvram.find("efi/nvram");
+    if (it != m->mapNvram.end())
     {
         RTVFSFILE hVfsFileNvram = it->second;
         RTVFS hVfsEfiVarStore;
@@ -1108,6 +1109,9 @@ HRESULT NvramStore::i_releaseUefiVarStore(RTVFS hVfs)
  */
 HRESULT NvramStore::i_loadSettings(const settings::NvramSettings &data)
 {
+    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("data: %p\n", data));
+
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.hrc());
 
@@ -1127,6 +1131,7 @@ HRESULT NvramStore::i_loadSettings(const settings::NvramSettings &data)
         || m->bd->strNvramPath == m->pParent->i_getDefaultNVRAMFilename())
         m->bd->strNvramPath.setNull();
 
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
@@ -1275,8 +1280,8 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreQuerySize(PPDMIVFSCONNECTOR pInterface
     AssertRCReturn(vrc, vrc);
 
     AutoReadLock rlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
-    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(strKey);
-    if (it != pThis->pNvramStore->m->bd->mapNvram.end())
+    NvramStoreIter it = pThis->pNvramStore->m->mapNvram.find(strKey);
+    if (it != pThis->pNvramStore->m->mapNvram.end())
     {
         RTVFSFILE hVfsFile = it->second;
         return RTVfsFileQuerySize(hVfsFile, pcb);
@@ -1297,8 +1302,8 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreReadAll(PPDMIVFSCONNECTOR pInterface, 
     AssertRCReturn(vrc, vrc);
 
     AutoReadLock rlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
-    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(strKey);
-    if (it != pThis->pNvramStore->m->bd->mapNvram.end())
+    NvramStoreIter it = pThis->pNvramStore->m->mapNvram.find(strKey);
+    if (it != pThis->pNvramStore->m->mapNvram.end())
     {
         RTVFSFILE hVfsFile = it->second;
 
@@ -1324,8 +1329,8 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreWriteAll(PPDMIVFSCONNECTOR pInterface,
 
     AutoWriteLock wlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
 
-    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(strKey);
-    if (it != pThis->pNvramStore->m->bd->mapNvram.end())
+    NvramStoreIter it = pThis->pNvramStore->m->mapNvram.find(strKey);
+    if (it != pThis->pNvramStore->m->mapNvram.end())
     {
         RTVFSFILE hVfsFile = it->second;
 
@@ -1344,7 +1349,7 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreWriteAll(PPDMIVFSCONNECTOR pInterface,
         {
             try
             {
-                pThis->pNvramStore->m->bd->mapNvram[strKey] = hVfsFile;
+                pThis->pNvramStore->m->mapNvram[strKey] = hVfsFile;
             }
             catch (...)
             {
@@ -1369,11 +1374,11 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreDelete(PPDMIVFSCONNECTOR pInterface, c
     AssertRCReturn(vrc, vrc);
 
     AutoWriteLock wlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
-    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(strKey);
-    if (it != pThis->pNvramStore->m->bd->mapNvram.end())
+    NvramStoreIter it = pThis->pNvramStore->m->mapNvram.find(strKey);
+    if (it != pThis->pNvramStore->m->mapNvram.end())
     {
         RTVFSFILE hVfsFile = it->second;
-        pThis->pNvramStore->m->bd->mapNvram.erase(it);
+        pThis->pNvramStore->m->mapNvram.erase(it);
         RTVfsFileRelease(hVfsFile);
         return VINF_SUCCESS;
     }
@@ -1391,7 +1396,7 @@ DECLCALLBACK(int) NvramStore::i_SsmSaveExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 
     AutoWriteLock wlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
 
-    size_t cEntries = pThis->pNvramStore->m->bd->mapNvram.size();
+    size_t cEntries = pThis->pNvramStore->m->mapNvram.size();
     AssertReturn(cEntries < 32, VERR_OUT_OF_RANGE); /* Some sanity checking. */
     pHlp->pfnSSMPutU32(pSSM, (uint32_t)cEntries);
 
@@ -1411,7 +1416,7 @@ DECLCALLBACK(int) NvramStore::i_SsmSaveExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 int NvramStore::i_SsmSaveExecInner(PDRVMAINNVRAMSTORE pThis, PCPDMDRVHLPR3 pHlp, PSSMHANDLE pSSM,
                                    void **ppvData, size_t *pcbDataMax) RT_NOEXCEPT
 {
-    for (NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.begin(); it != pThis->pNvramStore->m->bd->mapNvram.end(); ++it)
+    for (NvramStoreIter it = pThis->pNvramStore->m->mapNvram.begin(); it != pThis->pNvramStore->m->mapNvram.end(); ++it)
     {
         RTVFSFILE hVfsFile = it->second;
 
@@ -1454,14 +1459,14 @@ DECLCALLBACK(int) NvramStore::i_SsmLoadExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM,
         AutoWriteLock wlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
 
         /* Clear any content first. */
-        NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.begin();
-        while (it != pThis->pNvramStore->m->bd->mapNvram.end())
+        NvramStoreIter it = pThis->pNvramStore->m->mapNvram.begin();
+        while (it != pThis->pNvramStore->m->mapNvram.end())
         {
             RTVfsFileRelease(it->second);
             it++;
         }
 
-        pThis->pNvramStore->m->bd->mapNvram.clear();
+        pThis->pNvramStore->m->mapNvram.clear();
 
         uint32_t cEntries = 0;
         int vrc = pHlp->pfnSSMGetU32(pSSM, &cEntries);
@@ -1518,7 +1523,7 @@ int NvramStore::i_SsmLoadExecInner(PDRVMAINNVRAMSTORE pThis, PCPDMDRVHLPR3 pHlp,
 
         try
         {
-            pThis->pNvramStore->m->bd->mapNvram[Utf8Str(szId)] = hVfsFile;
+            pThis->pNvramStore->m->mapNvram[Utf8Str(szId)] = hVfsFile;
         }
         catch (...)
         {
