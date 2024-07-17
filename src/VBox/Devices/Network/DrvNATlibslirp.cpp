@@ -82,7 +82,7 @@ static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread
  *
  * @thread  NAT
  */
-static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, void *pBuf, int cb)
+static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, void *pBuf, size_t cb)
 {
     int rc;
     STAM_PROFILE_START(&pThis->StatNATRecv, a);

@@ -257,7 +257,7 @@ typedef DRVNAT *PDRVNAT;
  */
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS, PPDMTHREAD);
 static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS, PPDMTHREAD);
-static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT, void *, int);
+static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT, void *, size_t);
 static void drvNATFreeSgBuf(PDRVNAT, PPDMSCATTERGATHER);
 static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT, PPDMSCATTERGATHER);
 static DECLCALLBACK(int) drvNATNetworkUp_BeginXmit(PPDMINETWORKUP, bool);
