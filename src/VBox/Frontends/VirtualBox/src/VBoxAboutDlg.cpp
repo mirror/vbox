@@ -190,7 +190,7 @@ void VBoxAboutDlg::prepareLabel()
         if (!strColor.isEmpty())
             palette.setColor(QPalette::WindowText, QColor(strColor).name());
         else
-            palette.setColor(QPalette::WindowText, Qt::black);
+            palette.setColor(QPalette::WindowText, Qt::white);
         m_pLabel->setPalette(palette);
         m_pLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         m_pLabel->setFont(font());
