@@ -1340,7 +1340,7 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
 
             case 'h':
                 pHlp->pfnPrintf(pHlp,
-                                "Usage: info %ctlb [options]\n"
+                                "Usage: info tb [options]\n"
                                 "\n"
                                 "Options:\n"
                                 "  -c<n>, --cpu=<n>, --vcpu=<n>\n"
