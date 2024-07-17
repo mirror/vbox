@@ -1063,6 +1063,8 @@ typedef struct CPUMCPUIDCONFIG
     CPUMISAEXTCFG   enmFlushCmdMsr;
     CPUMISAEXTCFG   enmMdsClear;
     CPUMISAEXTCFG   enmArchCapMsr;
+    CPUMISAEXTCFG   enmFma;
+    CPUMISAEXTCFG   enmF16c;
 
     CPUMISAEXTCFG   enmAbm;
     CPUMISAEXTCFG   enmSse4A;
@@ -1398,7 +1400,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            //| X86_CPUID_FEATURE_ECX_TM2   - no thermal monitor 2.
                            | X86_CPUID_FEATURE_ECX_SSSE3
                            //| X86_CPUID_FEATURE_ECX_CNTXID - no L1 context id (MSR++).
-                           //| X86_CPUID_FEATURE_ECX_FMA   - not implemented yet.
+                           | PASSTHRU_FEATURE(pConfig->enmFma, pHstFeat->fFma, X86_CPUID_FEATURE_ECX_FMA)
                            | PASSTHRU_FEATURE(pConfig->enmCmpXchg16b, pHstFeat->fCmpXchg16b, X86_CPUID_FEATURE_ECX_CX16)
                            /* ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
                            //| X86_CPUID_FEATURE_ECX_TPRUPDATE
@@ -1415,7 +1417,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            | PASSTHRU_FEATURE(pConfig->enmXSave, pHstFeat->fXSaveRstor, X86_CPUID_FEATURE_ECX_XSAVE)
                            //| X86_CPUID_FEATURE_ECX_OSXSAVE - mirrors CR4.OSXSAVE state, set dynamically.
                            | PASSTHRU_FEATURE(pConfig->enmAvx, pHstFeat->fAvx, X86_CPUID_FEATURE_ECX_AVX)
-                           //| X86_CPUID_FEATURE_ECX_F16C  - not implemented yet.
+                           | PASSTHRU_FEATURE(pConfig->enmF16c, pHstFeat->fFma, X86_CPUID_FEATURE_ECX_F16C)
                            | PASSTHRU_FEATURE_TODO(pConfig->enmRdRand, X86_CPUID_FEATURE_ECX_RDRAND)
                            //| X86_CPUID_FEATURE_ECX_HVP   - Set explicitly later.
                            ;
@@ -2849,6 +2851,8 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
                                   "|PCID"
                                   "|INVPCID"
                                   "|FlushCmdMsr"
+                                  "|FMA"
+                                  "|F16C"
                                   "|ABM"
                                   "|SSE4A"
                                   "|MISALNSSE"
@@ -3033,6 +3037,24 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
      * Whether to expose the MSR_IA32_ARCH_CAPABILITIES MSR to the guest.
      */
     rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "ArchCapMsr", &pConfig->enmArchCapMsr, CPUMISAEXTCFG_ENABLED_SUPPORTED_OR_NOT_AMD64);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/FMA, boolean, depends}
+     * Expose the FMA instruction set extensions to the guest if available and
+     * XSAVE is exposed too. For the time being the default is to only expose this
+     * to VMs with nested paging and AMD-V or unrestricted guest execution mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfgEx(pVM, pIsaExts, "FMA", &pConfig->enmFma, fNestedPagingAndFullGuestExec /* temporarily */,
+                                    fMayHaveXSave && pConfig->enmXSave && (fXStateHostMask & XSAVE_C_YMM) /*fAllowed*/);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/F16C, boolean, depends}
+     * Expose the F16C instruction set extensions to the guest if available and
+     * XSAVE is exposed too. For the time being the default is to only expose this
+     * to VMs with nested paging and AMD-V or unrestricted guest execution mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfgEx(pVM, pIsaExts, "F16C", &pConfig->enmF16c, fNestedPagingAndFullGuestExec /* temporarily */,
+                                    fMayHaveXSave && pConfig->enmXSave && (fXStateHostMask & XSAVE_C_YMM) /*fAllowed*/);
     AssertLogRelRCReturn(rc, rc);
 
 

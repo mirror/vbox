@@ -888,6 +888,10 @@ typedef struct CPUMFEATURES
     uint32_t        fSha : 1;
     /** Support ADX instructions. */
     uint32_t        fAdx : 1;
+    /** Supports FMA. */
+    uint32_t        fFma : 1;
+    /** Supports F16C. */
+    uint32_t        fF16c : 1;
 
     /** Supports AMD 3DNow instructions. */
     uint32_t        f3DNow : 1;
@@ -951,7 +955,7 @@ typedef struct CPUMFEATURES
 
     /** Alignment padding / reserved for future use (96 bits total, plus 12 bytes
      *  prior to the bit fields -> total of 24 bytes) */
-    uint32_t        fPadding0 : 21;
+    uint32_t        fPadding0 : 19;
 
 
     /** @name SVM
