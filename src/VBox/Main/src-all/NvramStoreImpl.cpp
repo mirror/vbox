@@ -1110,7 +1110,6 @@ HRESULT NvramStore::i_releaseUefiVarStore(RTVFS hVfs)
 HRESULT NvramStore::i_loadSettings(const settings::NvramSettings &data)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("data: %p\n", data));
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.hrc());
