@@ -2331,6 +2331,7 @@ PREDEFINED             = \
     \
     RT_IPRT_FORMAT_ATTR(a,b)= \
     RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a,b)= \
+    RT_IPRT_CALLREQ_ATTR(a,b,c)= \
     RT_NOTHROW_PROTO= \
     RT_NOTHROW_DEF= \
     RT_NO_THROW_PROTO= \
