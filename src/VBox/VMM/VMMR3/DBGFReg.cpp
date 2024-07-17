@@ -2075,7 +2075,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryEx(PUVM pUVM, VMCPUID idDefCpu, const char *pszRe
         /*
          * Determine how many register values we'd be returning.
          */
-        uint32_t cRegs = 1; /* we always return the direct hit. */
+        size_t cRegs = 1; /* we always return the direct hit. */
 
         if (   (fFlags & DBGFR3REG_QUERY_EX_F_ALIASES)
             && !pLookupRec->pSubField
