@@ -1417,7 +1417,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            | PASSTHRU_FEATURE(pConfig->enmXSave, pHstFeat->fXSaveRstor, X86_CPUID_FEATURE_ECX_XSAVE)
                            //| X86_CPUID_FEATURE_ECX_OSXSAVE - mirrors CR4.OSXSAVE state, set dynamically.
                            | PASSTHRU_FEATURE(pConfig->enmAvx, pHstFeat->fAvx, X86_CPUID_FEATURE_ECX_AVX)
-                           | PASSTHRU_FEATURE(pConfig->enmF16c, pHstFeat->fFma, X86_CPUID_FEATURE_ECX_F16C)
+                           | PASSTHRU_FEATURE(pConfig->enmF16c, pHstFeat->fF16c, X86_CPUID_FEATURE_ECX_F16C)
                            | PASSTHRU_FEATURE_TODO(pConfig->enmRdRand, X86_CPUID_FEATURE_ECX_RDRAND)
                            //| X86_CPUID_FEATURE_ECX_HVP   - Set explicitly later.
                            ;
