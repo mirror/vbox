@@ -1520,7 +1520,7 @@
  * @param   a_iArgs The index (1-based) of the first argument, use 0 for
  *                  va_list.
  */
-#if defined(__GNUC__) && defined(WITH_IPRT_CALL_ATTRIBUTE)
+#if defined(__GNUC__) && defined(WITH_IPRT_CALLREQ_ATTRIBUTE)
 # define RT_IPRT_CALLREQ_ATTR(a_iFn, a_iArgc, a_iArgs)   __attribute__((__iprt_callreq__(a_iFn, a_iArgc, a_iArgs)))
 #else
 # define RT_IPRT_CALLREQ_ATTR(a_iFn, a_iArgc, a_iArgs)
