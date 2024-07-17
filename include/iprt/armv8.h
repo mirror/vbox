@@ -2408,7 +2408,7 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** Round towards Plus Infinity (RP) mode. */
 # define ARMV8_FPCR_RMODE_RP                                    1
 /** Round towards Minus Infinity (RM) mode. */
-# define ARMV8_FPCR_RMODE_RP                                    2
+# define ARMV8_FPCR_RMODE_RM                                    2
 /** Round towards Zero (RZ) mode. */
 # define ARMV8_FPCR_RMODE_RZ                                    3
 /** Bit 24 - Flushing denormalized numbers to zero control bit. */
@@ -2430,7 +2430,7 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** Bit 2 - Overflow cumulative floating-point exception bit. */
 #define ARMV8_FPSR_OFC                                          RT_BIT_64(2)
 /** Bit 3 - Underflow cumulative floating-point exception bit. */
-#define ARMV8_FPSR_OFC                                          RT_BIT_64(3)
+#define ARMV8_FPSR_UFC                                          RT_BIT_64(3)
 /** Bit 4 - Inexact cumulative floating-point exception bit. */
 #define ARMV8_FPSR_IXC                                          RT_BIT_64(4)
 /* Bit 5 - 6 - Reserved. */
