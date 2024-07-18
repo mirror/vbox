@@ -42,7 +42,6 @@ typedef enum VBOXCAPS_ENTRY_ACSTATE
     VBOXCAPS_ENTRY_ACSTATE_ACQUIRED
 } VBOXCAPS_ENTRY_ACSTATE;
 
-
 struct VBOXCAPS_ENTRY;
 struct VBOXCAPS;
 
@@ -66,13 +65,44 @@ typedef struct VBOXCAPS
 
 static VBOXCAPS gVBoxCaps;
 
+static const char* vboxCapsFuncState2Str(VBOXCAPS_ENTRY_FUNCSTATE state)
+{
+    switch (state)
+    {
+        case VBOXCAPS_ENTRY_FUNCSTATE_UNSUPPORTED: return "unsupported";
+        case VBOXCAPS_ENTRY_FUNCSTATE_SUPPORTED:   return "supported";
+        case VBOXCAPS_ENTRY_FUNCSTATE_STARTED:     return "started";
+        default:
+            return "unknown";
+    }
+}
 
-/* we need to perform Acquire/Release using the file handled we use for rewuesting events from VBoxGuest
- * otherwise Acquisition mechanism will treat us as different client and will not propagate necessary requests
- * */
+static const char* vboxCapsAcquireState2Str(VBOXCAPS_ENTRY_ACSTATE state)
+{
+    switch (state)
+    {
+        case VBOXCAPS_ENTRY_ACSTATE_RELEASED:  return "released";
+        case VBOXCAPS_ENTRY_ACSTATE_ACQUIRING: return "acquiring";
+        case VBOXCAPS_ENTRY_ACSTATE_ACQUIRED:  return "acquired";
+        default:
+            return "unknown";
+    }
+}
+
+static const char* vboxCapsIdx2Str(uint32_t iCap)
+{
+    switch (iCap)
+    {
+        case VBOXCAPS_ENTRY_IDX_SEAMLESS: return "SEAMLESS";
+        case VBOXCAPS_ENTRY_IDX_GRAPHICS: return "GRAPHICS";
+        default:
+            return "unknown";
+    }
+}
+
 int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fCfg)
 {
-    Log(("VBoxAcquireGuestCaps or(0x%x), not(0x%x), cfx(%d)\n", fOr, fNot, fCfg));
+    LogFunc(("or(0x%x), not(0x%x), cfx(%d)\n", fOr, fNot, fCfg));
     int rc = VbglR3AcquireGuestCaps(fOr, fNot, fCfg);
     if (RT_FAILURE(rc))
         LogFlowFunc(("VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed: %Rrc\n", rc));
@@ -84,14 +114,14 @@ static DECLCALLBACK(void) vboxCapsOnEnableSeamless(struct VBOXCAPS *pConsole, st
     RT_NOREF(pConsole, pCap);
     if (fEnabled)
     {
-        Log(("vboxCapsOnEnableSeamless: ENABLED\n"));
+        LogFunc(("ENABLED\n"));
         Assert(pCap->enmAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED);
         Assert(pCap->enmFuncState == VBOXCAPS_ENTRY_FUNCSTATE_STARTED);
         VBoxSeamlessEnable();
     }
     else
     {
-        Log(("vboxCapsOnEnableSeamless: DISABLED\n"));
+        LogFunc(("DISABLED\n"));
         Assert(pCap->enmAcState != VBOXCAPS_ENTRY_ACSTATE_ACQUIRED || pCap->enmFuncState != VBOXCAPS_ENTRY_FUNCSTATE_STARTED);
         VBoxSeamlessDisable();
     }
@@ -101,8 +131,8 @@ static void vboxCapsEntryAcStateSet(VBOXCAPS_ENTRY *pCap, VBOXCAPS_ENTRY_ACSTATE
 {
     VBOXCAPS *pConsole = &gVBoxCaps;
 
-    Log(("vboxCapsEntryAcStateSet: new state enmAcState(%d); pCap: fCap(%d), iCap(%d), enmFuncState(%d), enmAcState(%d)\n",
-            enmAcState, pCap->fCap, pCap->iCap, pCap->enmFuncState, pCap->enmAcState));
+    LogFunc(("new enmAcState(%d); pCap: fCap(%d), iCap(%d), enmFuncState(%d), enmAcState(%d)\n",
+        enmAcState, pCap->fCap, pCap->iCap, pCap->enmFuncState, pCap->enmAcState));
 
     if (pCap->enmAcState == enmAcState)
         return;
@@ -123,14 +153,17 @@ static void vboxCapsEntryAcStateSet(VBOXCAPS_ENTRY *pCap, VBOXCAPS_ENTRY_ACSTATE
         if (pCap->pfnOnEnable)
             pCap->pfnOnEnable(pConsole, pCap, FALSE);
     }
+
+    LogFunc(("%s %s -> %s\n", vboxCapsIdx2Str(pCap->iCap),
+        vboxCapsAcquireState2Str(enmOldAcState), vboxCapsAcquireState2Str(enmAcState)));
 }
 
 static void vboxCapsEntryFuncStateSet(VBOXCAPS_ENTRY *pCap, VBOXCAPS_ENTRY_FUNCSTATE enmFuncState)
 {
     VBOXCAPS *pConsole = &gVBoxCaps;
 
-    Log(("vboxCapsEntryFuncStateSet: new state enmAcState(%d); pCap: fCap(%d), iCap(%d), enmFuncState(%d), enmAcState(%d)\n",
-            enmFuncState, pCap->fCap, pCap->iCap, pCap->enmFuncState, pCap->enmAcState));
+    LogFunc(("new enmFuncState(%d); fCap(%d), iCap(%d), enmFuncState(%d), enmAcState(%d)\n",
+        enmFuncState, pCap->fCap, pCap->iCap, pCap->enmFuncState, pCap->enmAcState));
 
     if (pCap->enmFuncState == enmFuncState)
         return;
@@ -153,6 +186,9 @@ static void vboxCapsEntryFuncStateSet(VBOXCAPS_ENTRY *pCap, VBOXCAPS_ENTRY_FUNCS
         if (pCap->pfnOnEnable)
             pCap->pfnOnEnable(pConsole, pCap, FALSE);
     }
+
+    LogFunc((" %s %s -> %s\n", vboxCapsIdx2Str(pCap->iCap),
+        vboxCapsFuncState2Str(enmOldFuncState), vboxCapsFuncState2Str(enmFuncState)));
 }
 
 void VBoxCapsEntryFuncStateSet(uint32_t iCup, VBOXCAPS_ENTRY_FUNCSTATE enmFuncState)
@@ -181,13 +217,13 @@ int VBoxCapsReleaseAll()
     int rc = VBoxAcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GRAPHICS, false);
     if (!RT_SUCCESS(rc))
     {
-        LogFlowFunc(("vboxCapsEntryReleaseAll VBoxAcquireGuestCaps failed rc %d\n", rc));
+        LogFlowFunc(("failed rc %d\n", rc));
         return rc;
     }
 
     if (pConsole->idTimer)
     {
-        Log(("killing console timer\n"));
+        LogFunc(("killing console timer\n"));
         KillTimer(g_hwndToolWindow, pConsole->idTimer);
         pConsole->idTimer = 0;
     }
@@ -284,7 +320,7 @@ int VBoxCapsEntryAcquire(uint32_t iCap)
     VBOXCAPS *pConsole = &gVBoxCaps;
     Assert(VBoxConsoleIsAllowed());
     VBOXCAPS_ENTRY *pCap = &pConsole->aCaps[iCap];
-    Log(("VBoxCapsEntryAcquire %d\n", iCap));
+    LogFunc(("%d\n", iCap));
     if (pCap->enmAcState != VBOXCAPS_ENTRY_ACSTATE_RELEASED)
     {
         LogFlowFunc(("invalid cap[%d] state[%d] on acquire\n", iCap, pCap->enmAcState));
@@ -301,7 +337,7 @@ int VBoxCapsEntryAcquire(uint32_t iCap)
 
     if (rc != VERR_RESOURCE_BUSY)
     {
-        LogFlowFunc(("vboxCapsEntryReleaseAll VBoxAcquireGuestCaps failed rc %d\n", rc));
+        LogFlowFunc(("VBoxAcquireGuestCaps failed rc %d\n", rc));
         return rc;
     }
 
@@ -326,17 +362,17 @@ int VBoxCapsEntryAcquire(uint32_t iCap)
 int VBoxCapsAcquireAllSupported()
 {
     VBOXCAPS *pConsole = &gVBoxCaps;
-    Log(("VBoxCapsAcquireAllSupported\n"));
+    LogFlowFuncEnter();
     for (int i = 0; i < RT_ELEMENTS(pConsole->aCaps); ++i)
     {
         if (pConsole->aCaps[i].enmFuncState >= VBOXCAPS_ENTRY_FUNCSTATE_SUPPORTED)
         {
-            Log(("VBoxCapsAcquireAllSupported acquiring cap %d, state %d\n", i, pConsole->aCaps[i].enmFuncState));
+            LogFunc(("acquiring cap %d, state %d\n", i, pConsole->aCaps[i].enmFuncState));
             VBoxCapsEntryAcquire(i);
         }
         else
         {
-            LogFlowFunc(("VBoxCapsAcquireAllSupported: WARN: cap %d not supported, state %d\n", i, pConsole->aCaps[i].enmFuncState));
+            LogFlowFunc(("WARN: cap %d not supported, state %d\n", i, pConsole->aCaps[i].enmFuncState));
         }
     }
     return VINF_SUCCESS;
