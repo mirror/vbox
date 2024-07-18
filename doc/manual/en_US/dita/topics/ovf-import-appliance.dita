@@ -11,22 +11,10 @@
         <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates file type associations automatically for any
           OVF and OVA files on your host OS. </p>
         <p>The <b outputclass="bold">Appliance Settings</b> page of the <b outputclass="bold">Import Virtual
-            Appliance</b> wizard is shown. </p>
-        <fig id="fig-import-appliance">
-          <title>Import Virtual Appliance Wizard: Appliance Settings</title>
-          <xref href="images/ovf-import.png" format="png" platform="htmlhelp">
-            <image href="images/ovf-import.png" width="12cm" placement="break">
-              <alt>Import Virtual Appliance Wizard: Appliance Settings</alt>
-            </image>
-          </xref>
-          <image platform="ohc" href="images/ovf-import.png" width="12cm" placement="break">
-            <alt>Import Virtual Appliance Wizard: Appliance Settings</alt>
-          </image>
-        </fig>
+            Appliance</b> wizard is shown. This page shows the VMs described in the OVF or OVA file and enables you to
+          change the VM settings. </p>
       </li>
       <li>
-        <p>The <b outputclass="bold">Appliance Settings</b> page shows the VMs described in the OVF or OVA file and
-          enables you to change the VM settings. </p>
         <p>By default, membership of VM groups is preserved on import for VMs that were initially exported from <ph
             conkeyref="vbox-conkeyref-phrases/product-name"/>. You can change this behavior by using the <b
             outputclass="bold">Primary Group</b> setting for the VM. </p>

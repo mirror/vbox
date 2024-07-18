@@ -7,25 +7,15 @@
     <p>Every time you start up a VM, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates a log file that
       records system configuration and events. The <b outputclass="bold">Log Viewer</b> is a <ph
         conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> tool that enables you to view and analyze system logs. </p>
-    <!-- 7.1: New pic required? Tab operation changed. Log Viewer/Filter pane. bugref:10496 -->
-    <fig id="fig-log-viewer-tool">
-      <title>Log Viewer Tool, Showing System Events</title>
-      <xref href="images/log-viewer.png" format="png" platform="htmlhelp">
-        <image href="images/log-viewer.png" width="10cm" placement="break">
-          <alt>Log Viewer Tool, Showing System Events</alt>
-        </image>
-      </xref>
-      <image platform="ohc" href="images/log-viewer.png" width="10cm" placement="break">
-        <alt>Log Viewer Tool, Showing System Events</alt>
-      </image>
-    </fig>
+    <!-- 7.1: New pic required? Tab operation changed. Log Viewer/Filter pane. bugref:10496 
+Pic removed... still need to change/add anything?-->
     <p>To display the Log Viewer, do either of the following: </p>
     <ul>
       <li>
         <p>Click the VM name in the machine list and select <b outputclass="bold">Logs</b> from the machine tools menu. </p>
       </li>
       <li>
-        <p>In the guest VM, select <b outputclass="bold">Machine</b>, <b outputclass="bold">Show Log</b>. </p>
+        <p>In the VM, select <b outputclass="bold">Machine</b>, <b outputclass="bold">Show Log</b>. </p>
       </li>
     </ul>
     <p>Log messages for the VM are displayed in tabs in the Log Viewer window. See <xref href="collect-debug-info.dita"
