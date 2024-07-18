@@ -172,8 +172,8 @@
          <topicref href="topics/vm-info.dita">
             <topicref href="topics/vm-activity-overview.dita"/>
             <topicref href="topics/vm-activity-session-information.dita"/>
+            <topicref href="topics/log-viewer.dita"/>
          </topicref>
-         <topicref href="topics/log-viewer.dita"/>
       </chapter>
       <chapter href="topics/installation.dita" chunk="to-content">
          <topicref href="topics/installation_windows.dita">
