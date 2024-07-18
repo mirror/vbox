@@ -2450,10 +2450,14 @@ iemNativeEmit_packuswb_rv_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     RT_CONCAT3(iemNativeEmit_,a_Instr,_rr_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, \
                                                 uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc) \
     { \
-        uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst), \
-                                                                              kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForFullWrite); \
+        /* \
+         * The order of register allocation is important here when idxSimdGstRegSrc == idxSimdGstRegDst, \
+         * if _ForFullWrite is allocated first the register won't be initialized. \
+         */ \
         uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc), \
                                                                               kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly); \
+        uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst), \
+                                                                              kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForFullWrite); \
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6); \
         pCodeBuf[off++] = X86_OP_PRF_SIZE_OP; \
         if (idxSimdRegDst >= 8 || idxSimdRegSrc >= 8) \
@@ -2505,10 +2509,14 @@ iemNativeEmit_packuswb_rv_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     RT_CONCAT3(iemNativeEmit_,a_Instr,_rr_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, \
                                                 uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc) \
     { \
-        uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst), \
-                                                                              kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForFullWrite); \
+        /* \
+         * The order of register allocation is important here when idxSimdGstRegSrc == idxSimdGstRegDst, \
+         * if _ForFullWrite is allocated first the register won't be initialized. \
+         */ \
         uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc), \
                                                                               kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly); \
+        uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst), \
+                                                                              kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForFullWrite); \
         PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1); \
         pCodeBuf[off++] = Armv8A64MkVecInstrUShll(idxSimdRegDst, idxSimdRegSrc, 0, (a_ArmElemSz), (a_fArmUnsigned)); \
         iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst); \
