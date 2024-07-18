@@ -332,7 +332,7 @@
       virtual machines and other data represented by the VirtualBox data of
       that user (for example, on a Linux machine, under
       <computeroutput>/home/user1/.config/VirtualBox</computeroutput>; see the
-      VirtualBox User Manual for details on where this data is stored).</para>
+      VirtualBox User Guide for details on where this data is stored).</para>
 
       <sect2 id="vboxwebsrv-ref">
         <title>Command line options of vboxwebsrv</title>
@@ -556,7 +556,7 @@
         that conforms with the specifications for VirtualBox external
         authentication modules as laid out in section <emphasis
         role="bold">VRDE authentication</emphasis> of the VirtualBox User
-        Manual; the web service uses the same kind of modules as the
+        Guide; the web service uses the same kind of modules as the
         VirtualBox VRDE server. For technical details on VirtualBox external
         authentication modules see <xref linkend="vbox-auth"/></para>
 
@@ -709,7 +709,7 @@
           imitates a few typical command line tasks that
           <computeroutput>VBoxManage</computeroutput>, VirtualBox's regular
           command-line front-end, would provide (see the VirtualBox User
-          Manual for details). In particular, you can run:<itemizedlist>
+          Guide for details). In particular, you can run:<itemizedlist>
               <listitem>
                 <para><computeroutput>java clienttest show
                 vms</computeroutput>: show the virtual machines that are
@@ -6366,7 +6366,7 @@ AuthResult AUTHCALL AuthEntry(
           cleaned up to allow third party implementations of the remote
           desktop server. This is called the VirtualBox Remote Desktop
           Extension (VRDE) and can be added to VirtualBox by installing the
-          corresponding extension package; see the VirtualBox User Manual for
+          corresponding extension package; see the VirtualBox User Guide for
           details.</para>
 
           <para>The following API changes were made to support the VRDE
