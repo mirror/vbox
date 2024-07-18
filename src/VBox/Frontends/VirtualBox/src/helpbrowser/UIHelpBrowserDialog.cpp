@@ -188,6 +188,7 @@ void UIHelpBrowserDialog::findManualFileAndShow(const QString &strKeyword /*= QS
     /* For non-OSE version we just open it: */
     showUserManual(uiCommon().helpFile(), strKeyword);
 #else /* #ifndef VBOX_OSE */
+    Q_UNUSED(strKeyword);
 #if 0
     /* For OSE version we have to check if it present first: */
     QString strUserManualFileName1 = uiCommon().helpFile();
