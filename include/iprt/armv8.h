@@ -4890,6 +4890,36 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrShlImm(uint32_t iVecRegDst, uint32
 }
 
 
+/**
+ * A64: Encodes SHLL/SHLL2/USHLL/USHLL2 (vector, register).
+ *
+ * @returns The encoded instruction.
+ * @param   iVecRegDst  The vector register to put the result into.
+ * @param   iVecRegSrc  The vector source register.
+ * @param   cShift      Number of bits to shift.
+ * @param   enmSz       Element size of the source vector register, the destination vector register
+ *                      element size is twice as large, kArmv8InstrShiftSz_U64 is invalid.
+ * @param   fUnsigned   Flag whether this is an unsigned shift left (true, default) or signed (false).
+ * @param   fUpper      Flag whether this operates on the lower half (false, default) of the source vector register
+ *                      or the upper half (true).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkVecInstrUShll(uint32_t iVecRegDst, uint32_t iVecRegSrc, uint8_t cShift, ARMV8INSTRUSHIFTSZ enmSz,
+                                                    bool fUnsigned = true, bool fUpper = false)
+{
+    Assert(iVecRegDst < 32); Assert(iVecRegSrc < 32);
+    Assert(   (enmSz == kArmv8InstrShiftSz_U8 &&  cShift < 8)
+           || (enmSz == kArmv8InstrShiftSz_U16 && cShift < 16)
+           || (enmSz == kArmv8InstrShiftSz_U32 && cShift < 32));
+
+    return UINT32_C(0x0f00a400)
+         | ((uint32_t)fUpper << 30)
+         | ((uint32_t)fUnsigned << 29)
+         | (((uint32_t)enmSz | cShift) << 16)
+         | (iVecRegSrc << 5)
+         | iVecRegDst;
+}
+
+
 /** Armv8 vector arith ops element size.    */
 typedef enum ARMV8INSTRVECARITHSZ
 {

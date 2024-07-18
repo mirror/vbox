@@ -852,7 +852,7 @@ FNIEMOP_DEF(iemOp_pabsd_Vx_Wx)
 
 
 /** Body for the pmov{s,z}x* instructions. */
-#define IEMOP_BODY_PMOV_S_Z(a_Instr, a_SrcWidth) \
+#define IEMOP_BODY_PMOV_S_Z(a_Instr, a_SrcWidth, a_fRegNativeArchs, a_fMemNativeArchs) \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
@@ -865,12 +865,16 @@ FNIEMOP_DEF(iemOp_pabsd_Vx_Wx)
         IEM_MC_ARG(uint ## a_SrcWidth ## _t,    uSrc, 1); \
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();  \
         IEM_MC_PREPARE_SSE_USAGE();  \
-        IEM_MC_FETCH_XREG_U ## a_SrcWidth (uSrc, IEM_GET_MODRM_RM(pVCpu, bRm), 0); \
-        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm)); \
-        IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse41, \
-                                                             iemAImpl_ ## a_Instr ## _u128, \
-                                                             iemAImpl_v ## a_Instr ## _u128_fallback), \
-                                 puDst, uSrc); \
+        IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
+            IEM_MC_NATIVE_EMIT_2(RT_CONCAT3(iemNativeEmit_,a_Instr,_rr_u128), IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm)); \
+        } IEM_MC_NATIVE_ELSE() { \
+            IEM_MC_FETCH_XREG_U ## a_SrcWidth (uSrc, IEM_GET_MODRM_RM(pVCpu, bRm), 0); \
+            IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm)); \
+            IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse41, \
+                                                                 iemAImpl_ ## a_Instr ## _u128, \
+                                                                 iemAImpl_v ## a_Instr ## _u128_fallback), \
+                                     puDst, uSrc); \
+        } IEM_MC_NATIVE_ENDIF(); \
         IEM_MC_ADVANCE_RIP_AND_FINISH(); \
         IEM_MC_END(); \
     } \
@@ -888,11 +892,15 @@ FNIEMOP_DEF(iemOp_pabsd_Vx_Wx)
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT(); \
         IEM_MC_PREPARE_SSE_USAGE(); \
         IEM_MC_FETCH_MEM_U## a_SrcWidth (uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
-        IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm)); \
-        IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse41, \
-                                                             iemAImpl_ ## a_Instr ## _u128, \
-                                                             iemAImpl_v ## a_Instr ## _u128_fallback), \
-                                 puDst, uSrc); \
+        IEM_MC_NATIVE_IF(a_fMemNativeArchs) { \
+            IEM_MC_NATIVE_EMIT_2(RT_CONCAT3(iemNativeEmit_,a_Instr,_rv_u128), IEM_GET_MODRM_REG(pVCpu, bRm), uSrc); \
+        } IEM_MC_NATIVE_ELSE() { \
+            IEM_MC_REF_XREG_U128(puDst, IEM_GET_MODRM_REG(pVCpu, bRm)); \
+            IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fSse41, \
+                                                                 iemAImpl_ ## a_Instr ## _u128, \
+                                                                 iemAImpl_v ## a_Instr ## _u128_fallback), \
+                                     puDst, uSrc); \
+        } IEM_MC_NATIVE_ENDIF(); \
         IEM_MC_ADVANCE_RIP_AND_FINISH(); \
         IEM_MC_END(); \
     } \
@@ -904,7 +912,7 @@ FNIEMOP_DEF(iemOp_pmovsxbw_Vx_UxMq)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVSXBW, pmovsxbw, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovsxbw, 64);
+    IEMOP_BODY_PMOV_S_Z(pmovsxbw, 64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -913,7 +921,7 @@ FNIEMOP_DEF(iemOp_pmovsxbd_Vx_UxMd)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVSXBD, pmovsxbd, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovsxbd, 32);
+    IEMOP_BODY_PMOV_S_Z(pmovsxbd, 32, 0, 0);
 }
 
 
@@ -922,7 +930,7 @@ FNIEMOP_DEF(iemOp_pmovsxbq_Vx_UxMw)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVSXBQ, pmovsxbq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovsxbq, 16);
+    IEMOP_BODY_PMOV_S_Z(pmovsxbq, 16, 0, 0);
 }
 
 
@@ -931,7 +939,7 @@ FNIEMOP_DEF(iemOp_pmovsxwd_Vx_UxMq)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVSXWD, pmovsxwd, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovsxwd, 64);
+    IEMOP_BODY_PMOV_S_Z(pmovsxwd, 64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -940,7 +948,7 @@ FNIEMOP_DEF(iemOp_pmovsxwq_Vx_UxMd)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVSXWQ, pmovsxwq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovsxwq, 32);
+    IEMOP_BODY_PMOV_S_Z(pmovsxwq, 32, 0, 0);
 }
 
 
@@ -949,7 +957,7 @@ FNIEMOP_DEF(iemOp_pmovsxdq_Vx_UxMq)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVSXDQ, pmovsxdq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovsxdq, 64);
+    IEMOP_BODY_PMOV_S_Z(pmovsxdq, 64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -1041,7 +1049,7 @@ FNIEMOP_DEF(iemOp_pmovzxbw_Vx_UxMq)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVZXBW, pmovzxbw, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovzxbw, 64);
+    IEMOP_BODY_PMOV_S_Z(pmovzxbw, 64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -1050,7 +1058,7 @@ FNIEMOP_DEF(iemOp_pmovzxbd_Vx_UxMd)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVZXBD, pmovzxbd, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovzxbd, 32);
+    IEMOP_BODY_PMOV_S_Z(pmovzxbd, 32, 0, 0);
 }
 
 
@@ -1059,7 +1067,7 @@ FNIEMOP_DEF(iemOp_pmovzxbq_Vx_UxMw)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVZXBQ, pmovzxbq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovzxbq, 16);
+    IEMOP_BODY_PMOV_S_Z(pmovzxbq, 16, 0, 0);
 }
 
 
@@ -1068,7 +1076,7 @@ FNIEMOP_DEF(iemOp_pmovzxwd_Vx_UxMq)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVZXWD, pmovzxwd, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovzxwd, 64);
+    IEMOP_BODY_PMOV_S_Z(pmovzxwd, 64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -1077,7 +1085,7 @@ FNIEMOP_DEF(iemOp_pmovzxwq_Vx_UxMd)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVZXWQ, pmovzxwq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovzxwq, 32);
+    IEMOP_BODY_PMOV_S_Z(pmovzxwq, 32, 0, 0);
 }
 
 
@@ -1086,7 +1094,7 @@ FNIEMOP_DEF(iemOp_pmovzxdq_Vx_UxMq)
 {
      /** @todo r=aeichner Review code, the naming of this function and the parameter type specifiers. */
     IEMOP_MNEMONIC2(RM, PMOVZXDQ, pmovzxdq, Vx, Wq, DISOPTYPE_HARMLESS | DISOPTYPE_X86_SSE, IEMOPHINT_IGNORES_OP_SIZES);
-    IEMOP_BODY_PMOV_S_Z(pmovzxdq, 64);
+    IEMOP_BODY_PMOV_S_Z(pmovzxdq, 64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
