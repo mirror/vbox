@@ -114,67 +114,6 @@ static int xmlOutputCallbackNr;
  *									*
  ************************************************************************/
 
-static const char* const IOerr[] = {
-    "Unknown IO error",         /* UNKNOWN */
-    "Permission denied",	/* EACCES */
-    "Resource temporarily unavailable",/* EAGAIN */
-    "Bad file descriptor",	/* EBADF */
-    "Bad message",		/* EBADMSG */
-    "Resource busy",		/* EBUSY */
-    "Operation canceled",	/* ECANCELED */
-    "No child processes",	/* ECHILD */
-    "Resource deadlock avoided",/* EDEADLK */
-    "Domain error",		/* EDOM */
-    "File exists",		/* EEXIST */
-    "Bad address",		/* EFAULT */
-    "File too large",		/* EFBIG */
-    "Operation in progress",	/* EINPROGRESS */
-    "Interrupted function call",/* EINTR */
-    "Invalid argument",		/* EINVAL */
-    "Input/output error",	/* EIO */
-    "Is a directory",		/* EISDIR */
-    "Too many open files",	/* EMFILE */
-    "Too many links",		/* EMLINK */
-    "Inappropriate message buffer length",/* EMSGSIZE */
-    "Filename too long",	/* ENAMETOOLONG */
-    "Too many open files in system",/* ENFILE */
-    "No such device",		/* ENODEV */
-    "No such file or directory",/* ENOENT */
-    "Exec format error",	/* ENOEXEC */
-    "No locks available",	/* ENOLCK */
-    "Not enough space",		/* ENOMEM */
-    "No space left on device",	/* ENOSPC */
-    "Function not implemented",	/* ENOSYS */
-    "Not a directory",		/* ENOTDIR */
-    "Directory not empty",	/* ENOTEMPTY */
-    "Not supported",		/* ENOTSUP */
-    "Inappropriate I/O control operation",/* ENOTTY */
-    "No such device or address",/* ENXIO */
-    "Operation not permitted",	/* EPERM */
-    "Broken pipe",		/* EPIPE */
-    "Result too large",		/* ERANGE */
-    "Read-only file system",	/* EROFS */
-    "Invalid seek",		/* ESPIPE */
-    "No such process",		/* ESRCH */
-    "Operation timed out",	/* ETIMEDOUT */
-    "Improper link",		/* EXDEV */
-    "Attempt to load network entity %s", /* XML_IO_NETWORK_ATTEMPT */
-    "encoder error",		/* XML_IO_ENCODER */
-    "flush error",
-    "write error",
-    "no input",
-    "buffer full",
-    "loading error",
-    "not a socket",		/* ENOTSOCK */
-    "already connected",	/* EISCONN */
-    "connection refused",	/* ECONNREFUSED */
-    "unreachable network",	/* ENETUNREACH */
-    "address in use",		/* EADDRINUSE */
-    "already in use",		/* EALREADY */
-    "unknown address family",	/* EAFNOSUPPORT */
-};
-
-#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
 /**
  * xmlIOErrMemory:
  * @extra:  extra information
@@ -410,7 +349,7 @@ xmlIOErr(int code, const char *extra)
  *									*
  ************************************************************************/
 
-#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
+#if defined(_WIN32)
 
 /**
  * __xmlIOWin32UTF8ToWChar:
@@ -483,7 +422,7 @@ int
 xmlCheckFilename(const char *path)
 {
 #ifdef HAVE_STAT
-#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
+#if defined(_WIN32)
     struct _stat stat_buffer;
 #else
     struct stat stat_buffer;
@@ -495,7 +434,7 @@ xmlCheckFilename(const char *path)
 	return(0);
 
 #ifdef HAVE_STAT
-#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
+#if defined(_WIN32)
     {
         wchar_t *wpath;
 
@@ -759,8 +698,14 @@ xmlFileOpenSafe(const char *filename, int write, void **out) {
     {
         wchar_t *wpath;
 
-#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
-    fd = xmlWrapOpenUtf8(path, 0);
+        wpath = __xmlIOWin32UTF8ToWChar(filename);
+        if (wpath == NULL) {
+            xmlFree(fromUri);
+            return(XML_ERR_NO_MEMORY);
+        }
+	fd = _wfopen(wpath, write ? L"wb" : L"rb");
+        xmlFree(wpath);
+    }
 #else
     fd = fopen(filename, write ? "wb" : "rb");
 #endif /* WIN32 */
@@ -798,39 +743,8 @@ void *
 xmlFileOpen(const char *filename) {
     void *context;
 
-    if (!strcmp(filename, "-")) {
-	fd = stdout;
-	return((void *) fd);
-    }
-
-    if (!xmlStrncasecmp(BAD_CAST filename, BAD_CAST "file://localhost/", 17))
-#if defined (_WIN32)
-	path = &filename[17];
-#else
-	path = &filename[16];
-#endif
-    else if (!xmlStrncasecmp(BAD_CAST filename, BAD_CAST "file:///", 8)) {
-#if defined (_WIN32)
-	path = &filename[8];
-#else
-	path = &filename[7];
-#endif
-    } else
-	path = filename;
-
-    if (path == NULL)
-	return(NULL);
-
-#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
-    fd = xmlWrapOpenUtf8(path, 1);
-#elif(__MVS__)
-    fd = fopen(path, "w");
-#else
-    fd = fopen(path, "wb");
-#endif /* WIN32 */
-
-    if (fd == NULL) xmlIOErr(0, path);
-    return((void *) fd);
+    xmlFileOpenSafe(filename, 0, &context);
+    return(context);
 }
 
 /**
@@ -967,136 +881,6 @@ xmlBufferWrite (void * context, const char * buffer, int len) {
  *		I/O for compressed file accesses			*
  *									*
  ************************************************************************/
-
-/**
- * xmlGzfileOpen_real:
- * @filename:  the URI for matching
- *
- * input from compressed file open
- * if @filename is " " then the standard input is used
- *
- * Returns an I/O context or NULL in case of error
- */
-static void *
-xmlGzfileOpen_real (const char *filename) {
-    const char *path = NULL;
-    gzFile fd;
-
-    if (!strcmp(filename, "-")) {
-        int duped_fd = dup(fileno(stdin));
-        fd = gzdopen(duped_fd, "rb");
-        if (fd == Z_NULL && duped_fd >= 0) {
-            close(duped_fd);  /* gzdOpen() does not close on failure */
-        }
-
-	return((void *) fd);
-    }
-
-    if (!xmlStrncasecmp(BAD_CAST filename, BAD_CAST "file://localhost/", 17))
-#if defined (_WIN32)
-	path = &filename[17];
-#else
-	path = &filename[16];
-#endif
-    else if (!xmlStrncasecmp(BAD_CAST filename, BAD_CAST "file:///", 8)) {
-#if defined (_WIN32)
-	path = &filename[8];
-#else
-	path = &filename[7];
-#endif
-    } else
-	path = filename;
-
-    if (path == NULL)
-	return(NULL);
-    if (!xmlCheckFilename(path))
-        return(NULL);
-
-#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
-    fd = xmlWrapGzOpenUtf8(path, "rb");
-#else
-    fd = gzopen(path, "rb");
-#endif
-    return((void *) fd);
-}
-
-/**
- * xmlGzfileOpen:
- * @filename:  the URI for matching
- *
- * Wrapper around xmlGzfileOpen_real if the open fails, it will
- * try to unescape @filename
- */
-static void *
-xmlGzfileOpen (const char *filename) {
-    char *unescaped;
-    void *retval;
-
-    retval = xmlGzfileOpen_real(filename);
-    if (retval == NULL) {
-	unescaped = xmlURIUnescapeString(filename, 0, NULL);
-	if (unescaped != NULL) {
-	    retval = xmlGzfileOpen_real(unescaped);
-	}
-	xmlFree(unescaped);
-    }
-    return retval;
-}
-
-#ifdef LIBXML_OUTPUT_ENABLED
-/**
- * xmlGzfileOpenW:
- * @filename:  the URI for matching
- * @compression:  the compression factor (0 - 9 included)
- *
- * input from compressed file open
- * if @filename is " " then the standard input is used
- *
- * Returns an I/O context or NULL in case of error
- */
-static void *
-xmlGzfileOpenW (const char *filename, int compression) {
-    const char *path = NULL;
-    char mode[15];
-    gzFile fd;
-
-    snprintf(mode, sizeof(mode), "wb%d", compression);
-    if (!strcmp(filename, "-")) {
-        int duped_fd = dup(fileno(stdout));
-        fd = gzdopen(duped_fd, "rb");
-        if (fd == Z_NULL && duped_fd >= 0) {
-            close(duped_fd);  /* gzdOpen() does not close on failure */
-        }
-
-	return((void *) fd);
-    }
-
-    if (!xmlStrncasecmp(BAD_CAST filename, BAD_CAST "file://localhost/", 17))
-#if defined (_WIN32)
-	path = &filename[17];
-#else
-	path = &filename[16];
-#endif
-    else if (!xmlStrncasecmp(BAD_CAST filename, BAD_CAST "file:///", 8)) {
-#if defined (_WIN32)
-	path = &filename[8];
-#else
-	path = &filename[7];
-#endif
-    } else
-	path = filename;
-
-    if (path == NULL)
-	return(NULL);
-
-#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
-    fd = xmlWrapGzOpenUtf8(path, mode);
-#else
-    fd = gzopen(path, mode);
-#endif
-    return((void *) fd);
-}
-#endif /* LIBXML_OUTPUT_ENABLED */
 
 /**
  * xmlGzfileRead:

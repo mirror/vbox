@@ -1017,12 +1017,30 @@ xoroshiro64ss(unsigned *s) {
 
     return(result & 0xFFFFFFFF);
 }
-#endif
 
 /*
  * xmlGlobalRandom:
  *
  * Generate a pseudo-random value using the global PRNG.
+ *
+ * Returns a random value.
+ */
+unsigned
+xmlGlobalRandom(void) {
+    unsigned ret;
+
+    xmlMutexLock(&xmlRngMutex);
+    ret = xoroshiro64ss(globalRngState);
+    xmlMutexUnlock(&xmlRngMutex);
+
+    return(ret);
+}
+#endif //VBOX
+
+/*
+ * xmlRandom:
+ *
+ * Generate a pseudo-random value using the thread-local PRNG.
  *
  * Returns a random value.
  */
@@ -1047,21 +1065,6 @@ xmlRandom(void) {
     xmlMutexUnlock(&xmlRngMutex);
 
     return(ret);
-}
-
-/*
- * xmlRandom:
- *
- * Generate a pseudo-random value using the thread-local PRNG.
- *
- * Returns a random value.
- */
-unsigned
-xmlRandom(void) {
-#ifdef LIBXML_THREAD_ENABLED
-    return(xoroshiro64ss(xmlGetLocalRngState()));
-#else
-    return(xmlGlobalRandom());
 #endif
 #else
     return RTRandU32();

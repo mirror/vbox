@@ -12,18 +12,6 @@
 #include <ctype.h>
 #include <time.h>
 
-/**
- * MEM_LIST:
- *
- * keep track of all allocated blocks for error reporting
- * Always build the memory list !
- */
-#ifdef DEBUG_MEMORY_LOCATION
- #ifndef MEM_LIST
-  #define MEM_LIST /* keep a list of all the allocated memory blocks */
- #endif
-#endif
-
 #include <libxml/xmlmemory.h>
 #include <libxml/xmlerror.h>
 #include <libxml/parser.h>
@@ -32,7 +20,6 @@
 #include "private/memory.h"
 #include "private/threads.h"
 
-static int xmlMemInitialized = 0;
 static unsigned long  debugMemSize = 0;
 static unsigned long  debugMemBlocks = 0;
 static xmlMutex xmlMemMutex;
@@ -42,20 +29,6 @@ static xmlMutex xmlMemMutex;
  *		Macros, variables and associated types			*
  *									*
  ************************************************************************/
-
-#if !defined(LIBXML_THREAD_ENABLED) && !defined(LIBXML_THREAD_ALLOC_ENABLED)
- #ifdef xmlMalloc
- #undef xmlMalloc
- #endif
-
- #ifdef xmlRealloc
- #undef xmlRealloc
- #endif
-
- #ifdef xmlMemStrdup
- #undef xmlMemStrdup
- #endif
-#endif
 
 /*
  * Each of the blocks allocated begin with a header containing information
@@ -73,9 +46,7 @@ typedef struct memnod {
 #else
 #define ALIGN_SIZE  sizeof(double)
 #endif
-
-#define HDR_SIZE    sizeof(MEMHDR)
-#define RESERVE_SIZE (((HDR_SIZE + (ALIGN_SIZE-1)) \
+#define RESERVE_SIZE (((sizeof(MEMHDR) + ALIGN_SIZE - 1) \
 		      / ALIGN_SIZE ) * ALIGN_SIZE)
 
 #define MAX_SIZE_T ((size_t)-1)
@@ -440,28 +411,7 @@ xmlInitMemory(void) {
  */
 void
 xmlInitMemoryInternal(void) {
-
-#ifdef VBOX
-     const char *breakpoint;
-#else
-     char *breakpoint;
-#endif
-
-#ifdef DEBUG_MEMORY
-     xmlGenericError(xmlGenericErrorContext,
-	     "xmlInitMemory()\n");
-#endif
-
-     xmlInitMutex(&xmlMemMutex);
-
-     breakpoint = getenv("XML_MEM_BREAKPOINT");
-     if (breakpoint != NULL) {
-         sscanf(breakpoint, "%ud", &xmlMemStopAtBlock);
-     }
-     breakpoint = getenv("XML_MEM_TRACE");
-     if (breakpoint != NULL) {
-         sscanf(breakpoint, "%p", &xmlMemTraceBlockAt);
-     }
+    xmlInitMutex(&xmlMemMutex);
 }
 
 /**
