@@ -1069,26 +1069,43 @@ static void iemR3InfoTlbPrintHeader(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB con
 }
 
 
+#define IEMR3INFOTLB_F_ONLY_VALID   RT_BIT_32(0)
+
 /** Worker for iemR3InfoTlbPrintSlots and iemR3InfoTlbPrintAddress. */
-static void iemR3InfoTlbPrintSlot(PCDBGFINFOHLP pHlp, IEMTLB const *pTlb, IEMTLBENTRY const *pTlbe, uint32_t uSlot)
+static void iemR3InfoTlbPrintSlot(PCDBGFINFOHLP pHlp, IEMTLB const *pTlb, IEMTLBENTRY const *pTlbe,
+                                  uint32_t uSlot, uint32_t fFlags)
 {
-    pHlp->pfnPrintf(pHlp, "%02x: %s %#018RX64 -> %RGp / %p / %#05x %s%s%s%s%s/%s%s%s/%s %s\n",
+#ifndef VBOX_VMM_TARGET_ARMV8
+    uint64_t const uTlbRevision = !(uSlot & 1) ? pTlb->uTlbRevision : pTlb->uTlbRevisionGlobal;
+#else
+    uint64_t const uTlbRevision = pTlb->uTlbRevision;
+#endif
+    if ((fFlags & IEMR3INFOTLB_F_ONLY_VALID) && (pTlbe->uTag & IEMTLB_REVISION_MASK) != uTlbRevision)
+        return;
+
+    /* The address needs to be sign extended, thus the shifting fun here.*/
+    RTGCPTR const  GCPtr = (RTGCINTPTR)((pTlbe->uTag & ~IEMTLB_REVISION_MASK) << (64 - IEMTLB_TAG_ADDR_WIDTH))
+                         >>                                                      (64 - IEMTLB_TAG_ADDR_WIDTH - GUEST_PAGE_SHIFT);
+    pHlp->pfnPrintf(pHlp, "%0*x: %s %#018RX64 -> %RGp / %p / %#05x %s%s%s%s%s%s/%s%s%s%s/%s %s\n",
+                    RT_ELEMENTS(pTlb->aEntries) >= 0x1000 ? 4 : RT_ELEMENTS(pTlb->aEntries) >= 0x100 ? 3 : 2,
                     uSlot,
-                    (pTlbe->uTag & IEMTLB_REVISION_MASK) == pTlb->uTlbRevision ? "valid  "
-                    : (pTlbe->uTag & IEMTLB_REVISION_MASK) == 0                ? "empty  "
-                                                                               : "expired",
-                    (pTlbe->uTag & ~IEMTLB_REVISION_MASK) << X86_PAGE_SHIFT,
+                    (pTlbe->uTag & IEMTLB_REVISION_MASK) == uTlbRevision ? "valid  "
+                    : (pTlbe->uTag & IEMTLB_REVISION_MASK) == 0          ? "empty  "
+                                                                         : "expired",
+                    GCPtr,
                     pTlbe->GCPhys, pTlbe->pbMappingR3,
                     (uint32_t)(pTlbe->fFlagsAndPhysRev & ~IEMTLBE_F_PHYS_REV),
-                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_EXEC      ? "NX" : " X",
-                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_WRITE     ? "RO" : "RW",
-                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_ACCESSED  ? "-"  : "A",
-                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_DIRTY     ? "-"  : "D",
-                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE   ? "-"  : "S",
-                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_NO_WRITE     ? "-"  : "w",
-                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_NO_READ      ? "-"  : "r",
-                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_UNASSIGNED   ? "U"  : "-",
-                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_NO_MAPPINGR3    ? "S"  : "M",
+                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_WRITE      ? "R-" : "RW",
+                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_EXEC       ? "-"  : "X",
+                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_ACCESSED   ? "-"  : "A",
+                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_DIRTY      ? "-"  : "D",
+                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE    ? "-"  : "S",
+                    !(uSlot & 1)                                         ? "-"  : "G",
+                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_NO_WRITE      ? "-"  : "w",
+                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_NO_READ       ? "-"  : "r",
+                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_UNASSIGNED    ? "U"  : "-",
+                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PG_CODE_PAGE     ? "C"  : "-",
+                    pTlbe->fFlagsAndPhysRev & IEMTLBE_F_NO_MAPPINGR3     ? "S"  : "M",
                     (pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PHYS_REV) == pTlb->uTlbPhysRev ? "phys-valid"
                     : (pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PHYS_REV) == 0 ? "phys-empty" : "phys-expired");
 }
@@ -1096,7 +1113,7 @@ static void iemR3InfoTlbPrintSlot(PCDBGFINFOHLP pHlp, IEMTLB const *pTlb, IEMTLB
 
 /** Displays one or more TLB slots. */
 static void iemR3InfoTlbPrintSlots(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB const *pTlb,
-                                   uint32_t uSlot, uint32_t cSlots, bool *pfHeader)
+                                   uint32_t uSlot, uint32_t cSlots, uint32_t fFlags, bool *pfHeader)
 {
     if (uSlot < RT_ELEMENTS(pTlb->aEntries))
     {
@@ -1111,7 +1128,7 @@ static void iemR3InfoTlbPrintSlots(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB cons
         while (cSlots-- > 0)
         {
             IEMTLBENTRY const Tlbe = pTlb->aEntries[uSlot];
-            iemR3InfoTlbPrintSlot(pHlp, pTlb, &Tlbe, uSlot);
+            iemR3InfoTlbPrintSlot(pHlp, pTlb, &Tlbe, uSlot, fFlags);
             uSlot = (uSlot + 1) % RT_ELEMENTS(pTlb->aEntries);
         }
     }
@@ -1123,7 +1140,7 @@ static void iemR3InfoTlbPrintSlots(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB cons
 
 /** Displays the TLB slot for the given address. */
 static void iemR3InfoTlbPrintAddress(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB const *pTlb,
-                                     uint64_t uAddress, bool *pfHeader)
+                                     uint64_t uAddress, uint32_t fFlags, bool *pfHeader)
 {
     iemR3InfoTlbPrintHeader(pVCpu, pHlp, pTlb, pfHeader);
 
@@ -1133,7 +1150,7 @@ static void iemR3InfoTlbPrintAddress(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB co
     pHlp->pfnPrintf(pHlp, "Address %#RX64 -> slot %#x - %s\n", uAddress, uSlot,
                     Tlbe.uTag == (uTag | pTlb->uTlbRevision)  ? "match"
                     : (Tlbe.uTag & ~IEMTLB_REVISION_MASK) == uTag ? "expired" : "mismatch");
-    iemR3InfoTlbPrintSlot(pHlp, pTlb, &Tlbe, uSlot);
+    iemR3InfoTlbPrintSlot(pHlp, pTlb, &Tlbe, uSlot, fFlags);
 }
 
 
@@ -1145,13 +1162,14 @@ static void iemR3InfoTlbCommon(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **pa
      */
     static RTGETOPTDEF const s_aOptions[] =
     {
-        { "--cpu",     'c', RTGETOPT_REQ_UINT32                          },
-        { "--vcpu",    'c', RTGETOPT_REQ_UINT32                          },
-        { "all",       'A', RTGETOPT_REQ_NOTHING                         },
-        { "--all",     'A', RTGETOPT_REQ_NOTHING                         },
-        { "--address", 'a', RTGETOPT_REQ_UINT64      | RTGETOPT_FLAG_HEX },
-        { "--range",   'r', RTGETOPT_REQ_UINT32_PAIR | RTGETOPT_FLAG_HEX },
-        { "--slot",    's', RTGETOPT_REQ_UINT32      | RTGETOPT_FLAG_HEX },
+        { "--cpu",          'c', RTGETOPT_REQ_UINT32                          },
+        { "--vcpu",         'c', RTGETOPT_REQ_UINT32                          },
+        { "all",            'A', RTGETOPT_REQ_NOTHING                         },
+        { "--all",          'A', RTGETOPT_REQ_NOTHING                         },
+        { "--address",      'a', RTGETOPT_REQ_UINT64      | RTGETOPT_FLAG_HEX },
+        { "--range",        'r', RTGETOPT_REQ_UINT32_PAIR | RTGETOPT_FLAG_HEX },
+        { "--slot",         's', RTGETOPT_REQ_UINT32      | RTGETOPT_FLAG_HEX },
+        { "--only-valid",   'v', RTGETOPT_REQ_NOTHING                         },
     };
 
     char  szDefault[] = "-A";
@@ -1168,6 +1186,7 @@ static void iemR3InfoTlbCommon(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **pa
 
     bool            fNeedHeader  = true;
     bool            fAddressMode = true;
+    uint32_t        fFlags       = 0;
     PVMCPU          pVCpu        = VMMGetCpu(pVM);
     if (!pVCpu)
         pVCpu = VMMGetCpuById(pVM, 0);
@@ -1189,25 +1208,29 @@ static void iemR3InfoTlbCommon(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **pa
 
             case 'a':
                 iemR3InfoTlbPrintAddress(pVCpu, pHlp, fITlb ? &pVCpu->iem.s.CodeTlb : &pVCpu->iem.s.DataTlb,
-                                         ValueUnion.u64, &fNeedHeader);
+                                         ValueUnion.u64, fFlags, &fNeedHeader);
                 fAddressMode = true;
                 break;
 
             case 'A':
                 iemR3InfoTlbPrintSlots(pVCpu, pHlp, fITlb ? &pVCpu->iem.s.CodeTlb : &pVCpu->iem.s.DataTlb,
-                                       0, RT_ELEMENTS(pVCpu->iem.s.CodeTlb.aEntries), &fNeedHeader);
+                                       0, RT_ELEMENTS(pVCpu->iem.s.CodeTlb.aEntries), fFlags, &fNeedHeader);
                 break;
 
             case 'r':
                 iemR3InfoTlbPrintSlots(pVCpu, pHlp, fITlb ? &pVCpu->iem.s.CodeTlb : &pVCpu->iem.s.DataTlb,
-                                       ValueUnion.PairU32.uFirst, ValueUnion.PairU32.uSecond, &fNeedHeader);
+                                       ValueUnion.PairU32.uFirst, ValueUnion.PairU32.uSecond, fFlags, &fNeedHeader);
                 fAddressMode = false;
                 break;
 
             case 's':
                 iemR3InfoTlbPrintSlots(pVCpu, pHlp, fITlb ? &pVCpu->iem.s.CodeTlb : &pVCpu->iem.s.DataTlb,
-                                       ValueUnion.u32, 1, &fNeedHeader);
+                                       ValueUnion.u32, 1, fFlags, &fNeedHeader);
                 fAddressMode = false;
+                break;
+
+            case 'v':
+                fFlags |= IEMR3INFOTLB_F_ONLY_VALID;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -1217,7 +1240,7 @@ static void iemR3InfoTlbCommon(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **pa
                     rc = RTStrToUInt64Full(ValueUnion.psz, 16, &uAddr);
                     if (RT_SUCCESS(rc) && rc != VWRN_NUMBER_TOO_BIG)
                         iemR3InfoTlbPrintAddress(pVCpu, pHlp, fITlb ? &pVCpu->iem.s.CodeTlb : &pVCpu->iem.s.DataTlb,
-                                                 uAddr, &fNeedHeader);
+                                                 uAddr, fFlags, &fNeedHeader);
                     else
                         pHlp->pfnPrintf(pHlp, "error: Invalid or malformed guest address '%s': %Rrc\n", ValueUnion.psz, rc);
                 }
@@ -1227,7 +1250,7 @@ static void iemR3InfoTlbCommon(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **pa
                     rc = RTStrToUInt32Full(ValueUnion.psz, 16, &uSlot);
                     if (RT_SUCCESS(rc) && rc != VWRN_NUMBER_TOO_BIG)
                         iemR3InfoTlbPrintSlots(pVCpu, pHlp, fITlb ? &pVCpu->iem.s.CodeTlb : &pVCpu->iem.s.DataTlb,
-                                               uSlot, 1, &fNeedHeader);
+                                               uSlot, 1, fFlags, &fNeedHeader);
                     else
                         pHlp->pfnPrintf(pHlp, "error: Invalid or malformed TLB slot number '%s': %Rrc\n", ValueUnion.psz, rc);
                 }
@@ -1248,6 +1271,8 @@ static void iemR3InfoTlbCommon(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **pa
                                 "    Shows the TLB entries for the specified slot range.\n"
                                 "  -s<slot>,--slot=<slot>\n"
                                 "    Shows the given TLB slot.\n"
+                                "  -v,--only-valid\n"
+                                "    Only show valid TLB entries (TAG, not phys)\n"
                                 "\n"
                                 "Non-options are interpreted according to the last -a, -r or -s option,\n"
                                 "defaulting to addresses if not preceeded by any of those options.\n"
