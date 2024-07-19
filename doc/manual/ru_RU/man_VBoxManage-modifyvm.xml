@@ -2077,8 +2077,8 @@ it unless this changes. -->
               Например <literal>foo=bar,a=b</literal>.
             </para><para>
               Используйте эту опцию, только если вы опытный пользователь.
-              Информацию о ключах смотрите в <citetitle>Oracle VM
-              VirtualBox Programming Guide and Reference</citetitle>.
+              Информацию о ключах смотрите в <citetitle>&product-name;
+              Programming Guide and Reference</citetitle>.
             </para></listitem>
         </varlistentry>
         <varlistentry>

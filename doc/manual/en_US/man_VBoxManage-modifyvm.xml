@@ -2153,8 +2153,8 @@ it unless this changes. -->
               <literal>foo=bar,a=b</literal>.
             </para><para>
               Only use this option if you are an advanced user. For
-              information about keywords, see the <citetitle>Oracle VM
-              VirtualBox Programming Guide and Reference</citetitle>.
+              information about keywords, see the <citetitle>&product-name;
+              Programming Guide and Reference</citetitle>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
