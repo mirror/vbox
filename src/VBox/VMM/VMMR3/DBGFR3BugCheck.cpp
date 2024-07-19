@@ -61,11 +61,16 @@ int dbgfR3BugCheckInit(PVM pVM)
 {
     PCFGMNODE const pCfgNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "DBGF/");
 
+    /** @cfgm{/DBGF/SuspendOnBsod, boolean, false}
+     * Enables suspending (pausing) of the VM on a BSOD.
+     */
+    int rc = CFGMR3QueryBoolDef(pCfgNode, "SuspendOnBsod", &pVM->dbgf.s.BugCheck.fCfgSuspendOnBsod, false);
+    AssertLogRelRCReturn(rc, rc);
+
     /** @cfgm{/DBGF/PowerOffOnBsod, boolean, false}
      * Enables powering off the VM automatically on a BSOD.
      */
-    pVM->dbgf.s.BugCheck.fCfgPowerOffOnBsod;
-    int rc = CFGMR3QueryBoolDef(pCfgNode, "PowerOffOnBsod", &pVM->dbgf.s.BugCheck.fCfgPowerOffOnBsod, false);
+    rc = CFGMR3QueryBoolDef(pCfgNode, "PowerOffOnBsod", &pVM->dbgf.s.BugCheck.fCfgPowerOffOnBsod, false);
     AssertLogRelRCReturn(rc, rc);
 
     pVM->dbgf.s.BugCheck.idCpu    = NIL_VMCPUID;
@@ -887,6 +892,12 @@ VMMR3DECL(VBOXSTRICTRC) DBGFR3ReportBugCheck(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYP
         RTMsgError("Powering off - guest BSOD: %s\n", szDetails);
         PUVM const pUVM = pVM->pUVM;
         VMR3ReqCallNoWaitU(pUVM, VMCPUID_ANY_QUEUE, (PFNRT)VMR3PowerOff, 1, pUVM);
+    }
+    else if (pVM->dbgf.s.BugCheck.fCfgSuspendOnBsod)
+    {
+        RTMsgError("Suspending - guest BSOD: %s\n", szDetails);
+        PUVM const pUVM = pVM->pUVM;
+        VMR3ReqCallNoWaitU(pUVM, VMCPUID_ANY_QUEUE, (PFNRT)VMR3Suspend, 2, pUVM, VMSUSPENDREASON_RUNTIME_ERROR);
     }
     return rc;
 }

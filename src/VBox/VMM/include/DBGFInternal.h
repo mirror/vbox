@@ -1166,10 +1166,12 @@ typedef struct DBGF
      */
     struct
     {
-        /** Whether to power off VM on BSOD.   */
+        /** Whether to power off the VM on BSOD.   */
         bool                    fCfgPowerOffOnBsod;
+        /** Whether to suspend the VM on BSOD.   */
+        bool                    fCfgSuspendOnBsod;
         /** Explicit padding. */
-        bool                    afReserved[3];
+        bool                    afReserved[2];
 
         /** The ID of the CPU reporting it. */
         VMCPUID                 idCpu;
