@@ -16,11 +16,14 @@ brand:
 
 pdf2:
   font:
-    sans:           'Helvetica, Arial Unicode MS, Tahoma, Batang, SimSun'
-    serif:          'Times New Roman, Times, Arial Unicode MS, Tahoma, Batang, SimSun'
-    monospaced:     'DejaVu Sans Mono, Arial Unicode MS, Consolas, Cascadia Mono'
-    # ^^^ - Important to have proper unicode monospace font so we can use non-breaking hypen (U+2011)
+    sans:           'Noto Sans'
+    serif:          'Noto Serif'
+    monospaced:     'DejaVu Sans Mono'
+    # ^^^ - Important to have proper unicode monospace font so we can use non-breaking hyphen (U+2011)
     #       in syntax diagrams.
+    #
+    # If the PDF contains any use of font "Helvetica" then it might be that the topic nesting is too deep.
+    # Maximum nesting is 4 (not sure what limits it), but all config for h5 is ignored.
 
 page:
     size:               PA4
@@ -66,6 +69,7 @@ style:
 
     cmdname:
         color:              $brand-color-primary
+        font-family:        $pdf2-font-monospaced
         font-weight:        bold
 
     codeblock:
@@ -78,6 +82,7 @@ style:
 
     codeph:
         color:              $brand-color-secondary
+        font-family:        $pdf2-font-monospaced
         font-size:          '0.9 * from-parent(font-size)'
 
     cover:
@@ -88,10 +93,11 @@ style:
 
     cover-title:
         color:              $brand-color-primary
-        font-size:          36pt
+        font-family:        $pdf2-font-sans
+        font-size:          48pt
         font-weight:        bold
-        line-height:        1.5
-        space-before:       195mm
+        line-height:        1.3
+        space-before:       165mm
 
     example-title:
         color:              $brand-color-secondary
@@ -99,26 +105,30 @@ style:
     fig:
         caption:
             color:          $brand-color-secondary
+            font-family:    $pdf2-font-sans
             font-size:      9pt
             font-style:     italic
             font-weight:    normal
 
     filepath:
         color:              $brand-color-secondary
+        font-family:        $pdf2-font-monospaced
 
     h1:
         border-after:       solid 2pt $brand-color-inverse
         color:              $brand-color-primary
+        font-family:        $pdf2-font-sans
         font-size:          18pt
+        font-weight:        bold
         space-before:       0pt
         padding-top:        0pt
         space-after:        9pt
-        font-weight:        bold
         title-numbering:    true
 
     h2:
         border-after:       solid 1pt $brand-color-inverse
         color:              $brand-color-primary
+        font-family:        $pdf2-font-sans
         font-size:          16pt
         font-style:         italic
         space-before:       16pt
@@ -127,6 +137,7 @@ style:
 
     h3:
         color:              $brand-color-primary
+        font-family:        $pdf2-font-sans
         font-size:          14pt
         font-weight:        bold
         space-before:       21pt
@@ -134,6 +145,8 @@ style:
         title-numbering:    true
 
     h4:
+        color:              $brand-color-primary
+        font-family:        $pdf2-font-sans
         font-size:          12pt
         font-weight:        bold
         font-style:         italic
@@ -175,15 +188,16 @@ style:
 
     section-title:
         color:              $brand-color-secondary
+        font-family:        $pdf2-font-sans
 
     shortdesc:
         color:              $brand-color-secondary
-        font-size:          13pt
         line-height:        1.3
 
     table:
         caption:
             color:          $brand-color-secondary
+            font-family:    $pdf2-font-sans
             font-size:      9pt
             font-style:     italic
             font-weight:    normal
@@ -191,30 +205,32 @@ style:
         font-size:          9pt
         header:
             background-color:   $brand-color-inverse
+            font-family:    $pdf2-font-monospaced       # Hack for arrow glyphs
 
     toc-1:
         color:          $brand-color-primary
         font-family:    $pdf2-font-sans
-        space-before:   5pt
+        space-before:   6pt
         start-indent:   0pt
 
     toc-2:
         color:          black
         space-before:   4pt
-        start-indent:   5pt
+        start-indent:   12pt
 
     toc-3:
         color:          black
         space-before:   2pt
-        start-indent:   24pt
+        start-indent:   32pt
 
     toc-4:
         color:          black
         space-before:   2pt
-        start-indent:   40pt
+        start-indent:   48pt
 
     varname:
         color:          $brand-color-secondary
+        font-family:    $pdf2-font-monospaced
         font-style:     italic
 
 
@@ -223,9 +239,9 @@ style:
     # or version 0.6.2+ (unreleased).
     #
 
-    # We need to specify the font for each of these elements, so we get a monospace
-    # font capable of doing non-breaking hypen glyps. The default "Courier" does do
-    # that, at least not on Windows.
+    # We need to specify the font for each of these elements, so we get a consistent
+    # monospace font capable of doing non-breaking hyphen glyps. The default "Courier"
+    # does not do the job, at least not on Windows.
     delim:
         font-family:        $pdf2-font-monospaced
     groupchoice:
@@ -248,6 +264,14 @@ style:
         text-indent:        -1cm
         keep-together.within-page: always
     var:
+        font-family:        $pdf2-font-monospaced
+    pre:
+        font-family:        $pdf2-font-monospaced
+    userinput:
+        font-family:        $pdf2-font-monospaced
+    screen:
+        font-family:        $pdf2-font-monospaced
+    systemoutput:
         font-family:        $pdf2-font-monospaced
 
 
