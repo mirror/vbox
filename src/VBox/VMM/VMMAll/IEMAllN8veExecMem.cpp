@@ -455,6 +455,10 @@ static void iemExecMemAllocatorPrune(PVMCPU pVCpu, PIEMEXECMEMALLOCATOR pExecMem
     pExecMemAllocator->offChunkPrune = offChunk;
     pExecMemAllocator->idxChunkPrune = idxChunk;
 
+    /* Set the hint to the start of the pruned region. */
+    pExecMemAllocator->idxChunkHint  = idxChunk;
+    pExecMemAllocator->aChunks[idxChunk].idxFreeHint = offChunk / IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE;
+
     STAM_REL_PROFILE_STOP(&pExecMemAllocator->StatPruneProf, a);
 }
 #endif /* IEMEXECMEM_ALT_SUB_WITH_ALT_PRUNING */
