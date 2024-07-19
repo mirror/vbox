@@ -305,6 +305,8 @@ typedef struct IEMEXECMEMALLOCATOR
 
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE             StatAlloc;
+    /** Total amount of memory not being usable currently due to IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE. */
+    uint64_t                cbUnusable;
 #endif
 
 
@@ -564,12 +566,22 @@ iemExecMemAllocatorAllocInChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint32_t
                                                              pExecMemAllocator->cUnitsPerChunk - idxHint,
                                                              cReqUnits, idxChunk, pTb, (void **)ppaExec, ppChunkCtx);
             if (pvRet)
+            {
+#ifdef VBOX_WITH_STATISTICS
+                pExecMemAllocator->cbUnusable += (cReqUnits << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT) - cbReq;
+#endif
                 return (PIEMNATIVEINSTR)pvRet;
+            }
         }
-        return (PIEMNATIVEINSTR)iemExecMemAllocatorAllocInChunkInt(pExecMemAllocator, pbmAlloc, 0,
-                                                                   RT_MIN(pExecMemAllocator->cUnitsPerChunk,
-                                                                          RT_ALIGN_32(idxHint + cReqUnits, 64)),
-                                                                   cReqUnits, idxChunk, pTb, (void **)ppaExec, ppChunkCtx);
+        void *pvRet = iemExecMemAllocatorAllocInChunkInt(pExecMemAllocator, pbmAlloc, 0,
+                                                         RT_MIN(pExecMemAllocator->cUnitsPerChunk,
+                                                              RT_ALIGN_32(idxHint + cReqUnits, 64)),
+                                                         cReqUnits, idxChunk, pTb, (void **)ppaExec, ppChunkCtx);
+#ifdef VBOX_WITH_STATISTICS
+        if (pvRet)
+            pExecMemAllocator->cbUnusable += (cReqUnits << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT) - cbReq;
+#endif
+        return (PIEMNATIVEINSTR)pvRet;
     }
     return NULL;
 }
@@ -709,6 +721,9 @@ DECLHIDDEN(void) iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb) RT_N
     PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
     Assert(pExecMemAllocator && pExecMemAllocator->uMagic == IEMEXECMEMALLOCATOR_MAGIC);
     AssertPtr(pv);
+#ifdef VBOX_WITH_STATISTICS
+    size_t const cbOrig = cb;
+#endif
 #ifndef IEMEXECMEM_ALT_SUB_WITH_ALLOC_HEADER
     Assert(!((uintptr_t)pv & (IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE - 1)));
 
@@ -763,6 +778,9 @@ DECLHIDDEN(void) iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb) RT_N
             pExecMemAllocator->cbAllocated  -= cb;
             pExecMemAllocator->cbFree       += cb;
             pExecMemAllocator->cAllocations -= 1;
+#ifdef VBOX_WITH_STATISTICS
+            pExecMemAllocator->cbUnusable   -= (cReqUnits << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT) - cbOrig;
+#endif
             return;
         }
     }
@@ -1639,6 +1657,9 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
     pExecMemAllocator->cbTotal      = 0;
     pExecMemAllocator->cbFree       = 0;
     pExecMemAllocator->cbAllocated  = 0;
+#ifdef VBOX_WITH_STATISTICS
+    pExecMemAllocator->cbUnusable   = 0;
+#endif
     pExecMemAllocator->pbmAlloc                 = (uint64_t *)((uintptr_t)pExecMemAllocator + offBitmaps);
     pExecMemAllocator->cUnitsPerChunk           = cbChunk >> IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
     pExecMemAllocator->cBitmapElementsPerChunk  = cbChunk >> (IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT + 6);
@@ -1689,6 +1710,8 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
     STAMR3RegisterFU(pUVM, &pExecMemAllocator->cbTotal,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
                      "Total number of byte",                    "/IEM/CPU%u/re/ExecMem/cbTotal", pVCpu->idCpu);
 #ifdef VBOX_WITH_STATISTICS
+    STAMR3RegisterFU(pUVM, &pExecMemAllocator->cbUnusable,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+                     "Total number of bytes being unusable",    "/IEM/CPU%u/re/ExecMem/cbUnusable", pVCpu->idCpu);
     STAMR3RegisterFU(pUVM, &pExecMemAllocator->StatAlloc,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
                      "Profiling the allocator",                 "/IEM/CPU%u/re/ExecMem/ProfAlloc", pVCpu->idCpu);
 #endif
