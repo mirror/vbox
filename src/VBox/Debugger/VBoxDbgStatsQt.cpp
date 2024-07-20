@@ -39,6 +39,8 @@
 #include <QContextMenuEvent>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QFont>
+#include <QFontDatabase>
 #include <QGroupBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -277,6 +279,9 @@ private:
 
     /** Container indexed by node path and giving a filter config in return. */
     QHash<QString, VBoxGuiStatsFilterData *> m_FilterHash;
+
+    /** The font to use for values. */
+    QFont m_ValueFont;
 
 public:
     /**
@@ -1068,6 +1073,13 @@ VBoxDbgStatsModel::VBoxDbgStatsModel(const char *a_pszConfig, QObject *a_pParent
      * populate the map of pending node filter configs with it.
      */
     loadFilterConfig(a_pszConfig);
+
+    /*
+     * Font config.
+     */
+    m_ValueFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    m_ValueFont.setStyleStrategy(QFont::PreferAntialias);
+    m_ValueFont.setStretch(QFont::SemiCondensed);
 }
 
 
@@ -2971,7 +2983,7 @@ VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
         {
             case 0:
             case 1:
-                return QVariant();
+                return (int)(Qt::AlignLeft  | Qt::AlignVCenter);
             case 2:
             case 3:
             case 4:
@@ -2980,11 +2992,31 @@ VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
             case 7:
                 return (int)(Qt::AlignRight | Qt::AlignVCenter);
             case 8:
+                return (int)(Qt::AlignLeft  | Qt::AlignVCenter);
+            default:
+                AssertCompile(DBGGUI_STATS_COLUMNS == 9);
+                return QVariant(); /* bug */
+        }
+    else if (a_eRole == Qt::FontRole)
+        switch (iCol)
+        {
+            case 0:
+            case 1:
+                return QVariant();
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                return QFont(m_ValueFont);
+            case 8:
                 return QVariant();
             default:
                 AssertCompile(DBGGUI_STATS_COLUMNS == 9);
                 return QVariant(); /* bug */
         }
+
     return QVariant();
 }
 
