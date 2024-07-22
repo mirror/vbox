@@ -1,75 +1,26 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="gui-virtualboxmanager">
-  <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></title>
+  <title>Getting Started with <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr">GetG</ph></title>
   
   <body>
-    <p><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> is the user interface for <ph
-        conkeyref="vbox-conkeyref-phrases/product-name"/>. You can use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>
-      to create, configure, and manage your virtual machines. </p>
-    <p>This section describes the main features of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user interface.
-      Subsequent sections and chapters describe how to use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to perform
-      tasks in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
-    <p>When you start <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, the <b outputclass="bold"><ph
-          conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></b> window is displayed. </p>
-    <p><xref href="#gui-virtualboxmanager/fig-vbox-manager-initial"/> shows <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> the
-      first time you start <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, before you have created any
-      virtual machines.
-    </p>
-    <!-- 7.1: Welcome screen now includes Experience Level selection button: new pics required?-->
-    <fig id="fig-vbox-manager-initial">
-      <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, Showing Welcome Screen After Initial Startup</title>
-      <xref href="images/virtualbox-main-empty.png" format="png" platform="htmlhelp">
-        <image href="images/virtualbox-main-empty.png" width="12cm" placement="break">
-          <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, Showing Welcome Screen After Initial Startup</alt>
-        </image>
-      </xref>
-      <image platform="ohc" href="images/virtualbox-main-empty.png" width="12cm" placement="break">
-        <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, Showing Welcome Screen After Initial Startup</alt>
-      </image>
-    </fig>
-    <p><xref href="#gui-virtualboxmanager/fig-vbox-manager-populated"/> shows how <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>
-      might look after you have created some virtual machines.
-    </p>
-    <fig id="fig-vbox-manager-populated">
-      <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Window, After Creating Virtual Machines</title>
-      <xref href="images/virtualbox-main.png" format="png" platform="htmlhelp">
-        <image href="images/virtualbox-main.png" width="12cm" placement="break">
-          <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Window, After Creating Virtual Machines</alt>
-        </image>
-      </xref>
-      <image platform="ohc" href="images/virtualbox-main.png" width="12cm" placement="break">
-        <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Window, After Creating Virtual Machines</alt>
-      </image>
-    </fig>
-    <p>The main components of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window are as follows: </p>
-    <ul>
-      <li>
-        <p><b outputclass="bold">The machine list.</b> The left
-          pane of the <b outputclass="bold">VirtualBox
-          Manager</b> window lists all your virtual machines. If
-          you have not yet created any virtual machines, this list is
-          empty. See <xref href="gui-machine-list.dita#gui-machine-list"/>.
-        </p>
-      </li>
-      <li>
-        <p><b outputclass="bold">The Details pane.</b> The pane on
-          the right displays the properties of the currently selected
-          virtual machine. If you do not have any machines yet, the pane
-          displays a welcome message.
-        </p>
-        <p>
-          The toolbar buttons on the Details pane can be used to create
-          and work with virtual machines. See
-          <xref href="gui-details.dita#gui-details"/>.
-        </p>
-      </li>
-      <li>
-        <p><b outputclass="bold">Help Viewer.</b> A window that
-          displays context-sensitive help topics for <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> tasks.
-          See <xref href="help-viewer.dita#help-viewer"/>.
-        </p>
-      </li>
-    </ul>
+    <bodydiv>
+      <section id="section_awt_wjn_ccc">
+        <p>Use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to create, configure, and manage your virtual machines
+          (VMs).</p>
+        <p>Before adding VMs, you should configure VirtualBox for your network and host machine. </p>
+        <p>make this the bulk of this topic</p>
+      </section>
+      <section id="section_cwt_wjn_ccc">
+        <title>Managing VMs</title>
+        <p>make this a topic</p>
+        <p>As you add, import or create VMs they will appear in the machine list. Use the Machine Tools to <u>configure
+            individual VMs</u>, and the Global Tools to <u>configure VirtualBox</u>.</p>
+        <p>Check the <xref href="gui-notification-center.dita"/> for error messages. Errors are indicated by a warning
+          triangle.</p>
+      </section>
+    </bodydiv>
+    <!-- 7.1: Welcome screen now includes Experience Level selection button
+Completely rewritten for 7.1 Needs review. Add links to new topics for configuring VirtualBox for host, and Adding a saved VM to the list.-->
   </body>
 </topic>

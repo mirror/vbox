@@ -14,8 +14,9 @@
           computer on which <ph conkeyref="vbox-conkeyref-phrases/product-name"/> was installed. There are versions of
             <ph conkeyref="vbox-conkeyref-phrases/product-name"/> for Windows, macOS, Linux, and Oracle Solaris hosts.
           See <xref href="hostossupport.dita#hostossupport"/>. </p>
-                     <p>Most of the time, this manual discusses all <ph conkeyref="vbox-conkeyref-phrases/product-name"
-          /> versions together. There may be platform-specific differences which we will point out where appropriate. </p>
+                     <p>Most of the time, this user guide discusses all <ph
+            conkeyref="vbox-conkeyref-phrases/product-name"/> versions together. There may be platform-specific
+          differences which we will point out where appropriate. </p>
                   </li>
                   <li>
                      <p><b outputclass="bold">Guest operating system (guest OS).</b> This is the OS that is running

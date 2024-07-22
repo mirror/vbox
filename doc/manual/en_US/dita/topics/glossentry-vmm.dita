@@ -2,9 +2,8 @@
 <!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
 <glossentry xml:lang="en-us" id="glossentry-vmm">
   <glossterm>VMM</glossterm>
-  <glossdef>
-    Virtual Machine Manager. The component of Oracle VM VirtualBox that controls
-    VM execution. See <xref href="technical-components.dita"><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Executables and Components</xref>
-    for a list of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> components.
-  </glossdef>
+  <glossdef>Virtual Machine Manager. The component of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> that
+    controls VM execution. See <xref href="technical-components.dita"><ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> Executables and Components</xref> for a list of <ph
+      conkeyref="vbox-conkeyref-phrases/product-name"/> components. </glossdef>
 </glossentry>

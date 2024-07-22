@@ -17,10 +17,8 @@
           <codeph>noSelector</codeph>
         </dt>
         <dd>
-          <p>
-              Do not allow users to start <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. Trying to do so
-              will show a window containing a proper error message.
-            </p>
+          <p>Do not allow users to start <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. Trying to do so will show a
+            window containing a proper error message. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -28,9 +26,7 @@
           <codeph>noMenuBar</codeph>
         </dt>
         <dd>
-          <p>
-              VM windows will not contain a menu bar.
-            </p>
+          <p>VM windows will not contain a menu bar. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -38,9 +34,7 @@
           <codeph>noStatusBar</codeph>
         </dt>
         <dd>
-          <p>
-              VM windows will not contain a status bar.
-            </p>
+          <p>VM windows will not contain a status bar. </p>
         </dd>
       </dlentry>
     </dl>

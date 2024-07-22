@@ -1,26 +1,23 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="configbasics">
-  <title>Virtual Machine Configuration</title>
+  <title>Configure the Settings for a VM</title>
   
   <body>
-    <p>When you select a virtual machine from the list in the VirtualBox Manager window, you will see a summary of that
-      machine's settings on the right. </p>
-    <p>Clicking on <b outputclass="bold">Settings</b> displays a window, where you can configure many of the properties
-      of the selected VM. But be careful when changing VM settings. It is possible to change all VM settings after
-      installing a guest OS, but certain changes might prevent a guest OS from functioning correctly if done after
-      installation. </p>
-    <note>
-      <p>The <b outputclass="bold">Settings</b> button is disabled while a VM is either in the Running or Saved state.
-        This is because the <b outputclass="bold">Settings</b> window enables you to change fundamental characteristics
-        of the virtual machine that is created for your guest OS. For example, the guest OS may not perform well if half
-        of its memory is taken away. As a result, if the <b outputclass="bold">Settings</b> button is disabled, shut
-        down the current VM first. </p>
-    </note>
-    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a wide range of parameters that can be changed for
-      a virtual machine. The various settings that can be changed in the <b outputclass="bold">Settings</b> window are
-      described in detail in <xref href="BasicConcepts.dita#BasicConcepts"/>. Even more parameters are available when
-      using the <userinput>VBoxManage</userinput> command line interface. See <xref href="vboxmanage.dita#vboxmanage"/>. </p>
+    <p>You may need to change the configuration of a Virtual Machine (VM) after it has been created. For example, you
+      may want to add more memory. </p>
+    <p>Be careful when changing VM settings. It is possible to change all VM settings after installing a guest OS, but
+      certain changes might prevent a guest OS from functioning correctly if done after installation.</p>
+    <p>To change the settings for a VM:<ol id="ol_imv_1dp_ccc">
+        <li>Select the VM in the machine list.</li>
+        <li>Ensure the VM is Powered off, not Running or Saved. You can't change fundamental characteristics of the VM
+          if it is running. </li>
+        <li>Click <b outputclass="bold">Settings</b> to see the current configuration for the VM, and change the
+          settings as required. </li>
+      </ol></p>
+    <p>The settings are described in detail in <xref href="BasicConcepts.dita#BasicConcepts"/>. </p>
+    <p>Even more parameters are available when using the <userinput>VBoxManage</userinput> command line interface. See
+        <xref href="vboxmanage.dita#vboxmanage"/>. </p>
   </body>
   
 </topic>

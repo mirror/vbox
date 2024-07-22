@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="configuring_virtualbox">
+    <title>Configuring <ph conkeyref="vbox-conkeyref-phrases/product-name"/></title>
+    <body>
+        <p>Before creating, adding or importing any Virtual Machines, you must set up <ph
+                conkeyref="vbox-conkeyref-phrases/product-name"/> to work with your network and host machine.  </p>
+        <p>You can also set preferences and customize the interface for your convenience.</p>
+    </body>
+</topic>

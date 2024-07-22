@@ -17,23 +17,10 @@
     <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> is deceptively simple yet also very powerful. It can run
       everywhere from small embedded systems or desktop class machines all the way up to data center deployments and
       even Cloud environments. </p>
-    <p>The following screenshot shows how <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, installed on an Apple
-      Mac computer, is running Windows Server 2016 in a virtual machine window. </p>
-    <fig id="fig-win2016-intro">
-      <title>Windows Server 2016 Virtual Machine, Displayed on a macOS Host</title>
-      <xref href="images/vm-vista-running.png" format="png" platform="htmlhelp">
-        <image href="images/vm-vista-running.png" width="14cm" placement="break">
-          <alt>Windows Server 2016 Virtual Machine, Displayed on a macOS Host</alt>
-        </image>
-      </xref>
-      <image platform="ohc" href="images/vm-vista-running.png" width="14cm" placement="break">
-        <alt>Windows Server 2016 Virtual Machine, Displayed on a macOS Host</alt>
-      </image>
-    </fig>
-    <p>In this User Manual, we will begin simply with a quick introduction to virtualization and how to get your first
+    <p>In this User Guide, we will begin simply with a quick introduction to virtualization and how to get your first
       virtual machine running with the easy-to-use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> graphical user
       interface. Subsequent chapters will go into much more detail covering more powerful tools and features, but
-      fortunately, it is not necessary to read the entire User Manual before you can use <ph
+      fortunately, it is not necessary to read the entire User Guide before you can use <ph
         conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
     <p>You can find a summary of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s capabilities in <xref
         href="features-overview.dita#features-overview"/>. For existing <ph

@@ -16,11 +16,8 @@
           <codeph>GUI/HideDetails</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the VM configuration of a certain VM. The
-              details window will remain just empty if this VM is
-              selected.
-            </p>
+          <p>Do not show the VM configuration of a certain VM. The details window will remain just empty if this VM is
+            selected. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -28,11 +25,7 @@
           <codeph>GUI/PreventReconfiguration</codeph>
         </dt>
         <dd>
-          <p>
-              Do not allow the user to open the
-              <b outputclass="bold">Settings</b> dialog for a
-              certain VM.
-            </p>
+          <p>Do not allow the user to open the <b outputclass="bold">Settings</b> dialog for a certain VM. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -40,10 +33,7 @@
           <codeph>GUI/PreventSnapshotOperations</codeph>
         </dt>
         <dd>
-          <p>
-              Prevent snapshot operations for a VM from the GUI, either
-              at runtime or when the VM is powered off.
-            </p>
+          <p>Prevent snapshot operations for a VM from the GUI, either at runtime or when the VM is powered off. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -51,9 +41,7 @@
           <codeph>GUI/HideFromManager</codeph>
         </dt>
         <dd>
-          <p>
-              Hide a certain VM in the VM selector window.
-            </p>
+          <p>Hide a certain VM in the VM selector window. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -61,10 +49,7 @@
           <codeph>GUI/PreventApplicationUpdate</codeph>
         </dt>
         <dd>
-          <p>
-              Disable the automatic update check and hide the
-              corresponding menu item.
-            </p>
+          <p>Disable the automatic update check and hide the corresponding menu item. </p>
         </dd>
       </dlentry>
     </dl>

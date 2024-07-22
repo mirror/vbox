@@ -45,29 +45,21 @@
       <chapter href="topics/Introduction.dita" chunk="to-content">
          <topicref href="topics/virt-why-useful.dita"/>
          <topicref href="topics/virtintro.dita"/>
-         <topicref href="topics/features-overview.dita"/>
+    <topicref href="topics/features-overview.dita">
+      <topicref href="topics/frontends.dita"/>
+    </topicref>
          <topicref href="topics/hostossupport.dita">
             <topicref href="topics/arm-host-limitations.dita"/>
             <topicref href="topics/hostcpurequirements.dita"/>
          </topicref>
          <topicref href="topics/intro-installing.dita"/>
          <topicref href="topics/intro-starting.dita"/>
-         <topicref href="topics/gui-virtualboxmanager.dita">
-            <topicref href="topics/gui-machine-list.dita"/>
-            <topicref href="topics/gui-details.dita">
-               <topicref href="topics/gui-details-toolbar.dita"/>
-               <topicref href="topics/gui-details-settings.dita"/>
-               <topicref href="topics/gui-details-preview.dita"/>
-               <topicref href="topics/gui-notification-center.dita"/>
-            </topicref>
-            <topicref href="topics/gui-tools.dita">
+    <topicref href="topics/configuring-virtualbox.dita">
+      <topicref href="topics/preferences.dita"/>
+      <topicref href="topics/ui-experience-level.dita"/>
                <topicref href="topics/gui-tools-global.dita"/>
-               <topicref href="topics/gui-tools-machine.dita"/>
-            </topicref>
-            <topicref href="topics/help-viewer.dita"/>
-            <topicref href="topics/vboxmanager-wizards.dita"/>
-            <topicref href="topics/ui-experience-level.dita"/>
          </topicref>
+    <topicref href="topics/add-vm.dita"/>
          <topicref href="topics/create-vm-wizard.dita">
             <topicref href="topics/create-vm-wizard-name-os.dita"/>
             <topicref href="topics/create-vm-wizard-unattended-install.dita"/>
@@ -83,12 +75,14 @@
             <topicref href="topics/intro-resize-window.dita"/>
             <topicref href="topics/intro-save-machine-state.dita"/>
          </topicref>
+    <topicref href="topics/managing-vms.dita">
+      <topicref href="topics/configbasics.dita"/>
          <topicref href="topics/gui-vmgroups.dita"/>
+    </topicref>
          <topicref href="topics/snapshots.dita">
             <topicref href="topics/snapshots-take-restore-delete.dita"/>
             <topicref href="topics/snapshots-contents.dita"/>
          </topicref>
-         <topicref href="topics/configbasics.dita"/>
          <topicref href="topics/intro-removing.dita"/>
          <topicref href="topics/clone.dita"/>
          <topicref href="topics/ovf.dita">
@@ -123,8 +117,6 @@
             <topicref href="topics/cloud-using-cloud-networks.dita"/>
             <topicref href="topics/cloud-using-cli.dita"/>
          </topicref>
-         <topicref href="topics/preferences.dita"/>
-         <topicref href="topics/frontends.dita"/>
          <topicref href="topics/soft-keyb.dita">
             <topicref href="topics/soft-keyb-using.dita"/>
             <topicref href="topics/soft-keyb-custom.dita"/>

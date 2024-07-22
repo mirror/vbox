@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="managing_vms">
+    <title>Managing VMs</title>
+    <body>
+        <p>As you add, import or create VMs they will appear in the machine list. </p>
+        <p>To change the hardware configuration of a VM. See <xref href="configbasics.dita"/></p>
+        <p>To use VM Groups, see <xref href="gui-vmgroups.dita"/>.</p>
+        <p>Check the <b outputclass="bold">Notification Center</b> for tasks in progress and error messages. Click
+                <uicontrol>Open notification center</uicontrol> to see the list of notifications. Errors are indicated
+            by a warning triangle.</p>
+    </body>
+</topic>

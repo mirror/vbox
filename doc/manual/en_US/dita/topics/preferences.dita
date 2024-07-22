@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="preferences">
-  <title>Preferences</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Preferences</title>
   
   <body>
     <p>The Preferences window offers a selection of settings, which apply to all virtual machines of the current user. </p>
@@ -44,8 +44,8 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">Language.</b> Enables you to specify the language used for menus,
-          labels, and text in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. </p>
+        <p><b outputclass="bold">Language.</b> Enables you to specify the language used for menus, labels, and text in
+            <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Display.</b> Enables you to

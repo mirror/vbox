@@ -3,8 +3,7 @@
 <topic xml:lang="en-us" id="frontends">
   <title>Alternative Front Ends</title>
   <body>
-    <p>As briefly mentioned in <xref href="features-overview.dita#features-overview"/>, <ph
-        conkeyref="vbox-conkeyref-phrases/product-name"/> has a very flexible internal design that enables you to use
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> has a very flexible internal design that enables you to use
       multiple interfaces to control the same virtual machines. For example, you can start a virtual machine with the
         <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window and then stop it from the command line. With <ph
         conkeyref="vbox-conkeyref-phrases/product-name"/>'s support for the Remote Desktop Protocol (RDP), you can even
@@ -13,18 +12,15 @@
       package:</p>
     <ul>
       <li>
-        <p><b outputclass="bold">VirtualBox.</b> This is the <ph
-            conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, a graphical user interface that uses the
-          Qt toolkit. This interface is described throughout this manual. While this is the simplest
-          and easiest front end to use, some of the more advanced <ph
+        <p><b outputclass="bold">VirtualBox.</b> This is the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, a
+          graphical user interface that uses the Qt toolkit. This interface is described throughout this user guide.
+          While this is the simplest and easiest front end to use, some of the more advanced <ph
             conkeyref="vbox-conkeyref-phrases/product-name"/> features are not included.</p>
       </li>
       <li>
-        <p><b outputclass="bold">VBoxManage.</b> A command-line
-          interface for automated and detailed control of every aspect
-          of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. See
-          <xref href="vboxmanage.dita#vboxmanage"/>.
-        </p>
+        <p><b outputclass="bold">VBoxManage.</b> A command-line interface for automated and detailed control of every
+          aspect of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. See <xref href="vboxmanage.dita#vboxmanage"
+          />. </p>
       </li>
       <li>
         <p><b outputclass="bold">VBoxHeadless.</b> A front end that produces no visible output on

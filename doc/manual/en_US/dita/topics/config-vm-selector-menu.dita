@@ -14,10 +14,7 @@
           <codeph>General</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">General</b>
-              settings pane.
-            </p>
+          <p>Do not show the <b outputclass="bold">General</b> settings pane. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -25,10 +22,7 @@
           <codeph>Input</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Input</b>
-              settings pane.
-            </p>
+          <p>Do not show the <b outputclass="bold">Input</b> settings pane. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -36,10 +30,7 @@
           <codeph>Update</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Update</b>
-              settings pane.
-            </p>
+          <p>Do not show the <b outputclass="bold">Update</b> settings pane. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -47,10 +38,7 @@
           <codeph>Language</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Language</b>
-              settings pane.
-            </p>
+          <p>Do not show the <b outputclass="bold">Language</b> settings pane. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -58,10 +46,7 @@
           <codeph>Display</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Display</b>
-              settings pane.
-            </p>
+          <p>Do not show the <b outputclass="bold">Display</b> settings pane. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -69,10 +54,7 @@
           <codeph>Network</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Network</b>
-              settings pane.
-            </p>
+          <p>Do not show the <b outputclass="bold">Network</b> settings pane. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -80,10 +62,7 @@
           <codeph>Extensions</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the
-              <b outputclass="bold">Extensions</b> settings pane.
-            </p>
+          <p>Do not show the <b outputclass="bold">Extensions</b> settings pane. </p>
         </dd>
       </dlentry>
       <dlentry>
@@ -91,10 +70,7 @@
           <codeph>Proxy</codeph>
         </dt>
         <dd>
-          <p>
-              Do not show the <b outputclass="bold">Proxy</b>
-              settings pane.
-            </p>
+          <p>Do not show the <b outputclass="bold">Proxy</b> settings pane. </p>
         </dd>
       </dlentry>
     </dl>
