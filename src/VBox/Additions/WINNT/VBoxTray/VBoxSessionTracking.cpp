@@ -70,17 +70,20 @@ int vboxStCheckState()
         {
             gVBoxSt.fIsConsole = (*pProtocolType == 0);
             gVBoxSt.enmConnectState = *penmConnectState;
+            LogFlowFunc(("Session information: ProtocolType %d, ConnectState %d", *pProtocolType, *penmConnectState));
             return VINF_SUCCESS;
         }
-
-        DWORD dwErr = GetLastError();
-        LogFlowFunc(("WTSQuerySessionInformationA WTSClientProtocolType failed, error = %08X\n", dwErr));
-        rc = RTErrConvertFromWin32(dwErr);
+        else
+        {
+            DWORD dwErr = GetLastError();
+            LogWarnFunc(("WTSQuerySessionInformationA WTSClientProtocolType failed, error = %08X\n", dwErr));
+            rc = RTErrConvertFromWin32(dwErr);
+        }
     }
     else
     {
         DWORD dwErr = GetLastError();
-        LogFlowFunc(("WTSQuerySessionInformationA WTSConnectState failed, error = %08X\n", dwErr));
+        LogWarnFunc(("WTSQuerySessionInformationA WTSConnectState failed, error = %08X\n", dwErr));
         rc = RTErrConvertFromWin32(dwErr);
     }
 
@@ -94,56 +97,57 @@ int vboxStCheckState()
 int vboxStInit(HWND hWnd)
 {
     RT_ZERO(gVBoxSt);
-    int rc = RTLdrLoadSystem("WTSAPI32.DLL", false /*fNoUnload*/, &gVBoxSt.hLdrModWTSAPI32);
+    int rc = RTLdrLoadSystem("WTSAPI32.DLL", true /*fNoUnload*/, &gVBoxSt.hLdrModWTSAPI32);
+
     if (RT_SUCCESS(rc))
     {
         rc = RTLdrGetSymbol(gVBoxSt.hLdrModWTSAPI32, "WTSRegisterSessionNotification",
                             (void **)&gVBoxSt.pfnWTSRegisterSessionNotification);
         if (RT_SUCCESS(rc))
-        {
             rc = RTLdrGetSymbol(gVBoxSt.hLdrModWTSAPI32, "WTSUnRegisterSessionNotification",
-                                (void **)&gVBoxSt.pfnWTSUnRegisterSessionNotification);
-            if (RT_SUCCESS(rc))
-            {
-                rc = RTLdrGetSymbol(gVBoxSt.hLdrModWTSAPI32, "WTSQuerySessionInformationA",
-                                    (void **)&gVBoxSt.pfnWTSQuerySessionInformationA);
-                if (RT_FAILURE(rc))
-                    LogFlowFunc(("WTSQuerySessionInformationA not found\n"));
-            }
-            else
-                LogFlowFunc(("WTSUnRegisterSessionNotification not found\n"));
-        }
-        else
-            LogFlowFunc(("WTSRegisterSessionNotification not found\n"));
+                            (void **)&gVBoxSt.pfnWTSUnRegisterSessionNotification);
         if (RT_SUCCESS(rc))
-        {
-            gVBoxSt.hWTSAPIWnd = hWnd;
-            if (gVBoxSt.pfnWTSRegisterSessionNotification(gVBoxSt.hWTSAPIWnd, NOTIFY_FOR_THIS_SESSION))
-                vboxStCheckState();
-            else
-            {
-                DWORD dwErr = GetLastError();
-                LogFlowFunc(("WTSRegisterSessionNotification failed, error = %08X\n", dwErr));
-                if (dwErr == RPC_S_INVALID_BINDING)
-                {
-                    gVBoxSt.idDelayedInitTimer = SetTimer(gVBoxSt.hWTSAPIWnd, TIMERID_VBOXTRAY_ST_DELAYED_INIT_TIMER,
-                                                          2000, (TIMERPROC)NULL);
-                    gVBoxSt.fIsConsole = TRUE;
-                    gVBoxSt.enmConnectState = WTSActive;
-                    rc = VINF_SUCCESS;
-                }
-                else
-                    rc = RTErrConvertFromWin32(dwErr);
-            }
+            rc = RTLdrGetSymbol(gVBoxSt.hLdrModWTSAPI32, "WTSQuerySessionInformationA",
+                             (void **)&gVBoxSt.pfnWTSQuerySessionInformationA);
 
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
-        }
-
+        AssertRC(rc);
         RTLdrClose(gVBoxSt.hLdrModWTSAPI32);
     }
+
+    if (RT_SUCCESS(rc))
+    {
+        gVBoxSt.hWTSAPIWnd = hWnd;
+        if (gVBoxSt.pfnWTSRegisterSessionNotification(gVBoxSt.hWTSAPIWnd, NOTIFY_FOR_THIS_SESSION))
+        {
+            LogFunc(("hWnd(%p) registered for WTS session changes\n", gVBoxSt.hWTSAPIWnd));
+            vboxStCheckState();
+        }
+        else
+        {
+            DWORD dwErr = GetLastError();
+            LogRel(("WTSRegisterSessionNotification failed, error = %08X\n", dwErr));
+            if (dwErr == RPC_S_INVALID_BINDING)
+            {
+                gVBoxSt.idDelayedInitTimer = SetTimer(gVBoxSt.hWTSAPIWnd, TIMERID_VBOXTRAY_ST_DELAYED_INIT_TIMER,
+                                                        2000, (TIMERPROC)NULL);
+                gVBoxSt.fIsConsole = TRUE;
+                gVBoxSt.enmConnectState = WTSActive;
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = RTErrConvertFromWin32(dwErr);
+        }
+
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+    }
     else
-        LogFlowFunc(("WTSAPI32 load failed, rc = %Rrc\n", rc));
+    {
+        LogRel(("WtsApi32.dll APIs are not available (%Rrc)\n", rc));
+        gVBoxSt.pfnWTSRegisterSessionNotification = NULL;
+        gVBoxSt.pfnWTSUnRegisterSessionNotification = NULL;
+        gVBoxSt.pfnWTSQuerySessionInformationA = NULL;
+    }
 
     RT_ZERO(gVBoxSt);
     gVBoxSt.fIsConsole = TRUE;
@@ -153,11 +157,7 @@ int vboxStInit(HWND hWnd)
 
 void vboxStTerm(void)
 {
-    if (!gVBoxSt.hWTSAPIWnd)
-    {
-        LogFlowFunc(("vboxStTerm called for non-initialized St\n"));
-        return;
-    }
+    AssertReturnVoid(gVBoxSt.hWTSAPIWnd);
 
     if (gVBoxSt.idDelayedInitTimer)
     {
@@ -169,31 +169,28 @@ void vboxStTerm(void)
     {
         if (!gVBoxSt.pfnWTSUnRegisterSessionNotification(gVBoxSt.hWTSAPIWnd))
         {
-            LogFlowFunc(("WTSAPI32 load failed, error = %08X\n", GetLastError()));
+            LogWarnFunc(("WTSAPI32 unload failed, error = %08X\n", GetLastError()));
         }
     }
 
-    RTLdrClose(gVBoxSt.hLdrModWTSAPI32);
     RT_ZERO(gVBoxSt);
 }
-
-#define VBOXST_DBG_MAKECASE(_val) case _val: return #_val;
 
 static const char* vboxStDbgGetString(DWORD val)
 {
     switch (val)
     {
-        VBOXST_DBG_MAKECASE(WTS_CONSOLE_CONNECT);
-        VBOXST_DBG_MAKECASE(WTS_CONSOLE_DISCONNECT);
-        VBOXST_DBG_MAKECASE(WTS_REMOTE_CONNECT);
-        VBOXST_DBG_MAKECASE(WTS_REMOTE_DISCONNECT);
-        VBOXST_DBG_MAKECASE(WTS_SESSION_LOGON);
-        VBOXST_DBG_MAKECASE(WTS_SESSION_LOGOFF);
-        VBOXST_DBG_MAKECASE(WTS_SESSION_LOCK);
-        VBOXST_DBG_MAKECASE(WTS_SESSION_UNLOCK);
-        VBOXST_DBG_MAKECASE(WTS_SESSION_REMOTE_CONTROL);
+        RT_CASE_RET_STR(WTS_CONSOLE_CONNECT);
+        RT_CASE_RET_STR(WTS_CONSOLE_DISCONNECT);
+        RT_CASE_RET_STR(WTS_REMOTE_CONNECT);
+        RT_CASE_RET_STR(WTS_REMOTE_DISCONNECT);
+        RT_CASE_RET_STR(WTS_SESSION_LOGON);
+        RT_CASE_RET_STR(WTS_SESSION_LOGOFF);
+        RT_CASE_RET_STR(WTS_SESSION_LOCK);
+        RT_CASE_RET_STR(WTS_SESSION_UNLOCK);
+        RT_CASE_RET_STR(WTS_SESSION_REMOTE_CONTROL);
         default:
-            LogFlowFunc(("invalid WTS state %d\n", val));
+            LogWarnFunc(("invalid WTS state %d\n", val));
             return "Unknown";
     }
 }
@@ -211,7 +208,7 @@ BOOL vboxStCheckTimer(WPARAM wEvent)
     }
     else
     {
-        LogFlowFunc(("timer WTSRegisterSessionNotification failed, error = %08X\n", GetLastError()));
+        LogWarnFunc(("timer WTSRegisterSessionNotification failed, error = %08X\n", GetLastError()));
         Assert(gVBoxSt.fIsConsole == TRUE);
         Assert(gVBoxSt.enmConnectState == WTSActive);
     }
@@ -227,7 +224,7 @@ BOOL vboxStIsActiveConsole(void)
 BOOL vboxStHandleEvent(WPARAM wEvent)
 {
     RT_NOREF(wEvent);
-    LogFlowFunc(("WTS Event: %s\n", vboxStDbgGetString(wEvent)));
+    LogFunc(("WTS Event: %s\n", vboxStDbgGetString(wEvent)));
     BOOL fOldIsActiveConsole = vboxStIsActiveConsole();
 
     vboxStCheckState();
