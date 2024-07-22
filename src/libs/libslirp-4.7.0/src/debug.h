@@ -65,13 +65,13 @@ extern int slirp_debug;
 #  define LOG_GROUP LOG_GROUP_DRV_NAT
 #  include <VBox/log.h>
 # endif
-# define DEBUG_ERROR(...)           do { LogRel2((__VA_ARGS__)); LogRel2(("\n")); } while (0)
-# define DEBUG_CALL(...)            do { LogRel3((__VA_ARGS__)); LogRel3(("\n")); } while (0)
-# define DEBUG_VERBOSE_CALL(...)    do { LogRel4((__VA_ARGS__)); LogRel4(("\n")); } while (0)
-# define DEBUG_ARG(...)             do { LogRel5((__VA_ARGS__)); LogRel5(("\n")); } while (0)
-# define DEBUG_MISC(...)            do { LogRel6((__VA_ARGS__)); LogRel6(("\n")); } while (0)
-# define DEBUG_IS_MISC_ENABLED()    LogRelIs6Enabled()
-# define DEBUG_TFTP(...)            do { LogRel7((__VA_ARGS__)); LogRel7(("\n")); } while (0)
+# define DEBUG_ERROR(...)           do { Log2((__VA_ARGS__)); Log2(("\n")); } while (0)
+# define DEBUG_CALL(...)            do { Log3((__VA_ARGS__)); Log3(("\n")); } while (0)
+# define DEBUG_VERBOSE_CALL(...)    do { Log7((__VA_ARGS__)); Log7(("\n")); } while (0)
+# define DEBUG_ARG(...)             do { Log5((__VA_ARGS__)); Log5(("\n")); } while (0)
+# define DEBUG_MISC(...)            do { Log6((__VA_ARGS__)); Log6(("\n")); } while (0)
+# define DEBUG_IS_MISC_ENABLED()    LogIs6Enabled()
+# define DEBUG_TFTP(...)            do { Log7((__VA_ARGS__)); Log7(("\n")); } while (0)
 #endif /* VBOX */
 
 #endif /* DEBUG_H_ */

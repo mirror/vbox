@@ -46,7 +46,7 @@ SOCKET libslirp_wrap_RTHandleTableLookup(int fd)
         AssertRC(rc);
     }
 
-    LogFlowFunc(("Looking up %d on %p\n", fd, (void *)pNATHandleTable));
+    Log6Func(("Looking up %d on %p\n", fd, (void *)pNATHandleTable));
     SOCKET s = (SOCKET)RTHandleTableLookup(*pNATHandleTable, fd);
     return s;
 }
@@ -60,7 +60,7 @@ int libslirp_wrap_RTHandleTableAlloc(SOCKET uSocket, uint32_t *pHandle)
         AssertRC(rc);
     }
 
-    LogFlowFunc(("Creating sock %llu on %p\n", uSocket, (void *)pNATHandleTable));
+    Log6Func(("Creating sock %llu on %p\n", uSocket, (void *)pNATHandleTable));
     return RTHandleTableAlloc(*pNATHandleTable, (void *)uSocket, pHandle);
 }
 

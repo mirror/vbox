@@ -226,7 +226,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
     Assert(RTCritSectIsOwner(&pThis->XmitLock));
 
-    LogFlowFunc(("enter\n"));
+    LogFlowFuncEnter();
 
     /*
      * Drop the incoming frame if the NAT thread isn't running.
