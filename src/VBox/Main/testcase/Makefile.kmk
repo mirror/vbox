@@ -193,7 +193,8 @@ msiDarwinDescriptorDecoder_SOURCES  = \
 #
 # Note! VBOX_MAIN_APIWRAPPER_GEN_HDRS is only defined if kmk is executed a
 #       parent directory.  Since the rules for generating the files listed by
-#       the variable lives in the parent makefile, this is not a problem.
+#       the variable lives in the parent makefile, as does the rules for making
+#       VirtualBox.h, so it's not really a problem.
 #
 tstCollector_TEMPLATE = VBoxMainClientTstExe
 tstCollector_SOURCES  = \
@@ -212,8 +213,10 @@ tstCollector_LDFLAGS.win     = psapi.lib powrprof.lib
 #
 # tstGuestCtrlContextID
 #
+# Note! See notes on tstCollector.
+#
 tstGuestCtrlContextID_TEMPLATE = VBoxMainClientTstExe
-tstGuestCtrlContextID_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
+tstGuestCtrlContextID_INTERMEDIATES = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 tstGuestCtrlContextID_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlContextID_SOURCES  = \
 	tstGuestCtrlContextID.cpp \
@@ -225,8 +228,10 @@ tstGuestCtrlContextID_INCS     = ../include \
 #
 # tstGuestCtrlParseBuffer
 #
+# Note! See notes on tstCollector.
+#
 tstGuestCtrlParseBuffer_TEMPLATE = VBoxMainClientTstExe
-tstGuestCtrlParseBuffer_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
+tstGuestCtrlParseBuffer_INTERMEDIATES = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 tstGuestCtrlParseBuffer_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlParseBuffer_SOURCES  = \
 	tstGuestCtrlParseBuffer.cpp \
@@ -237,6 +242,8 @@ tstGuestCtrlParseBuffer_INCS     = ../include \
 
 #
 # tstGuestCtrlPaths
+#
+# Note! See notes on tstCollector.
 #
 tstGuestCtrlPaths_TEMPLATE       = VBoxMainClientTstExe
 tstGuestCtrlPaths_INTERMEDIATES  = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
@@ -257,6 +264,8 @@ endif
 
 #
 # tstUSBProxyLinux
+#
+# Note! See notes on tstCollector.
 #
 tstUSBProxyLinux_TEMPLATE  = VBoxMainClientTstExe
 tstUSBProxyLinux_INTERMEDIATES = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
@@ -304,13 +313,17 @@ tstRecording_SOURCES  = \
 	tstRecording.cpp \
 	../src-client/RecordingUtils.cpp
 tstRecording_INCS     = \
-	../include \
-	$(VBOX_MAIN_APIWRAPPER_INCS)
+	../include
 
 #
 # tstSettings
 #
+# Note! See notes on tstCollector.
+#
 tstSettings_TEMPLATE = VBoxMainClientTstExe
+tstSettings_INTERMEDIATES = \
+	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS) \
+	$(VBOX_XML_SCHEMADEFS_H)
 tstSettings_INCS     = \
 	../include \
 	$(VBOX_MAIN_APIWRAPPER_INCS) \
@@ -336,6 +349,8 @@ tstGuid_SOURCES  = tstGuid.cpp
 
 #
 # tstUnattendedScript
+#
+# Note! See notes on tstCollector.
 #
 tstUnattendedScript_TEMPLATE = VBoxMainClientTstExe
 tstUnattendedScript_DEFS     = VBOX_WITH_UNATTENDED IN_VBOXSVC IN_TST_UNATTENDED_SCRIPT

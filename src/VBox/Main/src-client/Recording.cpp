@@ -55,6 +55,7 @@
 #include <VBox/com/VirtualBox.h>
 
 #include "ConsoleImpl.h"
+#include "ProgressImpl.h"
 #include "Recording.h"
 #include "RecordingInternals.h"
 #include "RecordingStream.h"

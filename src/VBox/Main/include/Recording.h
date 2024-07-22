@@ -35,9 +35,9 @@
 #include <VBox/settings.h>
 
 #include "RecordingStream.h"
-#include "ProgressImpl.h"
 
 class Console;
+class Progress;
 
 /** No flags specified. */
 #define VBOX_RECORDING_CURSOR_F_NONE       0
@@ -188,7 +188,7 @@ protected:
     bool progressIsCompleted(void) const;
     int progressCreate(const settings::RecordingSettings &Settings, ComObjPtr<Progress> &pProgress);
     int progressNotifyComplete(HRESULT hrc = S_OK, IVirtualBoxErrorInfo *pErrorInfo = NULL);
-    int progressSet(uint32_t uOp, const Bstr &strDesc);
+    int progressSet(uint32_t uOp, const com::Bstr &strDesc);
     int progressSet(uint64_t msTimestamp);
 
     static DECLCALLBACK(int) threadMain(RTTHREAD hThreadSelf, void *pvUser);
