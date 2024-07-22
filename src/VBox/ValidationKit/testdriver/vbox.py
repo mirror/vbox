@@ -1505,7 +1505,7 @@ class TestDriver(base.TestDriver):                                              
             reporter.setComXcptFormatter(formatComOrXpComException);
 
             # Enable possibly not production ready code which should be tested.
-            if self.fpApiVer >= 7.1 && utils.getHostArch() == 'arm64':
+            if self.fpApiVer >= 7.1 and utils.getHostArch() == 'arm64':
                 self.oVBox.setExtraData('VBoxInternal2/EnableX86OnArm', '1');
 
         except:
