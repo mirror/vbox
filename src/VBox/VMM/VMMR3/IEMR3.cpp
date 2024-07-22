@@ -1097,7 +1097,8 @@ static void iemR3InfoTlbPrintSlot(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB const
     char           szTmp[128];
     if (fFlags & IEMR3INFOTLB_F_CHECK)
     {
-        PGMPTWALKFAST WalkFast;
+        uint32_t const fInvSlotG = (uint32_t)!(uSlot & 1) << X86_PTE_BIT_Gx;
+        PGMPTWALKFAST  WalkFast;
         int rc = PGMGstQueryPageFast(pVCpu, GCPtr, 0 /*fFlags - don't check or modify anything */, &WalkFast);
         pszValid = szTmp;
         if (RT_FAILURE(rc))
@@ -1121,11 +1122,10 @@ static void iemR3InfoTlbPrintSlot(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB const
         else if (   (~WalkFast.fEffective       & (X86_PTE_RW | X86_PTE_US | X86_PTE_G | X86_PTE_A | X86_PTE_D))
                  == (  (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PT_NO_WRITE | IEMTLBE_F_PT_NO_USER
                                                    | IEMTLBE_F_PT_NO_DIRTY | IEMTLBE_F_PT_NO_ACCESSED))
-                     | (!(uSlot & 1) << X86_PTE_BIT_G) ) )
+                     | fInvSlotG ) )
             pszValid = " still-valid";
-        else if (   (~WalkFast.fEffective       & (X86_PTE_RW | X86_PTE_US | X86_PTE_G))
-                 == (  (pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PT_NO_WRITE | IEMTLBE_F_PT_NO_USER))
-                     | (!(uSlot & 1) << X86_PTE_BIT_G) ) )
+        else if (   (~WalkFast.fEffective     & (X86_PTE_RW | X86_PTE_US | X86_PTE_G))
+                 == ((pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PT_NO_WRITE | IEMTLBE_F_PT_NO_USER)) | fInvSlotG) )
             switch (  (~WalkFast.fEffective    & (X86_PTE_A | X86_PTE_D))
                     ^ (pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PT_NO_DIRTY | IEMTLBE_F_PT_NO_ACCESSED)) )
             {
@@ -1150,7 +1150,7 @@ static void iemR3InfoTlbPrintSlot(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB const
                         : WalkFast.fEffective & X86_PTE_RW ? "writeable-now" : "writable-no-more",
                         (~WalkFast.fEffective & X86_PTE_US) == (pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_USER) ? ""
                         : WalkFast.fEffective & X86_PTE_US ? " user-now"     : " user-no-more",
-                        (~WalkFast.fEffective & X86_PTE_G)  == (!(uSlot & 1) << X86_PTE_BIT_G) ? ""
+                        (~WalkFast.fEffective & X86_PTE_G)  == fInvSlotG ? ""
                         : WalkFast.fEffective & X86_PTE_G  ? " global-now"   : " global-no-more",
                         (~WalkFast.fEffective & X86_PTE_D)  == (pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_DIRTY) ? ""
                         : WalkFast.fEffective & X86_PTE_D  ? " dirty-now"    : " dirty-no-more",
