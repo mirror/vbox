@@ -1097,7 +1097,7 @@ static void iemR3InfoTlbPrintSlot(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB const
     char           szTmp[128];
     if (fFlags & IEMR3INFOTLB_F_CHECK)
     {
-        uint32_t const fInvSlotG = (uint32_t)!(uSlot & 1) << X86_PTE_BIT_Gx;
+        uint32_t const fInvSlotG = (uint32_t)!(uSlot & 1) << X86_PTE_BIT_G;
         PGMPTWALKFAST  WalkFast;
         int rc = PGMGstQueryPageFast(pVCpu, GCPtr, 0 /*fFlags - don't check or modify anything */, &WalkFast);
         pszValid = szTmp;
