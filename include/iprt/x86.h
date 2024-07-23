@@ -3842,34 +3842,47 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
  * @{ */
 /** Exception Flag: Invalid operation.  */
 #define X86_MXCSR_IE          RT_BIT_32(0)
+#define X86_MXCSR_IE_BIT      0
 /** Exception Flag: Denormalized operand.  */
 #define X86_MXCSR_DE          RT_BIT_32(1)
+#define X86_MXCSR_DE_BIT      1
 /** Exception Flag: Zero divide.  */
 #define X86_MXCSR_ZE          RT_BIT_32(2)
+#define X86_MXCSR_ZE_BIT      2
 /** Exception Flag: Overflow.  */
 #define X86_MXCSR_OE          RT_BIT_32(3)
+#define X86_MXCSR_OE_BIT      3
 /** Exception Flag: Underflow.  */
 #define X86_MXCSR_UE          RT_BIT_32(4)
+#define X86_MXCSR_EU_BIT      4
 /** Exception Flag: Precision.  */
 #define X86_MXCSR_PE          RT_BIT_32(5)
+#define X86_MXCSR_PE_BIT      5
 /** Exception Flags: mask */
 #define X86_MXCSR_XCPT_FLAGS  UINT32_C(0x003f)
 
 /** Denormals are zero. */
 #define X86_MXCSR_DAZ         RT_BIT_32(6)
+#define X86_MXCSR_DAZ_BIT     6
 
 /** Exception Mask: Invalid operation. */
 #define X86_MXCSR_IM          RT_BIT_32(7)
+#define X86_MXCSR_IM_BIT      7
 /** Exception Mask: Denormalized operand. */
 #define X86_MXCSR_DM          RT_BIT_32(8)
+#define X86_MXCSR_DM_BIT      8
 /** Exception Mask: Zero divide.  */
 #define X86_MXCSR_ZM          RT_BIT_32(9)
+#define X86_MXCSR_ZM_BIT      9
 /** Exception Mask: Overflow.  */
 #define X86_MXCSR_OM          RT_BIT_32(10)
+#define X86_MXCSR_OM_BIT      10
 /** Exception Mask: Underflow.  */
 #define X86_MXCSR_UM          RT_BIT_32(11)
+#define X86_MXCSR_UM_BIT      11
 /** Exception Mask: Precision.  */
 #define X86_MXCSR_PM          RT_BIT_32(12)
+#define X86_MXCSR_PM_BIT      12
 /** Exception Mask: mask.  */
 #define X86_MXCSR_XCPT_MASK   UINT32_C(0x1f80)
 /** Exception Mask: shift.  */
@@ -3890,9 +3903,11 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 
 /** Flush-to-zero for masked underflow.  */
 #define X86_MXCSR_FZ          RT_BIT_32(15)
+#define X86_MXCSR_FZ_BIT      15
 
 /** Misaligned Exception Mask (AMD MISALIGNSSE).  */
 #define X86_MXCSR_MM          RT_BIT_32(17)
+#define X86_MXCSR_MM_BIT      17
 /** Bits which should be zero, apparently. */
 #define X86_MXCSR_ZERO_MASK   UINT32_C(0xfffd0000)
 /** @} */

@@ -2373,32 +2373,43 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
  * @{ */
 /** Bit 0 - Flush Inputs to Zero when FEAT_AFP is supported. */
 #define ARMV8_FPCR_FIZ                                          RT_BIT_64(0)
+#define ARMV8_FPCR_FIZ_BIT                                      0
 /** Bit 1 - Alternate Handling of floating-point numbers when FEAT_AFP is supported. */
 #define ARMV8_FPCR_AH                                           RT_BIT_64(1)
+#define ARMV8_FPCR_AH_BIT                                       1
 /** Bit 2 - Controls how the output elements other than the lowest element of the vector are determined for
  * Advanced SIMD scalar instructions, when FEAT_AFP is supported. */
 #define ARMV8_FPCR_NEP                                          RT_BIT_64(2)
+#define ARMV8_FPCR_NEP_BIT                                      2
 /* Bit 3 - 7 - Reserved.*/
 /** Bit 8 - Invalid Operation floating-point exception trap enable. */
 #define ARMV8_FPCR_IOE                                          RT_BIT_64(8)
+#define ARMV8_FPCR_IOE_BIT                                      8
 /** Bit 9 - Divide by Zero floating-point exception trap enable. */
 #define ARMV8_FPCR_DZE                                          RT_BIT_64(9)
+#define ARMV8_FPCR_DZE_BIT                                      9
 /** Bit 10 - Overflow floating-point exception trap enable. */
 #define ARMV8_FPCR_OFE                                          RT_BIT_64(10)
+#define ARMV8_FPCR_OFE_BIT                                      10
 /** Bit 11 - Underflow floating-point exception trap enable. */
 #define ARMV8_FPCR_UFE                                          RT_BIT_64(11)
+#define ARMV8_FPCR_UFE_BIT                                      11
 /** Bit 12 - Inexact floating-point exception trap enable. */
 #define ARMV8_FPCR_IXE                                          RT_BIT_64(12)
+#define ARMV8_FPCR_IXE_BIT                                      12
 /** Bit 13 - Controls numeric behavior of BFloat16 dot productions calculations performed,
  * supported when FEAT_EBF16 is supported. */
 #define ARMV8_FPCR_EBF                                          RT_BIT_64(13)
+#define ARMV8_FPCR_EBF_BIT                                      13
 /* Bit 14 - Reserved */
 /** Bit 15 - Input Denormal floating-point exception trap enable. */
 #define ARMV8_FPCR_IDE                                          RT_BIT_64(15)
+#define ARMV8_FPCR_IDE_BIT                                      15
 /* Bit 16 - 18 - Reserved for AArch64 (Len field for AArch32). */
 /** Bit 19 - Flushing denormalized numbers to zero control bit on half-precision data-processing instructions,
  * available when FEAT_FP16 is supported. */
 #define ARMV8_FPCR_FZ16                                         RT_BIT_64(19)
+#define ARMV8_FPCR_FZ16_BIT                                       19
 /* Bit 20 - 21 - Reserved for AArch64 (Stride field dor AArch32). */
 /** Bit 22 - 23 - Rounding Mode control field. */
 #define ARMV8_FPCR_RMODE_MASK                                   (RT_BIT_64(22) | RT_BIT_64(23))
@@ -2413,10 +2424,13 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 # define ARMV8_FPCR_RMODE_RZ                                    3
 /** Bit 24 - Flushing denormalized numbers to zero control bit. */
 #define ARMV8_FPCR_FZ                                           RT_BIT_64(24)
+#define ARMV8_FPCR_FZ_BIT                                       24
 /** Bit 25 - Default NaN use for NaN propagation. */
 #define ARMV8_FPCR_DN                                           RT_BIT_64(25)
+#define ARMV8_FPCR_DN_BIT                                       25
 /** Bit 26 - Alternative half-precision control bit. */
 #define ARMV8_FPCR_AHP                                          RT_BIT_64(26)
+#define ARMV8_FPCR_AHP_BIT                                      26
 /* Bit 27 - 63 - Reserved. */
 /** @} */
 
