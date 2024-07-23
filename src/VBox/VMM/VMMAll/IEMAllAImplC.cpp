@@ -15586,8 +15586,21 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t
                                                                PRTFLOAT32U pr32Result, uint32_t fMxcsr)
 {
     iemFpSoftF32ToIprt(pr32Result, r32Result);
-
     uint8_t fXcpt = pSoftState->exceptionFlags;
+    /* If DAZ is set \#DE is never set. */
+    if (   fMxcsr & X86_MXCSR_DAZ
+        || (   (fXcpt & X86_MXCSR_DE) /* Softfloat sets DE for sub-normal values. */
+            && (RTFLOAT32U_IS_SUBNORMAL(pr32Result))))
+        fXcpt &= ~X86_MXCSR_DE;
+
+    /*
+     * Skip computing the post-computational exception flags if any of the pre-computational exception flags
+     * are set and are unmasked in MXCSR.
+     */
+    if (  ((fMxcsr | fXcpt) & (X86_MXCSR_IE | X86_MXCSR_DE | X86_MXCSR_ZE))
+        & ~((fMxcsr & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT))
+        return fMxcsr | (fXcpt & (X86_MXCSR_IE | X86_MXCSR_DE | X86_MXCSR_ZE));
+
     if (   (fMxcsr & X86_MXCSR_FZ)
         && RTFLOAT32U_IS_SUBNORMAL(pr32Result))
     {
@@ -15597,11 +15610,12 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t
         fXcpt |= X86_MXCSR_UE | X86_MXCSR_PE;
     }
 
-    /* If DAZ is set \#DE is never set. */
-    if (   fMxcsr & X86_MXCSR_DAZ
-        || (   (fXcpt & X86_MXCSR_DE) /* Softfloat sets DE for sub-normal values. */
-            && (RTFLOAT32U_IS_SUBNORMAL(pr32Result))))
-        fXcpt &= ~X86_MXCSR_DE;
+    /* If OE/UE get raised PE won't be set because of the lower priority. */
+    if (   (   ((fXcpt & (X86_MXCSR_PE | X86_MXCSR_OE)) == (X86_MXCSR_PE | X86_MXCSR_OE))
+            && !(fMxcsr & X86_MXCSR_OM))
+        || (   ((fXcpt & (X86_MXCSR_PE | X86_MXCSR_UE)) == (X86_MXCSR_PE | X86_MXCSR_UE))
+            && !(fMxcsr & X86_MXCSR_UM)))
+        fXcpt &= ~X86_MXCSR_PE;
 
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
 }
@@ -15638,32 +15652,46 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResultNoFz(softfloat_sta
  * accordingly.
  *
  * @returns Updated MXCSR.
- * @param   pSoftState      The SoftFloat state following the operation.
- * @param   r64Result       The result of the SoftFloat operation.
- * @param   pr64Result      Where to store the result for IEM.
- * @param   fMxcsr          The original MXCSR value.
+ * @param   pSoftState           The SoftFloat state following the operation.
+ * @param   r64Result            The result of the SoftFloat operation.
+ * @param   pr64Result           Where to store the result for IEM.
+ * @param   fMxcsr               The original MXCSR value.
  */
 DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResult(softfloat_state_t const *pSoftState, float64_t r64Result,
                                                                PRTFLOAT64U pr64Result, uint32_t fMxcsr)
 {
     iemFpSoftF64ToIprt(pr64Result, r64Result);
     uint8_t fXcpt = pSoftState->exceptionFlags;
+    /* If DAZ is set \#DE is never set. */
+    if (   fMxcsr & X86_MXCSR_DAZ
+        || (   (fXcpt & X86_MXCSR_DE) /* Softfloat sets DE for sub-normal values. */
+            && (RTFLOAT64U_IS_SUBNORMAL(pr64Result))))
+        fXcpt &= ~X86_MXCSR_DE;
+
+    /*
+     * Skip computing the post-computational exception flags if any of the pre-computational exception flags
+     * are set and are unmasked in MXCSR.
+     */
+    if (  ((fMxcsr | fXcpt) & (X86_MXCSR_IE | X86_MXCSR_DE | X86_MXCSR_ZE))
+        & ~((fMxcsr & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT))
+        return fMxcsr | (fXcpt & (X86_MXCSR_IE | X86_MXCSR_DE | X86_MXCSR_ZE));
+
     if (   (fMxcsr & X86_MXCSR_FZ)
         && RTFLOAT64U_IS_SUBNORMAL(pr64Result))
     {
         /* Underflow masked and flush to zero is set. */
-        iemFpSoftF64ToIprt(pr64Result, r64Result);
         pr64Result->s.uFractionHigh = 0;
         pr64Result->s.uFractionLow  = 0;
         pr64Result->s.uExponent     = 0;
         fXcpt |= X86_MXCSR_UE | X86_MXCSR_PE;
     }
 
-    /* If DAZ is set \#DE is never set. */
-    if (   fMxcsr & X86_MXCSR_DAZ
-        || (   (fXcpt & X86_MXCSR_DE) /* Softfloat sets DE for sub-normal values. */
-            && (RTFLOAT64U_IS_SUBNORMAL(pr64Result))))
-        fXcpt &= ~X86_MXCSR_DE;
+    /* If OE/UE get raised PE won't be set because of the lower priority. */
+    if (   (   ((fXcpt & (X86_MXCSR_PE | X86_MXCSR_OE)) == (X86_MXCSR_PE | X86_MXCSR_OE))
+            && !(fMxcsr & X86_MXCSR_OM))
+        || (   ((fXcpt & (X86_MXCSR_PE | X86_MXCSR_UE)) == (X86_MXCSR_PE | X86_MXCSR_UE))
+            && !(fMxcsr & X86_MXCSR_UM)))
+        fXcpt &= ~X86_MXCSR_PE;
 
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
 }
