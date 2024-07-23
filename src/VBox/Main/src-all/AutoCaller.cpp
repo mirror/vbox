@@ -400,6 +400,13 @@ void ObjectState::autoUninitSpanDestructor()
 
     Assert(mState == InUninit);
 
+    if (mInitUninitWaiters > 0)
+    {
+        /* We have some concurrent uninit() calls on other threads (created
+         * during InUninit), signal that InUninit is finished and they may go on. */
+        RTSemEventMultiSignal(mInitUninitSem);
+    }
+
     setState(NotReady);
 }
 
