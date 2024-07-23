@@ -535,8 +535,8 @@ AssertCompile(PGM_WALKINFO_BIG_PAGE           == IEMTLBE_F_PT_LARGE_PAGE);
 # define IEMTLB_ENTRY_COUNT                      256
 # define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      8
 #else
-# define IEMTLB_ENTRY_COUNT                      16384
-# define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      14
+# define IEMTLB_ENTRY_COUNT                      8192
+# define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      13
 #endif
 AssertCompile(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) == IEMTLB_ENTRY_COUNT);
 
