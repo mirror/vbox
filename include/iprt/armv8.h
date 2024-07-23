@@ -2485,6 +2485,81 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 #define ARMV8_A64_INSTR_CFINV       UINT32_C(0xd500401f)
 
 
+/** Memory barrier: Shareability domain. */
+typedef enum
+{
+    kArm64InstMbReqDomain_OuterShareable = 0,
+    kArm64InstMbReqDomain_Nonshareable,
+    kArm64InstMbReqDomain_InnerShareable,
+    kArm64InstMbReqDomain_FullSystem
+} ARM64INSTRMBREQDOMAIN;
+
+/** Memory barrier: Access type. */
+typedef enum
+{
+    kArm64InstMbReqType_All0 = 0,   /**< Special. Only used with PSSBB and SSBB. */
+    kArm64InstMbReqType_Reads,
+    kArm64InstMbReqType_Writes,
+    kArm64InstMbReqType_All
+} ARM64INSTRMBREQTYPE;
+
+/**
+ * A64: DMB option
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrDmb(ARM64INSTRMBREQDOMAIN enmDomain = kArm64InstMbReqDomain_FullSystem,
+                                               ARM64INSTRMBREQTYPE enmType = kArm64InstMbReqType_All)
+{
+    return UINT32_C(0xd50330bf)
+         | ((uint32_t)enmDomain << 8)
+         | ((uint32_t)enmType   << 10);
+}
+
+
+/**
+ * A64: DSB option
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrDsb(ARM64INSTRMBREQDOMAIN enmDomain = kArm64InstMbReqDomain_FullSystem,
+                                               ARM64INSTRMBREQTYPE enmType = kArm64InstMbReqType_All)
+{
+    return UINT32_C(0xd503309f)
+         | ((uint32_t)enmDomain << 8)
+         | ((uint32_t)enmType   << 10);
+}
+
+
+/**
+ * A64: SSBB
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSsbb(void)
+{
+    return Armv8A64MkInstrDsb(kArm64InstMbReqDomain_OuterShareable, kArm64InstMbReqType_All0);
+}
+
+
+/**
+ * A64: PSSBB
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrPSsbb(void)
+{
+    return Armv8A64MkInstrDsb(kArm64InstMbReqDomain_Nonshareable, kArm64InstMbReqType_All0);
+}
+
+
+/**
+ * A64: ISB option
+ *
+ * @note Only the default option selection is supported, all others are
+ *       currently reserved.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrIsb(ARM64INSTRMBREQDOMAIN enmDomain = kArm64InstMbReqDomain_FullSystem,
+                                               ARM64INSTRMBREQTYPE enmType = kArm64InstMbReqType_All)
+{
+    return UINT32_C(0xd50330df)
+         | ((uint32_t)enmDomain << 8)
+         | ((uint32_t)enmType   << 10);
+}
+
+
 typedef enum
 {
     /** Add @a iImm7*sizeof(reg) to @a iBaseReg after the store/load,
