@@ -1096,7 +1096,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128AlignedSse(pVCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem)))
 
 # define IEM_MC_FETCH_MEM_XMM_NO_AC(a_XmmDst, a_iSeg, a_GCPtrMem) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem)))
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128NoAc(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(a_XmmDst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128AlignedSse(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem)))
 
@@ -1153,21 +1153,21 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 # define IEM_MC_FETCH_MEM_XMM(a_XmmDst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_XMM_NO_AC(a_XmmDst, a_iSeg, a_GCPtrMem) \
-    iemMemFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem))
+    iemMemFetchDataU128NoAcJmp(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(a_XmmDst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU128AlignedSseJmp(pVCpu, &(a_XmmDst).uXmm, (a_iSeg), (a_GCPtrMem))
 
 # define IEM_MC_FETCH_MEM_FLAT_U128(a_u128Dst, a_GCPtrMem) \
     iemMemFlatFetchDataU128Jmp(pVCpu, &(a_u128Dst), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_U128_NO_AC(a_u128Dst, a_GCPtrMem) \
-    iemMemFlatFetchDataU128Jmp(pVCpu, &(a_u128Dst), (a_GCPtrMem))
+    iemMemFlatFetchDataU128NoAcJmp(pVCpu, &(a_u128Dst), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_U128_ALIGN_SSE(a_u128Dst, a_GCPtrMem) \
     iemMemFlatFetchDataU128AlignedSseJmp(pVCpu, &(a_u128Dst), (a_GCPtrMem))
 
 # define IEM_MC_FETCH_MEM_FLAT_XMM(a_XmmDst, a_GCPtrMem) \
     iemMemFlatFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_XMM_NO_AC(a_XmmDst, a_GCPtrMem) \
-    iemMemFlatFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, (a_GCPtrMem))
+    iemMemFlatFetchDataU128NoAcJmp(pVCpu, &(a_XmmDst).uXmm, (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_XMM_ALIGN_SSE(a_XmmDst, a_GCPtrMem) \
     iemMemFlatFetchDataU128AlignedSseJmp(pVCpu, &(a_XmmDst).uXmm, (a_GCPtrMem))
 
