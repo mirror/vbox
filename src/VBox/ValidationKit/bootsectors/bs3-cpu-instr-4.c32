@@ -993,7 +993,9 @@ typedef struct BS3CPUINSTR4_TEST1_VALUES_T
     uint32_t            uMxCsr;                 /**< MXCSR to set prior to executing the instruction. */
     uint32_t            u128ExpectedMxCsr;      /**< Expected MXCSR for a 128-bit instruction. */
     uint32_t            u256ExpectedMxCsr;      /**< Expected MXCSR for a 256-bit instructions. */
-    uint32_t            uPad;
+    uint8_t             f128FpXcptExpected;     /**< Whether a floating-point exception is expected for a 128-bit instruction. */
+    uint8_t             f256FpXcptExpected;     /**< Whether a floating-point exception is expected for a 256-bit instruction. */
+    uint8_t             afPadding[2];           /**< Alignment padding. */
 } BS3CPUINSTR4_TEST1_VALUES_T;
 
 /*
@@ -1008,15 +1010,19 @@ typedef struct BS3CPUINSTR4_TEST1_VALUES_PS_T
     uint32_t            uMxCsr;                 /**< MXCSR to set prior to executing the instruction. */
     uint32_t            u128ExpectedMxCsr;      /**< Expected MXCSR for a 128-bit instruction. */
     uint32_t            u256ExpectedMxCsr;      /**< Expected MXCSR for a 256-bit instructions. */
-    uint32_t            uPad;
+    uint8_t             f128FpXcptExpected;     /**< Whether a floating-point exception is expected for a 128-bit instruction. */
+    uint8_t             f256FpXcptExpected;     /**< Whether a floating-point exception is expected for a 256-bit instruction. */
+    uint8_t             afPadding[2];           /**< Alignment padding. */
 } BS3CPUINSTR4_TEST1_VALUES_PS_T;
 AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_PS_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uSrc2,             BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uSrc1,             BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uDstOut,           BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uMxCsr,            BS3CPUINSTR4_TEST1_VALUES_T, uMxCsr);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, u128ExpectedMxCsr, BS3CPUINSTR4_TEST1_VALUES_T, u128ExpectedMxCsr);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, u256ExpectedMxCsr, BS3CPUINSTR4_TEST1_VALUES_T, u256ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uSrc2,              BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uSrc1,              BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uDstOut,            BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, uMxCsr,             BS3CPUINSTR4_TEST1_VALUES_T, uMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, u128ExpectedMxCsr,  BS3CPUINSTR4_TEST1_VALUES_T, u128ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, u256ExpectedMxCsr,  BS3CPUINSTR4_TEST1_VALUES_T, u256ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, f128FpXcptExpected, BS3CPUINSTR4_TEST1_VALUES_T, f128FpXcptExpected);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PS_T, f256FpXcptExpected, BS3CPUINSTR4_TEST1_VALUES_T, f256FpXcptExpected);
 
 /*
  * Test type #1.
@@ -1030,15 +1036,19 @@ typedef struct BS3CPUINSTR4_TEST1_VALUES_PD_T
     uint32_t            uMxCsr;                 /**< MXCSR to set prior to executing the instruction. */
     uint32_t            u128ExpectedMxCsr;      /**< Expected MXCSR for a 128-bit instruction. */
     uint32_t            u256ExpectedMxCsr;      /**< Expected MXCSR for a 256-bit instructions. */
-    uint32_t            uPad;
+    uint8_t             f128FpXcptExpected;     /**< Whether a floating-point exception is expected for a 128-bit instruction. */
+    uint8_t             f256FpXcptExpected;     /**< Whether a floating-point exception is expected for a 256-bit instruction. */
+    uint8_t             afPadding[2];           /**< Alignment padding. */
 } BS3CPUINSTR4_TEST1_VALUES_PD_T;
 AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_PD_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uSrc2,             BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uSrc1,             BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uDstOut,           BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uMxCsr,            BS3CPUINSTR4_TEST1_VALUES_T, uMxCsr);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, u128ExpectedMxCsr, BS3CPUINSTR4_TEST1_VALUES_T, u128ExpectedMxCsr);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, u256ExpectedMxCsr, BS3CPUINSTR4_TEST1_VALUES_T, u256ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uSrc2,              BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uSrc1,              BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uDstOut,            BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, uMxCsr,             BS3CPUINSTR4_TEST1_VALUES_T, uMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, u128ExpectedMxCsr,  BS3CPUINSTR4_TEST1_VALUES_T, u128ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, u256ExpectedMxCsr,  BS3CPUINSTR4_TEST1_VALUES_T, u256ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, f128FpXcptExpected, BS3CPUINSTR4_TEST1_VALUES_T, f128FpXcptExpected);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_PD_T, f256FpXcptExpected, BS3CPUINSTR4_TEST1_VALUES_T, f256FpXcptExpected);
 
 /*
  * Test type #1.
@@ -1052,15 +1062,19 @@ typedef struct BS3CPUINSTR4_TEST1_VALUES_SS_T
     uint32_t            uMxCsr;                 /**< MXCSR to set prior to executing the instruction. */
     uint32_t            u128ExpectedMxCsr;      /**< Expected MXCSR for a 128-bit instruction. */
     uint32_t            u256ExpectedMxCsr;      /**< Expected MXCSR for a 256-bit instructions. */
-    uint32_t            uPad;
+    uint8_t             f128FpXcptExpected;     /**< Whether a floating-point exception is expected for a 128-bit instruction. */
+    uint8_t             f256FpXcptExpected;     /**< Whether a floating-point exception is expected for a 256-bit instruction. */
+    uint8_t             afPadding[2];           /**< Alignment padding. */
 } BS3CPUINSTR4_TEST1_VALUES_SS_T;
 AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_SS_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uSrc2,             BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uSrc1,             BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uDstOut,           BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uMxCsr,            BS3CPUINSTR4_TEST1_VALUES_T, uMxCsr);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, u128ExpectedMxCsr, BS3CPUINSTR4_TEST1_VALUES_T, u128ExpectedMxCsr);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, u256ExpectedMxCsr, BS3CPUINSTR4_TEST1_VALUES_T, u256ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uSrc2,              BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uSrc1,              BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uDstOut,            BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, uMxCsr,             BS3CPUINSTR4_TEST1_VALUES_T, uMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, u128ExpectedMxCsr,  BS3CPUINSTR4_TEST1_VALUES_T, u128ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, u256ExpectedMxCsr,  BS3CPUINSTR4_TEST1_VALUES_T, u256ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, f128FpXcptExpected, BS3CPUINSTR4_TEST1_VALUES_T, f128FpXcptExpected);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SS_T, f256FpXcptExpected, BS3CPUINSTR4_TEST1_VALUES_T, f256FpXcptExpected);
 
 /*
  * Test type #1.
@@ -1074,15 +1088,19 @@ typedef struct BS3CPUINSTR4_TEST1_VALUES_SQ_T
     uint32_t            uMxCsr;                 /**< MXCSR to set prior to executing the instruction. */
     uint32_t            u128ExpectedMxCsr;      /**< Expected MXCSR for a 128-bit instruction. */
     uint32_t            u256ExpectedMxCsr;      /**< Expected MXCSR for a 256-bit instructions. */
-    uint32_t            uPad;
+    uint8_t             f128FpXcptExpected;     /**< Whether a floating-point exception is expected for a 128-bit instruction. */
+    uint8_t             f256FpXcptExpected;     /**< Whether a floating-point exception is expected for a 256-bit instruction. */
+    uint8_t             afPadding[2];           /**< Alignment padding. */
 } BS3CPUINSTR4_TEST1_VALUES_SQ_T;
 AssertCompile(sizeof(BS3CPUINSTR4_TEST1_VALUES_SQ_T) == sizeof(BS3CPUINSTR4_TEST1_VALUES_T));
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uSrc2,             BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uSrc1,             BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uDstOut,           BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uMxCsr,            BS3CPUINSTR4_TEST1_VALUES_T, uMxCsr);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, u128ExpectedMxCsr, BS3CPUINSTR4_TEST1_VALUES_T, u128ExpectedMxCsr);
-AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, u256ExpectedMxCsr, BS3CPUINSTR4_TEST1_VALUES_T, u256ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uSrc2,              BS3CPUINSTR4_TEST1_VALUES_T, uSrc2);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uSrc1,              BS3CPUINSTR4_TEST1_VALUES_T, uSrc1);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uDstOut,            BS3CPUINSTR4_TEST1_VALUES_T, uDstOut);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, uMxCsr,             BS3CPUINSTR4_TEST1_VALUES_T, uMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, u128ExpectedMxCsr,  BS3CPUINSTR4_TEST1_VALUES_T, u128ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, u256ExpectedMxCsr,  BS3CPUINSTR4_TEST1_VALUES_T, u256ExpectedMxCsr);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, f128FpXcptExpected, BS3CPUINSTR4_TEST1_VALUES_T, f128FpXcptExpected);
+AssertCompileMembersSameSizeAndOffset(BS3CPUINSTR4_TEST1_VALUES_SQ_T, f256FpXcptExpected, BS3CPUINSTR4_TEST1_VALUES_T, f256FpXcptExpected);
 
 typedef struct BS3CPUINSTR4_TEST1_T
 {
@@ -1148,14 +1166,30 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
     uint8_t const    cbInstr             = ((uint8_t const BS3_FAR *)(uintptr_t)pTestCtx->pTest->pfnWorker)[-1];
     uint8_t          bXcptExpect         = pTestCtx->bXcptExpect;
     uint8_t const    bFpXcpt             = pTestCtx->pConfig->fCr4OsXmmExcpt ? X86_XCPT_XF : X86_XCPT_UD;
-    uint32_t const   uExpectedMxCsr      = pTestCtx->cbOperand > 16 ? pValues->u256ExpectedMxCsr
-                                                                    : pValues->u128ExpectedMxCsr;
-    bool const       fFpFlagsExpect      = RT_BOOL(  (uExpectedMxCsr & X86_MXCSR_XCPT_FLAGS)
-                                                   & ((~pValues->uMxCsr >> X86_MXCSR_XCPT_MASK_SHIFT) & X86_MXCSR_XCPT_FLAGS));
     bool const       fSseInstr           = bs3CpuInstr4IsSse(pTest->enmType);
     uint32_t         uMxCsr;
     X86YMMREG        MemOpExpect;
     uint16_t         cErrors;
+    uint32_t         uExpectedMxCsr;
+    bool             fFpXcptExpected;
+
+    /*
+     * An exception may be raised based on the test value (128 vs 256 bits).
+     * In addition, we allow setting the exception flags (and mask) prior to
+     * executing the instruction, so we cannot use the exception flags to figure
+     * out if an exception will be raised. Hence, the input values provide us
+     * explicitly whether an exception is expected for 128 and 256-bit variants.
+     */
+    if (pTestCtx->cbOperand > 16)
+    {
+        uExpectedMxCsr  = pValues->u256ExpectedMxCsr;
+        fFpXcptExpected = pValues->f256FpXcptExpected;
+    }
+    else
+    {
+        uExpectedMxCsr  = pValues->u128ExpectedMxCsr;
+        fFpXcptExpected = pValues->f128FpXcptExpected;
+    }
 
     /*
      * Set up the context and some expectations.
@@ -1220,7 +1254,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
      */
     g_uBs3TrapEipHint = pCtx->rip.u32;
     if (    bXcptExpect == X86_XCPT_DB
-        && !fFpFlagsExpect)
+        && !fFpXcptExpected)
         g_uBs3TrapEipHint += cbInstr + 1;
     Bs3TrapSetJmpAndRestoreWithExtCtxAndRm(pCtx, pExtCtx, pTrapFrame, pExtCtxOut);
 
@@ -1233,7 +1267,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
      */
     cErrors = Bs3TestSubErrorCount();
     if (   bXcptExpect == X86_XCPT_DB
-        && !fFpFlagsExpect
+        && !fFpXcptExpected
         && pTest->iRegDst != UINT8_MAX)
     {
         if (fSseInstr)
@@ -1275,7 +1309,7 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
         }
 
         /* Check if the SIMD FP exception (or lack of) is as expected. */
-        if (fFpFlagsExpect)
+        if (fFpXcptExpected)
         {
             if (pTrapFrame->bXcpt == bFpXcpt)
             { /* likely */ }
@@ -1301,8 +1335,8 @@ static uint16_t bs3CpuInstr4_WorkerTestType1_Inner(uint8_t bMode, PBS3CPUINSTR4_
     }
     if (bXcptExpect == X86_XCPT_PF)
         pCtx->cr2.u = (uintptr_t)puMemOp;
-    Bs3TestCheckRegCtxEx(&pTrapFrame->Ctx, pCtx, bXcptExpect == X86_XCPT_DB && !fFpFlagsExpect ? cbInstr + 1 : 0, 0 /*cbSpAdjust*/,
-                         (bXcptExpect == X86_XCPT_DB && !fFpFlagsExpect) || BS3_MODE_IS_16BIT_SYS(bMode) ? 0 : X86_EFL_RF,
+    Bs3TestCheckRegCtxEx(&pTrapFrame->Ctx, pCtx, bXcptExpect == X86_XCPT_DB && !fFpXcptExpected ? cbInstr + 1 : 0, 0 /*cbSpAdjust*/,
+                         (bXcptExpect == X86_XCPT_DB && !fFpXcptExpected) || BS3_MODE_IS_16BIT_SYS(bMode) ? 0 : X86_EFL_RF,
                          pTestCtx->pszMode, pTestCtx->idTestStep);
     pCtx->cr2.u = 0;
 
@@ -1503,37 +1537,43 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
             { /* =>      */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
               /*mxcsr:in */ 0,
               /*128:out  */ 0,
-              /*256:out  */ 0 },
+              /*256:out  */ 0,
+              /*xcpt?    */ false, false },
          { { /*src2     */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
            { /*src1     */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
            { /* =>      */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
              /*mxcsr:in */ 0,
              /*128:out  */ 0,
-             /*256:out  */ 0 },
+             /*256:out  */ 0,
+             /*xcpt?    */ false, false },
          { { /*src2     */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
            { /*src1     */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
            { /* =>      */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
              /*mxcsr:in */ X86_MXCSR_RC_ZERO,
              /*128:out  */ X86_MXCSR_RC_ZERO,
-             /*256:out  */ X86_MXCSR_RC_ZERO },
+             /*256:out  */ X86_MXCSR_RC_ZERO,
+             /*xcpt?    */ false, false },
          { { /*src2     */ { FP32_0(1), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(1) } },
            { /*src1     */ { FP32_0(1), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(1) } },
            { /* =>      */ { FP32_0(1), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(1) } },
              /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
              /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
-             /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO },
+             /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
+             /*xcpt?    */ false, false },
          { { /*src2     */ { FP32_0(0), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(1) } },
            { /*src1     */ { FP32_0(0), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(1) } },
            { /* =>      */ { FP32_0(0), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(1) } },
              /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
              /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
-             /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN },
+             /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+             /*xcpt?    */ false, false },
          { { /*src2     */ { FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1) } },
            { /*src1     */ { FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1) } },
            { /* =>      */ { FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1) } },
              /*mxcsr:in */ X86_MXCSR_FZ | X86_MXCSR_RC_UP,
              /*128:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_UP,
-             /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_UP },
+             /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_UP,
+             /*xcpt?    */ false, false },
     /*
      * Infinity.
      */
@@ -1542,31 +1582,36 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
             { /* =>      */ { FP32_QNAN(1), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
               /*mxcsr:in */ X86_MXCSR_IM,
               /*128:out  */ X86_MXCSR_IM | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_IM | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_IM | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_INF(1),  FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
             { /*src1     */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_INF(0),  FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
             { /* =>      */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_QNAN(1), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
               /*mxcsr:in */ 0,
               /*128:out  */ X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_INF(0),  FP32_0(1), FP32_0(1), FP32_0(0) } },
             { /*src1     */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_INF(1),  FP32_0(1), FP32_0(1), FP32_0(0) } },
             { /* =>      */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_QNAN(1), FP32_0(1), FP32_0(1), FP32_0(0) } },
               /*mxcsr:in */ X86_MXCSR_FZ,
               /*128:out  */ X86_MXCSR_FZ,
-              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_IE,
+              /*xcpt?    */ false, true },
           { { /*src2     */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_INF(0)  } },
             { /*src1     */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_INF(1)  } },
             { /* =>      */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_QNAN(0) } },
               /*mxcsr:in */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
-              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ false, true },
           { { /*src2     */ { FP32_INF(0), FP32_INF(1), FP32_0(0), FP32_INF(1), FP32_0(1), FP32_INF(1),  FP32_INF(1),  FP32_INF(0) } },
             { /*src1     */ { FP32_INF(1), FP32_INF(0), FP32_0(1), FP32_INF(0), FP32_0(0), FP32_INF(0),  FP32_INF(0),  FP32_INF(1) } },
             { /* =>      */ { FP32_INF(1), FP32_INF(0), FP32_0(1), FP32_INF(0), FP32_0(1), FP32_QNAN(1), FP32_QNAN(1), FP32_INF(1) } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
     /*
      * Overflow, Precision.
      */
@@ -1575,43 +1620,50 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
             { /* =>      */ { FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0),        FP32_0(0), FP32_0(0),        FP32_INF(0),       } },
               /*mxcsr:in */ 0,
               /*128:out  */ 0,
-              /*256:out  */ X86_MXCSR_OE },
+              /*256:out  */ X86_MXCSR_OE,
+              /*xcpt?    */ false, true },
           { { /*src2     */ { FP32_NORM_MAX(0), FP32_NORM_MAX(0), FP32_0(0), FP32_0(0), FP32_NORM_MAX(0), FP32_0(1), FP32_0(0), FP32_NORM_MAX(0) } },
             { /*src1     */ { FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_0(0), FP32_0(0), FP32_NORM_MAX(1), FP32_0(1), FP32_0(1), FP32_NORM_MAX(0) } },
             { /* =>      */ { FP32_NORM_MAX(0), FP32_0(0),        FP32_0(0), FP32_0(0), FP32_0(0),        FP32_0(1), FP32_0(0), FP32_NORM_MAX(0) } },
               /*mxcsr:in */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_RC_ZERO | X86_MXCSR_OE | X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_RC_ZERO | X86_MXCSR_OE | X86_MXCSR_PE },
+              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_RC_ZERO | X86_MXCSR_OE | X86_MXCSR_PE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_NORM_MAX(0), FP32_NORM_MIN(1), FP32_0(0), FP32_NORM_MAX(0), FP32_NORM_MAX(0), FP32_NORM_MIN(1), FP32_0(0), FP32_NORM_MAX(0) } },
             { /*src1     */ { FP32_NORM_MAX(0), FP32_NORM_MIN(1), FP32_0(0), FP32_NORM_MAX(0), FP32_NORM_MAX(0), FP32_NORM_MIN(1), FP32_0(0), FP32_NORM_MAX(0) } },
             { /* =>      */ { FP32_INF(0),      FP32_V(1, 0, 2),  FP32_0(0), FP32_INF(0),      FP32_INF(0),      FP32_V(1, 0, 2),  FP32_0(0), FP32_INF(0)        } },
               /*mxcsr:in */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
               /*128:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_OE | X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_OE | X86_MXCSR_PE },
+              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_OE | X86_MXCSR_PE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_NORM_MIN(1), FP32_NORM_MAX(0), FP32_NORM_MAX(0), FP32_0(0), FP32_0(1), FP32_NORM_MAX(0), FP32_NORM_MAX(0), FP32_NORM_MIN(1) } },
             { /*src1     */ { FP32_NORM_MIN(1), FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_0(0), FP32_0(1), FP32_NORM_MAX(1), FP32_NORM_MAX(0), FP32_NORM_MIN(1) } },
             { /* =>      */ { FP32_V(1, 0, 2),  FP32_NORM_MAX(0), FP32_0(1),        FP32_0(0), FP32_0(1), FP32_0(1),        FP32_NORM_MAX(0), FP32_V(1, 0, 2)  } },
               /*mxcsr:in */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_OE | X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_OE | X86_MXCSR_PE },
+              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_OE | X86_MXCSR_PE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_0(0), FP32_0(1), FP32_0(1), FP32_0(0), FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_NORM_MAX(1), FP32_NORM_MAX(0) } },
             { /*src1     */ { FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(1), FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_NORM_MAX(1), FP32_NORM_MAX(0) } },
             { /* =>      */ { FP32_0(0), FP32_0(1), FP32_0(0), FP32_0(0), FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_NORM_MAX(1), FP32_NORM_MAX(0) } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_OE },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_OE,
+              /*xcpt?    */ false, true },
           { { /*src2     */ { FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_NORM_MAX(1), FP32_NORM_MAX(0), FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_NORM_MAX(1), FP32_NORM_MAX(0) } },
             { /*src1     */ { FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_NORM_MAX(1), FP32_NORM_MAX(0), FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_NORM_MAX(1), FP32_NORM_MAX(0) } },
             { /* =>      */ { FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_NORM_MAX(1), FP32_NORM_MAX(0), FP32_NORM_MAX(0), FP32_NORM_MAX(1), FP32_NORM_MAX(1), FP32_NORM_MAX(0) } },
               /*mxcsr:in */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_RC_ZERO | X86_MXCSR_OE | X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_RC_ZERO | X86_MXCSR_OE | X86_MXCSR_PE },
+              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_RC_ZERO | X86_MXCSR_OE | X86_MXCSR_PE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_NORM_SAFE_INT_MIN(0),                            FP32_NORM_MAX(0), FP32_0(0), FP32_NORM_SAFE_INT_MAX(1),                            FP32_NORM_SAFE_INT_MIN(0),                            FP32_NORM_MAX(0), FP32_0(0), FP32_NORM_SAFE_INT_MAX(1)                                } },
             { /*src1     */ { FP32_NORM_SAFE_INT_MAX(0),                            FP32_NORM_MAX(1), FP32_0(0), FP32_NORM_SAFE_INT_MAX(1),                            FP32_NORM_SAFE_INT_MAX(0),                            FP32_NORM_MAX(1), FP32_0(0), FP32_NORM_SAFE_INT_MAX(1)                                } },
             { /* =>      */ { FP32_V(0, FP32_FRAC_NORM_MAX, FP32_EXP_SAFE_INT_MAX), FP32_NORM_MAX(1), FP32_0(0), FP32_V(1, FP32_FRAC_NORM_MAX, FP32_EXP_SAFE_INT_MAX), FP32_V(0, FP32_FRAC_NORM_MAX, FP32_EXP_SAFE_INT_MAX), FP32_0(0),        FP32_0(0), FP32_V(1, FP32_FRAC_NORM_MAX, FP32_EXP_SAFE_INT_MAX + 1) } },
               /*mxcsr:in */ 0,
               /*128:out  */ X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_PE },
+              /*256:out  */ X86_MXCSR_PE,
+              /*xcpt?    */ true, true },
     /*
      * Normals.
      */
@@ -1620,49 +1672,57 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
             { /* =>      */ { FP32_V(0, 0x400000, 0x7f)/* 1.50*/, FP32_0(1),        FP32_0(0), FP32_V(0, 0x400000, 0x7e)/*0.75*/, FP32_V(0, 0x400000, 0x7f)/* 1.50*/, FP32_0(1),        FP32_0(0), FP32_V(0, 0x400000, 0x7e)/*0.75*/ } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_NORM_MAX(0), FP32_NORM_V1(0), FP32_0(0), FP32_0(0), FP32_NORM_MAX(0), FP32_NORM_V1(0), FP32_0(0), FP32_0(0) } },
             { /*src1     */ { FP32_NORM_MAX(1), FP32_NORM_V1(1), FP32_0(0), FP32_0(0), FP32_NORM_MAX(1), FP32_NORM_V1(1), FP32_0(0), FP32_0(0) } },
             { /* =>      */ { FP32_0(0),        FP32_0(0),       FP32_0(0), FP32_0(0), FP32_0(0),        FP32_0(0),       FP32_0(0), FP32_0(0) } },
               /*mxcsr:in */ 0,
               /*128:out  */ 0,
-              /*256:out  */ 0 },
+              /*256:out  */ 0,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_V(0, 0x5ca5b8, 0x93)/*1807543*/, FP32_V(0, 0x5c0000, 0x84)/*55*/, FP32_V(0, 0x2514d6, 0x93)/*1352346.75*/, FP32_0(0), FP32_V(0, 0x5c0000, 0x84)/*55*/, FP32_V(0, 0x2514d6, 0x93)/*1352346.75*/, FP32_V(0, 0x534000, 0x86)/*211.25*/, FP32_0(0) } },
             { /*src1     */ { FP32_V(0, 0x1ea980, 0x8f)/*  81235*/, FP32_V(0, 0x600000, 0x81)/* 7*/, FP32_V(0, 0x7c9000, 0x88)/*   1010.25*/, FP32_0(0), FP32_V(0, 0x600000, 0x81)/* 7*/, FP32_V(0, 0x7c9000, 0x88)/*   1010.25*/, FP32_1(1)                /*- 1.00*/, FP32_0(0) } },
             { /* =>      */ { FP32_V(0, 0x669050, 0x93)/*1888778*/, FP32_V(0, 0x780000, 0x84)/*62*/, FP32_V(0, 0x253468, 0x93)/*1353357.00*/, FP32_0(0), FP32_V(0, 0x780000, 0x84)/*62*/, FP32_V(0, 0x253468, 0x93)/*1353357.00*/, FP32_V(0, 0x524000, 0x86)/*210.25*/, FP32_0(0) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_V(0, 0x74429f, 0x97)/*32015678*/, FP32_V(0, 0x3c614e, 0x96)/*12345678*/, FP32_0(0), FP32_0(0), FP32_V(0, 0x74429f, 0x97)/*32015678*/, FP32_V(0, 0x3c614e, 0x96)/*12345678*/, FP32_1(1), FP32_0(0) } },
             { /*src1     */ { FP32_V(1, 0x712060, 0x92)/*- 987654*/, FP32_V(0, 0x3c614e, 0x96)/*12345678*/, FP32_0(0), FP32_1(0), FP32_V(1, 0x712060, 0x92)/*- 987654*/, FP32_V(0, 0x3c614e, 0x96)/*12345678*/, FP32_1(0), FP32_1(0) } },
             { /* =>      */ { FP32_V(0, 0x6cb99c, 0x97)/*31028024*/, FP32_V(0, 0x3c614e, 0x97)/*24691356*/, FP32_0(0), FP32_1(0), FP32_V(0, 0x6cb99c, 0x97)/*31028024*/, FP32_V(0, 0x3c614e, 0x97)/*24691356*/, FP32_0(0), FP32_1(0) } },
               /*mxcsr:in */ X86_MXCSR_FZ,
               /*128:out  */ X86_MXCSR_FZ,
-              /*256:out  */ X86_MXCSR_FZ },
+              /*256:out  */ X86_MXCSR_FZ,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_V(0, FP32_FRAC_NORM_MAX - 1, FP32_EXP_SAFE_INT_MAX), FP32_NORM_SAFE_INT_MAX(0),                                FP32_1(0), FP32_1(1), FP32_V(0, FP32_FRAC_NORM_MAX - 1, FP32_EXP_SAFE_INT_MAX), FP32_NORM_SAFE_INT_MAX(0),                                FP32_0(1), FP32_0(0) } },
             { /*src1     */ { FP32_1(0),                                                FP32_1(1),                                                FP32_1(1), FP32_1(0), FP32_1(0),                                                FP32_1(1),                                                FP32_0(1), FP32_0(0) } },
             { /* =>      */ { FP32_NORM_SAFE_INT_MAX(0),                                FP32_V(0, FP32_FRAC_NORM_MAX - 1, FP32_EXP_SAFE_INT_MAX), FP32_0(0), FP32_0(0), FP32_NORM_SAFE_INT_MAX(0),                                FP32_V(0, FP32_FRAC_NORM_MAX - 1, FP32_EXP_SAFE_INT_MAX), FP32_0(1), FP32_0(0) } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_RC_UP,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_UP,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_UP },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_UP,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_NORM_SAFE_INT_MAX(0),               FP32_1(1),                               FP32_0(1), FP32_1(1),  FP32_0(1), FP32_1(1),  FP32_NORM_SAFE_INT_MAX(0),                   FP32_1(1),                                  } },
             { /*src1     */ { FP32_1(0),                               FP32_NORM_SAFE_INT_MAX(1),               FP32_0(1), FP32_0(1), FP32_0(1), FP32_0(1), FP32_1(0),                                   FP32_NORM_SAFE_INT_MAX(1),                  } },
             { /* =>      */ { FP32_V(0, 0, FP32_EXP_SAFE_INT_MAX + 1), FP32_V(1, 0, FP32_EXP_SAFE_INT_MAX + 1), FP32_0(1), FP32_1(1),  FP32_0(1), FP32_1(1),  FP32_V(0, 0, FP32_EXP_SAFE_INT_MAX + 1), FP32_V(1, 0, FP32_EXP_SAFE_INT_MAX + 1) } },
               /*mxcsr:in */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
-              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO },
+              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_NORM_SAFE_INT_MIN(0), FP32_0(0),                 FP32_NORM_SAFE_INT_MIN(0), FP32_NORM_SAFE_INT_MIN(0), FP32_NORM_SAFE_INT_MIN(0), FP32_0(0),                 FP32_NORM_SAFE_INT_MIN(0), FP32_NORM_SAFE_INT_MIN(0) } },
             { /*src1     */ { FP32_NORM_SAFE_INT_MIN(1), FP32_NORM_SAFE_INT_MIN(1), FP32_0(0),                 FP32_NORM_SAFE_INT_MIN(0), FP32_NORM_SAFE_INT_MIN(1), FP32_NORM_SAFE_INT_MIN(1), FP32_0(0),                 FP32_NORM_SAFE_INT_MIN(0) } },
             { /* =>      */ { FP32_0(1),                 FP32_NORM_SAFE_INT_MIN(1), FP32_NORM_SAFE_INT_MIN(0), FP32_V(0, 0, 2),           FP32_0(1),                 FP32_NORM_SAFE_INT_MIN(1), FP32_NORM_SAFE_INT_MIN(0), FP32_V(0, 0, 2)           } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_V(0, 0x600000, 0x7e)/*      0.875*/, FP32_V(0, 0x3ce348, 0x90)/*193421.125*/, FP32_V(0, 0x6423f2, 0x92)/*934463.125*/, FP32_NORM_SAFE_INT_MIN(1), FP32_NORM_SAFE_INT_MIN(0), FP32_V(0, 0x16b43a, 0x93)/*1234567.25*/, FP32_V(0, 0x792318, 0x91)/*510232.75*/, FP32_V(0, 0x600000, 0x7e)/*      0.875*/ } },
             { /*src1     */ { FP32_V(0, 0x769b50, 0x92)/*1010101.000*/, FP32_V(0, 0x430ebc, 0x91)/*399477.875*/, FP32_V(1, 0x0a19f0, 0x8f)/*-70707.875*/, FP32_NORM_SAFE_INT_MIN(1), FP32_NORM_SAFE_INT_MIN(0), FP32_V(0, 0x00c6d3, 0x94)/*2109876.75*/, FP32_V(1, 0x316740, 0x8e)/*-45415.25*/, FP32_V(0, 0x769b50, 0x92)/*1010101.000*/ } },
             { /* =>      */ { FP32_V(0, 0x769b5e, 0x92)/*1010101.875*/, FP32_V(0, 0x10c030, 0x92)/*592899.000*/, FP32_V(0, 0x52e0b4, 0x92)/*863755.250*/, FP32_V(1, 0, 2),           FP32_V(0, 0, 2),           FP32_V(0, 0x4c20f0, 0x94)/*3344444.00*/, FP32_V(0, 0x62f630, 0x91)/*464817.50*/, FP32_V(0, 0x769b5e, 0x92)/*1010101.875*/ } },
               /*mxcsr:in */ X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_RC_DOWN,
-              /*256:out  */ X86_MXCSR_RC_DOWN },
+              /*256:out  */ X86_MXCSR_RC_DOWN,
+              /*xcpt?    */ false, false },
    /*
     * Denormals.
     */
@@ -1671,37 +1731,43 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
             { /* =>      */ { FP32_0(0),          FP32_DENORM_MAX(1), FP32_0(0), FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_DENORM_MAX(1) } },
               /*mxcsr:in */ 0,
               /*128:out  */ X86_MXCSR_DE,
-              /*256:out  */ X86_MXCSR_DE },
+              /*256:out  */ X86_MXCSR_DE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0) } },
             { /*src1     */ { FP32_0(0), FP32_DENORM_MAX(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_DENORM_MAX(0), FP32_0(0), FP32_0(0) } },
             { /* =>      */ { FP32_0(0), FP32_DENORM_MAX(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_DENORM_MAX(0), FP32_0(0), FP32_0(0) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_DENORM_MIN(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MAX(0) } },
             { /*src1     */ { FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0) } },
             { /* =>      */ { FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0)          } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_UP,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_UP,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_UP },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_UP,
+              /*xcpt?    */ false, false },
          { { /*src2     */ { FP32_DENORM_MAX(0), FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_0(0) } },
             { /*src1     */ { FP32_0(0),         FP32_0(0), FP32_0(0), FP32_0(0), FP32_DENORM_MAX(0), FP32_0(0), FP32_0(0), FP32_0(0) } },
             { /* =>      */ { FP32_0(0),         FP32_0(0), FP32_0(0), FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_0(0) } },
               /*mxcsr:in */ 0,
               /*128:out  */ X86_MXCSR_DE,
-              /*256:out  */ X86_MXCSR_DE },
+              /*256:out  */ X86_MXCSR_DE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_DENORM_MAX(1) } },
             { /*src1     */ { FP32_0(0), FP32_DENORM_MAX(0), FP32_0(0), FP32_0(0), FP32_DENORM_MAX(0), FP32_0(0), FP32_0(0), FP32_0(0)          } },
             { /* =>      */ { FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_0(0)          } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_DENORM_MIN(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MAX(0) } },
             { /*src1     */ { FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0) } },
             { /* =>      */ { FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0)          } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
+              /*xcpt?    */ false, false },
     /** @todo More Denormals. */
     /*
      * Invalids.
@@ -1711,74 +1777,85 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
             { /* =>      */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MIN), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V4) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK,
-              /*256:out  */ X86_MXCSR_XCPT_MASK },
+              /*256:out  */ X86_MXCSR_XCPT_MASK,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_QNAN(0),      FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V0),       FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V5) } },
             { /*src1     */ { FP32_SNAN(0),      FP32_SNAN_V(0, FP32_FRAC_NORM_MIN), FP32_SNAN_V(0, FP32_FRAC_NORM_MAX), FP32_SNAN_V(0, FP32_FRAC_V2), FP32_SNAN_V(0, FP32_FRAC_V6), FP32_SNAN_V(0, FP32_FRAC_V2), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V4) } },
             { /* =>      */ { FP32_QNAN_V(0, 1), FP32_QNAN_V(0, 1),                  FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V4) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_SNAN(0), FP32_SNAN_V(0, FP32_FRAC_NORM_MIN), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V3), FP32_SNAN_V(0, FP32_FRAC_V4), FP32_SNAN_V(0, FP32_FRAC_V5), FP32_SNAN_V(0, FP32_FRAC_V6) } },
             { /*src1     */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V5), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1) } },
             { /* =>      */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V5), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_SNAN(0),      FP32_SNAN_V(0, FP32_FRAC_NORM_MIN), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V2), FP32_SNAN_V(0, FP32_FRAC_V7), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V6), FP32_SNAN_V(0, FP32_FRAC_V1) } },
             { /*src1     */ { FP32_SNAN(0),      FP32_SNAN_V(0, FP32_FRAC_NORM_MAX), FP32_SNAN_V(0, FP32_FRAC_V4), FP32_SNAN_V(0, FP32_FRAC_V3), FP32_SNAN_V(0, FP32_FRAC_V5), FP32_SNAN_V(0, FP32_FRAC_V3), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V2) } },
             { /* =>      */ { FP32_QNAN_V(0, 1), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V5), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V2) } },
-              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_QNAN(0), FP32_QNAN_V(1, FP32_FRAC_NORM_MAX), FP32_NORM_V0(1),              FP32_QNAN_V(0, FP32_FRAC_V1), FP32_NORM_V3(0),              FP32_QNAN_V(1, FP32_FRAC_V3), FP32_NORM_V5(0),              FP32_QNAN_V(1, FP32_FRAC_V5) } },
             { /*src1     */ { FP32_1(0),    FP32_1(1),                          FP32_QNAN_V(1, FP32_FRAC_V0), FP32_NORM_V2(1),              FP32_QNAN_V(0, FP32_FRAC_V2), FP32_NORM_V4(0),              FP32_QNAN_V(1, FP32_FRAC_V4), FP32_NORM_V6(1)              } },
             { /* =>      */ { FP32_QNAN(0), FP32_QNAN_V(1, FP32_FRAC_NORM_MAX), FP32_QNAN_V(1, FP32_FRAC_V0), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(1, FP32_FRAC_V3), FP32_QNAN_V(1, FP32_FRAC_V4), FP32_QNAN_V(1, FP32_FRAC_V5) } },
-              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
-              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_XCPT_FLAGS,
+              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_XCPT_FLAGS,
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_XCPT_FLAGS,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_SNAN(1),      FP32_SNAN_V(1, FP32_FRAC_NORM_MAX), FP32_NORM_V0(1),              FP32_SNAN_V(0, FP32_FRAC_V1), FP32_NORM_V3(0),              FP32_SNAN_V(1, FP32_FRAC_V3), FP32_NORM_V5(0),              FP32_SNAN_V(1, FP32_FRAC_V5) } },
             { /*src1     */ { FP32_1(0),         FP32_1(0),                          FP32_SNAN_V(1, FP32_FRAC_V0), FP32_NORM_V2(1),              FP32_SNAN_V(1, FP32_FRAC_V2), FP32_NORM_V4(0),              FP32_SNAN_V(1, FP32_FRAC_V4), FP32_NORM_V6(1)              } },
             { /* =>      */ { FP32_QNAN_V(1, 1), FP32_QNAN_V(1, FP32_FRAC_NORM_MAX), FP32_QNAN_V(1, FP32_FRAC_V0), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(1, FP32_FRAC_V2), FP32_QNAN_V(1, FP32_FRAC_V3), FP32_QNAN_V(1, FP32_FRAC_V4), FP32_QNAN_V(1, FP32_FRAC_V5) } },
-              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE },
-
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V0),       FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V5) } },
             { /*src1     */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MIN), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V4) } },
             { /* =>      */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MIN), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V4) } },
               /*mxcsr:in */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
-              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN },
+              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_QNAN(0),      FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V0),       FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V5) } },
             { /*src1     */ { FP32_SNAN(0),      FP32_SNAN_V(0, FP32_FRAC_NORM_MIN), FP32_SNAN_V(0, FP32_FRAC_NORM_MAX), FP32_SNAN_V(0, FP32_FRAC_V2), FP32_SNAN_V(0, FP32_FRAC_V6), FP32_SNAN_V(0, FP32_FRAC_V2), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V4) } },
             { /* =>      */ { FP32_QNAN_V(0, 1), FP32_QNAN_V(0, 1),                  FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V4) } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP32_SNAN(0), FP32_SNAN_V(0, FP32_FRAC_NORM_MIN), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V3), FP32_SNAN_V(0, FP32_FRAC_V4), FP32_SNAN_V(0, FP32_FRAC_V5), FP32_SNAN_V(0, FP32_FRAC_V6) } },
             { /*src1     */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V5), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1) } },
             { /* =>      */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V5), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1) } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP32_SNAN(0),      FP32_SNAN_V(0, FP32_FRAC_NORM_MIN), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V2), FP32_SNAN_V(0, FP32_FRAC_V7), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V6), FP32_SNAN_V(0, FP32_FRAC_V1) } },
             { /*src1     */ { FP32_SNAN(0),      FP32_SNAN_V(0, FP32_FRAC_NORM_MAX), FP32_SNAN_V(0, FP32_FRAC_V4), FP32_SNAN_V(0, FP32_FRAC_V3), FP32_SNAN_V(0, FP32_FRAC_V5), FP32_SNAN_V(0, FP32_FRAC_V3), FP32_SNAN_V(0, FP32_FRAC_V1), FP32_SNAN_V(0, FP32_FRAC_V2) } },
             { /* =>      */ { FP32_QNAN_V(0, 1), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V5), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V2) } },
               /*mxcsr:in */ X86_MXCSR_RC_UP,
               /*128:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP32_QNAN(0), FP32_QNAN_V(1, FP32_FRAC_NORM_MAX), FP32_NORM_V0(1),              FP32_QNAN_V(0, FP32_FRAC_V1), FP32_NORM_V3(0),              FP32_QNAN_V(1, FP32_FRAC_V3), FP32_NORM_V5(0),              FP32_QNAN_V(1, FP32_FRAC_V5) } },
             { /*src1     */ { FP32_1(0),    FP32_1(1),                          FP32_QNAN_V(1, FP32_FRAC_V0), FP32_NORM_V2(1),              FP32_QNAN_V(0, FP32_FRAC_V2), FP32_NORM_V4(0),              FP32_QNAN_V(1, FP32_FRAC_V4), FP32_NORM_V6(1)              } },
             { /* =>      */ { FP32_QNAN(0), FP32_QNAN_V(1, FP32_FRAC_NORM_MAX), FP32_QNAN_V(1, FP32_FRAC_V0), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(1, FP32_FRAC_V3), FP32_QNAN_V(1, FP32_FRAC_V4), FP32_QNAN_V(1, FP32_FRAC_V5) } },
               /*mxcsr:in */ 0,
               /*128:out  */ 0,
-              /*256:out  */ 0 },
+              /*256:out  */ 0,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP32_SNAN(1),      FP32_SNAN_V(1, FP32_FRAC_NORM_MAX), FP32_NORM_V0(1),              FP32_SNAN_V(0, FP32_FRAC_V1), FP32_NORM_V3(0),              FP32_SNAN_V(1, FP32_FRAC_V3), FP32_NORM_V5(0),              FP32_SNAN_V(1, FP32_FRAC_V5) } },
             { /*src1     */ { FP32_1(0),         FP32_1(0),                          FP32_SNAN_V(1, FP32_FRAC_V0), FP32_NORM_V2(1),              FP32_SNAN_V(1, FP32_FRAC_V2), FP32_NORM_V4(0),              FP32_SNAN_V(1, FP32_FRAC_V4), FP32_NORM_V6(1)              } },
             { /* =>      */ { FP32_QNAN_V(1, 1), FP32_QNAN_V(1, FP32_FRAC_NORM_MAX), FP32_QNAN_V(1, FP32_FRAC_V0), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(1, FP32_FRAC_V2), FP32_QNAN_V(1, FP32_FRAC_V3), FP32_QNAN_V(1, FP32_FRAC_V4), FP32_QNAN_V(1, FP32_FRAC_V5) } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
     /** @todo Underflow, Precision; Rounding, FZ etc. */
     };
 
@@ -1844,31 +1921,36 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
             { /* =>      */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK,
-              /*256:out  */ X86_MXCSR_XCPT_MASK },
+              /*256:out  */ X86_MXCSR_XCPT_MASK,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
             { /*src1     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
             { /* =>      */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_FZ,
               /*128:out  */ X86_MXCSR_FZ,
-              /*256:out  */ X86_MXCSR_FZ },
+              /*256:out  */ X86_MXCSR_FZ,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_0(0), FP64_0(1), FP64_0(1), FP64_0(0) } },
             { /*src1     */ { FP64_0(0), FP64_0(1), FP64_0(1), FP64_0(0) } },
             { /* =>      */ { FP64_0(0), FP64_0(1), FP64_0(1), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_DOWN,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_DOWN },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_DOWN,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_0(0), FP64_0(0), FP64_0(1), FP64_0(1) } },
             { /*src1     */ { FP64_0(0), FP64_0(0), FP64_0(1), FP64_0(1) } },
             { /* =>      */ { FP64_0(0), FP64_0(0), FP64_0(1), FP64_0(1) } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_0(1), FP64_0(0), FP64_0(1), FP64_0(0) } },
             { /*src1     */ { FP64_0(1), FP64_0(0), FP64_0(1), FP64_0(0) } },
             { /* =>      */ { FP64_0(1), FP64_0(0), FP64_0(1), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+              /*xcpt?    */ false, false },
     /*
      * Infinity.
      */
@@ -1877,31 +1959,36 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
             { /* =>      */ { FP64_INF(1), FP64_0(0), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM,
               /*128:out  */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP64_0(0), FP64_INF(1), FP64_0(0), FP64_0(0) } },
             { /*src1     */ { FP64_0(0), FP64_INF(0), FP64_0(0), FP64_0(0) } },
             { /* =>      */ { FP64_0(0), FP64_INF(0), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP64_0(0), FP64_INF(1), FP64_0(0), FP64_0(0) } },
             { /*src1     */ { FP64_0(0), FP64_INF(0), FP64_0(0), FP64_0(0) } },
             { /* =>      */ { FP64_0(0), FP64_INF(0), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
               /*128:out  */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_DM | X86_MXCSR_ZM | X86_MXCSR_OM | X86_MXCSR_UM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP64_INF(0),  FP64_INF(1),  FP64_0(0), FP64_INF(1) } },
             { /*src1     */ { FP64_INF(1),  FP64_INF(0),  FP64_0(0), FP64_INF(0) } },
             { /* =>      */ { FP64_QNAN(1), FP64_QNAN(1), FP64_0(0), FP64_QNAN(1) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_V(0, 0,               0x3fd)/*0.25*/, FP64_0(1), FP64_0(0), FP64_INF(1) } },
             { /*src1     */ { FP64_V(0, 0,               0x3fe)/*0.50*/, FP64_0(1), FP64_0(0), FP64_INF(0) } },
             { /* =>      */ { FP64_V(0, 0x8000000000000, 0x3fe)/*0.75*/, FP64_0(1), FP64_0(0), FP64_QNAN(1) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
     /*
      * Overflow, Precision.
      */
@@ -1910,44 +1997,51 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
             { /* =>      */ { FP64_0(0), FP64_0(0),        FP64_0(0), FP64_0(0)        } },
               /*mxcsr:in */ 0,
               /*128:out  */ X86_MXCSR_OE,
-              /*256:out  */ X86_MXCSR_OE },
+              /*256:out  */ X86_MXCSR_OE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP64_NORM_MAX(0), FP64_NORM_MAX(0), FP64_0(0), FP64_0(0) } },
             { /*src1     */ { FP64_NORM_MAX(0), FP64_NORM_MAX(1), FP64_0(0), FP64_0(0) } },
             { /* =>      */ { FP64_NORM_MAX(0), FP64_NORM_MAX(1), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ 0,
               /*128:out  */ X86_MXCSR_OE,
-              /*256:out  */ X86_MXCSR_OE },
+              /*256:out  */ X86_MXCSR_OE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP64_NORM_MAX(0), FP64_NORM_MIN(1), FP64_0(0), FP64_NORM_MAX(0) } },
             { /*src1     */ { FP64_NORM_MAX(0), FP64_NORM_MIN(1), FP64_0(0), FP64_NORM_MAX(0) } },
             { /* =>      */ { FP64_INF(0),      FP64_V(1, 0, 2),  FP64_0(0), FP64_INF(0)      } },
               /*mxcsr:in */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ,
               /*128:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_OE | X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_OE | X86_MXCSR_PE },
+              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_OE | X86_MXCSR_PE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_NORM_MIN(1), FP64_NORM_MAX(0), FP64_NORM_MAX(0), FP64_0(0) } },
             { /*src1     */ { FP64_NORM_MIN(1), FP64_NORM_MAX(0), FP64_NORM_MAX(1), FP64_0(0) } },
             { /* =>      */ { FP64_V(1, 0, 2),  FP64_INF(0),      FP64_0(0),        FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_FZ,
               /*128:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_FZ | X86_MXCSR_OE | X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_FZ | X86_MXCSR_OE | X86_MXCSR_PE },
+              /*256:out  */ X86_MXCSR_OM | X86_MXCSR_PM | X86_MXCSR_FZ | X86_MXCSR_OE | X86_MXCSR_PE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_NORM_MAX(0), FP64_NORM_MAX(1), FP64_NORM_MAX(1), FP64_NORM_MAX(0) } },
             { /*src1     */ { FP64_NORM_MAX(0), FP64_NORM_MAX(1), FP64_NORM_MAX(1), FP64_NORM_MAX(0) } },
             { /* =>      */ { FP64_NORM_MAX(0), FP64_NORM_MAX(1), FP64_NORM_MAX(1), FP64_NORM_MAX(0) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO | X86_MXCSR_OE | X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO | X86_MXCSR_OE | X86_MXCSR_PE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO | X86_MXCSR_OE | X86_MXCSR_PE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_NORM_SAFE_INT_MIN(0),                            FP64_NORM_MAX(0), FP64_0(0), FP64_NORM_SAFE_INT_MAX(1)                                } },
             { /*src1     */ { FP64_NORM_SAFE_INT_MAX(0),                            FP64_NORM_MAX(1), FP64_0(0), FP64_NORM_SAFE_INT_MAX(1)                                } },
             { /* =>      */ { FP64_V(0, FP64_FRAC_NORM_MAX, FP64_EXP_SAFE_INT_MAX), FP64_0(0),        FP64_0(0), FP64_V(1, FP64_FRAC_NORM_MAX, FP64_EXP_SAFE_INT_MAX + 1) } },
               /*mxcsr:in */ X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_RC_ZERO | X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_RC_ZERO | X86_MXCSR_PE },
+              /*256:out  */ X86_MXCSR_RC_ZERO | X86_MXCSR_PE,
+              /*xcpt?    */ true, true },
           /** @todo Why does the below on cause PE?! */
           { { /*src2     */ { FP64_V(0, 0xc000000000000, 0x3ff)/* 1.75*/, FP64_NORM_MAX(0), FP64_0(0), FP64_V(0, 0,               0x3fd)/*0.25*/ } },
             { /*src1     */ { FP64_V(1, 0,               0x07d)/*-0.25*/, FP64_NORM_MAX(1), FP64_0(0), FP64_V(0, 0,               0x3fe)/*0.50*/ } },
             { /* =>      */ { FP64_V(0, 0xbffffffffffff, 0x3ff)/* 1.50*/, FP64_0(1),        FP64_0(0), FP64_V(0, 0x8000000000000, 0x3fe)/*0.75*/ } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_PE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_PE,
+              /*xcpt?    */ false, false },
     /*
      * Normals.
      */
@@ -1956,43 +2050,50 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
             { /* =>      */ { FP64_0(0),        FP64_0(0),       FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ 0,
               /*128:out  */ 0,
-              /*256:out  */ 0 },
+              /*256:out  */ 0,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_V(0, 0,               0x409)/*1024*/, FP64_V(0, 0xb800000000000, 0x404)/*55*/, FP64_0(0), FP64_0(0) } },
             { /*src1     */ { FP64_V(0, 0,               0x408)/* 512*/, FP64_V(0, 0xc000000000000, 0x401)/* 7*/, FP64_0(0), FP64_0(0) } },
             { /* =>      */ { FP64_V(0, 0x8000000000000, 0x409)/*1536*/, FP64_V(0, 0xf000000000000, 0x404)/*62*/, FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK,
-              /*256:out  */ X86_MXCSR_XCPT_MASK },
+              /*256:out  */ X86_MXCSR_XCPT_MASK,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_V(0, 0x26580b4800000, 0x41d)/* 1234567890*/, FP64_V(0, 0xd6f3458800000, 0x41c)/*987654321*/, FP64_0(0), FP64_V(0, 0xcf0033a34f337, 0x432)/*4072598000007579.5*/ } },
             { /*src1     */ { FP64_V(1, 0x26580b4800000, 0x41d)/*-1234567890*/, FP64_V(1, 0x9000000000000, 0x405)/*     -100*/, FP64_0(0), FP64_V(0, 0xd6eca42000000, 0x419)/*       123450000.5*/ } },
             { /* =>      */ { FP64_0(0),                                        FP64_V(0, 0xd6f3426800000, 0x41c)/*987654221*/, FP64_0(0), FP64_V(0, 0xcf00348ec5858, 0x432)/*4072598123457580.0*/ } },
               /*mxcsr:in */ 0,
               /*128:out  */ 0,
-              /*256:out  */ 0 },
+              /*256:out  */ 0,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_V(0, FP64_FRAC_NORM_MAX - 1, FP64_EXP_SAFE_INT_MAX), FP64_NORM_SAFE_INT_MAX(0),                                FP64_0(0), FP64_0(0) } },
             { /*src1     */ { FP64_1(0),                                                FP64_1(1),                                                FP64_0(0), FP64_0(0) } },
             { /* =>      */ { FP64_NORM_SAFE_INT_MAX(0),                                FP64_V(0, FP64_FRAC_NORM_MAX - 1, FP64_EXP_SAFE_INT_MAX), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_NORM_SAFE_INT_MAX(0),               FP64_1(1),                               FP64_0(0), FP64_0(0) } },
             { /*src1     */ { FP64_1(0),                               FP64_NORM_SAFE_INT_MAX(1),               FP64_0(0), FP64_0(0) } },
             { /* =>      */ { FP64_V(0, 0, FP64_EXP_SAFE_INT_MAX + 1), FP64_V(1, 0, FP64_EXP_SAFE_INT_MAX + 1), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_FZ,
               /*128:out  */ X86_MXCSR_FZ,
-              /*256:out  */ X86_MXCSR_FZ },
+              /*256:out  */ X86_MXCSR_FZ,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_NORM_SAFE_INT_MIN(0), FP64_0(0),                 FP64_NORM_SAFE_INT_MIN(0), FP64_NORM_SAFE_INT_MIN(0) } },
             { /*src1     */ { FP64_NORM_SAFE_INT_MIN(1), FP64_NORM_SAFE_INT_MIN(1), FP64_0(0),                 FP64_NORM_SAFE_INT_MIN(0) } },
             { /* =>      */ { FP64_0(1),                 FP64_NORM_SAFE_INT_MIN(1), FP64_NORM_SAFE_INT_MIN(0), FP64_V(0, 0, 2)           } },
               /*mxcsr:in */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
-              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN },
+              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_V(0, 0xc122186c3cfd0, 0x42d)/*123456789876543.25*/, FP64_0(0), FP64_0(0), FP64_NORM_SAFE_INT_MIN(1) } },
             { /*src1     */ { FP64_V(0, 0xb88e0395d49b0, 0x42d)/*121098765432102.75*/, FP64_0(0), FP64_0(0), FP64_NORM_SAFE_INT_MIN(1) } },
             { /* =>      */ { FP64_V(0, 0xbcd80e0108cc0, 0x42e)/*244555555308646.00*/, FP64_0(0), FP64_0(0), FP64_V(1, 0, 2)           } },
               /*mxcsr:in */ X86_MXCSR_RC_UP,
               /*128:out  */ X86_MXCSR_RC_UP,
-              /*256:out  */ X86_MXCSR_RC_UP },
+              /*256:out  */ X86_MXCSR_RC_UP,
+              /*xcpt?    */ false, false },
     /*
      * Denormals.
      */
@@ -2001,19 +2102,22 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
             { /* =>      */ { FP64_0(0),          FP64_0(0), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ 0,
               /*128:out  */ X86_MXCSR_DE,
-              /*256:out  */ X86_MXCSR_DE },
+              /*256:out  */ X86_MXCSR_DE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP64_0(0), FP64_0(0),          FP64_0(0), FP64_0(0) } },
             { /*src1     */ { FP64_0(0), FP64_DENORM_MAX(0), FP64_0(0), FP64_0(0) } },
             { /* =>      */ { FP64_0(0), FP64_DENORM_MAX(0), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_DENORM_MIN(0), FP64_DENORM_MIN(0), FP64_DENORM_MAX(0), FP64_DENORM_MAX(0) } },
             { /*src1     */ { FP64_DENORM_MAX(0), FP64_DENORM_MIN(0), FP64_DENORM_MAX(0), FP64_DENORM_MIN(0) } },
             { /* =>      */ { FP64_0(0),          FP64_0(0),          FP64_0(0),          FP64_0(0)          } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
+              /*xcpt?    */ false, false },
     /** @todo More denormals; Underflow, Precision; Rounding, FZ etc. */
     /*
      * Invalids.
@@ -2023,73 +2127,85 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
             { /* =>      */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MIN), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V2) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK,
-              /*256:out  */ X86_MXCSR_XCPT_MASK },
+              /*256:out  */ X86_MXCSR_XCPT_MASK,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_QNAN(0),      FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V0),       FP64_QNAN_V(0, FP64_FRAC_V2) } },
             { /*src1     */ { FP64_SNAN(0),      FP64_SNAN_V(0, FP64_FRAC_NORM_MIN), FP64_SNAN_V(0, FP64_FRAC_NORM_MAX), FP64_SNAN_V(0, FP64_FRAC_V1) } },
             { /* =>      */ { FP64_QNAN_V(0, 1), FP64_QNAN_V(0, 1),                  FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V1) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_SNAN(0), FP64_SNAN_V(0, FP64_FRAC_NORM_MIN), FP64_SNAN_V(0, FP64_FRAC_V0), FP64_SNAN_V(0, FP64_FRAC_V1) } },
             { /*src1     */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V2), FP64_QNAN_V(0, FP64_FRAC_V3) } },
             { /* =>      */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V2), FP64_QNAN_V(0, FP64_FRAC_V3) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_SNAN(0),      FP64_SNAN_V(0, FP64_FRAC_NORM_MIN), FP64_SNAN_V(0, FP64_FRAC_V1), FP64_SNAN_V(0, FP64_FRAC_V2) } },
             { /*src1     */ { FP64_SNAN(0),      FP64_SNAN_V(0, FP64_FRAC_NORM_MAX), FP64_SNAN_V(0, FP64_FRAC_V3), FP64_SNAN_V(0, FP64_FRAC_V0) } },
             { /* =>      */ { FP64_QNAN_V(0, 1), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V3), FP64_QNAN_V(0, FP64_FRAC_V0) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_QNAN(0), FP64_QNAN_V(1, FP64_FRAC_NORM_MAX), FP64_NORM_V0(1),              FP64_QNAN_V(0, FP64_FRAC_V1) } },
             { /*src1     */ { FP64_1(0),    FP64_1(1),                          FP64_QNAN_V(1, FP64_FRAC_V0), FP64_NORM_V2(1)              } },
             { /* =>      */ { FP64_QNAN(0), FP64_QNAN_V(1, FP64_FRAC_NORM_MAX), FP64_QNAN_V(1, FP64_FRAC_V0), FP64_QNAN_V(0, FP64_FRAC_V1) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK,
-              /*256:out  */ X86_MXCSR_XCPT_MASK },
+              /*256:out  */ X86_MXCSR_XCPT_MASK,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_SNAN(1),      FP64_SNAN_V(1, FP64_FRAC_NORM_MAX), FP64_NORM_V0(1),              FP64_SNAN_V(0, FP64_FRAC_V1) } },
             { /*src1     */ { FP64_1(0),         FP64_1(0),                          FP64_SNAN_V(1, FP64_FRAC_V0), FP64_NORM_V2(1)              } },
             { /* =>      */ { FP64_QNAN_V(1, 1), FP64_QNAN_V(1, FP64_FRAC_NORM_MAX), FP64_QNAN_V(1, FP64_FRAC_V0), FP64_QNAN_V(0, FP64_FRAC_V1) } },
               /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
               /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V0),       FP64_QNAN_V(0, FP64_FRAC_V2) } },
             { /*src1     */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MIN), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V3) } },
             { /* =>      */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MIN), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V3) } },
               /*mxcsr:in */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
-              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN },
+              /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_QNAN(0),      FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V0),       FP64_QNAN_V(0, FP32_FRAC_V1) } },
             { /*src1     */ { FP64_SNAN(0),      FP64_SNAN_V(0, FP64_FRAC_NORM_MIN), FP64_SNAN_V(0, FP64_FRAC_NORM_MAX), FP64_SNAN_V(0, FP32_FRAC_V2) } },
             { /* =>      */ { FP64_QNAN_V(0, 1), FP64_QNAN_V(0, 1),                  FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP32_FRAC_V2) } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP64_SNAN(0), FP64_SNAN_V(0, FP64_FRAC_NORM_MIN), FP64_SNAN_V(0, FP64_FRAC_V1), FP64_SNAN_V(0, FP64_FRAC_V1) } },
             { /*src1     */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V3), FP64_QNAN_V(0, FP64_FRAC_V2) } },
             { /* =>      */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V3), FP64_QNAN_V(0, FP64_FRAC_V2) } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP64_SNAN(0),      FP64_SNAN_V(0, FP64_FRAC_NORM_MIN), FP64_SNAN_V(0, FP64_FRAC_V1), FP64_SNAN_V(0, FP64_FRAC_V2) } },
             { /*src1     */ { FP64_SNAN(0),      FP64_SNAN_V(0, FP64_FRAC_NORM_MAX), FP64_SNAN_V(0, FP64_FRAC_V0), FP64_SNAN_V(0, FP64_FRAC_V3) } },
             { /* =>      */ { FP64_QNAN_V(0, 1), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V0), FP64_QNAN_V(0, FP64_FRAC_V3) } },
               /*mxcsr:in */ X86_MXCSR_RC_UP,
               /*128:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
           { { /*src2     */ { FP64_QNAN(0), FP64_QNAN_V(1, FP64_FRAC_NORM_MAX), FP64_NORM_V0(1),              FP64_QNAN_V(0, FP64_FRAC_V1) } },
             { /*src1     */ { FP64_1(0),    FP64_1(1),                          FP64_QNAN_V(1, FP64_FRAC_V3), FP64_NORM_V2(1)              } },
             { /* =>      */ { FP64_QNAN(0), FP64_QNAN_V(1, FP64_FRAC_NORM_MAX), FP64_QNAN_V(1, FP64_FRAC_V3), FP64_QNAN_V(0, FP64_FRAC_V1) } },
               /*mxcsr:in */ X86_MXCSR_RC_DOWN,
               /*128:out  */ X86_MXCSR_RC_DOWN,
-              /*256:out  */ X86_MXCSR_RC_DOWN },
+              /*256:out  */ X86_MXCSR_RC_DOWN,
+              /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_SNAN(1),      FP64_SNAN_V(1, FP64_FRAC_NORM_MAX), FP64_NORM_V0(1),              FP64_SNAN_V(0, FP64_FRAC_V2) } },
             { /*src1     */ { FP64_1(0),         FP64_1(0),                          FP64_SNAN_V(1, FP64_FRAC_V3), FP64_NORM_V2(1)              } },
             { /* =>      */ { FP64_QNAN_V(1, 1), FP64_QNAN_V(1, FP64_FRAC_NORM_MAX), FP64_QNAN_V(1, FP64_FRAC_V3), FP64_QNAN_V(0, FP64_FRAC_V2) } },
               /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
               /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
-              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE },
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
     };
 
     static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
@@ -4941,8 +5057,8 @@ BS3_DECL(void) Main_pe32()
 #if defined(ALL_TESTS)
         { "[v]addps",       bs3CpuInstr4_v_addps,  0 },
         { "[v]addpd",       bs3CpuInstr4_v_addpd,  0 },
-        { "[v]addss",       bs3CpuInstr4_v_addss,  0 },
 # if 0
+        { "[v]addss",       bs3CpuInstr4_v_addss,  0 },
         { "[v]haddps",      bs3CpuInstr4_v_haddps, 0 },
         { "[v]subps",       bs3CpuInstr4_v_subps,  0 },
         { "[v]subpd",       bs3CpuInstr4_v_subpd,  0 },
