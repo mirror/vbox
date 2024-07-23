@@ -39,8 +39,8 @@
   <!-- Translatable strings -->
   <xsl:variable name="sChapter" select="'chapter'"/>
   <xsl:variable name="sSection" select="'section'"/>
-  <xsl:variable name="sOfManual" select="'of the user manual'"/>
-  <xsl:variable name="sInManual" select="'in the user manual'"/>
+  <xsl:variable name="sOfManual" select="'of the User Guide'"/>
+  <xsl:variable name="sInManual" select="'in the User Guide'"/>
 
 
 <!-- Default operation is to supress output -->
