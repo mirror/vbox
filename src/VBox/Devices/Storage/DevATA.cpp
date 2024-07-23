@@ -4729,8 +4729,8 @@ static VBOXSTRICTRC ataIOPortWriteU8(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ui
             pCtl->aIfs[1].uATARegHCyl = val;
             break;
         case 6: /* drive/head */
-            pCtl->aIfs[0].uATARegSelect = (val & ~0x10) | 0xa0;
-            pCtl->aIfs[1].uATARegSelect = (val | 0x10) | 0xa0;
+            pCtl->aIfs[0].uATARegSelect = val & ~0x10;
+            pCtl->aIfs[1].uATARegSelect = val | 0x10;
             if (((val >> 4) & ATA_SELECTED_IF_MASK) != pCtl->iSelectedIf)
             {
                 /* select another drive */
