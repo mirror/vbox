@@ -5988,6 +5988,8 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 Assert(pVCpu->cpum.GstCtx.msrEFER == NewEFER);
             }
 
+            IEMTLBTRACE_LOAD_CR0(pVCpu, uNewCrX, uOldCrX);
+
             /*
              * Inform PGM.
              */
@@ -6109,6 +6111,8 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 IEM_SVM_CRX_VMEXIT_RET(pVCpu, SVM_EXIT_WRITE_CR3, enmAccessCrX, iGReg);
             }
 
+            IEMTLBTRACE_LOAD_CR3(pVCpu, uNewCrX, pVCpu->cpum.GstCtx.cr3);
+
             /* Inform PGM. */
             if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG)
             {
@@ -6200,6 +6204,8 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                     return iemRaiseGeneralProtectionFault0(pVCpu);
                 }
             }
+
+            IEMTLBTRACE_LOAD_CR4(pVCpu, uNewCrX, uOldCrX);
 
             /*
              * Notify PGM.
@@ -6879,6 +6885,7 @@ IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, u
     /*
      * Fetch the invpcid descriptor from guest memory.
      */
+/** @todo Check if the entire 128 bits are always read for all types.  Check for invalid types as well. */
     RTUINT128U uDesc;
     VBOXSTRICTRC rcStrict = iemMemFetchDataU128(pVCpu, &uDesc, iEffSeg, GCPtrInvpcidDesc);
     if (rcStrict == VINF_SUCCESS)
@@ -6913,6 +6920,8 @@ IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, u
                 }
 
                 /* Invalidate mappings for the linear address tagged with PCID except global translations. */
+/** @todo PGMFlushTLB is overkill for X86_INVPCID_TYPE_INDV_ADDR. Add a fGlobal parameter
+ * to PGMInvalidatePage or add a new function to support this variation of invlpg. */
                 PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */);
                 break;
             }
@@ -7285,6 +7294,9 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
         }
     }
 #endif
+
+    if (idMsr == MSR_K6_EFER)
+        IEMTLBTRACE_LOAD_EFER(pVCpu, uValue.u, pVCpu->cpum.GstCtx.msrEFER);
 
     /*
      * Do the job.

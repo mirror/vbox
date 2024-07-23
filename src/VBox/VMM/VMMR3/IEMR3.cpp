@@ -49,6 +49,9 @@
 
 #include <iprt/assert.h>
 #include <iprt/getopt.h>
+#ifdef IEM_WITH_TLB_TRACE
+# include <iprt/mem.h>
+#endif
 #include <iprt/string.h>
 
 #if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
@@ -63,6 +66,9 @@
 *********************************************************************************************************************************/
 static FNDBGFINFOARGVINT iemR3InfoITlb;
 static FNDBGFINFOARGVINT iemR3InfoDTlb;
+#ifdef IEM_WITH_TLB_TRACE
+static FNDBGFINFOARGVINT iemR3InfoTlbTrace;
+#endif
 #if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
 static FNDBGFINFOARGVINT iemR3InfoTb;
 #endif
@@ -202,7 +208,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        PVMCPU const pVCpu = pVM->apCpusR3[idCpu];
         AssertCompile(sizeof(pVCpu->iem.s) <= sizeof(pVCpu->iem.padding)); /* (tstVMStruct can't do it's job w/o instruction stats) */
 
         pVCpu->iem.s.CodeTlb.uTlbRevision       = pVCpu->iem.s.DataTlb.uTlbRevision       = uInitialTlbRevision;
@@ -285,6 +291,17 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
          * Distribute recompiler configuration.
          */
         pVCpu->iem.s.uTbNativeRecompileAtUsedCount = uTbNativeRecompileAtUsedCount;
+#endif
+
+#ifdef IEM_WITH_TLB_TRACE
+        /*
+         * Allocate trace buffer.
+         */
+        pVCpu->iem.s.idxTlbTraceEntry      = 0;
+        pVCpu->iem.s.cTlbTraceEntriesShift = 19;//16;
+        pVCpu->iem.s.paTlbTraceEntries     = (PIEMTLBTRACEENTRY)RTMemPageAlloc(  RT_BIT_Z(pVCpu->iem.s.cTlbTraceEntriesShift)
+                                                                               * sizeof(*pVCpu->iem.s.paTlbTraceEntries));
+        AssertLogRelReturn(pVCpu->iem.s.paTlbTraceEntries, VERR_NO_PAGE_MEMORY);
 #endif
     }
 
@@ -957,6 +974,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
     DBGFR3InfoRegisterInternalArgv(pVM, "itlb", "IEM instruction TLB", iemR3InfoITlb, DBGFINFO_FLAGS_RUN_ON_EMT);
     DBGFR3InfoRegisterInternalArgv(pVM, "dtlb", "IEM instruction TLB", iemR3InfoDTlb, DBGFINFO_FLAGS_RUN_ON_EMT);
+#ifdef IEM_WITH_TLB_TRACE
+    DBGFR3InfoRegisterInternalArgv(pVM, "tlbtrace", "IEM TLB trace log", iemR3InfoTlbTrace, DBGFINFO_FLAGS_RUN_ON_EMT);
+#endif
 #if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
     DBGFR3InfoRegisterInternalArgv(pVM, "tb",   "IEM translation block", iemR3InfoTb, DBGFINFO_FLAGS_RUN_ON_EMT);
 #endif
@@ -971,6 +991,14 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 VMMR3DECL(int)      IEMR3Term(PVM pVM)
 {
     NOREF(pVM);
+#ifdef IEM_WITH_TLB_TRACE
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU const pVCpu = pVM->apCpusR3[idCpu];
+        RTMemPageFree(pVCpu->iem.s.paTlbTraceEntries,
+                      RT_BIT_Z(pVCpu->iem.s.cTlbTraceEntriesShift) * sizeof(*pVCpu->iem.s.paTlbTraceEntries));
+    }
+#endif
     return VINF_SUCCESS;
 }
 
@@ -1161,8 +1189,8 @@ static void iemR3InfoTlbPrintSlot(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB const
     RT_NOREF(pVCpu);
 #endif
 
-    pHlp->pfnPrintf(pHlp, "%0*x: %s %#018RX64 -> %RGp / %p / %#05x %s%s%s%s%s%s%s/%s%s%s%s/%s %s%s\n",
-                    RT_ELEMENTS(pTlb->aEntries) >= 0x1000 ? 4 : RT_ELEMENTS(pTlb->aEntries) >= 0x100 ? 3 : 2, uSlot,
+    pHlp->pfnPrintf(pHlp, IEMTLB_SLOT_FMT ": %s %#018RX64 -> %RGp / %p / %#05x %s%s%s%s%s%s%s/%s%s%s%s/%s %s%s\n",
+                    uSlot,
                     (pTlbe->uTag & IEMTLB_REVISION_MASK) == uTlbRevision ? "valid  "
                     : (pTlbe->uTag & IEMTLB_REVISION_MASK) == 0          ? "empty  "
                                                                          : "expired",
@@ -1408,6 +1436,148 @@ static DECLCALLBACK(void) iemR3InfoDTlb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, 
 {
     return iemR3InfoTlbCommon(pVM, pHlp, cArgs, papszArgs, false /*fITlb*/);
 }
+
+
+#ifdef IEM_WITH_TLB_TRACE
+/**
+ * @callback_method_impl{FNDBGFINFOARGVINT, tlbtrace}
+ */
+static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs)
+{
+    /*
+     * Parse arguments.
+     */
+    static RTGETOPTDEF const s_aOptions[] =
+    {
+        { "--cpu",                      'c', RTGETOPT_REQ_UINT32  },
+        { "--vcpu",                     'c', RTGETOPT_REQ_UINT32  },
+        { "--last",                     'l', RTGETOPT_REQ_UINT32  },
+        { "--limit",                    'l', RTGETOPT_REQ_UINT32  },
+        { "--stop-at-global-flush",     'g', RTGETOPT_REQ_NOTHING },
+    };
+
+    RTGETOPTSTATE State;
+    int rc = RTGetOptInit(&State, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 0 /*iFirst*/, 0 /*fFlags*/);
+    AssertRCReturnVoid(rc);
+
+    uint32_t        cLimit             = UINT32_MAX;
+    bool            fStopAtGlobalFlush = false;
+    PVMCPU const    pVCpuCall          = VMMGetCpu(pVM);
+    PVMCPU          pVCpu              = pVCpuCall;
+    if (!pVCpu)
+        pVCpu = VMMGetCpuById(pVM, 0);
+
+    RTGETOPTUNION   ValueUnion;
+    while ((rc = RTGetOpt(&State, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'c':
+                if (ValueUnion.u32 >= pVM->cCpus)
+                    pHlp->pfnPrintf(pHlp, "error: Invalid CPU ID: %u\n", ValueUnion.u32);
+                else if (!pVCpu || pVCpu->idCpu != ValueUnion.u32)
+                    pVCpu = VMMGetCpuById(pVM, ValueUnion.u32);
+                break;
+
+            case 'l':
+                cLimit = ValueUnion.u32;
+                break;
+
+            case 'g':
+                fStopAtGlobalFlush = true;
+                break;
+
+            case 'h':
+                pHlp->pfnPrintf(pHlp,
+                                "Usage: info tlbtrace [options]\n"
+                                "\n"
+                                "Options:\n"
+                                "  -c<n>, --cpu=<n>, --vcpu=<n>\n"
+                                "    Selects the CPU which TLB trace we're looking at. Default: Caller / 0\n"
+                                "  -l<n>, --last=<n>\n"
+                                "    Limit display to the last N entries. Default: all\n"
+                                "  -g,--stop-at-global-flush\n"
+                                "    Stop after the first global flush entry.\n"
+                                );
+                return;
+
+            default:
+                pHlp->pfnGetOptError(pHlp, rc, &ValueUnion, &State);
+                return;
+        }
+    }
+
+    /*
+     * Get the details.
+     */
+    AssertReturnVoid(pVCpu);
+    Assert(pVCpu->iem.s.cTlbTraceEntriesShift <= 28);
+    uint32_t            idx         = pVCpu->iem.s.idxTlbTraceEntry;
+    uint32_t const      cShift      = RT_MIN(pVCpu->iem.s.cTlbTraceEntriesShift, 28);
+    uint32_t const      fMask       = RT_BIT_32(cShift) - 1;
+    uint32_t            cLeft       = RT_MIN(RT_MIN(idx, RT_BIT_32(cShift)), cLimit);
+    PCIEMTLBTRACEENTRY  paEntries   = pVCpu->iem.s.paTlbTraceEntries;
+    if (cLeft && paEntries)
+    {
+        /*
+         * Display the entries.
+         */
+        pHlp->pfnPrintf(pHlp, "TLB Trace for CPU %u:\n", pVCpu->idCpu);
+        while (cLeft-- > 0)
+        {
+            PCIEMTLBTRACEENTRY const pCur = &paEntries[--idx & fMask];
+            switch (pCur->enmType)
+            {
+                case kIemTlbTraceType_InvlPg:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 invlpg %RGv slot=" IEMTLB_SLOT_FMT "\n",
+                                    idx, pCur->rip, pCur->u64Param, (uint32_t)IEMTLB_ADDR_TO_EVEN_INDEX(pCur->u64Param));
+                    break;
+                case kIemTlbTraceType_Flush:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 flush %s rev=%#RX64\n", idx, pCur->rip,
+                                    pCur->bParam ? "data" : "code", pCur->u64Param);
+                    break;
+                case kIemTlbTraceType_FlushGlobal:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 flush %s rev=%#RX64 grev=%#RX64\n", idx, pCur->rip,
+                                    pCur->bParam ? "data" : "code", pCur->u64Param, pCur->u64Param2);
+                    if (fStopAtGlobalFlush)
+                        return;
+                    break;
+                case kIemTlbTraceType_Load:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load %s %RGv slot=" IEMTLB_SLOT_FMT "\n",
+                                    idx, pCur->rip, pCur->bParam ? "data" : "code",
+                                    pCur->u64Param, (uint32_t)IEMTLB_ADDR_TO_EVEN_INDEX(pCur->u64Param));
+                    break;
+                case kIemTlbTraceType_LoadGlobal:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load %s %RGv slot=" IEMTLB_SLOT_FMT " (global)\n",
+                                    idx, pCur->rip, pCur->bParam ? "data" : "code",
+                                    pCur->u64Param, (uint32_t)IEMTLB_ADDR_TO_EVEN_INDEX(pCur->u64Param));
+                    break;
+                case kIemTlbTraceType_Load_Cr0:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load cr0 %08RX64 (was %08RX64)\n",
+                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2);
+                    break;
+                case kIemTlbTraceType_Load_Cr3:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load cr3 %016RX64 (was %016RX64)\n",
+                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2);
+                    break;
+                case kIemTlbTraceType_Load_Cr4:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load cr4 %08RX64 (was %08RX64)\n",
+                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2);
+                    break;
+                case kIemTlbTraceType_Load_Efer:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load efer %016RX64 (was %016RX64)\n",
+                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2);
+                    break;
+                case kIemTlbTraceType_Invalid:
+                    pHlp->pfnPrintf(pHlp, "%u: Invalid!\n");
+                    break;
+            }
+        }
+    }
+    else
+        pHlp->pfnPrintf(pHlp, "No trace entries to display\n");
+}
+#endif /* IEM_WITH_TLB_TRACE */
 
 #if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
 /**

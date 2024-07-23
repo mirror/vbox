@@ -726,10 +726,18 @@ DECL_FORCE_INLINE(void) iemTlbInvalidateAll(PVMCPUCC pVCpu)
 # ifdef IEM_WITH_CODE_TLB
     pVCpu->iem.s.cbInstrBufTotal = 0;
     iemTlbInvalidateOne<a_fGlobal>(&pVCpu->iem.s.CodeTlb);
+    if (a_fGlobal)
+        IEMTLBTRACE_FLUSH_GLOBAL(pVCpu, pVCpu->iem.s.CodeTlb.uTlbRevision, pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal, false);
+    else
+        IEMTLBTRACE_FLUSH(pVCpu, pVCpu->iem.s.CodeTlb.uTlbRevision, false);
 # endif
 
 # ifdef IEM_WITH_DATA_TLB
     iemTlbInvalidateOne<a_fGlobal>(&pVCpu->iem.s.DataTlb);
+    if (a_fGlobal)
+        IEMTLBTRACE_FLUSH_GLOBAL(pVCpu, pVCpu->iem.s.DataTlb.uTlbRevision, pVCpu->iem.s.DataTlb.uTlbRevisionGlobal, true);
+    else
+        IEMTLBTRACE_FLUSH(pVCpu, pVCpu->iem.s.DataTlb.uTlbRevision, true);
 # endif
 #else
     RT_NOREF(pVCpu);
@@ -894,6 +902,7 @@ DECLINLINE(void) iemTlbInvalidatePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPT
  */
 VMM_INT_DECL(void) IEMTlbInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtr)
 {
+    IEMTLBTRACE_INVLPG(pVCpu, GCPtr);
 #if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
     Log10(("IEMTlbInvalidatePage: GCPtr=%RGv\n", GCPtr));
     GCPtr = IEMTLB_CALC_TAG_NO_REV(GCPtr);
@@ -1239,6 +1248,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.CodeTlb.uTlbRevision;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
                     iemTlbLoadedLargePage<false>(&pVCpu->iem.s.CodeTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                IEMTLBTRACE_LOAD(pVCpu, GCPtrFirst, false);
             }
             else
             {
@@ -1246,6 +1256,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
                     iemTlbLoadedLargePage<true>(&pVCpu->iem.s.CodeTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                IEMTLBTRACE_LOAD_GLOBAL(pVCpu, GCPtrFirst, false);
             }
             pTlbe->fFlagsAndPhysRev = (~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A))
                                     | (WalkFast.fEffective >> X86_PTE_PAE_BIT_NX) /*IEMTLBE_F_PT_NO_EXEC*/
@@ -6787,6 +6798,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
                     iemTlbLoadedLargePage<false>(&pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                IEMTLBTRACE_LOAD(pVCpu, GCPtrMem, true);
             }
             else
             {
@@ -6794,6 +6806,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
                     iemTlbLoadedLargePage<true>(&pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                IEMTLBTRACE_LOAD_GLOBAL(pVCpu, GCPtrMem, true);
             }
         }
         else
@@ -7183,6 +7196,7 @@ static void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, ui
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
                     iemTlbLoadedLargePage<false>(&pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                IEMTLBTRACE_LOAD(pVCpu, GCPtrMem, true);
             }
             else
             {
@@ -7193,6 +7207,7 @@ static void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, ui
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
                     iemTlbLoadedLargePage<true>(&pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                IEMTLBTRACE_LOAD_GLOBAL(pVCpu, GCPtrMem, true);
             }
         }
         else

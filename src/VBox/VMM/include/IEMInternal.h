@@ -526,6 +526,7 @@ AssertCompile(PGM_WALKINFO_BIG_PAGE           == IEMTLBE_F_PT_LARGE_PAGE);
                                      | PGMIEMGCPHYS2PTR_F_CODE_PAGE \
                                      | IEMTLBE_F_PHYS_REV )
 
+
 /** The TLB size (power of two).
  * We initially chose 256 because that way we can obtain the result directly
  * from a 8-bit register without an additional AND instruction.
@@ -534,10 +535,22 @@ AssertCompile(PGM_WALKINFO_BIG_PAGE           == IEMTLBE_F_PT_LARGE_PAGE);
 # define IEMTLB_ENTRY_COUNT                      256
 # define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      8
 #else
-# define IEMTLB_ENTRY_COUNT                      8192
-# define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      13
+# define IEMTLB_ENTRY_COUNT                      16384
+# define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      14
 #endif
 AssertCompile(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) == IEMTLB_ENTRY_COUNT);
+
+/** TLB slot format spec (assumes uint32_t or unsigned value). */
+#if IEMTLB_ENTRY_COUNT <= 0x100 / 2
+# define IEMTLB_SLOT_FMT    "%02x"
+#elif IEMTLB_ENTRY_COUNT <= 0x1000 / 2
+# define IEMTLB_SLOT_FMT    "%03x"
+#elif IEMTLB_ENTRY_COUNT <= 0x10000 / 2
+# define IEMTLB_SLOT_FMT    "%04x"
+#else
+# define IEMTLB_SLOT_FMT    "%05x"
+#endif
+
 
 /**
  * An IEM TLB.
@@ -699,6 +712,83 @@ AssertCompile(RT_IS_POWER_OF_TWO(IEMTLB_ENTRY_COUNT));
  *                      IEMTLB_CALC_TAG_NO_REV.
  */
 #define IEMTLB_TAG_TO_EVEN_ENTRY(a_pTlb, a_uTag)    ( &(a_pTlb)->aEntries[IEMTLB_TAG_TO_EVEN_INDEX(a_uTag)] )
+
+/** Converts a GC address to an even TLB index. */
+#define IEMTLB_ADDR_TO_EVEN_INDEX(a_GCPtr)  IEMTLB_TAG_TO_EVEN_INDEX(IEMTLB_CALC_TAG_NO_REV(a_GCPtr))
+
+
+/** @def IEM_WITH_TLB_TRACE
+ * Enables the TLB tracing.
+ * Adjust buffer size in IEMR3Init. */
+#if defined(DOXYGEN_RUNNING) || 0
+# define IEM_WITH_TLB_TRACE
+#endif
+
+#ifdef IEM_WITH_TLB_TRACE
+
+/** TLB trace entry types. */
+typedef enum : uint8_t
+{
+    kIemTlbTraceType_Invalid,
+    kIemTlbTraceType_InvlPg,
+    kIemTlbTraceType_Flush,
+    kIemTlbTraceType_FlushGlobal,
+    kIemTlbTraceType_Load,
+    kIemTlbTraceType_LoadGlobal,
+    kIemTlbTraceType_Load_Cr0,
+    kIemTlbTraceType_Load_Cr3,
+    kIemTlbTraceType_Load_Cr4,
+    kIemTlbTraceType_Load_Efer
+} IEMTLBTRACETYPE;
+
+/** TLB trace entry. */
+typedef struct IEMTLBTRACEENTRY
+{
+    /** The flattened RIP for the event. */
+    uint64_t            rip;
+    /** The event type. */
+    IEMTLBTRACETYPE     enmType;
+    /** Byte parameter - typically used as 'bool fDataTlb'.  */
+    uint8_t             bParam;
+    /** 16-bit parameter value. */
+    uint16_t            u16Param;
+    /** 32-bit parameter value. */
+    uint32_t            u32Param;
+    /** 64-bit parameter value. */
+    uint64_t            u64Param;
+    /** 64-bit parameter value. */
+    uint64_t            u64Param2;
+} IEMTLBTRACEENTRY;
+AssertCompileSize(IEMTLBTRACEENTRY, 32);
+/** Pointer to a TLB trace entry. */
+typedef IEMTLBTRACEENTRY *PIEMTLBTRACEENTRY;
+/** Pointer to a const TLB trace entry. */
+typedef IEMTLBTRACEENTRY const *PCIEMTLBTRACEENTRY;
+#endif /* !IEM_WITH_TLB_TRACE */
+
+#if defined(IEM_WITH_TLB_TRACE) && defined(IN_RING3)
+# define IEMTLBTRACE_INVLPG(a_pVCpu, a_GCPtr)               iemTlbTrace(a_pVCpu, kIemTlbTraceType_InvlPg, a_GCPtr)
+# define IEMTLBTRACE_FLUSH(a_pVCpu, a_uRev, a_fDataTlb)     iemTlbTrace(a_pVCpu, kIemTlbTraceType_Flush, a_uRev, 0, a_fDataTlb)
+# define IEMTLBTRACE_FLUSH_GLOBAL(a_pVCpu, a_uRev, a_uGRev, a_fDataTlb) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_FlushGlobal, a_uRev, a_uGRev, a_fDataTlb)
+# define IEMTLBTRACE_LOAD(a_pVCpu, a_GCPtr, a_fDataTlb)     iemTlbTrace(a_pVCpu, kIemTlbTraceType_Load, a_GCPtr, 0, a_fDataTlb)
+# define IEMTLBTRACE_LOAD_GLOBAL(a_pVCpu, a_GCPtr, a_fDataTlb) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_LoadGlobal, a_GCPtr, 0, a_fDataTlb)
+# define IEMTLBTRACE_LOAD_CR0(a_pVCpu, a_uNew, a_uOld)      iemTlbTrace(a_pVCpu, kIemTlbTraceType_Load_Cr0, a_uNew, a_uOld)
+# define IEMTLBTRACE_LOAD_CR3(a_pVCpu, a_uNew, a_uOld)      iemTlbTrace(a_pVCpu, kIemTlbTraceType_Load_Cr3, a_uNew, a_uOld)
+# define IEMTLBTRACE_LOAD_CR4(a_pVCpu, a_uNew, a_uOld)      iemTlbTrace(a_pVCpu, kIemTlbTraceType_Load_Cr4, a_uNew, a_uOld)
+# define IEMTLBTRACE_LOAD_EFER(a_pVCpu, a_uNew, a_uOld)     iemTlbTrace(a_pVCpu, kIemTlbTraceType_Load_Efer, a_uNew, a_uOld)
+#else
+# define IEMTLBTRACE_INVLPG(a_pVCpu, a_GCPtr)                           do { } while (0)
+# define IEMTLBTRACE_FLUSH(a_pVCpu, a_uRev, a_fDataTlb)                 do { } while (0)
+# define IEMTLBTRACE_FLUSH_GLOBAL(a_pVCpu, a_uRev, a_uGRev, a_fDataTlb) do { } while (0)
+# define IEMTLBTRACE_LOAD(a_pVCpu, a_GCPtr, a_fDataTlb)                 do { } while (0)
+# define IEMTLBTRACE_LOAD_GLOBAL(a_pVCpu, a_GCPtr, a_fDataTlb)          do { } while (0)
+# define IEMTLBTRACE_LOAD_CR0(a_pVCpu, a_uNew, a_uOld)                  do { } while (0)
+# define IEMTLBTRACE_LOAD_CR3(a_pVCpu, a_uNew, a_uOld)                  do { } while (0)
+# define IEMTLBTRACE_LOAD_CR4(a_pVCpu, a_uNew, a_uOld)                  do { } while (0)
+# define IEMTLBTRACE_LOAD_EFER(a_pVCpu, a_uNew, a_uOld)                 do { } while (0)
+#endif
 
 
 /** @name IEM_MC_F_XXX - MC block flags/clues.
@@ -2235,8 +2325,21 @@ typedef struct IEMCPU
     STAMCOUNTER             StatMemBounceBufferMapPhys;
     /** @} */
 
+#ifdef IEM_WITH_TLB_TRACE
+    uint64_t                au64Padding[3];
+#else
     uint64_t                au64Padding[5];
+#endif
     /** @} */
+
+#ifdef IEM_WITH_TLB_TRACE
+    /** The end (next) trace entry. */
+    uint32_t                idxTlbTraceEntry;
+    /** Number of trace entries allocated expressed as a power of two. */
+    uint32_t                cTlbTraceEntriesShift;
+    /** The trace entries. */
+    PIEMTLBTRACEENTRY       paTlbTraceEntries;
+#endif
 
     /** Data TLB.
      * @remarks Must be 64-byte aligned. */

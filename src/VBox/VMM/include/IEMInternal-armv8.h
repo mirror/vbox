@@ -300,6 +300,25 @@ typedef IEMTLBENTRY *PIEMTLBENTRY;
 /** @} */
 
 
+/** The TLB size (power of two).
+ * We initially chose 256 because that way we can obtain the result directly
+ * from a 8-bit register without an additional AND instruction.
+ * See also @bugref{10687}. */
+#define IEMTLB_ENTRY_COUNT                      256
+#define IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO      8
+
+/** TLB slot format spec (assumes uint32_t or unsigned value). */
+#if IEMTLB_ENTRY_COUNT <= 0x100 / 2
+# define IEMTLB_SLOT_FMT    "%02x"
+#elif IEMTLB_ENTRY_COUNT <= 0x1000 / 2
+# define IEMTLB_SLOT_FMT    "%03x"
+#elif IEMTLB_ENTRY_COUNT <= 0x10000 / 2
+# define IEMTLB_SLOT_FMT    "%04x"
+#else
+# define IEMTLB_SLOT_FMT    "%05x"
+#endif
+
+
 /**
  * An IEM TLB.
  *
@@ -310,7 +329,7 @@ typedef struct IEMTLB
     /** The TLB entries.
      * We've choosen 256 because that way we can obtain the result directly from a
      * 8-bit register without an additional AND instruction. */
-    IEMTLBENTRY         aEntries[256];
+    IEMTLBENTRY         aEntries[IEMTLB_ENTRY_COUNT];
     /** The TLB revision.
      * This is actually only 28 bits wide (see IEMTLBENTRY::uTag) and is incremented
      * by adding RT_BIT_64(36) to it.  When it wraps around and becomes zero, all
