@@ -1062,6 +1062,17 @@ HRESULT SystemProperties::getSupportedPlatformArchitectures(std::vector<Platform
 #endif
     };
     MY_VECTOR_ASSIGN_ARRAY(aSupportedPlatformArchitectures, s_aPlatformArchitectures);
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+    Bstr bstrEnableX86OnArm;
+    HRESULT hrc =mParent->GetExtraData(Bstr("VBoxInternal2/EnableX86OnArm").raw(), bstrEnableX86OnArm.asOutParam());
+    if (FAILED(hrc) || !bstrEnableX86OnArm.equals("1"))
+    {
+        Assert(aSupportedPlatformArchitectures[0] == PlatformArchitecture_x86);
+        if (aSupportedPlatformArchitectures[0] == PlatformArchitecture_x86)
+            aSupportedPlatformArchitectures.erase(aSupportedPlatformArchitectures.begin());
+    }
+#endif
     return S_OK;
 }
 

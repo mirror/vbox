@@ -564,6 +564,22 @@ HRESULT Console::initWithMachine(IMachine *aMachine, IInternalMachineControl *aC
         switch (platformArch)
         {
             case PlatformArchitecture_x86:
+#ifdef VBOX_WITH_VIRT_ARMV8
+                {
+                    ComPtr<IVirtualBox> pVirtualBox;
+                    hrc = mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+                    if (SUCCEEDED(hrc))
+                    {
+                        Bstr bstrEnableX86OnArm;
+                        hrc = pVirtualBox->GetExtraData(Bstr("VBoxInternal2/EnableX86OnArm").raw(), bstrEnableX86OnArm.asOutParam());
+                        if (FAILED(hrc) || !bstrEnableX86OnArm.equals("1"))
+                        {
+                            hrc = VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED;
+                            break;
+                        }
+                    }
+                }
+#endif
                 pszVMM = "VBoxVMM";
                 break;
 #ifdef VBOX_WITH_VIRT_ARMV8
