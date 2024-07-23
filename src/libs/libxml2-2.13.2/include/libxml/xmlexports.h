@@ -10,6 +10,15 @@
 
 /** DOC_DISABLE */
 
+/* VirtualBox: start - prevent warnings about undefined __GNUC__ */
+#ifndef __GNUC__
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4668)
+# endif
+#endif
+/* VirtualBox: end */
+
 /*
  * Symbol visibility
  */
@@ -151,6 +160,14 @@ XMLPUBFUN void xmlCheckVersion(int version);
 #ifdef __cplusplus
 }
 #endif
+
+/* VirtualBox: start - restore warning state */
+#ifndef __GNUC__
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
+#endif
+/* VirtualBox: end */
 
 #endif /* __XML_EXPORTS_H__ */
 
