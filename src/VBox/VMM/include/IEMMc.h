@@ -202,18 +202,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
         if (RT_LIKELY(IEM_IS_CANONICAL(a_u64Addr))) { /* likely */ } \
         else return iemRaiseGeneralProtectionFault0(pVCpu); \
     } while (0)
-#define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() \
-    do { \
-        if (RT_LIKELY((  ~((pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
-                       & (pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_FLAGS)) == 0)) \
-        { /* probable */ } \
-        else \
-        { \
-            if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT) \
-                return iemRaiseSimdFpException(pVCpu); \
-            return iemRaiseUndefinedOpcode(pVCpu); \
-        } \
-    } while (0)
 
 
 #define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name
@@ -3113,12 +3101,26 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @param   a_pfnAImpl      Pointer to the assembly SSE routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
+ *
+ * @note This throws an #XF/#UD exception if the helper indicates an exception
+ *       which is unmasked in the guest's MXCSR.
  */
 #define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { \
         IEM_MC_PREPARE_SSE_USAGE(); \
-        pVCpu->cpum.GstCtx.XState.x87.MXCSR = a_pfnAImpl(pVCpu->cpum.GstCtx.XState.x87.MXCSR & ~X86_MXCSR_XCPT_FLAGS, \
-                                                        (a0), (a1)); \
+        const uint32_t fMxcsrOld = pVCpu->cpum.GstCtx.XState.x87.MXCSR; \
+        const uint32_t fMxcsrNew = a_pfnAImpl(fMxcsrOld & ~X86_MXCSR_XCPT_FLAGS, \
+                                              (a0), (a1)); \
+        pVCpu->cpum.GstCtx.XState.x87.MXCSR |= fMxcsrNew; \
+        if (RT_LIKELY((  ~((fMxcsrOld & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
+                       & (fMxcsrNew & X86_MXCSR_XCPT_FLAGS)) == 0)) \
+        { /* probable */ } \
+        else \
+        { \
+            if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT) \
+                return iemRaiseSimdFpException(pVCpu); \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        } \
     } while (0)
 
 /**
@@ -3128,12 +3130,26 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  * @param   a2              The third extra argument.
+ *
+ * @note This throws an #XF/#UD exception if the helper indicates an exception
+ *       which is unmasked in the guest's MXCSR.
  */
 #define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { \
         IEM_MC_PREPARE_SSE_USAGE(); \
-        pVCpu->cpum.GstCtx.XState.x87.MXCSR = a_pfnAImpl(pVCpu->cpum.GstCtx.XState.x87.MXCSR & ~X86_MXCSR_XCPT_FLAGS, \
-                                                         (a0), (a1), (a2)); \
+        const uint32_t fMxcsrOld = pVCpu->cpum.GstCtx.XState.x87.MXCSR; \
+        const uint32_t fMxcsrNew = a_pfnAImpl(fMxcsrOld & ~X86_MXCSR_XCPT_FLAGS, \
+                                              (a0), (a1), (a2)); \
+        pVCpu->cpum.GstCtx.XState.x87.MXCSR |= fMxcsrNew; \
+        if (RT_LIKELY((  ~((fMxcsrOld & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
+                       & (fMxcsrNew & X86_MXCSR_XCPT_FLAGS)) == 0)) \
+        { /* probable */ } \
+        else \
+        { \
+            if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT) \
+                return iemRaiseSimdFpException(pVCpu); \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        } \
     } while (0)
 
 
@@ -3145,12 +3161,26 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @param   a_pfnAImpl      Pointer to the assembly AVX routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
+ *
+ * @note This throws an #XF/#UD exception if the helper indicates an exception
+ *       which is unmasked in the guest's MXCSR.
  */
 #define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { \
         IEM_MC_PREPARE_AVX_USAGE(); \
-        pVCpu->cpum.GstCtx.XState.x87.MXCSR = a_pfnAImpl(pVCpu->cpum.GstCtx.XState.x87.MXCSR & ~X86_MXCSR_XCPT_FLAGS, \
-                                                         (a0), (a1)); \
+        const uint32_t fMxcsrOld = pVCpu->cpum.GstCtx.XState.x87.MXCSR; \
+        const uint32_t fMxcsrNew = a_pfnAImpl(fMxcsrOld & ~X86_MXCSR_XCPT_FLAGS, \
+                                              (a0), (a1)); \
+        pVCpu->cpum.GstCtx.XState.x87.MXCSR |= fMxcsrNew; \
+        if (RT_LIKELY((  ~((fMxcsrOld & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
+                       & (fMxcsrNew & X86_MXCSR_XCPT_FLAGS)) == 0)) \
+        { /* probable */ } \
+        else \
+        { \
+            if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT) \
+                return iemRaiseSimdFpException(pVCpu); \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        } \
     } while (0)
 
 /**
@@ -3162,12 +3192,26 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  * @param   a2              The third extra argument.
+ *
+ * @note This throws an #XF/#UD exception if the helper indicates an exception
+ *       which is unmasked in the guest's MXCSR.
  */
 #define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { \
         IEM_MC_PREPARE_AVX_USAGE(); \
-        pVCpu->cpum.GstCtx.XState.x87.MXCSR = a_pfnAImpl(pVCpu->cpum.GstCtx.XState.x87.MXCSR & ~X86_MXCSR_XCPT_FLAGS, \
-                                                         (a0), (a1), (a2)); \
+        const uint32_t fMxcsrOld = pVCpu->cpum.GstCtx.XState.x87.MXCSR; \
+        const uint32_t fMxcsrNew = a_pfnAImpl(fMxcsrOld & ~X86_MXCSR_XCPT_FLAGS, \
+                                              (a0), (a1), (a2)); \
+        pVCpu->cpum.GstCtx.XState.x87.MXCSR |= fMxcsrNew; \
+        if (RT_LIKELY((  ~((fMxcsrOld & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
+                       & (fMxcsrNew & X86_MXCSR_XCPT_FLAGS)) == 0)) \
+        { /* probable */ } \
+        else \
+        { \
+            if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT) \
+                return iemRaiseSimdFpException(pVCpu); \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        } \
     } while (0)
 
 /** @note Not for IOPL or IF testing. */

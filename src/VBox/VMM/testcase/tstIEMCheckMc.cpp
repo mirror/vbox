@@ -628,7 +628,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     do { (void)fMcBegin; AssertCompile(RT_IS_POWER_OF_TWO(a_cbAlign)); CHK_TYPE(RTGCPTR,  a_EffAddr); } while (0)
 #define IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT()              do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(a_u64Addr) do { (void)fMcBegin; } while (0)
-#define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() do { (void)fMcBegin; } while (0)
 
 #define CHK_VAR(a_Name)                                 do { RT_CONCAT(iVarCheck_,a_Name) = 1; } while (0)
 #define IEM_MC_LOCAL(a_Type, a_Name) (void)fMcBegin; \
@@ -1083,7 +1082,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     const int fFpuRead = 1, fFpuWrite = 1, fFpuHost = 1, fSseRead = 1, fSseWrite = 1, fSseHost = 1, fAvxRead = 1, fAvxWrite = 1, fAvxHost = 1
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()   (void)fMcBegin; const int fFpuRead = 1, fSseRead = 1
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE() (void)fMcBegin; const int fFpuRead = 1, fFpuWrite = 1, fSseRead = 1, fSseWrite = 1
-#define IEM_MC_SSE_UPDATE_MXCSR(a_fMxcsr)                                                       do { (void)fSseWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_PREPARE_SSE_USAGE()              (void)fMcBegin; const int fSseRead = 1, fSseWrite = 1, fSseHost = 1
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()   (void)fMcBegin; const int fSseRead = 1
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE() (void)fMcBegin; const int fSseRead = 1, fSseWrite = 1

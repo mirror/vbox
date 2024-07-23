@@ -182,7 +182,6 @@ FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAF3XMMIMM8
 
         IEM_MC_FETCH_XREG_PAIR_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_SSE_AIMPL_3(pfnU128, pDst, pSrc, bImmArg);
-        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), Dst);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -209,7 +208,6 @@ FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAF3XMMIMM8
 
         IEM_MC_FETCH_MEM_XMM_ALIGN_SSE_AND_XREG_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm), pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
         IEM_MC_CALL_SSE_AIMPL_3(pfnU128, pDst, pSrc, bImmArg);
-        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), Dst);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -247,7 +245,6 @@ FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullImm8_To_Full, PFNIEMAIMPLMEDIAF2U128IMM8, p
         IEM_MC_REF_XREG_XMM_CONST(puSrc,        IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_ARG_CONST(uint8_t,                   bImmArg, /*=*/ bImm,    2);
         IEM_MC_CALL_SSE_AIMPL_3(pfnU128, puDst, puSrc, bImmArg);
-        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -271,7 +268,6 @@ FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullImm8_To_Full, PFNIEMAIMPLMEDIAF2U128IMM8, p
         IEM_MC_ARG_LOCAL_REF(PX86XMMREG,            puDst,          uDst,    0);
         IEM_MC_ARG_LOCAL_REF(PCX86XMMREG,           puSrc,          uSrc,    1);
         IEM_MC_CALL_SSE_AIMPL_3(pfnU128, puDst, puSrc, bImmArg);
-        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), uDst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -389,7 +385,6 @@ FNIEMOP_DEF(iemOp_roundss_Vss_Wss_Ib)
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_FETCH_XREG_PAIR_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_roundss_u128, pDst, pSrc, bImmArg);
-        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM_U32(IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iDword*/, Dst);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -417,7 +412,6 @@ FNIEMOP_DEF(iemOp_roundss_Vss_Wss_Ib)
         IEM_MC_FETCH_MEM_XMM_U32_AND_XREG_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm),
                                               0 /*a_iDword*/, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
         IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_roundss_u128, pDst, pSrc, bImmArg);
-        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM_U32(IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iDword*/, Dst);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -449,7 +443,6 @@ FNIEMOP_DEF(iemOp_roundsd_Vsd_Wsd_Ib)
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_FETCH_XREG_PAIR_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_roundsd_u128, pDst, pSrc, bImmArg);
-        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM_U64(IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iQword*/, Dst);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -477,7 +470,6 @@ FNIEMOP_DEF(iemOp_roundsd_Vsd_Wsd_Ib)
         IEM_MC_FETCH_MEM_XMM_U64_AND_XREG_XMM(Src, IEM_GET_MODRM_REG(pVCpu, bRm),
                                               0 /*a_iQword */, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
         IEM_MC_CALL_SSE_AIMPL_3(iemAImpl_roundsd_u128, pDst, pSrc, bImmArg);
-        IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT();
         IEM_MC_STORE_XREG_XMM_U64(IEM_GET_MODRM_REG(pVCpu, bRm), 0 /*a_iQword*/, Dst);
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();

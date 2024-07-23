@@ -459,7 +459,7 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseAvxRelated,(PVMCPUCC pVCpu))
 /**
  * Used by TB code when it wants to raise an SSE/AVX floating point exception related \#UD or \#XF.
  *
- * See IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT.
+ * See IEM_MC_CALL_AVX_XXX/IEM_MC_CALL_SSE_XXX.
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseSseAvxFpRelated,(PVMCPUCC pVCpu))
 {

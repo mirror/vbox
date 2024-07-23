@@ -500,7 +500,6 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED(a_EffAddr, a_cbAlign) IEM_LIVENESS_MARK_XCPT_OR_CALL()
 #define IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT()                          IEM_LIVENESS_MARK_XCPT_OR_CALL(); IEM_LIVENESS_CR4_INPUT()
 #define IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(a_u64Addr)        IEM_LIVENESS_MARK_XCPT_OR_CALL()
-#define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT()             IEM_LIVENESS_MARK_XCPT_OR_CALL(); IEM_LIVENESS_CR4_INPUT() /** @todo revisit when implemented. */
 
 #define IEM_MC_LOCAL(a_Type, a_Name)                                NOP()
 #define IEM_MC_LOCAL_ASSIGN(a_Type, a_Name, a_Value)                NOP()
@@ -1122,8 +1121,6 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()                                                   NOP()
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE()                                                 NOP()
 
-#define IEM_MC_SSE_UPDATE_MXCSR(a_fMxcsr)                                                       IEM_LIVENESS_MXCSR_MODIFY()
-
 #define IEM_MC_PREPARE_SSE_USAGE()                                                              NOP()
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()                                                   NOP()
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE()                                                 NOP()
@@ -1134,10 +1131,10 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 
 #define IEM_MC_CALL_MMX_AIMPL_2(a_pfnAImpl, a0, a1)                                             NOP()
 #define IEM_MC_CALL_MMX_AIMPL_3(a_pfnAImpl, a0, a1, a2)                                         NOP()
-#define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1)                                             IEM_LIVENESS_MXCSR_MODIFY()
-#define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2)                                         IEM_LIVENESS_MXCSR_MODIFY()
-#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a0, a1)                                             IEM_LIVENESS_MXCSR_MODIFY()
-#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a0, a1, a2)                                         IEM_LIVENESS_MXCSR_MODIFY()
+#define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1)                                             IEM_LIVENESS_MXCSR_MODIFY(); IEM_LIVENESS_MARK_XCPT_OR_CALL(); IEM_LIVENESS_CR4_INPUT()
+#define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2)                                         IEM_LIVENESS_MXCSR_MODIFY(); IEM_LIVENESS_MARK_XCPT_OR_CALL(); IEM_LIVENESS_CR4_INPUT()
+#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a0, a1)                                             IEM_LIVENESS_MXCSR_MODIFY(); IEM_LIVENESS_MARK_XCPT_OR_CALL(); IEM_LIVENESS_CR4_INPUT()
+#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a0, a1, a2)                                         IEM_LIVENESS_MXCSR_MODIFY(); IEM_LIVENESS_MARK_XCPT_OR_CALL(); IEM_LIVENESS_CR4_INPUT()
 
 #define IEM_LIVENESS_ONE_STATUS_EFLAG_INPUT(a_fBit) \
     do { if (     (a_fBit) == X86_EFL_CF) IEM_LIVENESS_ONE_EFLAG_INPUT(fEflCf); \

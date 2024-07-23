@@ -2290,52 +2290,6 @@ iemNativeEmitMaybeRaiseAvxRelatedXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t of
 }
 
 
-#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-#define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() \
-    off = iemNativeEmitSimdMaybeRaiseSseAvxSimdFpOrUdXcpt(pReNative, off, pCallEntry->idxInstr)
-
-/** Emits code for IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT. */
-DECL_INLINE_THROW(uint32_t)
-iemNativeEmitSimdMaybeRaiseSseAvxSimdFpOrUdXcpt(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
-{
-    /*
-     * Make sure we don't have any outstanding guest register writes as we may
-     * raise an \#UD or \#XF and all guest register must be up to date in CPUMCTX.
-     */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
-
-#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
-#else
-    RT_NOREF(idxInstr);
-#endif
-
-    uint8_t const idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr,
-                                                                kIemNativeGstRegUse_ReadOnly);
-    uint8_t const idxRegTmp   = iemNativeRegAllocTmp(pReNative, &off);
-
-    /* mov tmp, varmxcsr */
-    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxRegTmp, idxRegMxCsr);
-    /* tmp &= X86_MXCSR_XCPT_MASK */
-    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_MASK);
-    /* tmp >>= X86_MXCSR_XCPT_MASK_SHIFT */
-    off = iemNativeEmitShiftGprRight(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_MASK_SHIFT);
-    /* tmp = ~tmp */
-    off = iemNativeEmitInvBitsGpr(pReNative, off, idxRegTmp, idxRegTmp, false /*f64Bit*/);
-    /* tmp &= mxcsr */
-    off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxRegTmp, idxRegMxCsr);
-    off = iemNativeEmitTestAnyBitsInGprAndTbExitIfAnySet(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_FLAGS,
-                                                         kIemNativeLabelType_RaiseSseAvxFpRelated);
-
-    /* Free but don't flush the MXCSR register. */
-    iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
-    iemNativeRegFreeTmp(pReNative, idxRegTmp);
-
-    return off;
-}
-#endif
-
-
 #define IEM_MC_RAISE_DIVIDE_ERROR() \
     off = iemNativeEmitRaiseDivideError(pReNative, off, pCallEntry->idxInstr)
 
@@ -10015,7 +9969,7 @@ iemNativeEmitSimdClearZregU256Vlmax(PIEMRECOMPILERSTATE pReNative, uint32_t off,
  * Common worker for IEM_MC_CALL_SSE_AIMPL_XXX/IEM_MC_CALL_AVX_AIMPL_XXX.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallSseAvxAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t cArgs)
+iemNativeEmitCallSseAvxAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t cArgs, uint8_t idxInstr)
 {
     /* Grab the MXCSR register, it must not be call volatile or we end up freeing it when setting up the call below. */
     uint8_t const  idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr,
@@ -10045,14 +9999,50 @@ iemNativeEmitCallSseAvxAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     off = iemNativeEmitCallImm(pReNative, off, pfnAImpl);
 
     /*
-     * The updated MXCSR is in the return register.
+     * The updated MXCSR is in the return register, update exception status flags.
+     *
+     * The return register is marked allocated as a temporary because it is required for the
+     * exception generation check below.
      */
-    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxRegMxCsr, IEMNATIVE_CALL_RET_GREG);
+    Assert(!(pReNative->Core.bmHstRegs & RT_BIT_32(IEMNATIVE_CALL_RET_GREG)));
+    uint8_t const idxRegTmp = iemNativeRegMarkAllocated(pReNative, IEMNATIVE_CALL_RET_GREG, kIemNativeWhat_Tmp);
+    off = iemNativeEmitOrGpr32ByGpr(pReNative, off, idxRegMxCsr, idxRegTmp);
 
 #ifndef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
     /* Writeback the MXCSR register value (there is no delayed writeback for such registers at the moment). */
     off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, idxRegMxCsr, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.XState.x87.MXCSR));
 #endif
+
+    /*
+     * Make sure we don't have any outstanding guest register writes as we may
+     * raise an \#UD or \#XF and all guest register must be up to date in CPUMCTX.
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    /** @todo r=aeichner ANDN from BMI1 would save us a temporary and additional instruction here but I don't
+     * want to assume the existence for this instruction at the moment. */
+    uint8_t const idxRegTmp2 = iemNativeRegAllocTmp(pReNative, &off);
+
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegTmp2, idxRegTmp);
+    /* tmp &= X86_MXCSR_XCPT_MASK */
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_MASK);
+    /* tmp >>= X86_MXCSR_XCPT_MASK_SHIFT */
+    off = iemNativeEmitShiftGprRight(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_MASK_SHIFT);
+    /* tmp = ~tmp */
+    off = iemNativeEmitInvBitsGpr(pReNative, off, idxRegTmp, idxRegTmp, false /*f64Bit*/);
+    /* tmp &= mxcsr */
+    off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxRegTmp, idxRegTmp2);
+    off = iemNativeEmitTestAnyBitsInGprAndTbExitIfAnySet(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_FLAGS,
+                                                         kIemNativeLabelType_RaiseSseAvxFpRelated);
+
+    iemNativeRegFreeTmp(pReNative, idxRegTmp2);
+    iemNativeRegFreeTmp(pReNative, idxRegTmp);
     iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
 
     return off;
@@ -10060,30 +10050,30 @@ iemNativeEmitCallSseAvxAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 
 
 #define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1) \
-    off = iemNativeEmitCallSseAImpl2(pReNative, off, (uintptr_t)(a_pfnAImpl), (a0), (a1))
+    off = iemNativeEmitCallSseAImpl2(pReNative, off, pCallEntry->idxInstr, (uintptr_t)(a_pfnAImpl), (a0), (a1))
 
 /** Emits code for IEM_MC_CALL_SSE_AIMPL_2. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallSseAImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t idxArg0, uint8_t idxArg1)
+iemNativeEmitCallSseAImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr, uintptr_t pfnAImpl, uint8_t idxArg0, uint8_t idxArg1)
 {
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_SSE_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_SSE_AIMPL_HIDDEN_ARGS);
-    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 2);
+    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 2, idxInstr);
 }
 
 
 #define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
-    off = iemNativeEmitCallSseAImpl3(pReNative, off, (uintptr_t)(a_pfnAImpl), (a0), (a1), (a2))
+    off = iemNativeEmitCallSseAImpl3(pReNative, off, pCallEntry->idxInstr, (uintptr_t)(a_pfnAImpl), (a0), (a1), (a2))
 
 /** Emits code for IEM_MC_CALL_SSE_AIMPL_3. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallSseAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl,
+iemNativeEmitCallSseAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr, uintptr_t pfnAImpl,
                            uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2)
 {
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_SSE_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_SSE_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg2, 2 + IEM_SSE_AIMPL_HIDDEN_ARGS);
-    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 3);
+    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 3, idxInstr);
 }
 
 
@@ -10092,30 +10082,30 @@ iemNativeEmitCallSseAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_
 *********************************************************************************************************************************/
 
 #define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a0, a1) \
-    off = iemNativeEmitCallAvxAImpl2(pReNative, off, (uintptr_t)(a_pfnAImpl), (a0), (a1))
+    off = iemNativeEmitCallAvxAImpl2(pReNative, off, pCallEntry->idxInstr, (uintptr_t)(a_pfnAImpl), (a0), (a1))
 
 /** Emits code for IEM_MC_CALL_AVX_AIMPL_2. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallAvxAImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t idxArg0, uint8_t idxArg1)
+iemNativeEmitCallAvxAImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr, uintptr_t pfnAImpl, uint8_t idxArg0, uint8_t idxArg1)
 {
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_AVX_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_AVX_AIMPL_HIDDEN_ARGS);
-    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 2);
+    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 2, idxInstr);
 }
 
 
 #define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
-    off = iemNativeEmitCallAvxAImpl3(pReNative, off, (uintptr_t)(a_pfnAImpl), (a0), (a1), (a2))
+    off = iemNativeEmitCallAvxAImpl3(pReNative, off, pCallEntry->idxInstr, (uintptr_t)(a_pfnAImpl), (a0), (a1), (a2))
 
 /** Emits code for IEM_MC_CALL_AVX_AIMPL_3. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallAvxAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl,
+iemNativeEmitCallAvxAImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr, uintptr_t pfnAImpl,
                            uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2)
 {
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_AVX_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_AVX_AIMPL_HIDDEN_ARGS);
     IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg2, 2 + IEM_AVX_AIMPL_HIDDEN_ARGS);
-    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 3);
+    return iemNativeEmitCallSseAvxAImplCommon(pReNative, off, pfnAImpl, 3, idxInstr);
 }
 
 
