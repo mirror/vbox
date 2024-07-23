@@ -30,6 +30,17 @@
 
 #define XMLPUBVAR XMLPUBLIC extern
 
+/* bird/VirtualBox: Visibility attributes - start  */
+/* frank: changed to "hidden" */
+#if defined(VBOX_HAVE_VISIBILITY_HIDDEN) && !defined(LIBXML_STATIC) && defined(IN_LIBXML)
+  #undef XMLPUBFUN
+  #undef XMLPUBVAR
+  #define XMLPUBFUN __attribute__((visibility("hidden")))
+  #define XMLPUBVAR __attribute__((visibility("hidden"))) extern
+#endif
+/* bird/VirtualBox: Visibility attributes - end  */
+
+
 /* Compatibility */
 #define XMLCALL
 #define XMLCDECL
@@ -40,10 +51,6 @@
 /*
  * Attributes
  */
-// VBOX. Get rid of warning C4668
-//#ifndef __GNUC__
-//#define __GNUC__ 0
-//#endif
 
 #ifndef ATTRIBUTE_UNUSED
   #if __GNUC__ * 100 + __GNUC_MINOR__ >= 207 || defined(__clang__)
@@ -130,17 +137,6 @@
   #define XML_DECLARE_GLOBAL(name, type, attrs) \
     attrs XMLPUBVAR type name;
 #endif
-
-/* bird/VirtualBox: Visibility attributes - start  */
-/* frank: changed to "hidden" */
-#if defined(VBOX_HAVE_VISIBILITY_HIDDEN) && !defined(LIBXML_STATIC) && defined(IN_LIBXML)
-  #undef XMLPUBFUN
-  #undef XMLPUBVAR
-  #define XMLPUBFUN __attribute__((visibility("hidden")))
-  #define XMLPUBVAR __attribute__((visibility("hidden"))) extern
-#endif
-/* bird/VirtualBox: Visibility attributes - end  */
-
 
 /*
  * Originally declared in xmlversion.h which is generated

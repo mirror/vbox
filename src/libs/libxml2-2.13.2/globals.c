@@ -595,9 +595,11 @@ void xmlInitGlobalsInternal(void) {
     mainthread = GetCurrentThreadId();
 #endif
 
+#ifndef VBOX
 #ifdef LIBXML_THREAD_ENABLED
     xmlMainThreadRngState[0] = xmlGlobalRandom();
     xmlMainThreadRngState[1] = xmlGlobalRandom();
+#endif
 #endif
 }
 

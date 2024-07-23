@@ -349,7 +349,7 @@ xmlIOErr(int code, const char *extra)
  *									*
  ************************************************************************/
 
-#if defined(_WIN32)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
 
 /**
  * __xmlIOWin32UTF8ToWChar:
@@ -422,7 +422,7 @@ int
 xmlCheckFilename(const char *path)
 {
 #ifdef HAVE_STAT
-#if defined(_WIN32)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
     struct _stat stat_buffer;
 #else
     struct stat stat_buffer;
@@ -434,7 +434,7 @@ xmlCheckFilename(const char *path)
 	return(0);
 
 #ifdef HAVE_STAT
-#if defined(_WIN32)
+#if (defined(_WIN32) || defined (__DJGPP__)) && !defined (__CYGWIN__) && !defined(IPRT_NO_CRT)
     {
         wchar_t *wpath;
 

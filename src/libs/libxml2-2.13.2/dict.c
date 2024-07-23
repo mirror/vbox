@@ -1017,6 +1017,7 @@ xoroshiro64ss(unsigned *s) {
 
     return(result & 0xFFFFFFFF);
 }
+#endif
 
 /*
  * xmlGlobalRandom:
@@ -1027,6 +1028,7 @@ xoroshiro64ss(unsigned *s) {
  */
 unsigned
 xmlGlobalRandom(void) {
+#ifndef VBOX
     unsigned ret;
 
     xmlMutexLock(&xmlRngMutex);
@@ -1034,8 +1036,10 @@ xmlGlobalRandom(void) {
     xmlMutexUnlock(&xmlRngMutex);
 
     return(ret);
+#else
+    return RTRandU32();
+#endif
 }
-#endif //VBOX
 
 /*
  * xmlRandom:
@@ -1047,24 +1051,10 @@ xmlGlobalRandom(void) {
 unsigned
 xmlRandom(void) {
 #ifndef VBOX
-#ifdef XML_THREAD_LOCAL
-    if (!localRngInitialized) {
-        xmlMutexLock(&xmlRngMutex);
-        localRngState[0] = xoroshiro64ss(globalRngState);
-        localRngState[1] = xoroshiro64ss(globalRngState);
-        localRngInitialized = 1;
-        xmlMutexUnlock(&xmlRngMutex);
-    }
-
-    return(xoroshiro64ss(localRngState));
+#ifdef LIBXML_THREAD_ENABLED
+    return(xoroshiro64ss(xmlGetLocalRngState()));
 #else
-    unsigned ret;
-
-    xmlMutexLock(&xmlRngMutex);
-    ret = xoroshiro64ss(globalRngState);
-    xmlMutexUnlock(&xmlRngMutex);
-
-    return(ret);
+    return(xmlGlobalRandom());
 #endif
 #else
     return RTRandU32();

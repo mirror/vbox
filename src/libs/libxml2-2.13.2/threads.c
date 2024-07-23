@@ -643,7 +643,9 @@ xmlCleanupParser(void) {
     /* These functions should never call xmlFree. */
 
     xmlCleanupDictInternal();
+#ifndef VBOX
     xmlCleanupRandom();
+#endif
     xmlCleanupGlobalsInternal();
     /*
      * Must come last. On Windows, xmlCleanupGlobalsInternal can call
