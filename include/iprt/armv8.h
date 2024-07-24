@@ -3736,6 +3736,15 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfi(uint32_t iRegResult, uint32_t iRe
 }
 
 
+/** A64: Encodes a BFC instruction (clear).
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfc(uint32_t iRegResult,
+                                               uint32_t offFirstBit, uint32_t cBitsWidth, bool f64Bit = true)
+{
+    return Armv8A64MkInstrBfi(iRegResult, ARMV8_A64_REG_XZR, offFirstBit, cBitsWidth, f64Bit);
+}
+
+
 /** A64: Encodes a BFXIL instruction (insert low).
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfxil(uint32_t iRegResult, uint32_t iRegSrc,
