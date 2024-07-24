@@ -289,7 +289,7 @@ int slirp_socket_wrap(int domain, int type, int protocol)
     uint32_t fd;
 
     s = socket(domain, type, protocol);
-    if (!s) {
+    if (s == -1) {
         errno = socket_error();
         return s;
     }
