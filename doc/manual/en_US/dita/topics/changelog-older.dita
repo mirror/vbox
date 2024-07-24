@@ -6,7 +6,7 @@
   <body>
     <p>
       To view the change log for a legacy version of VirtualBox see the
-      documentation for the relevant Oracle VM VirtualBox release.
+      documentation for the relevant <ph conkeyref="vbox-conkeyref-phrases/product-name"/> release.
     </p>
     <p>
       Change logs are also available at:

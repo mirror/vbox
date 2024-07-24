@@ -5,12 +5,12 @@
 
   <body>
     <p>
-      This section summarizes the changes between Oracle VM VirtualBox versions.
+      This section summarizes the changes between <ph conkeyref="vbox-conkeyref-phrases/product-name"/> versions.
       Note that this change log is not exhaustive and not all changes are
       listed.
     </p>
     <p>
-      Oracle VM VirtualBox version numbers consist of three numbers separated by
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> version numbers consist of three numbers separated by
       dots where the first and second number represent the major version
       and the third number the minor version. Minor version numbers of
       official releases are always even. An odd minor version number
