@@ -54,6 +54,12 @@ RT_C_DECLS_BEGIN
 /** Frequency of the virtual clock. */
 #define TMCLOCK_FREQ_VIRTUAL    UINT32_C(1000000000)
 
+/** @def TM_SECONDS_TO_AUTOMATIC_POWER_OFF
+ * Powers off the VM automatically after the defined number of seconds.
+ * This is for debugging only. */
+#if defined(DOXYGEN_RUNNING) || 0
+# define TM_SECONDS_TO_AUTOMATIC_POWER_OFF 45
+#endif
 
 /**
  * Timer type.
@@ -739,6 +745,11 @@ typedef struct TM
     STAMCOUNTER                 StatTSCUnderflow;
     STAMCOUNTER                 StatTSCSyncNotTicking;
     /** @} */
+
+#ifdef TM_SECONDS_TO_AUTOMATIC_POWER_OFF
+    /** The automatic power off timer. */
+    TMTIMERHANDLE               hAutoPowerOff;
+#endif
 } TM;
 /** Pointer to TM VM instance data. */
 typedef TM *PTM;
