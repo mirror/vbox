@@ -230,6 +230,9 @@ public:
                                          const QStringList &exceptions = QStringList(),
                                          KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
 
+    /* Returns true if @p strTypeId is supported by the host. */
+    bool isGuestOSTypeIDSupported(const QString &strTypeId) const;
+
     /** Returns whether specified @a strOSTypeId is of DOS type. */
     static bool isDOSType(const QString &strOSTypeId);
 

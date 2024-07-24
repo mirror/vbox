@@ -299,8 +299,12 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
     /* Search for a matching OS type based on the string the user typed already. */
     for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
     {
-        if (strNewName.contains(gs_OSTypePattern[i].pattern))
+        if (   strNewName.contains(gs_OSTypePattern[i].pattern)
+            && gpGlobalSession->guestOSTypeManager().isGuestOSTypeIDSupported(gs_OSTypePattern[i].pcstId))
+        {
+
             return pNameAndSystemEditor->setGuestOSTypeByTypeId(gs_OSTypePattern[i].pcstId);
+        }
     }
     return false;
 }

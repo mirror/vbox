@@ -316,6 +316,11 @@ UIGuestOSTypeManager::getTypesForSubtype(const QString &strSubtype,
     return typeInfoList;
 }
 
+bool UIGuestOSTypeManager::isGuestOSTypeIDSupported(const QString &strTypeId) const
+{
+    return m_supportedGuestOSTypeIDs.contains(strTypeId);
+}
+
 QString UIGuestOSTypeManager::getFamilyId(const QString &strTypeId) const
 {
     /* Let QVector<>::value check for the bounds. It returns a default constructed value when it is out of bounds. */
