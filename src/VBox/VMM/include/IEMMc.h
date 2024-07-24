@@ -2680,6 +2680,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_NATIVE_EMIT_0(a_fnEmitter)
 #define IEM_MC_NATIVE_EMIT_1(a_fnEmitter, a0)                             (void)(a0)
 #define IEM_MC_NATIVE_EMIT_2(a_fnEmitter, a0, a1)                         (void)(a0), (void)(a1)
+#define IEM_MC_NATIVE_EMIT_2_EX(a_fnEmitter, a0, a1)                      (void)(a0), (void)(a1)
 #define IEM_MC_NATIVE_EMIT_3(a_fnEmitter, a0, a1, a2)                     (void)(a0), (void)(a1), (void)(a2)
 #define IEM_MC_NATIVE_EMIT_4(a_fnEmitter, a0, a1, a2, a3)                 (void)(a0), (void)(a1), (void)(a2), (void)(a3)
 #define IEM_MC_NATIVE_EMIT_5(a_fnEmitter, a0, a1, a2, a3, a4)             (void)(a0), (void)(a1), (void)(a2), (void)(a3), (void)(a4)

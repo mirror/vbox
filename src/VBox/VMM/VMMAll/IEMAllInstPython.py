@@ -3243,6 +3243,7 @@ g_dMcStmtParsers = {
     'IEM_MC_NATIVE_EMIT_0':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_NATIVE_EMIT_1':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_NATIVE_EMIT_2':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
+    'IEM_MC_NATIVE_EMIT_2_EX':                                   (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_NATIVE_EMIT_3':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_NATIVE_EMIT_4':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),
     'IEM_MC_NATIVE_EMIT_5':                                      (McBlock.parseMcGeneric,           True,  True,  True,  ),

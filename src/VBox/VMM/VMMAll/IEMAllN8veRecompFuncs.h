@@ -187,6 +187,9 @@ iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILERSTATE pReNative, uint32_t of
 #define IEM_MC_NATIVE_EMIT_2(a_fnEmitter, a0, a1) \
     off = a_fnEmitter(pReNative, off, (a0), (a1))
 
+#define IEM_MC_NATIVE_EMIT_2_EX(a_fnEmitter, a0, a1) \
+    off = a_fnEmitter(pReNative, off, pCallEntry->idxInstr, (a0), (a1))
+
 #define IEM_MC_NATIVE_EMIT_3(a_fnEmitter, a0, a1, a2) \
     off = a_fnEmitter(pReNative, off, (a0), (a1), (a2))
 
@@ -3331,7 +3334,7 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
     /* Clear the appropriate IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_XXX flags
-       when a calls clobber any of the relevatn control registers. */
+       when a calls clobber any of the relevant control registers. */
 # if 1
     if (!(fGstShwFlush & (RT_BIT_64(kIemNativeGstReg_Cr0) | RT_BIT_64(kIemNativeGstReg_Cr4) | RT_BIT_64(kIemNativeGstReg_Xcr0))))
     {
