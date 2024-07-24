@@ -2572,6 +2572,282 @@ IEMNATIVE_NATIVE_EMIT_PMOV_S_Z_U128(pmovsxbw, false, kArmv8InstrShiftSz_U8,  0x2
 IEMNATIVE_NATIVE_EMIT_PMOV_S_Z_U128(pmovsxwd, false, kArmv8InstrShiftSz_U16, 0x23);
 IEMNATIVE_NATIVE_EMIT_PMOV_S_Z_U128(pmovsxdq, false, kArmv8InstrShiftSz_U32, 0x25);
 
+
+/**
+ * Updates the MXCSR exception flags, raising any unmasked exceptions.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitMxcsrUpdate(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t const idxInstr, uint8_t const idxSimdGstRegDst, uint8_t const idxSimdRegRes)
+{
+    uint8_t const idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr, kIemNativeGstRegUse_ForUpdate);
+    uint8_t const idxRegMxCsrXcptFlags = iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off);
+
+#ifdef RT_ARCH_AMD64
+    PIEMNATIVEINSTR pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+
+    /* stmxcsr */
+    if (IEMNATIVE_REG_FIXED_PVMCPU >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xae;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, 3, IEMNATIVE_REG_FIXED_PVMCPU & 7);
+    pbCodeBuf[off++] = RT_BYTE1(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+    pbCodeBuf[off++] = RT_BYTE2(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+    pbCodeBuf[off++] = RT_BYTE3(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+    pbCodeBuf[off++] = RT_BYTE4(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+
+    /* Load MXCSR, mask everything except status flags and or into guest MXCSR. */
+    off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxRegTmp, RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+
+    /* Store the flags in the MXCSR xcpt flags register. */
+    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxRegMxCsrXcptFlags, idxRegTmp);
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegMxCsrXcptFlags, X86_MXCSR_XCPT_FLAGS);
+
+    /* Clear the status flags in the temporary copy and write it back to MXCSR. */
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp, ~X86_MXCSR_XCPT_FLAGS);
+    off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, idxRegTmp, RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+
+    pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+
+    /* ldmxcsr */
+    if (IEMNATIVE_REG_FIXED_PVMCPU >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xae;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, 2, IEMNATIVE_REG_FIXED_PVMCPU & 7);
+    pbCodeBuf[off++] = RT_BYTE1(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+    pbCodeBuf[off++] = RT_BYTE2(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+    pbCodeBuf[off++] = RT_BYTE3(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+    pbCodeBuf[off++] = RT_BYTE4(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+
+#elif defined(RT_ARCH_ARM64)
+    PIEMNATIVEINSTR pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    pu32CodeBuf[off++] = Armv8A64MkInstrMrs(idxRegMxCsrXcptFlags, ARMV8_AARCH64_SYSREG_FPSR);
+    pu32CodeBuf[off++] = Armv8A64MkInstrMsr(ARMV8_A64_REG_XZR, ARMV8_AARCH64_SYSREG_FPSR);      /* Clear FPSR for next instruction. */
+    pu32CodeBuf[off++] = Armv8A64MkInstrUxtb(idxRegMxCsrXcptFlags, idxRegMxCsrXcptFlags);       /* Ensure there are only the exception flags set (clears QC, and any possible NZCV flags). */
+
+    /*
+     * The exception flags layout differs between MXCSR and FPSR of course:
+     *
+     * Bit  FPSR        MXCSR
+     *  0   IOC  ------> IE
+     *
+     *  1   DZC  ----    DE <-+
+     *               \        |
+     *  2   OFC  ---  -> ZE   |
+     *              \         |
+     *  3   UFC  --  --> OE   |
+     *             \          |
+     *  4   IXC  -  ---> UE   |
+     *            \           |
+     *  5          ----> PE   |
+     *  6                     |
+     *  7   IDC --------------+
+     */
+    pu32CodeBuf[off++] = Armv8A64MkInstrLsrImm(idxRegTmp, idxRegMxCsrXcptFlags, 1);    /* Shift the block of flags starting at DZC to the least significant bits. */
+    pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxRegMxCsrXcptFlags, idxRegTmp, 2, 4);    /* Insert DZC, OFC, UFC and IXC into the MXCSR positions. */
+    pu32CodeBuf[off++] = Armv8A64MkInstrLsrImm(idxRegTmp, idxRegMxCsrXcptFlags, 6);    /* Shift IDC (now at 6) into the LSB. */
+    pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxRegMxCsrXcptFlags, idxRegTmp, 1, 1);    /* Insert IDC into the MXCSR positions. */
+#else
+# error "Port me"
+#endif
+
+    /*
+     * If PE is set together with OE/UE and neither are masked
+     * PE needs to be cleared, because on real hardware
+     * an exception is generated with only OE/UE being set,
+     * but because we mask all exceptions PE will get set as well.
+     */
+    /** @todo On ARM we can combine the load+and into one and instruction. */
+    /** @todo r=aeichner Can this be done more optimal? */
+    uint8_t const idxRegTmp2 = iemNativeRegAllocTmp(pReNative, &off);
+    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxRegTmp, idxRegMxCsrXcptFlags);
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp, X86_MXCSR_OE | X86_MXCSR_UE);
+    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxRegTmp2, idxRegMxCsr);
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxRegTmp2, X86_MXCSR_OM | X86_MXCSR_UM);
+    off = iemNativeEmitShiftGprRight(pReNative, off, idxRegTmp2, X86_MXCSR_XCPT_MASK_SHIFT);
+    off = iemNativeEmitInvBitsGpr(pReNative, off, idxRegTmp2, idxRegTmp2, false /*f64Bit*/);
+    off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxRegTmp2, idxRegTmp);
+    off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, idxRegTmp2, X86_MXCSR_OE | X86_MXCSR_UE);
+
+    uint32_t offFixup = off;
+    off = iemNativeEmitJzToFixed(pReNative, off, off);
+    off = iemNativeEmitBitClearInGpr32(pReNative, off, idxRegMxCsrXcptFlags, X86_MXCSR_PE_BIT);
+    iemNativeFixupFixedJump(pReNative, offFixup, off);
+    iemNativeRegFreeTmp(pReNative, idxRegTmp2);
+
+
+    /* Set the MXCSR flags now. */
+    off = iemNativeEmitOrGpr32ByGpr(pReNative, off, idxRegMxCsr, idxRegMxCsrXcptFlags);
+
+    /*
+     * Make sure we don't have any outstanding guest register writes as we may
+     * raise an \#UD or \#XF and all guest register must be up to date in CPUMCTX.
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    /* Check whether an exception is pending and only update the guest SIMD register if it isn't. */
+    /* mov tmp, varmxcsr */
+    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxRegTmp, idxRegMxCsr);
+    /* tmp >>= X86_MXCSR_XCPT_MASK_SHIFT */
+    off = iemNativeEmitShiftGprRight(pReNative, off, idxRegTmp, X86_MXCSR_XCPT_MASK_SHIFT);
+    /* tmp = ~tmp */
+    off = iemNativeEmitInvBitsGpr(pReNative, off, idxRegTmp, idxRegTmp, false /*f64Bit*/);
+    /* tmp &= mxcsr */
+    off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxRegMxCsrXcptFlags, idxRegTmp);
+    off = iemNativeEmitTestAnyBitsInGprAndTbExitIfAnySet(pReNative, off, idxRegMxCsrXcptFlags, X86_MXCSR_XCPT_FLAGS,
+                                                         kIemNativeLabelType_RaiseSseAvxFpRelated);
+
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ForFullWrite);
+
+    /* Move result to guest SIMD register (at this point there is no exception being raised). */
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, idxSimdRegDst, idxSimdRegRes);
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
+    iemNativeRegFreeTmp(pReNative, idxRegTmp);
+    iemNativeRegFreeTmp(pReNative, idxRegMxCsrXcptFlags);
+    iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
+    return off;
+}
+
+
+/**
+ * Common emitter for packed floating point instructions with 3 operands - register, register variant.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitSimdFp3OpCommon_rr_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t const idxInstr,
+                                                                 uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc,
+#ifdef RT_ARCH_AMD64
+                                                                 uint8_t const bPrefixX86, uint8_t const bOpcX86
+#elif defined(RT_ARCH_ARM64)
+                                                                 ARMV8INSTRVECFPOP const enmFpOp, ARMV8INSTRVECFPSZ const enmFpSz
+#endif
+                                                                 )
+{
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst),
+                                                                         kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc),
+                                                                         kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, IEMNATIVE_SIMD_REG_FIXED_TMP0, idxSimdRegDst);
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+    if (bPrefixX86 != 0)
+        pCodeBuf[off++] = bPrefixX86;
+    if (IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8 || idxSimdRegSrc >= 8)
+        pCodeBuf[off++] =   (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0)
+                          | (IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8 ? X86_OP_REX_R : 0);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = bOpcX86;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7, idxSimdRegSrc & 7);
+#elif defined(RT_ARCH_ARM64)
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pCodeBuf[off++] = Armv8A64MkVecInstrFp3Op(enmFpOp, enmFpSz, IEMNATIVE_SIMD_REG_FIXED_TMP0, idxSimdRegDst, idxSimdRegSrc);
+#else
+# error "Port me"
+#endif
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return iemNativeEmitMxcsrUpdate(pReNative, off, idxInstr, idxSimdGstRegDst, IEMNATIVE_SIMD_REG_FIXED_TMP0);
+}
+
+
+/**
+ * Common emitter for packed floating point instructions with 3 operands - register, local variable variant.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitSimdFp3OpCommon_rv_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t const idxInstr,
+                                                                 uint8_t const idxSimdGstRegDst, uint8_t const idxVarSrc,
+#ifdef RT_ARCH_AMD64
+                                                                 uint8_t const bPrefixX86, uint8_t const bOpcX86
+#elif defined(RT_ARCH_ARM64)
+                                                                 ARMV8INSTRVECFPOP const enmFpOp, ARMV8INSTRVECFPSZ const enmFpSz
+#endif
+                                                                 )
+{
+    uint8_t const idxSimdRegDst = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegDst),
+                                                                         kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxSimdRegSrc = iemNativeVarSimdRegisterAcquire(pReNative, idxVarSrc, &off, true /*fInitialized*/);
+
+#ifdef RT_ARCH_AMD64
+    off = iemNativeEmitSimdLoadVecRegFromVecRegU128(pReNative, off, IEMNATIVE_SIMD_REG_FIXED_TMP0, idxSimdRegDst);
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+    if (bPrefixX86 != 0)
+        pCodeBuf[off++] = bPrefixX86;
+    if (IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8 || idxSimdRegSrc >= 8)
+        pCodeBuf[off++] =   (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0)
+                          | (IEMNATIVE_SIMD_REG_FIXED_TMP0 >= 8 ? X86_OP_REX_R : 0);
+    pCodeBuf[off++] = 0x0f;
+    pCodeBuf[off++] = bOpcX86;
+    pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, IEMNATIVE_SIMD_REG_FIXED_TMP0 & 7, idxSimdRegSrc & 7);
+#elif defined(RT_ARCH_ARM64)
+    PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pCodeBuf[off++] = Armv8A64MkVecInstrFp3Op(enmFpOp, enmFpSz, IEMNATIVE_SIMD_REG_FIXED_TMP0, idxSimdRegDst, idxSimdRegSrc);
+#else
+# error "Port me"
+#endif
+    iemNativeVarRegisterRelease(pReNative, idxVarSrc);
+    iemNativeSimdRegFreeTmp(pReNative, idxSimdRegDst);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return iemNativeEmitMxcsrUpdate(pReNative, off, idxInstr, idxSimdGstRegDst, IEMNATIVE_SIMD_REG_FIXED_TMP0);
+}
+
+
+/**
+ * Common emitter for packed floating point instructions with 3 operands.
+ */
+#ifdef RT_ARCH_AMD64
+# define IEMNATIVE_NATIVE_EMIT_FP_3OP_U128(a_Instr, a_enmArmOp, a_ArmElemSz, a_bPrefixX86, a_bOpcX86) \
+    DECL_FORCE_INLINE_THROW(uint32_t) \
+    RT_CONCAT3(iemNativeEmit_,a_Instr,_rr_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t const idxInstr, \
+                                                uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc) \
+    { \
+        return iemNativeEmitSimdFp3OpCommon_rr_u128(pReNative, off, idxInstr, idxSimdGstRegDst, idxSimdGstRegSrc, \
+                                                    a_bPrefixX86, a_bOpcX86); \
+    } \
+    DECL_FORCE_INLINE_THROW(uint32_t) \
+    RT_CONCAT3(iemNativeEmit_,a_Instr,_rv_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t const idxInstr, \
+                                                uint8_t const idxSimdGstRegDst, uint8_t const idxVarSrc) \
+    { \
+        return iemNativeEmitSimdFp3OpCommon_rv_u128(pReNative, off, idxInstr, idxSimdGstRegDst, idxVarSrc, \
+                                                    a_bPrefixX86, a_bOpcX86); \
+    } \
+    typedef int ignore_semicolon
+#elif defined(RT_ARCH_ARM64)
+# define IEMNATIVE_NATIVE_EMIT_FP_3OP_U128(a_Instr, a_enmArmOp, a_ArmElemSz, a_bPrefixX86, a_bOpcX86) \
+    DECL_FORCE_INLINE_THROW(uint32_t) \
+    RT_CONCAT3(iemNativeEmit_,a_Instr,_rr_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t const idxInstr, \
+                                                uint8_t const idxSimdGstRegDst, uint8_t const idxSimdGstRegSrc) \
+    { \
+        return iemNativeEmitSimdFp3OpCommon_rr_u128(pReNative, off, idxInstr, idxSimdGstRegDst, idxSimdGstRegSrc, \
+                                                    a_enmArmOp, a_ArmElemSz); \
+    } \
+    DECL_FORCE_INLINE_THROW(uint32_t) \
+    RT_CONCAT3(iemNativeEmit_,a_Instr,_rv_u128)(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t const idxInstr, \
+                                                uint8_t const idxSimdGstRegDst, uint8_t const idxVarSrc) \
+    { \
+        return iemNativeEmitSimdFp3OpCommon_rv_u128(pReNative, off, idxInstr, idxSimdGstRegDst, idxVarSrc, \
+                                                    a_enmArmOp, a_ArmElemSz); \
+    } \
+    typedef int ignore_semicolon
+#else
+# error "Port me"
+#endif
+
+
+IEMNATIVE_NATIVE_EMIT_FP_3OP_U128(mulps, kArmv8VecInstrFpOp_Mul, kArmv8VecInstrFpSz_4x_Single, 0, 0x59);
+IEMNATIVE_NATIVE_EMIT_FP_3OP_U128(addps, kArmv8VecInstrFpOp_Add, kArmv8VecInstrFpSz_4x_Single, 0, 0x58);
+IEMNATIVE_NATIVE_EMIT_FP_3OP_U128(addpd, kArmv8VecInstrFpOp_Add, kArmv8VecInstrFpSz_2x_Double, X86_OP_PRF_SIZE_OP, 0x58);
+IEMNATIVE_NATIVE_EMIT_FP_3OP_U128(subps, kArmv8VecInstrFpOp_Sub, kArmv8VecInstrFpSz_4x_Single, 0, 0x5c);
+
 #endif /* IEMNATIVE_WITH_SIMD_REG_ALLOCATOR */
 
 #endif /* !VMM_INCLUDED_SRC_VMMAll_target_x86_IEMAllN8veEmit_x86_h */

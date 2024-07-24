@@ -751,6 +751,66 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU128
 
 
 /**
+ * A body preprocessor variant of iemOpCommonSseFp_FullFull_To_Full in order
+ * to support native emitters for certain instructions.
+ */
+#define SSE_FP_BODY_FullFull_To_Full(a_Ins, a_pImplExpr, a_fRegNativeArchs, a_fMemNativeArchs) \
+        PFNIEMAIMPLFPSSEF2U128 const pfnU128 = (a_pImplExpr); \
+        uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
+        if (IEM_IS_MODRM_REG_MODE(bRm)) \
+        { \
+            /* \
+             * XMM, XMM. \
+             */ \
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse); \
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT(); \
+            IEM_MC_PREPARE_SSE_USAGE(); \
+            IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
+                IEM_MC_NATIVE_EMIT_2_EX(RT_CONCAT3(iemNativeEmit_,a_Ins,_rr_u128), IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm)); \
+            } IEM_MC_NATIVE_ELSE() { \
+                IEM_MC_LOCAL(X86XMMREG,             SseRes); \
+                IEM_MC_ARG_LOCAL_REF(PX86XMMREG,    pSseRes,        SseRes,     0); \
+                IEM_MC_ARG(PCX86XMMREG,             pSrc1,                      1); \
+                IEM_MC_REF_XREG_XMM_CONST(pSrc1, IEM_GET_MODRM_REG(pVCpu, bRm)); \
+                IEM_MC_ARG(PCX86XMMREG,             pSrc2,                      2); \
+                IEM_MC_REF_XREG_XMM_CONST(pSrc2, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+                IEM_MC_CALL_SSE_AIMPL_3(pfnU128, pSseRes, pSrc1, pSrc2); \
+                IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), SseRes); \
+            } IEM_MC_NATIVE_ENDIF(); \
+            IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+            IEM_MC_END(); \
+        } \
+        else \
+        { \
+            /* \
+             * XMM, [mem128]. \
+             */ \
+            IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0); \
+            IEM_MC_LOCAL(X86XMMREG,                 uSrc2); \
+            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc); \
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse); \
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT(); \
+            IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
+            IEM_MC_PREPARE_SSE_USAGE(); \
+            IEM_MC_NATIVE_IF(a_fRegNativeArchs) { \
+                IEM_MC_NATIVE_EMIT_2_EX(RT_CONCAT3(iemNativeEmit_,a_Ins,_rv_u128), IEM_GET_MODRM_REG(pVCpu, bRm), uSrc2); \
+            } IEM_MC_NATIVE_ELSE() { \
+                IEM_MC_LOCAL(X86XMMREG,             SseRes); \
+                IEM_MC_ARG_LOCAL_REF(PX86XMMREG,    pSseRes,        SseRes,     0); \
+                IEM_MC_ARG(PCX86XMMREG,             pSrc1,                      1); \
+                IEM_MC_ARG_LOCAL_REF(PCX86XMMREG,   pSrc2, uSrc2,               2); \
+                IEM_MC_REF_XREG_XMM_CONST(pSrc1, IEM_GET_MODRM_REG(pVCpu, bRm)); \
+                IEM_MC_CALL_SSE_AIMPL_3(pfnU128, pSseRes, pSrc1, pSrc2); \
+                IEM_MC_STORE_XREG_XMM(IEM_GET_MODRM_REG(pVCpu, bRm), SseRes); \
+            } IEM_MC_NATIVE_ENDIF(); \
+            IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+            IEM_MC_END(); \
+        } void(0)
+
+
+/**
  * Common worker for SSE instructions on the forms:
  *      pxxs       xmm1, xmm2/mem32
  *
@@ -5371,7 +5431,7 @@ FNIEMOP_DEF(iemOp_xorpd_Vpd_Wpd)
 FNIEMOP_DEF(iemOp_addps_Vps_Wps)
 {
     IEMOP_MNEMONIC2(RM, ADDPS, addps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullFull_To_Full, iemAImpl_addps_u128);
+    SSE_FP_BODY_FullFull_To_Full(addps, iemAImpl_addps_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -5379,7 +5439,7 @@ FNIEMOP_DEF(iemOp_addps_Vps_Wps)
 FNIEMOP_DEF(iemOp_addpd_Vpd_Wpd)
 {
     IEMOP_MNEMONIC2(RM, ADDPD, addpd, Vpd, Wpd, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSse2Fp_FullFull_To_Full, iemAImpl_addpd_u128);
+    SSE_FP_BODY_FullFull_To_Full(addpd, iemAImpl_addpd_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -5403,7 +5463,7 @@ FNIEMOP_DEF(iemOp_addsd_Vsd_Wsd)
 FNIEMOP_DEF(iemOp_mulps_Vps_Wps)
 {
     IEMOP_MNEMONIC2(RM, MULPS, mulps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullFull_To_Full, iemAImpl_mulps_u128);
+    SSE_FP_BODY_FullFull_To_Full(mulps, iemAImpl_mulps_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 
@@ -5542,7 +5602,7 @@ FNIEMOP_DEF(iemOp_cvttps2dq_Vdq_Wps)
 FNIEMOP_DEF(iemOp_subps_Vps_Wps)
 {
     IEMOP_MNEMONIC2(RM, SUBPS, subps, Vps, Wps, DISOPTYPE_HARMLESS, 0);
-    return FNIEMOP_CALL_1(iemOpCommonSseFp_FullFull_To_Full, iemAImpl_subps_u128);
+    SSE_FP_BODY_FullFull_To_Full(subps, iemAImpl_subps_u128, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64, RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64);
 }
 
 

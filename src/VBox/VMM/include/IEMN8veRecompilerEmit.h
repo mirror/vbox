@@ -5983,6 +5983,41 @@ iemNativeEmitBswapGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr)
 
 
 /*********************************************************************************************************************************
+*   Bitfield manipulation                                                                                                        *
+*********************************************************************************************************************************/
+
+/**
+ * Emits code for clearing.
+ */
+DECL_FORCE_INLINE(uint32_t)
+iemNativeEmitBitClearInGpr32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t const iGpr, uint8_t iBit)
+{
+    Assert(iBit < 32);
+
+#if defined(RT_ARCH_AMD64)
+    /* btr r32, imm8 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+
+    if (iGpr >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xba;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 6, iGpr & 7);
+    pbCodeBuf[off++] = iBit;
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+
+    pu32CodeBuf[off++] = Armv8A64MkInstrBfc(iGpr, iBit /*offFirstBit*/, 1 /*cBits*/, true /*f64Bit*/);
+#else
+# error "Port me"
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/*********************************************************************************************************************************
 *   Compare and Testing                                                                                                          *
 *********************************************************************************************************************************/
 
