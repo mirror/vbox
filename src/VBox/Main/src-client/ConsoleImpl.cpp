@@ -574,7 +574,10 @@ HRESULT Console::initWithMachine(IMachine *aMachine, IInternalMachineControl *aC
                         hrc = pVirtualBox->GetExtraData(Bstr("VBoxInternal2/EnableX86OnArm").raw(), bstrEnableX86OnArm.asOutParam());
                         if (FAILED(hrc) || !bstrEnableX86OnArm.equals("1"))
                         {
-                            hrc = VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED;
+                            hrc = setError(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED,
+                                           tr("Cannot run the machine because its platform architecture %s is not supported on %s"),
+                                           Global::stringifyPlatformArchitecture(platformArch),
+                                           Global::stringifyPlatformArchitecture(PlatformArchitecture_ARM));
                             break;
                         }
                     }
