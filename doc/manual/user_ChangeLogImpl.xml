@@ -84,6 +84,11 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>GUI: Modernized look and feel, offering a selection between Basic and Experienced
+        user level with reduced or full UI functionality</para>
+      </listitem>
+
+      <listitem>
         <para>OCI: Performance dashboard shows resource usage like for local VMs</para>
       </listitem>
 
@@ -96,14 +101,14 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>GUI: Modernized look and feel, offering a selection between Basic and Experienced
-        user level with reduced or full UI functionality</para>
-      </listitem>
-
-      <listitem>
         <para>Oracle VirtualBox Extension Pack: Ajustment to the PUEL license, removing the
         duplicated evaluation option, for limited time evaluation use please download it
         from the Oracle Software Delivery Cloud</para>
+      </listitem>
+
+      <listitem>
+        <para>VRDE: If user does not set up TLS with custom certificates, enable it with
+        self-signed certificate, including issuing a new one before the old one expires</para>
       </listitem>
 
       <listitem>
@@ -125,7 +130,7 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>EFI: Added support for Secure Boot</para>
+        <para>EFI: Add new Microsoft DB/KEX certificates to newly created VMs</para>
       </listitem>
 
       <listitem>
