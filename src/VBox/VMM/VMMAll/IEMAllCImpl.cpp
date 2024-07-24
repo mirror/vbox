@@ -2911,6 +2911,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     /*
      * Commit the operation.
      */
+    IEMTLBTRACE_IRET(pVCpu, uNewCs, uNewEip, uNewFlags);
 #ifdef DBGFTRACE_ENABLED
     RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "iret/rm %04x:%04x -> %04x:%04x %x %04llx",
                       pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, uNewCs, uNewEip, uNewFlags, uNewRsp);
@@ -3328,6 +3329,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         uint32_t fEFlagsNew = IEMMISC_GET_EFL(pVCpu);
         fEFlagsNew         &= ~fEFlagsMask;
         fEFlagsNew         |= uNewFlags & fEFlagsMask;
+        IEMTLBTRACE_IRET(pVCpu, uNewCs, uNewEip, fEFlagsNew);
 #ifdef DBGFTRACE_ENABLED
         RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "iret/%up%u %04x:%08x -> %04x:%04x %x %04x:%04x",
                           IEM_GET_CPL(pVCpu), uNewCs & X86_SEL_RPL, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip,
@@ -3402,6 +3404,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
             fEFlagsMask &= ~(X86_EFL_AC | X86_EFL_ID | X86_EFL_VIF | X86_EFL_VIP);
         NewEfl.u           &= ~fEFlagsMask;
         NewEfl.u           |= fEFlagsMask & uNewFlags;
+        IEMTLBTRACE_IRET(pVCpu, uNewCs, uNewEip, NewEfl.u);
 #ifdef DBGFTRACE_ENABLED
         RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "iret/%up %04x:%08x -> %04x:%04x %x %04x:%04llx",
                           IEM_GET_CPL(pVCpu), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip,
@@ -3691,6 +3694,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     uint32_t fEFlagsNew = IEMMISC_GET_EFL(pVCpu);
     fEFlagsNew         &= ~fEFlagsMask;
     fEFlagsNew         |= uNewFlags & fEFlagsMask;
+    IEMTLBTRACE_IRET(pVCpu, uNewCs, uNewRip, fEFlagsNew);
 #ifdef DBGFTRACE_ENABLED
     RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "iret/64/%ul%u %08llx -> %04x:%04llx %llx %04x:%04llx",
                       IEM_GET_CPL(pVCpu), uNewCpl, pVCpu->cpum.GstCtx.rip, uNewCs, uNewRip, uNewFlags, uNewSs, uNewRsp);

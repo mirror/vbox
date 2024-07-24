@@ -188,7 +188,8 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                           cbInitialExec, cbInitialExec, cbMaxExec);
 
     /** @cfgm{/IEM/NativeRecompileAtUsedCount, uint32_t, 16}
-     * The translation block use count value to do native recompilation at. */
+     * The translation block use count value to do native recompilation at.
+     * Set to zero to disable native recompilation. */
     uint32_t uTbNativeRecompileAtUsedCount = 16;
     rc = CFGMR3QueryU32Def(pIem, "NativeRecompileAtUsedCount", &uTbNativeRecompileAtUsedCount, 16);
     AssertLogRelRCReturn(rc, rc);
@@ -1454,6 +1455,7 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
         { "--last",                     'l', RTGETOPT_REQ_UINT32  },
         { "--limit",                    'l', RTGETOPT_REQ_UINT32  },
         { "--stop-at-global-flush",     'g', RTGETOPT_REQ_NOTHING },
+        { "--resolve-rip",              'r', RTGETOPT_REQ_NOTHING },
     };
 
     RTGETOPTSTATE State;
@@ -1462,6 +1464,7 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
 
     uint32_t        cLimit             = UINT32_MAX;
     bool            fStopAtGlobalFlush = false;
+    bool            fResolveRip        = false;
     PVMCPU const    pVCpuCall          = VMMGetCpu(pVM);
     PVMCPU          pVCpu              = pVCpuCall;
     if (!pVCpu)
@@ -1487,18 +1490,31 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
                 fStopAtGlobalFlush = true;
                 break;
 
+            case 'r':
+                fResolveRip = true;
+                break;
+
             case 'h':
                 pHlp->pfnPrintf(pHlp,
-                                "Usage: info tlbtrace [options]\n"
+                                "Usage: info tlbtrace [options] [n]\n"
                                 "\n"
                                 "Options:\n"
                                 "  -c<n>, --cpu=<n>, --vcpu=<n>\n"
                                 "    Selects the CPU which TLB trace we're looking at. Default: Caller / 0\n"
-                                "  -l<n>, --last=<n>\n"
+                                "  [n], -l<n>, --last=<n>\n"
                                 "    Limit display to the last N entries. Default: all\n"
-                                "  -g,--stop-at-global-flush\n"
+                                "  -g, --stop-at-global-flush\n"
                                 "    Stop after the first global flush entry.\n"
+                                "  -r, --resolve-rip\n"
+                                "    Resolve symbols for the flattened RIP addresses.\n"
                                 );
+                return;
+
+            case VINF_GETOPT_NOT_OPTION:
+                rc = RTStrToUInt32Full(ValueUnion.psz, 0, &cLimit);
+                if (RT_SUCCESS(rc))
+                    break;
+                pHlp->pfnPrintf(pHlp, "error: failed to convert '%s' to a number: %Rrc\n", ValueUnion.psz, rc);
                 return;
 
             default:
@@ -1525,48 +1541,101 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
         pHlp->pfnPrintf(pHlp, "TLB Trace for CPU %u:\n", pVCpu->idCpu);
         while (cLeft-- > 0)
         {
-            PCIEMTLBTRACEENTRY const pCur = &paEntries[--idx & fMask];
+            PCIEMTLBTRACEENTRY const pCur      = &paEntries[--idx & fMask];
+            const char              *pszSymbol = "";
+            union
+            {
+                RTDBGSYMBOL Symbol;
+                char        ach[sizeof(RTDBGSYMBOL) + 32];
+            } uBuf;
+            if (fResolveRip)
+            {
+                RTGCINTPTR  offDisp = 0;
+                DBGFADDRESS Addr;
+                rc = DBGFR3AsSymbolByAddr(pVM->pUVM, DBGF_AS_GLOBAL, DBGFR3AddrFromFlat(pVM->pUVM, &Addr, pCur->rip),
+                                            RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL
+                                          | RTDBGSYMADDR_FLAGS_SKIP_ABS
+                                          | RTDBGSYMADDR_FLAGS_SKIP_ABS_IN_DEFERRED,
+                                          &offDisp, &uBuf.Symbol, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    if (offDisp)
+                    {
+                        size_t const cchName    = strlen(uBuf.Symbol.szName);
+                        char * const pszEndName = &uBuf.Symbol.szName[cchName];
+                        size_t const cbLeft     = sizeof(uBuf) - sizeof(uBuf.Symbol) + sizeof(uBuf.Symbol.szName) - cchName;
+                        if (offDisp > 0)
+                            RTStrPrintf(pszEndName, cbLeft, "+%#1RGv", offDisp);
+                        else
+                            RTStrPrintf(pszEndName, cbLeft, "-%#1RGv", -offDisp);
+                        char *pszName = uBuf.Symbol.szName;
+                        *--pszName = ' ';   /* padding */
+                        pszSymbol = pszName;
+                    }
+                }
+            }
             switch (pCur->enmType)
             {
                 case kIemTlbTraceType_InvlPg:
-                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 invlpg %RGv slot=" IEMTLB_SLOT_FMT "\n",
-                                    idx, pCur->rip, pCur->u64Param, (uint32_t)IEMTLB_ADDR_TO_EVEN_INDEX(pCur->u64Param));
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 invlpg %RGv slot=" IEMTLB_SLOT_FMT "%s\n", idx, pCur->rip,
+                                    pCur->u64Param, (uint32_t)IEMTLB_ADDR_TO_EVEN_INDEX(pCur->u64Param), pszSymbol);
                     break;
                 case kIemTlbTraceType_Flush:
-                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 flush %s rev=%#RX64\n", idx, pCur->rip,
-                                    pCur->bParam ? "data" : "code", pCur->u64Param);
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 flush %s rev=%#RX64%s\n", idx, pCur->rip,
+                                    pCur->bParam ? "data" : "code", pCur->u64Param, pszSymbol);
                     break;
                 case kIemTlbTraceType_FlushGlobal:
-                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 flush %s rev=%#RX64 grev=%#RX64\n", idx, pCur->rip,
-                                    pCur->bParam ? "data" : "code", pCur->u64Param, pCur->u64Param2);
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 flush %s rev=%#RX64 grev=%#RX64%s\n", idx, pCur->rip,
+                                    pCur->bParam ? "data" : "code", pCur->u64Param, pCur->u64Param2, pszSymbol);
                     if (fStopAtGlobalFlush)
                         return;
                     break;
                 case kIemTlbTraceType_Load:
-                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load %s %RGv slot=" IEMTLB_SLOT_FMT "\n",
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load %s %RGv slot=" IEMTLB_SLOT_FMT "%s\n",
                                     idx, pCur->rip, pCur->bParam ? "data" : "code",
-                                    pCur->u64Param, (uint32_t)IEMTLB_ADDR_TO_EVEN_INDEX(pCur->u64Param));
+                                    pCur->u64Param, (uint32_t)IEMTLB_ADDR_TO_EVEN_INDEX(pCur->u64Param), pszSymbol);
                     break;
                 case kIemTlbTraceType_LoadGlobal:
-                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load %s %RGv slot=" IEMTLB_SLOT_FMT " (global)\n",
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load %s %RGv slot=" IEMTLB_SLOT_FMT " (global)%s\n",
                                     idx, pCur->rip, pCur->bParam ? "data" : "code",
-                                    pCur->u64Param, (uint32_t)IEMTLB_ADDR_TO_EVEN_INDEX(pCur->u64Param));
+                                    pCur->u64Param, (uint32_t)IEMTLB_ADDR_TO_EVEN_INDEX(pCur->u64Param), pszSymbol);
                     break;
                 case kIemTlbTraceType_Load_Cr0:
-                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load cr0 %08RX64 (was %08RX64)\n",
-                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2);
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load cr0 %08RX64 (was %08RX64)%s\n",
+                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2, pszSymbol);
                     break;
                 case kIemTlbTraceType_Load_Cr3:
-                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load cr3 %016RX64 (was %016RX64)\n",
-                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2);
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load cr3 %016RX64 (was %016RX64)%s\n",
+                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2, pszSymbol);
                     break;
                 case kIemTlbTraceType_Load_Cr4:
-                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load cr4 %08RX64 (was %08RX64)\n",
-                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2);
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load cr4 %08RX64 (was %08RX64)%s\n",
+                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2, pszSymbol);
                     break;
                 case kIemTlbTraceType_Load_Efer:
-                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load efer %016RX64 (was %016RX64)\n",
-                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2);
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 load efer %016RX64 (was %016RX64)%s\n",
+                                    idx, pCur->rip, pCur->u64Param, pCur->u64Param2, pszSymbol);
+                    break;
+                case kIemTlbTraceType_Irq:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 irq %#04x flags=%#x eflboth=%#RX64%s\n",
+                                    idx, pCur->rip, pCur->bParam, pCur->u32Param,
+                                    pCur->u64Param & ((RT_BIT_64(CPUMX86EFLAGS_HW_BITS) - 1) | CPUMX86EFLAGS_INT_MASK_64),
+                                    pszSymbol);
+                    break;
+                case kIemTlbTraceType_Xcpt:
+                    if (pCur->u32Param & IEM_XCPT_FLAGS_CR2)
+                        pHlp->pfnPrintf(pHlp, "%u: %016RX64 xcpt %#04x flags=%#x errcd=%#x cr2=%RX64%s\n",
+                                        idx, pCur->rip, pCur->bParam, pCur->u32Param, pCur->u64Param, pCur->u64Param2, pszSymbol);
+                    else if (pCur->u32Param & IEM_XCPT_FLAGS_ERR)
+                        pHlp->pfnPrintf(pHlp, "%u: %016RX64 xcpt %#04x flags=%#x errcd=%#x%s\n",
+                                        idx, pCur->rip, pCur->bParam, pCur->u32Param, pCur->u64Param, pszSymbol);
+                    else
+                        pHlp->pfnPrintf(pHlp, "%u: %016RX64 xcpt %#04x flags=%#x%s\n",
+                                        idx, pCur->rip, pCur->bParam, pCur->u32Param, pszSymbol);
+                    break;
+                case kIemTlbTraceType_IRet:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 iret cs:rip=%04x:%016RX64 efl=%08RX32%s\n",
+                                    idx, pCur->rip, pCur->u32Param, pCur->u64Param, (uint32_t)pCur->u64Param2, pszSymbol);
                     break;
                 case kIemTlbTraceType_Invalid:
                     pHlp->pfnPrintf(pHlp, "%u: Invalid!\n");

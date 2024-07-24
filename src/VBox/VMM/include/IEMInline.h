@@ -4804,14 +4804,14 @@ DECLINLINE(void) iemVmxVirtApicSetPendingWrite(PVMCPUCC pVCpu, uint16_t offApic)
  * @note Don't use directly, only via the IEMTLBTRACE_XXX macros.
  */
 DECLINLINE(void) iemTlbTrace(PVMCPU pVCpu, IEMTLBTRACETYPE enmType, uint64_t u64Param, uint64_t u64Param2 = 0,
-                             uint8_t bParam = 0 /*, uint32_t u32Param = 0, uint16_t u16Param = 0 */)
+                             uint8_t bParam = 0, uint32_t u32Param = 0/*, uint16_t u16Param = 0 */)
 {
     uint32_t const          fMask  = RT_BIT_32(pVCpu->iem.s.cTlbTraceEntriesShift) - 1;
     PIEMTLBTRACEENTRY const pEntry = &pVCpu->iem.s.paTlbTraceEntries[pVCpu->iem.s.idxTlbTraceEntry++ & fMask];
     pEntry->u64Param  = u64Param;
     pEntry->u64Param2 = u64Param2;
     pEntry->u16Param  = 0; //u16Param;
-    pEntry->u32Param  = 0; //u32Param;
+    pEntry->u32Param  = u32Param;
     pEntry->bParam    = bParam;
     pEntry->enmType   = enmType;
     pEntry->rip       = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;

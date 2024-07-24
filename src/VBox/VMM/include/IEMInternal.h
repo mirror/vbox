@@ -738,7 +738,10 @@ typedef enum : uint8_t
     kIemTlbTraceType_Load_Cr0,
     kIemTlbTraceType_Load_Cr3,
     kIemTlbTraceType_Load_Cr4,
-    kIemTlbTraceType_Load_Efer
+    kIemTlbTraceType_Load_Efer,
+    kIemTlbTraceType_Irq,
+    kIemTlbTraceType_Xcpt,
+    kIemTlbTraceType_IRet
 } IEMTLBTRACETYPE;
 
 /** TLB trace entry. */
@@ -778,6 +781,12 @@ typedef IEMTLBTRACEENTRY const *PCIEMTLBTRACEENTRY;
 # define IEMTLBTRACE_LOAD_CR3(a_pVCpu, a_uNew, a_uOld)      iemTlbTrace(a_pVCpu, kIemTlbTraceType_Load_Cr3, a_uNew, a_uOld)
 # define IEMTLBTRACE_LOAD_CR4(a_pVCpu, a_uNew, a_uOld)      iemTlbTrace(a_pVCpu, kIemTlbTraceType_Load_Cr4, a_uNew, a_uOld)
 # define IEMTLBTRACE_LOAD_EFER(a_pVCpu, a_uNew, a_uOld)     iemTlbTrace(a_pVCpu, kIemTlbTraceType_Load_Efer, a_uNew, a_uOld)
+# define IEMTLBTRACE_IRQ(a_pVCpu, a_uVector, a_fFlags, a_fEFlags) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_Irq, a_fEFlags, 0, a_uVector, a_fFlags)
+# define IEMTLBTRACE_XCPT(a_pVCpu, a_uVector, a_uErr, a_uCr2, a_fFlags) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_Xcpt, a_uErr, a_uCr2, a_uVector, a_fFlags)
+# define IEMTLBTRACE_IRET(a_pVCpu, a_uRetCs, a_uRetRip, a_fEFlags) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_IRet, a_uRetRip, a_fEFlags, 0, a_uRetCs)
 #else
 # define IEMTLBTRACE_INVLPG(a_pVCpu, a_GCPtr)                           do { } while (0)
 # define IEMTLBTRACE_FLUSH(a_pVCpu, a_uRev, a_fDataTlb)                 do { } while (0)
@@ -788,6 +797,9 @@ typedef IEMTLBTRACEENTRY const *PCIEMTLBTRACEENTRY;
 # define IEMTLBTRACE_LOAD_CR3(a_pVCpu, a_uNew, a_uOld)                  do { } while (0)
 # define IEMTLBTRACE_LOAD_CR4(a_pVCpu, a_uNew, a_uOld)                  do { } while (0)
 # define IEMTLBTRACE_LOAD_EFER(a_pVCpu, a_uNew, a_uOld)                 do { } while (0)
+# define IEMTLBTRACE_IRQ(a_pVCpu, a_uVector, a_fFlags)                  do { } while (0)
+# define IEMTLBTRACE_XCPT(a_pVCpu, a_uVector, a_uErr, a_uCr2, a_fFlags) do { } while (0)
+# define IEMTLBTRACE_IRET(a_pVCpu, a_uRetCs, a_uRetRip, a_fEFlags)      do { } while (0)
 #endif
 
 
