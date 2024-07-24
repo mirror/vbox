@@ -1062,6 +1062,7 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_NATIVE_EMIT_0(a_fnEmitter)
 #define IEM_MC_NATIVE_EMIT_1(a_fnEmitter, a0)                                                   NOP()
 #define IEM_MC_NATIVE_EMIT_2(a_fnEmitter, a0, a1)                                               NOP()
+#define IEM_MC_NATIVE_EMIT_2_EX(a_fnEmitter, a0, a1)                                            NOP()
 #define IEM_MC_NATIVE_EMIT_3(a_fnEmitter, a0, a1, a2)                                           NOP()
 #define IEM_MC_NATIVE_EMIT_4(a_fnEmitter, a0, a1, a2, a3)                                       NOP()
 #define IEM_MC_NATIVE_EMIT_5(a_fnEmitter, a0, a1, a2, a3, a4)                                   NOP()
@@ -1117,17 +1118,17 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW(a_uFpuOpcode)                                            NOP()
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)              NOP()
 
-#define IEM_MC_PREPARE_FPU_USAGE()                                                              NOP()
-#define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()                                                   NOP()
-#define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE()                                                 NOP()
+#define IEM_MC_PREPARE_FPU_USAGE()                                                              IEM_LIVENESS_MXCSR_INPUT() /* fxrstor */
+#define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()                                                   IEM_LIVENESS_MXCSR_INPUT()
+#define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE()                                                 IEM_LIVENESS_MXCSR_INPUT()
 
-#define IEM_MC_PREPARE_SSE_USAGE()                                                              NOP()
-#define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()                                                   NOP()
-#define IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE()                                                 NOP()
+#define IEM_MC_PREPARE_SSE_USAGE()                                                              IEM_LIVENESS_MXCSR_INPUT()
+#define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()                                                   IEM_LIVENESS_MXCSR_INPUT()
+#define IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE()                                                 IEM_LIVENESS_MXCSR_INPUT()
 
-#define IEM_MC_PREPARE_AVX_USAGE()                                                              NOP()
-#define IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ()                                                   NOP()
-#define IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE()                                                 NOP()
+#define IEM_MC_PREPARE_AVX_USAGE()                                                              IEM_LIVENESS_MXCSR_INPUT()
+#define IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ()                                                   IEM_LIVENESS_MXCSR_INPUT()
+#define IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE()                                                 IEM_LIVENESS_MXCSR_INPUT()
 
 #define IEM_MC_CALL_MMX_AIMPL_2(a_pfnAImpl, a0, a1)                                             NOP()
 #define IEM_MC_CALL_MMX_AIMPL_3(a_pfnAImpl, a0, a1, a2)                                         NOP()

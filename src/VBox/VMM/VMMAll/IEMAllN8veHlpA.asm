@@ -280,3 +280,22 @@ SEH64_END_PROLOGUE
         ret     20h
 ENDPROC     iemNativeHlpAsmSafeWrapCheckTlbLookup
 
+
+;;
+; This is wrapper function that restores MXCSR when TB execution finished.
+;
+; @param    uRegFpCtrl  (gcc:rdi, msc:rcx)  The MXCSR value to restore.
+;
+ALIGNCODE(16)
+BEGINPROC   iemNativeFpCtrlRegRestore
+        sub     xSP, 4
+%ifdef RT_OS_WINDOWS
+        mov     [xSP], edx
+%else
+        mov     [xSP], edi
+%endif
+
+        ldmxcsr [xSP]
+        add     xSP, 4
+        ret
+ENDPROC     iemNativeFpCtrlRegRestore

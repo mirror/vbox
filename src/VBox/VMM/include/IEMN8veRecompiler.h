@@ -1348,6 +1348,12 @@ typedef IEMNATIVECORESTATE const *PCIEMNATIVECORESTATE;
 # define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE                         RT_BIT_32(2)
 /** Flag for indicating that IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() has emitted code in the current TB. */
 # define IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX                         RT_BIT_32(3)
+# ifdef IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS
+/** Flag indicating that the guest MXCSR was synced to the host floating point control register. */
+#  define IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SYNCED                                    RT_BIT_32(4)
+/** Flag indicating whether the host floating point control register was saved before overwriting it. */
+#  define IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SAVED                                     RT_BIT_32(5)
+# endif
 #endif
 
 
@@ -2578,6 +2584,10 @@ extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeTbEntry, (PVMCPUCC pVCpu, uintp
 # elif defined(RT_ARCH_ARM64)
 extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeTbEntry, (PVMCPUCC pVCpu, PCPUMCTX pCpumCtx, uintptr_t pfnTbBody));
 # endif
+#endif
+
+#ifdef IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS
+extern "C" IEM_DECL_NATIVE_HLP_DEF(int, iemNativeFpCtrlRegRestore, (uint64_t u64RegFpCtrl));
 #endif
 
 #endif /* !RT_IN_ASSEMBLER - ASM-NOINC-END */

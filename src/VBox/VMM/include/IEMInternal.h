@@ -118,6 +118,12 @@ RT_C_DECLS_BEGIN
 # define IEM_WITH_TLB_STATISTICS
 #endif
 
+/** @def IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS
+ * Enable this to use native emitters for certain SIMD FP operations. */
+#if 1 || defined(DOXYGEN_RUNNING)
+# define IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS
+#endif
+
 /** @def VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
  * Enables a quicker alternative to throw/longjmp for IEM_DO_LONGJMP when
  * executing native translation blocks.
@@ -2046,6 +2052,22 @@ typedef struct IEMCPU
 #else
     R3PTRTYPE(void *)       pvUnusedR3;
 #endif
+#ifdef IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS
+    /** The saved host floating point control register (MXCSR on x86, FPCR on arm64)
+     * needing restore when the TB finished, IEMNATIVE_SIMD_FP_CTRL_REG_NOT_MODIFIED indicates the TB
+     * didn't modify it so we don't need to restore it. */
+# ifdef RT_ARCH_AMD64
+    uint32_t                uRegFpCtrl;
+    /** Temporary copy of MXCSR for stmxcsr/ldmxcsr (so we don't have to fiddle with stack pointers). */
+    uint32_t                uRegMxcsrTmp;
+# elif defined(RT_ARCH_ARM64)
+    uint64_t                uRegFpCtrl;
+# else
+#  error "Port me"
+# endif
+#else
+    uint64_t                u64Unused;
+#endif
     /** Fixed TB used for threaded recompilation.
      * This is allocated once with maxed-out sizes and re-used afterwards. */
     R3PTRTYPE(PIEMTB)       pThrdCompileTbR3;
@@ -2338,9 +2360,9 @@ typedef struct IEMCPU
     /** @} */
 
 #ifdef IEM_WITH_TLB_TRACE
-    uint64_t                au64Padding[3];
+    uint64_t                au64Padding[2];
 #else
-    uint64_t                au64Padding[5];
+    uint64_t                au64Padding[4];
 #endif
     /** @} */
 
@@ -2389,6 +2411,19 @@ typedef IEMCPU *PIEMCPU;
 /** Pointer to the const per-CPU IEM state. */
 typedef IEMCPU const *PCIEMCPU;
 
+/** @def IEMNATIVE_SIMD_FP_CTRL_REG_NOT_MODIFIED
+ * Value indicating the TB didn't modified the floating point control register.
+ * @note Neither FPCR nor MXCSR accept this as a valid value (MXCSR is not fully populated,
+ *       FPCR has the upper 32-bit reserved), so this is safe. */
+#if defined(IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS) || defined(DOXYGEN_RUNNING)
+# ifdef RT_ARCH_AMD64
+#  define IEMNATIVE_SIMD_FP_CTRL_REG_NOT_MODIFIED UINT32_MAX
+# elif defined(RT_ARCH_ARM64)
+#  define IEMNATIVE_SIMD_FP_CTRL_REG_NOT_MODIFIED UINT64_MAX
+# else
+#  error "Port me"
+# endif
+#endif
 
 /** @def IEM_GET_CTX
  * Gets the guest CPU context for the calling EMT.

@@ -113,6 +113,9 @@
 # error The setjmp approach must be enabled for the recompiler.
 #endif
 
+#if defined(IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS) && !defined(IEMNATIVE_WITH_SIMD_REG_ALLOCATOR)
+# error "IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS requires IEMNATIVE_WITH_SIMD_REG_ALLOCATOR"
+#endif
 
 
 /**
@@ -2843,6 +2846,15 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
 # ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER_LONGJMP
         pVCpu->iem.s.pvTbFramePointerR3 = NULL;
 # endif
+# ifdef IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS
+        /* Restore FPCR/MXCSR if the TB modified it. */
+        if (pVCpu->iem.s.uRegFpCtrl != IEMNATIVE_SIMD_FP_CTRL_REG_NOT_MODIFIED)
+        {
+            iemNativeFpCtrlRegRestore(pVCpu->iem.s.uRegFpCtrl);
+            /* Reset for the next round saving us an unconditional instruction on next TB entry. */
+            pVCpu->iem.s.uRegFpCtrl = IEMNATIVE_SIMD_FP_CTRL_REG_NOT_MODIFIED;
+        }
+# endif
 # ifdef IEMNATIVE_STRICT_EFLAGS_SKIPPING
         Assert(pVCpu->iem.s.fSkippingEFlags == 0);
 # endif
@@ -3156,6 +3168,16 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
                 Assert(pVCpu->iem.s.idxTbCurInstr < pTb->cInstructions);
                 pVCpu->iem.s.cInstructions += pVCpu->iem.s.idxTbCurInstr;
 # endif
+
+#ifdef IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS
+                /* Restore FPCR/MXCSR if the TB modified it. */
+                if (pVCpu->iem.s.uRegFpCtrl != IEMNATIVE_SIMD_FP_CTRL_REG_NOT_MODIFIED)
+                {
+                    iemNativeFpCtrlRegRestore(pVCpu->iem.s.uRegFpCtrl);
+                    /* Reset for the next round saving us an unconditional instruction on next TB entry. */
+                    pVCpu->iem.s.uRegFpCtrl = IEMNATIVE_SIMD_FP_CTRL_REG_NOT_MODIFIED;
+                }
+#endif
             }
 #endif
 

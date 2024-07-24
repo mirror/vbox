@@ -78,6 +78,9 @@
 # error The setjmp approach must be enabled for the recompiler.
 #endif
 
+#if defined(IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS) && !defined(IEMNATIVE_WITH_SIMD_REG_ALLOCATOR)
+# error "IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS requires IEMNATIVE_WITH_SIMD_REG_ALLOCATOR"
+#endif
 
 
 /*********************************************************************************************************************************
@@ -3364,6 +3367,12 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
         pReNative->fSimdRaiseXcptChecksEmitted &= ~(  IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_AVX
                                                     | IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_SSE
                                                     | IEMNATIVE_SIMD_RAISE_XCPT_CHECKS_EMITTED_MAYBE_DEVICE_NOT_AVAILABLE);
+# endif
+
+# ifdef IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS
+    /* Mark the host floating point control register as not synced if MXCSR is modified. */
+    if (fGstShwFlush & RT_BIT_64(kIemNativeGstReg_MxCsr))
+        pReNative->fSimdRaiseXcptChecksEmitted &= ~IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SYNCED;
 # endif
 #endif
 
@@ -8755,8 +8764,128 @@ iemNativeEmitMemCommitAndUnmap(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 
 DECL_INLINE_THROW(uint32_t) iemNativeEmitPrepareFpuForUse(PIEMRECOMPILERSTATE pReNative, uint32_t off, bool fForChange)
 {
-    /** @todo this needs a lot more work later. */
+#ifndef IEMNATIVE_WITH_SIMD_FP_NATIVE_EMITTERS
     RT_NOREF(pReNative, fForChange);
+#else
+    if (   !(pReNative->fSimdRaiseXcptChecksEmitted & IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SYNCED)
+        && fForChange)
+    {
+# ifdef RT_ARCH_AMD64
+
+        /* Need to save the host MXCSR the first time, and clear the exception flags. */
+        if (!(pReNative->fSimdRaiseXcptChecksEmitted & IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SAVED))
+        {
+            PIEMNATIVEINSTR pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+
+            /* stmxcsr */
+            if (IEMNATIVE_REG_FIXED_PVMCPU >= 8)
+                pbCodeBuf[off++] = X86_OP_REX_B;
+            pbCodeBuf[off++] = 0x0f;
+            pbCodeBuf[off++] = 0xae;
+            pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, 3, IEMNATIVE_REG_FIXED_PVMCPU & 7);
+            pbCodeBuf[off++] = RT_BYTE1(RT_UOFFSETOF(VMCPU, iem.s.uRegFpCtrl));
+            pbCodeBuf[off++] = RT_BYTE2(RT_UOFFSETOF(VMCPU, iem.s.uRegFpCtrl));
+            pbCodeBuf[off++] = RT_BYTE3(RT_UOFFSETOF(VMCPU, iem.s.uRegFpCtrl));
+            pbCodeBuf[off++] = RT_BYTE4(RT_UOFFSETOF(VMCPU, iem.s.uRegFpCtrl));
+            IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+            pReNative->fSimdRaiseXcptChecksEmitted |= IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SAVED;
+        }
+
+        uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off, false /*fPreferVolatile*/);
+        uint8_t const idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr, kIemNativeGstRegUse_ReadOnly);
+
+        /*
+         * Mask any exceptions and clear the exception status and save into MXCSR,
+         * taking a detour through memory here because ldmxcsr/stmxcsr don't support
+         * a register source/target (sigh).
+         */
+        off = iemNativeEmitLoadGprFromGpr32(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, idxRegMxCsr);
+        off = iemNativeEmitOrGpr32ByImm(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, X86_MXCSR_XCPT_MASK);
+        off = iemNativeEmitAndGpr32ByImm(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, ~X86_MXCSR_XCPT_FLAGS);
+        off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+
+        PIEMNATIVEINSTR pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+
+        /* ldmxcsr */
+        if (IEMNATIVE_REG_FIXED_PVMCPU >= 8)
+            pbCodeBuf[off++] = X86_OP_REX_B;
+        pbCodeBuf[off++] = 0x0f;
+        pbCodeBuf[off++] = 0xae;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, 2, IEMNATIVE_REG_FIXED_PVMCPU & 7);
+        pbCodeBuf[off++] = RT_BYTE1(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+        pbCodeBuf[off++] = RT_BYTE2(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+        pbCodeBuf[off++] = RT_BYTE3(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+        pbCodeBuf[off++] = RT_BYTE4(RT_UOFFSETOF(VMCPU, iem.s.uRegMxcsrTmp));
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+        iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
+        iemNativeRegFreeTmp(pReNative, idxRegTmp);
+
+# elif defined(RT_ARCH_ARM64)
+        uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off, false /*fPreferVolatile*/);
+
+        /* Need to save the host floating point control register the first time, clear FPSR. */
+        if (!(pReNative->fSimdRaiseXcptChecksEmitted & IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SAVED))
+        {
+            PIEMNATIVEINSTR pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+            pu32CodeBuf[off++] = Armv8A64MkInstrMsr(ARMV8_A64_REG_XZR, ARMV8_AARCH64_SYSREG_FPSR);
+            pu32CodeBuf[off++] = Armv8A64MkInstrMrs(idxRegTmp, ARMV8_AARCH64_SYSREG_FPCR);
+            off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegTmp, RT_UOFFSETOF(VMCPU, iem.s.uRegFpCtrl));
+            pReNative->fSimdRaiseXcptChecksEmitted |= IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SAVED;
+        }
+
+        /*
+         * Translate MXCSR to FPCR.
+         *
+         * Unfortunately we can't emulate the exact behavior of MXCSR as we can't take
+         * FEAT_AFP on arm64 for granted (My M2 Macbook doesn't has it). So we can't map
+         * MXCSR.DAZ to FPCR.FIZ and MXCSR.FZ to FPCR.FZ with FPCR.AH being set.
+         * We can only use FPCR.FZ which will flush inputs _and_ output de-normals to zero.
+         */
+        /** @todo Check the host supported flags (needs additional work to get the host features from CPUM)
+         *        and implement alternate handling if FEAT_AFP is present. */
+        uint8_t const idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr, kIemNativeGstRegUse_ReadOnly);
+
+        PIEMNATIVEINSTR pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+
+        /* First make sure that there is nothing set for the upper 16-bits (X86_MXCSR_MM, which we don't emulate right now). */
+        pu32CodeBuf[off++] = Armv8A64MkInstrUxth(idxRegTmp, idxRegMxCsr);
+
+        /* If either MXCSR.FZ or MXCSR.DAZ is set FPCR.FZ will be set. */
+        pu32CodeBuf[off++] = Armv8A64MkInstrUbfx(IEMNATIVE_REG_FIXED_TMP0, idxRegTmp, X86_MXCSR_DAZ_BIT, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrLsrImm(idxRegTmp,              idxRegTmp, X86_MXCSR_FZ_BIT);
+        pu32CodeBuf[off++] = Armv8A64MkInstrOrr(idxRegTmp, idxRegTmp, IEMNATIVE_REG_FIXED_TMP0);
+        pu32CodeBuf[off++] = Armv8A64MkInstrLslImm(idxRegTmp, idxRegTmp, ARMV8_FPCR_FZ_BIT);
+
+        /*
+         * Init the rounding mode, the layout differs between MXCSR.RM[14:13] and FPCR.RMode[23:22]:
+         *
+         * Value    MXCSR   FPCR
+         *   0       RN      RN
+         *   1       R-      R+
+         *   2       R+      R-
+         *   3       RZ      RZ
+         *
+         * Conversion can be achieved by switching bit positions
+         */
+        pu32CodeBuf[off++] = Armv8A64MkInstrLsrImm(IEMNATIVE_REG_FIXED_TMP0, idxRegMxCsr, X86_MXCSR_RC_SHIFT);
+        pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxRegTmp, IEMNATIVE_REG_FIXED_TMP0, 14, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrLsrImm(IEMNATIVE_REG_FIXED_TMP0, idxRegMxCsr, X86_MXCSR_RC_SHIFT + 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxRegTmp, IEMNATIVE_REG_FIXED_TMP0, 13, 1);
+
+        /* Write the value to FPCR. */
+        pu32CodeBuf[off++] = Armv8A64MkInstrMsr(idxRegTmp, ARMV8_AARCH64_SYSREG_FPCR);
+
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+        iemNativeRegFreeTmp(pReNative, idxRegMxCsr);
+        iemNativeRegFreeTmp(pReNative, idxRegTmp);
+# else
+#  error "Port me"
+# endif
+        pReNative->fSimdRaiseXcptChecksEmitted |= IEMNATIVE_SIMD_HOST_FP_CTRL_REG_SYNCED;
+    }
+#endif
     return off;
 }
 
@@ -9979,10 +10108,12 @@ iemNativeEmitCallSseAvxAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
                                                                  kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
     AssertRelease(!(RT_BIT_32(idxRegMxCsr) & IEMNATIVE_CALL_VOLATILE_GREG_MASK));
 
+#if 0 /* This is not required right now as the called helper will set up the SSE/AVX state if it is an assembly one. */
     /*
      * Need to do the FPU preparation.
      */
     off = iemNativeEmitPrepareFpuForUse(pReNative, off, true /*fForChange*/);
+#endif
 
     /*
      * Do all the call setup and cleanup.

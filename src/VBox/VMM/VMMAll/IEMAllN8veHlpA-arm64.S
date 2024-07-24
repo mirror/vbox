@@ -256,3 +256,22 @@ BEGINPROC_HIDDEN iemNativeHlpAsmSafeWrapCheckTlbLookup
 #endif
         brk #1
 
+
+/**
+ * Restores the FPCR register from the given argument.
+ *
+ * @param    u64RegFpCtrl    (x0)      The value to restore FPCR with.
+ */
+ALIGNCODE(IEM_HLP_FUNCTION_ALIGNMENT)
+BEGINPROC_HIDDEN iemNativeFpCtrlRegRestore
+#ifdef RT_OS_DARWIN
+        pacibsp
+#endif
+
+        msr FPCR, x0
+
+#ifdef RT_OS_DARWIN
+        retab
+#else
+        ret
+#endif
