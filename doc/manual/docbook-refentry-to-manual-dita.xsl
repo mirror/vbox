@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-    docbook-refentry-to-manual-sect1.xsl:
+    docbook-refentry-to-manual-dita.xsl:
         XSLT stylesheet for converting a refentry (manpage)
         to dita for use in the user manual.
 -->
@@ -49,7 +49,7 @@
            the case, so it's disabled by default.  When we switch to
            4.0.x with the latest com.elovirta.pdf plugin (2023-03-xx
            or later), we can enable this by default again. -->
-<xsl:param name="g_fReplaceHypens">false</xsl:param>
+<xsl:param name="g_fReplaceHyphens">true</xsl:param>
 
 <!-- Render the syntax diagram more as text than as proper markup. -->
 <xsl:param name="g_fRenderSyntaxAsText">true</xsl:param>
@@ -768,7 +768,7 @@
   </xsl:element>
 </xsl:template>
 
-<!-- replaceable/text() in a cmdsynopsis should have hypens replaced. -->
+<!-- replaceable/text() in a cmdsynopsis should have hyphens replaced. -->
 <xsl:template match="replaceable/text()[ancestor::cmdsynopsis]" >
   <xsl:call-template name="emit-text-with-replacements"/>
 </xsl:template>
@@ -1083,12 +1083,12 @@
 
 
 <!--
- Maybe replace hypens (dashes) with non-breaking ones.
+ Maybe replace hyphens (dashes) with non-breaking ones.
  -->
 <xsl:template name="emit-text-with-replacements">
   <xsl:param name="a_sText" select="."/>
   <xsl:choose>
-    <xsl:when test="$g_fReplaceHypens = 'true'">
+    <xsl:when test="$g_fReplaceHyphens = 'true'">
       <xsl:call-template name="str:subst">
           <xsl:with-param name="text" select="$a_sText"/>
           <xsl:with-param name="replace">-</xsl:with-param>

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-    docbook-refentry-to-manual-sect1.xsl:
+    docbook-refentry-to-C-help.xsl:
         XSLT stylesheet for nicking the refsynopsisdiv bit of a
         refentry (manpage) for use in the command overview section
         in the user manual.
