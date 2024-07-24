@@ -3854,7 +3854,7 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 #define X86_MXCSR_OE_BIT      3
 /** Exception Flag: Underflow.  */
 #define X86_MXCSR_UE          RT_BIT_32(4)
-#define X86_MXCSR_EU_BIT      4
+#define X86_MXCSR_UE_BIT      4
 /** Exception Flag: Precision.  */
 #define X86_MXCSR_PE          RT_BIT_32(5)
 #define X86_MXCSR_PE_BIT      5
