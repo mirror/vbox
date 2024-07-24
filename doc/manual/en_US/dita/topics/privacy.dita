@@ -4,26 +4,20 @@
   <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Privacy Information</title>
   
   <body>
-    <p>
-    Version 6, July 19, 2024
-  </p>
-    <p>
-    The Oracle Privacy Policies posted on
-    <xref href="https://www.oracle.com/legal/privacy/" scope="external"/>
-    apply to your personal data collected and used by Oracle. The
-    following privacy information describes in more detail which
-    information is exchanged between the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application and
-    Oracle, and which information is collected by the virtualbox.org
-    website.
-  </p>
+    <p>Version 6, July 19, 2024</p>
+    <p>The Oracle Privacy Policies posted on <xref href="https://www.oracle.com/legal/privacy/" format="html"
+        scope="external"/> apply to your personal data collected and used by Oracle. The following privacy information
+      describes in more detail which information is exchanged between the <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> application and Oracle, and which information is collected by
+      the virtualbox.org website. </p>
     <p><b outputclass="bold">§ 1 virtualbox.org.</b> The
     "virtualbox.org" website logs anonymous usage information such as
     your IP address, geographical location, browser type, referral
     source, length of visit and number of page views while you visit
     (collectively, "anonymous data"). In addition, but only if you
-    choose to register an Oracle Single Sign On account, the website's
-    bug tracking and forum services store the data you choose to reveal
-    in your profile, such as your user name and contact information.
+    choose to register an Oracle Single Sign On account, the website's bug tracking and forum services
+    store the data you choose to reveal in your profile, such as your
+    user name and contact information.
   </p>
     <p><b outputclass="bold">§ 2 Cookies.</b> The virtualbox.org
     website, the bug tracker and the forum services use cookies to
@@ -33,37 +27,28 @@
     cookies disabled, logging into the bug tracker and forum services
     will not work without them.
   </p>
-    <p><b outputclass="bold">§ 3 Update notifications.</b> The
-    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application may contact Oracle to find out whether a
-    new version of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has been released and notify the user
-    if that is the case. In the process, anonymous data such as your IP
-    address and a non-identifying counter, together with the product
-    version and the platform being used, is sent so that the server can
-    find out whether an update is available. By default, this check is
-    performed once a day. You change this interval or disable these
-    checks altogether in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> preferences.
-  </p>
-    <p><b outputclass="bold">§ 4 Usage of personal information.</b>
-    Oracle may use anonymous and personal data collected by the means
-    above for statistical purposes as well as to automatically inform
-    you about new notices related to your posts on the bug tracker and
-    forum services, to administer the website and to contact you due to
-    technical issues. Oracle may also inform you about new product
-    releases related to <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
-  </p>
+    <p><b outputclass="bold">§ 3 Update notifications.</b> The <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
+      application may contact Oracle to find out whether a new version of <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> has been released and notify the user if that is the case. In
+      the process, anonymous data such as your IP address and a non-identifying counter, together with the product
+      version and the platform being used, is sent so that the server can find out whether an update is available. By
+      default, this check is performed once a day. You change this interval or disable these checks altogether in the
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> preferences. </p>
+    <p><b outputclass="bold">§ 4 Usage of personal information.</b> Oracle may use anonymous and personal data collected
+      by the means above for statistical purposes as well as to automatically inform you about new notices related to
+      your posts on the bug tracker and forum services, to administer the website and to contact you due to technical
+      issues. Oracle may also inform you about new product releases related to <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
     <p>
     In no event will personal data without your express consent be
     provided to any third parties, unless Oracle may be required to do
     so by law or in connection with legal proceedings.
   </p>
-    <p><b outputclass="bold">§ 5 Updates.</b> Oracle may update the
-    privacy policy at any time by posting a new version at
-    <xref href="https://www.oracle.com/legal/privacy/" scope="external"/>
-    and the privacy information will be kept up to date in the
-    documentation which comes with the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application. You
-    should check these places occasionally to ensure you are happy with
-    any changes.
-  </p>
+    <p><b outputclass="bold">§ 5 Updates.</b> Oracle may update the privacy policy at any time by posting a new version
+      at <xref href="https://www.oracle.com/legal/privacy/" format="html" scope="external"/> and the privacy information
+      will be kept up to date in the documentation which comes with the <ph
+        conkeyref="vbox-conkeyref-phrases/product-name"/> application. You should check these places occasionally to
+      ensure you are happy with any changes. </p>
   </body>
   
 </topic>
