@@ -54,13 +54,18 @@
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
 #include "UITools.h"
-#ifdef VBOX_WS_MAC
+#if defined(VBOX_WS_MAC) && (defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32))
 # include "UIIconPool.h"
 # include "UIVersion.h"
-#endif
+#endif /* VBOX_WS_MAC && (RT_ARCH_ARM64 || RT_ARCH_ARM32) */
 #ifndef VBOX_WS_MAC
 # include "UIMenuBar.h"
 #endif
+
+/* COM includes: */
+#if defined(VBOX_WS_MAC) && (defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32))
+# include "CSystemProperties.h"
+#endif /* VBOX_WS_MAC && (RT_ARCH_ARM64 || RT_ARCH_ARM32) */
 
 
 UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParent)
@@ -680,17 +685,32 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         m_pToolBar->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
                         m_pToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
                         m_pToolBar->setUseTextLabels(true);
-#ifdef VBOX_WS_MAC
-                        /* Branding stuff for Qt6 beta: */
+
+#if defined(VBOX_WS_MAC) && (defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32))
+                        /* Branding stuff for macOS ARM platform: */
                         if (UIVersionInfo::showBetaLabel())
                         {
-                            m_pToolBar->emulateMacToolbar();
-                            m_pToolBar->enableBranding(UIIconPool::iconSet(":/explosion_hazard_32px.png"),
-                                                       "Dev Preview", // do we need to make it NLS?
-                                                       QColor(246, 179, 0),
-                                                       74 /* width of BETA label */);
+                            /* Check whether we should show Dev Preview tag: */
+                            bool fShowDevPreviewTag = false;
+                            const CVirtualBox comVBox = gpGlobalSession->virtualBox();
+                            if (comVBox.isNotNull())
+                            {
+                                const CSystemProperties comSystemProps = comVBox.GetSystemProperties();
+                                if (comVBox.isOk() && comSystemProps.isNotNull())
+                                    fShowDevPreviewTag =
+                                        comSystemProps.GetSupportedPlatformArchitectures().contains(KPlatformArchitecture_x86);
+                            }
+                            /* Enable Dev Preview tag: */
+                            if (fShowDevPreviewTag)
+                            {
+                                m_pToolBar->emulateMacToolbar();
+                                m_pToolBar->enableBranding(UIIconPool::iconSet(":/explosion_hazard_32px.png"),
+                                                           "Dev Preview", // do we need to make it NLS?
+                                                           QColor(246, 179, 0),
+                                                           74 /* width of BETA label */);
+                            }
                         }
-#endif /* VBOX_WS_MAC */
+#endif /* VBOX_WS_MAC && (RT_ARCH_ARM64 || RT_ARCH_ARM32) */
 
                         /* Add toolbar into layout: */
                         pLayoutRight->addWidget(m_pToolBar);
