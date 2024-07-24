@@ -15597,8 +15597,9 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t
      * Skip computing the post-computational exception flags if any of the pre-computational exception flags
      * are set and are unmasked in MXCSR.
      */
+    uint32_t const fMxcsrExcpMask = ~((fMxcsr & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT);
     if (  ((fMxcsr | fXcpt) & (X86_MXCSR_IE | X86_MXCSR_DE | X86_MXCSR_ZE))
-        & ~((fMxcsr & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT))
+        & fMxcsrExcpMask)
         return fMxcsr | (fXcpt & (X86_MXCSR_IE | X86_MXCSR_DE | X86_MXCSR_ZE));
 
     if (   (fMxcsr & X86_MXCSR_FZ)
@@ -15611,10 +15612,8 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR32ToMxcsrAndIprtResult(softfloat_state_t
     }
 
     /* If OE/UE get raised PE won't be set because of the lower priority. */
-    if (   (   ((fXcpt & (X86_MXCSR_PE | X86_MXCSR_OE)) == (X86_MXCSR_PE | X86_MXCSR_OE))
-            && !(fMxcsr & X86_MXCSR_OM))
-        || (   ((fXcpt & (X86_MXCSR_PE | X86_MXCSR_UE)) == (X86_MXCSR_PE | X86_MXCSR_UE))
-            && !(fMxcsr & X86_MXCSR_UM)))
+    if (  (fXcpt & (X86_MXCSR_UE | X86_MXCSR_OE))
+        & fMxcsrExcpMask)
         fXcpt &= ~X86_MXCSR_PE;
 
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
@@ -15672,8 +15671,9 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResult(softfloat_state_t
      * Skip computing the post-computational exception flags if any of the pre-computational exception flags
      * are set and are unmasked in MXCSR.
      */
+    uint32_t const fMxcsrExcpMask = ~((fMxcsr & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT);
     if (  ((fMxcsr | fXcpt) & (X86_MXCSR_IE | X86_MXCSR_DE | X86_MXCSR_ZE))
-        & ~((fMxcsr & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT))
+        & fMxcsrExcpMask)
         return fMxcsr | (fXcpt & (X86_MXCSR_IE | X86_MXCSR_DE | X86_MXCSR_ZE));
 
     if (   (fMxcsr & X86_MXCSR_FZ)
@@ -15687,10 +15687,8 @@ DECLINLINE(uint32_t) iemSseSoftStateAndR64ToMxcsrAndIprtResult(softfloat_state_t
     }
 
     /* If OE/UE get raised PE won't be set because of the lower priority. */
-    if (   (   ((fXcpt & (X86_MXCSR_PE | X86_MXCSR_OE)) == (X86_MXCSR_PE | X86_MXCSR_OE))
-            && !(fMxcsr & X86_MXCSR_OM))
-        || (   ((fXcpt & (X86_MXCSR_PE | X86_MXCSR_UE)) == (X86_MXCSR_PE | X86_MXCSR_UE))
-            && !(fMxcsr & X86_MXCSR_UM)))
+    if (  (fXcpt & (X86_MXCSR_UE | X86_MXCSR_OE))
+        & fMxcsrExcpMask)
         fXcpt &= ~X86_MXCSR_PE;
 
     return fMxcsr | (fXcpt & X86_MXCSR_XCPT_FLAGS);
