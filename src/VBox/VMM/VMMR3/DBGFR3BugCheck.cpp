@@ -608,7 +608,7 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
         case 0x00000137: cchUsed = RTStrPrintf(pszDetails, cbDetails, "WIN32K_HANDLE_MANAGER\n"); break;
         case 0x00000138: cchUsed = RTStrPrintf(pszDetails, cbDetails, "GPIO_CONTROLLER_DRIVER_ERROR\n"); break;
 
-        case 0x00000139:
+        case 0x00000139: /* __fastfail(P1) triggers this via INT 29h(?) and P1 in rcx. */
         {
             const char *pszCheck;
             switch (uP1)
@@ -617,30 +617,46 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
                 case 0x01:  pszCheck = "Illegal virtual function table use (VTGuard)"; break;
                 case 0x02:  pszCheck = "Stack buffer overrun (via cookie)"; break;
                 case 0x03:  pszCheck = "Correupt LIST_ENTRY"; break;
-                case 0x04:  pszCheck = "Out of bounds stack pointer"; break;
+                case 0x04:  pszCheck = "Out of bounds stack pointer"; break; /* "Reserved" on learn.microsoft.com */
                 case 0x05:  pszCheck = "Invalid parameter (fatal)"; break;
                 case 0x06:  pszCheck = "Uninitialized stack cookie (by loader prior to Win8)"; break;
                 case 0x07:  pszCheck = "Fatal program exit request"; break;
                 case 0x08:  pszCheck = "Compiler bounds check violation"; break;
                 case 0x09:  pszCheck = "Direct RtlQueryRegistryValues w/o typechecking on untrusted hive"; break;
                 /* https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/bug-check---bug-check-0x139-kernel-security-check-failure
-                   and !analyze -show differs on the following: */
-                case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e:
-                case 0x0f:  pszCheck = "Memory safety violation [?]"; break;
-                case 0x10:  pszCheck = "Invalid indirect call (indirect call guard) [?]"; break;
-                case 0x11:  pszCheck = "Invalid memory write (write guard) [?]"; break;
-                case 0x12:  pszCheck = "Invalid target context for fiber switch [?]"; break;
-                case 0x13:  pszCheck = "Invalid register context assignment"; break;
-                case 0x14:  pszCheck = "Invalid object reference count"; break;
-                case 0x15: case 0x16: case 0x17:
-                case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e:
-                case 0x1f:  pszCheck = "Memory safety violation"; break;
-                case 0x18:  pszCheck = "Invalid jmp_buf"; break;
-                case 0x19:  pszCheck = "Modifying read-only data"; break;
-                case 0x20:  pszCheck = "Crypto self-test fail"; break;
-                case 0x21:  pszCheck = "Invalid exception chain"; break;
-                case 0x22:  pszCheck = "Crypto library error"; break;
-                /** @todo there are lots more... */
+                   and !analyze -show differs on the following.  Looks like a decimal/hex mixup.
+                   Using the web info, hoping it is more accurate (matches 0x1d better)... */
+                case 0x0a:  pszCheck = "Invalid indirect control transfer (call guard)"; break;
+                case 0x0b:  pszCheck = "Invalid memory write (write guard)"; break;
+                case 0x0c:  pszCheck = "Invalid context for fiber switch"; break;
+                case 0x0d:  pszCheck = "Invalid register context (in assignment)"; break;
+                case 0x0e:  pszCheck = "Invalid object reference count"; break;
+
+                case 0x0f:  pszCheck = "Memory safety violation [?]"; break;       /* windbg; undocument on learn.microsoft.com */
+                case 0x10:  pszCheck = "Invalid indirect call (call guard) [?]"; break;      /* ditto */
+                case 0x11:  pszCheck = "Invalid memory write (write guard) [?]"; break;      /* ditto */
+
+                case 0x12:  pszCheck = "Invalid jmp_buf;"; break;
+                case 0x13:  pszCheck = "Modifying read-only data"; break;
+                case 0x14:  pszCheck = "Crypto self-test fail"; break;
+                case 0x15:  pszCheck = "Invalid exception chain"; break;
+                case 0x16:  pszCheck = "Crypto library error"; break;
+                case 0x17:  pszCheck = "Invalid call from within DllMain"; break; /* sounds very userlandish... */
+                case 0x18:  pszCheck = "Invalid image base address"; break;
+                case 0x19:  pszCheck = "Problem protecting delay load import."; break;
+                case 0x1a:  pszCheck = "Call to unsafe extension"; break;
+                case 0x1b:  pszCheck = "Deprecated service call"; break;
+                case 0x1c:  pszCheck = "Out of bounce buffer access"; break;
+                case 0x1d:  pszCheck = "Corrupt RTL_BALANCED_NODE (often heap related)"; break;
+
+                case 0x23:  pszCheck = "RtlpHpAllocWithExceptionProtection/RtlpHpFreeWithExceptionProtection problem"; break; /* disas */
+
+                case 0x25:  pszCheck = "Out of bound jump table (switch) attempt"; break;
+                case 0x26:  pszCheck = "Bogus longjmp target"; break;
+                case 0x27:  pszCheck = "Invalid call target (export suppressed; RtlUnwindEx,RtlDispatchException)"; break;
+
+                case 0x32:  pszCheck = "RtlpHpFixedVsFree problem"; break; /* disas */
+
                 default:    pszCheck = "Todo/Unknown"; break;
             }
             cchUsed = RTStrPrintf(pszDetails, cbDetails,
@@ -652,7 +668,41 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
             break;
         }
 
-        case 0x0000013a: cchUsed = RTStrPrintf(pszDetails, cbDetails, "KERNEL_MODE_HEAP_CORRUPTION\n"); break;
+        case 0x0000013a:
+        {
+            const char *pszCheck;
+            switch (uP1)
+            {
+                case 0x03: pszCheck = "a corrupt entry header"; break;
+                case 0x04: pszCheck = "multiple corrupt entry headers"; break;
+                case 0x05: pszCheck = "a corrupt entry header for a large allocation"; break;
+                case 0x06: pszCheck = "buffer overrun (possibly)"; break;
+                case 0x07: pszCheck = "buffer underrun (possibly)"; break;
+                case 0x08: pszCheck = "block is not busy - it is free"; break; /* same as 0xf? */
+                case 0x09: pszCheck = "invalid argument"; break;
+                case 0x0a: pszCheck = "invalid allocation type"; break;
+                case 0x0b: pszCheck = "use after free (possibly)"; break;
+                case 0x0c: pszCheck = "wrong heap given"; break;
+                case 0x0d: pszCheck = "free list corruption"; break;
+                case 0x0e: pszCheck = "non-free list corruption"; break;
+                case 0x0f: pszCheck = "block is not busy - it is free"; break; /* same as 0x8? */
+                case 0x10: pszCheck = "bogus state due to buffer overrun (possibly)"; break;
+                case 0x11: pszCheck = "bogus state due to buffer overrun (possibly)"; break;
+                case 0x12: pszCheck = "bogus state due to buffer overrun (possibly)"; break;
+                case 0x13: pszCheck = "NULL heap handle"; break;
+                case 0x14: pszCheck = "request too big"; break;
+                case 0x15: pszCheck = "commit limit exceeded"; break;
+                case 0x16: pszCheck = "invalid VA manage query size/whatever"; break;
+            }
+
+            cchUsed = RTStrPrintf(pszDetails, cbDetails,
+                                  "KERNEL_MODE_HEAP_CORRUPTION\n"
+                                  "P1: %016RX64 - %s!\n"
+                                  "P2: %016RX64 - Heap address\n"
+                                  "P3: %016RX64 - Corruption address\n"
+                                  "P4: %016RX64 - reserved\n", uP1, pszCheck, uP2, uP3, uP4);
+            break;
+        }
         case 0x0000013b: cchUsed = RTStrPrintf(pszDetails, cbDetails, "PASSIVE_INTERRUPT_ERROR\n"); break;
         case 0x0000013c: cchUsed = RTStrPrintf(pszDetails, cbDetails, "INVALID_IO_BOOST_STATE\n"); break;
         case 0x0000013d: cchUsed = RTStrPrintf(pszDetails, cbDetails, "CRITICAL_INITIALIZATION_FAILURE\n"); break;
