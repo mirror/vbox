@@ -489,8 +489,21 @@
      || (((a_uDR7) & UINT32_C(0x0c)) != 0 && ((a_uDR7) & UINT32_C(0x00f00000)) == 0) \
      || (((a_uDR7) & UINT32_C(0x30)) != 0 && ((a_uDR7) & UINT32_C(0x0f000000)) == 0) \
      || (((a_uDR7) & UINT32_C(0xc0)) != 0 && ((a_uDR7) & UINT32_C(0xf0000000)) == 0) )
+ %define X86_DR7_IS_RW_CFG(a_uDR7, a_iBp)   ( ~((a_uDR7) & (0x00030000 << ((a_iBp) * 4))) == 0)
+ %define X86_DR7_ANY_RW_ENABLED(a_uDR7) \
+    (   (((a_uDR7) & 0x03) != 0 && ((a_uDR7) & UINT32_C(0x00030000)) == UINT32_C(0x00030000)) \
+     || (((a_uDR7) & UINT32_C(0x0c)) != 0 && ((a_uDR7) & UINT32_C(0x00300000)) == UINT32_C(0x00300000)) \
+     || (((a_uDR7) & UINT32_C(0x30)) != 0 && ((a_uDR7) & UINT32_C(0x03000000)) == UINT32_C(0x03000000)) \
+     || (((a_uDR7) & UINT32_C(0xc0)) != 0 && ((a_uDR7) & UINT32_C(0x30000000)) == UINT32_C(0x30000000)) )
+ %define X86_DR7_IS_W_CFG(a_uDR7, a_iBp)   ( ((a_uDR7) & (0x00010000 << ((a_iBp) * 4))) != 0)
+ %define X86_DR7_ANY_W_ENABLED(a_uDR7) \
+    (   (((a_uDR7) & 0x03) != 0 && ((a_uDR7) & UINT32_C(0x00010000)) != 0) \
+     || (((a_uDR7) & UINT32_C(0x0c)) != 0 && ((a_uDR7) & UINT32_C(0x00100000)) != 0) \
+     || (((a_uDR7) & UINT32_C(0x30)) != 0 && ((a_uDR7) & UINT32_C(0x01000000)) != 0) \
+     || (((a_uDR7) & UINT32_C(0xc0)) != 0 && ((a_uDR7) & UINT32_C(0x10000000)) != 0) )
  %define X86_DR7_ANY_RW_IO(uDR7) \
-    (   (    0x22220000 & (uDR7) )
+    (   (    0x22220000 & (uDR7) )   \
+     && ( ( (UINT32_C(0x22220000) & (uDR7) ) >> 1 )  &  ~(uDR7) ) )
 %endif
 %define X86_DR7_LEN_BYTE                    0
 %define X86_DR7_LEN_WORD                    1
@@ -592,8 +605,29 @@
 %define MSR_IA32_ARCH_CAP_F_RDCL_NO         RT_BIT_32(0)
 %define MSR_IA32_ARCH_CAP_F_IBRS_ALL        RT_BIT_32(1)
 %define MSR_IA32_ARCH_CAP_F_RSBO            RT_BIT_32(2)
-%define MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D RT_BIT_32(3)
-%define MSR_IA32_ARCH_CAP_F_MDS_NO          RT_BIT_32(4)
+%define MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D  RT_BIT_32(3)
+%define MSR_IA32_ARCH_CAP_F_SSB_NO          RT_BIT_32(4)
+%define MSR_IA32_ARCH_CAP_F_MDS_NO          RT_BIT_32(5)
+%define MSR_IA32_ARCH_CAP_F_IF_PSCHANGE_MC_NO       RT_BIT_32(6)
+%define MSR_IA32_ARCH_CAP_F_TSX_CTRL        RT_BIT_32(7)
+%define MSR_IA32_ARCH_CAP_F_TAA_NO          RT_BIT_32(8)
+%define MSR_IA32_ARCH_CAP_F_MISC_PACKAGE_CTRLS      RT_BIT_32(10)
+%define MSR_IA32_ARCH_CAP_F_ENERGY_FILTERING_CTL    RT_BIT_32(11)
+%define MSR_IA32_ARCH_CAP_F_DOITM                   RT_BIT_32(12)
+%define MSR_IA32_ARCH_CAP_F_SBDR_SSDP_NO            RT_BIT_32(13)
+%define MSR_IA32_ARCH_CAP_F_FBSDP_NO                RT_BIT_32(14)
+%define MSR_IA32_ARCH_CAP_F_PSDP_NO                 RT_BIT_32(15)
+%define MSR_IA32_ARCH_CAP_F_FB_CLEAR                RT_BIT_32(17)
+%define MSR_IA32_ARCH_CAP_F_FB_CLEAR_CTRL           RT_BIT_32(18)
+%define MSR_IA32_ARCH_CAP_F_RRSBA                   RT_BIT_32(19)
+%define MSR_IA32_ARCH_CAP_F_BHI_NO                  RT_BIT_32(20)
+%define MSR_IA32_ARCH_CAP_F_XAPIC_DISABLE_STATUS    RT_BIT_32(21)
+%define MSR_IA32_ARCH_CAP_F_OVERCLOCKING_STATUS     RT_BIT_32(22)
+%define MSR_IA32_ARCH_CAP_F_PBRSB_NO                RT_BIT_32(23)
+%define MSR_IA32_ARCH_CAP_F_GDS_CTRL                RT_BIT_32(24)
+%define MSR_IA32_ARCH_CAP_F_GDS_NO                  RT_BIT_32(25)
+%define MSR_IA32_ARCH_CAP_F_RFDS_NO                 RT_BIT_32(26)
+%define MSR_IA32_ARCH_CAP_F_RFDS_CLEAR              RT_BIT_32(27)
 %define MSR_IA32_FLUSH_CMD                  0x10b
 %define MSR_IA32_FLUSH_CMD_F_L1D            RT_BIT_32(0)
 %define MSR_BBL_CR_CTL3                     0x11e
@@ -1292,19 +1326,32 @@
 %define X86_FCW_IC_PROJECTIVE 0x0000
 %define X86_FCW_ZERO_MASK   0xf080
 %define X86_MXCSR_IE          RT_BIT_32(0)
+%define X86_MXCSR_IE_BIT      0
 %define X86_MXCSR_DE          RT_BIT_32(1)
+%define X86_MXCSR_DE_BIT      1
 %define X86_MXCSR_ZE          RT_BIT_32(2)
+%define X86_MXCSR_ZE_BIT      2
 %define X86_MXCSR_OE          RT_BIT_32(3)
+%define X86_MXCSR_OE_BIT      3
 %define X86_MXCSR_UE          RT_BIT_32(4)
+%define X86_MXCSR_EU_BIT      4
 %define X86_MXCSR_PE          RT_BIT_32(5)
+%define X86_MXCSR_PE_BIT      5
 %define X86_MXCSR_XCPT_FLAGS  0x003f
 %define X86_MXCSR_DAZ         RT_BIT_32(6)
+%define X86_MXCSR_DAZ_BIT     6
 %define X86_MXCSR_IM          RT_BIT_32(7)
+%define X86_MXCSR_IM_BIT      7
 %define X86_MXCSR_DM          RT_BIT_32(8)
+%define X86_MXCSR_DM_BIT      8
 %define X86_MXCSR_ZM          RT_BIT_32(9)
+%define X86_MXCSR_ZM_BIT      9
 %define X86_MXCSR_OM          RT_BIT_32(10)
+%define X86_MXCSR_OM_BIT      10
 %define X86_MXCSR_UM          RT_BIT_32(11)
+%define X86_MXCSR_UM_BIT      11
 %define X86_MXCSR_PM          RT_BIT_32(12)
+%define X86_MXCSR_PM_BIT      12
 %define X86_MXCSR_XCPT_MASK   0x1f80
 %define X86_MXCSR_XCPT_MASK_SHIFT 7
 %define X86_MXCSR_RC_MASK     0x6000
@@ -1314,7 +1361,9 @@
 %define X86_MXCSR_RC_UP       0x4000
 %define X86_MXCSR_RC_ZERO     0x6000
 %define X86_MXCSR_FZ          RT_BIT_32(15)
+%define X86_MXCSR_FZ_BIT      15
 %define X86_MXCSR_MM          RT_BIT_32(17)
+%define X86_MXCSR_MM_BIT      17
 %define X86_MXCSR_ZERO_MASK   0xfffd0000
 %ifndef __ASSEMBLER__
  %ifndef VBOX_FOR_DTRACE_LIB
