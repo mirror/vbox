@@ -80,10 +80,6 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-        <para>New product icon and wordmark, including minor product rename</para>
-      </listitem>
-
-      <listitem>
         <para>GUI: Modernized look and feel, offering a selection between Basic and Experienced
         user level with reduced or full UI functionality</para>
       </listitem>
