@@ -693,6 +693,7 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
                 case 0x14: pszCheck = "request too big"; break;
                 case 0x15: pszCheck = "commit limit exceeded"; break;
                 case 0x16: pszCheck = "invalid VA manage query size/whatever"; break;
+                default:   pszCheck = "Todo/Unknown"; break;
             }
 
             cchUsed = RTStrPrintf(pszDetails, cbDetails,
