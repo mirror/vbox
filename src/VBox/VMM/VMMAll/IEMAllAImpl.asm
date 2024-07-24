@@ -5368,6 +5368,23 @@ IEMIMPL_V_PMOV_SZ_X pmovzxdq
         add     xSP, 4
         ; Merge the status bits into the original MXCSR value.
         and     %1, X86_MXCSR_XCPT_FLAGS
+        ;
+        ; If PE is set together with OE/UE and neither are masked
+        ; PE needs to be cleared because on real hardware
+        ; an exception is generated with only OE/UE being set,
+        ; but because we mask all exceptions PE will get set as well.
+        ;
+        mov     T2_32, %1
+        and     T2_32, X86_MXCSR_OE | X86_MXCSR_UE
+        mov     T1_32, %2
+        and     T1_32, X86_MXCSR_OM | X86_MXCSR_UM
+        shr     T1_32, X86_MXCSR_XCPT_MASK_SHIFT
+        not     T1_32
+        and     T2_32, T1_32
+        bt      T2_32, X86_MXCSR_UE
+        jz      .excp_masked
+        btr     %1, X86_MXCSR_PE_BIT
+.excp_masked:
         or      %1, %2
 
         ldmxcsr [xSP]
