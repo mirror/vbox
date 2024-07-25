@@ -30,7 +30,7 @@
           <p><b>x86 host platforms.</b> This includes Windows, macOS, and Linux platforms.</p>
         </li>
         <li>
-          <p><b>Arm host platforms.</b> This includes Apple silicon hosts and some Linux OSes.</p>
+          <p><b>Arm host platforms.</b> This includes macOS.</p>
         </li>
       </ul>
     </note>

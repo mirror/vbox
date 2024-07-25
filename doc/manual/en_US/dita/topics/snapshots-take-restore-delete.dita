@@ -41,17 +41,6 @@
           will see an item called <b outputclass="bold">Current State</b>, signifying that the current state of your VM
           is a variation based on the snapshot you took earlier. If you later take another snapshot, you will see that
           they are displayed in sequence, and that each subsequent snapshot is derived from an earlier one. </p>
-                       <fig id="fig-snapshots-list">
-                         <title>Snapshots List For a Virtual Machine</title>
-                         <xref href="images/snapshots-2.png" format="png" platform="htmlhelp">
-                           <image href="images/snapshots-2.png" width="10cm" placement="break">
-                             <alt>Snapshots List For a Virtual Machine</alt>
-                           </image>
-                         </xref>
-                         <image platform="ohc" href="images/snapshots-2.png" width="10cm" placement="break">
-                           <alt>Snapshots List For a Virtual Machine</alt>
-                         </image>
-                       </fig>
                         <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> imposes no limits on the number of
           snapshots you can take. The only practical limitation is disk space on your host. Each snapshot stores the
           state of the virtual machine and thus occupies some disk space. See <xref

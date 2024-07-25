@@ -267,6 +267,8 @@
             <entry>
               <p><b>Mouse Integration</b></p>
               <p>Settings for capturing the host mouse pointer.</p>
+              <p>The icon indicates whether mouse integration is on (green arrow) or off (yellow arrow) and whether the
+                pointer is captured (mouse icon colored) or not (mouse icon gray).</p>
               <p>Right-click to enable or disable mouse integration.</p>
               <p>See also <xref href="keyb_mouse_normal.dita#keyb_mouse_normal"/>.</p>
             </entry>        
@@ -287,7 +289,10 @@
             <entry>
               <p><b>Host Key</b></p>
               <p>Settings for capturing the host keyboard.</p>
-              <p>The current host key setting is displayed to the right of the icon.</p>
+              <p>The arrow on the icon is green if the keyboard is captured, and black if not.</p>
+              <p>The background is blue if the host key is not pressed, and white when it is pressed.</p>
+              <p>A check icon appears when the VM is waiting for a host key combination to be typed.</p>
+              <p>The current host key is displayed to the right of the icon.</p>
               <p>Right-click to show options for configuring the host key combination and other
                 keyboard shortcuts.</p>
               <p>Right-click to insert a special key combination, such as Ctrl-Alt-Del.</p>

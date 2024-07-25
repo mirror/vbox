@@ -28,11 +28,11 @@
       <li><p>The <b>Settings</b> window for a virtual machine.</p>
    </li>
     </ul>
-    
+   <p>Wherever you set it, the preference applies throughout <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. </p> 
     <section id="gui-experience-level-select">
       <title>Selecting the Experience Level</title>
       <ol>
-        <li><p>Display the required settings window.</p></li>
+        <li>In the File menu, choose <b>Preferences</b>. </li>
       <li><p>Click <b>Basic</b> or <b>Expert</b> to select the required experience level.</p>
         <p>
           <xref href="images/experience-levels.png" format="png" platform="htmlhelp"> 
@@ -44,8 +44,7 @@
             <alt>Icon for setting the experience level. Click to enable Basic or Expert mode.</alt>
           </image>
         </p>
-      <p>The number of available settings and tools might change, depending on the selected
-            experience level.</p></li>
+      <p>The number of available settings and tools will change, depending on the selected experience level.</p></li>
       </ol>
     </section>
   </body>
