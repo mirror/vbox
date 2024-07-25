@@ -55,7 +55,7 @@
 #
 # Wine will not be required if STAGEDISO is set.
 
-verpkg   := VirtualBox-7.0
+verpkg   := VirtualBox-7.1
 vboxroot := $(shell while ! test -r configure && ! test "$$PWD" = "/"; do cd ..; done; pwd)
 instlin  := $(vboxroot)/src/VBox/Installer/linux
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd $(vboxroot)/..; pwd))
