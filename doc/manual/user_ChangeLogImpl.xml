@@ -112,6 +112,10 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
+        <para>macOS/ARM host: ARM virtualization for Linux and BSD VMs</para>
+      </listitem>
+
+      <listitem>
         <para>Linux host and guest: Added Wayland support for Clipboard sharing (bug #20808)</para>
       </listitem>
 
