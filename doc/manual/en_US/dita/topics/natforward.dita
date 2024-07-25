@@ -44,7 +44,7 @@
     <pre xml:space="preserve">VBoxManage modifyvm "VM name" --natpf1 "guestssh,tcp,127.0.0.1,2222,,22"</pre>
     <p>This example forwards all TCP traffic arriving on the localhost interface at 127.0.0.1 through port 2222 to port
       22 in the guest. </p>
-    <p> It is possible to configure incoming NAT connections while the VM is running, see <xref
+    <p>It is possible to configure incoming NAT connections while the VM is running, see <xref
         href="vboxmanage-controlvm.dita"/>. </p>
   </body>
   

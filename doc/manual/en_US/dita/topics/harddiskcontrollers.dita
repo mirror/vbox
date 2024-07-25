@@ -30,7 +30,7 @@
           virtualization product, the OS in that machine may expect a particular controller type and crash if it is not
           found. </p>
         <p>After you have created a new virtual machine with the <b outputclass="bold">New Virtual Machine</b> wizard in
-          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, you will typically see one IDE controller in the
+            <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, you will typically see one IDE controller in the
           machine's <b outputclass="bold">Storage</b> settings. The virtual CD/DVD drive will be attached to one of the
           four ports of this controller. </p>
       </li>
@@ -69,7 +69,7 @@
           page of the machine's <b outputclass="bold">Settings</b> window, click <b outputclass="bold">Add
             Controller</b> under the Storage Tree box and then select <b outputclass="bold">Add SATA Controller</b>. The
           new controller appears as a separate PCI device in the virtual machine, and you can add virtual disks to it. </p>
-        <p> To change the IDE compatibility mode settings for the SATA controller, see <xref
+        <p>To change the IDE compatibility mode settings for the SATA controller, see <xref
             href="vboxmanage-storagectl.dita"/>. </p>
       </li>
       <li>

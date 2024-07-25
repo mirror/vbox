@@ -38,7 +38,7 @@
           the GDM file mentioned above. There you also have to add the line <codeph>auth requisite pam_vbox.so</codeph>. </p>
       </li>
       <li>
-        <p> If authentication against the shadow database using <filepath>pam_unix.so</filepath> or
+        <p>If authentication against the shadow database using <filepath>pam_unix.so</filepath> or
             <filepath>pam_unix2.so</filepath> is required, the argument <codeph>try_first_pass</codeph> for
             <filepath>pam_unix.so</filepath> or <codeph>use_first_pass</codeph> for <filepath>pam_unix2.so</filepath> is
           needed in order to pass the credentials from the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> module

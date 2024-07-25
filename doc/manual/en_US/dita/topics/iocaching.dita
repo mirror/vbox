@@ -48,7 +48,7 @@
       use the following <userinput>VBoxManage</userinput> command to disable the host I/O cache for a virtual storage
       controller: </p>
     <pre xml:space="preserve">VBoxManage storagectl "VM name" --name &lt;controllername&gt; --hostiocache off</pre>
-    <p> See <xref href="vboxmanage-storagectl.dita"/>. </p>
+    <p>See <xref href="vboxmanage-storagectl.dita"/>. </p>
     <p>For the above reasons, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses SATA controllers by default for
       new virtual machines. </p>
   </body>

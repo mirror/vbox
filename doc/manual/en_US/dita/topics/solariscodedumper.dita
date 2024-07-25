@@ -11,7 +11,7 @@
     <p>You can specify which directory to use for core dumps with this command, as follows: </p>
     <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> VBoxInternal2/CoreDumpDir <varname>path-to-directory</varname>
                </pre>
-    <p> Ensure the directory you specify is on a volume with sufficient free space and that the <ph
+    <p>Ensure the directory you specify is on a volume with sufficient free space and that the <ph
         conkeyref="vbox-conkeyref-phrases/product-name"/> process has sufficient permissions to write files to this
       directory. If you skip this command and do not specify any core dump directory, the current directory of the <ph
         conkeyref="vbox-conkeyref-phrases/product-name"/> executable will be used. This would most likely fail when
@@ -32,7 +32,7 @@ $ VBoxManage setextradata <varname>VM-name</varname> VBoxInternal2/CoreDumpLive 
     <pre xml:space="preserve">$ kill -s SIGUSR2 <varname>VM-process-id</varname>
                </pre>
     <p>The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> CoreDumper creates core files of the form
-      <filepath>core.vb.<varname>process-name</varname>.<varname>process-ID</varname>
+          <filepath>core.vb.<varname>process-name</varname>.<varname>process-ID</varname>
       </filepath> such as <filepath>core.vb.VBoxHeadless.11321</filepath>. </p>
   </body>
   

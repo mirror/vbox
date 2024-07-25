@@ -23,7 +23,7 @@
       </li>
       <li>
         <p>Click <b>OK</b> to create the clone and the related <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance.
-          The new instance is started automatically. </p>   
+          The new instance is started automatically.</p>   
         <p>The new cloud VM is shown in the <b outputclass="bold">OCI</b> group in <ph
             conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. </p>
       </li>

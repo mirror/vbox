@@ -38,7 +38,7 @@
           <li>On a Windows host, this file is in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> installation
             directory, usually in <filepath>C:\Program files\Oracle\VirtualBox</filepath>. </li>
           <li>
-            <p> On macOS hosts, this file is in the application bundle of <ph
+            <p>On macOS hosts, this file is in the application bundle of <ph
                 conkeyref="vbox-conkeyref-phrases/product-name"/>. Right-click the <ph
                 conkeyref="vbox-conkeyref-phrases/product-name"/> icon in Finder and choose <b outputclass="bold">Show
                 Package Contents</b>. The file is located in the <filepath>Contents/MacOS</filepath> folder. </p>
