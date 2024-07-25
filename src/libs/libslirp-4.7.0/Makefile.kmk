@@ -35,8 +35,8 @@ include $(KBUILD_PATH)/subheader.kmk
 #	socket.c(131): warning C4388: '>': signed/unsigned mismatch
 #
 LIBRARIES += VBox-libslirp
-VBox-libslirp_TEMPLATE := VBoxR3DllNonPedanticFast
-VBox-libslirp_CFLAGS.win = -wd4388
+VBox-libslirp_TEMPLATE := VBoxR3DllNonPedantic
+VBox-libslirp_CFLAGS.win = -wd4388 -wd4101
 VBox-libslirp_INCS = \
 	include \
 	$(VBox-libslirp_0_OUTDIR)
