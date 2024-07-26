@@ -184,6 +184,9 @@ private:
     /** Selects preferred type. */
     void selectPreferredType();
 
+    /** Defines whether @a pWidget @a fEnabled by reason @a uReason. */
+    static void setEnabledByReason(QWidget *pWidget, uint uReason, bool fEnabled);
+
     /** @name Arguments
      * @{ */
         /** Holds whether we should propose to choose a name. */

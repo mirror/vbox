@@ -110,13 +110,13 @@ void UINameAndSystemEditor::setOSTypeStuffEnabled(bool fEnabled)
     if (m_pLabelFamily)
         m_pLabelFamily->setEnabled(fEnabled);
     if (m_pLabelDistribution)
-        m_pLabelDistribution->setEnabled(fEnabled);
+        setEnabledByReason(m_pLabelDistribution, 1, fEnabled);
     if (m_pLabelType)
         m_pLabelType->setEnabled(fEnabled);
     if (m_pComboFamily)
         m_pComboFamily->setEnabled(fEnabled);
     if (m_pComboDistribution)
-        m_pComboDistribution->setEnabled(fEnabled);
+        setEnabledByReason(m_pComboDistribution, 1, fEnabled);
     if (m_pComboType)
         m_pComboType->setEnabled(fEnabled);
     if (m_pIconType)
@@ -688,8 +688,8 @@ void UINameAndSystemEditor::populateDistributionCombo()
                                                                        false /* including restricted? */,
                                                                        QStringList() << distribution(),
                                                                        enmArch);
-    m_pLabelDistribution->setEnabled(!distributions.isEmpty());
-    m_pComboDistribution->setEnabled(!distributions.isEmpty());
+    setEnabledByReason(m_pLabelDistribution, 2, !distributions.isEmpty());
+    setEnabledByReason(m_pComboDistribution, 2, !distributions.isEmpty());
 
     /* Block signals initially and clear the combo: */
     m_pComboDistribution->blockSignals(true);
@@ -828,4 +828,28 @@ void UINameAndSystemEditor::selectPreferredType()
 
     /* Choose the item under the index we found or 1st one item otherwise: */
     m_pComboType->setCurrentIndex(iChosenIndex != -1 ? iChosenIndex : 0);
+}
+
+void UINameAndSystemEditor::setEnabledByReason(QWidget *pWidget, uint uReason, bool fEnabled)
+{
+    /* Some widgets can be enabled by two independent reasons;
+     * and we want to actually enable them only by both. */
+
+    /* Make sure passed widget is valid: */
+    AssertPtrReturnVoid(pWidget);
+    /* Make sure uReason provided is equal to 1 or 2: */
+    AssertReturnVoid(uReason == 1 || uReason == 2);
+
+    /* Property template: */
+    QString strPropertyTemplate("enabledByReason_%1");
+
+    /* Update value for passed uReason: */
+    pWidget->setProperty(strPropertyTemplate.arg(uReason).toUtf8().constData(), fEnabled);
+
+    /* Make sure widget enabled only if requested by both reasons: */
+    const QVariant property1 = pWidget->property(strPropertyTemplate.arg(1).toUtf8().constData());
+    const QVariant property2 = pWidget->property(strPropertyTemplate.arg(2).toUtf8().constData());
+    const bool fEnabledByReason1 = !property1.isValid() || property1.toBool();
+    const bool fEnabledByReason2 = !property2.isValid() || property2.toBool();
+    pWidget->setEnabled(fEnabledByReason1 && fEnabledByReason2);
 }
