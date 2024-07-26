@@ -131,9 +131,10 @@ void UIGuestOSTypeManager::reCacheGuestOSTypes()
     CGuestOSTypeVector guestOSTypes = comVBox.GetGuestOSTypes();
 
     /* Acquire a list of guest OS types supported by this host: */
-    m_supportedGuestOSTypeIDs.clear();
     CSystemProperties comSystemProps = comVBox.GetSystemProperties();
-    foreach (const KPlatformArchitecture &enmArch, comSystemProps.GetSupportedPlatformArchitectures())
+    m_supportedArchTypes = comSystemProps.GetSupportedPlatformArchitectures();
+    m_supportedGuestOSTypeIDs.clear();
+    foreach (const KPlatformArchitecture &enmArch, m_supportedArchTypes)
     {
         CPlatformProperties comPlatformProps = comVBox.GetPlatformProperties(enmArch);
         foreach (const CGuestOSType &comType, comPlatformProps.GetSupportedGuestOSTypes())

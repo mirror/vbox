@@ -262,6 +262,9 @@ private:
     /** Adds certain @a comType to internal cache. */
     void addGuestOSType(const CGuestOSType &comType);
 
+    /** Holds the list of supported platform architectures. */
+    QVector<KPlatformArchitecture>  m_supportedArchTypes;
+
     /** Holds the list of supported guest OS type IDs. */
     QStringList  m_supportedGuestOSTypeIDs;
 
