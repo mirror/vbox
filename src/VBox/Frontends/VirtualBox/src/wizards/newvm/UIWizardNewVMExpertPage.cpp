@@ -241,6 +241,8 @@ void UIWizardNewVMExpertPage::sltRetranslateUI()
         m_pDiskExisting->setText(UIWizardNewVM::tr("U&se an Existing Virtual Hard Disk File"));
     if (m_pDiskSelectionButton)
         m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Chooses a Virtual Hard Fisk File..."));
+    if (m_pDiskSelectionButton)
+        m_pDiskSelectionButton->setText(UIWizardNewVM::tr("Choose a Virtual Hard Fisk File"));
 
     if (m_pNameAndSystemLayout && m_pNameAndSystemEditor)
         m_pNameAndSystemLayout->setColumnMinimumWidth(0, m_pNameAndSystemEditor->firstColumnWidth());

@@ -403,7 +403,7 @@ void UIMedium::refresh()
         }
 
         /* Refresh tool-tip: */
-        m_strToolTip = m_sstrRow.arg(QString("<p style=white-space:pre><b>%1</b></p>").arg(m_fHostDrive ? m_strName : m_strLocation));
+        m_strToolTip = m_sstrRow.arg(QString("%1").arg(m_fHostDrive ? m_strName : m_strLocation));
         if (m_type == UIMediumDeviceType_HardDisk)
         {
             m_strToolTip += m_sstrRow.arg(QApplication::translate("UIMedium", "<p style=white-space:pre>Type (Format):  %1 (%2)</p>", "medium")

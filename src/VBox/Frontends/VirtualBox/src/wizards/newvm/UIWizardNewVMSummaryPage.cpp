@@ -427,13 +427,9 @@ void UIWizardNewVMSummaryPage::prepare()
     pMainLayout->addWidget(m_pLabel);
 
     m_pTree = new QITreeView;
-    QString sty("QTreeView::branch {"
-                "background: palette(base);"
-                "}");
 
     if (m_pTree)
     {
-        //m_pTree->setStyleSheet(sty);
         m_pTree->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
         m_pTree->setAlternatingRowColors(true);
         m_pModel = new UIWizardNewVMSummaryModel(m_pTree);
@@ -458,6 +454,8 @@ void UIWizardNewVMSummaryPage::sltRetranslateUI()
                                             " chosen for the new virtual machine. When you are happy with the configuration"
                                             " press Finish to create the virtual machine. Alternatively you can go back"
                                             " and modify the configuration."));
+    if (m_pTree)
+        m_pLabel->setWhatsThis(UIWizardNewVM::tr("Lists chosen configuration of the guest system."));
 }
 
 void UIWizardNewVMSummaryPage::initializePage()
