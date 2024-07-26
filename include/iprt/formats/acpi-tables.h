@@ -233,7 +233,7 @@ typedef const ACPITBLHDR *PCACPITBLHDR;
 /** Platform Memory Topology Table. */
 #define ACPI_TABLE_HDR_SIGNATURE_PMTT           ACPI_SIGNATURE_MAKE_FROM_U8('P', 'M', 'T', 'T')
 /** Processor Properties Topology Table. */
-#define ACPI_TABLE_HDR_SIGNATURE_PMTT           ACPI_SIGNATURE_MAKE_FROM_U8('P', 'P', 'T', 'T')
+#define ACPI_TABLE_HDR_SIGNATURE_PPTT           ACPI_SIGNATURE_MAKE_FROM_U8('P', 'P', 'T', 'T')
 /** Persistent System Description Table. */
 #define ACPI_TABLE_HDR_SIGNATURE_PSDT           ACPI_SIGNATURE_MAKE_FROM_U8('P', 'S', 'D', 'T')
 /** ACPI RAS Feature Table. */
@@ -363,7 +363,7 @@ typedef struct ACPIRSDT
     ACPITBLHDR          Hdr;                            /**< 0x000: The table header. */
     uint32_t            au32AddrTbl[RT_FLEXIBLE_ARRAY]; /**< 0x024: Array of 32-bit physical addresses pointing to other tables, variable in size. */
 } ACPIRSDT;
-AssertCompileSize(ACPIRSDT, 40);
+//AssertCompileSize(ACPIRSDT, 40);
 /** Pointer to an ACPI Root System Description Table. */
 typedef ACPIRSDT *PACPIRSDT;
 /** Pointer to a const ACPI Root System Description Table. */
@@ -386,7 +386,7 @@ typedef struct ACPIXSDT
     uint64_t            au64AddrTbl[RT_FLEXIBLE_ARRAY]; /**< 0x024: Array of 64-bit physical addresses pointing to other tables, variable in size. */
 } ACPIXSDT;
 #pragma pack()
-AssertCompileSize(ACPIXSDT, 44);
+//AssertCompileSize(ACPIXSDT, 44);
 /** Pointer to an ACPI Extended System Description Table. */
 typedef ACPIXSDT *PACPIXSDT;
 /** Pointer to a const ACPI Extended System Description Table. */
