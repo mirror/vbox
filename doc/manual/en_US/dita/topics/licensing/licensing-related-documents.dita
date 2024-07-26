@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="licensing-related-documents">
+  <title>Related Documents</title>
+  <body>
+    <p>
+      The documentation for this product is available at:
+    </p>
+    <p>
+      <xref href="https://docs.oracle.com/en/virtualization/virtualbox/index.html" format="html" scope="external"/>
+    </p>
+  </body>
+</topic>

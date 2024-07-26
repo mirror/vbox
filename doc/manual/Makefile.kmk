@@ -1,4 +1,4 @@
-# $Id$
+# /# $Id$
 ## @file
 # Sub-Makefile for the VirtualBox User Manual, SDK reference and other manuals.
 #
@@ -178,7 +178,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  BLDDIRS += \
  	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita \
  	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics \
- 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/licensing \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/licensing/vbox-base \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/licensing/vbox-ext
 
  BLDDIRS += \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/, \
@@ -587,7 +590,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  VBOX_USER_MANUAL_DITA_BASIC_SRC_FILES := \
  	$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/*.dita*)) \
  	$(addprefix topics/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita))) \
- 	$(addprefix topics/images/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*png)))
+ 	$(addprefix topics/images/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*png))) \
+ 	$(addprefix topics/licensing/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/licensing/*dita*))) \
+ 	$(addprefix topics/licensing/vbox-base/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/licensing/vbox-base/*dita))) \
+ 	$(addprefix topics/licensing/vbox-ext/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/licensing/vbox-ext/*dita)))
 
  ##
  # Produce copying rules for one language and defining the variable
@@ -599,7 +605,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_USER_MANUAL_DITA_SRC_FILES_$(1) := \
   	$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/*.ditamap)) \
   	$$(addprefix topics/,$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/topics/*dita))) \
-  	$$(addprefix topics/images/,$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/topics/images/*png)))
+  	$$(addprefix topics/images/,$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/topics/images/*png))) \
+  	$$(addprefix topics/licensing/,$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/topics/licensing/*dita*))) \
+  	$$(addprefix topics/licensing/vbox-base/,$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/topics/licensing/vbox-base/*dita))) \
+  	$$(addprefix topics/licensing/vbox-ext/,$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/topics/licensing/vbox-ext/*dita)))
   VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)_FALLBACK := \
   	$$(filter-out $$(VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)), $$(VBOX_USER_MANUAL_DITA_BASIC_SRC_FILES))
 

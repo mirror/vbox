@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="license-xf86-input-mouse-1.0.4">
+  
+ <title>xf86-input-mouse</title>
+  
+ <body>
+
+ 
+  <pre xml:space="preserve">xf86-input-mouse
+
+src/mouse.c
+/*
+ *
+ * Copyright 1990,91 by Thomas Roell, Dinkelscherben, Germany.
+ * Copyright 1993 by David Dawes &lt;dawes@xfree86.org&gt;
+ * Copyright 2002 by SuSE Linux AG, Author: Egbert Eich
+ * Copyright 1994-2002 by The XFree86 Project, Inc.
+ * Copyright 2002 by Paul Elliott
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the names of copyright holders not be
+ * used in advertising or publicity pertaining to distribution of the
+ * software without specific, written prior permission.  The copyright holders
+ * make no representations about the suitability of this
+ * software for any purpose.  It is provided &#34;as is&#34; without express or
+ * implied warranty.
+ *
+ * THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
+ * SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS, IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER
+ * RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
+ * CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ */
+
+=====================================================================
+src/mouse.h:
+src/mousePriv.h
+/*
+ * Copyright (c) 1997-1999 by The XFree86 Project, Inc.
+ */
+
+=====================================================================
+src/pnp.c:
+/*
+ * Copyright 1998 by Kazutaka YOKOTA &lt;yokota@zodiac.mech.utsunomiya-u.ac.jp&gt;
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of Kazutaka YOKOTA not be used in
+ * advertising or publicity pertaining to distribution of the software without
+ * specific, written prior permission.  Kazutaka YOKOTA makes no representations
+ * about the suitability of this software for any purpose.  It is provided
+ * &#34;as is&#34; without express or implied warranty.
+ *
+ * KAZUTAKA YOKOTA DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+ * EVENT SHALL KAZUTAKA YOKOTA BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+</pre>
+  </body>
+ </topic>

@@ -1,0 +1,175 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">              
+<topic xml:lang="en-us" id="licenses-oss-vbox-ext">
+  <title>Open Source or Other Separately Licensed Software</title>
+  <body>
+  <p>Required notices for open source or other separately licensed software products or components distributed in <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/> are identified in the following table, along with the applicable licensing information. Additional notices and/or licenses may be found in the included documentation or readme files of the individual third party software.</p>
+        <table id="table-oss-vbox-ext">
+        <title>Open Source or Other Separately Licensed Software Included With <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/></title>
+         <desc>
+           <ph>This table shows the additional licensing information for
+          the software packages and container images used for <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/></ph>
+        </desc>
+        <tgroup cols="3">
+          <colspec/>
+          <colspec/>
+          <colspec/>
+          <thead>
+            <row>
+              <entry>Provider</entry>
+              <entry>Component(s)</entry>
+              <entry>License Information</entry>
+            </row>
+          </thead>
+          <tbody>
+          
+           <row>
+             <entry>
+               <p>Danny Gasparovski</p>
+             </entry>     
+             
+             <entry>
+            <p>Slirp</p>
+              </entry>
+             
+            <entry>
+               <p>
+             A copy of the License is reproduced in 
+             <xref href="licensing-license-vbox-ext-slirp-1.0.16.dita#license-slirp-1.0.16" scope="local"/>
+              </p>
+             </entry>        
+            </row>
+           <row>
+             <entry>
+               <p>Free Software Foundation, Inc.</p>
+             </entry>     
+             
+             <entry>
+            <p>glibc</p>
+              </entry>
+             
+            <entry>
+               <p>
+             A copy of the License is reproduced in 
+             <xref href="licensing-license-vbox-ext-glibc-2.17-324.0.402.el7_9.dita#license-glibc-2.17-324.0.402.el7_9" scope="local"/>
+              </p>
+             </entry>        
+            </row>
+           <row>
+             <entry>
+               <p>Jean-loup Gailly and Mark Adler</p>
+             </entry>     
+             
+             <entry>
+            <p>Zlib Data Compression Library</p>
+              </entry>
+             
+            <entry>
+               <p>
+             A copy of the License is reproduced in 
+             <xref href="licensing-license-vbox-ext-zlib-data-compression-library-1.2.13.dita#license-zlib-data-compression-library-1.2.13" scope="local"/>
+              </p>
+             </entry>        
+            </row>
+           <row>
+             <entry>
+               <p>Marc Alexander Lehmann</p>
+             </entry>     
+             
+             <entry>
+            <p>LZF</p>
+              </entry>
+             
+            <entry>
+               <p>
+             A copy of the License is reproduced in 
+             <xref href="licensing-license-vbox-ext-lzf-3.6.dita#license-lzf-3.6" scope="local"/>
+              </p>
+             </entry>        
+            </row>
+           <row>
+             <entry>
+               <p>OpenSSL Project</p>
+             </entry>     
+             
+             <entry>
+            <p>OpenSSL</p>
+              </entry>
+             
+            <entry>
+               <p>
+             A copy of the License is reproduced in 
+             <xref href="licensing-license-vbox-ext-openssl-3.1.3.dita#license-openssl-3.1.3" scope="local"/>
+              </p>
+             </entry>        
+            </row>
+           <row>
+             <entry>
+               <p>Philip Rebohle, Joshua Ashton</p>
+             </entry>     
+             
+             <entry>
+            <p>dxvk-native</p>
+              </entry>
+             
+            <entry>
+               <p>
+             A copy of the License is reproduced in 
+             <xref href="licensing-license-vbox-ext-dxvk-native-1.9.2b.dita#license-dxvk-native-1.9.2b" scope="local"/>
+              </p>
+             </entry>        
+            </row>
+           <row>
+             <entry>
+               <p>X.Org Foundation</p>
+             </entry>     
+             
+             <entry>
+            <p>glproto</p>
+              </entry>
+             
+            <entry>
+               <p>
+             A copy of the License is reproduced in 
+             <xref href="licensing-license-vbox-ext-glproto-1.4.17.dita#license-glproto-1.4.17" scope="local"/>
+              </p>
+             </entry>        
+            </row>
+           <row>
+             <entry>
+               <p>X.Org Foundation</p>
+             </entry>     
+             
+             <entry>
+            <p>xorg-server</p>
+              </entry>
+             
+            <entry>
+               <p>
+             A copy of the License is reproduced in 
+             <xref href="licensing-license-vbox-ext-xorg-server-1.8.0.dita#license-xorg-server-1.8.0" scope="local"/>
+              </p>
+             </entry>        
+            </row>
+           <row>
+             <entry>
+               <p>X.Org Foundation</p>
+             </entry>     
+             
+             <entry>
+            <p>xproto</p>
+              </entry>
+             
+            <entry>
+               <p>
+             A copy of the License is reproduced in 
+             <xref href="licensing-license-vbox-ext-xproto-7.0.31.dita#license-xproto-7.0.31" scope="local"/>
+              </p>
+             </entry>        
+            </row>
+       </tbody>
+        </tgroup>
+        </table>
+      </body>   
+  </topic>
+

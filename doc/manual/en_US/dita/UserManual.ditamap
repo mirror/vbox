@@ -644,6 +644,10 @@
       <topicref href="topics/changelog-older.dita"/>
    </chapter>
 
+<!--    <chapter href="topics/licensing/licensing_chapter.dita" chunk="to-content">
+      <topicref format="ditamap" href="topics/licensing/licensing.ditamap"/>
+   </chapter> -->
+
    <!-- Third Party Licenses-->
 
    <chapter href="topics/privacy.dita" chunk="to-content"/>

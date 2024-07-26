@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">              
+<topic xml:lang="en-us" id="sw-licenses-vbox-ext">
+  <title>Software Licenses</title>
+  <body>
+    <p>
+    This section contains the licenses for third-party software packages used by <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/>.
+  </p>
+  </body>
+</topic>
+

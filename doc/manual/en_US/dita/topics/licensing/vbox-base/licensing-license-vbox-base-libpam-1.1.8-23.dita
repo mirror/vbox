@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="license-libpam-1.1.8-23">
+  
+ <title>libpam</title>
+  
+ <body>
+
+ 
+  <pre xml:space="preserve">
+Unless otherwise *explicitly* stated the following text describes the
+licensed conditions under which the contents of this Linux-PAM release
+may be distributed:
+
+-------------------------------------------------------------------------
+Redistribution and use in source and binary forms of Linux-PAM, with
+or without modification, are permitted provided that the following
+conditions are met:
+
+1. Redistributions of source code must retain any existing copyright
+   notice, and this entire permission notice in its entirety,
+   including the disclaimer of warranties.
+
+2. Redistributions in binary form must reproduce all prior and current
+   copyright notices, this list of conditions, and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+3. The name of any author may not be used to endorse or promote
+   products derived from this software without their specific prior
+   written permission.
+
+ALTERNATIVELY, this product may be distributed under the terms of the
+GNU General Public License, in which case the provisions of the GNU
+GPL are required INSTEAD OF the above restrictions.  (This clause is
+necessary due to a potential conflict between the GNU GPL and the
+restrictions contained in a BSD-style copyright.)
+
+THIS SOFTWARE IS PROVIDED ``AS IS&#39;&#39; AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR(S) BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+=====================================================================
+From libpam/include/security/pam_modules.h:
+/* Copyright (C) Theodore Ts&#39;o, 1996.
+ * Copyright (C) Andrew Morgan, 1996-8.
+ *                                                All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, and the entire permission notice in its entirety,
+ *    including the disclaimer of warranties.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote
+ *    products derived from this software without specific prior
+ *    written permission.
+ *
+ * ALTERNATIVELY, this product may be distributed under the terms of
+ * the GNU General Public License, in which case the provisions of the
+ * GNU GPL are required INSTEAD OF the above restrictions.  (This
+ * clause is necessary due to a potential bad interaction between the
+ * GNU GPL and the restrictions contained in a BSD-style copyright.)
+ *
+ * THIS SOFTWARE IS PROVIDED ``AS IS&#39;&#39; AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.  */
+======================================================================
+From libpam/include/security/_pam_macros.h:
+/*
+ * All kind of macros used by PAM, but usable in some other
+ * programs too.
+ * Organized by Cristian Gafton &lt;gafton@redhat.com&gt;
+ */
+======================================================================
+From AUTHORS:
+
+Original authors and current maintainers of Linux-PAM:
+
+Andrew G. Morgan        &lt;morgan@kernel.org&gt;
+Dmitry V. Levin         &lt;ldv@altlinux.org&gt;
+Thorsten Kukuk          &lt;kukuk@thkukuk.de&gt;
+Sebastien Tricaud       &lt;toady@gscore.org&gt;
+Tomas Mraz              &lt;t8m@centrum.cz&gt;
+
+</pre>
+  </body>
+ </topic>
