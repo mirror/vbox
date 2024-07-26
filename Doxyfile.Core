@@ -248,6 +248,8 @@ ALIASES += udf260{2}="<a href=\"http://www.osta.org/specs/pdf/udf260.pdf#page=\2
 ALIASES += ecma{3}="<a href=\"https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-\1.pdf#page=\3\">ECMA-\1:\2</a>"
 # ECMA-167 spec reference - 1=part 2=section, 3=page
 ALIASES += ecma167{3}="\ecma{167,Part\1/\2,\3}"
+# ACPI spec reference - 1=chapter, 2=section
+ALIASES += acpi65{2}="<a href=\"https://uefi.org/specs/ACPI/6.5/\1.html#\2\">ACPI-6.5:\2</a>"
 
 # Internal: 1=doc number; 2=file base name; 3=revision (077); 4=page; 5=doc name; 6=section/table/figure; 7=title
 ALIASES += sdm{7}="<a href=\"https://www.intel.com/content/dam/develop/public/us/en/documents/\1-\2.pdf#page=\4\">\5:\6 \"\7\"</a>"
