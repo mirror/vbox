@@ -3422,8 +3422,8 @@ DxgkDdiEscape(
                 if (pEscapeHdr->u32CmdSpecific)
                 {
                     WARN(("VBOXESC_CONFIGURETARGETS invalid command %d", pEscapeHdr->u32CmdSpecific));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
+//                    Status = STATUS_INVALID_PARAMETER;
+//                    break;
                 }
 
                 HANDLE hKey = NULL;
@@ -3480,6 +3480,59 @@ DxgkDdiEscape(
                 LOG(("<= VBOXESC_CONFIGURETARGETS"));
                 break;
             }
+
+            case VBOXESC_RECONNECT_TARGETS:
+            {
+                LOG(("=> VBOXESC_RECONNECT_TARGETS"));
+
+                if (!pEscape->Flags.HardwareAccess)
+                {
+                    WARN(("VBOXESC_RECONNECT_TARGETS called without HardwareAccess flag set, failing\n"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                if (pEscape->PrivateDriverDataSize != sizeof (*pEscapeHdr))
+                {
+                    WARN(("VBOXESC_RECONNECT_TARGETS invalid private driver size %d\n", pEscape->PrivateDriverDataSize));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                if (pEscapeHdr->u32CmdSpecific == 0)
+                {
+                    WARN(("VBOXESC_RECONNECT_TARGETS u32CmdSpecific is zero\n"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                uint32_t u32Mask = pEscapeHdr->u32CmdSpecific;
+
+                for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                {
+                    VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[i];
+                    bool fConnReq = u32Mask & RT_BIT(i);
+
+                    pTarget->fConfigured = true;
+
+                    if (!pTarget->fConnected && fConnReq)
+                    {
+                        Status = VBoxWddmChildStatusConnect(pDevExt, (uint32_t)i, TRUE);
+                        LOG(("VBOXESC_RECONNECT_TARGETS connecting target %d, status 0x%x", i, Status));
+                    }
+                    else if (pTarget->fConnected && !fConnReq)
+                    {
+                        Status = VBoxWddmChildStatusConnect(pDevExt, (uint32_t)i, FALSE);
+                        LOG(("VBOXESC_RECONNECT_TARGETS disconnecting target %d, status 0x%x", i, Status));
+                    }
+                 }
+
+                Status = STATUS_SUCCESS;
+
+                LOG(("<= VBOXESC_RECONNECT_TARGETS"));
+                break;
+            }
+
             case VBOXESC_SETALLOCHOSTID:
             {
                 PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)pEscape->hDevice;

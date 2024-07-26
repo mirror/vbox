@@ -58,6 +58,8 @@
 # define VBOXESC_UPDATEMODES                0xABCD9016
 # define VBOXESC_GUEST_DISPLAYCHANGED       0xABCD9017
 # define VBOXESC_TARGET_CONNECTIVITY        0xABCD9018
+
+# define VBOXESC_RECONNECT_TARGETS          0xABCD9019
 #endif /* #ifdef VBOX_WITH_WDDM */
 
 # define VBOXESC_ISANYX                     0xABCD9200
