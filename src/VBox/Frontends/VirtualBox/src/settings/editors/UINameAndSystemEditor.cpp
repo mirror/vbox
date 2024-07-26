@@ -295,7 +295,7 @@ void UINameAndSystemEditor::sltRetranslateUI()
     if (m_pSelectorPath)
         m_pSelectorPath->setToolTip(tr("Selects the folder hosting virtual machine."));
     if (m_pComboEdition)
-        m_pComboEdition->setToolTip(tr("Selects the operating system's edition when possible."));
+        m_pComboEdition->setToolTip(tr("Selects the operating system edition when possible."));
     if (m_pComboFamily)
         m_pComboFamily->setToolTip(tr("Selects the operating system type that "
                                       "you plan to install into this virtual machine."));
