@@ -264,79 +264,67 @@ QRect QIAccessibilityInterfaceForQITreeViewItem::boundingRect() const
 
 int QIAccessibilityInterfaceForQITreeView::childCount() const
 {
-    /* Sanity check: */
+    /* Make sure tree still alive: */
     AssertPtrReturn(tree(), 0);
+    /* Make sure model still alive: */
     AssertPtrReturn(tree()->model(), 0);
 
-    /* Acquire root model-index: */
+    /* Acquire required model-index, that can be root-index if specified
+     * or null index otherwise, in that case we return the amount of top-level children: */
     const QModelIndex rootIndex = tree()->rootIndex();
+    const QModelIndex requiredIndex = rootIndex.isValid() ? rootIndex : QModelIndex();
 
     /* Return the number of children: */
-    return tree()->model()->rowCount(rootIndex);
+    return tree()->model()->rowCount(requiredIndex);
 }
 
 QAccessibleInterface *QIAccessibilityInterfaceForQITreeView::child(int iIndex) const
 {
-    /* Sanity check: */
-    AssertPtrReturn(tree(), 0);
-    AssertPtrReturn(tree()->model(), 0);
+    /* Make sure table still alive: */
+    QITreeView *pTree = tree();
+    AssertPtrReturn(pTree, 0);
+    /* Make sure model still alive: */
+    QAbstractItemModel *pModel = pTree->model();
+    AssertPtrReturn(pModel, 0);
+    /* Make sure index is valid: */
     AssertReturn(iIndex >= 0, 0);
-    if (iIndex >= childCount())
+
+    /* Real index might be different: */
+    int iRealIndex = iIndex;
+
+    // WORKAROUND:
+    // For a tree-views Qt accessibility code has a hard-coded architecture which we do not like
+    // but have to live with, this architecture enumerates children of all levels as children of level 0,
+    // so Qt can try to address our interface with index which surely out of bounds by our laws.
+    // Let's assume that's exactly the case and try to enumerate children like they are a part of the list, not tree.
+    if (iRealIndex >= childCount())
     {
-        // WORKAROUND:
-        // Normally I would assert here, but Qt5 accessibility code has
-        // a hard-coded architecture for a tree-views which we do not like
-        // but have to live with and this architecture enumerates children
-        // of all levels as children of level 0, so Qt5 can try to address
-        // our interface with index which surely out of bounds by our laws.
-        // So let's assume that's exactly such case and try to enumerate
-        // visible children like they are a part of the list, not tree.
-        // printf("Invalid index: %d\n", iIndex);
+        // Split delimeter is overall column count:
+        const int iColumnCount = pModel->columnCount();
 
-        // Take into account we also have header with 'column count' indexes,
-        // so we should start enumerating tree indexes since 'column count'.
-        const int iColumnCount = tree()->model()->columnCount();
-        int iCurrentIndex = iColumnCount;
-
-        // Set iterator to root model-index initially:
-        QModelIndex index = tree()->rootIndex();
-        // But if it has child, go deeper:
-        if (tree()->model()->index(0, 0, index).isValid())
-            index = tree()->model()->index(0, 0, index);
-
-        // Search for sibling with corresponding index:
-        while (index.isValid() && iCurrentIndex < iIndex)
-        {
-            ++iCurrentIndex;
-            if (iCurrentIndex % iColumnCount == 0)
-                index = tree()->indexBelow(index);
-        }
-
-        // Check whether we have proxy model set or source one otherwise:
-        const QSortFilterProxyModel *pProxyModel = qobject_cast<const QSortFilterProxyModel*>(tree()->model());
-        // Acquire source model-index, which can be the same as model-index:
-        const QModelIndex sourceIndex = pProxyModel ? pProxyModel->mapToSource(index) : index;
-
-        // Return what we found:
-        // if (sourceIndex.isValid())
-        //     printf("Item found: [%s]\n", ((QITreeViewItem*)sourceIndex.internalPointer())->text().toUtf8().constData());
-        // else
-        //     printf("Item not found\n");
-        return sourceIndex.isValid() ? QAccessible::queryAccessibleInterface((QITreeViewItem*)sourceIndex.internalPointer()) : 0;
+        // Real row index:
+        iRealIndex = iRealIndex / iColumnCount;
     }
 
-    /* Acquire root model-index: */
-    const QModelIndex rootIndex = tree()->rootIndex();
-    /* Acquire child model-index: */
-    const QModelIndex childIndex = tree()->model()->index(iIndex, 0, rootIndex);
+    /* Make sure index fits the bounds finally: */
+    if (iRealIndex >= childCount())
+        return 0;
 
+    /* Acquire parent model-index, that can be root-index if specified
+     * or null index otherwise, in that case we will return one of top-level children: */
+    const QModelIndex rootIndex = tree()->rootIndex();
+    const QModelIndex parentIndex = rootIndex.isValid() ? rootIndex : QModelIndex();
+
+    /* Acquire child-index: */
+    const QModelIndex childIndex = pModel->index(iRealIndex, 0, parentIndex);
     /* Check whether we have proxy model set or source one otherwise: */
-    const QSortFilterProxyModel *pProxyModel = qobject_cast<const QSortFilterProxyModel*>(tree()->model());
-    /* Acquire source child model-index, which can be the same as child model-index: */
+    const QSortFilterProxyModel *pProxyModel = qobject_cast<const QSortFilterProxyModel*>(pModel);
+    /* Acquire source-model child-index (can be the same as original if there is no proxy model): */
     const QModelIndex sourceChildIndex = pProxyModel ? pProxyModel->mapToSource(childIndex) : childIndex;
-    /* Acquire source child item: */
+
+    /* Acquire child item: */
     QITreeViewItem *pItem = reinterpret_cast<QITreeViewItem*>(sourceChildIndex.internalPointer());
-    /* Return the child with the passed iIndex: */
+    /* Return child item's accessibility interface: */
     return QAccessible::queryAccessibleInterface(pItem);
 }
 
