@@ -223,14 +223,27 @@ UIGuestOSTypeManager::getFamilies(bool fListAll /* = true */,
                                   const QStringList &including /* = QStringList() */,
                                   KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
-    /* Otherwise we'll have to prepare list by arch type: */
+    /* Prepare family list: */
     UIGuestOSTypeManager::UIGuestOSFamilyInfo families;
     foreach (const UIFamilyInfo &fi, m_guestOSFamilies)
     {
-        if (   !fListAll
-            && !fi.m_fSupported
-            && !including.contains(fi.m_strId))
+        /* Always include family which was asked for: */
+        if (including.contains(fi.m_strId))
+        {
+            families << fi;
             continue;
+        }
+
+        /* Skip everyting if requested arch type is NOT supported: */
+        if (   enmArch != KPlatformArchitecture_None
+            && !m_supportedArchTypes.contains(enmArch))
+            continue;
+
+        /* Skip unsupported families if there was no request to show all: */
+        if (   !fListAll
+            && !fi.m_fSupported)
+            continue;
+
         const KPlatformArchitecture enmCurrentArch = fi.m_enmArch;
         if (   enmCurrentArch == enmArch
             || enmCurrentArch == KPlatformArchitecture_None
@@ -246,14 +259,27 @@ UIGuestOSTypeManager::getSubtypesForFamilyId(const QString &strFamilyId,
                                              const QStringList &including /* = QStringList() */,
                                              KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
-    /* Otherwise we'll have to prepare list by arch type: */
+    /* Prepare subtype list: */
     UIGuestOSSubtypeInfo subtypes;
     foreach (const UISubtypeInfo &si, m_guestOSSubtypes.value(strFamilyId))
     {
-        if (   !fListAll
-            && !si.m_fSupported
-            && !including.contains(si.m_strName))
+        /* Always include subtype which was asked for: */
+        if (including.contains(si.m_strName))
+        {
+            subtypes << si;
             continue;
+        }
+
+        /* Skip everyting if requested arch type is NOT supported: */
+        if (   enmArch != KPlatformArchitecture_None
+            && !m_supportedArchTypes.contains(enmArch))
+            continue;
+
+        /* Skip unsupported subtypes if there was no request to show all: */
+        if (   !fListAll
+            && !si.m_fSupported)
+            continue;
+
         const KPlatformArchitecture enmCurrentArch = si.m_enmArch;
         if (   enmCurrentArch == enmArch
             || enmCurrentArch == KPlatformArchitecture_None
@@ -274,15 +300,27 @@ UIGuestOSTypeManager::getTypesForFamilyId(const QString &strFamilyId,
         return typeInfoList;
     foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
-        if (   !fListAll
-            && !type.isSupported()
-            && !including.contains(type.getId()))
-            continue;
-        if (type.getFamilyId() != strFamilyId)
-            continue;
+        /* Check for redundant type: */
         QPair<QString, QString> info(type.getId(), type.getDescription());
         if (typeInfoList.contains(info))
             continue;
+
+        /* Always include subtype which was asked for: */
+        if (including.contains(type.getId()))
+        {
+            typeInfoList << info;
+            continue;
+        }
+
+        /* Skip unsupported types if there was no request to show all: */
+        if (   !fListAll
+            && !type.isSupported())
+            continue;
+
+        /* Skip types of different family: */
+        if (type.getFamilyId() != strFamilyId)
+            continue;
+
         if (   enmArch == KPlatformArchitecture_None
             || type.getPlatformArchitecture() == enmArch)
             typeInfoList << info;
@@ -301,15 +339,27 @@ UIGuestOSTypeManager::getTypesForSubtype(const QString &strSubtype,
         return typeInfoList;
     foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
-        if (   !fListAll
-            && !type.isSupported()
-            && !including.contains(type.getId()))
-            continue;
-        if (type.getSubtype() != strSubtype)
-            continue;
+        /* Check for redundant type: */
         QPair<QString, QString> info(type.getId(), type.getDescription());
         if (typeInfoList.contains(info))
             continue;
+
+        /* Always include subtype which was asked for: */
+        if (including.contains(type.getId()))
+        {
+            typeInfoList << info;
+            continue;
+        }
+
+        /* Skip unsupported types if there was no request to show all: */
+        if (   !fListAll
+            && !type.isSupported())
+            continue;
+
+        /* Skip types of different subtype: */
+        if (type.getSubtype() != strSubtype)
+            continue;
+
         if (   enmArch == KPlatformArchitecture_None
             || type.getPlatformArchitecture() == enmArch)
             typeInfoList << info;
