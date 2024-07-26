@@ -72,20 +72,26 @@ static DECLCALLBACK(int) vgsvcDisplayConfigInit(void)
     return VINF_SUCCESS;
 }
 
-void ReplugDisplays(uint32_t cDisplays, VMMDevDisplayDef *paDisplays)
+void ReconnectDisplays(uint32_t cDisplays, VMMDevDisplayDef *paDisplays)
 {
-    RT_NOREF2(cDisplays, paDisplays);
     D3DKMT_HANDLE hAdapter;
     D3DKMT_ENUMADAPTERS EnumAdapters = {0};
     NTSTATUS rcNt;
-    ULONG id = 0;
+    uint32_t u32Mask = 0;
+
+    for(uint32_t i = 0; i < cDisplays; i++)
+    {
+        u32Mask |= (paDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED) ? 0 : RT_BIT(i);
+    }
+
+    VGSvcVerbose(2, "ReconnectDisplays u32Mask 0x%x\n", u32Mask);
 
     EnumAdapters.NumAdapters = RT_ELEMENTS(EnumAdapters.Adapters);
     rcNt = g_pfnD3DKMTEnumAdapters(&EnumAdapters);
 
     VGSvcVerbose(2, "D3DKMTEnumAdapters  rcNt=%#x NumAdapters=%d\n", rcNt, EnumAdapters.NumAdapters);
 
-    for(id = 0; id < EnumAdapters.NumAdapters; id++)
+    for(ULONG id = 0; id < EnumAdapters.NumAdapters; id++)
     {
         D3DKMT_ADAPTERINFO *pAdapterInfo = &EnumAdapters.Adapters[id];
         VGSvcVerbose(2, "#%d: NumOfSources=%d hAdapter=0x%p Luid(%u, %u)\n", id,
@@ -103,8 +109,8 @@ void ReplugDisplays(uint32_t cDisplays, VMMDevDisplayDef *paDisplays)
     if (hAdapter)
     {
         VBOXDISPIFESCAPE EscapeHdr = {0};
-        EscapeHdr.escapeCode = VBOXESC_CONFIGURETARGETS;
-        EscapeHdr.u32CmdSpecific = 0;
+        EscapeHdr.escapeCode = VBOXESC_RECONNECT_TARGETS;
+        EscapeHdr.u32CmdSpecific = u32Mask;
 
         D3DKMT_ESCAPE EscapeData = {0};
         EscapeData.hAdapter = hAdapter;
@@ -161,8 +167,14 @@ DECLCALLBACK(int) vgsvcDisplayConfigWorker(bool volatile *pfShutdown)
             VGSvcVerbose(2, "VbglR3GetDisplayChangeRequestMulti rc=%Rrc cDisplays=%d\n", rc, cDisplays);
             if (cDisplays > 0)
             {
-                ReplugDisplays(cDisplays, &aDisplays[0]);
-                VGSvcVerbose(2, "Display[0] (%dx%d)\n", aDisplays[0].cx, aDisplays[0].cy);
+                for(uint32_t i = 0; i < cDisplays; i++)
+                {
+                    VGSvcVerbose(2, "Display[%i] flags=%#x (%dx%d)\n", i,
+                        aDisplays[i].fDisplayFlags,
+                        aDisplays[i].cx, aDisplays[i].cy);
+                }
+
+                ReconnectDisplays(cDisplays, &aDisplays[0]);
             }
         }
 
