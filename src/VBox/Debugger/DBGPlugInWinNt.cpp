@@ -267,6 +267,12 @@ typedef struct DBGDIGGERWINNT
     /** NTKUSERSHAREDDATA::NtBuildNumber */
     uint32_t            NtBuildNumber;
 
+    /** The address of the bootmgr image if early during boot. */
+    DBGFADDRESS         BootMgrAddr;
+    /** The address of the winload.exe image if early during boot.
+     * When this is set, f32Bit has also been determined.  */
+    DBGFADDRESS         WinLoadAddr;
+
     /** The address of the ntoskrnl.exe image. */
     DBGFADDRESS         KernelAddr;
     /** The address of the ntoskrnl.exe module table entry. */
@@ -364,6 +370,7 @@ static const RTUTF16 g_wszKernelNames[][WINNT_KERNEL_BASE_NAME_LEN + 1] =
 
 
 #ifdef VBOX_DEBUGGER_WITH_WIN_DBG_PRINT_HOOKING
+
 /**
  * Queries the string from guest memory with the pointer in the given register, sanitizing it.
  *
@@ -661,7 +668,8 @@ static void dbgDiggerWinNtDbgPrintHook(PDBGDIGGERWINNT pThis, PUVM pUVM)
     else
         LogRel(("DigWinNt/DbgPrint: Failed to resolve kernel address space handle\n"));
 }
-#endif
+
+#endif /* VBOX_DEBUGGER_WITH_WIN_DBG_PRINT_HOOKING */
 
 /**
  * Tries to resolve the KPCR and KPCRB addresses for each vCPU.
@@ -849,6 +857,249 @@ static void dbgDiggerWinNtResolveKpcr(PDBGDIGGERWINNT pThis, PUVM pUVM, PCVMMR3V
 
 
 /**
+ * Checks if the given headers are for the BootMgr image loaded very early
+ * during the BIOS boot process.
+ */
+static bool dbgDiggerWinNtIsBootMgr(PUVM pUVM, PCVMMR3VTABLE pVMM, PCDBGFADDRESS pAddr,
+                                    uint8_t const *pbHdrs, size_t cbHdrs, uint32_t *pcbImage)
+{
+    if (pcbImage)
+        *pcbImage = 0;
+
+    /*
+     * Check and skip the DOS header.
+     */
+    AssertReturn(sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS32) < cbHdrs, false);
+    IMAGE_DOS_HEADER const * const pMzHdr = (IMAGE_DOS_HEADER const *)pbHdrs;
+    if (   pMzHdr->e_magic  != IMAGE_DOS_SIGNATURE
+        || pMzHdr->e_lfanew < 0x40
+        || pMzHdr->e_lfanew > 0x400)
+        return false;
+
+    /*
+     * Check the NT headers.
+     */
+    AssertReturn(pMzHdr->e_lfanew + sizeof(IMAGE_NT_HEADERS32) <= cbHdrs, false);
+    IMAGE_NT_HEADERS32 const * const pHdrs = (PCIMAGE_NT_HEADERS32)&pbHdrs[pMzHdr->e_lfanew];
+    if (pHdrs->Signature != IMAGE_NT_SIGNATURE)
+        return false;
+    /* Not so many sections here, typically 3: */
+    if (   pHdrs->FileHeader.NumberOfSections <= 1
+        || pHdrs->FileHeader.NumberOfSections >= 6)
+        return false;
+    if (   pHdrs->FileHeader.Machine              != IMAGE_FILE_MACHINE_I386
+        || pHdrs->FileHeader.SizeOfOptionalHeader != sizeof(pHdrs->OptionalHeader))
+        return false;
+    if (pHdrs->OptionalHeader.Magic               != IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+        return false;
+    if (pHdrs->OptionalHeader.NumberOfRvaAndSizes != IMAGE_NUMBEROF_DIRECTORY_ENTRIES)
+        return false;
+    /* Special subsystem with version 1.0: */
+    /** @todo which subsystem type does pre win11 use?  (this is win11/amd64)  */
+    if (pHdrs->OptionalHeader.Subsystem           != IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION)
+        return false;
+    if (   pHdrs->OptionalHeader.MajorSubsystemVersion != 1
+        || pHdrs->OptionalHeader.MinorSubsystemVersion != 0)
+        return false;
+    /* Image OS version and windows version value are all zero: */
+    if (   pHdrs->OptionalHeader.MajorOperatingSystemVersion != 0
+        || pHdrs->OptionalHeader.MinorOperatingSystemVersion != 0
+        || pHdrs->OptionalHeader.Win32VersionValue           != 0)
+        return false;
+    /* DLL image with 32-bit machine code: */
+    if (   (pHdrs->FileHeader.Characteristics & (IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_DLL | IMAGE_FILE_32BIT_MACHINE))
+        !=                                      (IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_DLL | IMAGE_FILE_32BIT_MACHINE))
+        return false;
+    /* No imports: */
+    if (   pHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size != 0
+        || pHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size    != 0)
+        return false;
+    /* Has a bunch of exports ('BootLib.dll'), for win11/amd64 it's 2630 bytes: */
+    IMAGE_DATA_DIRECTORY const ExpRvaSize = pHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT]; /* cache for later */
+    if (ExpRvaSize.Size < 1024)
+        return false;
+    if ((uint64_t)ExpRvaSize.VirtualAddress + ExpRvaSize.Size > pHdrs->OptionalHeader.SizeOfImage)
+        return false;
+    /* Check the image size is reasonable (win11/amd64 is 872448): */
+    /** @todo adjust for older windows versions...  */
+    if (   pHdrs->OptionalHeader.SizeOfImage < _64K
+        || pHdrs->OptionalHeader.SizeOfImage > _4M)
+        return false;
+    /* The image base is 0x00400000 (relocations typically stripped): */
+    if (pHdrs->OptionalHeader.ImageBase != UINT32_C(0x00400000))
+        return false;
+
+    /*
+     * Final check is that export directory name is 'BootLib.dll'.
+     */
+    static char const       s_szBootLibDll[] = "BootLib.dll";
+    DBGFADDRESS             Addr2;
+    IMAGE_EXPORT_DIRECTORY  ExpDir;
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0,
+                                    pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr2, pAddr->FlatPtr + ExpRvaSize.VirtualAddress),
+                                    &ExpDir, sizeof(ExpDir));
+    if (RT_FAILURE(rc))
+        return false;
+    /* There ought to be a few named exports here (win11 has 94): */
+    if (ExpDir.NumberOfNames < 48 || ExpDir.NumberOfNames > _4K)
+        return false;
+
+    if (   ExpDir.Name < pMzHdr->e_lfanew + pHdrs->OptionalHeader.SizeOfHeaders
+        || (uint64_t)ExpDir.Name + sizeof(s_szBootLibDll) > pHdrs->OptionalHeader.SizeOfImage)
+        return false;
+
+    char szActualName[sizeof(s_szBootLibDll)];
+    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr2, pAddr->FlatPtr + ExpDir.Name),
+                                &szActualName, sizeof(szActualName));
+    if (RT_FAILURE(rc))
+        return false;
+    if (szActualName[sizeof(s_szBootLibDll) - 1] != '\0')
+        return false;
+    if (RTStrICmpAscii(szActualName, s_szBootLibDll) != 0)
+        return false;
+
+    if (pcbImage)
+        *pcbImage = pHdrs->OptionalHeader.SizeOfImage;
+    return true;
+}
+
+
+/**
+ * Checks if the given headers are for the WinLoad.exe/efi image loaded very
+ * early during the BIOS or EFI boot process.
+ */
+static bool dbgDiggerWinNtIsWinLoad(PUVM pUVM, PCVMMR3VTABLE pVMM, PCDBGFADDRESS pAddr, uint8_t const *pbHdrs, size_t cbHdrs,
+                                    bool *pf32Bit, uint32_t *pcbImage, uint32_t *puNtMajorVersion, uint32_t *puNtMinorVersion)
+{
+    if (pf32Bit)
+        *pf32Bit = false;
+    if (pcbImage)
+        *pcbImage = 0;
+    if (puNtMajorVersion)
+        *puNtMajorVersion = 0;
+    if (puNtMinorVersion)
+        *puNtMinorVersion = 0;
+
+    /*
+     * Check and skip the DOS header.
+     */
+    AssertReturn(sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS64) < cbHdrs, false);
+    IMAGE_DOS_HEADER const * const pMzHdr = (IMAGE_DOS_HEADER const *)pbHdrs;
+    if (   pMzHdr->e_magic  != IMAGE_DOS_SIGNATURE
+        || pMzHdr->e_lfanew < 0x40
+        || pMzHdr->e_lfanew > 0x400)
+        return false;
+
+    /*
+     * Check the NT headers.
+     *
+     * ASSUMES that the 64-bit and 32-bit optional headers match up to
+     * SizeOfStackReserve, if you exclude ImageBase and BaseOfData.
+     */
+    AssertReturn(pMzHdr->e_lfanew + sizeof(IMAGE_NT_HEADERS64) <= cbHdrs, false);
+    IMAGE_NT_HEADERS32 const * const pHdrs32 = (PCIMAGE_NT_HEADERS32)&pbHdrs[pMzHdr->e_lfanew];
+    IMAGE_NT_HEADERS64 const * const pHdrs64 = (PCIMAGE_NT_HEADERS64)&pbHdrs[pMzHdr->e_lfanew];
+    if (pHdrs32->Signature != IMAGE_NT_SIGNATURE)
+        return false;
+    /* There are a few extra sections here, but not too many: */
+    if (   pHdrs32->FileHeader.NumberOfSections <= 4
+        || pHdrs32->FileHeader.NumberOfSections >= 15)
+        return false;
+    bool f32Bit;
+    if (pHdrs32->FileHeader.Machine == IMAGE_FILE_MACHINE_I386)
+        f32Bit = true;
+    else if (pHdrs32->FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64)
+        f32Bit = false;
+    else
+        return false;
+    if (pHdrs32->FileHeader.SizeOfOptionalHeader != (f32Bit ? sizeof(IMAGE_OPTIONAL_HEADER32) : sizeof(IMAGE_OPTIONAL_HEADER64)))
+        return false;
+    if (pHdrs32->OptionalHeader.Magic            != (f32Bit ? IMAGE_NT_OPTIONAL_HDR32_MAGIC   : IMAGE_NT_OPTIONAL_HDR64_MAGIC))
+        return false;
+    /* Special subsystem with version 6.0 or later: */
+    /** @todo which subsystem type does pre win11 use?  (this is win11/amd64)  */
+    if (pHdrs32->OptionalHeader.Subsystem        != IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION)
+        return false;
+    if (pHdrs32->OptionalHeader.MajorSubsystemVersion < 6)
+        return false;
+    /* Image OS version and windows version value are all zero: */
+    if (   pHdrs32->OptionalHeader.MajorOperatingSystemVersion != 0
+        || pHdrs32->OptionalHeader.MinorOperatingSystemVersion != 0
+        || pHdrs32->OptionalHeader.Win32VersionValue           != 0)
+        return false;
+    /* DLL image: */
+    if (   (pHdrs32->FileHeader.Characteristics & (IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_DLL))
+        !=                                        (IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_DLL))
+        return false;
+    /* Check the image size is reasonable (win11/amd64 is 1769472 for BIOS and ~2MB for EFI): */
+    /** @todo adjust for older windows versions...  */
+    if (   pHdrs32->OptionalHeader.SizeOfImage < _1M
+        || pHdrs32->OptionalHeader.SizeOfImage > _8M)
+        return false;
+
+    /* The rest of the fields differs in placement between 32-bit and 64-bit. */
+
+    if (   (f32Bit ? pHdrs32->OptionalHeader.NumberOfRvaAndSizes : pHdrs64->OptionalHeader.NumberOfRvaAndSizes)
+        != IMAGE_NUMBEROF_DIRECTORY_ENTRIES)
+        return false;
+
+    /* No imports: */
+    IMAGE_DATA_DIRECTORY const * const paDataDirs = f32Bit
+                                                  ? pHdrs32->OptionalHeader.DataDirectory : pHdrs64->OptionalHeader.DataDirectory;
+    if (   paDataDirs[IMAGE_DIRECTORY_ENTRY_IMPORT].Size != 0
+        || paDataDirs[IMAGE_DIRECTORY_ENTRY_IAT].Size    != 0)
+        return false;
+    /* Has a bunch of exports ('winload.sys'), for win11/amd64 it's 11734 bytes: */
+    IMAGE_DATA_DIRECTORY const ExpRvaSize = paDataDirs[IMAGE_DIRECTORY_ENTRY_EXPORT]; /* cache for later */
+    if (ExpRvaSize.Size < 1024)
+        return false;
+    if ((uint64_t)ExpRvaSize.VirtualAddress + ExpRvaSize.Size > pHdrs32->OptionalHeader.SizeOfImage)
+        return false;
+
+    /*
+     * Final check is that export directory name is 'winload.sys'.
+     */
+    static char const       s_szWinLoadSys[] = "winload.sys";
+    DBGFADDRESS             Addr2;
+    IMAGE_EXPORT_DIRECTORY  ExpDir;
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0,
+                                    pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr2, pAddr->FlatPtr + ExpRvaSize.VirtualAddress),
+                                    &ExpDir, sizeof(ExpDir));
+    if (RT_FAILURE(rc))
+        return false;
+    /* There ought to be a few named exports here (win11 has 373): */
+    if (ExpDir.NumberOfNames < 128 || ExpDir.NumberOfNames > _4K)
+        return false;
+
+    if (   ExpDir.Name < pMzHdr->e_lfanew + pHdrs32->OptionalHeader.SizeOfHeaders
+        || (uint64_t)ExpDir.Name + sizeof(s_szWinLoadSys) > pHdrs32->OptionalHeader.SizeOfImage)
+        return false;
+
+    char szActualName[sizeof(s_szWinLoadSys)];
+    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr2, pAddr->FlatPtr + ExpDir.Name),
+                                &szActualName, sizeof(szActualName));
+    if (RT_FAILURE(rc))
+        return false;
+    if (szActualName[sizeof(s_szWinLoadSys) - 1] != '\0')
+        return false;
+    if (RTStrICmpAscii(szActualName, s_szWinLoadSys) != 0)
+        return false;
+
+    if (pf32Bit)
+        *pf32Bit  = f32Bit;
+    if (pcbImage)
+        *pcbImage = pHdrs32->OptionalHeader.SizeOfImage;
+    /* Note! We could get more accurate version info from the resource section if we wanted to... */
+    if (puNtMajorVersion)
+        *puNtMajorVersion = pHdrs32->OptionalHeader.MajorSubsystemVersion;
+    if (puNtMinorVersion)
+        *puNtMinorVersion = pHdrs32->OptionalHeader.MinorSubsystemVersion;
+
+    return true;
+}
+
+
+/**
  * Process a PE image found in guest memory.
  *
  * @param   pThis           The instance data.
@@ -858,9 +1109,12 @@ static void dbgDiggerWinNtResolveKpcr(PDBGDIGGERWINNT pThis, PUVM pUVM, PCVMMR3V
  * @param   pszFilename     The image filename.
  * @param   pImageAddr      The image address.
  * @param   cbImage         The size of the image.
+ * @param   enmArch         Module architecture override.  Default is determined
+ *                          by DBGDIGGERWINNT::f32Bit.
  */
 static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszName,
-                                       const char *pszFilename, PCDBGFADDRESS pImageAddr, uint32_t cbImage)
+                                       const char *pszFilename, PCDBGFADDRESS pImageAddr, uint32_t cbImage,
+                                       RTLDRARCH enmArch = RTLDRARCH_WHATEVER)
 {
     LogFlow(("DigWinNt: %RGp %#x %s\n", pImageAddr->FlatPtr, cbImage, pszName));
 
@@ -877,11 +1131,12 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, PCVMMR3
     /*
      * Use the common in-memory module reader to create a debug module.
      */
+    if (enmArch == RTLDRARCH_WHATEVER)
+        enmArch = pThis->f32Bit ? RTLDRARCH_X86_32 : RTLDRARCH_AMD64;
     RTERRINFOSTATIC ErrInfo;
     RTDBGMOD        hDbgMod = NIL_RTDBGMOD;
     int rc = pVMM->pfnDBGFR3ModInMem(pUVM, pImageAddr, pThis->fNt31 ? DBGFMODINMEM_F_PE_NT31 : 0, pszName, pszFilename,
-                                     pThis->f32Bit ? RTLDRARCH_X86_32 : RTLDRARCH_AMD64, cbImage,
-                                     &hDbgMod, RTErrInfoInitStatic(&ErrInfo));
+                                     enmArch, cbImage, &hDbgMod, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1310,7 +1565,44 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void
     int             rc;
 
     /*
-     * Figure the NT version.
+     * Load the bootmgr module if it was detected and is still present.
+     * The boot manager is always 32-bit on x86.
+     */
+    if (DBGFADDRESS_IS_VALID(&pThis->BootMgrAddr))
+    {
+        rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->BootMgrAddr, &u, sizeof(u));
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cbImage = 0;
+            if (dbgDiggerWinNtIsBootMgr(pUVM, pVMM, &pThis->BootMgrAddr, &u.au8[0], sizeof(u), &cbImage))
+                dbgDiggerWinNtProcessImage(pThis, pUVM, pVMM, "BootMgr", "BootMgr.exe",
+                                           &pThis->BootMgrAddr, cbImage, RTLDRARCH_X86_32);
+        }
+    }
+
+    /*
+     * Load the winload module if it was detected and still present.
+     */
+    if (DBGFADDRESS_IS_VALID(&pThis->WinLoadAddr))
+    {
+        rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->WinLoadAddr, &u, sizeof(u));
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cbImage         = 0;
+            uint32_t uNtMajorVersion = 0;
+            uint32_t uNtMinorVersion = 0;
+            if (dbgDiggerWinNtIsWinLoad(pUVM, pVMM, &pThis->WinLoadAddr, &u.au8[0], sizeof(u),
+                                        NULL /*pf32Bit*/, &cbImage, &uNtMajorVersion, &uNtMinorVersion))
+            {
+                dbgDiggerWinNtProcessImage(pThis, pUVM, pVMM, "WinLoad", "WinLoad.exe", &pThis->WinLoadAddr, cbImage);
+                pThis->NtMajorVersion = uNtMajorVersion;
+                pThis->NtMinorVersion = uNtMinorVersion;
+            }
+        }
+    }
+
+    /*
+     * Try figure the NT version.
      */
     pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, pThis->f32Bit ? NTKUSERSHAREDDATA_WINNT32 : NTKUSERSHAREDDATA_WINNT64);
     rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &u, GUEST_PAGE_SIZE);
@@ -1333,7 +1625,10 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void
     else
     {
         Log(("DigWinNt: Error reading KUSER_SHARED_DATA: %Rrc\n", rc));
-        return rc;
+        if (   !DBGFADDRESS_IS_VALID(&pThis->KernelAddr)
+            || !DBGFADDRESS_IS_VALID(&pThis->KernelMteAddr)
+            || !DBGFADDRESS_IS_VALID(&pThis->PsLoadedModuleListAddr))
+            return DBGFADDRESS_IS_VALID(&pThis->BootMgrAddr) || DBGFADDRESS_IS_VALID(&pThis->WinLoadAddr) ? VINF_SUCCESS : rc;
     }
 
     /*
@@ -1445,6 +1740,7 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void
 static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERWINNT pThis = (PDBGDIGGERWINNT)pvData;
+    bool            fRet  = false;
     DBGFADDRESS     Addr;
     union
     {
@@ -1464,13 +1760,74 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, vo
     } uMte, uMte2, uMte3;
 
     /*
+     * Reset the state (paranoia)
+     */
+    RT_ZERO(pThis->BootMgrAddr);
+    RT_ZERO(pThis->WinLoadAddr);
+    RT_ZERO(pThis->KernelAddr);
+    RT_ZERO(pThis->KernelMteAddr);
+    RT_ZERO(pThis->PsLoadedModuleListAddr);
+    pThis->f32Bit = false;
+    pThis->fNt31  = false;
+
+    /*
+     * Look for the BootMgr/BootLib.dll module at 0x400000.
+     * This is only relevant when booting via BIOS.
+     */
+    if (1/** @todo BIOS + x86/amd64 only */)
+    {
+        int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                        pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, UINT32_C(0x400000)),
+                                        &u.au8[0], sizeof(u));
+        if (RT_SUCCESS(rc) && dbgDiggerWinNtIsBootMgr(pUVM, pVMM, &Addr, &u.au8[0], sizeof(u), NULL))
+        {
+            pThis->BootMgrAddr = Addr;
+            fRet = true;
+        }
+    }
+
+    /*
+     * Look for the winload.exe/winload.sys module that's, from the looks of it,
+     * responsible for loading the kernel and boot drivers.
+     */
+    if (DBGFADDRESS_IS_VALID(&pThis->BootMgrAddr))
+    {
+        static const char s_szNeedle[] = "PAGER32C"; /* Section name. No terminator. */
+        uint32_t const    uEndAddr     = _16M + _1M;
+        pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, pThis->BootMgrAddr.FlatPtr + _64K);
+        do
+        {
+            int rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /*idCpu*/, &Addr, uEndAddr - Addr.FlatPtr,
+                                            8 /*uAlign*/, s_szNeedle, sizeof(s_szNeedle) - 1, &Addr);
+            if (RT_FAILURE(rc))
+                break;
+
+            DBGFADDRESS AddrMz;
+            rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                        pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrMz,
+                                                                    Addr.FlatPtr & ~(RTGCUINTPTR)GUEST_PAGE_OFFSET_MASK),
+                                        &u.au8[0], sizeof(u));
+            bool f32Bit = false;
+            if (RT_SUCCESS(rc) && dbgDiggerWinNtIsWinLoad(pUVM, pVMM, &AddrMz, &u.au8[0], sizeof(u), &f32Bit, NULL, NULL, NULL))
+            {
+                pThis->WinLoadAddr = AddrMz;
+                pThis->f32Bit      = f32Bit;
+                fRet = true;
+                break;
+            }
+            pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, AddrMz.FlatPtr + GUEST_PAGE_SIZE);
+        } while (Addr.FlatPtr + _64K < uEndAddr);
+    }
+
+    /*
      * NT only runs in protected or long mode.
      */
     CPUMMODE const enmMode = pVMM->pfnDBGFR3CpuGetMode(pUVM, 0 /*idCpu*/);
     if (enmMode != CPUMMODE_PROTECTED && enmMode != CPUMMODE_LONG)
-        return false;
-    bool const      f64Bit = enmMode == CPUMMODE_LONG;
-    uint64_t const  uStart = f64Bit ? UINT64_C(0xffff080000000000) : UINT32_C(0x80001000);
+        return fRet;
+    bool const      f64Bit = enmMode == CPUMMODE_LONG
+                          || (DBGFADDRESS_IS_VALID(&pThis->WinLoadAddr) && !pThis->f32Bit);
+    uint64_t const  uStart = f64Bit ? UINT64_C(0xffff800000000000) : UINT32_C(0x80001000);
     uint64_t const  uEnd   = f64Bit ? UINT64_C(0xffffffffffff0000) : UINT32_C(0xffff0000);
 
     /*
@@ -1482,35 +1839,41 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, vo
     uint64_t uIdtrBase = 0;
     uint16_t uIdtrLimit = 0;
     int rc = pVMM->pfnDBGFR3RegCpuQueryXdtr(pUVM, 0, DBGFREG_IDTR, &uIdtrBase, &uIdtrLimit);
-    AssertRCReturn(rc, false);
+    AssertRCReturn(rc, fRet);
 
     const uint16_t cbMinIdtr = (X86_XCPT_PF + 1) * (f64Bit ? sizeof(X86DESC64GATE) : sizeof(X86DESCGATE));
     if (uIdtrLimit < cbMinIdtr)
-        return false;
+        return fRet;
 
     rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, uIdtrBase), &u, cbMinIdtr);
     if (RT_FAILURE(rc))
-        return false;
+        return fRet;
 
-    uint64_t uKrnlStart;
-    uint64_t uKrnlEnd;
+    uint64_t uKrnlStart = uStart;
+    uint64_t uKrnlEnd   = uEnd;
     if (f64Bit)
     {
         uint64_t uHandler = u.a64Gates[X86_XCPT_PF].u16OffsetLow
                           | ((uint32_t)u.a64Gates[X86_XCPT_PF].u16OffsetHigh << 16)
                           | ((uint64_t)u.a64Gates[X86_XCPT_PF].u32OffsetTop  << 32);
-        if (uHandler < uStart || uHandler > uEnd)
-            return false;
-        uKrnlStart = (uHandler & ~(uint64_t)_4M) - _512M;
-        uKrnlEnd   = (uHandler + (uint64_t)_4M) & ~(uint64_t)_4M;
+        if (uHandler >= uStart && uHandler <= uEnd)
+        {
+            uKrnlStart = (uHandler & ~(uint64_t)_4M) - _512M;
+            uKrnlEnd   = (uHandler + (uint64_t)_4M) & ~(uint64_t)_4M;
+        }
+        else if (!DBGFADDRESS_IS_VALID(&pThis->WinLoadAddr))
+            return fRet;
     }
     else
     {
         uint32_t uHandler = RT_MAKE_U32(u.a32Gates[X86_XCPT_PF].u16OffsetLow, u.a32Gates[X86_XCPT_PF].u16OffsetHigh);
-        if (uHandler < uStart || uHandler > uEnd)
-            return false;
-        uKrnlStart = (uHandler & ~(uint64_t)_4M) - _64M;
-        uKrnlEnd   = (uHandler + (uint64_t)_4M) & ~(uint64_t)_4M;
+        if (uHandler >= uStart && uHandler <= uEnd)
+        {
+            uKrnlStart = (uHandler & ~(uint64_t)_4M) - _64M;
+            uKrnlEnd   = (uHandler + (uint64_t)_4M) & ~(uint64_t)_4M;
+        }
+        else if (!DBGFADDRESS_IS_VALID(&pThis->WinLoadAddr))
+            return fRet;
     }
 
     /*
@@ -1531,7 +1894,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, vo
         rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, uEnd - KernelAddr.FlatPtr,
                                     8, "PAGELK\0", sizeof("PAGELK\0"), &KernelAddr);
         if (   rc == VERR_DBGF_MEM_NOT_FOUND
-            && enmMode != CPUMMODE_LONG)
+            && !f64Bit)
         {
             /* NT3.1 didn't have a PAGELK section, so look for _TEXT instead.  The
                following VirtualSize is zero, so check for that too. */
@@ -1551,7 +1914,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, vo
             &&  u.MzHdr.e_lfanew >= 0x080
             &&  u.MzHdr.e_lfanew <= 0x400) /* W8 is at 0x288*/
         {
-            if (enmMode != CPUMMODE_LONG)
+            if (!f64Bit)
             {
                 IMAGE_NT_HEADERS32 const *pHdrs = (IMAGE_NT_HEADERS32 const *)&u.au8[u.MzHdr.e_lfanew];
                 if (    pHdrs->Signature                            == IMAGE_NT_SIGNATURE
@@ -1726,7 +2089,8 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, vo
             }
         }
     }
-    return false;
+
+    return fRet;
 }
 
 
