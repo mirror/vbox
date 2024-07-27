@@ -67,14 +67,13 @@ Debugger_SOURCES   = \
 	DBGCScreenAscii.cpp
 
 ifdef VBOX_WITH_VIRT_ARMV8
- ifdef VBOX_WITH_DEBUGGER
-  LIBRARIES += Debugger-armv8
- endif # VBOX_WITH_DEBUGGER
-
  #
  # Debugger library - linked into VBoxVMM, ARMv8 variant.
  #
  # @todo Can this be merged into one library later maybe?
+ ifdef VBOX_WITH_DEBUGGER
+  LIBRARIES += Debugger-armv8
+ endif
  Debugger-armv8_TEMPLATE  = VBoxR3Dll
  Debugger-armv8_DEFS      = VBOX_VMM_TARGET_ARMV8 IN_VMM_R3 IN_DBG_R3 IN_DIS
  ifneq ($(KBUILD_TYPE),release)
@@ -98,7 +97,18 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	DBGCIoProvUdp.cpp \
  	DBGCIoProvIpc.cpp \
  	DBGCScreenAscii.cpp
-endif
+endif # VBOX_WITH_VIRT_ARMV8
+
+
+#
+# Executable Image dumper based on the dumpimage debugger command.
+#
+PROGRAMS += VBoxDumpImage
+VBoxDumpImage_TEMPLATE = VBoxR3Tool
+VBoxDumpImage_DEFS    := DBGC_DUMP_IMAGE_TOOL
+VBoxDumpImage_SOURCES := DBGCDumpImage.cpp
+$(call VBOX_SET_VER_INFO_DLL,VBoxDumpImage,VirtualBox Executable Image Dumper Utility)
+
 
 #
 # The diggers plug-in.
