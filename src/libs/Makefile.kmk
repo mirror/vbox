@@ -75,7 +75,7 @@ endif
 if   defined(VBOX_WITH_LIBSLIRP) \
   && !defined(VBOX_ONLY_BUILD) \
   && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
- include $(PATH_SUB_CURRENT)/libslirp-4.7.0/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/libslirp-4.8.0/Makefile.kmk
 endif
 
 # libssh for cloud integration.
