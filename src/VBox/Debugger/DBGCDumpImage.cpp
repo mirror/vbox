@@ -91,73 +91,433 @@ typedef struct
 #define FLENT(a_Define) { a_Define, #a_Define }
 
 
+
 /*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
+*   DebugImageCmd                                                                                                                *
 *********************************************************************************************************************************/
+
+#define DUMPIMAGE_SELECT_HEADERS     RT_BIT_64(0)
+#define DUMPIMAGE_SELECT_SECTIONS    RT_BIT_64(1)
+#define DUMPIMAGE_SELECT_EXPORTS     RT_BIT_64(2)
+#define DUMPIMAGE_SELECT_IMPORTS     RT_BIT_64(3)
+#define DUMPIMAGE_SELECT_TLS         RT_BIT_64(4)
+#define DUMPIMAGE_SELECT_LOAD_CONFIG RT_BIT_64(5)
+#define DUMPIMAGE_SELECT_RESOURCES   RT_BIT_64(6)
+#define DUMPIMAGE_SELECT_FIXUP       RT_BIT_64(7)
+#define DUMPIMAGE_SELECT_DEBUG       RT_BIT_64(8)
+#define DUMPIMAGE_SELECT_EVERYTHING  UINT64_MAX
+#define DUMPIMAGE_SELECT_DEFAULT     DUMPIMAGE_SELECT_EVERYTHING
+
+class DumpImageCmd
+{
+public:
+    /** Pointer to the command helpers. */
+    PDBGCCMDHLP const   m_pCmdHlp;
+    /** The command descriptor (for failing the command). */
+    PCDBGCCMD const     m_pCmd;
+    /** The command exit code. */
+    RTEXITCODE          m_rcExit;
+    /** The first failure code.   */
+    int                 m_rc;
+
+    /** Current number of targets. */
+    unsigned            m_cTargets;
+    /** The name of what's being dumped (for error messages). */
+    const char         *m_pszName;
 #ifndef DBGC_DUMP_IMAGE_TOOL
-extern FNDBGCCMD dbgcCmdDumpImage; /* See DBGCCommands.cpp. */
+    /** Debugger: Pointer to the image base address variable. */
+    PCDBGCVAR           m_pImageBase;
+#else
+    /** Command line tool: The file we're dumping. */
+    RTVFSFILE           m_hVfsFile;
 #endif
+
+public:
+    /** What to dump (DUMPIMAGE_SELECT_XXX). */
+    uint64_t            m_fSelection;
+
+private:
+    DumpImageCmd();
+
+public:
+    DumpImageCmd(PDBGCCMDHLP a_pCmdHlp, PCDBGCCMD a_pCmd)
+        : m_pCmdHlp(a_pCmdHlp)
+        , m_pCmd(a_pCmd)
+        , m_rcExit(RTEXITCODE_SUCCESS)
+        , m_rc(VINF_SUCCESS)
+        , m_cTargets(0)
+        , m_pszName(NULL)
+#ifndef DBGC_DUMP_IMAGE_TOOL
+        , m_pImageBase(NULL)
+#else
+        , m_hVfsFile(NIL_RTVFSFILE)
+#endif
+        , m_fSelection(DUMPIMAGE_SELECT_DEFAULT)
+    {
+    }
+
+    ~DumpImageCmd()
+    {
+        clearTarget();
+    }
+
+    /** @name Methods not requiring any target.
+     * @{ */
+
+    void myPrintfV(const char *pszFormat, va_list va) const RT_NOEXCEPT
+    {
+#ifndef DBGC_DUMP_IMAGE_TOOL
+        m_pCmdHlp->pfnPrintfV(m_pCmdHlp, NULL, pszFormat, va);
+#else
+        RTPrintfV(pszFormat, va);
+#endif
+    }
+
+    void myPrintf(const char *pszFormat, ...) const RT_NOEXCEPT
+    {
+        va_list va;
+        va_start(va, pszFormat);
+#ifndef DBGC_DUMP_IMAGE_TOOL
+        m_pCmdHlp->pfnPrintfV(m_pCmdHlp, NULL, pszFormat, va);
+#else
+        RTPrintfV(pszFormat, va);
+#endif
+        va_end(va);
+    }
+
+    int myErrorV(const char *pszFormat, va_list va) RT_NOEXCEPT
+    {
+        int rc;
+        if (m_pszName)
+        {
+            va_list vaCopy;
+            va_copy(vaCopy, va);
+#ifndef DBGC_DUMP_IMAGE_TOOL
+            rc = DBGCCmdHlpFail(m_pCmdHlp, m_pCmd, "%s: %N", m_pszName, pszFormat, &vaCopy);
+#else
+            RTMsgError("%s: %N", m_pszName, pszFormat, &vaCopy);
+#endif
+            va_end(va);
+        }
+        else
+#ifndef DBGC_DUMP_IMAGE_TOOL
+            rc = m_pCmdHlp->pfnFailV(m_pCmdHlp, m_pCmd, pszFormat, va);
+#else
+            RTMsgErrorV(pszFormat, va);
+        rc = VERR_GENERAL_FAILURE;
+#endif
+
+        m_rcExit = RTEXITCODE_FAILURE;
+        if (m_rc == VINF_SUCCESS)
+            m_rc = rc;
+        return rc;
+    }
+
+    int myError(const char *pszFormat, ...) RT_NOEXCEPT
+    {
+        va_list va;
+        va_start(va, pszFormat);
+        int rc = myErrorV(pszFormat, va);
+        va_end(va);
+        return rc;
+    }
+
+    int myErrorV(int rc, const char *pszFormat, va_list va) RT_NOEXCEPT
+    {
+        if (m_pszName)
+        {
+            va_list vaCopy;
+            va_copy(vaCopy, va);
+#ifndef DBGC_DUMP_IMAGE_TOOL
+            rc = DBGCCmdHlpFailRc(m_pCmdHlp, m_pCmd, rc, "%s: %N", m_pszName, pszFormat, &vaCopy);
+#else
+            RTMsgError("%s: %N: %Rrc", m_pszName, pszFormat, &vaCopy, rc);
+#endif
+            va_end(vaCopy);
+        }
+        else
+        {
+#ifndef DBGC_DUMP_IMAGE_TOOL
+            rc = m_pCmdHlp->pfnFailRcV(m_pCmdHlp, m_pCmd, rc, pszFormat, va);
+#else
+            va_list vaCopy;
+            va_copy(vaCopy, va);
+            RTMsgError("%N: %Rrc", pszFormat, &vaCopy, rc);
+            va_end(vaCopy);
+#endif
+        }
+
+        m_rcExit = RTEXITCODE_FAILURE;
+        if (m_rc == VINF_SUCCESS)
+            m_rc = rc;
+        return rc;
+    }
+
+    int myError(int rc, const char *pszFormat, ...) RT_NOEXCEPT
+    {
+        va_list va;
+        va_start(va, pszFormat);
+        rc = myErrorV(rc, pszFormat, va);
+        va_end(va);
+        return rc;
+    }
+
+    int mySyntax(const char *pszFormat, ...) RT_NOEXCEPT
+    {
+        m_rcExit = RTEXITCODE_SYNTAX;
+        va_list va;
+        va_start(va, pszFormat);
+#ifndef DBGC_DUMP_IMAGE_TOOL
+        int rc = DBGCCmdHlpFail(m_pCmdHlp, m_pCmd, "syntax: %N", pszFormat, &va);
+#else
+        RTMsgSyntaxV(pszFormat, va);
+        int const rc = VERR_GENERAL_FAILURE;
+#endif
+        va_end(va);
+
+        m_rcExit = RTEXITCODE_SYNTAX;
+        if (m_rc == VINF_SUCCESS)
+            m_rc = rc;
+        return rc;
+    }
+
+    void setFailure(int rc) RT_NOEXCEPT
+    {
+        m_rcExit = RTEXITCODE_FAILURE;
+        if (m_rc == VINF_SUCCESS)
+            m_rc = rc;
+    }
+
+    RTEXITCODE getExitCode() const RT_NOEXCEPT
+    {
+        return m_rcExit;
+    }
+
+    int getStatus() const RT_NOEXCEPT
+    {
+        return m_rc;
+    }
+
+private:
+    int parseSelection(const char *pszSelection, uint64_t *pfSel)
+    {
+        static const struct { const char *psz; size_t cch; uint64_t fSel; } s_aMnemonics[] =
+        {
+            { RT_STR_TUPLE("h"),            DUMPIMAGE_SELECT_HEADERS     },
+            { RT_STR_TUPLE("hd"),           DUMPIMAGE_SELECT_HEADERS     },
+            { RT_STR_TUPLE("hdr"),          DUMPIMAGE_SELECT_HEADERS     },
+            { RT_STR_TUPLE("header"),       DUMPIMAGE_SELECT_HEADERS     },
+            { RT_STR_TUPLE("headers"),      DUMPIMAGE_SELECT_HEADERS     },
+            { RT_STR_TUPLE("s"),            DUMPIMAGE_SELECT_SECTIONS    },
+            { RT_STR_TUPLE("se"),           DUMPIMAGE_SELECT_SECTIONS    },
+            { RT_STR_TUPLE("sec"),          DUMPIMAGE_SELECT_SECTIONS    },
+            { RT_STR_TUPLE("section"),      DUMPIMAGE_SELECT_SECTIONS    },
+            { RT_STR_TUPLE("sections"),     DUMPIMAGE_SELECT_SECTIONS    },
+            { RT_STR_TUPLE("d"),            DUMPIMAGE_SELECT_DEBUG       },
+            { RT_STR_TUPLE("db"),           DUMPIMAGE_SELECT_DEBUG       },
+            { RT_STR_TUPLE("dg"),           DUMPIMAGE_SELECT_DEBUG       },
+            { RT_STR_TUPLE("dbg"),          DUMPIMAGE_SELECT_DEBUG       },
+            { RT_STR_TUPLE("dbginfo"),      DUMPIMAGE_SELECT_DEBUG       },
+            { RT_STR_TUPLE("debug"),        DUMPIMAGE_SELECT_DEBUG       },
+            { RT_STR_TUPLE("f"),            DUMPIMAGE_SELECT_FIXUP       },
+            { RT_STR_TUPLE("fx"),           DUMPIMAGE_SELECT_FIXUP       },
+            { RT_STR_TUPLE("fix"),          DUMPIMAGE_SELECT_FIXUP       },
+            { RT_STR_TUPLE("fixup"),        DUMPIMAGE_SELECT_FIXUP       },
+            { RT_STR_TUPLE("fixups"),       DUMPIMAGE_SELECT_FIXUP       },
+            { RT_STR_TUPLE("e"),            DUMPIMAGE_SELECT_EXPORTS     },
+            { RT_STR_TUPLE("ex"),           DUMPIMAGE_SELECT_EXPORTS     },
+            { RT_STR_TUPLE("exp"),          DUMPIMAGE_SELECT_EXPORTS     },
+            { RT_STR_TUPLE("export"),       DUMPIMAGE_SELECT_EXPORTS     },
+            { RT_STR_TUPLE("exports"),      DUMPIMAGE_SELECT_EXPORTS     },
+            { RT_STR_TUPLE("i"),            DUMPIMAGE_SELECT_IMPORTS     },
+            { RT_STR_TUPLE("im"),           DUMPIMAGE_SELECT_IMPORTS     },
+            { RT_STR_TUPLE("imp"),          DUMPIMAGE_SELECT_IMPORTS     },
+            { RT_STR_TUPLE("import"),       DUMPIMAGE_SELECT_IMPORTS     },
+            { RT_STR_TUPLE("imports"),      DUMPIMAGE_SELECT_IMPORTS     },
+            { RT_STR_TUPLE("l"),            DUMPIMAGE_SELECT_LOAD_CONFIG },
+            { RT_STR_TUPLE("lc"),           DUMPIMAGE_SELECT_LOAD_CONFIG },
+            { RT_STR_TUPLE("lcfg"),         DUMPIMAGE_SELECT_LOAD_CONFIG },
+            { RT_STR_TUPLE("loadcfg"),      DUMPIMAGE_SELECT_LOAD_CONFIG },
+            { RT_STR_TUPLE("rc"),           DUMPIMAGE_SELECT_RESOURCES   },
+            { RT_STR_TUPLE("rcs"),          DUMPIMAGE_SELECT_RESOURCES   },
+            { RT_STR_TUPLE("rcsrc"),        DUMPIMAGE_SELECT_RESOURCES   },
+            { RT_STR_TUPLE("resource"),     DUMPIMAGE_SELECT_RESOURCES   },
+            { RT_STR_TUPLE("resources"),    DUMPIMAGE_SELECT_RESOURCES   },
+            { RT_STR_TUPLE("t"),            DUMPIMAGE_SELECT_TLS         },
+            { RT_STR_TUPLE("tls"),          DUMPIMAGE_SELECT_TLS         },
+            /* masks: */
+            { RT_STR_TUPLE("all"),          DUMPIMAGE_SELECT_EVERYTHING  },
+            { RT_STR_TUPLE("everything"),   DUMPIMAGE_SELECT_EVERYTHING  },
+            { RT_STR_TUPLE("def"),          DUMPIMAGE_SELECT_DEFAULT     },
+            { RT_STR_TUPLE("default"),      DUMPIMAGE_SELECT_DEFAULT     },
+        };
+
+        *pfSel = 0;
+        char ch;
+        do
+        {
+            /* Skip leading spaces and commas. */
+            while ((ch = *pszSelection) != '\0' && (RT_C_IS_BLANK(ch) || ch == ','))
+                pszSelection++;
+
+            /* Find the end of the selection mnemonic. */
+            size_t cch = 0;
+            while (ch != '\0' && ch != ',' && !RT_C_IS_BLANK(ch))
+                ch = pszSelection[++cch];
+            if (!cch)
+            {
+                if (*pfSel)
+                    break;
+                mySyntax("No selection");
+                return VERR_INVALID_PARAMETER;
+            }
+
+            /* Look it up. */
+            uint32_t i;
+            for (i = 0; i < RT_ELEMENTS(s_aMnemonics); i++)
+                if (cch == s_aMnemonics[i].cch && memcmp(s_aMnemonics[i].psz, pszSelection, cch) == 0)
+                {
+                    *pfSel = s_aMnemonics[i].fSel;
+                    break;
+                }
+            if (i >= RT_ELEMENTS(s_aMnemonics))
+            {
+                mySyntax("Unknown selection '%.*s'", cch, pszSelection);
+                return VERR_INVALID_PARAMETER;
+            }
+        } while (ch != '\0');
+        return VINF_SUCCESS;
+    }
+
+public:
+    int optSelectionInclude(const char *pszSelection) RT_NOEXCEPT
+    {
+        uint64_t fSel = 0;
+        int rc = parseSelection(pszSelection, &fSel);
+        if (RT_SUCCESS(rc))
+            m_fSelection |= fSel;
+        return rc;
+    }
+
+    int optSelectionOnly(const char *pszSelection) RT_NOEXCEPT
+    {
+        uint64_t fSel = 0;
+        int rc = parseSelection(pszSelection, &fSel);
+        if (RT_SUCCESS(rc))
+        {
+            if (m_fSelection == DUMPIMAGE_SELECT_DEFAULT)
+                m_fSelection = 0;
+            m_fSelection |= fSel;
+        }
+        return rc;
+    }
+
+    int optSelectionSkip(const char *pszSelection) RT_NOEXCEPT
+    {
+        uint64_t fSel = 0;
+        int rc = parseSelection(pszSelection, &fSel);
+        if (RT_SUCCESS(rc))
+            m_fSelection &= ~fSel;
+        return rc;
+
+    }
+
+    /** @} */
+
+
+    /** @name Methods working on a target.
+     * @{ */
+
+#ifndef DBGC_DUMP_IMAGE_TOOL
+    void setTarget(const char *a_pszName, PCDBGCVAR a_pImageBase) RT_NOEXCEPT
+#else
+    void setTarget(const char *a_pszName, RTVFSFILE a_hVfsFile) RT_NOEXCEPT
+#endif
+    {
+        m_cTargets  += 1;
+        m_pszName    = a_pszName;
+#ifndef DBGC_DUMP_IMAGE_TOOL
+        m_pImageBase = a_pImageBase;
+#else
+        m_hVfsFile   = a_hVfsFile;
+#endif
+    }
+
+    void clearTarget() RT_NOEXCEPT
+    {
+        m_pszName    = NULL;
+#ifndef DBGC_DUMP_IMAGE_TOOL
+        m_pImageBase = NULL;
+#else
+        RTVfsFileRelease(m_hVfsFile);
+        m_hVfsFile = NIL_RTVFSFILE;
+#endif
+    }
+
+    bool isFirstTarget() const RT_NOEXCEPT
+    {
+        return m_cTargets == 1;
+    }
+
+    /**
+     * Early read function.
+     *
+     * This kind of works on file offsets, though we all knows that it really
+     * depends on whether the stuff being dumped is in-memory or a file.  However,
+     * in the latter case we do not have the ability to do any RVA translation, thus
+     * the input is treated as file offsets.
+     */
+    int readAt(size_t off, void *pvDst, size_t cbToRead, size_t *pcbRead) RT_NOEXCEPT
+    {
+        RT_BZERO(pvDst, cbToRead);
+        if (pcbRead)
+            *pcbRead = 0;
+/** @todo introduce a buffer here? */
+#ifndef DBGC_DUMP_IMAGE_TOOL
+        DBGCVAR AddrToReadAt;
+        int rc = DBGCCmdHlpEval(m_pCmdHlp, &AddrToReadAt, "%DV + %#zx", m_pImageBase, off);
+        if (RT_SUCCESS(rc))
+        {
+            rc = DBGCCmdHlpMemRead(m_pCmdHlp, pvDst, cbToRead, &AddrToReadAt, pcbRead);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+            return myError(rc, "Failed to read %zu bytes at offset %Dv", cbToRead, &AddrToReadAt);
+        }
+        return myError(rc, "Failed to calculate address %Dv + #%zx for %#zx byte read", m_pImageBase, off, cbToRead);
+
+#else  /* DBGC_DUMP_IMAGE_TOOL */
+        int rc = RTVfsFileReadAt(m_hVfsFile, off, pvDst, cbToRead, pcbRead);
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+        return myError(rc, "Failed to read %zu bytes at offset %#zx", cbToRead, off);
+#endif /* DBGC_DUMP_IMAGE_TOOL */
+    }
+
+    int dumpImage(const char *pszImageBaseAddr) RT_NOEXCEPT;
+
+    /** @} */
+};
 
 
 /** Stringifies a 32-bit flag value. */
-static void dbgcDumpImageFlags32(PDBGCCMDHLP pCmdHlp, uint32_t fFlags, DBGCDUMPFLAGENTRY const *paEntries, size_t cEntries)
+static void dbgcDumpImageFlags32(DumpImageCmd *pCmd, uint32_t fFlags, DBGCDUMPFLAGENTRY const *paEntries, size_t cEntries)
 {
     for (size_t i = 0; i < cEntries; i++)
         if (fFlags & paEntries[i].fFlag)
-            DBGCCmdHlpPrintf(pCmdHlp, " %s", paEntries[i].pszNm);
-}
-
-
-/**
- * Early read function.
- *
- * @todo refactor/abstract this somehow...
- */
-static int dumpReadAt(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, PCDBGCVAR pImageBase, const char *pszName,
-                      size_t off, void *pvDst, size_t cbToRead, size_t *pcbRead)
-{
-    RT_BZERO(pvDst, cbToRead);
-    if (pcbRead)
-        *pcbRead = 0;
-
-#ifndef DBGC_DUMP_IMAGE_TOOL
-    DBGCVAR AddrToReadAt;
-    int rc = DBGCCmdHlpEval(pCmdHlp, &AddrToReadAt, "%DV + %#zx", pImageBase, off);
-    if (RT_SUCCESS(rc))
-    {
-        rc = DBGCCmdHlpMemRead(pCmdHlp, pvDst, cbToRead, &AddrToReadAt, pcbRead);
-        if (RT_SUCCESS(rc))
-            return VINF_SUCCESS;
-        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "%s: Failed to read %zu bytes at offset %Dv", pszName, cbToRead, &AddrToReadAt);
-    }
-    return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "%s: Failed to calculate address %Dv + #%zx for %#zx byte read",
-                            pszName, pImageBase, off, cbToRead);
-
-#else  /* DBGC_DUMP_IMAGE_TOOL */
-    CMDHLPSTATE * const pToolState = RT_FROM_MEMBER(pCmdHlp, CMDHLPSTATE, Core);
-    int rc = RTVfsFileReadAt(pToolState->hVfsFile, off, pvDst, cbToRead, pcbRead);
-    if (RT_SUCCESS(rc))
-        return VINF_SUCCESS;
-    RT_NOREF(pImageBase);
-    return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "%s: Failed to read %zu bytes at offset %#zx", pszName, cbToRead, off);
-#endif /* DBGC_DUMP_IMAGE_TOOL */
+            pCmd->myPrintf(" %s", paEntries[i].pszNm);
 }
 
 
 /*********************************************************************************************************************************
 *   DumpImageBase                                                                                                                *
 *********************************************************************************************************************************/
+/**
+ * Base class for the dumpers.
+ */
 class DumpImageBase
 {
-public:
-    /** The name of what's being dumped (for error messages). */
-    const char * const  m_pszName;
-    /** Pointer to the image base address variable. */
-    PCDBGCVAR const     m_pImageBase;
-    /** Pointer to the command helpers. */
-    PDBGCCMDHLP const   m_pCmdHlp;
-    /** The command descriptor (for failing the command). */
-    PCDBGCCMD const     m_pCmd;
+protected:
+    DumpImageCmd       *m_pCmd;
 
 private:
     /** The Image base address. */
@@ -176,7 +536,7 @@ private:
 private:
     DumpImageBase();
 
-    void setupAddrFormatting(const char *a_pszImageBaseAddr)
+    void setupAddrFormatting(const char *a_pszImageBaseAddr) RT_NOEXCEPT
     {
         /*
          * Expected inputs: %%12345678, %123456789abcdef, 0x12345678, 0008:12345678
@@ -209,12 +569,8 @@ private:
     }
 
 public:
-    DumpImageBase(PDBGCCMDHLP a_pCmdHlp, PCDBGCCMD a_pCmd, PCDBGCVAR a_pImageBase,
-                  const char *a_pszImageBaseAddr, const char *a_pszName)
-        : m_pszName(a_pszName)
-        , m_pImageBase(a_pImageBase)
-        , m_pCmdHlp(a_pCmdHlp)
-        , m_pCmd(a_pCmd)
+    DumpImageBase(DumpImageCmd *a_pCmd, const char *a_pszImageBaseAddr) RT_NOEXCEPT
+        : m_pCmd(a_pCmd)
         , m_uImageBaseAddr(0)
         , m_cchAddr(0)
         , m_cchAddrValue(12)
@@ -226,10 +582,10 @@ public:
 
     virtual ~DumpImageBase() { }
 
-    virtual size_t rvaToFileOffset(size_t uRva) const = 0;
-    virtual size_t getEndRva(bool a_fAligned = true) const = 0;
+    virtual size_t rvaToFileOffset(size_t uRva) const RT_NOEXCEPT = 0;
+    virtual size_t getEndRva(bool a_fAligned = true) const RT_NOEXCEPT = 0;
 
-    char *rvaToStringWithAddr(size_t uRva, char *pszDst, size_t cbDst, bool fWide = false)
+    char *rvaToStringWithAddr(size_t uRva, char *pszDst, size_t cbDst, bool fWide = false) const RT_NOEXCEPT
     {
         if (!fWide)
             RTStrPrintf(pszDst, cbDst, "%#09zx/%s%0*RX64", uRva, m_szAddrPfx, m_cchAddrValue, m_uImageBaseAddr + uRva);
@@ -238,15 +594,15 @@ public:
         return pszDst;
     }
 
-    virtual void myPrintf(const char *pszFormat, ...)
+    void myPrintf(const char *pszFormat, ...) const RT_NOEXCEPT
     {
         va_list va;
         va_start(va, pszFormat);
-        m_pCmdHlp->pfnPrintfV(m_pCmdHlp, NULL, pszFormat, va);
+        m_pCmd->myPrintfV(pszFormat, va);
         va_end(va);
     }
 
-    void myPrintHeader(size_t uRva, const char *pszFormat, ...)
+    void myPrintHeader(size_t uRva, const char *pszFormat, ...) const RT_NOEXCEPT
     {
         char    szTmp[64];
         char    szLine[128];
@@ -262,55 +618,35 @@ public:
                  cchLine, "===============================================================================");
     }
 
-    virtual int myError(const char *pszFormat, ...)
+    int myError(const char *pszFormat, ...) const RT_NOEXCEPT
     {
         va_list va;
         va_start(va, pszFormat);
-        int rc = DBGCCmdHlpFail(m_pCmdHlp, m_pCmd, "%s: %N", m_pszName, pszFormat, &va);
+        int rc = m_pCmd->myErrorV(pszFormat, va);
         va_end(va);
         return rc;
     }
 
-    virtual int myError(int rc, const char *pszFormat, ...)
+    int myError(int rc, const char *pszFormat, ...) const RT_NOEXCEPT
     {
         va_list va;
         va_start(va, pszFormat);
-        rc = DBGCCmdHlpFailRc(m_pCmdHlp, m_pCmd, rc, "%s: %N", m_pszName, pszFormat, &va);
+        rc = m_pCmd->myErrorV(rc, pszFormat, va);
         va_end(va);
         return rc;
     }
 
-    int readBytesAtRva(size_t uRva, void *pvBuf, size_t cbToRead, size_t *pcbRead = NULL)
+    int readBytesAtRva(size_t uRva, void *pvBuf, size_t cbToRead, size_t *pcbRead = NULL) RT_NOEXCEPT
     {
-        /* Ensure buffer and return size is zero before we do anything. */
-        if (pcbRead)
-            *pcbRead = 0;
-        RT_BZERO(pvBuf, cbToRead);
-
 #ifndef DBGC_DUMP_IMAGE_TOOL
-        /* Calc the read address. */
-        DBGCVAR AddrToReadAt;
-        int rc = DBGCCmdHlpEval(m_pCmdHlp, &AddrToReadAt, "%DV + %#zx", m_pImageBase, uRva);
-        if (RT_SUCCESS(rc))
-        {
-            rc = DBGCCmdHlpMemRead(m_pCmdHlp, pvBuf, cbToRead, &AddrToReadAt, pcbRead);
-            if (RT_FAILURE(rc))
-                rc = myError(rc, "Failed to read %zu bytes at %Dv", cbToRead, &AddrToReadAt);
-        }
-#else  /* DBGC_DUMP_IMAGE_TOOL */
-        int rc;
+        /* RVA and offset is the same in this context. */
+        return m_pCmd->readAt(uRva, pvBuf, cbToRead, pcbRead);
+#else
         size_t const offFile = rvaToFileOffset(uRva);
         if (offFile != ~(size_t)0)
-        {
-            CMDHLPSTATE * const pToolState = RT_FROM_MEMBER(m_pCmdHlp, CMDHLPSTATE, Core);
-            rc = RTVfsFileReadAt(pToolState->hVfsFile, offFile, pvBuf, cbToRead, pcbRead);
-            if (RT_FAILURE(rc))
-                rc = myError(rc, "Failed to read %zu bytes at %#zx (RVA %#zx)", cbToRead, offFile, uRva);
-        }
-        else
-            rc = myError(VERR_READ_ERROR, "Failed to convert RVA %#zx to file offset for %zu byte read!", uRva, cbToRead);
-#endif /* DBGC_DUMP_IMAGE_TOOL */
-        return rc;
+            return m_pCmd->readAt(offFile, pvBuf, cbToRead, pcbRead);
+        return myError(VERR_READ_ERROR, "Failed to convert RVA %#zx to file offset for %zu byte read!", uRva, cbToRead);
+#endif
     }
 };
 
@@ -334,7 +670,7 @@ private:
     /** Pointer to the image dumper. */
     DumpImageBase  *m_pImage;
 
-    int loadBuffer(size_t uRva)
+    int loadBuffer(size_t uRva) RT_NOEXCEPT
     {
         /* Check that the RVA is within the image. */
         size_t const cbMaxRva = m_pImage->getEndRva();
@@ -352,15 +688,14 @@ private:
     }
 
     /** Resizes the buffer if the current one can't hold @a cbNeeded bytes. */
-    int ensureBufferSpace(size_t cbNeeded)
+    int ensureBufferSpace(size_t cbNeeded) RT_NOEXCEPT
     {
         if (cbNeeded > m_cbBufAlloc)
         {
             cbNeeded = RT_ALIGN_Z(cbNeeded, 512);
             void *pvNew = RTMemTmpAllocZ(cbNeeded);
             if (!pvNew)
-                return DBGCCmdHlpFailRc(m_pImage->m_pCmdHlp, m_pImage->m_pCmd, VERR_NO_TMP_MEMORY,
-                                        "Failed to allocate %zu (%#zx) bytes", cbNeeded, cbNeeded);
+                return m_pImage->myError(VERR_NO_TMP_MEMORY, "Failed to allocate %zu (%#zx) bytes", cbNeeded, cbNeeded);
             memcpy(pvNew, m_pbBuf, RT_MIN(m_cbBuf, m_cbBufAlloc));
 
             if (m_pbBuf != &m_abBufFixed[0])
@@ -374,7 +709,7 @@ private:
     DumpImageBufferedReader();
 
 public:
-    DumpImageBufferedReader(DumpImageBase *a_pImage)
+    DumpImageBufferedReader(DumpImageBase *a_pImage) RT_NOEXCEPT
         : m_pbBuf(&m_abBufFixed[0])
         , m_cbBufAlloc(sizeof(m_abBufFixed))
         , m_cbBuf(0)
@@ -385,7 +720,7 @@ public:
     }
 
     /** Copy constructor. */
-    DumpImageBufferedReader(DumpImageBufferedReader const &a_rThat)
+    DumpImageBufferedReader(DumpImageBufferedReader const &a_rThat) RT_NOEXCEPT
         : m_pbBuf(&m_abBufFixed[0])
         , m_cbBufAlloc(sizeof(m_abBufFixed))
         , m_cbBuf(RT_MIN(a_rThat.m_cbBuf, sizeof(m_abBufFixed)))
@@ -397,7 +732,7 @@ public:
             RT_BZERO(&m_abBufFixed[m_cbBuf], sizeof(m_abBufFixed) - m_cbBuf);
     }
 
-    ~DumpImageBufferedReader()
+    ~DumpImageBufferedReader() RT_NOEXCEPT
     {
         if (m_pbBuf != &m_abBufFixed[0])
             RTMemTmpFree(m_pbBuf);
@@ -410,7 +745,7 @@ public:
      * The buffer is entirely zeroed before reading anything, so it's okay to ignore
      * the status code.
      */
-    int readBytes(size_t uRva, void *pvDst, size_t cbToRead)
+    int readBytes(size_t uRva, void *pvDst, size_t cbToRead) RT_NOEXCEPT
     {
         RT_BZERO(pvDst, cbToRead);
 
@@ -453,7 +788,7 @@ public:
      * @note    Extra buffer space will be allocated if @a cbItem is larger than the
      *          internal buffer.
      */
-    uint8_t const *bufferedBytes(size_t uRva, size_t cbItem)
+    uint8_t const *bufferedBytes(size_t uRva, size_t cbItem) RT_NOEXCEPT
     {
         /* Do we need to load the item into the buffer? */
         if (   uRva < m_uRvaBuf
@@ -477,7 +812,7 @@ public:
      *       space will be allocated if the string doesn't terminate within the
      *       buffer size.
      */
-    const char *bufferedString(size_t uRva)
+    const char *bufferedString(size_t uRva) RT_NOEXCEPT
     {
         /* Do we need to reload the buffer? */
         if (   uRva < m_uRvaBuf
@@ -502,7 +837,7 @@ public:
      * Gets a simple integer value, with default in case of failure.
      */
     template<typename IntType>
-    IntType bufferedInt(size_t uRva, IntType Default = 0)
+    IntType bufferedInt(size_t uRva, IntType Default = 0) RT_NOEXCEPT
     {
         AssertCompile(sizeof(IntType) <= 8);
         AssertReturn(uRva < uRva + sizeof(IntType), Default);
@@ -526,108 +861,6 @@ public:
 /*********************************************************************************************************************************
 *   PE                                                                                                                           *
 *********************************************************************************************************************************/
-
-static const char *dbgcPeMachineName(uint16_t uMachine)
-{
-    switch (uMachine)
-    {
-        case IMAGE_FILE_MACHINE_I386         : return "I386";
-        case IMAGE_FILE_MACHINE_AMD64        : return "AMD64";
-        case IMAGE_FILE_MACHINE_UNKNOWN      : return "UNKNOWN";
-        case IMAGE_FILE_MACHINE_BASIC_16     : return "BASIC_16";
-        case IMAGE_FILE_MACHINE_BASIC_16_TV  : return "BASIC_16_TV";
-        case IMAGE_FILE_MACHINE_IAPX16       : return "IAPX16";
-        case IMAGE_FILE_MACHINE_IAPX16_TV    : return "IAPX16_TV";
-        //case IMAGE_FILE_MACHINE_IAPX20       : return "IAPX20";
-        //case IMAGE_FILE_MACHINE_IAPX20_TV    : return "IAPX20_TV";
-        case IMAGE_FILE_MACHINE_I8086        : return "I8086";
-        case IMAGE_FILE_MACHINE_I8086_TV     : return "I8086_TV";
-        case IMAGE_FILE_MACHINE_I286_SMALL   : return "I286_SMALL";
-        case IMAGE_FILE_MACHINE_MC68         : return "MC68";
-        //case IMAGE_FILE_MACHINE_MC68_WR      : return "MC68_WR";
-        case IMAGE_FILE_MACHINE_MC68_TV      : return "MC68_TV";
-        case IMAGE_FILE_MACHINE_MC68_PG      : return "MC68_PG";
-        //case IMAGE_FILE_MACHINE_I286_LARGE   : return "I286_LARGE";
-        case IMAGE_FILE_MACHINE_U370_WR      : return "U370_WR";
-        case IMAGE_FILE_MACHINE_AMDAHL_470_WR: return "AMDAHL_470_WR";
-        case IMAGE_FILE_MACHINE_AMDAHL_470_RO: return "AMDAHL_470_RO";
-        case IMAGE_FILE_MACHINE_U370_RO      : return "U370_RO";
-        case IMAGE_FILE_MACHINE_R4000        : return "R4000";
-        case IMAGE_FILE_MACHINE_WCEMIPSV2    : return "WCEMIPSV2";
-        case IMAGE_FILE_MACHINE_VAX_WR       : return "VAX_WR";
-        case IMAGE_FILE_MACHINE_VAX_RO       : return "VAX_RO";
-        case IMAGE_FILE_MACHINE_SH3          : return "SH3";
-        case IMAGE_FILE_MACHINE_SH3DSP       : return "SH3DSP";
-        case IMAGE_FILE_MACHINE_SH4          : return "SH4";
-        case IMAGE_FILE_MACHINE_SH5          : return "SH5";
-        case IMAGE_FILE_MACHINE_ARM          : return "ARM";
-        case IMAGE_FILE_MACHINE_THUMB        : return "THUMB";
-        case IMAGE_FILE_MACHINE_ARMNT        : return "ARMNT";
-        case IMAGE_FILE_MACHINE_AM33         : return "AM33";
-        case IMAGE_FILE_MACHINE_POWERPC      : return "POWERPC";
-        case IMAGE_FILE_MACHINE_POWERPCFP    : return "POWERPCFP";
-        case IMAGE_FILE_MACHINE_IA64         : return "IA64";
-        case IMAGE_FILE_MACHINE_MIPS16       : return "MIPS16";
-        case IMAGE_FILE_MACHINE_MIPSFPU      : return "MIPSFPU";
-        case IMAGE_FILE_MACHINE_MIPSFPU16    : return "MIPSFPU16";
-        case IMAGE_FILE_MACHINE_EBC          : return "EBC";
-        case IMAGE_FILE_MACHINE_M32R         : return "M32R";
-        case IMAGE_FILE_MACHINE_ARM64        : return "ARM64";
-    }
-    return "??";
-}
-
-
-static const char *dbgcPeDataDirName(unsigned iDir)
-{
-    switch (iDir)
-    {
-        case IMAGE_DIRECTORY_ENTRY_EXPORT:          return "EXPORT";
-        case IMAGE_DIRECTORY_ENTRY_IMPORT:          return "IMPORT";
-        case IMAGE_DIRECTORY_ENTRY_RESOURCE:        return "RESOURCE";
-        case IMAGE_DIRECTORY_ENTRY_EXCEPTION:       return "EXCEPTION";
-        case IMAGE_DIRECTORY_ENTRY_SECURITY:        return "SECURITY";
-        case IMAGE_DIRECTORY_ENTRY_BASERELOC:       return "BASERELOC";
-        case IMAGE_DIRECTORY_ENTRY_DEBUG:           return "DEBUG";
-        case IMAGE_DIRECTORY_ENTRY_ARCHITECTURE:    return "ARCHITECTURE";
-        case IMAGE_DIRECTORY_ENTRY_GLOBALPTR:       return "GLOBALPTR";
-        case IMAGE_DIRECTORY_ENTRY_TLS:             return "TLS";
-        case IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG:     return "LOAD_CONFIG";
-        case IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT:    return "BOUND_IMPORT";
-        case IMAGE_DIRECTORY_ENTRY_IAT:             return "IAT";
-        case IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:    return "DELAY_IMPORT";
-        case IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR:  return "COM_DESCRIPTOR";
-    }
-    return "??";
-}
-
-
-static const char *dbgPeDebugTypeName(uint32_t uType, char *pszTmp, size_t cchTmp)
-{
-    switch (uType)
-    {
-        case IMAGE_DEBUG_TYPE_UNKNOWN:       return "UNKNOWN";
-        case IMAGE_DEBUG_TYPE_COFF:          return "COFF";
-        case IMAGE_DEBUG_TYPE_CODEVIEW:      return "CODEVIEW";
-        case IMAGE_DEBUG_TYPE_FPO:           return "FPO";
-        case IMAGE_DEBUG_TYPE_MISC:          return "MISC";
-        case IMAGE_DEBUG_TYPE_EXCEPTION:     return "EXCEPTION";
-        case IMAGE_DEBUG_TYPE_FIXUP:         return "FIXUP";
-        case IMAGE_DEBUG_TYPE_OMAP_TO_SRC:   return "OMAP_TO_SRC";
-        case IMAGE_DEBUG_TYPE_OMAP_FROM_SRC: return "OMAP_FROM_SRC";
-        case IMAGE_DEBUG_TYPE_BORLAND:       return "BORLAND";
-        case IMAGE_DEBUG_TYPE_RESERVED10:    return "RESERVED10";
-        case IMAGE_DEBUG_TYPE_CLSID:         return "CLSID";
-        case IMAGE_DEBUG_TYPE_VC_FEATURE:    return "VC_FEATURE";
-        case IMAGE_DEBUG_TYPE_POGO:          return "POGO";
-        case IMAGE_DEBUG_TYPE_ILTCG:         return "ILTCG";
-        case IMAGE_DEBUG_TYPE_MPX:           return "MPX";
-        case IMAGE_DEBUG_TYPE_REPRO:         return "REPRO";
-    }
-    RTStrPrintf(pszTmp, cchTmp, "%#RX32", uType);
-    return pszTmp;
-}
-
 
 /**
  * PE dumper class.
@@ -658,11 +891,10 @@ public:
     PCIMAGE_DATA_DIRECTORY      paDataDir;
 
 public:
-    DumpImagePe(PDBGCCMDHLP a_pCmdHlp, PCDBGCCMD a_pCmd, PCDBGCVAR a_pImageBase,
-                const char *a_pszImageBaseAddr, const char *a_pszName,
+    DumpImagePe(DumpImageCmd *a_pCmd, const char *a_pszImageBaseAddr,
                 uint32_t a_offPeHdr, PCIMAGE_FILE_HEADER a_pFileHdr, void *a_pvNtHdrs,
-                uint32_t a_offShdrs, unsigned a_cShdrs, PCIMAGE_SECTION_HEADER a_paShdrs)
-        : DumpImageBase(a_pCmdHlp, a_pCmd, a_pImageBase, a_pszImageBaseAddr, a_pszName)
+                uint32_t a_offShdrs, unsigned a_cShdrs, PCIMAGE_SECTION_HEADER a_paShdrs) RT_NOEXCEPT
+        : DumpImageBase(a_pCmd, a_pszImageBaseAddr)
         , m_pFileHdr(a_pFileHdr)
         , m_offPeHdr(a_offPeHdr)
         , m_offShdrs(a_offShdrs)
@@ -684,12 +916,13 @@ public:
         }
     }
 
-    virtual size_t rvaToFileOffset(size_t uRva) const RT_OVERRIDE
+    virtual size_t rvaToFileOffset(size_t uRva) const RT_NOEXCEPT RT_OVERRIDE
     {
         AssertReturn(m_paShdrs, uRva);
         AssertReturn(u.pv, uRva);
         if (uRva < m_paShdrs[0].VirtualAddress)
             return uRva;
+        /** @todo handle uninitialized data. needs different return code or smth. */
         unsigned iSh = m_cShdrs;
         while (iSh-- > 0)
         {
@@ -704,7 +937,7 @@ public:
         return ~(size_t)0;
     }
 
-    virtual size_t getEndRva(bool a_fAligned = true) const RT_OVERRIDE
+    virtual size_t getEndRva(bool a_fAligned = true) const RT_NOEXCEPT RT_OVERRIDE
     {
         AssertCompileMembersAtSameOffset(IMAGE_NT_HEADERS32, OptionalHeader.SizeOfImage,
                                          IMAGE_NT_HEADERS64, OptionalHeader.SizeOfImage);
@@ -734,17 +967,125 @@ public:
 
     /** @} */
 
+    /** @name Constants naming
+     * @{ */
+
+    static const char *machineToString(uint16_t uMachine) RT_NOEXCEPT
+    {
+        switch (uMachine)
+        {
+            case IMAGE_FILE_MACHINE_I386         : return "I386";
+            case IMAGE_FILE_MACHINE_AMD64        : return "AMD64";
+            case IMAGE_FILE_MACHINE_UNKNOWN      : return "UNKNOWN";
+            case IMAGE_FILE_MACHINE_BASIC_16     : return "BASIC_16";
+            case IMAGE_FILE_MACHINE_BASIC_16_TV  : return "BASIC_16_TV";
+            case IMAGE_FILE_MACHINE_IAPX16       : return "IAPX16";
+            case IMAGE_FILE_MACHINE_IAPX16_TV    : return "IAPX16_TV";
+            //case IMAGE_FILE_MACHINE_IAPX20       : return "IAPX20";
+            //case IMAGE_FILE_MACHINE_IAPX20_TV    : return "IAPX20_TV";
+            case IMAGE_FILE_MACHINE_I8086        : return "I8086";
+            case IMAGE_FILE_MACHINE_I8086_TV     : return "I8086_TV";
+            case IMAGE_FILE_MACHINE_I286_SMALL   : return "I286_SMALL";
+            case IMAGE_FILE_MACHINE_MC68         : return "MC68";
+            //case IMAGE_FILE_MACHINE_MC68_WR      : return "MC68_WR";
+            case IMAGE_FILE_MACHINE_MC68_TV      : return "MC68_TV";
+            case IMAGE_FILE_MACHINE_MC68_PG      : return "MC68_PG";
+            //case IMAGE_FILE_MACHINE_I286_LARGE   : return "I286_LARGE";
+            case IMAGE_FILE_MACHINE_U370_WR      : return "U370_WR";
+            case IMAGE_FILE_MACHINE_AMDAHL_470_WR: return "AMDAHL_470_WR";
+            case IMAGE_FILE_MACHINE_AMDAHL_470_RO: return "AMDAHL_470_RO";
+            case IMAGE_FILE_MACHINE_U370_RO      : return "U370_RO";
+            case IMAGE_FILE_MACHINE_R4000        : return "R4000";
+            case IMAGE_FILE_MACHINE_WCEMIPSV2    : return "WCEMIPSV2";
+            case IMAGE_FILE_MACHINE_VAX_WR       : return "VAX_WR";
+            case IMAGE_FILE_MACHINE_VAX_RO       : return "VAX_RO";
+            case IMAGE_FILE_MACHINE_SH3          : return "SH3";
+            case IMAGE_FILE_MACHINE_SH3DSP       : return "SH3DSP";
+            case IMAGE_FILE_MACHINE_SH4          : return "SH4";
+            case IMAGE_FILE_MACHINE_SH5          : return "SH5";
+            case IMAGE_FILE_MACHINE_ARM          : return "ARM";
+            case IMAGE_FILE_MACHINE_THUMB        : return "THUMB";
+            case IMAGE_FILE_MACHINE_ARMNT        : return "ARMNT";
+            case IMAGE_FILE_MACHINE_AM33         : return "AM33";
+            case IMAGE_FILE_MACHINE_POWERPC      : return "POWERPC";
+            case IMAGE_FILE_MACHINE_POWERPCFP    : return "POWERPCFP";
+            case IMAGE_FILE_MACHINE_IA64         : return "IA64";
+            case IMAGE_FILE_MACHINE_MIPS16       : return "MIPS16";
+            case IMAGE_FILE_MACHINE_MIPSFPU      : return "MIPSFPU";
+            case IMAGE_FILE_MACHINE_MIPSFPU16    : return "MIPSFPU16";
+            case IMAGE_FILE_MACHINE_EBC          : return "EBC";
+            case IMAGE_FILE_MACHINE_M32R         : return "M32R";
+            case IMAGE_FILE_MACHINE_ARM64        : return "ARM64";
+        }
+        return "??";
+    }
+
+    static const char *dataDirectoryToString(unsigned iDir) RT_NOEXCEPT
+    {
+        switch (iDir)
+        {
+            case IMAGE_DIRECTORY_ENTRY_EXPORT:          return "EXPORT";
+            case IMAGE_DIRECTORY_ENTRY_IMPORT:          return "IMPORT";
+            case IMAGE_DIRECTORY_ENTRY_RESOURCE:        return "RESOURCE";
+            case IMAGE_DIRECTORY_ENTRY_EXCEPTION:       return "EXCEPTION";
+            case IMAGE_DIRECTORY_ENTRY_SECURITY:        return "SECURITY";
+            case IMAGE_DIRECTORY_ENTRY_BASERELOC:       return "BASERELOC";
+            case IMAGE_DIRECTORY_ENTRY_DEBUG:           return "DEBUG";
+            case IMAGE_DIRECTORY_ENTRY_ARCHITECTURE:    return "ARCHITECTURE";
+            case IMAGE_DIRECTORY_ENTRY_GLOBALPTR:       return "GLOBALPTR";
+            case IMAGE_DIRECTORY_ENTRY_TLS:             return "TLS";
+            case IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG:     return "LOAD_CONFIG";
+            case IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT:    return "BOUND_IMPORT";
+            case IMAGE_DIRECTORY_ENTRY_IAT:             return "IAT";
+            case IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:    return "DELAY_IMPORT";
+            case IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR:  return "COM_DESCRIPTOR";
+        }
+        return "??";
+    }
+
+    static const char *debugTypeToString(uint32_t uType, char *pszTmp, size_t cchTmp) RT_NOEXCEPT
+    {
+        switch (uType)
+        {
+            case IMAGE_DEBUG_TYPE_UNKNOWN:       return "UNKNOWN";
+            case IMAGE_DEBUG_TYPE_COFF:          return "COFF";
+            case IMAGE_DEBUG_TYPE_CODEVIEW:      return "CODEVIEW";
+            case IMAGE_DEBUG_TYPE_FPO:           return "FPO";
+            case IMAGE_DEBUG_TYPE_MISC:          return "MISC";
+            case IMAGE_DEBUG_TYPE_EXCEPTION:     return "EXCEPTION";
+            case IMAGE_DEBUG_TYPE_FIXUP:         return "FIXUP";
+            case IMAGE_DEBUG_TYPE_OMAP_TO_SRC:   return "OMAP_TO_SRC";
+            case IMAGE_DEBUG_TYPE_OMAP_FROM_SRC: return "OMAP_FROM_SRC";
+            case IMAGE_DEBUG_TYPE_BORLAND:       return "BORLAND";
+            case IMAGE_DEBUG_TYPE_RESERVED10:    return "RESERVED10";
+            case IMAGE_DEBUG_TYPE_CLSID:         return "CLSID";
+            case IMAGE_DEBUG_TYPE_VC_FEATURE:    return "VC_FEATURE";
+            case IMAGE_DEBUG_TYPE_POGO:          return "POGO";
+            case IMAGE_DEBUG_TYPE_ILTCG:         return "ILTCG";
+            case IMAGE_DEBUG_TYPE_MPX:           return "MPX";
+            case IMAGE_DEBUG_TYPE_REPRO:         return "REPRO";
+        }
+        RTStrPrintf(pszTmp, cchTmp, "%#RX32", uType);
+        return pszTmp;
+    }
+
+    /** @} */
+
+
     /** @name Dumpers
      * @{
      */
 
-    int dumpPeHdr(void)
+    int dumpPeHdr(void) RT_NOEXCEPT
     {
+        if (!(m_pCmd->m_fSelection & DUMPIMAGE_SELECT_HEADERS))
+            return VINF_SUCCESS;
+        myPrintHeader(m_offPeHdr, "PE & File Header - %s", m_pCmd->m_pszName);
+
         char szTmp[64];
-        myPrintHeader(m_offPeHdr, "PE & File Header - %s", m_pszName);
         myPrintf("Signature:                    %#010RX32\n", u.pNt32->Signature);
         PCIMAGE_FILE_HEADER const pFileHdr = &u.pNt32->FileHeader;
-        myPrintf("Machine:                      %s (%#06RX16)\n", dbgcPeMachineName(pFileHdr->Machine), pFileHdr->Machine);
+        myPrintf("Machine:                      %s (%#06RX16)\n", machineToString(pFileHdr->Machine), pFileHdr->Machine);
         myPrintf("Number of sections:           %#06RX16\n", pFileHdr->NumberOfSections);
         myPrintf("Timestamp:                    %#010RX32\n",
                  pFileHdr->TimeDateStamp, timestampToString(pFileHdr->TimeDateStamp, szTmp, sizeof(szTmp)));
@@ -775,9 +1116,12 @@ public:
     }
 
     template<typename OptHdrType, bool const a_f32Bit>
-    int dumpOptHdr(OptHdrType const *pOptHdr, uint32_t uBaseOfData = 0)
+    int dumpOptHdr(OptHdrType const *pOptHdr, uint32_t uBaseOfData = 0) RT_NOEXCEPT
     {
+        if (!(m_pCmd->m_fSelection & DUMPIMAGE_SELECT_HEADERS))
+            return VINF_SUCCESS;
         myPrintHeader(m_offPeHdr + RT_UOFFSETOF(IMAGE_NT_HEADERS32, OptionalHeader), "Optional Header");
+
         char szTmp[64];
         myPrintf("Optional header magic:        %#06RX16\n", pOptHdr->Magic);
         myPrintf("Linker version:               %u.%02u\n", pOptHdr->MajorLinkerVersion, pOptHdr->MinorLinkerVersion);
@@ -836,7 +1180,7 @@ public:
         for (uint32_t i = 0; i < RT_ELEMENTS(pOptHdr->DataDirectory); i++)
             if (pOptHdr->DataDirectory[i].Size || pOptHdr->DataDirectory[i].VirtualAddress)
             {
-                const char * const pszName = dbgcPeDataDirName(i);
+                const char * const pszName = dataDirectoryToString(i);
                 rvaToStringWithAddr(pOptHdr->DataDirectory[i].VirtualAddress, szTmp, sizeof(szTmp));
                 if (i == IMAGE_DIRECTORY_ENTRY_SECURITY)
                 {
@@ -854,7 +1198,10 @@ public:
 
     int dumpSectionHdrs(void) RT_NOEXCEPT
     {
+        if (!(m_pCmd->m_fSelection & DUMPIMAGE_SELECT_SECTIONS))
+            return VINF_SUCCESS;
         myPrintHeader(m_offShdrs, "Section Table");
+
         for (unsigned i = 0; i < m_cShdrs; i++)
         {
             char szTmp[64];
@@ -865,9 +1212,12 @@ public:
         return VINF_SUCCESS;
     }
 
-    int dumpExportDir(DumpImageBufferedReader *pBufRdr, uint32_t uRvaData, uint32_t cbData)
+    int dumpExportDir(DumpImageBufferedReader *pBufRdr, uint32_t uRvaData, uint32_t cbData) RT_NOEXCEPT
     {
+        if (!(m_pCmd->m_fSelection & DUMPIMAGE_SELECT_EXPORTS))
+            return VINF_SUCCESS;
         myPrintHeader(uRvaData, "Export Table");
+
         RT_NOREF(cbData);
         char szTmp[64];
 
@@ -1011,8 +1361,12 @@ public:
     }
 
     template<typename ThunkType, bool const a_f32Bit, ThunkType const a_fOrdinalConst>
-    int dumpImportDir(DumpImageBufferedReader *pBufRdr, uint32_t uRvaData, uint32_t cbData)
+    int dumpImportDir(DumpImageBufferedReader *pBufRdr, uint32_t uRvaData, uint32_t cbData) RT_NOEXCEPT
     {
+        if (!(m_pCmd->m_fSelection & DUMPIMAGE_SELECT_IMPORTS))
+            return VINF_SUCCESS;
+        myPrintHeader(uRvaData, "Import table");
+
         char         szTmp[64];
         char         szTmp2[64];
         size_t const cchRvaWithAddr = strlen(rvaToStringWithAddr(uRvaData, szTmp, sizeof(szTmp)));
@@ -1020,7 +1374,6 @@ public:
         /* Use dedicated readers for each array and names */
         DumpImageBufferedReader NameRdr(*pBufRdr), Thunk1stRdr(*pBufRdr), ThunkOrgRdr(*pBufRdr);
 
-        myPrintHeader(uRvaData, "Import table");
         int            rcRet    = VINF_SUCCESS;
         uint32_t const cEntries = cbData / sizeof(IMAGE_IMPORT_DESCRIPTOR);
         for (uint32_t i = 0; i < cEntries; i += 1, uRvaData += sizeof(IMAGE_IMPORT_DESCRIPTOR))
@@ -1116,9 +1469,12 @@ public:
         return rcRet;
     }
 
-    int dumpDebugDir(DumpImageBufferedReader *pBufRdr, uint32_t uRvaData, uint32_t cbData)
+    int dumpDebugDir(DumpImageBufferedReader *pBufRdr, uint32_t uRvaData, uint32_t cbData) RT_NOEXCEPT
     {
+        if (!(m_pCmd->m_fSelection & DUMPIMAGE_SELECT_DEBUG))
+            return VINF_SUCCESS;
         myPrintHeader(uRvaData, "Debug Directory");
+
         int            rcRet    = VINF_SUCCESS;
         uint32_t const cEntries = cbData / sizeof(IMAGE_DEBUG_DIRECTORY);
         for (uint32_t i = 0; i < cEntries; i += 1, uRvaData += sizeof(IMAGE_DEBUG_DIRECTORY))
@@ -1140,7 +1496,7 @@ public:
             myPrintf("%u: %s LB %06RX32  %#09RX32  %13s",
                      i, rvaToStringWithAddr(DbgDir.AddressOfRawData, szTmp, sizeof(szTmp)), DbgDir.SizeOfData,
                      DbgDir.PointerToRawData,
-                     dbgPeDebugTypeName(DbgDir.Type, szTmp2, sizeof(szTmp2)));
+                     debugTypeToString(DbgDir.Type, szTmp2, sizeof(szTmp2)));
             if (DbgDir.MajorVersion || DbgDir.MinorVersion)
                 myPrintf("  v%u.%u", DbgDir.MajorVersion, DbgDir.MinorVersion);
             if (DbgDir.Characteristics)
@@ -1208,7 +1564,7 @@ public:
         return rcRet;
     }
 
-    int dumpDataDirs(DumpImageBufferedReader *pBufRdr, unsigned cDataDirs, PCIMAGE_DATA_DIRECTORY paDataDirs)
+    int dumpDataDirs(DumpImageBufferedReader *pBufRdr, unsigned cDataDirs, PCIMAGE_DATA_DIRECTORY paDataDirs) RT_NOEXCEPT
     {
         int rcRet = VINF_SUCCESS;
         for (unsigned i = 0; i < cDataDirs; i++)
@@ -1240,86 +1596,83 @@ public:
     }
 
     /** @} */
-};
 
-
-static int dbgcDumpImagePe(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pImageBase, const char *pszImageBaseAddr,
-                           const char *pszName, uint32_t offPeHdr, PCIMAGE_FILE_HEADER pFileHdr)
-{
-    DBGCCmdHlpPrintf(pCmdHlp, "%s: PE image - %#x (%s), %u sections\n", pszName, pFileHdr->Machine,
-                     dbgcPeMachineName(pFileHdr->Machine), pFileHdr->NumberOfSections);
-
-    /* Is it a supported optional header size? */
-    uint8_t cBits;
-    if (pFileHdr->SizeOfOptionalHeader == sizeof(IMAGE_OPTIONAL_HEADER32))
-        cBits = 32;
-    else if (pFileHdr->SizeOfOptionalHeader == sizeof(IMAGE_OPTIONAL_HEADER64))
-        cBits = 64;
-    else
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "%s: Unsupported optional header size: %#x\n",
-                              pszName, pFileHdr->SizeOfOptionalHeader);
-
-    /*
-     * Allocate memory for all the headers, including section headers, and read them into memory.
-     */
-    size_t const offShdrs = pFileHdr->SizeOfOptionalHeader + sizeof(*pFileHdr) + sizeof(uint32_t);
-    size_t const cbHdrs   = offShdrs + pFileHdr->NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
-    if (cbHdrs > _2M)
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "%s: headers too big: %zu.\n", pszName, cbHdrs);
-
-    void *pvBuf = RTMemTmpAllocZ(cbHdrs);
-    if (!pvBuf)
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "%s: failed to allocate %zu bytes for headers.\n", pszName, cbHdrs);
-
-    int rc = dumpReadAt(pCmdHlp, pCmd, pImageBase, pszName, offPeHdr, pvBuf, cbHdrs, NULL);
-    if (RT_SUCCESS(rc))
+    static int dumpImage(DumpImageCmd *pCmd, const char *pszImageBaseAddr,
+                         uint32_t offPeHdr, PCIMAGE_FILE_HEADER pFileHdr) RT_NOEXCEPT
     {
-        /* Format the image base value from the header if one isn't specified. */
-        char szTmp[32];
-        if (!pszImageBaseAddr)
-        {
-            if (cBits == 32)
-                RTStrPrintf(szTmp, sizeof(szTmp), "%#010RX32", ((PIMAGE_NT_HEADERS32)pvBuf)->OptionalHeader.ImageBase);
-            else
-                RTStrPrintf(szTmp, sizeof(szTmp), "%#018RX64", ((PIMAGE_NT_HEADERS64)pvBuf)->OptionalHeader.ImageBase);
-            pszImageBaseAddr = szTmp;
-        }
+        pCmd->myPrintf("%s: PE image - %#x (%s), %u sections\n", pCmd->m_pszName, pFileHdr->Machine,
+                       machineToString(pFileHdr->Machine), pFileHdr->NumberOfSections);
 
-        /* Finally, instantiate dumper now that we've got the section table
-           loaded, and let it contiue. */
-        DumpImagePe This(pCmdHlp, pCmd, pImageBase, pszImageBaseAddr, pszName,
-                         offPeHdr, pFileHdr, pvBuf,
-                         (uint32_t)offShdrs, pFileHdr->NumberOfSections, (PCIMAGE_SECTION_HEADER)((uintptr_t)pvBuf + offShdrs));
-
-        This.dumpPeHdr();
-        if (cBits == 32)
-            rc = This.dumpOptHdr<IMAGE_OPTIONAL_HEADER32, true>(&This.u.pNt32->OptionalHeader,
-                                                                This.u.pNt32->OptionalHeader.BaseOfData);
+        /* Is it a supported optional header size? */
+        uint8_t cBits;
+        if (pFileHdr->SizeOfOptionalHeader == sizeof(IMAGE_OPTIONAL_HEADER32))
+            cBits = 32;
+        else if (pFileHdr->SizeOfOptionalHeader == sizeof(IMAGE_OPTIONAL_HEADER64))
+            cBits = 64;
         else
-            rc = This.dumpOptHdr<IMAGE_OPTIONAL_HEADER64, false>(&This.u.pNt64->OptionalHeader);
+            return pCmd->myError("Unsupported optional header size: %#x", pFileHdr->SizeOfOptionalHeader);
 
-        int rc2 = This.dumpSectionHdrs();
-        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-            rc = rc2;
+        /*
+         * Allocate memory for all the headers, including section headers, and read them into memory.
+         */
+        size_t const offShdrs = pFileHdr->SizeOfOptionalHeader + sizeof(*pFileHdr) + sizeof(uint32_t);
+        size_t const cbHdrs   = offShdrs + pFileHdr->NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
+        if (cbHdrs > _2M)
+            return pCmd->myError("headers too big: %zu.\n", cbHdrs);
 
-        DumpImageBufferedReader BufRdr(&This);
-        rc2 = This.dumpDataDirs(&BufRdr, This.cDataDir, This.paDataDir);
-        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-            rc = rc2;
+        void *pvBuf = RTMemTmpAllocZ(cbHdrs);
+        if (!pvBuf)
+            return pCmd->myError("failed to allocate %zu bytes for headers.", cbHdrs);
+
+        int rc = pCmd->readAt(offPeHdr, pvBuf, cbHdrs, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            /* Format the image base value from the header if one isn't specified. */
+            char szTmp[32];
+            if (!pszImageBaseAddr)
+            {
+                if (cBits == 32)
+                    RTStrPrintf(szTmp, sizeof(szTmp), "%#010RX32", ((PIMAGE_NT_HEADERS32)pvBuf)->OptionalHeader.ImageBase);
+                else
+                    RTStrPrintf(szTmp, sizeof(szTmp), "%#018RX64", ((PIMAGE_NT_HEADERS64)pvBuf)->OptionalHeader.ImageBase);
+                pszImageBaseAddr = szTmp;
+            }
+
+            /* Finally, instantiate dumper now that we've got the section table
+               loaded, and let it contiue. */
+            DumpImagePe This(pCmd, pszImageBaseAddr, offPeHdr, pFileHdr, pvBuf, (uint32_t)offShdrs,
+                             pFileHdr->NumberOfSections, (PCIMAGE_SECTION_HEADER)((uintptr_t)pvBuf + offShdrs));
+
+            This.dumpPeHdr();
+            if (cBits == 32)
+                rc = This.dumpOptHdr<IMAGE_OPTIONAL_HEADER32, true>(&This.u.pNt32->OptionalHeader,
+                                                                    This.u.pNt32->OptionalHeader.BaseOfData);
+            else
+                rc = This.dumpOptHdr<IMAGE_OPTIONAL_HEADER64, false>(&This.u.pNt64->OptionalHeader);
+
+            int rc2 = This.dumpSectionHdrs();
+            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                rc = rc2;
+
+            DumpImageBufferedReader BufRdr(&This);
+            rc2 = This.dumpDataDirs(&BufRdr, This.cDataDir, This.paDataDir);
+            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                rc = rc2;
+        }
+        RTMemTmpFree(pvBuf);
+        return rc;
     }
-    RTMemTmpFree(pvBuf);
-    return rc;
-}
+
+};
 
 
 /*********************************************************************************************************************************
 *   ELF                                                                                                                          *
 *********************************************************************************************************************************/
 
-static int dbgcDumpImageElf(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pImageBase, const char *pszName)
+static int dbgcDumpImageElf(DumpImageCmd *pCmd)
 {
-    RT_NOREF(pCmd, pImageBase);
-    DBGCCmdHlpPrintf(pCmdHlp, "%s: ELF image dumping not implemented yet.\n", pszName);
+    pCmd->myPrintf("%s: ELF image dumping not implemented yet.\n", pCmd->m_pszName);
     return VINF_SUCCESS;
 }
 
@@ -1452,8 +1805,7 @@ static const char *dbgcMachoProt(uint32_t fProt)
 }
 
 
-static int dbgcDumpImageMachO(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pImageBase, const char *pszName,
-                              mach_header_64_t const *pHdr)
+static int dbgcDumpImageMachO(DumpImageCmd *pCmd, mach_header_64_t const *pHdr)
 {
 #define ENTRY(a_Define)  { a_Define, #a_Define }
     RT_NOREF_PV(pCmd);
@@ -1461,12 +1813,12 @@ static int dbgcDumpImageMachO(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pIm
     /*
      * Header:
      */
-    DBGCCmdHlpPrintf(pCmdHlp, "%s: Mach-O image (%s bit) - %s (%u) - %s (%#x / %#x)\n",
-                     pszName, pHdr->magic == IMAGE_MACHO64_SIGNATURE ? "64" : "32",
-                     dbgcMachoFileType(pHdr->filetype), pHdr->filetype,
-                     dbgcMachoCpuType(pHdr->cputype, pHdr->cpusubtype), pHdr->cputype, pHdr->cpusubtype);
+    pCmd->myPrintf("%s: Mach-O image (%s bit) - %s (%u) - %s (%#x / %#x)\n",
+                   pCmd->m_pszName, pHdr->magic == IMAGE_MACHO64_SIGNATURE ? "64" : "32",
+                   dbgcMachoFileType(pHdr->filetype), pHdr->filetype,
+                   dbgcMachoCpuType(pHdr->cputype, pHdr->cpusubtype), pHdr->cputype, pHdr->cpusubtype);
 
-    DBGCCmdHlpPrintf(pCmdHlp, "%s: Flags: %#x", pszName, pHdr->flags);
+    pCmd->myPrintf("%s: Flags: %#x", pCmd->m_pszName, pHdr->flags);
     static DBGCDUMPFLAGENTRY const s_aHdrFlags[] =
     {
         FLENT(MH_NOUNDEFS),                     FLENT(MH_INCRLINK),
@@ -1483,20 +1835,19 @@ static int dbgcDumpImageMachO(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pIm
         FLENT(MH_DEAD_STRIPPABLE_DYLIB),        FLENT(MH_HAS_TLV_DESCRIPTORS),
         FLENT(MH_NO_HEAP_EXECUTION),
     };
-    dbgcDumpImageFlags32(pCmdHlp, pHdr->flags, s_aHdrFlags, RT_ELEMENTS(s_aHdrFlags));
-    DBGCCmdHlpPrintf(pCmdHlp, "\n");
+    dbgcDumpImageFlags32(pCmd, pHdr->flags, s_aHdrFlags, RT_ELEMENTS(s_aHdrFlags));
+    pCmd->myPrintf("\n");
     if (pHdr->reserved != 0 && pHdr->magic == IMAGE_MACHO64_SIGNATURE)
-        DBGCCmdHlpPrintf(pCmdHlp, "%s: Reserved header field: %#x\n", pszName, pHdr->reserved);
+        pCmd->myPrintf("%s: Reserved header field: %#x\n", pCmd->m_pszName, pHdr->reserved);
 
     /*
      * And now the load commands.
      */
     const uint32_t cCmds  = pHdr->ncmds;
     const uint32_t cbCmds = pHdr->sizeofcmds;
-    DBGCCmdHlpPrintf(pCmdHlp, "%s: %u load commands covering %#x bytes:\n", pszName, cCmds, cbCmds);
+    pCmd->myPrintf("%s: %u load commands covering %#x bytes:\n", pCmd->m_pszName, cCmds, cbCmds);
     if (cbCmds > _16M)
-        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_OUT_OF_RANGE,
-                                "%s: Commands too big: %#x bytes, max 16MiB\n", pszName, cbCmds);
+        return pCmd->myError(VERR_OUT_OF_RANGE, "%s: Commands too big: %#x bytes, max 16MiB", pCmd->m_pszName, cbCmds);
 
 
     /* Read the commands into a temp buffer: */
@@ -1505,7 +1856,7 @@ static int dbgcDumpImageMachO(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pIm
     if (!pbCmds)
         return VERR_NO_TMP_MEMORY;
 
-    int rc = dumpReadAt(pCmdHlp, pCmd, pImageBase, pszName, cbHdr, pbCmds, cbCmds, NULL);
+    int rc = pCmd->readAt(cbHdr, pbCmds, cbCmds, NULL);
     if (RT_SUCCESS(rc))
     {
         static const DBGCDUMPFLAGENTRY s_aSegFlags[] =
@@ -1521,47 +1872,44 @@ static int dbgcDumpImageMachO(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pIm
             const uint32_t cbCurCmd = offCmd + sizeof(*pCurCmd) <= cbCmds ? pCurCmd->cmdsize : sizeof(*pCurCmd);
             if (offCmd + cbCurCmd > cbCmds)
             {
-                rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_OUT_OF_RANGE,
-                                      "%s: Load command #%u (offset %#x + %#x) is out of bounds! cmdsize=%u (%#x) cmd=%u\n",
-                                      pszName, iCmd, offCmd, cbHdr, cbCurCmd, cbCurCmd,
-                                      offCmd + RT_UOFFSET_AFTER(load_command_t, cmd) <= cbCmds ? pCurCmd->cmd : UINT32_MAX);
+                rc = pCmd->myError(VERR_OUT_OF_RANGE,
+                                   "%s: Load command #%u (offset %#x + %#x) is out of bounds! cmdsize=%u (%#x) cmd=%u\n",
+                                   pCmd->m_pszName, iCmd, offCmd, cbHdr, cbCurCmd, cbCurCmd,
+                                   offCmd + RT_UOFFSET_AFTER(load_command_t, cmd) <= cbCmds ? pCurCmd->cmd : UINT32_MAX);
                 break;
             }
 
-            DBGCCmdHlpPrintf(pCmdHlp, "%s: Load command #%u (offset %#x + %#x): %s (%u) LB %u\n",
-                             pszName, iCmd, offCmd, cbHdr, dbgcMachoLoadCommand(pCurCmd->cmd), pCurCmd->cmd, cbCurCmd);
+            pCmd->myPrintf("%s: Load command #%u (offset %#x + %#x): %s (%u) LB %u\n",
+                           pCmd->m_pszName, iCmd, offCmd, cbHdr, dbgcMachoLoadCommand(pCurCmd->cmd), pCurCmd->cmd, cbCurCmd);
             switch (pCurCmd->cmd)
             {
                 case LC_SEGMENT_64:
                     if (cbCurCmd < sizeof(segment_command_64_t))
-                        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_LDRMACHO_BAD_LOAD_COMMAND,
-                                              "%s: LC_SEGMENT64 is too short!\n", pszName);
+                        rc = pCmd->myError(VERR_LDRMACHO_BAD_LOAD_COMMAND, "LC_SEGMENT64 is too short!");
                     else
                     {
                         segment_command_64_t const *pSeg = (segment_command_64_t const *)pCurCmd;
-                        DBGCCmdHlpPrintf(pCmdHlp, "%s:   vmaddr: %016RX64 LB %08RX64  prot: %s(%x)  maxprot: %s(%x)  name: %.16s\n",
-                                         pszName, pSeg->vmaddr, pSeg->vmsize, dbgcMachoProt(pSeg->initprot), pSeg->initprot,
-                                         dbgcMachoProt(pSeg->maxprot), pSeg->maxprot, pSeg->segname);
-                        DBGCCmdHlpPrintf(pCmdHlp, "%s:   file:   %016RX64 LB %08RX64  sections: %2u  flags: %#x",
-                                         pszName, pSeg->fileoff, pSeg->filesize, pSeg->nsects, pSeg->flags);
-                        dbgcDumpImageFlags32(pCmdHlp, pSeg->flags, s_aSegFlags, RT_ELEMENTS(s_aSegFlags));
-                        DBGCCmdHlpPrintf(pCmdHlp, "\n");
+                        pCmd->myPrintf("%s:   vmaddr: %016RX64 LB %08RX64  prot: %s(%x)  maxprot: %s(%x)  name: %.16s\n",
+                                       pCmd->m_pszName, pSeg->vmaddr, pSeg->vmsize, dbgcMachoProt(pSeg->initprot), pSeg->initprot,
+                                       dbgcMachoProt(pSeg->maxprot), pSeg->maxprot, pSeg->segname);
+                        pCmd->myPrintf("%s:   file:   %016RX64 LB %08RX64  sections: %2u  flags: %#x",
+                                       pCmd->m_pszName, pSeg->fileoff, pSeg->filesize, pSeg->nsects, pSeg->flags);
+                        dbgcDumpImageFlags32(pCmd, pSeg->flags, s_aSegFlags, RT_ELEMENTS(s_aSegFlags));
+                        pCmd->myPrintf("\n");
                         if (   pSeg->nsects > _64K
                             || pSeg->nsects * sizeof(section_64_t) + sizeof(pSeg) > cbCurCmd)
-                            rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_LDRMACHO_BAD_LOAD_COMMAND,
-                                                  "%s: LC_SEGMENT64 is too short for all the sections!\n", pszName);
+                            rc = pCmd->myError(VERR_LDRMACHO_BAD_LOAD_COMMAND, "LC_SEGMENT64 is too short for all the sections!");
                         else
                         {
                             section_64_t const *paSec = (section_64_t const *)(pSeg + 1);
                             for (uint32_t iSec = 0; iSec < pSeg->nsects; iSec++)
                             {
-                                DBGCCmdHlpPrintf(pCmdHlp,
-                                                 "%s:   Section #%u: %016RX64 LB %08RX64  align: 2**%-2u  name: %.16s",
-                                                 pszName, iSec, paSec[iSec].addr, paSec[iSec].size, paSec[iSec].align,
-                                                 paSec[iSec].sectname);
+                                pCmd->myPrintf("%s:   Section #%u: %016RX64 LB %08RX64  align: 2**%-2u  name: %.16s",
+                                               pCmd->m_pszName, iSec, paSec[iSec].addr, paSec[iSec].size, paSec[iSec].align,
+                                               paSec[iSec].sectname);
                                 if (strncmp(pSeg->segname, paSec[iSec].segname, sizeof(pSeg->segname)))
-                                    DBGCCmdHlpPrintf(pCmdHlp, "(in %.16s)", paSec[iSec].segname);
-                                DBGCCmdHlpPrintf(pCmdHlp, "\n");
+                                    pCmd->myPrintf("(in %.16s)", paSec[iSec].segname);
+                                pCmd->myPrintf("\n");
 
                                 /// @todo Good night!
                                 ///    uint32_t            offset;
@@ -1593,9 +1941,12 @@ static int dbgcDumpImageMachO(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pIm
 /**
  * Common worker for the dumpimage command and the VBoxDumpImage tool.
  */
-static int dumpImageCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pImageBase, const char *pszImageBaseAddr,
-                           const char *pszName)
+int DumpImageCmd::dumpImage(const char *pszImageBaseAddr) RT_NOEXCEPT
 {
+    if (!isFirstTarget())
+        myPrintf("===================================================================\n"
+                 "\n"
+                 "\n");
     union
     {
         uint8_t             ab[0x10];
@@ -1607,7 +1958,7 @@ static int dumpImageCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pImage
         } Nt;
         mach_header_64_t    MachO64;
     } uBuf;
-    int rc = dumpReadAt(pCmdHlp, pCmd, pImageBase, pszName, 0, &uBuf.DosHdr, sizeof(uBuf.DosHdr), NULL);
+    int rc = readAt(0, &uBuf.DosHdr, sizeof(uBuf.DosHdr), NULL);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1619,39 +1970,42 @@ static int dumpImageCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pImage
             if (offNewHdr < _256K && offNewHdr >= 16)
             {
                 /* Look for new header. */
-                rc = dumpReadAt(pCmdHlp, pCmd, pImageBase, pszName, offNewHdr, &uBuf.Nt, sizeof(uBuf.Nt), NULL);
+                rc = readAt(offNewHdr, &uBuf.Nt, sizeof(uBuf.Nt), NULL);
                 if (RT_SUCCESS(rc))
                 {
                     /* PE: */
                     if (uBuf.Nt.u32Magic == IMAGE_NT_SIGNATURE)
-                        rc = dbgcDumpImagePe(pCmd, pCmdHlp, pImageBase, pszImageBaseAddr, pszName, offNewHdr, &uBuf.Nt.FileHdr);
+                        rc = DumpImagePe::dumpImage(this, pszImageBaseAddr, offNewHdr, &uBuf.Nt.FileHdr);
                     else
-                        rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "%s: Unknown new header magic: %.8Rhxs\n", pszName, uBuf.ab);
+                        return myError(rc, "Unknown new header magic: %.8Rhxs", uBuf.ab);
                 }
             }
             else
-                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "%s: MZ header but e_lfanew=%#RX32 is out of bounds (16..256K).\n",
-                                    pszName, offNewHdr);
+                return myError(rc, "e_lfanew=%#RX32 is out of bounds (16..256K).", offNewHdr);
         }
         /*
          * ELF.
          */
         else if (uBuf.ab[0] == ELFMAG0 && uBuf.ab[1] == ELFMAG1 && uBuf.ab[2] == ELFMAG2 && uBuf.ab[3] == ELFMAG3)
-            rc = dbgcDumpImageElf(pCmd, pCmdHlp, pImageBase, pszImageBaseAddr);
+            rc = dbgcDumpImageElf(this);
         /*
          * Mach-O.
          */
         else if (   uBuf.MachO64.magic == IMAGE_MACHO64_SIGNATURE
-                 || uBuf.MachO64.magic == IMAGE_MACHO32_SIGNATURE )
-            rc = dbgcDumpImageMachO(pCmd, pCmdHlp, pImageBase, pszImageBaseAddr, &uBuf.MachO64);
+                 || uBuf.MachO64.magic == IMAGE_MACHO32_SIGNATURE)
+            rc = dbgcDumpImageMachO(this, &uBuf.MachO64);
         /*
          * Dunno.
          */
         else
-            rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "%s: Unknown magic: %.8Rhxs\n", pszName, uBuf.ab);
+            return myError(rc, "Unknown magic: %.8Rhxs", uBuf.ab);
+
+        /* Make 100% sure the failure status is signalled. */
+        if (RT_FAILURE(rc))
+            setFailure(rc);
     }
     else
-        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "%s: Failed to read %zu", pszName, sizeof(uBuf.DosHdr));
+        rc = myError(rc, "Failed to read %zu", sizeof(uBuf.DosHdr));
     return rc;
 }
 
@@ -1663,72 +2017,21 @@ static int dumpImageCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pImage
  */
 DECLCALLBACK(int) dbgcCmdDumpImage(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    int rcRet = VINF_SUCCESS;
+    DumpImageCmd Cmd(pCmdHlp, pCmd);
     for (unsigned iArg = 0; iArg < cArgs; iArg++)
     {
         DBGCVAR const ImageBase = paArgs[iArg];
         char          szImageBaseAddr[64];
         DBGCCmdHlpStrPrintf(pCmdHlp, szImageBaseAddr, sizeof(szImageBaseAddr), "%Dv", &ImageBase);
-        int rc = dumpImageCommon(pCmd, pCmdHlp, &ImageBase, szImageBaseAddr, szImageBaseAddr);
-        if (RT_FAILURE(rc) && RT_SUCCESS(rcRet))
-            rcRet = rc;
+        Cmd.setTarget(szImageBaseAddr, &ImageBase);
+        Cmd.dumpImage(szImageBaseAddr);
+        Cmd.clearTarget();
     }
     RT_NOREF(pUVM);
-    return rcRet;
+    return Cmd.getStatus();
 }
 
 #else /* DBGC_DUMP_IMAGE_TOOL */
-
-
-/**
- * @interface_member_impl{DBGCCMDHLP,pfnPrintfV}
- */
-static DECLCALLBACK(int) toolPrintfV(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, const char *pszFormat, va_list args)
-{
-    int rc = RTPrintfV(pszFormat, args);
-    if (rc >= 0)
-    {
-        if (pcbWritten)
-            *pcbWritten = (unsigned)rc;
-        return VINF_SUCCESS;
-    }
-    if (pcbWritten)
-        *pcbWritten = 0;
-    RT_NOREF(pCmdHlp);
-    return VERR_IO_GEN_FAILURE;
-}
-
-
-/**
- * @interface_member_impl{DBGCCMDHLP,pfnFailV}
- */
-static DECLCALLBACK(int) toolFailV(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *pszFormat, va_list va)
-{
-    CMDHLPSTATE * const pCmdHlpState = RT_FROM_MEMBER(pCmdHlp, CMDHLPSTATE, Core);
-    pCmdHlpState->rcExit = RTEXITCODE_FAILURE;
-    RTMsgErrorV(pszFormat, va);
-    RT_NOREF(pCmd);
-    return VERR_GENERAL_FAILURE;
-}
-
-
-/**
- * @interface_member_impl{DBGCCMDHLP,pfnFailRcV}
- */
-static DECLCALLBACK(int) toolFailRcV(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, int rc, const char *pszFormat, va_list va)
-{
-    CMDHLPSTATE * const pCmdHlpState = RT_FROM_MEMBER(pCmdHlp, CMDHLPSTATE, Core);
-    pCmdHlpState->rcExit = RTEXITCODE_FAILURE;
-
-    va_list vaCopy;
-    va_copy(vaCopy, va);
-    RTMsgError("%N: %Rrc", pszFormat, &vaCopy, rc);
-    va_end(vaCopy);
-
-    RT_NOREF(pCmd);
-    return rc;
-}
-
 
 int main(int argc, char **argv)
 {
@@ -1739,19 +2042,18 @@ int main(int argc, char **argv)
     /*
      * Setup image helper code.
      */
-    CMDHLPSTATE ToolState;
-    RT_ZERO(ToolState);
-    ToolState.Core.pfnPrintfV = toolPrintfV;
-    ToolState.Core.pfnFailV   = toolFailV;
-    ToolState.Core.pfnFailRcV = toolFailRcV;
-    ToolState.hVfsFile        = NIL_RTVFSFILE;
-    ToolState.rcExit          = RTEXITCODE_SUCCESS;
-
-    char szImageBaseAddr[32] = {0};
+    DumpImageCmd Cmd(NULL, NULL);
+    char        szImageBaseAddr[32] = {0};
+    //uint64_t    fSelect             = DUMPIMAGE_SELECT_DEFAULT;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--image-base", 'b', RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX },
+        { "--include",    'i', RTGETOPT_REQ_STRING },
+        { "--only",       'o', RTGETOPT_REQ_STRING },
+        { "--only",       'O', RTGETOPT_REQ_STRING },
+        { "--skip",       's', RTGETOPT_REQ_STRING },
+        { "--skip",       'S', RTGETOPT_REQ_STRING },
     };
 
     RTGETOPTSTATE GetState;
@@ -1771,6 +2073,26 @@ int main(int argc, char **argv)
                     RTStrPrintf(szImageBaseAddr, sizeof(szImageBaseAddr), "%#010RX64", ValueUnion.u64);
                 break;
 
+            case 'i':
+                rc = Cmd.optSelectionInclude(ValueUnion.psz);
+                if (RT_FAILURE(rc))
+                    return RTEXITCODE_SYNTAX;
+                break;
+
+            case 'o':
+            case 'O':
+                rc = Cmd.optSelectionOnly(ValueUnion.psz);
+                if (RT_FAILURE(rc))
+                    return RTEXITCODE_SYNTAX;
+                break;
+
+            case 's':
+            case 'S':
+                rc = Cmd.optSelectionSkip(ValueUnion.psz);
+                if (RT_FAILURE(rc))
+                    return RTEXITCODE_SYNTAX;
+                break;
+
             case 'V':
                 RTPrintf("%s\n", RTBldCfgRevision());
                 return RTEXITCODE_SUCCESS;
@@ -1783,19 +2105,20 @@ int main(int argc, char **argv)
             {
                 RTERRINFOSTATIC ErrInfo;
                 uint32_t        offError = 0;
+                RTVFSFILE       hVfsFile = NIL_RTVFSFILE;
                 rc = RTVfsChainOpenFile(ValueUnion.psz, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
-                                        &ToolState.hVfsFile, &offError, RTErrInfoInitStatic(&ErrInfo));
+                                        &hVfsFile, &offError, RTErrInfoInitStatic(&ErrInfo));
                 if (RT_SUCCESS(rc))
                 {
-                    rc = dumpImageCommon(NULL, &ToolState.Core, NULL, szImageBaseAddr[0] ? szImageBaseAddr : NULL, ValueUnion.psz);
-                    if (RT_FAILURE(rc) && ToolState.rcExit == RTEXITCODE_SUCCESS)
-                        ToolState.rcExit = RTEXITCODE_FAILURE;
-                    RTVfsFileRelease(ToolState.hVfsFile);
+                    Cmd.setTarget(ValueUnion.psz, hVfsFile);
+                    Cmd.dumpImage(szImageBaseAddr[0] ? szImageBaseAddr : NULL);
+                    Cmd.clearTarget();
                 }
                 else
-                    ToolState.rcExit = RTVfsChainMsgErrorExitFailure("RTVfsChainOpenFile", ValueUnion.psz,
-                                                                     rc, offError, &ErrInfo.Core);
-                ToolState.hVfsFile = NIL_RTVFSFILE;
+                {
+                    RTVfsChainMsgErrorExitFailure("RTVfsChainOpenFile", ValueUnion.psz, rc, offError, &ErrInfo.Core);
+                    Cmd.setFailure(rc);
+                }
                 break;
             }
 
@@ -1804,8 +2127,8 @@ int main(int argc, char **argv)
         }
     }
 
-    return ToolState.rcExit;
-
+    return Cmd.getExitCode();
 }
+
 #endif /* !DBGC_DUMP_IMAGE_TOOL */
 

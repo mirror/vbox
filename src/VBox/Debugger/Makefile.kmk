@@ -55,6 +55,7 @@ Debugger_SOURCES   = \
 	DBGCCmdWorkers.cpp \
 	DBGCCommands.cpp \
 	DBGCDumpImage.cpp \
+	DBGCNtCommands.cpp \
 	DBGCFunctions.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp \
@@ -87,6 +88,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	DBGCCmdWorkers.cpp \
  	DBGCCommands.cpp \
  	DBGCDumpImage.cpp \
+ 	DBGCNtCommands.cpp \
  	DBGCFunctions.cpp \
  	DBGCEmulateCodeView.cpp \
  	DBGCOps.cpp \
