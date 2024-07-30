@@ -56,15 +56,8 @@
  */
 typedef struct NT_RTL_BALANCED_NODE64
 {
-    union
-    {
-        uint64_t Children[2];
-        struct
-        {
-            uint64_t Left;
-            uint64_t Right;
-        };
-    };
+    uint64_t Left;
+    uint64_t Right;
 
     /**
      * Pointer to the parent node and flags in the least significant bits.
@@ -122,9 +115,9 @@ int dbgCmdNtRbTreeWorker(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pRootAdd
     if ((Root.Root & fAlignMask) == 0 || (Root.Min & fAlignMask) == 0)
     {
         if ((Root.Root & fAlignMask) == 0 && (Root.Min & fAlignMask) == 0)
-            DBGCCmdHlpPrintf(pCmdHlp, "RB Root %DV: Empty\n");
+            DBGCCmdHlpPrintf(pCmdHlp, "RB Root %DV: Empty\n", pRootAddr);
         else
-            DBGCCmdHlpPrintf(pCmdHlp, "RB Root %DV: Bogus root state!\n");
+            DBGCCmdHlpPrintf(pCmdHlp, "RB Root %DV: Bogus root state!\n", pRootAddr);
         return VINF_SUCCESS;
     }
 
