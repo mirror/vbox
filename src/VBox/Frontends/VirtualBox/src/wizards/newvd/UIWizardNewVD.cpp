@@ -107,6 +107,21 @@ QUuid UIWizardNewVD::mediumId() const
     return m_uMediumId;
 }
 
+const QString &UIWizardNewVD::defaultPath() const
+{
+    return m_strDefaultPath;
+}
+
+const QString &UIWizardNewVD::defaultName() const
+{
+    return m_strDefaultName;
+}
+
+qulonglong UIWizardNewVD::defaultSize() const
+{
+    return m_uDefaultSize;
+}
+
 void UIWizardNewVD::populatePages()
 {
     switch (mode())
@@ -115,12 +130,12 @@ void UIWizardNewVD::populatePages()
         {
             addPage(new UIWizardNewVDFileTypePage);
             m_iMediumVariantPageIndex = addPage(new UIWizardNewVDVariantPage);
-            addPage(new UIWizardNewVDSizeLocationPage(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
+            addPage(new UIWizardNewVDSizeLocationPage(diskMinimumSize()));
             break;
         }
         case WizardMode_Expert:
         {
-            addPage(new UIWizardNewVDExpertPage(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
+            addPage(new UIWizardNewVDExpertPage(diskMinimumSize()));
             break;
         }
         default:
@@ -232,4 +247,16 @@ void UIWizardNewVD::setMediumVariantPageVisibility()
     if (uCapabilities & KMediumFormatCapabilities_CreateSplit2G)
         ++cTest;
     setPageVisible(m_iMediumVariantPageIndex, cTest > 1);
+}
+
+qulonglong UIWizardNewVD::diskMinimumSize() const
+{
+    return sourceDiskLogicalSize();
+}
+
+qulonglong UIWizardNewVD::sourceDiskLogicalSize() const
+{
+    if (m_comSourceVirtualDisk.isNull())
+        return _4M;
+    return m_comSourceVirtualDisk.GetLogicalSize();
 }

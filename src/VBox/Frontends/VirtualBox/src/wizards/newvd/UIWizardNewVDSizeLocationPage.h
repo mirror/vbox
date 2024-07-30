@@ -46,7 +46,7 @@ class SHARED_LIBRARY_STUFF UIWizardNewVDSizeLocationPage : public UINativeWizard
 
 public:
 
-    UIWizardNewVDSizeLocationPage(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
+    UIWizardNewVDSizeLocationPage(qulonglong uDiskMinimumSize);
 
 private slots:
 
@@ -65,9 +65,6 @@ private:
     UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroup;
     qulonglong m_uMediumSizeMin;
     qulonglong m_uMediumSizeMax;
-    QString m_strDefaultName;
-    QString m_strDefaultPath;
-    qulonglong m_uDefaultSize;
     QSet<QString> m_userModifiedParameters;
 };
 

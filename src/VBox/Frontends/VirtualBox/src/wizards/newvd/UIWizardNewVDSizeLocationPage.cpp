@@ -39,14 +39,10 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-UIWizardNewVDSizeLocationPage::UIWizardNewVDSizeLocationPage(const QString &strDefaultName,
-                                                             const QString &strDefaultPath, qulonglong uDefaultSize)
+UIWizardNewVDSizeLocationPage::UIWizardNewVDSizeLocationPage(qulonglong uDiskMinimumSize)
     : m_pMediumSizePathGroup(0)
-    , m_uMediumSizeMin(_4M)
+    , m_uMediumSizeMin(uDiskMinimumSize)
     , m_uMediumSizeMax(gpGlobalSession->virtualBox().GetSystemProperties().GetInfoVDSize())
-    , m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
-    , m_strDefaultPath(strDefaultPath)
-    , m_uDefaultSize(uDefaultSize)
 {
     prepare();
 }
@@ -118,9 +114,11 @@ void UIWizardNewVDSizeLocationPage::initializePage()
     QString strMediumFilePath;
     /* Initialize the medium file path with default name and path if user has not exclusively modified them yet: */
     if (!m_userModifiedParameters.contains("MediumPath"))
+    {
         strMediumFilePath =
-            UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(m_strDefaultName,
-                                                                                                strExtension), m_strDefaultPath);
+            UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(pWizard->defaultName(),
+                                                                                              strExtension), pWizard->defaultPath());
+    }
     /* Initialize the medium file path with file path and file name from the location editor. This part is to update the
      * file extention correctly in case user has gone back and changed the file format after modifying medium file path: */
     else
@@ -135,7 +133,8 @@ void UIWizardNewVDSizeLocationPage::initializePage()
     if (!m_userModifiedParameters.contains("MediumSize"))
     {
         m_pMediumSizePathGroup->blockSignals(true);
-        m_pMediumSizePathGroup->setMediumSize(m_uDefaultSize > m_uMediumSizeMin && m_uDefaultSize < m_uMediumSizeMax ? m_uDefaultSize : m_uMediumSizeMin);
+        qulonglong uDefaultSize = pWizard->defaultSize();
+        m_pMediumSizePathGroup->setMediumSize(uDefaultSize > m_uMediumSizeMin && uDefaultSize < m_uMediumSizeMax ? uDefaultSize : m_uMediumSizeMin);
         m_pMediumSizePathGroup->blockSignals(false);
         pWizard->setMediumSize(m_pMediumSizePathGroup->mediumSize());
     }

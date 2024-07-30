@@ -41,25 +41,22 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-UIWizardNewVDExpertPage::UIWizardNewVDExpertPage(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
+UIWizardNewVDExpertPage::UIWizardNewVDExpertPage(qulonglong uDiskMinimumSize)
     : UINativeWizardPage()
     , m_pSizeAndPathGroup(0)
     , m_pFormatComboBox(0)
     , m_pVariantWidget(0)
     , m_pFormatVariantGroupBox(0)
-    , m_strDefaultName(strDefaultName)
-    , m_strDefaultPath(strDefaultPath)
-    , m_uDefaultSize(uDefaultSize)
     , m_uMediumSizeMin(_4M)
     , m_uMediumSizeMax(gpGlobalSession->virtualBox().GetSystemProperties().GetInfoVDSize())
 {
-    prepare();
+    prepare(uDiskMinimumSize);
 }
 
-void UIWizardNewVDExpertPage::prepare()
+void UIWizardNewVDExpertPage::prepare(qulonglong uDiskMinimumSize)
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    m_pSizeAndPathGroup = new UIMediumSizeAndPathGroupBox(true /* fExpertMode */, 0 /* parent */, _4M /* minimum size */);
+    m_pSizeAndPathGroup = new UIMediumSizeAndPathGroupBox(true /* fExpertMode */, 0 /* parent */,uDiskMinimumSize);
     m_pFormatComboBox = new UIDiskFormatsComboBox(true /* fExpertMode */, KDeviceType_HardDisk, 0);
     m_pVariantWidget = new UIDiskVariantWidget(0);
 
@@ -162,15 +159,16 @@ void UIWizardNewVDExpertPage::initializePage()
 
     QString strExtension = UIWizardDiskEditors::defaultExtension(comMediumFormat, KDeviceType_HardDisk);
     QString strMediumFilePath =
-        UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(m_strDefaultName,
-                                                                                          strExtension), m_strDefaultPath);
+        UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(pWizard->defaultName(),
+                                                                                          strExtension), pWizard->defaultPath());
     m_pSizeAndPathGroup->blockSignals(true);
     m_pSizeAndPathGroup->setMediumFilePath(strMediumFilePath);
     m_pSizeAndPathGroup->blockSignals(false);
     pWizard->setMediumPath(m_pSizeAndPathGroup->mediumFilePath());
 
     m_pSizeAndPathGroup->blockSignals(true);
-    m_pSizeAndPathGroup->setMediumSize(m_uDefaultSize > m_uMediumSizeMin && m_uDefaultSize < m_uMediumSizeMax ? m_uDefaultSize : m_uMediumSizeMin);
+    qulonglong uDefaultSize = pWizard->defaultSize();
+    m_pSizeAndPathGroup->setMediumSize(uDefaultSize > m_uMediumSizeMin && uDefaultSize < m_uMediumSizeMax ? uDefaultSize : m_uMediumSizeMin);
     m_pSizeAndPathGroup->blockSignals(false);
     pWizard->setMediumSize(m_pSizeAndPathGroup->mediumSize());
 

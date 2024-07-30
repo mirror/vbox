@@ -80,6 +80,10 @@ public:
        QUuid mediumId() const;
     /** @} */
 
+       const QString &defaultPath() const;
+       const QString &defaultName() const;
+       qulonglong defaultSize() const;
+
 protected:
 
     virtual void populatePages() RT_OVERRIDE RT_FINAL;
@@ -92,6 +96,8 @@ private:
 
     /** Check medium capabilities and decide if medium variant page should be hidden. */
     void setMediumVariantPageVisibility();
+    qulonglong diskMinimumSize() const;
+    qulonglong sourceDiskLogicalSize() const;
     qulonglong m_uMediumVariant;
     CMediumFormat m_comMediumFormat;
     QString m_strMediumPath;
@@ -101,6 +107,8 @@ private:
     qulonglong  m_uDefaultSize;
     int m_iMediumVariantPageIndex;
     QUuid m_uMediumId;
+    /** Holds the source virtual disk wrapper. */
+    CMedium m_comSourceVirtualDisk;
 };
 
 typedef QPointer<UIWizardNewVD> UISafePointerWizardNewVD;

@@ -47,7 +47,7 @@ class SHARED_LIBRARY_STUFF UIWizardNewVDExpertPage : public UINativeWizardPage
 
 public:
 
-    UIWizardNewVDExpertPage(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
+    UIWizardNewVDExpertPage(qulonglong uDiskMinimumSize);
 
 private slots:
 
@@ -62,7 +62,7 @@ private slots:
 private:
 
     /** Prepare stuff. */
-    void prepare();
+    void prepare(qulonglong uDiskMinimumSize);
     virtual void initializePage() RT_OVERRIDE RT_FINAL;
 
     /** Validation stuff. */
@@ -80,9 +80,6 @@ private:
 
    /** @name Variable
      * @{ */
-       QString m_strDefaultName;
-       QString m_strDefaultPath;
-       qulonglong m_uDefaultSize;
        qulonglong m_uMediumSizeMin;
        qulonglong m_uMediumSizeMax;
    /** @} */
