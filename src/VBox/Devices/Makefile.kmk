@@ -777,9 +777,15 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   VBoxDD_DEFS   += VBOX_WITH_LIBSLIRP
   VBoxDD_SOURCES += \
   	Network/DrvNATlibslirp.cpp
-  Network/DrvNATlibslirp.cpp_INCS += \
-  	$(PATH_ROOT)/src/libs/libslirp-4.8.0/src \
-  	$(PATH_OUT)/obj/VBox-libslirp
+  ifdef VBOX_WITH_LIBSLIRP_480
+   Network/DrvNATlibslirp.cpp_INCS += \
+    $(PATH_ROOT)/src/libs/libslirp-4.8.0/src \
+   	$(PATH_OUT)/obj/VBox-libslirp
+  else
+   Network/DrvNATlibslirp.cpp_INCS += \
+   	$(PATH_ROOT)/src/libs/libslirp-4.7.0/src \
+   	$(PATH_OUT)/obj/VBox-libslirp
+  endif
  endif
 
  # --- WARNING! SLIRP MESS AHEAD! ;-) ---
