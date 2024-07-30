@@ -41,7 +41,7 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-UIWizardNewVDExpertPage::UIWizardNewVDExpertPage(qulonglong uDiskMinimumSize)
+UIWizardNewVDExpertPage::UIWizardNewVDExpertPage(qulonglong uDiskMinimumSize, KDeviceType enmDeviceType)
     : UINativeWizardPage()
     , m_pSizeAndPathGroup(0)
     , m_pFormatComboBox(0)
@@ -50,10 +50,10 @@ UIWizardNewVDExpertPage::UIWizardNewVDExpertPage(qulonglong uDiskMinimumSize)
     , m_uMediumSizeMin(_4M)
     , m_uMediumSizeMax(gpGlobalSession->virtualBox().GetSystemProperties().GetInfoVDSize())
 {
-    prepare(uDiskMinimumSize);
+    prepare(uDiskMinimumSize, enmDeviceType);
 }
 
-void UIWizardNewVDExpertPage::prepare(qulonglong uDiskMinimumSize)
+void UIWizardNewVDExpertPage::prepare(qulonglong uDiskMinimumSize, KDeviceType enmDeviceType)
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     m_pSizeAndPathGroup = new UIMediumSizeAndPathGroupBox(true /* fExpertMode */, 0 /* parent */,uDiskMinimumSize);

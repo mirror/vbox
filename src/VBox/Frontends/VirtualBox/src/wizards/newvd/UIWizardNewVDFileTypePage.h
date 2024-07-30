@@ -34,6 +34,9 @@
 /* GUI includes: */
 #include "UINativeWizardPage.h"
 
+/* COM includes:*/
+#include "KDeviceType.h"
+
 /* Forward declarations: */
 class QIRichTextLabel;
 class UIDiskFormatsGroupBox;
@@ -46,7 +49,7 @@ class SHARED_LIBRARY_STUFF UIWizardNewVDFileTypePage : public UINativeWizardPage
 public:
 
     /** Constructor. */
-    UIWizardNewVDFileTypePage();
+    UIWizardNewVDFileTypePage(KDeviceType enmDeviceType);
 
 private slots:
 
@@ -55,7 +58,7 @@ private slots:
 
 private:
 
-    void prepare();
+    void prepare(KDeviceType enmDeviceType);
     void initializePage() RT_OVERRIDE RT_FINAL;
 
     /** Validation stuff. */

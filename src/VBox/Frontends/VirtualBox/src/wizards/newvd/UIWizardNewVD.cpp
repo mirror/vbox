@@ -50,6 +50,7 @@ UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
     , m_strDefaultPath(strDefaultPath)
     , m_uDefaultSize(uDefaultSize)
     , m_iMediumVariantPageIndex(-1)
+    , m_enmDeviceType(KDeviceType_HardDisk)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -128,14 +129,14 @@ void UIWizardNewVD::populatePages()
     {
         case WizardMode_Basic:
         {
-            addPage(new UIWizardNewVDFileTypePage);
+            addPage(new UIWizardNewVDFileTypePage(m_enmDeviceType));
             m_iMediumVariantPageIndex = addPage(new UIWizardNewVDVariantPage);
             addPage(new UIWizardNewVDSizeLocationPage(diskMinimumSize()));
             break;
         }
         case WizardMode_Expert:
         {
-            addPage(new UIWizardNewVDExpertPage(diskMinimumSize()));
+            addPage(new UIWizardNewVDExpertPage(diskMinimumSize(), m_enmDeviceType));
             break;
         }
         default:

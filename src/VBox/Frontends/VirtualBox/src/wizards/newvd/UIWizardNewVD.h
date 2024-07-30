@@ -109,6 +109,7 @@ private:
     QUuid m_uMediumId;
     /** Holds the source virtual disk wrapper. */
     CMedium m_comSourceVirtualDisk;
+    KDeviceType m_enmDeviceType;
 };
 
 typedef QPointer<UIWizardNewVD> UISafePointerWizardNewVD;
