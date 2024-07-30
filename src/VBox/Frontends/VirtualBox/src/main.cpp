@@ -280,6 +280,7 @@ static void ShowHelp()
         "  --scale                    switch to scale mode during startup\n"
         "  --no-startvm-errormsgbox   do not show a message box for VM start errors\n"
         "  --restore-current          restore the current snapshot before starting\n"
+        "  --restore-snapshot=<name>  restore the named snapshot before starting\n"
         "  --no-aggressive-caching    delays caching media info in VM processes\n"
         "  --fda <image|none>         Mount the specified floppy image\n"
         "  --dvd <image|none>         Mount the specified DVD image\n"
