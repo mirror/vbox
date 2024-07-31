@@ -314,18 +314,39 @@ void UICommon::prepare()
         const QByteArray &argBytes = arguments.at(i).toUtf8();
         const char *arg = argBytes.constData();
         enum { OptType_Unknown, OptType_VMRunner, OptType_VMSelector, OptType_MaybeBoth } enmOptType = OptType_Unknown;
+
+        const char *pszSep = NULL;
+#define MATCH_OPT_WITH_VALUE(a_szOption) \
+            (    !::strncmp(arg,RT_STR_TUPLE(a_szOption)) \
+              && (   *(pszSep = &arg[sizeof(a_szOption) - 1]) == '\0' \
+                  || *pszSep == '=' \
+                  || *pszSep == ':') )
+#define ASSIGN_OPT_VALUE_TO_QSTRING(a_strDst) do { \
+                if (*pszSep != '\0') \
+                    (a_strDst) = &pszSep[1]; \
+                else if (++i < argc) \
+                    (a_strDst) = arguments.at(i); \
+                else \
+                    (a_strDst).clear(); \
+            } while (0)
+#define ASSIGN_OPT_VALUE_TO_QUUID(a_uuidDst) do { \
+                if (*pszSep != '\0') \
+                    (a_uuidDst) = QUuid(&pszSep[1]); \
+                else if (++i < argc) \
+                    (a_uuidDst) = QUuid(arguments.at(i)); \
+                else \
+                    (a_uuidDst) = QUuid(); /* null UUID */ \
+            } while (0)
+
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in main.cpp and hardenedmain.cpp exactly,
          * otherwise there will be weird error messages. */
-        if (   !::strcmp(arg, "--startvm")
-            || !::strcmp(arg, "-startvm"))
+        if (   MATCH_OPT_WITH_VALUE("--startvm")
+            || MATCH_OPT_WITH_VALUE("-startvm") /* legacy */)
         {
             enmOptType = OptType_VMRunner;
-            if (++i < argc)
-            {
-                vmNameOrUuid = arguments.at(i);
-                startVM = true;
-            }
+            ASSIGN_OPT_VALUE_TO_QSTRING(vmNameOrUuid);
+            startVM = true;
         }
         else if (!::strcmp(arg, "-separate") || !::strcmp(arg, "--separate"))
         {
@@ -333,11 +354,10 @@ void UICommon::prepare()
             fSeparateProcess = true;
         }
 #ifdef VBOX_GUI_WITH_PIDFILE
-        else if (!::strcmp(arg, "-pidfile") || !::strcmp(arg, "--pidfile"))
+        else if (MATCH_OPT_WITH_VALUE("--pidfile") || MATCH_OPT_WITH_VALUE("-pidfile"))
         {
             enmOptType = OptType_MaybeBoth;
-            if (++i < argc)
-                m_strPidFile = arguments.at(i);
+            ASSIGN_OPT_VALUE_TO_QSTRING(m_strPidFile);
         }
 #endif /* VBOX_GUI_WITH_PIDFILE */
         /* Visual state type options: */
@@ -362,21 +382,25 @@ void UICommon::prepare()
             visualStateType = UIVisualStateType_Scale;
         }
         /* Passwords: */
-        else if (!::strcmp(arg, "--settingspw"))
+        else if (MATCH_OPT_WITH_VALUE("--settingspw") || MATCH_OPT_WITH_VALUE("--settings-pw"))
         {
             enmOptType = OptType_MaybeBoth;
-            if (++i < argc)
-            {
+            if (*pszSep == '\0')
+                RTStrCopy(m_astrSettingsPw, sizeof(m_astrSettingsPw), &pszSep[1]);
+            else if (++i < argc)
                 RTStrCopy(m_astrSettingsPw, sizeof(m_astrSettingsPw), arguments.at(i).toLocal8Bit().constData());
-                m_fSettingsPwSet = true;
-            }
+            else
+                m_astrSettingsPw[0] = '\0';
+            m_fSettingsPwSet = m_astrSettingsPw[0] != '\0';
         }
-        else if (!::strcmp(arg, "--settingspwfile"))
+        else if (MATCH_OPT_WITH_VALUE("--settingspwfile") || MATCH_OPT_WITH_VALUE("--settings-pw-file"))
         {
             enmOptType = OptType_MaybeBoth;
-            if (++i < argc)
+            QString strFilename;
+            ASSIGN_OPT_VALUE_TO_QSTRING(strFilename);
+            if (!strFilename.isEmpty())
             {
-                const QByteArray &argFileBytes = arguments.at(i).toLocal8Bit();
+                const QByteArray &argFileBytes = strFilename.toLocal8Bit();
                 const char *pszFile = argFileBytes.constData();
                 bool fStdIn = !::strcmp(pszFile, "stdin");
                 int vrc = VINF_SUCCESS;
@@ -405,10 +429,11 @@ void UICommon::prepare()
             }
         }
         /* Misc options: */
-        else if (!::strcmp(arg, "-comment") || !::strcmp(arg, "--comment"))
+        else if (MATCH_OPT_WITH_VALUE("--comment") || MATCH_OPT_WITH_VALUE("--comment"))
         {
             enmOptType = OptType_MaybeBoth;
-            ++i;
+            if (*pszSep == '\0')
+                ++i; /* we completely ignore the option value here, it's here only for 'ps' listing. */
         }
         else if (!::strcmp(arg, "--no-startvm-errormsgbox"))
         {
@@ -431,18 +456,10 @@ void UICommon::prepare()
             m_fRestoreCurrentSnapshot = true;
             m_strSnapshotToRestore.clear();
         }
-        else if (   !::strcmp(arg, "--restore-snapshot")
-                 || !::strncmp(arg, RT_STR_TUPLE("--restore-snapshot="))
-                 || !::strncmp(arg, RT_STR_TUPLE("--restore-snapshot:")))
+        else if (MATCH_OPT_WITH_VALUE("--restore-snapshot"))
         {
             enmOptType = OptType_VMRunner;
-            const char * const pszSep = &arg[sizeof("--restore-snapshot") - 1];
-            if (*pszSep != '\0')
-                m_strSnapshotToRestore = &pszSep[1];
-            else if (++i < argc)
-                m_strSnapshotToRestore = arguments.at(i);
-            else
-                m_strSnapshotToRestore.clear();
+            ASSIGN_OPT_VALUE_TO_QSTRING(m_strSnapshotToRestore);
             m_fRestoreCurrentSnapshot = false;
         }
         else if (!::strcmp(arg, "--no-keyboard-grabbing"))
@@ -451,17 +468,17 @@ void UICommon::prepare()
             m_fNoKeyboardGrabbing = true;
         }
         /* Ad hoc VM reconfig options: */
-        else if (!::strcmp(arg, "--fda"))
+        else if (MATCH_OPT_WITH_VALUE("--fda"))
         {
             enmOptType = OptType_VMRunner;
-            if (++i < argc)
-                m_uFloppyImage = QUuid(arguments.at(i));
+/** @todo r=bird: this isn't correct. Must use QString instead of QUuid to store this! */
+            ASSIGN_OPT_VALUE_TO_QUUID(m_uFloppyImage);
         }
-        else if (!::strcmp(arg, "--dvd") || !::strcmp(arg, "--cdrom"))
+        else if (MATCH_OPT_WITH_VALUE("--dvd") || MATCH_OPT_WITH_VALUE("--cdrom"))
         {
             enmOptType = OptType_VMRunner;
-            if (++i < argc)
-                m_uDvdImage = QUuid(arguments.at(i));
+/** @todo r=bird: this isn't correct. Must use QString instead of QUuid to store this! */
+            ASSIGN_OPT_VALUE_TO_QUUID(m_uDvdImage);
         }
         /* VMM Options: */
         else if (!::strcmp(arg, "--execute-all-in-iem"))
@@ -471,11 +488,12 @@ void UICommon::prepare()
         }
         else if (!::strcmp(arg, "--driverless"))
             enmOptType = OptType_VMRunner;
-        else if (!::strcmp(arg, "--warp-pct"))
+        else if (MATCH_OPT_WITH_VALUE("--warp-pct"))
         {
             enmOptType = OptType_VMRunner;
-            if (++i < argc)
-                m_uWarpPct = RTStrToUInt32(arguments.at(i).toLocal8Bit().constData());
+            QString strValue;
+            ASSIGN_OPT_VALUE_TO_QSTRING(strValue);
+            m_uWarpPct = strValue.isEmpty() ? 100 : RTStrToUInt32(strValue.toLocal8Bit().constData());
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /* Debugger/Debugging options: */
@@ -506,44 +524,27 @@ void UICommon::prepare()
             setDebuggerVar(&m_fDbgAutoShow, true);
             setDebuggerVar(&m_fDbgAutoShowStatistics, true);
         }
-        else if (!::strcmp(arg, "--statistics-expand") || !::strcmp(arg, "--stats-expand"))
+        else if (MATCH_OPT_WITH_VALUE("--statistics-expand") || MATCH_OPT_WITH_VALUE("--stats-expand"))
         {
             enmOptType = OptType_VMRunner;
-            if (++i < argc)
+            QString strValue;
+            ASSIGN_OPT_VALUE_TO_QSTRING(strValue);
+            if (!strValue.isEmpty())
             {
                 if (!m_strDbgStatisticsExpand.isEmpty())
                     m_strDbgStatisticsExpand.append('|');
-                m_strDbgStatisticsExpand.append(arguments.at(i));
+                m_strDbgStatisticsExpand.append(strValue);
             }
         }
-        else if (!::strncmp(arg, RT_STR_TUPLE("--statistics-expand=")) || !::strncmp(arg, RT_STR_TUPLE("--stats-expand=")))
+        else if (MATCH_OPT_WITH_VALUE("--statistics-filter") || MATCH_OPT_WITH_VALUE("--stats-filter"))
         {
             enmOptType = OptType_VMRunner;
-            if (!m_strDbgStatisticsExpand.isEmpty())
-                m_strDbgStatisticsExpand.append('|');
-            m_strDbgStatisticsExpand.append(arguments.at(i).section('=', 1));
+            ASSIGN_OPT_VALUE_TO_QSTRING(m_strDbgStatisticsFilter);
         }
-        else if (!::strcmp(arg, "--statistics-filter") || !::strcmp(arg, "--stats-filter"))
+        else if (MATCH_OPT_WITH_VALUE("--statistics-config") || MATCH_OPT_WITH_VALUE("--stats-config"))
         {
             enmOptType = OptType_VMRunner;
-            if (++i < argc)
-                m_strDbgStatisticsFilter = arguments.at(i);
-        }
-        else if (!::strncmp(arg, RT_STR_TUPLE("--statistics-filter=")) || !::strncmp(arg, RT_STR_TUPLE("--stats-filter=")))
-        {
-            enmOptType = OptType_VMRunner;
-            m_strDbgStatisticsFilter = arguments.at(i).section('=', 1);
-        }
-        else if (!::strcmp(arg, "--statistics-config") || !::strcmp(arg, "--stats-config"))
-        {
-            enmOptType = OptType_VMRunner;
-            if (++i < argc)
-                m_strDbgStatisticsConfig = arguments.at(i);
-        }
-        else if (!::strncmp(arg, RT_STR_TUPLE("--statistics-config=")) || !::strncmp(arg, RT_STR_TUPLE("--stats-config=")))
-        {
-            enmOptType = OptType_VMRunner;
-            m_strDbgStatisticsConfig = arguments.at(i).section('=', 1);
+            ASSIGN_OPT_VALUE_TO_QSTRING(m_strDbgStatisticsConfig);
         }
         else if (!::strcmp(arg, "-no-debug") || !::strcmp(arg, "--no-debug"))
         {
@@ -570,6 +571,9 @@ void UICommon::prepare()
 
         i++;
     }
+#undef MATCH_OPT_WITH_VALUE
+#undef ASSIGN_OPT_VALUE_TO_QSTRING
+#undef ASSIGN_OPT_VALUE_TO_QUUID
 
     if (uiType() == UIType_RuntimeUI && startVM)
     {

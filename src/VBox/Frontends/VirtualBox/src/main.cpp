@@ -272,7 +272,7 @@ static void ShowHelp()
     static const char s_szUsage[] =
 #ifdef VBOX_RUNTIME_UI
         "Options:\n"
-        "  --startvm <vmname|UUID>    start a VM by specifying its UUID or name\n"
+        "  --startvm=<vmname|UUID>    start a VM by specifying its UUID or name\n"
         "  --separate                 start a separate VM process\n"
         "  --normal                   keep normal (windowed) mode during startup\n"
         "  --fullscreen               switch to fullscreen mode during startup\n"
@@ -282,19 +282,19 @@ static void ShowHelp()
         "  --restore-current          restore the current snapshot before starting\n"
         "  --restore-snapshot=<name>  restore the named snapshot before starting\n"
         "  --no-aggressive-caching    delays caching media info in VM processes\n"
-        "  --fda <image|none>         Mount the specified floppy image\n"
-        "  --dvd <image|none>         Mount the specified DVD image\n"
+        "  --fda=<image|none>         Mount the specified floppy image\n"
+        "  --dvd=<image|none>         Mount the specified DVD image\n"
 # ifdef VBOX_GUI_WITH_PIDFILE
-        "  --pidfile <file>           create a pidfile file when a VM is up and running\n"
+        "  --pidfile=<file>           create a pidfile file when a VM is up and running\n"
 # endif /* VBOX_GUI_WITH_PIDFILE */
 # ifdef VBOX_WITH_DEBUGGER_GUI
         "  --dbg                      enable the GUI debug menu\n"
         "  --debug                    like --dbg and show debug windows at VM startup\n"
         "  --debug-command-line       like --dbg and show command line window at VM startup\n"
         "  --debug-statistics         like --dbg and show statistics window at VM startup\n"
-        "  --statistics-expand <pat>  expand the matching statistics (can be repeated)\n"
-        "  --statistics-filter <pat>  statistics filter\n"
-        "  --statistics-config <str>  statistics configuration\n"
+        "  --statistics-expand=<pat>  expand the matching statistics (can be repeated)\n"
+        "  --statistics-filter=<pat>  statistics filter\n"
+        "  --statistics-config=<str>  statistics configuration\n"
         "  --no-debug                 disable the GUI debug menu and debug windows\n"
         "  --start-paused             start the VM in the paused state\n"
         "  --start-running            start the VM running (for overriding --debug*)\n"
@@ -303,7 +303,7 @@ static void ShowHelp()
         "Expert options:\n"
         "  --execute-all-in-iem       For debugging the interpreted execution mode.\n"
         "  --driverless               Do not open the support driver (NEM or IEM mode).\n"
-        "  --warp-pct <pct>           time warp factor, 100%% (= 1.0) = normal speed\n"
+        "  --warp-pct=<pct>           time warp factor, 100%% (= 1.0) = normal speed\n"
         "  --no-keyboard-grabbing     Don't grab the keyboard on windows (for debugging).\n"
         "\n"
 # ifdef VBOX_WITH_DEBUGGER_GUI
