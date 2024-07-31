@@ -758,7 +758,7 @@ protected:
     virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Online Documentation..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox user manual"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox user guide"));
     }
 };
 

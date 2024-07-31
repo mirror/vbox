@@ -206,8 +206,8 @@ void UINotificationMessage::cannotValidateGuestAdditionsSHA256Sum(const QString 
 void UINotificationMessage::warnAboutUserManualDownloaded(const QString &strUrl, const QString &strTarget)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "User manual downloaded ..."),
-        QApplication::translate("UIMessageCenter", "<p>The VirtualBox User Manual has been successfully downloaded from "
+        QApplication::translate("UIMessageCenter", "User guide downloaded ..."),
+        QApplication::translate("UIMessageCenter", "<p>The VirtualBox User Guide has been successfully downloaded from "
                                                    "<nobr><a href=\"%1\">%1</a></nobr> and saved locally as "
                                                    "<nobr><b>%2</b>.</nobr></p>").arg(strUrl, strTarget));
 }
@@ -4593,7 +4593,7 @@ UINotificationDownloaderUserManual::~UINotificationDownloaderUserManual()
 
 QString UINotificationDownloaderUserManual::name() const
 {
-    return UINotificationDownloader::tr("Downloading User Manual ...");
+    return UINotificationDownloader::tr("Downloading User Guide ...");
 }
 
 QString UINotificationDownloaderUserManual::details() const

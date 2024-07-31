@@ -1602,7 +1602,7 @@ bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QS
 bool UIMessageCenter::confirmLookingForUserManual(const QString &strMissedLocation) const
 {
     return questionBinary(0, MessageType_Question,
-                          tr("<p>Could not find the <b>VirtualBox User Manual</b> <nobr><b>%1</b>.</nobr></p>"
+                          tr("<p>Could not find the <b>VirtualBox User Guide</b> <nobr><b>%1</b>.</nobr></p>"
                              "<p>Do you wish to download this file from the Internet?</p>")
                              .arg(strMissedLocation),
                           0 /* auto-confirm id */,
@@ -1612,7 +1612,7 @@ bool UIMessageCenter::confirmLookingForUserManual(const QString &strMissedLocati
 bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const
 {
     return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("<p>Are you sure you want to download the <b>VirtualBox User Manual</b> "
+                          tr("<p>Are you sure you want to download the <b>VirtualBox User Guide</b> "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
                              .arg(strURL, QLocale(UITranslator::languageId()).toString(uSize)),
                           0 /* auto-confirm id */,
@@ -1622,7 +1622,7 @@ bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglon
 void UIMessageCenter::cannotSaveUserManual(const QString &strURL, const QString &strTarget) const
 {
     alert(windowManager().mainWindowShown(), MessageType_Error,
-          tr("<p>The VirtualBox User Manual has been successfully downloaded "
+          tr("<p>The VirtualBox User Guide has been successfully downloaded "
              "from <nobr><a href=\"%1\">%1</a></nobr> "
              "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
              "<p>Please choose another location for that file.</p>")
@@ -2167,8 +2167,8 @@ void UIMessageCenter::prepare()
     /* Translations for Main.
      * Please make sure they corresponds to the strings coming from Main one-by-one symbol! */
     tr("Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer");
-    tr("VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'vboxusers' group.  Please see the user manual for a more detailed explanation");
-    tr("VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the 'usbfs' folder and files.  Please see the user manual for a more detailed explanation");
+    tr("VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the 'vboxusers' group.  Please see the user guide for a more detailed explanation");
+    tr("VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the 'usbfs' folder and files.  Please see the user guide for a more detailed explanation");
     tr("The USB Proxy Service has not yet been ported to this host");
     tr("Could not load the Host USB Proxy service");
 }

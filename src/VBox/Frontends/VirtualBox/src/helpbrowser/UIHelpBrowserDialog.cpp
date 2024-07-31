@@ -91,7 +91,7 @@ void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
 
 void UIHelpBrowserDialog::sltRetranslateUI()
 {
-    setWindowTitle(UIHelpBrowserWidget::tr("%1 User Manual", "[Product Name] User Manual").arg(VBOX_PRODUCT));
+    setWindowTitle(UIHelpBrowserWidget::tr("%1 User Guide", "[Product Name] User Guide").arg(VBOX_PRODUCT));
 }
 
 bool UIHelpBrowserDialog::event(QEvent *pEvent)
@@ -194,7 +194,7 @@ void UIHelpBrowserDialog::findManualFileAndShow(const QString &strKeyword /*= QS
     QString strUserManualFileName1 = uiCommon().helpFile();
     QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
     QString strUserManualFileName2 = QDir(gpGlobalSession->homeFolder()).absoluteFilePath(strShortFileName);
-    /* Show if user manual already present: */
+    /* Show if user guide already present: */
     if (QFile::exists(strUserManualFileName1))
         showUserManual(strUserManualFileName1, strKeyword);
     else if (QFile::exists(strUserManualFileName2))
@@ -203,12 +203,12 @@ void UIHelpBrowserDialog::findManualFileAndShow(const QString &strKeyword /*= QS
     /* If downloader is running already: */
     if (UINotificationDownloaderUserManual::exists())
         gpNotificationCenter->invoke();
-    /* Else propose to download user manual: */
+    /* Else propose to download user guide: */
     else if (confirmLookingForUserManual(strUserManualFileName1))
     {
-        /* Download user manual: */
+        /* Download user guide: */
         UINotificationDownloaderUserManual *pNotification = UINotificationDownloaderUserManual::instance(UICommon::helpFile());
-        /* After downloading finished => show User Manual: */
+        /* After downloading finished => show User Guide: */
         /// @todo
         // connect(pNotification, &UINotificationDownloaderUserManual::sigUserManualDownloaded,
         //         this, &UIMessageCenter::showUserManual);

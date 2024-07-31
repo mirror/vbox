@@ -47,7 +47,7 @@ UIDownloaderUserManual::UIDownloaderUserManual()
     /* Get version number and adjust it for test and trunk builds. The server only has official releases. */
     const QString strVersion = UIVersion(UIVersionInfo::vboxVersionStringNormalized()).effectiveReleasedVersion().toString();
 
-    /* Compose User Manual filename: */
+    /* Compose User Guide filename: */
     QString strUserManualFullFileName = uiCommon().helpFile();
     QString strUserManualShortFileName = QFileInfo(strUserManualFullFileName).fileName();
 
@@ -64,7 +64,7 @@ UIDownloaderUserManual::UIDownloaderUserManual()
 
 QString UIDownloaderUserManual::description() const
 {
-    return UIDownloader::description().arg(tr("VirtualBox User Manual"));
+    return UIDownloader::description().arg(tr("VirtualBox User Guide"));
 }
 
 bool UIDownloaderUserManual::askForDownloadingConfirmation(UINetworkReply *pReply)
@@ -110,7 +110,7 @@ void UIDownloaderUserManual::handleDownloadedObject(UINetworkReply *pReply)
         /* Ask the user for another location for the user-manual file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
                                                                windowManager().mainWindowShown(),
-                                                               tr("Select folder to save User Manual to"), true);
+                                                               tr("Select folder to save User Guide to"), true);
 
         /* Check if user had really set a new target: */
         if (!strTarget.isNull())
