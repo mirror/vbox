@@ -462,7 +462,7 @@ void UIWizardNewVMSummaryPage::sltRetranslateUI()
                                             " press Finish to create the virtual machine. Alternatively you can go back"
                                             " and modify the configuration."));
     if (m_pTree)
-        m_pLabel->setWhatsThis(UIWizardNewVM::tr("Lists chosen configuration of the guest system."));
+        m_pTree->setWhatsThis(UIWizardNewVM::tr("Lists chosen configuration of the guest system."));
 }
 
 void UIWizardNewVMSummaryPage::initializePage()
