@@ -50,6 +50,9 @@ public:
                   const QString &strDefaultPath,
                   qulonglong uDefaultSize);
 
+    /** Constructs wizard to clone medium referenced by @a uMediumId, passing @a pParent to the base-class. */
+    UIWizardNewVD(QWidget *pParent, const QUuid &uMediumId);
+
     bool createVirtualDisk();
 
     /** Creates and shows a UIWizardNewVD wizard.
@@ -83,6 +86,7 @@ public:
        const QString &defaultPath() const;
        const QString &defaultName() const;
        qulonglong defaultSize() const;
+       KDeviceType deviceType() const;
 
 protected:
 
