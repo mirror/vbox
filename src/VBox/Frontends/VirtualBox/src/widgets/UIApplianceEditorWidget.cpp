@@ -1820,6 +1820,11 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
                 /* Create tree-view: */
                 m_pTreeViewSettings = new QITreeView;
                 {
+                    /* Extend trigger set: */
+                    m_pTreeViewSettings->setEditTriggers(  QAbstractItemView::DoubleClicked
+                                                         | QAbstractItemView::SelectedClicked
+                                                         | QAbstractItemView::AnyKeyPressed);
+
                     /* Configure tree-view: */
                     m_pTreeViewSettings->setAlternatingRowColors(true);
                     m_pTreeViewSettings->setAllColumnsShowFocus(true);
