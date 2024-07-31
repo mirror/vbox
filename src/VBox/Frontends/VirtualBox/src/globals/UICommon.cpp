@@ -329,14 +329,6 @@ void UICommon::prepare()
                 else \
                     (a_strDst).clear(); \
             } while (0)
-#define ASSIGN_OPT_VALUE_TO_QUUID(a_uuidDst) do { \
-                if (*pszSep != '\0') \
-                    (a_uuidDst) = QUuid(&pszSep[1]); \
-                else if (++i < argc) \
-                    (a_uuidDst) = QUuid(arguments.at(i)); \
-                else \
-                    (a_uuidDst) = QUuid(); /* null UUID */ \
-            } while (0)
 
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in main.cpp and hardenedmain.cpp exactly,
@@ -471,14 +463,12 @@ void UICommon::prepare()
         else if (MATCH_OPT_WITH_VALUE("--fda"))
         {
             enmOptType = OptType_VMRunner;
-/** @todo r=bird: this isn't correct. Must use QString instead of QUuid to store this! */
-            ASSIGN_OPT_VALUE_TO_QUUID(m_uFloppyImage);
+            ASSIGN_OPT_VALUE_TO_QSTRING(m_strFloppyImage);
         }
         else if (MATCH_OPT_WITH_VALUE("--dvd") || MATCH_OPT_WITH_VALUE("--cdrom"))
         {
             enmOptType = OptType_VMRunner;
-/** @todo r=bird: this isn't correct. Must use QString instead of QUuid to store this! */
-            ASSIGN_OPT_VALUE_TO_QUUID(m_uDvdImage);
+            ASSIGN_OPT_VALUE_TO_QSTRING(m_strDvdImage);
         }
         /* VMM Options: */
         else if (!::strcmp(arg, "--execute-all-in-iem"))
@@ -573,7 +563,6 @@ void UICommon::prepare()
     }
 #undef MATCH_OPT_WITH_VALUE
 #undef ASSIGN_OPT_VALUE_TO_QSTRING
-#undef ASSIGN_OPT_VALUE_TO_QUUID
 
     if (uiType() == UIType_RuntimeUI && startVM)
     {

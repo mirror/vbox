@@ -177,13 +177,13 @@ public:
         bool shouldNotGrabKeyboard() const { return m_fNoKeyboardGrabbing; }
 
         /** Returns the --fda option value (whether we have floppy image). */
-        bool hasFloppyImageToMount() const { return !m_uFloppyImage.isNull(); }
+        bool hasFloppyImageToMount() const { return !m_strFloppyImage.isEmpty(); }
         /** Returns the --dvd | --cdrom option value (whether we have DVD image). */
-        bool hasDvdImageToMount() const { return !m_uDvdImage.isNull(); }
+        bool hasDvdImageToMount() const { return !m_strDvdImage.isEmpty(); }
         /** Returns floppy image name. */
-        QUuid getFloppyImage() const { return m_uFloppyImage; }
+        QString getFloppyImage() const { return m_strFloppyImage; }
         /** Returns DVD image name. */
-        QUuid getDvdImage() const { return m_uDvdImage; }
+        QString getDvdImage() const { return m_strDvdImage; }
 
         /** Returns the --execute-all-in-iem option value. */
         bool areWeToExecuteAllInIem() const { return m_fExecuteAllInIem; }
@@ -413,9 +413,9 @@ private:
         QString m_strSnapshotToRestore;
 
         /** Holds the --fda option value (floppy image). */
-        QUuid  m_uFloppyImage;
+        QString  m_strFloppyImage;
         /** Holds the --dvd | --cdrom option value (DVD image). */
-        QUuid  m_uDvdImage;
+        QString  m_strDvdImage;
 
         /** Holds the --execute-all-in-iem option value. */
         bool      m_fExecuteAllInIem;
