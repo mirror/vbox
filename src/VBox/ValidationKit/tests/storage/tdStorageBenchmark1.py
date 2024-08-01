@@ -276,7 +276,7 @@ class IoPerfTest(object):
         self.fDirectIo    = True;
         self.fReportIoStats = dCfg.get('ReportIoStats', True);
         self.asGstIoPerfPaths   = [
-            '${CDROM}/vboxvalidationkit/${OS/ARCH}/IoPerf${EXESUFF}',
+            '${CDROM}/validationkit/${OS/ARCH}/IoPerf${EXESUFF}',
             '${CDROM}/${OS/ARCH}/IoPerf${EXESUFF}',
         ];
 
