@@ -125,20 +125,13 @@ Key: GUI/LastNormalWindowPosition, Value: 851,286,1048,738</screen>
       in the configuration:
     </para>
 <screen>$ VBoxManage getextradata global enumerate
-Key: GUI/Details/Elements, Value: general,system,preview,display,storage,audio,network,usb,sharedFolders,description
-Key: GUI/DetailsPageBoxes, Value: general,system,preview,display,storage,audio,network,usb,sharedFolders,description
-Key: GUI/GroupDefinitions/, Value: m=43349dd8-2aa3-41b8-988f-0e255ce68090,m=9ebcd81e-5231-48ce-a27d-28218757f3fe,m=c690e8b1-93a0-4c95-9cd7-6437fff93251,m=f7c1e10d-3722-4891-887e-07b3c4104946
-Key: GUI/HideDescriptionForWizards, Value: NewVM
-Key: GUI/LastItemSelected, Value: m=ol7u4
+Key: GUI/LastItemSelected, Value: m=OracleLinux7u4
 Key: GUI/LastWindowPosition, Value: 951,510,960,520
-Key: GUI/RecentFolderCD, Value: C:/Users/user1
-Key: GUI/RecentListCD, Value: C:\Users\user1\V1.iso,C:\Users\user1\V2.iso,C:\Users\user1\V3.iso
 Key: GUI/SplitterSizes, Value: 318,637
-Key: GUI/SuppressMessages, Value: remindAboutMouseIntegration,remindAboutAutoCapture
 Key: GUI/Toolbar/MachineTools/Order, Value: Details
 Key: GUI/Tools/LastItemsSelected, Value: Welcome,Details
 Key: GUI/UpdateCheckCount, Value: 71
-Key: GUI/UpdateDate, Value: 1 d, 2019-04-10, stable, 5.2.22
+Key: GUI/UpdateDate, Value: 1 d, 2022-10-10, stable, 7.0.0
 Key: GUI/VirtualMediaManager/Details/Expanded, Value: true</screen>
   </refsect1>
 
