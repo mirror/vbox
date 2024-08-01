@@ -790,8 +790,8 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
     RTGCPTR const   GCPtrTagMask = fPartialScan
                                  ? ~(RTGCPTR)0
                                  :   ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK
-                                   & ~(RTGCPTR)(   (  RT_BIT_64((a_f2MbLargePage ? 9 : 10) - IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO)
-                                                    - 1U)
+                                   & ~(RTGCPTR)(   (RT_BIT_64(RT_MAX(  (a_f2MbLargePage ? 9 : 10)
+                                                                     - IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO, 0)) - 1U)
                                                 << IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO);
 
     /*
