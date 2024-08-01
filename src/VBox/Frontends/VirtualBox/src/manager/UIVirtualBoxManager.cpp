@@ -1277,7 +1277,7 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
                 break;
             }
             case WizardType_CloneVD:
-                m_wizards[enmType] = new UIWizardCloneVD(this, m_uMediumId);
+                m_wizards[enmType] = new UIWizardNewVD(this, m_uMediumId);
                 break;
             default:
                 break;

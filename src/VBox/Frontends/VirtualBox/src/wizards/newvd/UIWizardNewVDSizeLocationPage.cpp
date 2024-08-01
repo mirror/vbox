@@ -51,7 +51,7 @@ void UIWizardNewVDSizeLocationPage::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
-    m_pMediumSizePathGroup = new UIMediumSizeAndPathGroupBox(false /* fExpertMode */, 0 /* parent */, _4M /* minimum size */);
+    m_pMediumSizePathGroup = new UIMediumSizeAndPathGroupBox(false /* fExpertMode */, 0 /* parent */, m_uMediumSizeMin);
     connect(m_pMediumSizePathGroup, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
             this, &UIWizardNewVDSizeLocationPage::sltMediumSizeChanged);
     connect(m_pMediumSizePathGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
@@ -148,6 +148,8 @@ bool UIWizardNewVDSizeLocationPage::isComplete() const
     if (pWizard->mediumPath().isEmpty())
         return false;
     if (pWizard->mediumSize() > m_uMediumSizeMax || pWizard->mediumSize() < m_uMediumSizeMin)
+        return false;
+    if (!m_pMediumSizePathGroup->filePathUnique() || !m_pMediumSizePathGroup->pathExists())
         return false;
     return true;
 }
