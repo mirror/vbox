@@ -60,7 +60,6 @@
 #include "UINotificationCenter.h"
 #include "UIShortcutPool.h"
 #include "UITranslationEventListener.h"
-#include "UIWizardCloneVD.h"
 #include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */

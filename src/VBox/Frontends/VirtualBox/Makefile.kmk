@@ -341,7 +341,6 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/newvm \
 	./src/wizards/newvd \
 	./src/wizards/clonevm \
-	./src/wizards/clonevd \
 	./src/wizards/exportappliance \
 	./src/wizards/importappliance \
 	./src/wizards/editors
@@ -703,11 +702,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/clonevm/UIWizardCloneVMTypePage.h \
 	src/wizards/clonevm/UIWizardCloneVMModePage.h \
 	src/wizards/clonevm/UIWizardCloneVMExpertPage.h \
-	src/wizards/clonevd/UIWizardCloneVD.h \
-	src/wizards/clonevd/UIWizardCloneVDFormatPage.h \
-	src/wizards/clonevd/UIWizardCloneVDVariantPage.h \
-	src/wizards/clonevd/UIWizardCloneVDPathSizePage.h \
-	src/wizards/clonevd/UIWizardCloneVDExpertPage.h \
 	src/wizards/exportappliance/UIWizardExportApp.h \
 	src/wizards/exportappliance/UIWizardExportAppPageExpert.h \
 	src/wizards/exportappliance/UIWizardExportAppPageFormat.h \
@@ -1237,11 +1231,6 @@ VirtualBox_SOURCES = \
 	src/wizards/clonevm/UIWizardCloneVMTypePage.cpp \
 	src/wizards/clonevm/UIWizardCloneVMModePage.cpp \
 	src/wizards/clonevm/UIWizardCloneVMExpertPage.cpp \
-	src/wizards/clonevd/UIWizardCloneVD.cpp \
-	src/wizards/clonevd/UIWizardCloneVDFormatPage.cpp \
-	src/wizards/clonevd/UIWizardCloneVDVariantPage.cpp \
-	src/wizards/clonevd/UIWizardCloneVDPathSizePage.cpp \
-	src/wizards/clonevd/UIWizardCloneVDExpertPage.cpp \
 	src/wizards/exportappliance/UIWizardExportApp.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageFormat.cpp \
@@ -2058,7 +2047,6 @@ QTGUI_DOXYFILE_INPUT_DIRS := \
 		widgets/graphics \
 		wizards \
 		wizards/addcloudvm \
-		wizards/clonevd \
 		wizards/clonevm \
 		wizards/exportappliance \
 		wizards/importappliance \

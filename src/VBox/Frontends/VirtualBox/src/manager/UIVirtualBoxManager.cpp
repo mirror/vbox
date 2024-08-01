@@ -85,7 +85,6 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVMLogViewerDialog.h"
 #include "UIWizardAddCloudVM.h"
-#include "UIWizardCloneVD.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardImportApp.h"
