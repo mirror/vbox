@@ -116,12 +116,12 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
   # use docbook from our tools directory
   VBOX_PATH_DOCBOOK       ?= $(KBUILD_DEVTOOLS)/common/DocBook/v1.69.1
   VBOX_PATH_DOCBOOK_DTD   ?= $(KBUILD_DEVTOOLS)/common/docbook-xml/v4.5
-  VBOX_PATH_DITA_DTD      ?= $(VBOX_DITA_OT_PATH)/plugins/org.oasis-open.dita.v1_2/dtd
+  VBOX_PATH_DITA_DTD      ?= $(VBOX_DITA_OT_PATH)/plugins/org.dita.specialization.dita11/dtd/
  else
   # use docbook of the build host
   VBOX_PATH_DOCBOOK       ?= /usr/share/xml/docbook/stylesheet/docbook-xsl
   VBOX_PATH_DOCBOOK_DTD   ?= /usr/share/xml/docbook/schema/dtd/4.5
-  VBOX_PATH_DITA_DTD      ?= $(VBOX_DITA_OT_PATH)/plugins/org.oasis-open.dita.v1_2/dtd
+  VBOX_PATH_DITA_DTD      ?= $(VBOX_DITA_OT_PATH)/plugins/org.dita.specialization.dita11/dtd/
  endif
  VBOX_XML_CATALOG         ?= $(VBOX_PATH_MANUAL_OUTBASE)/vbox-doc.cat
  VBOX_XML_CATALOG_DOCBOOK ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook.cat
@@ -315,10 +315,10 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
 		'<?xml version="1.0"?>' \
 		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
 		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
-		'  <public publicId="-//OASIS//DTD DITA BookMap//EN"        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DITA_DTD)/bookmap/dtd/bookmap.dtd"/>' \
-		'  <public publicId="-//OASIS//DTD DITA Topic//EN"          uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DITA_DTD)/technicalContent/dtd/topic.dtd"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/dita/bookmap.dtd"    uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DITA_DTD)/bookmap/dtd/bookmap.dtd"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/topic.dtd"      uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DITA_DTD)/technicalContent/dtd/topic.dtd"/>' \
+		'  <public publicId="-//OASIS//DTD DITA BookMap//EN"        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DITA_DTD)/bookmap.dtd"/>' \
+		'  <public publicId="-//OASIS//DTD DITA Topic//EN"          uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DITA_DTD)/topic.dtd"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/dita/bookmap.dtd"        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DITA_DTD)/bookmap.dtd"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/topic.dtd"   uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DITA_DTD)/topic.dtd"/>' \
 		'</catalog>'
 
   # Create a docbook catalog file for xsltproc that points to the local manual files in non-default locations
