@@ -35,6 +35,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/ssm.h>
 #if defined(VBOX_VMM_TARGET_ARMV8)
 # include "IEMInternal-armv8.h"
 #else
@@ -1559,6 +1560,7 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
                                           &offDisp, &uBuf.Symbol, NULL);
                 if (RT_SUCCESS(rc))
                 {
+                    /* Add displacement. */
                     if (offDisp)
                     {
                         size_t const cchName    = strlen(uBuf.Symbol.szName);
@@ -1568,10 +1570,13 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
                             RTStrPrintf(pszEndName, cbLeft, "+%#1RGv", offDisp);
                         else
                             RTStrPrintf(pszEndName, cbLeft, "-%#1RGv", -offDisp);
-                        char *pszName = uBuf.Symbol.szName;
-                        *--pszName = ' ';   /* padding */
-                        pszSymbol = pszName;
                     }
+
+                    /* Put a space before it. */
+                    AssertCompile(RTASSERT_OFFSET_OF(RTDBGSYMBOL, szName) > 0);
+                    char *pszName = uBuf.Symbol.szName;
+                    *--pszName = ' ';
+                    pszSymbol = pszName;
                 }
             }
             switch (pCur->enmType)
@@ -1600,6 +1605,7 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
                                     idx, pCur->rip, pCur->bParam ? "data" : "code",
                                     pCur->u64Param, (uint32_t)IEMTLB_ADDR_TO_EVEN_INDEX(pCur->u64Param), pszSymbol);
                     break;
+
                 case kIemTlbTraceType_Load_Cr0:
                     pHlp->pfnPrintf(pHlp, "%u: %016RX64 load cr0 %08RX64 (was %08RX64)%s\n",
                                     idx, pCur->rip, pCur->u64Param, pCur->u64Param2, pszSymbol);
@@ -1616,6 +1622,7 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
                     pHlp->pfnPrintf(pHlp, "%u: %016RX64 load efer %016RX64 (was %016RX64)%s\n",
                                     idx, pCur->rip, pCur->u64Param, pCur->u64Param2, pszSymbol);
                     break;
+
                 case kIemTlbTraceType_Irq:
                     pHlp->pfnPrintf(pHlp, "%u: %016RX64 irq %#04x flags=%#x eflboth=%#RX64%s\n",
                                     idx, pCur->rip, pCur->bParam, pCur->u32Param,
@@ -1637,6 +1644,20 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
                     pHlp->pfnPrintf(pHlp, "%u: %016RX64 iret cs:rip=%04x:%016RX64 efl=%08RX32%s\n",
                                     idx, pCur->rip, pCur->u32Param, pCur->u64Param, (uint32_t)pCur->u64Param2, pszSymbol);
                     break;
+
+                case kIemTlbTraceType_Tb_Compile:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 tb comp GCPhysPc=%012RX64%s\n",
+                                    idx, pCur->rip, pCur->u64Param, pszSymbol);
+                    break;
+                case kIemTlbTraceType_Tb_Exec_Threaded:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 tb thrd GCPhysPc=%012RX64 tb=%p used=%u%s\n",
+                                    idx, pCur->rip, pCur->u64Param, (uintptr_t)pCur->u64Param2, pCur->u32Param, pszSymbol);
+                    break;
+                case kIemTlbTraceType_Tb_Exec_Native:
+                    pHlp->pfnPrintf(pHlp, "%u: %016RX64 tb n8ve GCPhysPc=%012RX64 tb=%p used=%u%s\n",
+                                    idx, pCur->rip, pCur->u64Param, (uintptr_t)pCur->u64Param2, pCur->u32Param, pszSymbol);
+                    break;
+
                 case kIemTlbTraceType_Invalid:
                     pHlp->pfnPrintf(pHlp, "%u: Invalid!\n");
                     break;

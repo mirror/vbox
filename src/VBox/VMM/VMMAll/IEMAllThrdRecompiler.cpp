@@ -1049,6 +1049,61 @@ void iemTbAllocatorProcessDelayedFrees(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAlloca
 }
 
 
+#if 0
+/**
+ * Frees all TBs.
+ */
+static int iemTbAllocatorFreeAll(PVMCPUCC pVCpu)
+{
+    PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
+    AssertReturn(pTbAllocator, VERR_WRONG_ORDER);
+    AssertReturn(pTbAllocator->uMagic == IEMTBALLOCATOR_MAGIC, VERR_INVALID_MAGIC);
+
+    iemTbAllocatorProcessDelayedFrees(pVCpu, pTbAllocator);
+
+    uint32_t idxChunk = pTbAllocator->cAllocatedChunks;
+    while (idxChunk-- > 0)
+    {
+        PIEMTB const paTbs = pTbAllocator->aChunks[idxChunk].paTbs;
+        uint32_t     idxTb = pTbAllocator->cTbsPerChunk;
+        while (idxTb-- > 0)
+        {
+            PIEMTB const pTb = &paTbs[idxTb];
+            if (pTb->fFlags)
+                iemTbAllocatorFreeInner(pVCpu, pTbAllocator, pTb, idxChunk, idxTb);
+        }
+    }
+
+    pVCpu->iem.s.ppTbLookupEntryR3 = &pVCpu->iem.s.pTbLookupEntryDummyR3;
+
+# if 1
+    /* Reset the free list. */
+    pTbAllocator->pTbsFreeHead = NULL;
+    idxChunk = pTbAllocator->cAllocatedChunks;
+    while (idxChunk-- > 0)
+    {
+        uint32_t const cTbsPerChunk = pTbAllocator->cTbsPerChunk;
+        PIEMTB const   paTbs        = pTbAllocator->aChunks[idxChunk].paTbs;
+        RT_BZERO(paTbs, sizeof(paTbs[0]) * cTbsPerChunk);
+        for (uint32_t idxTb = 0; idxTb < cTbsPerChunk; idxTb++)
+        {
+            paTbs[idxTb].idxAllocChunk = idxChunk; /* This is not strictly necessary... */
+            paTbs[idxTb].pNext = pTbAllocator->pTbsFreeHead;
+            pTbAllocator->pTbsFreeHead = &paTbs[idxTb];
+        }
+    }
+# endif
+
+# if 1
+    /* Completely reset the TB cache. */
+    RT_BZERO(pVCpu->iem.s.pTbCacheR3->apHash, sizeof(pVCpu->iem.s.pTbCacheR3->apHash[0]) * pVCpu->iem.s.pTbCacheR3->cHash);
+# endif
+
+    return VINF_SUCCESS;
+}
+#endif
+
+
 /**
  * Grow the translation block allocator with another chunk.
  */
@@ -2632,6 +2687,7 @@ static bool iemThreadedCompileCheckIrqAfter(PVMCPUCC pVCpu, PIEMTB pTb)
  */
 static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint32_t fExtraFlags) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    IEMTLBTRACE_TB_COMPILE(pVCpu, GCPhysPc);
     Assert(!(fExtraFlags & IEMTB_F_TYPE_MASK));
     fExtraFlags |= IEMTB_F_TYPE_THREADED;
 
@@ -2822,6 +2878,7 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
     if (pTb->fFlags & IEMTB_F_TYPE_NATIVE)
     {
         pVCpu->iem.s.cTbExecNative++;
+        IEMTLBTRACE_TB_EXEC_N8VE(pVCpu, pTb);
 # ifdef LOG_ENABLED
         iemThreadedLogCurInstr(pVCpu, "EXn", 0);
 # endif
@@ -2901,6 +2958,7 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
          * The threaded execution loop.
          */
         pVCpu->iem.s.cTbExecThreaded++;
+        IEMTLBTRACE_TB_EXEC_THRD(pVCpu, pTb);
 #ifdef LOG_ENABLED
         uint64_t             uRipPrev   = UINT64_MAX;
 #endif
