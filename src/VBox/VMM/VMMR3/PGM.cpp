@@ -736,7 +736,11 @@ static const DBGCCMD    g_aCmds[] =
 VMMR3_INT_DECL(void) PGMR3EnableNemMode(PVM pVM)
 {
     AssertFatal(!PDMCritSectIsInitialized(&pVM->pgm.s.CritSectX));
-    pVM->pgm.s.fNemMode = true;
+    if (!pVM->pgm.s.fNemMode)
+    {
+        LogRel(("PGM: Enabling NEM mode\n"));
+        pVM->pgm.s.fNemMode = true;
+    }
 }
 
 
@@ -780,7 +784,10 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     {
 #ifdef VBOX_WITH_PGM_NEM_MODE
         if (!pVM->pgm.s.fNemMode)
+        {
+            LogRel(("PGM: Enabling NEM mode (driverless)\n"));
             pVM->pgm.s.fNemMode = true;
+        }
 #else
         return VMR3SetError(pVM->pUVM, VERR_SUP_DRIVERLESS, RT_SRC_POS,
                             "Driverless requires that VBox is built with VBOX_WITH_PGM_NEM_MODE defined");
