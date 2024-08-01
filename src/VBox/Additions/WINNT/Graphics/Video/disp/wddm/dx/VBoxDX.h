@@ -53,6 +53,15 @@
 #define DEBUG_BREAKPOINT_TEST() do { } while (0)
 #endif
 
+/**@def FLOAT_FMT_STR
+ * Format string bits to go with FLOAT_FMT_ARGS. */
+#define FLOAT_FMT_STR                  "%s%u.%06u"
+/** @def FLOAT_FMT_ARGS
+ * Format arguments for a float value, corresponding to FLOAT_FMT_STR.
+ * @param   r       The floating point value to format.  */
+#define FLOAT_FMT_ARGS(r)              (r) >= 0.0f ? "" : "-", (unsigned)RT_ABS(r) \
+                                       , (unsigned)(RT_ABS((r) - (float)(unsigned)(r)) * 1000000.0f)
+
 typedef struct VBOXDXADAPTER
 {
     HANDLE hRTAdapter;

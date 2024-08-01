@@ -325,7 +325,10 @@ int vgpu10SetBlendState(PVBOXDX_DEVICE pDevice,
 
     SVGA3dCmdDXSetBlendState *cmd = (SVGA3dCmdDXSetBlendState *)pvCmd;
     SET_CMD_FIELD(blendId);
-    memcpy(cmd->blendFactor, blendFactor, sizeof(blendFactor));
+    SET_CMD_FIELD(blendFactor[0]);
+    SET_CMD_FIELD(blendFactor[1]);
+    SET_CMD_FIELD(blendFactor[2]);
+    SET_CMD_FIELD(blendFactor[3]);
     SET_CMD_FIELD(sampleMask);
 
     vboxDXCommandBufferCommit(pDevice);
