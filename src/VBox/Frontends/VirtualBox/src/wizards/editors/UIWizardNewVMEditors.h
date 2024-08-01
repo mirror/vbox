@@ -189,6 +189,9 @@ private:
 
     void prepare();
 
+    /** Updates minimum layout hint. */
+    void updateMinimumLayoutHint();
+
     UIBaseMemoryEditor *m_pBaseMemoryEditor;
     UIVirtualCPUEditor *m_pVirtualCPUEditor;
     QCheckBox *m_pEFICheckBox;
