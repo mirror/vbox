@@ -286,16 +286,20 @@ ENDPROC     iemNativeHlpAsmSafeWrapCheckTlbLookup
 ;
 ; @param    uRegFpCtrl  (gcc:rdi, msc:rcx)  The MXCSR value to restore.
 ;
+; @todo r=bird: could use the _mm_setcsr() intrinsic instead...
+;
 ALIGNCODE(16)
 BEGINPROC   iemNativeFpCtrlRegRestore
-        sub     xSP, 4
+SEH64_END_PROLOGUE
+
 %ifdef RT_OS_WINDOWS
-        mov     [xSP], edx
+        mov     [xSP + xCB], edi            ; use the first parameter spill slot.
+        ldmxcsr [xSP + xCB]
 %else
-        mov     [xSP], edi
+        push    xDI
+        ldmxcsr [xSP]
+        add     xSP, xCB
 %endif
 
-        ldmxcsr [xSP]
-        add     xSP, 4
         ret
 ENDPROC     iemNativeFpCtrlRegRestore
