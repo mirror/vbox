@@ -25,6 +25,9 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
+/* Qt includes: */
+#include <QDir>
+
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIGlobalSession.h"
@@ -64,7 +67,6 @@ UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
 UIWizardNewVD::UIWizardNewVD(QWidget *pParent, const QUuid &uMediumId)
     : UINativeWizard(pParent, WizardType_CloneVD)
     , m_iMediumVariantPageIndex(-1)
-    , m_enmDeviceType(KDeviceType_Null)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -74,11 +76,12 @@ UIWizardNewVD::UIWizardNewVD(QWidget *pParent, const QUuid &uMediumId)
     setPixmapName(":/wizard_new_harddisk_bg.png");
 #endif /* VBOX_WS_MAC */
 
-    /* Init medium to be cloned: */
     UIMedium uiMedium = gpMediumEnumerator->medium(uMediumId);
     m_comSourceVirtualDisk = uiMedium.medium();
 
-    /* Init device type: */
+    m_strDefaultPath = QDir::toNativeSeparators(QFileInfo(m_comSourceVirtualDisk.GetLocation()).absolutePath());
+    m_strDefaultName = QString("%1_%2").arg(m_comSourceVirtualDisk.GetName()).arg(UIWizardNewVD::tr("copy"));
+    m_uDefaultSize = m_comSourceVirtualDisk.GetLogicalSize();
     m_enmDeviceType = m_comSourceVirtualDisk.GetDeviceType();
 }
 
@@ -272,11 +275,6 @@ void UIWizardNewVD::setMediumVariantPageVisibility()
 }
 
 qulonglong UIWizardNewVD::diskMinimumSize() const
-{
-    return sourceDiskLogicalSize();
-}
-
-qulonglong UIWizardNewVD::sourceDiskLogicalSize() const
 {
     if (m_comSourceVirtualDisk.isNull())
         return _4M;

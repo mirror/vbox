@@ -101,7 +101,7 @@ private:
     /** Check medium capabilities and decide if medium variant page should be hidden. */
     void setMediumVariantPageVisibility();
     qulonglong diskMinimumSize() const;
-    qulonglong sourceDiskLogicalSize() const;
+
     qulonglong m_uMediumVariant;
     CMediumFormat m_comMediumFormat;
     QString m_strMediumPath;

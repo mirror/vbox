@@ -69,13 +69,13 @@ void UIWizardNewVDSizeLocationPage::sltSelectLocationButtonClicked()
     AssertReturnVoid(pWizard);
     QString strSelectedPath =
         UIWizardDiskEditors::openFileDialogForDiskFile(pWizard->mediumPath(), pWizard->mediumFormat(),
-                                                                KDeviceType_HardDisk, pWizard);
+                                                                pWizard->deviceType(), pWizard);
 
     if (strSelectedPath.isEmpty())
         return;
     QString strMediumPath =
         UIWizardDiskEditors::appendExtension(strSelectedPath,
-                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
     QFileInfo mediumPath(strMediumPath);
     m_pMediumSizePathGroup->setMediumFilePath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
@@ -95,7 +95,7 @@ void UIWizardNewVDSizeLocationPage::sltMediumPathChanged(const QString &strPath)
     m_userModifiedParameters << "MediumPath";
     QString strMediumPath =
         UIWizardDiskEditors::appendExtension(strPath,
-                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
     pWizard->setMediumPath(strMediumPath);
     emit completeChanged();
 }
@@ -110,7 +110,7 @@ void UIWizardNewVDSizeLocationPage::initializePage()
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard && m_pMediumSizePathGroup);
 
-    QString strExtension = UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
+    QString strExtension = UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType());
     QString strMediumFilePath;
     /* Initialize the medium file path with default name and path if user has not exclusively modified them yet: */
     if (!m_userModifiedParameters.contains("MediumPath"))
