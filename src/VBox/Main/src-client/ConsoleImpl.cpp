@@ -11317,6 +11317,9 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
         VMProcPriority_T enmVMPriority = VMProcPriority_Default;
         pMachine->COMGETTER(VMProcessPriority)(&enmVMPriority);
 
+        VMExecutionEngine_T enmExecEngine = VMExecutionEngine_NotSet;
+        pMachine->COMGETTER(VMExecutionEngine)(&enmExecEngine);
+
         /*
          * Create the VM
          *
@@ -11332,7 +11335,9 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
         PVM           pVM  = NULL;
         vrc = pVMM->pfnVMR3Create(cCpus,
                                   pConsole->mpVmm2UserMethods,
-                                  0 /*fFlags*/,
+                                     enmExecEngine == VMExecutionEngine_Interpreter
+                                  || enmExecEngine == VMExecutionEngine_Recompiler /** @todo NativeApi too? */
+                                  ? VMCREATE_F_DRIVERLESS : 0,
                                   Console::i_genericVMSetErrorCallback,
                                   &pTask->mErrorMsg,
                                   pTask->mpfnConfigConstructor,
