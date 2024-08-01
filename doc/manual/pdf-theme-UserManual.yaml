@@ -260,6 +260,7 @@ style:
         font-family:        $pdf2-font-monospaced
     syntaxdiagram:
         font-family:        $pdf2-font-monospaced
+        font-size:          10pt                # Needed for long unbreakable synopsis bits
         start-indent:       '1cm + from-parent(start-indent)'
         text-indent:        -1cm
         keep-together.within-page: always
@@ -267,12 +268,16 @@ style:
         font-family:        $pdf2-font-monospaced
     pre:
         font-family:        $pdf2-font-monospaced
+        font-size:          9pt                 # Needed for 80 column
     userinput:
         font-family:        $pdf2-font-monospaced
+        font-size:          10pt                # More line length without annoying line breaks
     screen:
         font-family:        $pdf2-font-monospaced
+        font-size:          10pt                # More line length without annoying line breaks
     systemoutput:
         font-family:        $pdf2-font-monospaced
+        font-size:          10pt                # More line length without annoying line breaks
 
 
     # Prevent a parameter and it's definition from ending up on different pages.

@@ -200,6 +200,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  OTHER_CLEAN += \
  	$(VBOX_XML_CATALOG) \
  	$(VBOX_XML_CATALOG_DOCBOOK) \
+ 	$(VBOX_XML_CATALOG_DITA) \
  	$(VBOX_XML_CATALOG_MANUAL) \
  	$(VBOX_XML_ENTITIES) \
  	$(foreach lang, $(VBOX_MANUAL_ALL_LANGUAGES) \
@@ -442,9 +443,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(VBOX_MANUAL_APIREF_TMP) \
  		$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
  		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatesdkref.run,) \
- 		$(VBOX_XML_CATALOG) \
- 		$(VBOX_XML_CATALOG_DOCBOOK) \
- 		$(VBOX_XML_CATALOG_MANUAL) \
+ 		$(VBOX_XML_ALL_CATALOGS_DEP) \
  		$(VBOX_XML_ENTITIES) \
  		$(MAKEFILE_CURRENT) \
  		| $$(dir $$@)
@@ -484,7 +483,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(VBOX_PATH_MANUAL_SRC)/en_US/SDKRef.xml \
  		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_SDKREF_XML_FILES)) \
  		$(VBOX_MANUAL_APIREF_TMP) \
- 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) \
+ 		$(VBOX_XML_ALL_CATALOGS_DEP) \
  		$(VBOX_XML_ENTITIES) $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Validating $<)
 	$(QUIET)$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $<
@@ -505,9 +504,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_ACCESSIBILITY_XML_FILES)) \
  		$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
  		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validateaccessibility.run,) \
- 		$(VBOX_XML_CATALOG) \
- 		$(VBOX_XML_CATALOG_DOCBOOK) \
- 		$(VBOX_XML_CATALOG_MANUAL) \
+ 		$(VBOX_XML_ALL_CATALOGS_DEP) \
  		$(VBOX_XML_ENTITIES) \
  		$(MAKEFILE_CURRENT) \
  		| $$(dir $$@)
@@ -543,9 +540,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/Accessibility.html: \
  		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_ACCESSIBILITY_XML_FILES)) \
  		$(VBOX_DOCBOOK_HTML_ONE_PAGE_FORMATCFG) \
- 		$(VBOX_XML_CATALOG) \
- 		$(VBOX_XML_CATALOG_DOCBOOK) \
- 		$(VBOX_XML_CATALOG_MANUAL) \
+ 		$(VBOX_XML_ALL_CATALOGS_DEP) \
  		$(VBOX_XML_ENTITIES) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc $(notdir $(firstword $(filter %.xsl,$^))),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) \
@@ -558,7 +553,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/validateaccessibility.run: \
  		$(VBOX_PATH_MANUAL_SRC)/en_US/Accessibility.xml \
  		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_ACCESSIBILITY_XML_FILES)) \
- 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) \
+ 		$(VBOX_XML_ALL_CATALOGS_DEP) \
  		$(VBOX_XML_ENTITIES) $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Validating $<)
 	$(QUIET)$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $<
@@ -691,9 +686,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_PATH_MANUAL_SRC)/add_file_to_id_only_references.py \
   		$$(VBOX_USER_MANUAL_ID_MAPPING_FILE_$1) \
   		$$(qfirstfile , $$(qwildcard , $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2).xml) $(3) $$(VBOX_PATH_MANUAL_SRC)/en_US/$(2).xml) \
-  		$$(VBOX_XML_CATALOG) \
-  		$$(VBOX_XML_CATALOG_DOCBOOK) \
-  		$$(VBOX_XML_CATALOG_MANUAL) \
+  		$$(VBOX_XML_ALL_CATALOGS_DEP) \
   		$$(VBOX_XML_ENTITIES) \
   		$$(VBOX_VERSION_STAMP) \
   		| $$$$(dir $$$$@)
@@ -837,9 +830,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/changelog-versions.ditamap.kmk: \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-to-manual-dita.sh \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-to-manual-dita.xsl \
-  		$$(VBOX_XML_CATALOG) \
-  		$$(VBOX_XML_CATALOG_DOCBOOK) \
-  		$$(VBOX_XML_CATALOG_MANUAL) \
+  		$$(VBOX_XML_ALL_CATALOGS_DEP) \
   		| $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc docbook-changelog-to-manual-dita.xsl,,,$$@)
 	$$(QUIET)$$(RM) -f -- "$$@" "$$@.files.xml"
@@ -1153,9 +1144,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html: \
  		$(VBOX_PATH_MANUAL_SRC)/en_US/docbook-changelog-formatcfg.xsl \
  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml \
- 		$(VBOX_XML_CATALOG) \
- 		$(VBOX_XML_CATALOG_DOCBOOK) \
- 		$(VBOX_XML_CATALOG_MANUAL) \
+ 		$(VBOX_XML_ALL_CATALOGS_DEP) \
  		$(VBOX_XML_ENTITIES) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc $(notdir $(firstword $(filter %.xsl,$^))),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) --output "$@" "$<" $(filter %.xml,$^)
@@ -1179,7 +1168,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl \
   		$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT) \
-  		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
+  		$$(VBOX_XML_ALL_CATALOGS_DEP) \
   		$$(VBOX_XML_ENTITIES) $$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(RM) -f "$$@"
@@ -1194,7 +1183,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(patsubst man_%,%.1,$(basename $(2))): \
   		$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(2) \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage.xsl \
-  		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
+  		$$(VBOX_XML_ALL_CATALOGS_DEP) \
   		$$(VBOX_XML_ENTITIES) $$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(RM) -f "$$@"
