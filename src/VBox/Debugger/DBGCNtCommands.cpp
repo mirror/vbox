@@ -74,7 +74,11 @@ typedef struct NT_RTL_BALANCED_NODE64
 typedef struct NT_RTL_RB_TREE64
 {
     uint64_t Root;  /**< Address of the root node (NT_RTL_BALANCED_NODE64). */
-    uint64_t Min;   /**< Address of the left most node (NT_RTL_BALANCED_NODE64). */
+    /** The address of the left-most node (NT_RTL_BALANCED_NODE64).
+     *  Bit 0 is used to indicate 'Encoded', meaning that Left and Right are
+     *  XORed with the node address and Min is XORed with the address of this
+     *  structure. */
+    uint64_t Min;
 } NT_RTL_RB_TREE64;
 
 
@@ -96,6 +100,8 @@ DECLINLINE(PDBGCVAR) dbgCmdNtVarFromGCFlatPtr(PDBGCVAR pVar, RTGCPTR GCFlat)
 template<typename TreeType = NT_RTL_RB_TREE64, typename NodeType = NT_RTL_BALANCED_NODE64, typename PtrType = uint64_t>
 int dbgCmdNtRbTreeWorker(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pRootAddr)
 {
+    int           rcRet          = VINF_SUCCESS;
+    uint32_t      cErrors        = 0;
     PtrType const fAlignMask     = ~(PtrType)(sizeof(PtrType) - 1);
     PtrType const fAlignInfoMask =  (PtrType)(sizeof(PtrType) - 1);
 
@@ -109,9 +115,9 @@ int dbgCmdNtRbTreeWorker(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pRootAdd
 
     DBGCCmdHlpPrintf(pCmdHlp,
                      sizeof(PtrType) == sizeof(uint64_t)
-                     ? "RB Root %DV: Root=%#016RX64 Min=%#016RX64\n"
-                     : "RB Root %DV: Root=%#010RX32 Min=%#010RX32\n",
-                     pRootAddr, Root.Root, Root.Min);
+                     ? "RB Root %DV: Root=%#016RX64 Min=%#016RX64%s\n"
+                     : "RB Root %DV: Root=%#010RX32 Min=%#010RX32%s\n",
+                     pRootAddr, Root.Root, Root.Min, Root.Min & 1 ? " Encoded=1" : "");
     if ((Root.Root & fAlignMask) == 0 || (Root.Min & fAlignMask) == 0)
     {
         if ((Root.Root & fAlignMask) == 0 && (Root.Min & fAlignMask) == 0)
@@ -119,6 +125,16 @@ int dbgCmdNtRbTreeWorker(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pRootAdd
         else
             DBGCCmdHlpPrintf(pCmdHlp, "RB Root %DV: Bogus root state!\n", pRootAddr);
         return VINF_SUCCESS;
+    }
+    if (Root.Root & fAlignInfoMask)
+    {
+        rcRet = DBGCCmdHlpFail(pCmdHlp, pCmd, "Misaligned Root pointer: %#RX64", Root.Root);
+        cErrors++;
+    }
+    if ((Root.Min & fAlignInfoMask) > 1)
+    {
+        rcRet = DBGCCmdHlpFail(pCmdHlp, pCmd, "Misaligned Min pointer: %#RX64 (bits 1+ should be zero)", Root.Min);
+        cErrors++;
     }
 
     /*
@@ -152,11 +168,9 @@ int dbgCmdNtRbTreeWorker(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pRootAdd
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "Root node is RED! Parent=%#RX64", (uint64_t)aStack[0].Node.ParentAndFlags);
     cStackEntries++;
 
-    int      rcRet       = VINF_SUCCESS;
     uint8_t  cReqBlacks  = 0; /**< Number of black nodes required in each path. Set when we reach the left most node. */
     uint8_t  cchMaxDepth = 32;
     uint32_t idxNode     = 0;
-    uint32_t cErrors     = 0;
     while (cStackEntries > 0)
     {
         uint32_t const idxCurEntry = cStackEntries - 1;
@@ -221,7 +235,7 @@ int dbgCmdNtRbTreeWorker(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pRootAdd
                     cReqBlacks  = aStack[idxCurEntry].cBlacks + 1;
                     cchMaxDepth = RT_MIN(cReqBlacks * 4, RT_ELEMENTS(aStack) * 2 + 2);
 
-                    if (Root.Min != aStack[idxCurEntry].Ptr)
+                    if ((Root.Min & ~(PtrType)1) != aStack[idxCurEntry].Ptr)
                     {
                         rcRet = DBGCCmdHlpFail(pCmdHlp, pCmd,
                                                "Bogus Min node in tree anchor!  Left most node is %#RU64, expected %#RU64",
