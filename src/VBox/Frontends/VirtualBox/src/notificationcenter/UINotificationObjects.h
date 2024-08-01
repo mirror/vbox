@@ -821,12 +821,15 @@ signals:
 public:
 
     /** Constructs medium copy notification-progress.
-      * @param  comSource  Brings the medium being copied.
-      * @param  comTarget  Brings the medium being the target.
-      * @param  variants   Brings the target medium options. */
+      * @param  comSource    Brings the medium being copied.
+      * @param  comTarget    Brings the medium being the target.
+      * @param  variants     Brings the target medium options.
+      * @param  uMediumSize  Brings the target medium size.
+      */
     UINotificationProgressMediumCopy(const CMedium &comSource,
                                      const CMedium &comTarget,
-                                     const QVector<KMediumVariant> &variants);
+                                     const QVector<KMediumVariant> &variants,
+                                     qulonglong uMediumSize);
 
 protected:
 
@@ -854,6 +857,8 @@ private:
     QString                  m_strTargetLocation;
     /** Holds the target medium options. */
     QVector<KMediumVariant>  m_variants;
+    /** Holds the target medium size. */
+    qulonglong m_uMediumSize;
 };
 
 /** UINotificationProgress extension for medium move functionality. */

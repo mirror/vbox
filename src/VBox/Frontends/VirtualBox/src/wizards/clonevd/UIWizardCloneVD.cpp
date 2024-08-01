@@ -99,7 +99,8 @@ bool UIWizardCloneVD::copyVirtualDisk()
     /* Copy medium: */
     UINotificationProgressMediumCopy *pNotification = new UINotificationProgressMediumCopy(m_comSourceVirtualDisk,
                                                                                            comVirtualDisk,
-                                                                                           variants);
+                                                                                           variants,
+                                                                                           m_uMediumSize);
     connect(pNotification, &UINotificationProgressMediumCopy::sigMediumCopied,
             gpMediumEnumerator, &UIMediumEnumerator::sltHandleMediumCreated);
     gpNotificationCenter->append(pNotification);

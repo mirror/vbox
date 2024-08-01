@@ -1939,10 +1939,12 @@ void UINotificationProgressMediumCreate::sltHandleProgressFinished()
 
 UINotificationProgressMediumCopy::UINotificationProgressMediumCopy(const CMedium &comSource,
                                                                    const CMedium &comTarget,
-                                                                   const QVector<KMediumVariant> &variants)
+                                                                   const QVector<KMediumVariant> &variants,
+                                                                   qulonglong uMediumSize)
     : m_comSource(comSource)
     , m_comTarget(comTarget)
     , m_variants(variants)
+    , m_uMediumSize(uMediumSize)
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressMediumCopy::sltHandleProgressFinished);
@@ -1979,7 +1981,7 @@ CProgress UINotificationProgressMediumCopy::createProgress(COMResult &comResult)
     }
 
     /* Initialize progress-wrapper: */
-    CProgress comProgress = m_comSource.CloneTo(m_comTarget, m_variants, CMedium());
+    CProgress comProgress = m_comSource.ResizeAndCloneTo(m_comTarget, m_uMediumSize, m_variants, CMedium());
     /* Store COM result: */
     comResult = m_comSource;
     /* Return progress-wrapper: */

@@ -181,7 +181,7 @@ bool UIWizardNewVD::createVirtualDisk()
 
     /* Create new virtual disk image: */
     CMedium comVirtualDisk = comVBox.CreateMedium(m_comMediumFormat.GetName(),
-                                                  m_strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
+                                                  m_strMediumPath, KAccessMode_ReadWrite, m_enmDeviceType);
     if (!comVBox.isOk())
     {
         UINotificationMessage::cannotCreateMediumStorage(comVBox, m_strMediumPath, notificationCenter());
@@ -197,16 +197,28 @@ bool UIWizardNewVD::createVirtualDisk()
         variants[i] = (KMediumVariant)temp;
     }
 
-    UINotificationProgressMediumCreate *pNotification = new UINotificationProgressMediumCreate(comVirtualDisk,
-                                                                                               m_uMediumSize,
-                                                                                               variants);
-    connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
-            gpMediumEnumerator, &UIMediumEnumerator::sltHandleMediumCreated);
+    if (!isClonning())
+    {
+        UINotificationProgressMediumCreate *pNotification = new UINotificationProgressMediumCreate(comVirtualDisk,
+                                                                                                   m_uMediumSize,
+                                                                                                   variants);
+        connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
+                gpMediumEnumerator, &UIMediumEnumerator::sltHandleMediumCreated);
+        gpNotificationCenter->append(pNotification);
+    }
+    else
+    {
+        /* Copy medium: */
+        UINotificationProgressMediumCopy *pNotification = new UINotificationProgressMediumCopy(m_comSourceVirtualDisk,
+                                                                                               comVirtualDisk,
+                                                                                               variants,
+                                                                                               m_uMediumSize);
+        connect(pNotification, &UINotificationProgressMediumCopy::sigMediumCopied,
+                gpMediumEnumerator, &UIMediumEnumerator::sltHandleMediumCreated);
+        gpNotificationCenter->append(pNotification);
+    }
 
     m_uMediumId = comVirtualDisk.GetId();
-
-    gpNotificationCenter->append(pNotification);
-
     /* Positive: */
     return true;
 }
@@ -252,7 +264,10 @@ QUuid UIWizardNewVD::createVDWithWizard(QWidget *pParent,
 void UIWizardNewVD::sltRetranslateUI()
 {
     UINativeWizard::sltRetranslateUI();
-    setWindowTitle(tr("Create Virtual Hard Disk"));
+    if (!isClonning())
+        setWindowTitle(tr("Create Virtual Hard Disk"));
+    else
+        setWindowTitle(tr("Copy Virtual Disk"));
 }
 
 void UIWizardNewVD::setMediumVariantPageVisibility()
@@ -276,7 +291,7 @@ void UIWizardNewVD::setMediumVariantPageVisibility()
 
 qulonglong UIWizardNewVD::diskMinimumSize() const
 {
-    if (m_comSourceVirtualDisk.isNull())
+    if (!isClonning())
         return _4M;
     return m_comSourceVirtualDisk.GetLogicalSize();
 }
@@ -284,4 +299,9 @@ qulonglong UIWizardNewVD::diskMinimumSize() const
 KDeviceType UIWizardNewVD::deviceType() const
 {
     return m_enmDeviceType;
+}
+
+bool UIWizardNewVD::isClonning() const
+{
+    return !m_comSourceVirtualDisk.isNull();
 }

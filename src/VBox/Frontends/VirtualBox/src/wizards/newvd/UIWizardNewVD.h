@@ -101,6 +101,7 @@ private:
     /** Check medium capabilities and decide if medium variant page should be hidden. */
     void setMediumVariantPageVisibility();
     qulonglong diskMinimumSize() const;
+    bool isClonning() const;
 
     qulonglong m_uMediumVariant;
     CMediumFormat m_comMediumFormat;
