@@ -1752,7 +1752,7 @@ bool UISession::acquireScreenShot(ulong uScreenId, ulong uWidth, ulong uHeight, 
         /* Take the screen-shot directly: */
         comDisplay.TakeScreenShot(uScreenId, pBits, uWidth, uHeight, enmFormat);
         fSuccess = comDisplay.isOk();
-        if (!fSuccess)
+        if (!fSuccess && comDisplay.rc() != VBOX_E_NOT_SUPPORTED) /* VBOX_E_NOT_SUPPORTED: screens size 0x0 can't be snapshotted */
             UINotificationMessage::cannotAcquireDisplayParameter(comDisplay);
     }
     return fSuccess;
