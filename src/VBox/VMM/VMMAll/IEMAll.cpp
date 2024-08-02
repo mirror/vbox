@@ -797,7 +797,7 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
     /*
      * Do the scanning.
      */
-    for (idxEven = 0; idxEven < idxEvenEnd; idxEven += 2)
+    for (; idxEven < idxEvenEnd; idxEven += 2)
     {
         if (a_fNonGlobal)
         {
@@ -836,17 +836,17 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, R
     AssertCompile(IEMTLB_CALC_TAG_NO_REV((RTGCPTR)0x8731U << GUEST_PAGE_SHIFT) == 0x8731U);
 
     GCPtrTag &= ~(RTGCPTR)(RT_BIT_64((a_f2MbLargePage ? 21 : 22) - GUEST_PAGE_SHIFT) - 1U);
-    if (   pTlb->GlobalLargePageRange.uFirstTag >= GCPtrTag
-        && pTlb->GlobalLargePageRange.uLastTag  <= GCPtrTag)
+    if (   GCPtrTag >= pTlb->GlobalLargePageRange.uFirstTag
+        && GCPtrTag <= pTlb->GlobalLargePageRange.uLastTag)
     {
-        if (   pTlb->NonGlobalLargePageRange.uFirstTag < GCPtrTag
-            || pTlb->NonGlobalLargePageRange.uLastTag  > GCPtrTag)
+        if (   GCPtrTag < pTlb->NonGlobalLargePageRange.uFirstTag
+            || GCPtrTag > pTlb->NonGlobalLargePageRange.uLastTag)
             iemTlbInvalidateLargePageWorkerInner<a_fDataTlb, a_f2MbLargePage, true, false>(pVCpu, pTlb, GCPtrTag, GCPtrInstrBufPcTag);
         else
             iemTlbInvalidateLargePageWorkerInner<a_fDataTlb, a_f2MbLargePage, true, true>(pVCpu, pTlb, GCPtrTag, GCPtrInstrBufPcTag);
     }
-    else if (   pTlb->NonGlobalLargePageRange.uFirstTag < GCPtrTag
-             || pTlb->NonGlobalLargePageRange.uLastTag  > GCPtrTag)
+    else if (   GCPtrTag < pTlb->NonGlobalLargePageRange.uFirstTag
+             || GCPtrTag > pTlb->NonGlobalLargePageRange.uLastTag)
     { /* Large pages aren't as likely in the non-global TLB half. */ }
     else
         iemTlbInvalidateLargePageWorkerInner<a_fDataTlb, a_f2MbLargePage, false, true>(pVCpu, pTlb, GCPtrTag, GCPtrInstrBufPcTag);
