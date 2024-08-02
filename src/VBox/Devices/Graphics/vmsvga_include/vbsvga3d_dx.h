@@ -33,6 +33,8 @@
 #define VBSVGA3D_CAP_3D    0x00000001
 /* Video decoding/processing and ClearView commands. */
 #define VBSVGA3D_CAP_VIDEO 0x00000002
+/* The host supports SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE_V2 command. */
+#define VBSVGA3D_CAP_RASTERIZER_STATE_V2 0x00000004
 
 /* Arbitrary limits. Allows to use constant size structures.
  * NVIDIA supports 5 streams, AMD more, so 8 seems to be a good round number.

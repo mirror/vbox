@@ -1578,6 +1578,27 @@ struct SVGA3dCmdDXDefineRasterizerState {
 SVGA3dCmdDXDefineRasterizerState;
 /* SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE */
 
+typedef struct SVGA3dCmdDXDefineRasterizerState_v2 {
+    SVGA3dRasterizerStateId rasterizerId;
+
+    uint8 fillMode;
+    SVGA3dCullMode cullMode;
+    uint8 frontCounterClockwise;
+    uint8 provokingVertexLast;
+    int32 depthBias;
+    float depthBiasClamp;
+    float slopeScaledDepthBias;
+    uint8 depthClipEnable;
+    uint8 scissorEnable;
+    SVGA3dMultisampleRastEnable multisampleEnable;
+    uint8 antialiasedLineEnable;
+    float lineWidth;
+    uint8 lineStippleEnable;
+    uint8 lineStippleFactor;
+    uint16 lineStipplePattern;
+    uint32 forcedSampleCount;
+} SVGA3dCmdDXDefineRasterizerState_v2;
+
 typedef
 #include "vmware_pack_begin.h"
 struct SVGA3dCmdDXDestroyRasterizerState {

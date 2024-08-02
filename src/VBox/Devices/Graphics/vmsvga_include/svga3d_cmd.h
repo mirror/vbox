@@ -334,7 +334,9 @@ typedef enum {
    SVGA_3D_CMD_SURFACE_STRETCHBLT_NON_MS_TO_MS            = 1276,
    SVGA_3D_CMD_DX_BIND_SHADER_IFACE                       = 1277,
 
-   SVGA_3D_CMD_MAX                                        = 1278,
+   SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE_V2              = 1288,
+
+   SVGA_3D_CMD_MAX                                        = 1303,
    SVGA_3D_CMD_FUTURE_MAX                                 = 3000
 
 #ifdef VBOX

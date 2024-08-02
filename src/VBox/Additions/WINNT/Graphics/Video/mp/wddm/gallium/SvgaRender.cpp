@@ -1240,6 +1240,15 @@ static NTSTATUS procCmdDXDefineRasterizerState(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSV
 }
 
 
+/* SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE_V2 1288 */
+static NTSTATUS procCmdDXDefineRasterizerState_v2(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    SVGA3dCmdDXDefineRasterizerState_v2 *pCmd = (SVGA3dCmdDXDefineRasterizerState_v2 *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, SVGA_COTABLE_RASTERIZERSTATE, pCmd->rasterizerId);
+}
+
+
 /* SVGA_3D_CMD_DX_DESTROY_RASTERIZER_STATE 1198 */
 static NTSTATUS procCmdDXDestroyRasterizerState(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
 {
@@ -2197,6 +2206,31 @@ static SVGA3DCOMMANDDESC const s_aCommandDesc[] =
     { procCmdDXBindStreamOutput },                  // SVGA_3D_CMD_DX_BIND_STREAMOUTPUT
     { procCmdSurfaceStretchBltNonMSToMS },          // SVGA_3D_CMD_SURFACE_STRETCHBLT_NON_MS_TO_MS
     { procCmdDXBindShaderIface },                   // SVGA_3D_CMD_DX_BIND_SHADER_IFACE
+    { procCmdInvalid },                             // SVGA_3D_CMD_UPDATE_GB_SCREENTARGET_MOVE = 1278,
+    { procCmdInvalid },                             // 1279,
+    { procCmdInvalid },                             // 1280,
+    { procCmdInvalid },                             // SVGA_3D_CMD_DX_PRED_STAGING_COPY = 1281,
+    { procCmdInvalid },                             // SVGA_3D_CMD_DX_STAGING_COPY = 1282,
+    { procCmdInvalid },                             // SVGA_3D_CMD_DX_PRED_STAGING_COPY_REGION = 1283,
+    { procCmdInvalid },                             // SVGA_3D_CMD_DX_SET_VERTEX_BUFFERS_V2 = 1284,
+    { procCmdInvalid },                             // SVGA_3D_CMD_DX_SET_INDEX_BUFFER_V2 = 1285,
+    { procCmdInvalid },                             // SVGA_3D_CMD_DX_SET_VERTEX_BUFFERS_OFFSET_AND_SIZE = 1286,
+    { procCmdInvalid },                             // SVGA_3D_CMD_DX_SET_INDEX_BUFFER_OFFSET_AND_SIZE = 1287,
+    { procCmdDXDefineRasterizerState_v2 },          // SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE_V2
+    { procCmdInvalid },                             // SVGA_3D_CMD_DX_PRED_STAGING_CONVERT_REGION = 1289,
+    { procCmdInvalid },                             // SVGA_3D_CMD_DX_PRED_STAGING_CONVERT = 1290,
+    { procCmdInvalid },                             // SVGA_3D_CMD_DX_STAGING_BUFFER_COPY = 1291,
+    { procCmdInvalid },                             // 1292,
+    { procCmdInvalid },                             // 1293,
+    { procCmdInvalid },                             // 1294,
+    { procCmdInvalid },                             // 1295,
+    { procCmdInvalid },                             // 1296,
+    { procCmdInvalid },                             // 1297,
+    { procCmdInvalid },                             // 1298,
+    { procCmdInvalid },                             // 1299,
+    { procCmdInvalid },                             // 1300,
+    { procCmdInvalid },                             // 1301,
+    { procCmdInvalid },                             // 1302,
 
     /* VirtualBox commands */
     { procVBCmdDXDefineVideoProcessor },            // VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR

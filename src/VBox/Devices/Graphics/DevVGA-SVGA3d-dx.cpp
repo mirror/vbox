@@ -1745,7 +1745,7 @@ int vmsvga3dDXDestroyDepthStencilState(PVGASTATECC pThisCC, uint32_t idDXContext
 }
 
 
-int vmsvga3dDXDefineRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineRasterizerState const *pCmd)
+int vmsvga3dDXDefineRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineRasterizerState_v2 const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1779,7 +1779,7 @@ int vmsvga3dDXDefineRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, S
     pEntry->lineStippleEnable     = pCmd->lineStippleEnable;
     pEntry->lineStippleFactor     = pCmd->lineStippleFactor;
     pEntry->lineStipplePattern    = pCmd->lineStipplePattern;
-    pEntry->forcedSampleCount     = 0; /** @todo Not in pCmd. */
+    pEntry->forcedSampleCount     = pCmd->forcedSampleCount;
     RT_ZERO(pEntry->mustBeZero);
 
     rc = pSvgaR3State->pFuncsDX->pfnDXDefineRasterizerState(pThisCC, pDXContext, rasterizerId, pEntry);

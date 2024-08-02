@@ -296,6 +296,7 @@ static const char *vmsvgaFifo3dCmdToString(SVGAFifo3dCmdId enmCmdId)
         SVGA_CASE_ID2STR(SVGA_3D_CMD_DX_BIND_STREAMOUTPUT);
         SVGA_CASE_ID2STR(SVGA_3D_CMD_SURFACE_STRETCHBLT_NON_MS_TO_MS);
         SVGA_CASE_ID2STR(SVGA_3D_CMD_DX_BIND_SHADER_IFACE);
+        SVGA_CASE_ID2STR(SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE_V2);
         SVGA_CASE_ID2STR(SVGA_3D_CMD_MAX);
         SVGA_CASE_ID2STR(SVGA_3D_CMD_FUTURE_MAX);
 
@@ -3117,6 +3118,38 @@ static int vmsvga3dCmdDXDestroyDepthStencilState(PVGASTATECC pThisCC, uint32_t i
 
 /* SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE 1197 */
 static int vmsvga3dCmdDXDefineRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineRasterizerState const *pCmd, uint32_t cbCmd)
+{
+#ifdef VMSVGA3D_DX
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    SVGA3dCmdDXDefineRasterizerState_v2 cmd;
+    cmd.rasterizerId          = pCmd->rasterizerId;
+    cmd.fillMode              = pCmd->fillMode;
+    cmd.cullMode              = pCmd->cullMode;
+    cmd.frontCounterClockwise = pCmd->frontCounterClockwise;
+    cmd.provokingVertexLast   = pCmd->provokingVertexLast;
+    cmd.depthBias             = pCmd->depthBias;
+    cmd.depthBiasClamp        = pCmd->depthBiasClamp;
+    cmd.slopeScaledDepthBias  = pCmd->slopeScaledDepthBias;
+    cmd.depthClipEnable       = pCmd->depthClipEnable;
+    cmd.scissorEnable         = pCmd->scissorEnable;
+    cmd.multisampleEnable     = pCmd->multisampleEnable;
+    cmd.antialiasedLineEnable = pCmd->antialiasedLineEnable;
+    cmd.lineWidth             = pCmd->lineWidth;
+    cmd.lineStippleEnable     = pCmd->lineStippleEnable;
+    cmd.lineStippleFactor     = pCmd->lineStippleFactor;
+    cmd.lineStipplePattern    = pCmd->lineStipplePattern;
+    cmd.forcedSampleCount     = 0;
+    return vmsvga3dDXDefineRasterizerState(pThisCC, idDXContext, &cmd);
+#else
+    RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/* SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE_V2 1288 */
+static int vmsvga3dCmdDXDefineRasterizerState_v2(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineRasterizerState_v2 const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
     //DEBUG_BREAKPOINT_TEST();
@@ -6839,6 +6872,14 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idDXCont
         SVGA3dCmdVBDXClearRenderTargetViewRegion *pCmd = (SVGA3dCmdVBDXClearRenderTargetViewRegion *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
         rcParse = vmsvga3dCmdVBDXClearRenderTargetViewRegion(pThisCC, idDXContext, pCmd, cbCmd);
+        break;
+    }
+
+    case SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE_V2:
+    {
+        SVGA3dCmdDXDefineRasterizerState_v2 *pCmd = (SVGA3dCmdDXDefineRasterizerState_v2 *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        rcParse = vmsvga3dCmdDXDefineRasterizerState_v2(pThisCC, idDXContext, pCmd, cbCmd);
         break;
     }
 

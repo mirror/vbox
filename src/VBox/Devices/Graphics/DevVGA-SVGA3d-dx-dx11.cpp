@@ -4056,6 +4056,7 @@ static DECLCALLBACK(int) vmsvga3dBackQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCap
         *pu32Val = VBSVGA3D_CAP_3D;
         if (pState->pBackend->dxDevice.pVideoDevice)
             *pu32Val |= VBSVGA3D_CAP_VIDEO;
+        *pu32Val |= VBSVGA3D_CAP_RASTERIZER_STATE_V2;
         break;
 
     case SVGA3D_DEVCAP_MAX_LIGHTS:

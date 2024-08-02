@@ -1194,25 +1194,49 @@ void vboxDXCreateRasterizerState(PVBOXDX_DEVICE pDevice, PVBOXDX_RASTERIZER_STAT
     uint8 lineStippleEnable     = 0; /** @todo */
     uint8 lineStippleFactor     = 0; /** @todo */
     uint16 lineStipplePattern   = 0; /** @todo */
-    /** @todo uint32 forcedSampleCount = p->ForcedSampleCount; SVGA3dCmdDXDefineRasterizerState_v2 */
+    uint32 forcedSampleCount    = p->ForcedSampleCount;
 
-    vgpu10DefineRasterizerState(pDevice,
-                                pRasterizerState->uRasterizerId,
-                                fillMode,
-                                cullMode,
-                                frontCounterClockwise,
-                                provokingVertexLast,
-                                depthBias,
-                                depthBiasClamp,
-                                slopeScaledDepthBias,
-                                depthClipEnable,
-                                scissorEnable,
-                                multisampleEnable,
-                                antialiasedLineEnable,
-                                lineWidth,
-                                lineStippleEnable,
-                                lineStippleFactor,
-                                lineStipplePattern);
+    if (pDevice->pAdapter->fVBoxCaps & VBSVGA3D_CAP_RASTERIZER_STATE_V2)
+    {
+        vgpu10DefineRasterizerState_v2(pDevice,
+                                       pRasterizerState->uRasterizerId,
+                                       fillMode,
+                                       cullMode,
+                                       frontCounterClockwise,
+                                       provokingVertexLast,
+                                       depthBias,
+                                       depthBiasClamp,
+                                       slopeScaledDepthBias,
+                                       depthClipEnable,
+                                       scissorEnable,
+                                       multisampleEnable,
+                                       antialiasedLineEnable,
+                                       lineWidth,
+                                       lineStippleEnable,
+                                       lineStippleFactor,
+                                       lineStipplePattern,
+                                       forcedSampleCount);
+    }
+    else
+    {
+        vgpu10DefineRasterizerState(pDevice,
+                                    pRasterizerState->uRasterizerId,
+                                    fillMode,
+                                    cullMode,
+                                    frontCounterClockwise,
+                                    provokingVertexLast,
+                                    depthBias,
+                                    depthBiasClamp,
+                                    slopeScaledDepthBias,
+                                    depthClipEnable,
+                                    scissorEnable,
+                                    multisampleEnable,
+                                    antialiasedLineEnable,
+                                    lineWidth,
+                                    lineStippleEnable,
+                                    lineStippleFactor,
+                                    lineStipplePattern);
+    }
 }
 
 

@@ -191,6 +191,54 @@ int vgpu10DefineRasterizerState(PVBOXDX_DEVICE pDevice,
 }
 
 
+int vgpu10DefineRasterizerState_v2(PVBOXDX_DEVICE pDevice,
+                                   SVGA3dRasterizerStateId rasterizerId,
+                                   uint8 fillMode,
+                                   SVGA3dCullMode cullMode,
+                                   uint8 frontCounterClockwise,
+                                   uint8 provokingVertexLast,
+                                   int32 depthBias,
+                                   float depthBiasClamp,
+                                   float slopeScaledDepthBias,
+                                   uint8 depthClipEnable,
+                                   uint8 scissorEnable,
+                                   SVGA3dMultisampleRastEnable multisampleEnable,
+                                   uint8 antialiasedLineEnable,
+                                   float lineWidth,
+                                   uint8 lineStippleEnable,
+                                   uint8 lineStippleFactor,
+                                   uint16 lineStipplePattern,
+                                   uint32 forcedSampleCount)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, SVGA_3D_CMD_DX_DEFINE_RASTERIZER_STATE_V2,
+                                             sizeof(SVGA3dCmdDXDefineRasterizerState_v2));
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    SVGA3dCmdDXDefineRasterizerState_v2 *cmd = (SVGA3dCmdDXDefineRasterizerState_v2 *)pvCmd;
+    SET_CMD_FIELD(rasterizerId);
+    SET_CMD_FIELD(fillMode);
+    SET_CMD_FIELD(cullMode);
+    SET_CMD_FIELD(frontCounterClockwise);
+    SET_CMD_FIELD(provokingVertexLast);
+    SET_CMD_FIELD(depthBias);
+    SET_CMD_FIELD(depthBiasClamp);
+    SET_CMD_FIELD(slopeScaledDepthBias);
+    SET_CMD_FIELD(depthClipEnable);
+    SET_CMD_FIELD(scissorEnable);
+    SET_CMD_FIELD(multisampleEnable);
+    SET_CMD_FIELD(antialiasedLineEnable);
+    SET_CMD_FIELD(lineWidth);
+    SET_CMD_FIELD(lineStippleEnable);
+    SET_CMD_FIELD(lineStippleFactor);
+    SET_CMD_FIELD(lineStipplePattern);
+    SET_CMD_FIELD(forcedSampleCount);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
 int vgpu10DestroyRasterizerState(PVBOXDX_DEVICE pDevice,
                                  SVGA3dRasterizerStateId rasterizerId)
 {
