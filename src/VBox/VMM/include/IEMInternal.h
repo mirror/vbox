@@ -737,6 +737,9 @@ typedef enum : uint8_t
 {
     kIemTlbTraceType_Invalid,
     kIemTlbTraceType_InvlPg,
+    kIemTlbTraceType_EvictSlot,
+    kIemTlbTraceType_LargeEvictSlot,
+    kIemTlbTraceType_LargeScan,
     kIemTlbTraceType_Flush,
     kIemTlbTraceType_FlushGlobal,
     kIemTlbTraceType_Load,
@@ -750,7 +753,11 @@ typedef enum : uint8_t
     kIemTlbTraceType_IRet,
     kIemTlbTraceType_Tb_Compile,
     kIemTlbTraceType_Tb_Exec_Threaded,
-    kIemTlbTraceType_Tb_Exec_Native
+    kIemTlbTraceType_Tb_Exec_Native,
+    kIemTlbTraceType_User0,
+    kIemTlbTraceType_User1,
+    kIemTlbTraceType_User2,
+    kIemTlbTraceType_User3,
 } IEMTLBTRACETYPE;
 
 /** TLB trace entry. */
@@ -779,19 +786,31 @@ typedef IEMTLBTRACEENTRY const *PCIEMTLBTRACEENTRY;
 #endif /* !IEM_WITH_TLB_TRACE */
 
 #if defined(IEM_WITH_TLB_TRACE) && defined(IN_RING3)
-# define IEMTLBTRACE_INVLPG(a_pVCpu, a_GCPtr)               iemTlbTrace(a_pVCpu, kIemTlbTraceType_InvlPg, a_GCPtr)
-# define IEMTLBTRACE_FLUSH(a_pVCpu, a_uRev, a_fDataTlb)     iemTlbTrace(a_pVCpu, kIemTlbTraceType_Flush, a_uRev, 0, a_fDataTlb)
+# define IEMTLBTRACE_INVLPG(a_pVCpu, a_GCPtr) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_InvlPg, a_GCPtr)
+# define IEMTLBTRACE_EVICT_SLOT(a_pVCpu, a_GCPtrTag, a_GCPhys, a_idxSlot, a_fDataTlb) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_EvictSlot, a_GCPtrTag, a_GCPhys, a_fDataTlb, a_idxSlot)
+# define IEMTLBTRACE_LARGE_EVICT_SLOT(a_pVCpu, a_GCPtrTag, a_GCPhys, a_idxSlot, a_fDataTlb) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_LargeEvictSlot, a_GCPtrTag, a_GCPhys, a_fDataTlb, a_idxSlot)
+# define IEMTLBTRACE_LARGE_SCAN(a_pVCpu, a_fGlobal, a_fNonGlobal, a_fDataTlb) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_LargeScan, 0, 0, a_fDataTlb, (uint8_t)a_fGlobal | ((uint8_t)a_fNonGlobal << 1))
+# define IEMTLBTRACE_FLUSH(a_pVCpu, a_uRev, a_fDataTlb) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_Flush, a_uRev, 0, a_fDataTlb)
 # define IEMTLBTRACE_FLUSH_GLOBAL(a_pVCpu, a_uRev, a_uGRev, a_fDataTlb) \
     iemTlbTrace(a_pVCpu, kIemTlbTraceType_FlushGlobal, a_uRev, a_uGRev, a_fDataTlb)
-# define IEMTLBTRACE_LOAD(a_pVCpu, a_GCPtr, a_fDataTlb)     iemTlbTrace(a_pVCpu, kIemTlbTraceType_Load, a_GCPtr, 0, a_fDataTlb)
-# define IEMTLBTRACE_LOAD_GLOBAL(a_pVCpu, a_GCPtr, a_fDataTlb) \
-    iemTlbTrace(a_pVCpu, kIemTlbTraceType_LoadGlobal, a_GCPtr, 0, a_fDataTlb)
+# define IEMTLBTRACE_LOAD(a_pVCpu, a_GCPtr, a_GCPhys, a_fTlb, a_fDataTlb) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_Load, a_GCPtr, a_GCPhys, a_fDataTlb, a_fTlb)
+# define IEMTLBTRACE_LOAD_GLOBAL(a_pVCpu, a_GCPtr, a_GCPhys, a_fTlb, a_fDataTlb) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_LoadGlobal, a_GCPtr, a_GCPhys, a_fDataTlb, a_fTlb)
 #else
-# define IEMTLBTRACE_INVLPG(a_pVCpu, a_GCPtr)                           do { } while (0)
-# define IEMTLBTRACE_FLUSH(a_pVCpu, a_uRev, a_fDataTlb)                 do { } while (0)
-# define IEMTLBTRACE_FLUSH_GLOBAL(a_pVCpu, a_uRev, a_uGRev, a_fDataTlb) do { } while (0)
-# define IEMTLBTRACE_LOAD(a_pVCpu, a_GCPtr, a_fDataTlb)                 do { } while (0)
-# define IEMTLBTRACE_LOAD_GLOBAL(a_pVCpu, a_GCPtr, a_fDataTlb)          do { } while (0)
+# define IEMTLBTRACE_INVLPG(a_pVCpu, a_GCPtr)                                               do { } while (0)
+# define IEMTLBTRACE_EVICT_SLOT(a_pVCpu, a_GCPtrTag, a_GCPhys, a_idxSlot, a_fDataTlb)       do { } while (0)
+# define IEMTLBTRACE_LARGE_EVICT_SLOT(a_pVCpu, a_GCPtrTag, a_GCPhys, a_idxSlot, a_fDataTlb) do { } while (0)
+# define IEMTLBTRACE_LARGE_SCAN(a_pVCpu, a_fGlobal, a_fNonGlobal, a_fDataTlb)               do { } while (0)
+# define IEMTLBTRACE_FLUSH(a_pVCpu, a_uRev, a_fDataTlb)                                     do { } while (0)
+# define IEMTLBTRACE_FLUSH_GLOBAL(a_pVCpu, a_uRev, a_uGRev, a_fDataTlb)                     do { } while (0)
+# define IEMTLBTRACE_LOAD(a_pVCpu, a_GCPtr, a_GCPhys, a_fTlb, a_fDataTlb)                   do { } while (0)
+# define IEMTLBTRACE_LOAD_GLOBAL(a_pVCpu, a_GCPtr, a_GCPhys, a_fTlb, a_fDataTlb)            do { } while (0)
 #endif
 
 #if defined(IEM_WITH_TLB_TRACE) && defined(IN_RING3) && 1
@@ -830,6 +849,22 @@ typedef IEMTLBTRACEENTRY const *PCIEMTLBTRACEENTRY;
 # define IEMTLBTRACE_TB_COMPILE(a_pVCpu, a_GCPhysPc)                    do { } while (0)
 # define IEMTLBTRACE_TB_EXEC_THRD(a_pVCpu, a_pTb)                       do { } while (0)
 # define IEMTLBTRACE_TB_EXEC_N8VE(a_pVCpu, a_pTb)                       do { } while (0)
+#endif
+
+#if defined(IEM_WITH_TLB_TRACE) && defined(IN_RING3) && 1
+# define IEMTLBTRACE_USER0(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_User0, a_u64Param1, a_u64Param2, a_bParam, a_u32Param)
+# define IEMTLBTRACE_USER1(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_User1, a_u64Param1, a_u64Param2, a_bParam, a_u32Param)
+# define IEMTLBTRACE_USER2(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_User2, a_u64Param1, a_u64Param2, a_bParam, a_u32Param)
+# define IEMTLBTRACE_USER3(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) \
+    iemTlbTrace(a_pVCpu, kIemTlbTraceType_User3, a_u64Param1, a_u64Param2, a_bParam, a_u32Param)
+#else
+# define IEMTLBTRACE_USER1(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) do { } while (0)
+# define IEMTLBTRACE_USER2(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) do { } while (0)
+# define IEMTLBTRACE_USER3(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) do { } while (0)
+# define IEMTLBTRACE_USER4(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) do { } while (0)
 #endif
 
 
