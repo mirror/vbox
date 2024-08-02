@@ -12,17 +12,6 @@
       <p>Cloud VMs do not install, export, or import instances to the <ph
           conkeyref="vbox-conkeyref-phrases/product-name"/> host. All operations are done remotely on the cloud service. </p>
     </note>
-    <fig id="fig-cloud-vm-overview">
-      <title>Cloud VMs, Shown With Local VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></title>
-      <xref href="images/cloudvm-overview-mixed.png" format="png" platform="htmlhelp">
-        <image href="images/cloudvm-overview-mixed.png" width="12cm" placement="break">
-          <alt>Cloud VMs, Shown With Local VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></alt>
-        </image>
-      </xref>
-      <image platform="ohc" href="images/cloudvm-overview-mixed.png" width="12cm" placement="break">
-        <alt>Cloud VMs, Shown With Local VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></alt>
-      </image>
-    </fig>
     <p>Cloud VMs can be used to do the following tasks in <ph conkeyref="vbox-conkeyref-phrases/oci"/>: </p>
     <ul>
       <li>

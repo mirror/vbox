@@ -9,23 +9,14 @@
     <p>Cloud VMs are further grouped according to the cloud profile used to connect to them. The cloud profile
       identifies the user and compartment for the cloud VM and includes details of the key pair used to connect to cloud
       instances. See <xref href="cloud-create-cloud-profile.dita#cloud-create-cloud-profile"/>. </p>
-    <fig id="fig-cloud-vm-oci-group">
-      <title>OCI Group, Containing Cloud VMs</title>
-      <xref href="images/cloudvm-oci-group.png" format="png" platform="htmlhelp">
-        <image href="images/cloudvm-oci-group.png" width="10cm" placement="break">
-          <alt>OCI Group, Containing Cloud VMs</alt>
-        </image>
-      </xref>
-      <image href="images/cloudvm-oci-group.png" width="10cm" placement="break" platform="ohc">
-        <alt>OCI Group, Containing Cloud VMs</alt>
-      </image>
-    </fig>
     <p>All cloud profiles registered with <ph conkeyref="vbox-conkeyref-phrases/product-name"/> are listed automatically
       in the OCI group. </p>
     <p>To enable or disable listing of cloud VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> for a specific
-      cloud profile, do the following: </p>
-    <p>Display the <b outputclass="bold">Cloud Profile Manager</b> and select or deselect the <b outputclass="bold">List
-        VMs</b> check box for each cloud profile. </p>
+      cloud profile, follow these steps. </p>
+    <ol id="ol_uly_nwf_gcc">
+      <li>Display the <b outputclass="bold">Cloud Profile Manager</b> .</li>
+      <li>Select or deselect the <b outputclass="bold">List VMs</b> check box for each cloud profile.</li>
+    </ol>
   </body>
   
 </topic>

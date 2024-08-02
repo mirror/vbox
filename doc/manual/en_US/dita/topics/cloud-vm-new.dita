@@ -14,21 +14,9 @@
       </li>
       <li>
         <p>Select <b outputclass="bold">Group</b>, <b outputclass="bold">New Machine</b>. </p>
-        <p>The <b outputclass="bold">Create Cloud Virtual Machine</b> wizard is displayed. </p>
-        <fig id="fig-cloudvm-new">
-          <title>Create Cloud Virtual Machine Wizard</title>
-          <xref href="images/cloudvm-new.png" format="png" platform="htmlhelp">
-            <image href="images/cloudvm-new.png" width="12cm" placement="break">
-              <alt>Create Cloud Virtual Machine Wizard</alt>
-            </image>
-          </xref>
-          <image href="images/cloudvm-new.png" width="12cm" placement="break" platform="ohc">
-            <alt>Create Cloud Virtual Machine Wizard</alt>
-          </image>
-        </fig>
       </li>
       <li>
-        <p>On the initial page, configure the following settings for the new cloud VM: </p>
+        <p>Configure the following settings for the new cloud VM: </p>
         <ul>
           <li>
             <p><b outputclass="bold">Location:</b> The cloud service provider that will host the new instance. Select <b
@@ -45,10 +33,8 @@
         </ul>
       </li>
       <li>
-        <p>Click <b outputclass="bold">Next</b> to display the <b outputclass="bold">Cloud Virtual Machine Settings</b>
-          page. </p>
-        <p>You can use this page to change the default settings for the new <ph conkeyref="vbox-conkeyref-phrases/oci"/>
-          instance, such as the display name, shape, and networking configuration. </p>
+        <p>Change the <b outputclass="bold">Cloud Virtual Machine Settings</b> as required. You will likely need to
+          change the display name, shape, and networking configuration. </p>
         <p>To add an SSH key to the instance, click the <b outputclass="bold">SSH Authorised Keys</b> field and paste
           the public key into the displayed dialog. </p>
       </li>

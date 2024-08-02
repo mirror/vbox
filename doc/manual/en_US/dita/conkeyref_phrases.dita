@@ -24,5 +24,8 @@
     <p>
       <ph id="company-name">Oracle</ph>
     </p>
+    <p>
+      <ph id="oci-console">Oracle Cloud Console</ph>
+    </p>
   </body>
 </topic>

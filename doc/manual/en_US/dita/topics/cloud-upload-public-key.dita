@@ -7,7 +7,7 @@
     <p>Use the following steps to upload your public key to <ph conkeyref="vbox-conkeyref-phrases/oci"/>. </p>
     <ol>
       <li>
-        <p>Log in to the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console. </p>
+        <p>Log in to the <ph conkeyref="vbox-conkeyref-phrases/oci-console"/>. </p>
       </li>
       <li>
         <p>Display the <b outputclass="bold">User Settings</b> page. </p>
@@ -21,32 +21,21 @@
         <p>Upload the public key. </p>
         <p>Click <b outputclass="bold">Add Public Key</b>. </p>
         <p>The <b outputclass="bold">Add Public Key</b> dialog is displayed. </p>
-        <fig id="fig-upload-key-oci">
-          <title>Upload Public Key Dialog in <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console</title>
-          <xref href="images/upload-key.png" format="png" platform="htmlhelp">
-            <image href="images/upload-key.png" width="12cm" placement="break">
-              <alt>Upload Public Key Dialog in <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console</alt>
-            </image>
-          </xref>
-          <image href="images/upload-key.png" width="12cm" placement="break" platform="ohc">
-            <alt>Upload Public Key Dialog in <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console</alt>
-          </image>
-        </fig>
+      </li>
+      <li>
         <p>Select one of the following options: </p>
-        <ul>
+        <ul id="ul_rhf_z5f_gcc">
           <li>
-            <p><b outputclass="bold">Choose Public Key File.</b>
-                This option enables you to browse to the public key file
-                on your local hard disk.
-              </p>
+            <p><b outputclass="bold">Choose Public Key File.</b> This option enables you to browse to the public key
+              file on your local hard disk. </p>
           </li>
           <li>
-            <p><b outputclass="bold">Paste Public Keys.</b> This
-                option enables you to paste the contents of the public
-                key file into the window in the dialog box.
-              </p>
+            <p><b outputclass="bold">Paste Public Keys.</b> This option enables you to paste the contents of the public
+              key file into the window in the dialog box. </p>
           </li>
         </ul>
+      </li>
+          <li>
         <p>Click <b outputclass="bold">Add</b> to upload the public key. </p>
       </li>
     </ol>

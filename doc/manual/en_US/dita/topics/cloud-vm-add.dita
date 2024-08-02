@@ -15,18 +15,6 @@
       </li>
       <li>
         <p>Select <b outputclass="bold">Group</b>, <b outputclass="bold">Add Machine</b>. </p>
-        <p>The <b outputclass="bold">Add Cloud Virtual Machine</b> wizard is displayed. </p>
-        <fig id="fig-cloudvm-add">
-          <title>Add Cloud Virtual Machine Wizard</title>
-          <xref href="images/cloudvm-add.png" format="png" platform="htmlhelp">
-            <image href="images/cloudvm-add.png" width="12cm" placement="break">
-              <alt>Add Cloud Virtual Machine Wizard</alt>
-            </image>
-          </xref>
-          <image href="images/cloudvm-add.png" width="12cm" placement="break" platform="ohc">
-            <alt>Add Cloud Virtual Machine Wizard</alt>
-          </image>
-        </fig>
       </li>
       <li>
         <p>Configure the following settings: </p>

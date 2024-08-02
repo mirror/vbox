@@ -8,8 +8,7 @@
         conkeyref="vbox-conkeyref-phrases/product-name"/>: </p>
     <ol>
       <li>
-        <p>Select <b outputclass="bold">File</b>, <b outputclass="bold">Import Appliance</b> to open the <b
-            outputclass="bold">Import Virtual Appliance</b> wizard. </p>
+        <p>Select <b outputclass="bold">File</b>, <b outputclass="bold">Import Appliance</b>.</p>
         <p>In the <b outputclass="bold">Source</b> drop-down list, select <b outputclass="bold"><ph
               conkeyref="vbox-conkeyref-phrases/oci"/></b>. </p>
         <p>In the <b outputclass="bold">Profile</b> drop-down list, select the cloud profile for your <ph
@@ -20,23 +19,12 @@
       </li>
       <li>
         <p>(Optional) Edit settings for the new local virtual machine. </p>
-        <p>For example, you can edit the VM name and description. </p>
-        <fig id="fig-import-instance-oci">
-          <title>Import Cloud Instance Wizard: Appliance Settings</title>
-          <xref href="images/import-instance.png" format="png" platform="htmlhelp">
-            <image href="images/import-instance.png" width="12cm" placement="break">
-              <alt>Import Cloud Instance Wizard: Appliance Settings</alt>
-            </image>
-          </xref>
-          <image href="images/import-instance.png" width="12cm" placement="break" platform="ohc">
-            <alt>Import Cloud Instance Wizard: Appliance Settings</alt>
-          </image>
-        </fig>
+        <p>For example, you can edit the Name and Description that will be used for the VM. </p>
         <p>Click <b outputclass="bold">Finish</b> to import the instance from <ph conkeyref="vbox-conkeyref-phrases/oci"
           />. </p>
       </li>
       <li>
-        <p>Monitor the import process by using the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console. </p>
+        <p>Monitor the import process by using the <ph conkeyref="vbox-conkeyref-phrases/oci-console"/>. </p>
       </li>
     </ol>
     <p>You can also use the <userinput>VBoxManage import</userinput> command to import an instance from <ph
