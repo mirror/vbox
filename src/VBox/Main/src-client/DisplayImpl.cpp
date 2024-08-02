@@ -2038,8 +2038,10 @@ HRESULT Display::takeScreenShotWorker(ULONG aScreenId,
             RTMemFree(pu8PNG);
         }
     }
-    else if (vrc == VERR_TRY_AGAIN)
-        hrc = setErrorBoth(E_UNEXPECTED, vrc, tr("Screenshot is not available at this time"));
+    else if (vrc == VERR_NOT_SUPPORTED) /* zero screen size (or too large screen size for vram) */
+        hrc = setErrorBoth(VBOX_E_NOT_SUPPORTED, vrc, tr("Screenshot is not possible at this time"));
+    else if (vrc == VERR_TRY_AGAIN)     /* resizing while taking screenshot */
+        hrc = setErrorBoth(E_UNEXPECTED, vrc, tr("Screenshot is not possible at this time"));
     else if (RT_FAILURE(vrc))
         hrc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not take a screenshot (%Rrc)"), vrc);
 

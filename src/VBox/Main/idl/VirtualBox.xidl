@@ -21941,6 +21941,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
             Unless you are writing a new VM frontend use
             <link to="#takeScreenShotToArray" />.
         </note>
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Current screen configuration does not support taking a screen shot
+          (typically because it is 0x0 in size).
+        </result>
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="address" type="octet" mod="ptr" dir="in"/>
