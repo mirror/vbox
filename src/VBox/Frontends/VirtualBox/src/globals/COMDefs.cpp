@@ -49,7 +49,7 @@
    internally in plevent.c. Because moc doesn't seems to respect
    #ifdefs, we still have to include the definition of the class.
    very silly. */
-# if !defined (Q_OS_MAC)  && !defined (Q_OS_OS2)
+# if !defined(Q_OS_MAC)  && !defined(Q_OS_OS2)
 XPCOMEventQSocketListener *COMBase::sSocketListener = 0;
 
 # endif
@@ -64,13 +64,11 @@ class XPCOMEventQSocketListener : public QObject
 
 public:
 
-    XPCOMEventQSocketListener (nsIEventQueue *eq)
+    XPCOMEventQSocketListener(nsIEventQueue *eq)
     {
         mEventQ = eq;
-        mNotifier = new QSocketNotifier (mEventQ->GetEventQueueSelectFD(),
-                                         QSocketNotifier::Read, this);
-        QObject::connect (mNotifier, SIGNAL (activated (int)),
-                          this, SLOT (processEvents()));
+        mNotifier = new QSocketNotifier(mEventQ->GetEventQueueSelectFD(), QSocketNotifier::Read, this);
+        QObject::connect(mNotifier, SIGNAL(activated (int)), this, SLOT(processEvents()));
     }
 
     virtual ~XPCOMEventQSocketListener()
@@ -85,10 +83,10 @@ public slots:
 private:
 
     QSocketNotifier *mNotifier;
-    nsCOMPtr <nsIEventQueue> mEventQ;
+    nsCOMPtr<nsIEventQueue> mEventQ;
 };
 
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* defined(VBOX_WITH_XPCOM) */
 
 /**
  *  Initializes COM/XPCOM.
@@ -99,40 +97,40 @@ HRESULT COMBase::InitializeCOM(bool fGui)
 
     HRESULT rc = com::Initialize(fGui ? VBOX_COM_INIT_F_DEFAULT | VBOX_COM_INIT_F_GUI : VBOX_COM_INIT_F_DEFAULT);
 
-#if defined (VBOX_WITH_XPCOM)
+#if defined(VBOX_WITH_XPCOM)
 
-# if !defined (RT_OS_DARWIN) && !defined (RT_OS_OS2)
+# if !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2)
 
-    if (NS_SUCCEEDED (rc))
+    if (NS_SUCCEEDED(rc))
     {
-        nsCOMPtr <nsIEventQueue> eventQ;
-        rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
-        if (NS_SUCCEEDED (rc))
+        nsCOMPtr<nsIEventQueue> eventQ;
+        rc = NS_GetMainEventQ(getter_AddRefs(eventQ));
+        if (NS_SUCCEEDED(rc))
         {
 #  ifdef DEBUG
             BOOL isNative = FALSE;
-            eventQ->IsQueueNative (&isNative);
-            AssertMsg (isNative, ("The event queue must be native"));
+            eventQ->IsQueueNative(&isNative);
+            AssertMsg(isNative, ("The event queue must be native"));
 #  endif
             BOOL isOnMainThread = FALSE;
-            rc = eventQ->IsOnCurrentThread (&isOnMainThread);
-            if (NS_SUCCEEDED (rc) && isOnMainThread)
+            rc = eventQ->IsOnCurrentThread(&isOnMainThread);
+            if (NS_SUCCEEDED(rc) && isOnMainThread)
             {
-                sSocketListener = new XPCOMEventQSocketListener (eventQ);
+                sSocketListener = new XPCOMEventQSocketListener(eventQ);
             }
         }
     }
 
-# endif /* !defined (RT_OS_DARWIN) && !defined (RT_OS_OS) */
+# endif /* !defined(RT_OS_DARWIN) && !defined(RT_OS_OS) */
 
-#endif /* defined (VBOX_WITH_XPCOM) */
+#endif /* defined(VBOX_WITH_XPCOM) */
 
-    if (FAILED (rc))
+    if (FAILED(rc))
         CleanupCOM();
 
-    AssertComRC (rc);
+    AssertComRC(rc);
 
-    LogFlowFunc (("rc=%08X\n", rc));
+    LogFlowFunc(("rc=%08X\n", rc));
     LogFlowFuncLeave();
     return rc;
 
@@ -147,20 +145,20 @@ HRESULT COMBase::CleanupCOM()
 
     HRESULT rc = S_OK;
 
-#if defined (VBOX_WITH_XPCOM)
+#if defined(VBOX_WITH_XPCOM)
 
     /* scope the code to make smart references are released before calling
      * com::Shutdown() */
     {
-        nsCOMPtr <nsIEventQueue> eventQ;
-        rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
-        if (NS_SUCCEEDED (rc))
+        nsCOMPtr<nsIEventQueue> eventQ;
+        rc = NS_GetMainEventQ(getter_AddRefs(eventQ));
+        if (NS_SUCCEEDED(rc))
         {
             BOOL isOnMainThread = FALSE;
-            rc = eventQ->IsOnCurrentThread (&isOnMainThread);
-            if (NS_SUCCEEDED (rc) && isOnMainThread)
+            rc = eventQ->IsOnCurrentThread(&isOnMainThread);
+            if (NS_SUCCEEDED(rc) && isOnMainThread)
             {
-# if !defined (RT_OS_DARWIN) && !defined (RT_OS_OS2)
+# if !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2)
                 if (sSocketListener)
                 {
                     delete sSocketListener;
@@ -171,59 +169,58 @@ HRESULT COMBase::CleanupCOM()
         }
     }
 
-#endif /* defined (VBOX_WITH_XPCOM) */
+#endif /* defined(VBOX_WITH_XPCOM) */
 
     HRESULT rc2 = com::Shutdown();
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
         rc = rc2;
 
-    AssertComRC (rc);
+    AssertComRC(rc);
 
-    LogFlowFunc (("rc=%08X\n", rc));
+    LogFlowFunc(("rc=%08X\n", rc));
     LogFlowFuncLeave();
     return rc;
 }
 
 /* static */
-void COMBase::ToSafeArray (const QVector <QString> &aVec,
-                           com::SafeArray <BSTR> &aArr)
+void COMBase::ToSafeArray(const QVector<QString> &aVec,
+                          com::SafeArray<BSTR> &aArr)
 {
-    aArr.reset (aVec.size());
+    aArr.reset(aVec.size());
     for (int i = 0; i < aVec.size(); ++ i)
-        aArr [i] = SysAllocString ((const OLECHAR *)
-            (aVec.at (i).isNull() ? 0 : aVec.at (i).utf16()));
+        aArr [i] = SysAllocString((const OLECHAR *)(aVec.at(i).isNull() ? 0 : aVec.at(i).utf16()));
 }
 
 /* static */
-void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
-                             QVector <QString> &aVec)
+void COMBase::FromSafeArray(const com::SafeArray<BSTR> &aArr,
+                            QVector<QString> &aVec)
 {
     AssertCompile(sizeof(aArr[0][0]) == sizeof(ushort));
-    aVec.resize (static_cast <int> (aArr.size()));
+    aVec.resize(static_cast<int>(aArr.size()));
     for (int i = 0; i < aVec.size(); ++ i)
-        aVec [i] = QString::fromUtf16 ((const char16_t *)aArr [i]);
+        aVec[i] = QString::fromUtf16((const char16_t *)aArr[i]);
 }
 
 /* static */
-void COMBase::ToSafeArray (const QVector <QUuid> &aVec,
-                           com::SafeGUIDArray &aArr)
+void COMBase::ToSafeArray(const QVector <QUuid> &aVec,
+                          com::SafeGUIDArray &aArr)
 {
-    AssertCompileSize (GUID, sizeof (QUuid));
-    aArr.reset (aVec.size());
+    AssertCompileSize(GUID, sizeof(QUuid));
+    aArr.reset(aVec.size());
     for (int i = 0; i < aVec.size(); ++ i)
-        aArr [i] = *(GUID*) &aVec [i];
+        aArr[i] = *(GUID *)&aVec[i];
 }
 
 /* static */
-void COMBase::FromSafeArray (const com::SafeGUIDArray &aArr,
-                             QVector <QUuid> &aVec)
+void COMBase::FromSafeArray(const com::SafeGUIDArray &aArr,
+                            QVector<QUuid> &aVec)
 {
-    AssertCompileSize (GUID, sizeof (QUuid));
-    aVec.resize (static_cast <int> (aArr.size()));
+    AssertCompileSize(GUID, sizeof(QUuid));
+    aVec.resize (static_cast<int>(aArr.size()));
     for (int i = 0; i < aVec.size(); ++ i)
     {
 #ifdef VBOX_WITH_XPCOM
-        aVec [i] = *(QUuid*) &aArr [i];
+        aVec[i] = *(QUuid *)&aArr[i];
 #else
         /* No by-reference accessor, only by-value. So spell it out to avoid warnings. */
         GUID Tmp = aArr[i];
@@ -233,23 +230,22 @@ void COMBase::FromSafeArray (const com::SafeGUIDArray &aArr,
 }
 
 /* static */
-void COMBase::ToSafeArray (const QVector <QUuid> &aVec,
-                           com::SafeArray <BSTR> &aArr)
+void COMBase::ToSafeArray(const QVector<QUuid> &aVec,
+                          com::SafeArray<BSTR> &aArr)
 {
-    aArr.reset (aVec.size());
+    aArr.reset(aVec.size());
     for (int i = 0; i < aVec.size(); ++ i)
-        aArr [i] = SysAllocString ((const OLECHAR *)
-            (aVec.at (i).isNull() ? 0 : aVec.at(i).toString().utf16()));
+        aArr[i] = SysAllocString((const OLECHAR *)(aVec.at(i).isNull() ? 0 : aVec.at(i).toString().utf16()));
 }
 
 /* static */
-void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
-                             QVector <QUuid> &aVec)
+void COMBase::FromSafeArray(const com::SafeArray<BSTR> &aArr,
+                            QVector<QUuid> &aVec)
 {
     AssertCompile(sizeof(aArr[0][0]) == sizeof(ushort));
-    aVec.resize (static_cast <int> (aArr.size()));
+    aVec.resize(static_cast<int>(aArr.size()));
     for (int i = 0; i < aVec.size(); ++ i)
-        aVec [i] = QUuid(QString::fromUtf16 ((const char16_t *)aArr [i]));
+        aVec[i] = QUuid(QString::fromUtf16((const char16_t *)aArr[i]));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -262,6 +258,7 @@ void COMErrorInfo::init(const CVirtualBoxErrorInfo &info)
         mIsBasicAvailable = false;
         mIsFullAvailable = false;
         mResultCode = S_OK;
+        mResultDetail = 0;
         m_pNext = NULL;
         AssertMsgFailedReturnVoid(("error info is NULL!\n"));
     }
@@ -273,11 +270,15 @@ void COMErrorInfo::init(const CVirtualBoxErrorInfo &info)
     gotSomething |= info.isOk();
     gotAll &= info.isOk();
 
+    mResultDetail = info.GetResultDetail();
+    gotSomething |= info.isOk();
+    gotAll &= info.isOk();
+
     mInterfaceID = info.GetInterfaceID();
     gotSomething |= info.isOk();
     gotAll &= info.isOk();
     if (info.isOk())
-        mInterfaceName = getInterfaceNameFromIID (mInterfaceID);
+        mInterfaceName = getInterfaceNameFromIID(mInterfaceID);
 
     mComponent = info.GetComponent();
     gotSomething |= info.isOk();
@@ -304,7 +305,7 @@ void COMErrorInfo::init(const CVirtualBoxErrorInfo &info)
 
     mIsNull = !gotSomething;
 
-    AssertMsg (gotSomething, ("Nothing to fetch!\n"));
+    AssertMsg(gotSomething, ("Nothing to fetch!\n"));
 }
 
 void COMErrorInfo::copyFrom(const COMErrorInfo &x)
@@ -314,6 +315,7 @@ void COMErrorInfo::copyFrom(const COMErrorInfo &x)
     mIsFullAvailable = x.mIsFullAvailable;
 
     mResultCode = x.mResultCode;
+    mResultDetail = x.mResultDetail;
     mInterfaceID = x.mInterfaceID;
     mComponent = x.mComponent;
     mText = x.mText;
@@ -464,11 +466,11 @@ void COMErrorInfo::fetchFromCurrentThread(IUnknown *callee, const GUID *calleeII
 }
 
 // static
-QString COMErrorInfo::getInterfaceNameFromIID (const QUuid &id)
+QString COMErrorInfo::getInterfaceNameFromIID(const QUuid &id)
 {
     QString name;
 
-    com::GetInterfaceNameByIID (COMBase::GUIDIn (id), COMBase::BSTROut (name));
+    com::GetInterfaceNameByIID(COMBase::GUIDIn(id), COMBase::BSTROut(name));
 
     return name;
 }

@@ -125,6 +125,7 @@ public:
           mIsBasicAvailable(false),
           mIsFullAvailable(false),
           mResultCode(S_OK),
+          mResultDetail(0),
           m_pNext(NULL)
     {}
 
@@ -150,12 +151,13 @@ public:
         return *this;
     }
 
-    bool isNull() const { return mIsNull; }
+    bool isNull() const RT_NOEXCEPT { return mIsNull; }
 
-    bool isBasicAvailable() const { return mIsBasicAvailable; }
-    bool isFullAvailable() const { return mIsFullAvailable; }
+    bool isBasicAvailable() const RT_NOEXCEPT { return mIsBasicAvailable; }
+    bool isFullAvailable() const RT_NOEXCEPT { return mIsFullAvailable; }
 
-    HRESULT resultCode() const { return mResultCode; }
+    HRESULT resultCode() const RT_NOEXCEPT { return mResultCode; }
+    ULONG resultDetail() const RT_NOEXCEPT { return mResultDetail; }
     QUuid interfaceID() const { return mInterfaceID; }
     QString component() const { return mComponent; }
     QString text() const { return mText; }
@@ -180,6 +182,7 @@ private:
     bool mIsFullAvailable : 1;
 
     HRESULT mResultCode;
+    ULONG mResultDetail;
     QUuid mInterfaceID;
     QString mComponent;
     QString mText;
