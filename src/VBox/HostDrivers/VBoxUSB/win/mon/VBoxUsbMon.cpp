@@ -1271,7 +1271,7 @@ static NTSTATUS vboxUsbMonIoctlDispatch(PVBOXUSBMONCTX pContext, ULONG Ctl, PVOI
             if (cbOutBuffer)
             {
                 /* we've validated that already */
-                Assert(cbOutBuffer == (ULONG)*pRc);
+                Assert(cbOutBuffer == sizeof (*pRc));
                 *pRc = rc;
                 Info = sizeof (*pRc);
             }
