@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -98,6 +98,7 @@ UINativeWizard::UINativeWizard(QWidget *pParent,
     , m_enmMode(gEDataManager->isSettingsInExpertMode() ? WizardMode_Expert : WizardMode_Basic)
     , m_strHelpKeyword(strHelpKeyword)
     , m_iLastIndex(-1)
+    , m_fAborted(true)
     , m_fClosed(false)
     , m_pLabelPixmap(0)
     , m_pLayoutRight(0)
@@ -233,6 +234,10 @@ void UINativeWizard::sltRetranslateUI()
 
 void UINativeWizard::keyPressEvent(QKeyEvent *pEvent)
 {
+    // WORKAROUND:
+    // In non-modal case we'll have to handle Escape button ourselves.
+    // In modal case QDialog does this itself internally by unwinding the event-loop.
+
     /* Different handling depending on current modality: */
     const Qt::WindowModality enmModality = windowHandle()->modality();
 
@@ -275,6 +280,8 @@ void UINativeWizard::closeEvent(QCloseEvent *pEvent)
         if (!m_fClosed)
         {
             m_fClosed = true;
+            if (m_fAborted)
+                cleanWizard();
             emit sigClose(m_enmType);
         }
 
@@ -373,7 +380,10 @@ void UINativeWizard::sltNext()
     {
         /* Different handling depending on current modality: */
         if (windowHandle()->modality() == Qt::NonModal)
+        {
+            m_fAborted = false;
             close();
+        }
         else
             accept();
     }
