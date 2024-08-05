@@ -1256,9 +1256,9 @@ static void iemR3InfoTlbPrintAddress(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, IEMTLB co
 
     uint64_t const    uTag  = IEMTLB_CALC_TAG_NO_REV(uAddress);
 #ifdef IEMTLB_TAG_TO_EVEN_INDEX
-    uint32_t const    uSlot = IEMTLB_TAG_TO_EVEN_INDEX(uAddress);
+    uint32_t const    uSlot = IEMTLB_TAG_TO_EVEN_INDEX(uTag);
 #else
-    uint32_t const    uSlot = IEMTLB_TAG_TO_INDEX(uAddress);
+    uint32_t const    uSlot = IEMTLB_TAG_TO_INDEX(uTag);
 #endif
     IEMTLBENTRY const TlbeL = pTlb->aEntries[uSlot];
 #ifndef VBOX_VMM_TARGET_ARMV8

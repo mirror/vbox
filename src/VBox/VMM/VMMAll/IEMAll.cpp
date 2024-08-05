@@ -780,21 +780,30 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
 {
     IEMTLBTRACE_LARGE_SCAN(pVCpu, a_fGlobal, a_fNonGlobal, a_fDataTlb);
 
-    /* Combine TAG values with the TLB revisions. */
+    /*
+     * Combine TAG values with the TLB revisions.
+     */
     RTGCPTR GCPtrTagGlob = a_fGlobal ? GCPtrTag | pTlb->uTlbRevisionGlobal : 0;
     if (a_fNonGlobal)
         GCPtrTag |= pTlb->uTlbRevision;
 
-    /* Set up the scan. */
-    bool const      fPartialScan = IEMTLB_ENTRY_COUNT >= (a_f2MbLargePage ? 512 : 1024);
-    uintptr_t       idxEven      = fPartialScan ? IEMTLB_TAG_TO_EVEN_INDEX(GCPtrTag) : 0;
+    /*
+     * Set up the scan.
+     *
+     * GCPtrTagMask: A 2MB page consists of 512 4K pages, so a 256 TLB will map
+     * offset zero and offset 1MB to the same slot pair.  Our GCPtrTag[Globl]
+     * values are for the range 0-1MB, or slots 0-256.  So, we construct a mask
+     * that fold large page offsets 1MB-2MB into the 0-1MB range.
+     *
+     * For our example with 2MB pages and a 256 entry TLB: 0xfffffffffffffeff
+     */
+    bool const      fPartialScan = IEMTLB_ENTRY_COUNT > (a_f2MbLargePage ? 512 : 1024);
+    uintptr_t       idxEven      = fPartialScan ? IEMTLB_TAG_TO_EVEN_INDEX(GCPtrTag)             : 0;
     uintptr_t const idxEvenEnd   = fPartialScan ? idxEven + ((a_f2MbLargePage ? 512 : 1024) * 2) : IEMTLB_ENTRY_COUNT * 2;
-    RTGCPTR const   GCPtrTagMask = fPartialScan
-                                 ? ~(RTGCPTR)0
-                                 :   ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK
-                                   & ~(RTGCPTR)(   (RT_BIT_64(RT_MAX(  (a_f2MbLargePage ? 9 : 10)
-                                                                     - IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO, 0)) - 1U)
-                                                << IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO);
+    RTGCPTR const   GCPtrTagMask = fPartialScan ? ~(RTGCPTR)0
+                                 : ~(RTGCPTR)(  (RT_BIT_32(a_f2MbLargePage ? 9 : 10) - 1U)
+                                              & ~(uint32_t)(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) - 1U));
+IEMTLBTRACE_USER3(pVCpu, GCPtrTagMask, GCPtrTag, RT_MAKE_U32(idxEven, idxEvenEnd), a_fDataTlb);
 
     /*
      * Do the scanning.
