@@ -293,7 +293,7 @@ BEGINPROC   iemNativeFpCtrlRegRestore
 SEH64_END_PROLOGUE
 
 %ifdef RT_OS_WINDOWS
-        mov     [xSP + xCB], edi            ; use the first parameter spill slot.
+        mov     [xSP + xCB], ecx            ; use the first parameter spill slot.
         ldmxcsr [xSP + xCB]
 %else
         push    xDI
