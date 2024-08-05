@@ -508,76 +508,87 @@ static DECLCALLBACK(void) vboxTrayLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLO
  * Creates the default release logger outputting to the specified file.
  *
  * @return  IPRT status code.
- * @param   pszLogFile          Path to log file to use.
+ * @param   pszLogFile          Path to log file to use. Can be NULL if not needed.
  */
 static int vboxTrayLogCreate(const char *pszLogFile)
 {
     /* Create release (or debug) logger (stdout + file). */
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+#ifdef DEBUG
+    static const char s_szEnvVarPfx[] = "VBOXTRAY_LOG";
+    static const char s_szGroupSettings[] = "all.e.l.f";
+#else
     static const char s_szEnvVarPfx[] = "VBOXTRAY_RELEASE_LOG";
-
+    static const char s_szGroupSettings[] = "all";
+#endif
     RTERRINFOSTATIC ErrInfo;
     int rc = RTLogCreateEx(&g_pLoggerRelease, s_szEnvVarPfx,
                            RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_USECRLF,
-                           "all.e", RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
+                           s_szGroupSettings, RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
                            0 /*cBufDescs*/, NULL /*paBufDescs*/, RTLOGDEST_STDOUT,
                            vboxTrayLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
                            NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
                            RTErrInfoInitStatic(&ErrInfo), "%s", pszLogFile ? pszLogFile : "");
     if (RT_SUCCESS(rc))
     {
-        /* Register this logger as the release logger. */
-        RTLogRelSetDefaultInstance(g_pLoggerRelease);
-
+#ifdef DEBUG
         /* Register this logger as the _debug_ logger. */
         RTLogSetDefaultInstance(g_pLoggerRelease);
-
-        /* All groups we want to enable logging for VBoxTray. */
-        const char *apszGroups[] = { "guest_dnd", "shared_clipboard" };
-        char        szGroupSettings[_1K];
-
-        szGroupSettings[0] = '\0';
-
-        for (size_t i = 0; i < RT_ELEMENTS(apszGroups); i++)
+#else
+        /* Register this logger as the release logger. */
+        RTLogRelSetDefaultInstance(g_pLoggerRelease);
+#endif
+        /* If verbosity is explicitly set, make sure to increase the logging levels for
+         * the logging groups we offer functionality for in VBoxTray. */
+        if (g_cVerbosity)
         {
-            if (i > 0)
-                rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), "+");
-            if (RT_SUCCESS(rc))
-                rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), apszGroups[i]);
-            if (RT_FAILURE(rc))
-                break;
+            /* All groups we want to enable logging for VBoxTray. */
+            const char *apszGroups[] = { "guest_dnd", "shared_clipboard" };
+            char        szGroupSettings[_1K];
 
-            switch (g_cVerbosity)
+            szGroupSettings[0] = '\0';
+
+            for (size_t i = 0; i < RT_ELEMENTS(apszGroups); i++)
             {
-                case 1:
-                    rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l");
+                if (i > 0)
+                    rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), "+");
+                if (RT_SUCCESS(rc))
+                    rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), apszGroups[i]);
+                if (RT_FAILURE(rc))
                     break;
 
-                case 2:
-                    rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2");
-                    break;
+                switch (g_cVerbosity)
+                {
+                    case 1:
+                        rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l");
+                        break;
 
-                case 3:
-                    rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2.l3");
-                    break;
+                    case 2:
+                        rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2");
+                        break;
 
-                case 4:
-                    RT_FALL_THROUGH();
-                default:
-                    rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2.l3.f");
+                    case 3:
+                        rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2.l3");
+                        break;
+
+                    case 4:
+                        RT_FALL_THROUGH();
+                    default:
+                        rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2.l3.f");
+                        break;
+                }
+
+                if (RT_FAILURE(rc))
                     break;
             }
 
+            LogRel(("Verbose log settings are: %s\n", szGroupSettings));
+
+            if (RT_SUCCESS(rc))
+                rc = RTLogGroupSettings(g_pLoggerRelease, szGroupSettings);
             if (RT_FAILURE(rc))
-                break;
+                RTMsgError("Setting log group settings failed, rc=%Rrc\n", rc);
         }
-
-        LogRel(("Verbose log settings are: %s\n", szGroupSettings));
-
-        if (RT_SUCCESS(rc))
-            rc = RTLogGroupSettings(g_pLoggerRelease, szGroupSettings);
-        if (RT_FAILURE(rc))
-            RTMsgError("Setting log group settings failed, rc=%Rrc\n", rc);
 
         /* Explicitly flush the log in case of VBOXTRAY_RELEASE_LOG=buffered. */
         RTLogFlush(g_pLoggerRelease);
