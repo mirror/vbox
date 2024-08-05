@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -98,6 +98,7 @@ UINativeWizard::UINativeWizard(QWidget *pParent,
     , m_enmMode(gEDataManager->isSettingsInExpertMode() ? WizardMode_Expert : WizardMode_Basic)
     , m_strHelpKeyword(strHelpKeyword)
     , m_iLastIndex(-1)
+    , m_fAborted(false)
     , m_fClosed(false)
     , m_pLabelPixmap(0)
     , m_pLayoutRight(0)
@@ -233,6 +234,10 @@ void UINativeWizard::sltRetranslateUI()
 
 void UINativeWizard::keyPressEvent(QKeyEvent *pEvent)
 {
+    // WORKAROUND:
+    // In non-modal case we'll have to handle Escape button ourselves.
+    // In modal case QDialog does this itself internally by unwinding the event-loop.
+
     /* Different handling depending on current modality: */
     const Qt::WindowModality enmModality = windowHandle()->modality();
 
@@ -244,7 +249,7 @@ void UINativeWizard::keyPressEvent(QKeyEvent *pEvent)
         {
             case Qt::Key_Escape:
             {
-                close();
+                sltAbort();
                 return;
             }
             default:
@@ -275,6 +280,8 @@ void UINativeWizard::closeEvent(QCloseEvent *pEvent)
         if (!m_fClosed)
         {
             m_fClosed = true;
+            if (m_fAborted)
+                cleanWizard();
             emit sigClose(m_enmType);
         }
 
@@ -377,6 +384,12 @@ void UINativeWizard::sltNext()
         else
             accept();
     }
+}
+
+void UINativeWizard::sltAbort()
+{
+    cleanWizard();
+    close();
 }
 
 void UINativeWizard::sltHandleHelpRequest()
@@ -538,7 +551,7 @@ void UINativeWizard::prepare()
                 connect(wizardButton(WizardButtonType_Next), &QPushButton::clicked,
                         this, &UINativeWizard::sltNext);
                 connect(wizardButton(WizardButtonType_Cancel), &QPushButton::clicked,
-                        this, &UINativeWizard::close);
+                        this, &UINativeWizard::sltAbort);
             }
 
             /* Add to layout: */
