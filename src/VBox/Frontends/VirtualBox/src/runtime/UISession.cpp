@@ -646,7 +646,7 @@ bool UISession::toggleClipboardFileTransfer(bool fEnabled)
     comMachine.SetClipboardFileTransfersEnabled(fEnabled);
     const bool fSuccess = comMachine.isOk();
     if (!fSuccess)
-        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+        UINotificationMessage::cannotChangeMachineParameter(comMachine);
     return fSuccess;
 }
 
