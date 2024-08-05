@@ -580,27 +580,6 @@ void UINativeWizard::init()
     sltCurrentIndexChanged();
 }
 
-void UINativeWizard::deinit()
-{
-    /* Remove all the pages: */
-    m_pWidgetStack->blockSignals(true);
-    while (m_pWidgetStack->count() > 0)
-    {
-        QWidget *pLastWidget = m_pWidgetStack->widget(m_pWidgetStack->count() - 1);
-        m_pWidgetStack->removeWidget(pLastWidget);
-        delete pLastWidget;
-    }
-    m_pWidgetStack->blockSignals(false);
-
-    /* Update last index: */
-    m_iLastIndex = -1;
-    /* Update invisible pages: */
-    m_invisiblePages.clear();
-
-    /* Clean wizard finally: */
-    cleanWizard();
-}
-
 void UINativeWizard::retranslatePages()
 {
     /* Translate all the pages: */

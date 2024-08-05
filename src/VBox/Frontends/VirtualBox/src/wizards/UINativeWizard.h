@@ -180,8 +180,6 @@ private:
     void cleanup();
     /** Inits all. */
     void init();
-    /** Deinits all. */
-    void deinit();
 
     /** Performs pages translation. */
     void retranslatePages();
