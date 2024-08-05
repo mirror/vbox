@@ -179,7 +179,6 @@ protected:
 
 private slots:
 
-    void sltHandleWizardCancel();
     virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
 
 private:
