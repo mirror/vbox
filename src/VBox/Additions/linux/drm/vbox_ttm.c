@@ -532,7 +532,7 @@ void vbox_ttm_placement(struct vbox_bo *bo, u32 mem_type)
 #endif
 
 	bo->placement.placement = bo->placements;
-#if RTLNX_VER_MAX(6,9,0)
+#if RTLNX_VER_MAX(6,9,0) && !RTLNX_RHEL_MAJ_PREREQ(9,5)
 	bo->placement.busy_placement = bo->placements;
 #endif
 
@@ -587,7 +587,7 @@ void vbox_ttm_placement(struct vbox_bo *bo, u32 mem_type)
 	}
 
 	bo->placement.num_placement = c;
-#if RTLNX_VER_MAX(6,9,0)
+#if RTLNX_VER_MAX(6,9,0) && !RTLNX_RHEL_MAJ_PREREQ(9,5)
 	bo->placement.num_busy_placement = c;
 #endif
 
