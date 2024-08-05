@@ -46,6 +46,7 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 FNBS3TESTDOMODE             bs3CpuBasic2_RaiseXcpt0e_c32;
+FNBS3TESTDOMODE             bs3CpuBasic2_InvlPg_c32;
 
 
 /*********************************************************************************************************************************
@@ -53,7 +54,12 @@ FNBS3TESTDOMODE             bs3CpuBasic2_RaiseXcpt0e_c32;
 *********************************************************************************************************************************/
 static const BS3TESTMODEBYONEENTRY g_aModeByOne32Tests[] =
 {
-    { "#PF",  bs3CpuBasic2_RaiseXcpt0e_c32, BS3TESTMODEBYONEENTRY_F_ONLY_PAGING },
+#if 0
+    { "#PF",    bs3CpuBasic2_RaiseXcpt0e_c32,   BS3TESTMODEBYONEENTRY_F_ONLY_PAGING },
+#endif
+#if 1
+    { "invlpg", bs3CpuBasic2_InvlPg_c32,        BS3TESTMODEBYONEENTRY_F_ONLY_PAGING | BS3TESTMODEBYONEENTRY_F_SKIP_V8086 },
+#endif
 };
 
 

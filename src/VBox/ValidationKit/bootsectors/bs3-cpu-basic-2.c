@@ -124,10 +124,10 @@ BS3_DECL(void) Main_rm()
     NOREF(g_aModeByOneTests);
 #endif
 
-#if 0 /** @todo The '\#PF' test doesn't work right in IEM! */
     /*
      * Do tests driven from 32-bit code (bs3-cpu-basic-2-32.c32 via assembly).
      */
+#if 1
     Bs3SwitchTo32BitAndCallC_rm(bs3CpuBasic2_Do32BitTests_pe32, 0);
 #endif
 

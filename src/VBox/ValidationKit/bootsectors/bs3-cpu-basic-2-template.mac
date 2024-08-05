@@ -1898,6 +1898,92 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_retf_i24_rexw_opsize, BS3_PBC_NEAR
 BS3_PROC_END_CMN   bs3CpuBasic2_retf_i24_rexw_opsize
  %endif
 
+
+
+;*********************************************************************************************************************************
+;*  INVLPG 2/4 MB                                                                                                                *
+;*********************************************************************************************************************************
+ %ifnmacro BS3_CPUBAS2_INVLPG
+  %macro BS3_CPUBAS2_INVLPG 1
+;;
+;; @param   sBX         Mapping area.
+;; @param   sDI         Pointer to the PDE.
+;; @param   sDX         1st PDE value.
+;; @param   sSI         2nd PDE value.
+;; @returns uint64_t - zero on success
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_invlpg_ %+ %1 %+ mb, BS3_PBC_NEAR
+        push    xBP
+        mov     xBP, xSP
+        push    sBX                         ; xBP - xCB - sCB*1
+        push    sDI                         ; xBP - xCB - sCB*2
+        push    sDX                         ; xBP - xCB - sCB*3
+        push    sSI                         ; xBP - xCB - sCB*4
+   %if TMPL_BITS == 16
+        push    ds
+        mov     ax, BS3_SEL_R0_DS32         ; load flat DS and use 32-bit addressing for everything.
+        mov     ds, ax
+   %endif
+
+        ;
+        ; Pass one: touch pages from bottom, invalidate from the top.
+        ;
+        mov     ecx, %1 * 1024 * 1024
+.loop1:
+
+        ; Load TLB for [sBX] using 1st PDE value.
+        mov     [sDI], sDX
+        invlpg  [sBX]
+
+        mov     eax, [sBX]
+        cmp     eax, ebx
+        je      .loop1_test1_okay
+        mov     edx, 0x11
+        jmp     .return_edx_or_ecx
+.loop1_test1_okay:
+
+        ; Switch to the 2nd PDE value, invalidate and check that the value now changed to the 2nd page.
+        mov     [sDI], sSI
+        invlpg  [sBX + sCX - 1]
+
+        mov     eax, [sBX]
+        sub     eax, %1 * 1024 * 1024       ; the value we read is from the 2nd page, so subtract a page before comparing.
+        cmp     eax, ebx
+        je      .loop1_test2_okay
+        mov     edx, 0x12
+        jmp     .return_edx_or_ecx
+.loop1_test2_okay:
+
+        ; Advance
+        add     ebx, X86_PAGE_SIZE
+        sub     sCX, X86_PAGE_SIZE * 2
+        cmp     sCX, -(%1 * 1024 * 1024 / 2)
+        jg      .loop1
+
+        ;
+        ; Return (int3 back to test driver, actually).
+        ;
+        xor     edx, edx
+        xor     eax, eax
+.return:
+        int3
+        jmp     .return
+
+.return_edx_or_ecx:
+        or      edx, ecx
+        xchg    eax, edx
+        jmp     .return
+BS3_PROC_END_CMN   bs3CpuBasic2_invlpg_ %+ %1 %+ mb
+   %endmacro
+  %endif
+
+BS3_CPUBAS2_INVLPG 2
+  %if TMPL_BITS != 64
+BS3_CPUBAS2_INVLPG 4
+  %endif
+
+; %endif ; TMPL_BITS != 16
+
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment

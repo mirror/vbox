@@ -1,0 +1,399 @@
+/* $Id$ */
+/** @file
+ * BS3Kit - bs3-cpu-basic-2, 32-bit C code for testing \#PF.
+ */
+
+/*
+ * Copyright (C) 2007-2023 Oracle and/or its affiliates.
+ *
+ * This file is part of VirtualBox base platform packages, as
+ * available from https://www.virtualbox.org.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation, in version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see <https://www.gnu.org/licenses>.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL), a copy of it is provided in the "COPYING.CDDL" file included
+ * in the VirtualBox distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
+ */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include <bs3kit.h>
+#include <iprt/asm-amd64-x86.h>
+
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+typedef void BS3_CALL FNBS3CPUBASIC2INVLPGFUNC(void);
+
+typedef struct BS3CPUBASIC2INVLPGTSTCMNMODE
+{
+    uint8_t                     bMode;
+    bool                        fPae;
+    FNBS3CPUBASIC2INVLPGFUNC   *pfnInvlPg;
+} BS3CPUBASIC2INVLPGTSTCMNMODE;
+typedef BS3CPUBASIC2INVLPGTSTCMNMODE const *PCBS3CPUBASIC2INVLPGTSTCMNMODE;
+
+typedef struct BS3CPUBASIC2INVLPGSTATE
+{
+    /** The mode we're currently testing. */
+    uint8_t                     bMode;
+    /** CR4.PGE value. */
+    bool                        fGlobalPages;
+    /** Index into g_aCmnModes.   */
+    uint8_t                     idxCmnMode;
+    uint8_t                     abReserved[5];
+
+    /** Address of the test area (alias). */
+    union
+    {
+        uint64_t                u;
+        uint32_t                u32;
+        uint16_t                u16;
+    }                           uTestAddr;
+    /** Pointer to the orignal test area mapping. */
+    uint8_t                    *pbOrgTest;
+    /** The size of the test area (4 or 8 MB). */
+    uint32_t                    cbTest;
+    /** The large page size (2 or 4 MB). */
+    uint32_t                    cbLargePg;
+
+    /** Test paging information for the 1st large page (uTestAddr.u). */
+    BS3PAGINGINFO4ADDR          PgInfo1;
+    /** Test paging information for the 2nd large page (uTestAddr.u + cbLargePg). */
+    BS3PAGINGINFO4ADDR          PgInfo2;
+
+    /** Trap context frame. */
+    BS3TRAPFRAME                TrapCtx;
+    /** Test context. */
+    BS3REGCTX                   Ctx;
+
+    /** The PML4E backup. */
+    uint64_t                    u64Pml4eBackup;
+    /** The PDPTE backup. */
+    uint64_t                    u64PdpteBackup;
+    /** The PDE backups. */
+    union
+    {
+        uint32_t                Legacy;
+        uint64_t                Pae;
+    } aPdeBackup[2];
+    /** The PTE backups. */
+    union
+    {
+        uint32_t                Legacy[X86_PG_ENTRIES];
+        uint64_t                Pae[X86_PG_PAE_ENTRIES];
+    } aPteBackup[2];
+
+} BS3CPUBASIC2INVLPGSTATE;
+/** Pointer to state for the \#PF test. */
+typedef BS3CPUBASIC2INVLPGSTATE *PBS3CPUBASIC2INVLPGSTATE;
+
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+FNBS3CPUBASIC2INVLPGFUNC    bs3CpuBasic2_invlpg_4mb_c16;
+FNBS3CPUBASIC2INVLPGFUNC    bs3CpuBasic2_invlpg_4mb_c32;
+FNBS3CPUBASIC2INVLPGFUNC    bs3CpuBasic2_invlpg_2mb_c16;
+FNBS3CPUBASIC2INVLPGFUNC    bs3CpuBasic2_invlpg_2mb_c32;
+FNBS3CPUBASIC2INVLPGFUNC    bs3CpuBasic2_invlpg_2mb_c64;
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static const BS3CPUBASIC2INVLPGTSTCMNMODE g_aCmnModes[] =
+{
+    { BS3_MODE_CODE_16, false, bs3CpuBasic2_invlpg_4mb_c16 },
+    { BS3_MODE_CODE_16,  true, bs3CpuBasic2_invlpg_2mb_c16 },
+    { BS3_MODE_CODE_32, false, bs3CpuBasic2_invlpg_4mb_c32 },
+    { BS3_MODE_CODE_32,  true, bs3CpuBasic2_invlpg_2mb_c32 },
+    { BS3_MODE_CODE_64,  true, bs3CpuBasic2_invlpg_2mb_c64 },
+};
+
+
+
+/**
+ * Flush everything.
+ */
+static void bs3CpuBasic2InvlPg_FlushAll(void)
+{
+    uint32_t uCr4 = ASMGetCR4();
+    if (uCr4 & (X86_CR4_PGE | X86_CR4_PCIDE))
+    {
+        ASMSetCR4(uCr4 & ~(X86_CR4_PGE | X86_CR4_PCIDE));
+        ASMSetCR4(uCr4);
+    }
+    else
+        ASMReloadCR3();
+}
+
+
+/**
+ * Restores all the paging entries from backup and flushes everything.
+ *
+ * @param   pThis       Test state data.
+ */
+static void bs3CpuBasic2InvlPg_RestoreFromBackups(PBS3CPUBASIC2INVLPGSTATE pThis)
+{
+    Bs3MemCpy(pThis->PgInfo1.u.Legacy.pPte, &pThis->aPteBackup[0], sizeof(pThis->aPteBackup[0]));
+    Bs3MemCpy(pThis->PgInfo2.u.Legacy.pPte, &pThis->aPteBackup[1], sizeof(pThis->aPteBackup[1]));
+    if (pThis->PgInfo1.cEntries == 2)
+    {
+        pThis->PgInfo1.u.Legacy.pPde->u = pThis->aPdeBackup[0].Legacy;
+        pThis->PgInfo2.u.Legacy.pPde->u = pThis->aPdeBackup[1].Legacy;
+    }
+    else
+    {
+        pThis->PgInfo1.u.Pae.pPde->u = pThis->aPdeBackup[0].Pae;
+        pThis->PgInfo2.u.Pae.pPde->u = pThis->aPdeBackup[1].Pae;
+        if (pThis->PgInfo1.cEntries > 2)
+            pThis->PgInfo1.u.Pae.pPdpe->u  = pThis->u64PdpteBackup;
+        if (pThis->PgInfo1.cEntries > 3)
+            pThis->PgInfo1.u.Pae.pPml4e->u = pThis->u64Pml4eBackup;
+    }
+    bs3CpuBasic2InvlPg_FlushAll();
+}
+
+
+/**
+ * Worker for bs3CpuBasic2_InvlPg_c32 that does the actual testing.
+ *
+ * Caller does all the cleaning up.
+ *
+ * @returns Error count.
+ * @param   pThis           Test state data.
+ * @param   fGlobalPages    Whether global pages are enabled.
+ */
+static uint8_t bs3CpuBasic2_InvlPgWorker(PBS3CPUBASIC2INVLPGSTATE pThis, bool const fGlobalPages)
+{
+    /*
+     * Set up the test context.
+     */
+    uint32_t fPdeAttribs = X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_PS;
+    pThis->fGlobalPages = fGlobalPages;
+    if (fGlobalPages)
+        fPdeAttribs |= X86_PDE4M_G;
+
+    Bs3RegCtxSaveEx(&pThis->Ctx, pThis->bMode, 640);
+    pThis->Ctx.rbx.u     = pThis->uTestAddr.u;
+    if (pThis->PgInfo1.cEntries == 2)
+        pThis->Ctx.rdi.u = (uintptr_t)pThis->PgInfo1.u.Legacy.pPde;
+    else
+        pThis->Ctx.rdi.u = (uintptr_t)pThis->PgInfo1.u.Pae.pPde;
+    pThis->Ctx.rdx.u     = (uintptr_t)pThis->pbOrgTest | fPdeAttribs;
+    pThis->Ctx.rsi.u     = ((uintptr_t)pThis->pbOrgTest | fPdeAttribs) + pThis->cbLargePg;
+
+    /*
+     * Execute the testcase.
+     */
+    Bs3RegCtxSetRipCsFromCurPtr(&pThis->Ctx, g_aCmnModes[pThis->idxCmnMode].pfnInvlPg);
+    Bs3TrapSetJmpAndRestore(&pThis->Ctx, &pThis->TrapCtx);
+
+    if (   pThis->TrapCtx.bXcpt != X86_XCPT_BP
+        || pThis->TrapCtx.Ctx.rax.u != 0)
+    {
+        Bs3TestFailedF("bXcpt=%#x rax=%#RX64 rdx=%#RX64\n", pThis->TrapCtx.bXcpt,
+                       pThis->TrapCtx.Ctx.rax.u, pThis->TrapCtx.Ctx.rdx.u);
+        Bs3TrapPrintFrame(&pThis->TrapCtx);
+    }
+
+
+    /*
+     * Cleanup.
+     */
+    bs3CpuBasic2InvlPg_RestoreFromBackups(pThis);
+    return 0;
+}
+
+#include "bs3-cmn-memory.h"
+
+
+BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_InvlPg_c32(uint8_t bMode)
+{
+    uint32_t const              cbLargePg = BS3_MODE_IS_LEGACY_PAGING(bMode) ? _4M : _2M;
+    void                       *pvTestUnaligned;
+    uint32_t                    cbTestUnaligned;
+    void                       *pvTmp;
+    uint8_t                     bRet = 1;
+    int                         rc;
+    PBS3CPUBASIC2INVLPGSTATE    pState;
+
+    /*
+     * Only test on 486+ with 4M / 2MB page support.
+     */
+    if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) < BS3CPU_80486)
+        return BS3TESTDOMODE_SKIPPED;
+    if (!(g_uBs3CpuDetected & BS3CPU_F_CPUID))
+        return BS3TESTDOMODE_SKIPPED;
+    if (!(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_PSE))
+        return BS3TESTDOMODE_SKIPPED;
+
+    /* Skip v86 modes, as those are ring-0 and invlpg doesn't work there.
+       Also, they can't address a whole page. (Test config should ensure
+       we don't get these, but just to be on the safe side.)*/
+    if (BS3_MODE_IS_V86(bMode))
+        return BS3TESTDOMODE_SKIPPED;
+
+    /*
+     * Allocate two large pages.
+     *
+     * HACK ALERT! We allocate a chunk of temporary memory before the two large
+     * pages to prevent heap fragmentation by the Bs3PagingAlias calls causing
+     * trouble in later iterations and tests.
+     */
+    pvTmp = Bs3MemAlloc(BS3MEMKIND_FLAT32, _512K);
+    cbTestUnaligned = cbLargePg * 3;
+    pvTestUnaligned = Bs3MemAlloc(BS3MEMKIND_FLAT32, cbTestUnaligned);
+    Bs3MemFree(pvTmp, _512K);
+    if (!pvTestUnaligned)
+    {
+        cbTestUnaligned = cbLargePg * 2;
+        pvTestUnaligned = Bs3MemAlloc(BS3MEMKIND_FLAT32, cbTestUnaligned);
+        if ((uintptr_t)pvTestUnaligned & (cbLargePg - 1))
+        {
+            Bs3MemFree(pvTestUnaligned, cbTestUnaligned);
+            pvTestUnaligned = NULL;
+        }
+        if (!pvTestUnaligned)
+        {
+            Bs3TestFailedF("Failed to allocate two large pages (%#x bytes)!\n", cbTestUnaligned);
+            return 1;
+        }
+    }
+
+    /*
+     * Allocate and initialize the state.
+     */
+    pState = (PBS3CPUBASIC2INVLPGSTATE)Bs3MemAllocZ(BS3MEMKIND_FLAT32, sizeof(*pState));
+    if (pState)
+    {
+        pState->bMode = bMode;
+
+        pState->idxCmnMode = 0;
+        while (   g_aCmnModes[pState->idxCmnMode].bMode != (bMode & BS3_MODE_CODE_MASK)
+               || g_aCmnModes[pState->idxCmnMode].fPae  != !BS3_MODE_IS_LEGACY_PAGING(bMode))
+            pState->idxCmnMode++;
+        if (pState->idxCmnMode >= RT_ELEMENTS(g_aCmnModes))
+        {
+            Bs3TestFailed("No matching g_aCmnModes entry!");
+            pState->idxCmnMode = 0;
+        }
+
+        /* Complete the allocation of the two large pages. */
+        pState->cbLargePg  = cbLargePg;
+        pState->cbTest     = cbLargePg * 2;
+        pState->pbOrgTest  = (uint8_t *)(((uintptr_t)pvTestUnaligned + cbLargePg - 1) & ~(cbLargePg - 1));
+
+        /*
+         * Alias this memory far away from where our code and data lives.
+         */
+        if (bMode & BS3_MODE_CODE_64)
+            pState->uTestAddr.u = UINT64_C(0xffffc486b0000000) + cbLargePg * 7;
+        else
+            pState->uTestAddr.u =         UINT32_C(0x80000000) + cbLargePg * 3;
+        rc = Bs3PagingAlias(pState->uTestAddr.u, (uintptr_t)pState->pbOrgTest, pState->cbTest,
+                            X86_PTE_P | X86_PTE_RW | X86_PTE_US);
+        if (RT_SUCCESS(rc))
+        {
+            rc = Bs3PagingQueryAddressInfo(pState->uTestAddr.u, &pState->PgInfo1);
+            if (RT_SUCCESS(rc))
+                rc = Bs3PagingQueryAddressInfo(pState->uTestAddr.u + cbLargePg, &pState->PgInfo2);
+            if (RT_SUCCESS(rc))
+            {
+                /* Backup the paging structures. */
+                /** @todo try use this to attempt mixing 4/2M and 4K entries in the TLB for
+                 *        the same large page. */
+                Bs3MemCpy(&pState->aPteBackup[0], pState->PgInfo1.u.Legacy.pPte, sizeof(pState->aPteBackup[0].Legacy));
+                Bs3MemCpy(&pState->aPteBackup[1], pState->PgInfo2.u.Legacy.pPte, sizeof(pState->aPteBackup[1].Legacy));
+                if (pState->PgInfo1.cEntries == 2)
+                {
+                    pState->aPdeBackup[0].Legacy = pState->PgInfo1.u.Legacy.pPde->u;
+                    pState->aPdeBackup[1].Legacy = pState->PgInfo2.u.Legacy.pPde->u;
+                }
+                else
+                {
+                    pState->aPdeBackup[0].Pae = pState->PgInfo1.u.Pae.pPde->u;
+                    pState->aPdeBackup[1].Pae = pState->PgInfo2.u.Pae.pPde->u;
+                    if (pState->PgInfo1.cEntries > 2)
+                        pState->u64PdpteBackup = pState->PgInfo1.u.Pae.pPdpe->u;
+                    if (pState->PgInfo1.cEntries > 3)
+                        pState->u64Pml4eBackup = pState->PgInfo1.u.Pae.pPml4e->u;
+                }
+
+                /** @todo to 16-bit properly? */
+
+                /*
+                 * Initialize the memory buffers by stamping each dword with the low
+                 * 32-bits of its aliased address.
+                 */
+                {
+                    uint32_t  uValue  = pState->uTestAddr.u32;
+                    uint32_t *pu32Dst = (uint32_t *)pState->pbOrgTest;
+                    uint32_t  cLeft   = pState->cbTest / sizeof(*pu32Dst);
+                    while (cLeft-- > 0)
+                    {
+                        *pu32Dst = uValue;
+                        uValue += sizeof(*pu32Dst);
+                        pu32Dst++;
+                    }
+                }
+
+                /*
+                 * Do the testing.
+                 */
+                {
+                    uint32_t const cr0 = ASMGetCR0();
+                    uint32_t const cr4 = ASMGetCR4();
+
+                    ASMSetCR0(cr0 | X86_CR0_WP);
+                    ASMSetCR4(cr4 & ~X86_CR4_PGE);
+                    bRet = bs3CpuBasic2_InvlPgWorker(pState, false /*fGlobalPages*/);
+
+                    ASMSetCR4(cr4 | X86_CR4_PGE);
+                    bRet = bs3CpuBasic2_InvlPgWorker(pState, true /*fGlobalPages*/);
+
+                    ASMSetCR4(cr4);
+                    ASMSetCR0(cr0);
+                }
+
+                bs3CpuBasic2InvlPg_RestoreFromBackups(pState);
+            }
+            else
+                Bs3TestFailedF("Bs3PagingQueryAddressInfo failed: %d\n", rc);
+            Bs3PagingUnalias(pState->uTestAddr.u, pState->cbTest);
+        }
+        else
+            Bs3TestFailedF("Bs3PagingAlias failed! rc=%d\n", rc);
+        Bs3MemFree(pState, sizeof(*pState));
+    }
+    else
+        Bs3TestFailedF("Bs3MemAlloc/state failed! cb=%#x\n", sizeof(*pState));
+    Bs3MemFree(pvTestUnaligned, cbTestUnaligned);
+    return bRet;
+}
+

@@ -113,7 +113,8 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
         bool        fSkipped    = true;
         bool const  fOnlyPaging = RT_BOOL((paEntries[i].fFlags | fFlags) & BS3TESTMODEBYONEENTRY_F_ONLY_PAGING);
         bool const  fMinimal    = RT_BOOL((paEntries[i].fFlags | fFlags) & BS3TESTMODEBYONEENTRY_F_MINIMAL);
-        bool const  fCurDoV86Modes      = fDoV86Modes && !fMinimal;
+        bool const  fSkipV8086  = RT_BOOL((paEntries[i].fFlags | fFlags) & BS3TESTMODEBYONEENTRY_F_SKIP_V8086);
+        bool const  fCurDoV86Modes      = fDoV86Modes && !fMinimal && !fSkipV8086;
         bool const  fCurDoWeirdV86Modes = fDoWeirdV86Modes && fCurDoV86Modes;
         uint8_t     bErrNo;
         Bs3TestSub(paEntries[i].pszSubTest);

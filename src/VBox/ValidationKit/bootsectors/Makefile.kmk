@@ -271,6 +271,7 @@ ifdef VBOX_WITH_BS3KIT
  	bs3-cpu-basic-2-x0.c \
  	bs3-cpu-basic-2-32.c32 \
  	bs3-cpu-basic-2-pf.c32 \
+ 	bs3-cpu-basic-2-invlpg.c32 \
  	bs3kit/bs3-cmn-instantiate-x0.c16 \
  	bs3kit/bs3-cmn-instantiate.c32 \
  	bs3kit/bs3-cmn-instantiate.c64 \

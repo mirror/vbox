@@ -4222,6 +4222,8 @@ typedef BS3TESTMODEBYONEENTRY const *PCBS3TESTMODEBYONEENTRY;
 #define BS3TESTMODEBYONEENTRY_F_MINIMAL         RT_BIT_32(1)
 /** The 32-bit worker is ready to handle real-mode by mode switching. */
 #define BS3TESTMODEBYONEENTRY_F_REAL_MODE_READY RT_BIT_32(2)
+/** Skip all v8086 mode tests. */
+#define BS3TESTMODEBYONEENTRY_F_SKIP_V8086      RT_BIT_32(3)
 /** @} */
 
 
