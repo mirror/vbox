@@ -803,7 +803,6 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
     RTGCPTR const   GCPtrTagMask = fPartialScan ? ~(RTGCPTR)0
                                  : ~(RTGCPTR)(  (RT_BIT_32(a_f2MbLargePage ? 9 : 10) - 1U)
                                               & ~(uint32_t)(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) - 1U));
-IEMTLBTRACE_USER3(pVCpu, GCPtrTagMask, GCPtrTag, RT_MAKE_U32(idxEven, idxEvenEnd), a_fDataTlb);
 
     /*
      * Do the scanning.
