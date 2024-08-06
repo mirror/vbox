@@ -775,17 +775,23 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllGlobal(PVMCPUCC pVCpu)
 
 #if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
 
+/** @todo graduate this to cdefs.h or asm-mem.h.   */
+# if defined(_MM_HINT_T0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+#  define MY_PREFETCH(a_pvAddr)     _mm_prefetch((const char *)(a_pvAddr), _MM_HINT_T0);
+# elif defined(_MSC_VER) && (defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32))
+#  define MY_PREFETCH(a_pvAddr)     __prefetch((a_pvAddr));
+# elif defined(__GNUC__) || RT_CLANG_HAS_FEATURE(__builtin_prefetch)
+#  define MY_PREFETCH(a_pvAddr)     __builtin_prefetch((a_pvAddr), 0 /*rw*/, 3 /*locality*/)
+# else
+#  define MY_PREFETCH(a_pvAddr)     ((void)0)
+# endif
+
 template<bool const a_fDataTlb, bool const a_f2MbLargePage, bool const a_fGlobal, bool const a_fNonGlobal>
-DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPTR GCPtrTag, RTGCPTR GCPtrInstrBufPcTag)
+DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPTR GCPtrTag,
+                                                      RTGCPTR GCPtrInstrBufPcTag) RT_NOEXCEPT
 {
     IEMTLBTRACE_LARGE_SCAN(pVCpu, a_fGlobal, a_fNonGlobal, a_fDataTlb);
-
-    /*
-     * Combine TAG values with the TLB revisions.
-     */
-    RTGCPTR GCPtrTagGlob = a_fGlobal ? GCPtrTag | pTlb->uTlbRevisionGlobal : 0;
-    if (a_fNonGlobal)
-        GCPtrTag |= pTlb->uTlbRevision;
+    AssertCompile(IEMTLB_ENTRY_COUNT >= 16); /* prefetching + unroll assumption */
 
     /*
      * Set up the scan.
@@ -796,54 +802,84 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
      * that fold large page offsets 1MB-2MB into the 0-1MB range.
      *
      * For our example with 2MB pages and a 256 entry TLB: 0xfffffffffffffeff
+     *
+     * MY_PREFETCH: Hope that prefetching 256 bytes at the time is okay for
+     * relevant host architectures.
      */
+    /** @todo benchmark this code from the guest side.   */
     bool const      fPartialScan = IEMTLB_ENTRY_COUNT > (a_f2MbLargePage ? 512 : 1024);
     uintptr_t       idxEven      = fPartialScan ? IEMTLB_TAG_TO_EVEN_INDEX(GCPtrTag)             : 0;
+    MY_PREFETCH(&pTlb->aEntries[0 + !a_fNonGlobal]);
+    MY_PREFETCH(&pTlb->aEntries[2 + !a_fNonGlobal]);
+    MY_PREFETCH(&pTlb->aEntries[4 + !a_fNonGlobal]);
+    MY_PREFETCH(&pTlb->aEntries[6 + !a_fNonGlobal]);
     uintptr_t const idxEvenEnd   = fPartialScan ? idxEven + ((a_f2MbLargePage ? 512 : 1024) * 2) : IEMTLB_ENTRY_COUNT * 2;
     RTGCPTR const   GCPtrTagMask = fPartialScan ? ~(RTGCPTR)0
                                  : ~(RTGCPTR)(  (RT_BIT_32(a_f2MbLargePage ? 9 : 10) - 1U)
                                               & ~(uint32_t)(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) - 1U));
 
     /*
+     * Combine TAG values with the TLB revisions.
+     */
+    RTGCPTR GCPtrTagGlob = a_fGlobal ? GCPtrTag | pTlb->uTlbRevisionGlobal : 0;
+    if (a_fNonGlobal)
+        GCPtrTag |= pTlb->uTlbRevision;
+
+    /*
      * Do the scanning.
      */
-    for (; idxEven < idxEvenEnd; idxEven += 2)
+    for (; idxEven < idxEvenEnd; idxEven += 8)
     {
-        if (a_fNonGlobal)
-        {
-            if ((pTlb->aEntries[idxEven].uTag & GCPtrTagMask) == GCPtrTag)
-            {
-                if (pTlb->aEntries[idxEven].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE)
-                {
-                    IEMTLBTRACE_LARGE_EVICT_SLOT(pVCpu, GCPtrTag, pTlb->aEntries[idxEven].GCPhys, idxEven, a_fDataTlb);
-                    pTlb->aEntries[idxEven].uTag = 0;
-                    if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
-                        pVCpu->iem.s.cbInstrBufTotal = 0;
-                }
+#define ONE_ITERATION(a_idxEvenIter) \
+            if (a_fNonGlobal)  \
+            { \
+                if ((pTlb->aEntries[a_idxEvenIter].uTag & GCPtrTagMask) == GCPtrTag) \
+                { \
+                    if (pTlb->aEntries[a_idxEvenIter].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE) \
+                    { \
+                        IEMTLBTRACE_LARGE_EVICT_SLOT(pVCpu, GCPtrTag, pTlb->aEntries[a_idxEvenIter].GCPhys, \
+                                                     a_idxEvenIter, a_fDataTlb); \
+                        pTlb->aEntries[a_idxEvenIter].uTag = 0; \
+                        if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag) \
+                            pVCpu->iem.s.cbInstrBufTotal = 0; \
+                    } \
+                } \
+                GCPtrTag++; \
+            } \
+            \
+            if (a_fGlobal) \
+            { \
+                if ((pTlb->aEntries[a_idxEvenIter + 1].uTag & GCPtrTagMask) == GCPtrTagGlob) \
+                { \
+                    if (pTlb->aEntries[a_idxEvenIter + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE) \
+                    { \
+                        IEMTLBTRACE_LARGE_EVICT_SLOT(pVCpu, GCPtrTag, pTlb->aEntries[a_idxEvenIter + 1].GCPhys, \
+                                                     a_idxEvenIter + 1, a_fDataTlb); \
+                        pTlb->aEntries[a_idxEvenIter + 1].uTag = 0; \
+                        if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag) \
+                            pVCpu->iem.s.cbInstrBufTotal = 0; \
+                    } \
+                } \
+                GCPtrTagGlob++; \
             }
-            GCPtrTag++;
-        }
-
-        if (a_fGlobal)
+        if (idxEven < idxEvenEnd - 8)
         {
-            if ((pTlb->aEntries[idxEven + 1].uTag & GCPtrTagMask) == GCPtrTagGlob)
-            {
-                if (pTlb->aEntries[idxEven + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE)
-                {
-                    IEMTLBTRACE_LARGE_EVICT_SLOT(pVCpu, GCPtrTag, pTlb->aEntries[idxEven + 1].GCPhys, idxEven + 1, a_fDataTlb);
-                    pTlb->aEntries[idxEven + 1].uTag = 0;
-                    if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag)
-                        pVCpu->iem.s.cbInstrBufTotal = 0;
-                }
-            }
-            GCPtrTagGlob++;
+            MY_PREFETCH(&pTlb->aEntries[idxEven +  8 + !a_fNonGlobal]);
+            MY_PREFETCH(&pTlb->aEntries[idxEven + 10 + !a_fNonGlobal]);
+            MY_PREFETCH(&pTlb->aEntries[idxEven + 12 + !a_fNonGlobal]);
+            MY_PREFETCH(&pTlb->aEntries[idxEven + 14 + !a_fNonGlobal]);
         }
+        ONE_ITERATION(idxEven)
+        ONE_ITERATION(idxEven + 2)
+        ONE_ITERATION(idxEven + 4)
+        ONE_ITERATION(idxEven + 6)
+#undef ONE_ITERATION
     }
-
 }
 
 template<bool const a_fDataTlb, bool const a_f2MbLargePage>
-DECLINLINE(void) iemTlbInvalidateLargePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPTR GCPtrTag, RTGCPTR GCPtrInstrBufPcTag)
+DECLINLINE(void) iemTlbInvalidateLargePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPTR GCPtrTag,
+                                                 RTGCPTR GCPtrInstrBufPcTag) RT_NOEXCEPT
 {
     AssertCompile(IEMTLB_CALC_TAG_NO_REV((RTGCPTR)0x8731U << GUEST_PAGE_SHIFT) == 0x8731U);
 
@@ -868,7 +904,7 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, R
 }
 
 template<bool const a_fDataTlb>
-DECLINLINE(void) iemTlbInvalidatePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPTR GCPtrTag, uintptr_t idxEven)
+DECLINLINE(void) iemTlbInvalidatePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPTR GCPtrTag, uintptr_t idxEven) RT_NOEXCEPT
 {
     /*
      * Flush the entry pair.
