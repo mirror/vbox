@@ -52,10 +52,10 @@ void UIWizardNewVDVariantPage::prepare()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
 
-    m_pDescriptionLabel = new QIRichTextLabel;
-    m_pDynamicLabel = new QIRichTextLabel;
-    m_pFixedLabel = new QIRichTextLabel;
-    m_pSplitLabel = new QIRichTextLabel;
+    m_pDescriptionLabel = new QIRichTextLabel(this);
+    m_pDynamicLabel = new QIRichTextLabel(this);
+    m_pFixedLabel = new QIRichTextLabel(this);
+    m_pSplitLabel = new QIRichTextLabel(this);
 
     pMainLayout->addWidget(m_pDescriptionLabel);
     pMainLayout->addWidget(m_pDynamicLabel);

@@ -223,7 +223,6 @@ private:
     /** Holds the Cloud Profile object instance. */
     CCloudProfile  m_comCloudProfile;
 
-
     /** Holds the format label instance. */
     QIRichTextLabel *m_pLabelFormat;
     /** Holds the settings label instance. */

@@ -746,7 +746,7 @@ QWidget *UIWizardNewVMNameOSTypePage::createNameOSTypeWidgets()
             m_pSkipUnattendedCheckBox = new QCheckBox;
             if (m_pSkipUnattendedCheckBox)
                 m_pNameAndSystemLayout->addWidget(m_pSkipUnattendedCheckBox, 1, 1);
-            m_pInfoLabel = new QIRichTextLabel;
+            m_pInfoLabel = new QIRichTextLabel(pContainerWidget);
             if (m_pInfoLabel)
                 m_pNameAndSystemLayout->addWidget(m_pInfoLabel, 2, 1);
         }

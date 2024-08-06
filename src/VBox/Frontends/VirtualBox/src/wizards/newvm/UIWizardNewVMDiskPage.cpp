@@ -439,9 +439,9 @@ QWidget *UIWizardNewVMDiskPage::createMediumVariantWidgets(bool fWithLabels)
         }
         if (fWithLabels)
         {
-            m_pDescriptionLabel = new QIRichTextLabel;
-            m_pDynamicLabel = new QIRichTextLabel;
-            m_pFixedLabel = new QIRichTextLabel;
+            m_pDescriptionLabel = new QIRichTextLabel(pContainerWidget);
+            m_pDynamicLabel = new QIRichTextLabel(pContainerWidget);
+            m_pFixedLabel = new QIRichTextLabel(pContainerWidget);
 
             pMainLayout->addWidget(m_pDescriptionLabel);
             pMainLayout->addWidget(m_pDynamicLabel);
