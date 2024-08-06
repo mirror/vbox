@@ -112,7 +112,7 @@ struct ResourceAssignmentManager::State
 
 
 HRESULT ResourceAssignmentManager::State::init(PCVMMR3VTABLE pVMM, ChipsetType_T chipsetType, IommuType_T iommuType,
-                                               RTGCPHYS GCPhysMmioTop, RTGCPHYS GCPhysRamStart,
+                                               RTGCPHYS GCPhysMmioStart, RTGCPHYS GCPhysRamStart,
                                                RTGCPHYS GCPhysMmio32Start, RTGCPHYS cbMmio32, uint32_t cInterrupts)
 {
     mpVMM = pVMM;
@@ -122,8 +122,8 @@ HRESULT ResourceAssignmentManager::State::init(PCVMMR3VTABLE pVMM, ChipsetType_T
 
     mChipsetType           = chipsetType;
     mIommuType             = iommuType;
-    mGCPhysMmioStart       = GCPhysMmioTop;
-    mGCPhysMmioStartOrig   = GCPhysMmioTop;
+    mGCPhysMmioStart       = GCPhysMmioStart;
+    mGCPhysMmioStartOrig   = GCPhysMmioStart;
     mGCPhysRamStart        = GCPhysRamStart;
     mGCPhysMmio32Start     = GCPhysMmio32Start;
     mGCPhysMmio32StartOrig = GCPhysMmio32Start;
@@ -170,17 +170,11 @@ ResourceAssignmentManager *ResourceAssignmentManager::createInstance(PCVMMR3VTAB
 HRESULT ResourceAssignmentManager::assignMmioRegion(const char *pszName, RTGCPHYS cbRegion, PRTGCPHYS pGCPhysStart, PRTGCPHYS pcbRegion)
 {
     RTGCPHYS cbRegionAligned = RT_ALIGN_T(cbRegion, _4K, RTGCPHYS);
-    RTGCPHYS GCPhysMmioStart = pState->mGCPhysMmioStart - cbRegionAligned;
-
-    if (GCPhysMmioStart < pState->mGCPhysRamStart)
-    {
-        AssertLogRelMsgFailed(("ResourceAssignmentManager: MMIO range for %s would overlap RAM region\n", pszName));
-        return E_INVALIDARG;
-    }
+    RTGCPHYS GCPhysMmioStart = pState->mGCPhysMmioStart;
 
     *pGCPhysStart = GCPhysMmioStart;
     *pcbRegion    = cbRegionAligned;
-    pState->mGCPhysMmioStart -= cbRegionAligned;
+    pState->mGCPhysMmioStart += cbRegionAligned;
     pState->addAddrRange(pszName, GCPhysMmioStart, cbRegionAligned);
     return S_OK;
 }
@@ -206,18 +200,13 @@ HRESULT ResourceAssignmentManager::assignMmio32Region(const char *pszName, RTGCP
 HRESULT ResourceAssignmentManager::assignMmioRegionAligned(const char *pszName, RTGCPHYS cbRegion, RTGCPHYS cbAlignment, PRTGCPHYS pGCPhysStart, PRTGCPHYS pcbRegion)
 {
     RTGCPHYS cbRegionAligned = RT_ALIGN_T(cbRegion, cbAlignment, RTGCPHYS);
-    RTGCPHYS GCPhysMmioStart = pState->mGCPhysMmioStart - cbRegionAligned;
+    RTGCPHYS GCPhysMmioStart = pState->mGCPhysMmioStart;
 
-    GCPhysMmioStart = GCPhysMmioStart & ~(cbAlignment - 1);
-    if (GCPhysMmioStart < pState->mGCPhysRamStart)
-    {
-        AssertLogRelMsgFailed(("ResourceAssignmentManager: MMIO range for %s would overlap RAM region\n", pszName));
-        return E_INVALIDARG;
-    }
+    GCPhysMmioStart = RT_ALIGN_T(GCPhysMmioStart, cbAlignment, RTGCPHYS);
 
     *pGCPhysStart = GCPhysMmioStart;
     *pcbRegion    = cbRegionAligned;
-    pState->mGCPhysMmioStart = GCPhysMmioStart;
+    pState->mGCPhysMmioStart = GCPhysMmioStart + cbRegionAligned;
     pState->addAddrRange(pszName, GCPhysMmioStart, cbRegionAligned);
     return S_OK;
 }
@@ -231,12 +220,6 @@ HRESULT ResourceAssignmentManager::assignFixedAddress(const char *pszName, RTGCP
 
 HRESULT ResourceAssignmentManager::assignRamRegion(const char *pszName, RTGCPHYS cbRam, PRTGCPHYS pGCPhysStart)
 {
-    if (pState->mGCPhysRamStart + cbRam > pState->mGCPhysMmioStart)
-    {
-        AssertLogRelMsgFailed(("ResourceAssignmentManager: RAM range for %s would overlap MMIO range\n", pszName));
-        return E_INVALIDARG;
-    }
-
     *pGCPhysStart = pState->mGCPhysRamStart;
     pState->mGCPhysRamStart += cbRam;
     pState->addAddrRange(pszName, *pGCPhysStart, cbRam);
@@ -263,8 +246,8 @@ HRESULT ResourceAssignmentManager::assignSingleInterrupt(const char *pszName, ui
 
 HRESULT ResourceAssignmentManager::queryMmioRegion(PRTGCPHYS pGCPhysMmioStart, PRTGCPHYS pcbMmio)
 {
-    *pGCPhysMmioStart = pState->mGCPhysMmioStart;
-    *pcbMmio          = pState->mGCPhysMmioStartOrig - pState->mGCPhysMmioStart;
+    *pGCPhysMmioStart = pState->mGCPhysMmioStartOrig;
+    *pcbMmio          = pState->mGCPhysMmioStart - pState->mGCPhysMmioStartOrig;
     return S_OK;
 }
 

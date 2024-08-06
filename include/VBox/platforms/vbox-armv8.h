@@ -61,24 +61,24 @@ typedef struct VBOXPLATFORMARMV8
     uint64_t                    u64PhysAddrRamBase;
     /** Size of the base RAM region in bytes. */
     uint64_t                    cbRamBase;
-    /** Offset to the beginning of the FDT backwards from the start of this descriptor, 0 if not available. */
-    uint64_t                    u64OffBackFdt;
+    /** Offset to the beginning of the FDT from the start of this descriptor, 0 if not available. */
+    int64_t                     i64OffFdt;
     /** Size of the FDT in bytes, 0 if not available. */
     uint64_t                    cbFdt;
-    /** Offset to the RDSP/XSDP table for ACPI backwards from the start of this descriptor, 0 if not available. */
-    uint64_t                    u64OffBackAcpiXsdp;
+    /** Offset to the RDSP/XSDP table for ACPI from the start of this descriptor, 0 if not available. */
+    int64_t                     i64OffAcpiXsdp;
     /** Size of the RDSP/XSDP table, 0 if not available. */
     uint64_t                    cbAcpiXsdp;
-    /** Offset backwards to the start of the UEFI ROM region from the start of this descriptor, 0 if not available (doesn't make much sense though). */
-    uint64_t                    u64OffBackUefiRom;
+    /** Offset to the start of the UEFI ROM region from the start of this descriptor, 0 if not available (doesn't make much sense though). */
+    int64_t                     i64OffUefiRom;
     /** Size if the UEFI ROM region in bytes, 0 if not available. */
     uint64_t                    cbUefiRom;
-    /** Offset backwards to the start of the MMIO region from the start of this descriptor, 0 if not available (doesn't make much sense though). */
-    uint64_t                    u64OffBackMmio;
+    /** Offset to the start of the MMIO region from the start of this descriptor, 0 if not available (doesn't make much sense though). */
+    int64_t                     i64OffMmio;
     /** Size of the MMIO region in bytes, 0 if not available. */
     uint64_t                    cbMmio;
-    /** Offset backwards to the start of the MMIO32 region from the start of this descriptor, 0 if not available. */
-    uint64_t                    u64OffBackMmio32;
+    /** Offset to the start of the MMIO32 region from the start of this descriptor, 0 if not available. */
+    int64_t                     i64OffMmio32;
     /** Size of the MMIO32 region in bytes, 0 if not available. */
     uint64_t                    cbMmio32;
     /** Padding to 64KiB. */
@@ -92,5 +92,8 @@ typedef const VBOXPLATFORMARMV8 *PCVBOXPLATFORMARMV8;
 #define VBOXPLATFORMARMV8_MAGIC   RT_MAKE_U32_FROM_U8('V', '8', 'O', 'X')
 /** Current version of the descriptor. */
 #define VBOXPLATFORMARMV8_VERSION 0x1
+
+/** Physical address of the VBox platform descriptor (128MiB). */
+#define VBOXPLATFORMARMV8_PHYS_ADDR UINT64_C(0x08000000)
 
 #endif /* !VBOX_INCLUDED_platforms_vbox_armv8_h */

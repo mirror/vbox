@@ -48,7 +48,7 @@
 
 EFI_PHYSICAL_ADDRESS EFIAPI VBoxArmPlatformDescGetPhysAddr (VOID)
 {
-    return LShiftU64 (1ULL, ArmGetPhysicalAddressBits ()) - sizeof(VBOXPLATFORMARMV8);
+    return VBOXPLATFORMARMV8_PHYS_ADDR;
 }
 
 
@@ -94,7 +94,7 @@ VOID * EFIAPI VBoxArmPlatformFdtGet(VOID)
     if (!pDesc->cbFdt)
         return NULL;
 
-    return (VOID *)((UINTN)pDesc - pDesc->u64OffBackFdt);
+    return (VOID *)((UINTN)pDesc + pDesc->i64OffFdt);
 }
 
 
@@ -115,7 +115,7 @@ EFI_PHYSICAL_ADDRESS EFIAPI VBoxArmPlatformUefiRomStartGetPhysAddr(VOID)
     if (!pDesc->cbUefiRom)
         return 0;
 
-    return (EFI_PHYSICAL_ADDRESS)((UINTN)pDesc - pDesc->u64OffBackUefiRom);
+    return (EFI_PHYSICAL_ADDRESS)((UINTN)pDesc + pDesc->i64OffUefiRom);
 }
 
 
@@ -136,7 +136,7 @@ EFI_PHYSICAL_ADDRESS EFIAPI VBoxArmPlatformMmioStartGetPhysAddr(VOID)
     if (!pDesc->cbMmio)
         return 0;
 
-    return (EFI_PHYSICAL_ADDRESS)((UINTN)pDesc - pDesc->u64OffBackMmio);
+    return (EFI_PHYSICAL_ADDRESS)((UINTN)pDesc + pDesc->i64OffMmio);
 }
 
 
@@ -157,7 +157,7 @@ EFI_PHYSICAL_ADDRESS EFIAPI VBoxArmPlatformMmio32StartGetPhysAddr(VOID)
     if (!pDesc->cbMmio)
         return 0;
 
-    return (EFI_PHYSICAL_ADDRESS)((UINTN)pDesc - pDesc->u64OffBackMmio32);
+    return (EFI_PHYSICAL_ADDRESS)((UINTN)pDesc + pDesc->i64OffMmio32);
 }
 
 

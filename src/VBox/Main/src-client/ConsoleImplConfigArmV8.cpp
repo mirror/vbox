@@ -107,10 +107,6 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 #define H()         AssertLogRelMsgReturnStmt(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), RTFdtDestroy(hFdt), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
 #define VRC()       AssertLogRelMsgReturnStmt(RT_SUCCESS(vrc), ("vrc=%Rrc\n", vrc), RTFdtDestroy(hFdt), vrc)
 
-    /** @todo Find a way to figure it out before CPUM is set up, can't use CPUMGetGuestAddrWidths() and on macOS we need
-     * access to Hypervisor.framework to query the ID registers (Linux can in theory parse /proc/cpuinfo, no idea for Windows). */
-    RTGCPHYS GCPhysTopOfAddrSpace = RT_BIT_64(36);
-
     /*
      * Get necessary objects and frequently used parameters.
      */
@@ -186,11 +182,11 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
     BusAssignmentManager *pBusMgr = mBusMgr = BusAssignmentManager::createInstance(pVMM, chipsetType, IommuType_None);
     ResourceAssignmentManager *pResMgr = ResourceAssignmentManager::createInstance(pVMM, chipsetType, IommuType_None,
-                                                                                   GCPhysTopOfAddrSpace - sizeof(VBOXPLATFORMARMV8),
-                                                                                   _1G,             /*GCPhysRam*/
-                                                                                   128 * _1M,       /*GCPhysMmio32Start*/
-                                                                                   _1G - 128 * _1M, /*cbMmio32*/
-                                                                                   32               /*cInterrupts*/);
+                                                                                   RT_MAX(_1G + cbRam, _4G),                  /*GCPhysMmio*/
+                                                                                   _1G,                                       /*GCPhysRam*/
+                                                                                   VBOXPLATFORMARMV8_PHYS_ADDR + _1M,         /*GCPhysMmio32Start*/
+                                                                                   _1G - (VBOXPLATFORMARMV8_PHYS_ADDR + _1M), /*cbMmio32*/
+                                                                                   32                                         /*cInterrupts*/);
 
     /*
      * Get root node first.
@@ -334,6 +330,13 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
 
         /*
+         * CPUM values.
+         */
+        PCFGMNODE pCpum;
+        InsertConfigNode(pRoot, "CPUM", &pCpum);
+
+
+        /*
          * PDM config.
          *  Load drivers in VBoxC.[so|dll]
          */
@@ -397,7 +400,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
         InsertConfigNode(pResources,    "ArmV8Desc",             &pRes);
         InsertConfigInteger(pRes,       "RegisterAsRom",         1);
-        InsertConfigInteger(pRes,       "GCPhysLoadAddress",     UINT64_MAX); /* End of physical address space. */
+        InsertConfigInteger(pRes,       "GCPhysLoadAddress",     VBOXPLATFORMARMV8_PHYS_ADDR);
         InsertConfigString(pRes,        "ResourceId",            "VBoxArmV8Desc");
 
         /*
@@ -612,10 +615,10 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         uint32_t aPinIrqs[] = { iIrq, iIrq + 1, iIrq + 2, iIrq + 3 };
         RTGCPHYS GCPhysPciMmioEcam, GCPhysPciMmio, GCPhysPciMmio32;
         RTGCPHYS cbPciMmioEcam, cbPciMmio, cbPciMmio32;
-        hrc = pResMgr->assignMmioRegionAligned("pci-pio",    _64K, _64K,         &GCPhysMmioStart,   &cbMmio);         H();
-        hrc = pResMgr->assignMmioRegion(       "pci-ecam",   16 * _1M,           &GCPhysPciMmioEcam, &cbPciMmioEcam);  H();
-        hrc = pResMgr->assignMmioRegion(       "pci-mmio",   _2G,                &GCPhysPciMmio,     &cbPciMmio);      H();
-        hrc = pResMgr->assignMmio32Region(     "pci-mmio32", (1024 - 128) * _1M, &GCPhysPciMmio32,   &cbPciMmio32);    H();
+        hrc = pResMgr->assignMmioRegionAligned("pci-pio",    _64K, _64K,                              &GCPhysMmioStart,   &cbMmio);         H();
+        hrc = pResMgr->assignMmioRegion(       "pci-ecam",   16 * _1M,                                &GCPhysPciMmioEcam, &cbPciMmioEcam);  H();
+        hrc = pResMgr->assignMmioRegion(       "pci-mmio",   _2G,                                     &GCPhysPciMmio,     &cbPciMmio);      H();
+        hrc = pResMgr->assignMmio32Region(     "pci-mmio32", _1G - VBOXPLATFORMARMV8_PHYS_ADDR - _1M, &GCPhysPciMmio32,   &cbPciMmio32);    H();
 
         InsertConfigNode(pDevices, "pci-generic-ecam",  &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
@@ -772,12 +775,20 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     /* Initialize the VBox platform descriptor. */
     VBOXPLATFORMARMV8 ArmV8Platform; RT_ZERO(ArmV8Platform);
 
-    vrc = RTFdtDumpToVfsIoStrm(hFdt, RTFDTTYPE_DTB, 0 /*fFlags*/, hVfsIosDesc, NULL /*pErrInfo*/);
-    if (RT_SUCCESS(vrc))
-        vrc = RTVfsFileQuerySize(hVfsFileDesc, &ArmV8Platform.cbFdt);
+    /* Make room for the descriptor at the beginning. */
+    vrc = RTVfsIoStrmZeroFill(hVfsIosDesc, sizeof(ArmV8Platform));
     AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
 
-    vrc = RTVfsIoStrmZeroFill(hVfsIosDesc, (RTFOFF)(RT_ALIGN_64(ArmV8Platform.cbFdt, _64K) - ArmV8Platform.cbFdt));
+    vrc = RTFdtDumpToVfsIoStrm(hFdt, RTFDTTYPE_DTB, 0 /*fFlags*/, hVfsIosDesc, NULL /*pErrInfo*/);
+    uint64_t cbFdt = 0;
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = RTVfsFileQuerySize(hVfsFileDesc, &cbFdt);
+        cbFdt -= sizeof(ArmV8Platform);
+    }
+    AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
+
+    vrc = RTVfsIoStrmZeroFill(hVfsIosDesc, (RTFOFF)(RT_ALIGN_64(cbFdt, _64K) - cbFdt));
     AssertRCReturn(vrc, vrc);
 
     RTGCPHYS GCPhysMmioStart;
@@ -796,19 +807,19 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     ArmV8Platform.fFlags              = 0;
     ArmV8Platform.u64PhysAddrRamBase  = GCPhysRam;
     ArmV8Platform.cbRamBase           = cbRam;
-    ArmV8Platform.u64OffBackFdt       = RT_ALIGN_64(ArmV8Platform.cbFdt, _64K);
-    ArmV8Platform.cbFdt               = RT_ALIGN_64(ArmV8Platform.cbFdt, _64K);
-    ArmV8Platform.u64OffBackAcpiXsdp  = 0;
+    ArmV8Platform.i64OffFdt           = sizeof(ArmV8Platform);
+    ArmV8Platform.cbFdt               = RT_ALIGN_64(cbFdt, _64K);
+    ArmV8Platform.i64OffAcpiXsdp      = 0;
     ArmV8Platform.cbAcpiXsdp          = 0;
-    ArmV8Platform.u64OffBackUefiRom   = GCPhysTopOfAddrSpace - sizeof(ArmV8Platform);
-    ArmV8Platform.cbUefiRom           = _64M; /** @todo Fixed reservation but the ROM region is usually much smaller. */
-    ArmV8Platform.u64OffBackMmio      = GCPhysTopOfAddrSpace - sizeof(ArmV8Platform) - GCPhysMmioStart;
+    ArmV8Platform.i64OffUefiRom       = -128 * _1M;
+    ArmV8Platform.cbUefiRom           = _64M;
+    ArmV8Platform.i64OffMmio          = GCPhysMmioStart - _128M;
     ArmV8Platform.cbMmio              = cbMmio;
-    ArmV8Platform.u64OffBackMmio32    = GCPhysTopOfAddrSpace - sizeof(ArmV8Platform) - GCPhysMmio32Start;
+    ArmV8Platform.i64OffMmio32        = GCPhysMmio32Start - _128M;
     ArmV8Platform.cbMmio32            = cbMmio32;
 
     /* Add the VBox platform descriptor to the resource store. */
-    vrc = RTVfsIoStrmWrite(hVfsIosDesc, &ArmV8Platform, sizeof(ArmV8Platform), true /*fBlocking*/, NULL /*pcbWritten*/);
+    vrc = RTVfsIoStrmWriteAt(hVfsIosDesc, 0, &ArmV8Platform, sizeof(ArmV8Platform), true /*fBlocking*/, NULL /*pcbWritten*/);
     RTVfsIoStrmRelease(hVfsIosDesc);
     vrc = mptrResourceStore->i_addItem("resources", "VBoxArmV8Desc", hVfsFileDesc);
     RTVfsFileRelease(hVfsFileDesc);

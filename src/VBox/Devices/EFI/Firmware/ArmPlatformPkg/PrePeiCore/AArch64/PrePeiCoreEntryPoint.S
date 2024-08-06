@@ -45,37 +45,28 @@ ASM_PFX(MainEntryPoint):
   //
   // The VirtualBox platform has the following layout:
   //
-  //    0        128MiB            RAM size + 128MiB                                                                            -64KiB    Max phys address
-  //    +----------+------------------------+-----------------------------+-------------+---------+----------+---------+-----------+------------+
-  //    |   UEFI   |                        |                             |             |         |          |  Misc   |  FDT/ACPI |    VBox    |
-  //    | firmware |        RAM ..... =>    |  Not assigned address space | <= PCI MMIO | PCI PIO | PCI ECAM |  MMIO   |   table   | Descriptor |
-  //    |  region  |                        |                             |             |         |          | region  |   region  |   region   |
-  //    +----------+------------------------+-----------------------------+-------------+---------+----------+---------+-----------+------------+
+  //    0        128MiB              128MiB + 1MiB 1GiB                                                                          
+  //    +----------+------------+-----------+--------+----------------+-----------+----------------------------+
+  //    |   UEFI   |    VBox    |  FDT/ACPI |        |                |           |                            |
+  //    | firmware | Descriptor |   table   | MMIO32 |      RAM ..... |  MMIO ... | Not assigned address space |
+  //    |  region  |   region   |   region  |        |                |           |                            |
+  //    +----------+------------+-----------+--------+----------------+-----------+----------------------------+
   //
   // In order to have as few as hardcoded addresses as possible in the firmware
-  // VirtualBox installs a descriptor at the end of the physical address space
+  // VirtualBox installs a descriptor right after the firmware region
   // where all the other information is stored.
   //
-  // First the start of the region is determined by reading the size of the
-  // physical address space. From there the memory and stack is set up and
-  // the C entry point is called.
+  // First the start of the RAM region is determined by reading the descriptor.
+  // From there the memory and stack is set up and the C entry point is called.
   //
   // Note: Only the VBox descriptor and UEFI firmware region are at a fixed location.
   //       Everything else can float around freely in theory to give us the most flexibility.
   //
 
-  // Save the result from ArmPlatformIsPrimaryCore().
-  mov x6, x0
-
-  // Get the number of physical address bits
-  bl ASM_PFX(ArmGetPhysicalAddressBits)
-
   //
   // Determine the start of the VBox descriptor region.
   //
-  mov x1, #1
-  lsl x1, x1, x0      // Determine first invalid address
-  sub x1, x1, #65536  // Get at start of VBox descriptor region.
+  mov x1, #0x08000000
 
   //
   // Get at the ram base and use the beginning as our temporary stack.
@@ -86,7 +77,6 @@ ASM_PFX(MainEntryPoint):
   add x1, x1, FixedPcdGet32(PcdCPUCorePrimaryStackSize)
 
   // Restore the result from ArmPlatformIsPrimaryCore().
-  mov x0, x6
 #endif
 
   // x0 is equal to 1 if I am the primary core
