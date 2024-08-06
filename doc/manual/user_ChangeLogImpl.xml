@@ -122,7 +122,8 @@ Rules for adding a changelog entry to make them look more uniform:
 
       <listitem>
         <para>Recording: Bigger general performance improvements for the encoding
-          pipeline, resulting in less CPU usage while recording is active</para>
+          pipeline, resulting in less CPU usage while recording is active. This
+          requires 7.1 Guest Additions to be installed on Windows guests</para>
       </listitem>
 
     </itemizedlist>
