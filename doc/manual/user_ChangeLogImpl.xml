@@ -80,8 +80,8 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-        <para>GUI: Modernized look and feel, offering a selection between Basic and Experienced
-        user level with reduced or full UI functionality</para>
+        <para>GUI: Modernized look and feel, offering a selection between Basic
+          and Experienced user level with reduced or full UI functionality</para>
       </listitem>
 
       <listitem>
@@ -97,9 +97,9 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>Oracle VirtualBox Extension Pack: Ajustment to the PUEL license, removing the
-        duplicated evaluation option, for limited time evaluation use please download it
-        from the Oracle Software Delivery Cloud</para>
+        <para>Oracle VirtualBox Extension Pack: Ajustments to the PUEL license,
+          removing the duplicated evaluation option. For limited time evaluation
+          use please download it from the Oracle Software Delivery Cloud</para>
       </listitem>
 
       <listitem>
@@ -108,7 +108,7 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>NAT: new engine with IPv6 support</para>
+        <para>NAT: New engine with IPv6 support</para>
       </listitem>
 
       <listitem>
@@ -116,7 +116,13 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>Linux host and guest: Added Wayland support for Clipboard sharing (bug #20808)</para>
+        <para>Linux host and guest: Added Wayland support for Clipboard sharing
+          (bug #20808)</para>
+      </listitem>
+
+      <listitem>
+        <para>Recording: Bigger general performance improvements for the encoding
+          pipeline, resulting in less CPU usage while recording is active</para>
       </listitem>
 
     </itemizedlist>
@@ -126,11 +132,21 @@ Rules for adding a changelog entry to make them look more uniform:
     <itemizedlist>
 
       <listitem>
-        <para>Screen recording: improve performance</para>
+        <para>VMM: Fixed EFLAGS.TF handling for CPUID instructions when Hyper-V
+          is being used (bug #17961)</para>
       </listitem>
 
       <listitem>
-        <para>EFI: Add new Microsoft DB/KEX certificates to newly created VMs</para>
+       <para>virtio-net: Follow up fixes for FreeBSD 12.3 and pfSense 2.6.0 (bug #21201)</para>
+      </listitem>
+
+      <listitem>
+        <para>EFI: Added new Microsoft DB/KEX certificates to newly created VMs</para>
+      </listitem>
+
+      <listitem>
+        <para>Oracle Extension Pack: Fixed shipping the cryptographic support
+          module for full VM encryption</para>
       </listitem>
 
       <listitem>
@@ -138,7 +154,36 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>GUI: Migration to recent Qt version.</para>
+        <para>GUI: Migration to recent Qt version</para>
+      </listitem>
+
+      <listitem>
+        <para>Unattended Installation: Added support for subiquity- / cloud-init-based installers;
+          this enables installing more modern Linux-based guest OSes in Unattended mode</para>
+      </listitem>
+
+      <listitem>
+        <para>Unattended Installation: Added support for specifying separate passwords for
+          the user and admin / root accounts</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: Added ability to show and (re-)attach to a (video) recording progress
+          of a VM</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: Added the ability to query the guest's mount points via a new "mount"
+          Guest Control sub command. Requires at least 7.1 Guest Additions</para>
+      </listitem>
+
+      <listitem>
+        <para>Python: Our API bindings for Python 2.x is now marked as being deprecated and will
+          be removed in a future version. Please upgrade your code to use Python 3</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxShell: Lots of smaller and bigger bugfixes + Python 3.x compatibility</para>
       </listitem>
 
     </itemizedlist>
