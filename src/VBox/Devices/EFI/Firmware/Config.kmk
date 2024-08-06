@@ -139,6 +139,7 @@ TEMPLATE_VBoxEfiBldProg_CFLAGS.linux += -Wno-error=stringop-truncation # VfrComp
 
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.darwin.arm64  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.darwin.arm64)
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.darwin.arm64 += -Wno-register # BaseTools/Source/C/VfrCompile/Pccts/h/AParser.cpp:475:2: error: ISO C++17 does not allow 'register' storage class specifier [-Wregister]
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.darwin.arm64 += -Wno-deprecated-declarations # out/darwin.arm64/debug/obj/VfrCompile/VfrSyntax.cpp:11241:3: error: 'sprintf' is deprecated: This function is provided for compatibility reasons only
 
 TEMPLATE_VBoxEfiBldProg_INCS = $(TEMPLATE_VBoxBldProg_INCS) \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Common \
