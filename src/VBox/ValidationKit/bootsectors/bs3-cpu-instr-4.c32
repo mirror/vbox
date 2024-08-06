@@ -4513,7 +4513,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulps(uint8_t bMode)
 }
 
 
-#if 0
 /*
  * [V]MULPD.
  */
@@ -4527,84 +4526,98 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulpd(uint8_t bMode)
     /* 0*/{ { /*src2     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
             { /*src1     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
             { /* =>      */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
-              /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
-              /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK,
+             /*256:out  */ X86_MXCSR_XCPT_MASK,
+             /*xcpt?    */ false, false },
          { { /*src2     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
            { /*src1     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
            { /* =>      */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
-             /*mask     */ ~X86_MXCSR_XCPT_MASK,
-             /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
-             /*flags    */ 0, 0 },
+             /*mxcsr:in */ 0,
+             /*128:out  */ 0,
+             /*256:out  */ 0,
+             /*xcpt?    */ false, false },
          { { /*src2     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
            { /*src1     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
            { /* =>      */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
-             /*mask     */ ~X86_MXCSR_XCPT_MASK,
-             /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
-             /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
+             /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
+             /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
+             /*xcpt?    */ false, false },
          { { /*src2     */ { FP64_0(1), FP64_0(0), FP64_0(0), FP64_0(0) } },
            { /*src1     */ { FP64_0(1), FP64_0(0), FP64_0(0), FP64_0(0) } },
            { /* =>      */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
-             /*mask     */ ~X86_MXCSR_XCPT_MASK,
-             /*daz,fz,rc*/ X86_MXCSR_DAZ, 0, X86_MXCSR_RC_ZERO,
-             /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
+             /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
+             /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
+             /*xcpt?    */ false, false },
          { { /*src2     */ { FP64_0(0), FP64_0(0), FP64_0(1), FP64_0(0) } },
            { /*src1     */ { FP64_0(0), FP64_0(0), FP64_0(1), FP64_0(0) } },
            { /* =>      */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
-             /*mask     */ ~X86_MXCSR_XCPT_MASK,
-             /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
-             /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+             /*128:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+             /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+             /*xcpt?    */ false, false },
          { { /*src2     */ { FP64_0(0), FP64_0(1), FP64_0(0), FP64_0(1) } },
            { /*src1     */ { FP64_0(0), FP64_0(0), FP64_0(1), FP64_0(1) } },
            { /* =>      */ { FP64_0(0), FP64_0(1), FP64_0(1), FP64_0(0) } },
-             /*mask     */ X86_MXCSR_XCPT_MASK,
-             /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_DOWN,
-             /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+             /*xcpt?    */ false, false },
          { { /*src2     */ { FP64_NORM_V0(0), FP64_NORM_V1(1), FP64_0(0),       FP64_NORM_V3(1) } },
            { /*src1     */ { FP64_0(0),       FP64_0(0),       FP64_NORM_V2(1), FP64_0(1)       } },
            { /* =>      */ { FP64_0(0),       FP64_0(1),       FP64_0(1),       FP64_0(0)       } },
-             /*mask     */ X86_MXCSR_XCPT_MASK,
-             /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_DOWN,
-             /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+             /*xcpt?    */ false, false },
     /*
      * Infinity.
      */
     /* 7*/{ { /*src2     */ { FP64_INF(0), FP64_0(0), FP64_INF(1), FP64_0(0) } },
             { /*src1     */ { FP64_INF(1), FP64_0(0), FP64_INF(0), FP64_0(0) } },
             { /* =>      */ { FP64_INF(1), FP64_0(0), FP64_INF(1), FP64_0(0) } },
-              /*mask     */ ~X86_MXCSR_IM,
-              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
-              /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK & ~X86_MXCSR_IM,
+             /*128:out  */ X86_MXCSR_XCPT_MASK & ~X86_MXCSR_IM,
+             /*256:out  */ X86_MXCSR_XCPT_MASK & ~X86_MXCSR_IM,
+             /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_INF(0), FP64_INF(0), FP64_INF(1), FP64_INF(1) } },
             { /*src1     */ { FP64_INF(1), FP64_INF(0), FP64_INF(1), FP64_INF(0) } },
             { /* =>      */ { FP64_INF(1), FP64_INF(0), FP64_INF(0), FP64_INF(1) } },
-              /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_NEAREST,
-              /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK,
+             /*256:out  */ X86_MXCSR_XCPT_MASK,
+             /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_INF(0), FP64_INF(1), FP64_0(1), FP64_INF(0) } },
             { /*src1     */ { FP64_INF(1), FP64_INF(0), FP64_0(1), FP64_INF(0) } },
             { /* =>      */ { FP64_INF(1), FP64_INF(1), FP64_0(0), FP64_INF(0) } },
-              /*mask     */ ~X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 0, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
-              /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+             /*128:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+             /*256:out  */ X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+             /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_INF(0), FP64_INF(1), FP64_0(1), FP64_INF(0) } },
             { /*src1     */ { FP64_INF(1), FP64_INF(0), FP64_0(1), FP64_INF(0) } },
             { /* =>      */ { FP64_INF(1), FP64_INF(1), FP64_0(0), FP64_INF(0) } },
-              /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_ZERO,
-              /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+             /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_INF(0), FP64_INF(0),     FP64_1(0),   FP64_INF(0)     } },
             { /*src1     */ { FP64_1(0),   FP64_NORM_V0(0), FP64_INF(0), FP64_NORM_V1(0) } },
             { /* =>      */ { FP64_INF(0), FP64_INF(0),     FP64_INF(0), FP64_INF(0)     } },
-              /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ 0, 0, X86_MXCSR_RC_DOWN,
-              /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*xcpt?    */ false, false },
           { { /*src2     */ { FP64_INF(1), FP64_INF(0),     FP64_NORM_V3(0), FP64_INF(1)     } },
             { /*src1     */ { FP64_1(1),   FP64_NORM_V3(1), FP64_INF(1),     FP64_NORM_V1(1) } },
             { /* =>      */ { FP64_INF(0), FP64_INF(1),     FP64_INF(1),     FP64_INF(0)     } },
-              /*mask     */ X86_MXCSR_XCPT_MASK,
-              /*daz,fz,rc*/ X86_MXCSR_DAZ, X86_MXCSR_FZ, X86_MXCSR_RC_UP,
-              /*flags    */ 0, 0 },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
+             /*xcpt?    */ false, false },
+#if 0
     /*
      * Normals.
      */
@@ -4811,6 +4824,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulpd(uint8_t bMode)
               /*daz,fz,rc*/ X86_MXCSR_DAZ, 0, X86_MXCSR_RC_ZERO,
               /*flags    */ X86_MXCSR_IE, X86_MXCSR_IE },
     /** @todo Underflow, Precision; Rounding, FZ etc. */
+#endif
     };
 
     static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
@@ -4860,6 +4874,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulpd(uint8_t bMode)
 }
 
 
+#if 0
 /*
  * [V]MULSS.
  */
@@ -5299,8 +5314,8 @@ BS3_DECL(void) Main_pe32()
         { "[v]subpd",       bs3CpuInstr4_v_subpd,  0 },
         { "[v]subss",       bs3CpuInstr4_v_subss,  0 },
         { "[v]mulps",       bs3CpuInstr4_v_mulps,  0 },
-# if 0
         { "[v]mulpd",       bs3CpuInstr4_v_mulpd,  0 },
+# if 0
         { "[v]mulss",       bs3CpuInstr4_v_mulss,  0 },
 # endif
 #endif
