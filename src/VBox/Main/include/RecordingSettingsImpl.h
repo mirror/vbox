@@ -35,8 +35,8 @@
 
 namespace settings
 {
-    struct RecordingSettings;
-    struct RecordingScreenSettings;
+    struct Recording;
+    struct RecordingScreen;
 }
 
 class RecordingScreenSettings;
@@ -58,8 +58,8 @@ public:
     void uninit();
 
     // public methods only for internal purposes
-    HRESULT i_loadSettings(const settings::RecordingSettings &data);
-    HRESULT i_saveSettings(settings::RecordingSettings &data);
+    HRESULT i_loadSettings(const settings::Recording &Settings);
+    HRESULT i_saveSettings(settings::Recording &Settings);
 
     void    i_rollback(void);
     void    i_commit(void);
@@ -81,7 +81,7 @@ private:
     int i_start(void);
     int i_stop(void);
     int i_syncToMachineDisplays(uint32_t cDisplays);
-    int i_createScreenObj(RecordingScreenSettingsObjMap &screenSettingsMap, uint32_t idScreen, const settings::RecordingScreenSettings &data);
+    int i_createScreenObj(RecordingScreenSettingsObjMap &screenSettingsMap, uint32_t idScreen, const settings::RecordingScreen &data);
     int i_destroyScreenObj(RecordingScreenSettingsObjMap &screenSettingsMap, uint32_t idScreen);
     int i_destroyAllScreenObj(RecordingScreenSettingsObjMap &screenSettingsMap);
 

@@ -200,7 +200,7 @@ public:
     int i_recordingCreate(ComPtr<IProgress> &pProgress);
     void i_recordingDestroy(void);
     int i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock, ComPtr<IProgress> &pProgress);
-    int i_recordingGetSettings(settings::RecordingSettings &recording);
+    int i_recordingGetSettings(settings::Recording &Settings);
     int i_recordingStart(util::AutoWriteLock *pAutoLock = NULL);
     int i_recordingStop(util::AutoWriteLock *pAutoLock = NULL);
     int i_recordingCursorShapeChange(bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot, uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, uint32_t cbShape);

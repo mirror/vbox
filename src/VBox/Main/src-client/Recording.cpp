@@ -238,7 +238,7 @@ bool RecordingContext::progressIsCompleted(void) const
  * @param   Settings            Recording settings to use for creation.
  * @param   pProgress           Where to return the created progress object on success.
  */
-int RecordingContext::progressCreate(const settings::RecordingSettings &Settings, ComObjPtr<Progress> &pProgress)
+int RecordingContext::progressCreate(const settings::Recording &Settings, ComObjPtr<Progress> &pProgress)
 {
     /* Determine the number of operations the recording progress has.
      * We use the maximum time (in s) of each screen as the overall progress indicator.
@@ -248,7 +248,7 @@ int RecordingContext::progressCreate(const settings::RecordingSettings &Settings
     settings::RecordingScreenSettingsMap::const_iterator itScreen = Settings.mapScreens.begin();
     while (itScreen != Settings.mapScreens.end())
     {
-        settings::RecordingScreenSettings const &screenSettings = itScreen->second;
+        settings::RecordingScreen const &screenSettings = itScreen->second;
         if (screenSettings.ulMaxTimeS == 0)
         {
             cOperations = 1; /* Screen will be recorded indefinitely, reset operation count and bail out.  */
@@ -670,7 +670,7 @@ DECLCALLBACK(int) RecordingContext::s_audioCodecWriteDataCallback(PRECORDINGCODE
  * @returns VBox status code.
  * @param   screenSettings      Reference to recording screen settings to use for initialization.
  */
-int RecordingContext::audioInit(const settings::RecordingScreenSettings &screenSettings)
+int RecordingContext::audioInit(const settings::RecordingScreen &screenSettings)
 {
     RecordingAudioCodec_T const enmCodec = screenSettings.Audio.enmCodec;
 
@@ -753,7 +753,7 @@ DECLCALLBACK(void) RecordingContext::s_recordingStateChangedCallback(RecordingCo
  * @param   Settings            Reference to recording settings to use for creation.
  * @param   pProgress           Progress object returned on success.
  */
-int RecordingContext::createInternal(Console *ptrConsole, const settings::RecordingSettings &Settings,
+int RecordingContext::createInternal(Console *ptrConsole, const settings::Recording &Settings,
                                      ComPtr<IProgress> &pProgress)
 {
     int vrc = VINF_SUCCESS;
@@ -766,7 +766,7 @@ int RecordingContext::createInternal(Console *ptrConsole, const settings::Record
     AssertReturn(itScreen0 != m_Settings.mapScreens.end(), VERR_WRONG_ORDER);
 
     /* We always use the audio settings from screen 0, as we multiplex the audio data anyway. */
-    settings::RecordingScreenSettings const &screen0Settings = itScreen0->second;
+    settings::RecordingScreen const &screen0Settings = itScreen0->second;
 
     vrc = this->audioInit(screen0Settings);
     if (RT_FAILURE(vrc))
@@ -991,7 +991,7 @@ void RecordingContext::destroyInternal(void)
  *
  * @returns The recording context's current settings.
  */
-const settings::RecordingSettings &RecordingContext::GetConfig(void) const
+const settings::Recording &RecordingContext::GetConfig(void) const
 {
     return m_Settings;
 }
@@ -1071,7 +1071,7 @@ size_t RecordingContext::GetStreamCount(void) const
  * @param   Settings            Reference to recording settings to use for creation.
  * @param   pProgress           Progress object returned on success.
  */
-int RecordingContext::Create(Console *ptrConsole, const settings::RecordingSettings &Settings, ComPtr<IProgress> &pProgress)
+int RecordingContext::Create(Console *ptrConsole, const settings::Recording &Settings, ComPtr<IProgress> &pProgress)
 {
     return createInternal(ptrConsole, Settings, pProgress);
 }

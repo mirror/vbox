@@ -119,13 +119,13 @@ class RecordingStream
 {
 public:
 
-    RecordingStream(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings);
+    RecordingStream(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreen &Settings);
 
     virtual ~RecordingStream(void);
 
 public:
 
-    int Init(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings);
+    int Init(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreen &Settings);
     int Uninit(void);
 
     int ThreadMain(int rcWait, uint64_t msTimestamp, RecordingBlockMap &commonBlocks);
@@ -135,7 +135,7 @@ public:
     int SendVideoFrame(PRECORDINGVIDEOFRAME pFrame, uint64_t msTimestamp);
     int SendScreenChange(PRECORDINGSURFACEINFO pInfo, uint64_t msTimestamp, bool fForce = false);
 
-    const settings::RecordingScreenSettings &GetConfig(void) const;
+    const settings::RecordingScreen &GetConfig(void) const;
     uint16_t GetID(void) const { return this->m_uScreenID; };
 #ifdef VBOX_WITH_AUDIO_RECORDING
     PRECORDINGCODEC GetAudioCodec(void) { return this->m_pCodecAudio; };
@@ -152,13 +152,13 @@ public:
 
 protected:
 
-    int open(const settings::RecordingScreenSettings &screenSettings);
+    int open(const settings::RecordingScreen &screenSettings);
     int close(void);
 
-    int initInternal(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &screenSettings);
+    int initInternal(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreen &screenSettings);
     int uninitInternal(void);
 
-    int initVideo(const settings::RecordingScreenSettings &screenSettings);
+    int initVideo(const settings::RecordingScreen &screenSettings);
     int unitVideo(void);
 
     bool isLimitReachedInternal(uint64_t msTimestamp) const;
@@ -224,7 +224,7 @@ protected:
     /** Video codec instance data to use. */
     RECORDINGCODEC      m_CodecVideo;
     /** Screen settings to use. */
-    settings::RecordingScreenSettings
+    settings::RecordingScreen
                         m_ScreenSettings;
     /** Set of recording (data) blocks for this stream. */
     RecordingBlockSet   m_Blocks;

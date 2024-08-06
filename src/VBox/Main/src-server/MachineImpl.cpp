@@ -8618,7 +8618,7 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
                                 const settings::Hardware &data,
                                 const settings::Debugging *pDbg,
                                 const settings::Autostart *pAutostart,
-                                const settings::RecordingSettings &recording)
+                                const settings::Recording &recording)
 {
     AssertReturn(!i_isSessionMachine(), E_FAIL);
 
@@ -10012,7 +10012,7 @@ HRESULT Machine::i_saveAllSnapshots(settings::MachineConfigFile &config)
  *  @param recording      Reference to reecording settings.
  */
 HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *pDbg,
-                                settings::Autostart *pAutostart, settings::RecordingSettings &recording)
+                                settings::Autostart *pAutostart, settings::Recording &recording)
 {
     HRESULT hrc = S_OK;
 

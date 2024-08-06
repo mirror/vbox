@@ -7565,11 +7565,11 @@ HRESULT Console::i_recordingSendAudio(const void *pvData, size_t cbData, uint64_
 
 #ifdef VBOX_WITH_RECORDING
 
-int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
+int Console::i_recordingGetSettings(settings::Recording &Settings)
 {
     Assert(mMachine.isNotNull());
 
-    recording.applyDefaults();
+    Settings.applyDefaults();
 
     ComPtr<IRecordingSettings> pRecordSettings;
     HRESULT hrc = mMachine->COMGETTER(RecordingSettings)(pRecordSettings.asOutParam());
@@ -7578,7 +7578,7 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
     BOOL fTemp;
     hrc = pRecordSettings->COMGETTER(Enabled)(&fTemp);
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-    recording.common.fEnabled = RT_BOOL(fTemp);
+    Settings.common.fEnabled = RT_BOOL(fTemp);
 
     SafeIfaceArray<IRecordingScreenSettings> paRecScreens;
     hrc = pRecordSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paRecScreens));
@@ -7586,7 +7586,7 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
 
     for (unsigned long i = 0; i < (unsigned long)paRecScreens.size(); ++i)
     {
-        settings::RecordingScreenSettings recScreenSettings;
+        settings::RecordingScreen recScreenSettings;
         ComPtr<IRecordingScreenSettings> pRecScreenSettings = paRecScreens[i];
 
         hrc = pRecScreenSettings->COMGETTER(Enabled)(&fTemp);
@@ -7644,10 +7644,10 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
         hrc = pRecScreenSettings->COMGETTER(VideoFPS)((ULONG *)&recScreenSettings.Video.ulFPS);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
-        recording.mapScreens[i] = recScreenSettings;
+        Settings.mapScreens[i] = recScreenSettings;
     }
 
-    Assert(recording.mapScreens.size() == paRecScreens.size());
+    Assert(Settings.mapScreens.size() == paRecScreens.size());
 
     return VINF_SUCCESS;
 }
@@ -7659,10 +7659,10 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &recording)
  */
 int Console::i_recordingCreate(ComPtr<IProgress> &pProgress)
 {
-    settings::RecordingSettings recordingSettings;
-    int vrc = i_recordingGetSettings(recordingSettings);
+    settings::Recording Settings;
+    int vrc = i_recordingGetSettings(Settings);
     if (RT_SUCCESS(vrc))
-        vrc = mRecording.mCtx.Create(this, recordingSettings, pProgress);
+        vrc = mRecording.mCtx.Create(this, Settings, pProgress);
 
     if (RT_FAILURE(vrc))
         setErrorBoth(VBOX_E_RECORDING_ERROR, vrc, tr("Recording initialization failed (%Rrc) -- please consult log file for details"), vrc);

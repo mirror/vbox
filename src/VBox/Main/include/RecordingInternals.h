@@ -596,7 +596,7 @@ typedef std::list<RecordingBlock *> RecordingBlockList;
 
 int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmAudioCodec);
 int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmVideoCodec);
-int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreenSettings &Settings);
+int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreen &Settings);
 int recordingCodecDestroy(PRECORDINGCODEC pCodec);
 int recordingCodecEncodeFrame(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser);
 int recordingCodecEncodeCurrent(PRECORDINGCODEC pCodec, uint64_t msTimestamp);

@@ -796,12 +796,12 @@ static DECLCALLBACK(int) recordingCodecVorbisFinalize(PRECORDINGCODEC pCodec)
  * @param   Settings            Screen settings to use for initialization.
  */
 static int recordingCodecInitAudio(const PRECORDINGCODEC pCodec,
-                                   const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreenSettings &Settings)
+                                   const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreen &Settings)
 {
     AssertReturn(pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO, VERR_INVALID_PARAMETER);
 
     com::Utf8Str strCodec;
-    settings::RecordingScreenSettings::audioCodecToString(pCodec->Parms.enmAudioCodec, strCodec);
+    settings::RecordingScreen::audioCodecToString(pCodec->Parms.enmAudioCodec, strCodec);
     LogRel(("Recording: Initializing audio codec '%s'\n", strCodec.c_str()));
 
     const PPDMAUDIOPCMPROPS pPCMProps = &pCodec->Parms.u.Audio.PCMProps;
@@ -856,10 +856,10 @@ static int recordingCodecInitAudio(const PRECORDINGCODEC pCodec,
  * @param   Settings            Screen settings to use for initialization.
  */
 static int recordingCodecInitVideo(const PRECORDINGCODEC pCodec,
-                                   const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreenSettings &Settings)
+                                   const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreen &Settings)
 {
     com::Utf8Str strTemp;
-    settings::RecordingScreenSettings::videoCodecToString(pCodec->Parms.enmVideoCodec, strTemp);
+    settings::RecordingScreen::videoCodecToString(pCodec->Parms.enmVideoCodec, strTemp);
     LogRel(("Recording: Initializing video codec '%s'\n", strTemp.c_str()));
 
     pCodec->Parms.uBitrate         = Settings.Video.ulRate;
@@ -1051,7 +1051,7 @@ int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmV
  * @param   pCallbacks          Codec callback table to use. Optional and may be NULL.
  * @param   Settings            Settings to use for initializing the codec.
  */
-int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreenSettings &Settings)
+int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBACKS pCallbacks, const settings::RecordingScreen &Settings)
 {
     int vrc = RTCritSectInit(&pCodec->CritSect);
     AssertRCReturn(vrc, vrc);

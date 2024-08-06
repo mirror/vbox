@@ -46,7 +46,7 @@
 #include "WebMWriter.h"
 
 
-RecordingStream::RecordingStream(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings)
+RecordingStream::RecordingStream(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordingScreen &Settings)
     : m_enmState(RECORDINGSTREAMSTATE_UNINITIALIZED)
 {
     int vrc2 = initInternal(a_pCtx, uScreen, Settings);
@@ -66,7 +66,7 @@ RecordingStream::~RecordingStream(void)
  * @returns VBox status code.
  * @param   screenSettings      Recording settings to use.
  */
-int RecordingStream::open(const settings::RecordingScreenSettings &screenSettings)
+int RecordingStream::open(const settings::RecordingScreen &screenSettings)
 {
     /* Sanity. */
     Assert(screenSettings.enmDest != RecordingDestination_None);
@@ -130,7 +130,7 @@ int RecordingStream::open(const settings::RecordingScreenSettings &screenSetting
  *
  * @returns The recording stream's used configuration.
  */
-const settings::RecordingScreenSettings &RecordingStream::GetConfig(void) const
+const settings::RecordingScreen &RecordingStream::GetConfig(void) const
 {
     return m_ScreenSettings;
 }
@@ -709,7 +709,7 @@ int RecordingStream::SendScreenChange(PRECORDINGSURFACEINFO pInfo, uint64_t msTi
  * @param   uScreen             Screen number to use for this recording stream.
  * @param   Settings            Recording screen configuration to use for initialization.
  */
-int RecordingStream::Init(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings)
+int RecordingStream::Init(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreen &Settings)
 {
     return initInternal(pCtx, uScreen, Settings);
 }
@@ -723,7 +723,7 @@ int RecordingStream::Init(RecordingContext *pCtx, uint32_t uScreen, const settin
  * @param   screenSettings      Recording screen configuration to use for initialization.
  */
 int RecordingStream::initInternal(RecordingContext *pCtx, uint32_t uScreen,
-                                  const settings::RecordingScreenSettings &screenSettings)
+                                  const settings::RecordingScreen &screenSettings)
 {
     AssertReturn(m_enmState == RECORDINGSTREAMSTATE_UNINITIALIZED, VERR_WRONG_ORDER);
 
@@ -738,7 +738,7 @@ int RecordingStream::initInternal(RecordingContext *pCtx, uint32_t uScreen,
 #endif
     m_ScreenSettings = screenSettings;
 
-    settings::RecordingScreenSettings *pSettings = &m_ScreenSettings;
+    settings::RecordingScreen *pSettings = &m_ScreenSettings;
 
     int vrc = RTCritSectInit(&m_CritSect);
     if (RT_FAILURE(vrc))
@@ -1047,7 +1047,7 @@ DECLCALLBACK(int) RecordingStream::codecWriteDataCallback(PRECORDINGCODEC pCodec
  * @returns VBox status code.
  * @param   screenSettings      Screen settings to use.
  */
-int RecordingStream::initVideo(const settings::RecordingScreenSettings &screenSettings)
+int RecordingStream::initVideo(const settings::RecordingScreen &screenSettings)
 {
     /* Sanity. */
     AssertReturn(screenSettings.Video.ulRate,   VERR_INVALID_PARAMETER);

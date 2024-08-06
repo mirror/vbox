@@ -39,7 +39,7 @@ class RecordingSettings;
 
 namespace settings
 {
-    struct RecordingScreenSettings;
+    struct RecordingScreen;
 }
 
 class ATL_NO_VTABLE RecordingScreenSettings :
@@ -53,21 +53,21 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(RecordingSettings *aParent, uint32_t uScreenId, const settings::RecordingScreenSettings& aThat);
+    HRESULT init(RecordingSettings *aParent, uint32_t uScreenId, const settings::RecordingScreen& aThat);
     HRESULT init(RecordingSettings *aParent, RecordingScreenSettings *aThat);
     HRESULT initCopy(RecordingSettings *aParent, RecordingScreenSettings *aThat);
     void uninit(void);
 
     // public methods only for internal purposes
-    HRESULT i_loadSettings(const settings::RecordingScreenSettings &data);
-    HRESULT i_saveSettings(settings::RecordingScreenSettings &data);
+    HRESULT i_loadSettings(const settings::RecordingScreen &Settings);
+    HRESULT i_saveSettings(settings::RecordingScreen &Settings);
 
     void i_rollback(void);
     void i_commit(void);
     void i_copyFrom(RecordingScreenSettings *aThat);
     void i_applyDefaults(void);
 
-    settings::RecordingScreenSettings &i_getData(void);
+    settings::RecordingScreen &i_getData(void);
 
     int32_t i_reference(void);
     int32_t i_release(void);

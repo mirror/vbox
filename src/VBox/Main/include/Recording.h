@@ -127,14 +127,14 @@ public:
 
 public:
 
-    const settings::RecordingSettings &GetConfig(void) const;
+    const settings::Recording &GetConfig(void) const;
     RecordingStream *GetStream(unsigned uScreen) const;
     size_t GetStreamCount(void) const;
 #ifdef VBOX_WITH_AUDIO_RECORDING
     PRECORDINGCODEC GetCodecAudio(void) { return &this->m_CodecAudio; }
 #endif
 
-    int Create(Console *pConsole, const settings::RecordingSettings &Settings, ComPtr<IProgress> &pProgress);
+    int Create(Console *pConsole, const settings::Recording &Settings, ComPtr<IProgress> &pProgress);
     void Destroy(void);
 
     int Start(void);
@@ -167,7 +167,7 @@ public:
 
 protected:
 
-    int createInternal(Console *ptrConsole, const settings::RecordingSettings &Settings, ComPtr<IProgress> &pProgress);
+    int createInternal(Console *ptrConsole, const settings::Recording &Settings, ComPtr<IProgress> &pProgress);
     void reset(void);
     int startInternal(void);
     int stopInternal(void);
@@ -186,7 +186,7 @@ protected:
 
     bool progressIsCanceled(void) const;
     bool progressIsCompleted(void) const;
-    int progressCreate(const settings::RecordingSettings &Settings, ComObjPtr<Progress> &pProgress);
+    int progressCreate(const settings::Recording &Settings, ComObjPtr<Progress> &pProgress);
     int progressNotifyComplete(HRESULT hrc = S_OK, IVirtualBoxErrorInfo *pErrorInfo = NULL);
     int progressSet(uint32_t uOp, const com::Bstr &strDesc);
     int progressSet(uint64_t msTimestamp);
@@ -197,7 +197,7 @@ protected:
 
 protected:
 
-    int audioInit(const settings::RecordingScreenSettings &screenSettings);
+    int audioInit(const settings::RecordingScreen &screenSettings);
 
 protected:
 
@@ -211,8 +211,8 @@ protected:
 
     /** Pointer to the console object. */
     Console                     *m_pConsole;
-    /** Used recording configuration. */
-    settings::RecordingSettings  m_Settings;
+    /** Used recording settings. */
+    settings::Recording          m_Settings;
     /** The current state. */
     RECORDINGSTS                 m_enmState;
     /** Callback table. */

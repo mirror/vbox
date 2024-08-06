@@ -60,7 +60,7 @@ struct RecordingSettings::Data
     ComPtr<IProgress>                       mProgress;
 
     // use the XML settings structure in the members for simplicity
-    Backupable<settings::RecordingCommonSettings> bd;
+    Backupable<settings::RecordingCommon> bd;
 };
 
 DEFINE_EMPTY_CTOR_DTOR(RecordingSettings)
@@ -433,7 +433,7 @@ HRESULT RecordingSettings::start(ComPtr<IProgress> &aProgress)
  * @param   data                Recording screen settings to use for that screen.
  */
 int RecordingSettings::i_createScreenObj(RecordingScreenSettingsObjMap &screenSettingsMap,
-                                         uint32_t idScreen, const settings::RecordingScreenSettings &data)
+                                         uint32_t idScreen, const settings::RecordingScreen &data)
 {
     AssertReturn(screenSettingsMap.find(idScreen) == screenSettingsMap.end(), VERR_ALREADY_EXISTS);
 
@@ -528,11 +528,11 @@ int RecordingSettings::i_destroyAllScreenObj(RecordingScreenSettingsObjMap &scre
  * Loads settings from the given settings.
  * May be called once right after this object creation.
  *
- * @param data                  Capture settings to load from.
+ * @param Settings                  Recording settings to load from.
  *
  * @note Locks this object for writing.
  */
-HRESULT RecordingSettings::i_loadSettings(const settings::RecordingSettings &data)
+HRESULT RecordingSettings::i_loadSettings(const settings::Recording &Settings)
 {
     LogFlowThisFuncEnter();
 
@@ -543,10 +543,10 @@ HRESULT RecordingSettings::i_loadSettings(const settings::RecordingSettings &dat
 
     HRESULT hrc = S_OK;
 
-    LogFlowThisFunc(("Data has %zu screens\n", data.mapScreens.size()));
+    LogFlowThisFunc(("Data has %zu screens\n", Settings.mapScreens.size()));
 
-    settings::RecordingScreenSettingsMap::const_iterator itScreenData = data.mapScreens.begin();
-    while (itScreenData != data.mapScreens.end())
+    settings::RecordingScreenSettingsMap::const_iterator itScreenData = Settings.mapScreens.begin();
+    while (itScreenData != Settings.mapScreens.end())
     {
         RecordingScreenSettingsObjMap::iterator itScreen = m->mapScreenObj.find(itScreenData->first);
         if (itScreen != m->mapScreenObj.end())
@@ -572,10 +572,10 @@ HRESULT RecordingSettings::i_loadSettings(const settings::RecordingSettings &dat
     if (SUCCEEDED(hrc))
     {
         ComAssertComRCRet(hrc, hrc);
-        AssertReturn(m->mapScreenObj.size() == data.mapScreens.size(), E_UNEXPECTED);
+        AssertReturn(m->mapScreenObj.size() == Settings.mapScreens.size(), E_UNEXPECTED);
 
         // simply copy
-        m->bd.assignCopy(&data.common);
+        m->bd.assignCopy(&Settings.common);
     }
 
     LogFlowThisFunc(("Returning %Rhrc\n", hrc));
@@ -599,11 +599,11 @@ void RecordingSettings::i_reset(void)
 /**
  * Saves settings to the given settings.
  *
- * @param data                  Where to store the capture settings to.
+ * @param Settings                  Where to store the recording settings to.
  *
  * @note Locks this object for reading.
  */
-HRESULT RecordingSettings::i_saveSettings(settings::RecordingSettings &data)
+HRESULT RecordingSettings::i_saveSettings(settings::Recording &Settings)
 {
     LogFlowThisFuncEnter();
 
@@ -622,7 +622,7 @@ HRESULT RecordingSettings::i_saveSettings(settings::RecordingSettings &data)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    data.common = *m->bd.data();
+    Settings.common = *m->bd.data();
 
     HRESULT hrc = S_OK;
 
@@ -630,7 +630,7 @@ HRESULT RecordingSettings::i_saveSettings(settings::RecordingSettings &data)
                                                        itScreen != m->mapScreenObj.end();
                                                      ++itScreen)
     {
-        hrc = itScreen->second->i_saveSettings(data.mapScreens[itScreen->first /* Screen ID */]);
+        hrc = itScreen->second->i_saveSettings(Settings.mapScreens[itScreen->first /* Screen ID */]);
         if (FAILED(hrc))
             break;
     }
@@ -922,7 +922,7 @@ int RecordingSettings::i_syncToMachineDisplays(uint32_t cDisplays)
     {
         if (m->mapScreenObj.find(i) == m->mapScreenObj.end())
         {
-            settings::RecordingScreenSettings defaultScreenSettings(i /* Screen ID */); /* Apply default settings. */
+            settings::RecordingScreen defaultScreenSettings(i /* Screen ID */); /* Apply default settings. */
 
             int vrc2 = i_createScreenObj(m->mapScreenObj, i /* Screen ID */, defaultScreenSettings);
             AssertRC(vrc2);

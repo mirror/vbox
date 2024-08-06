@@ -1273,7 +1273,7 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
                                           const settings::Hardware &hardware,
                                           const settings::Debugging *pDbg,
                                           const settings::Autostart *pAutostart,
-                                          const settings::RecordingSettings &recording,
+                                          const settings::Recording &recording,
                                           IN_GUID aSnapshotId,
                                           const Utf8Str &aStateFilePath)
 {

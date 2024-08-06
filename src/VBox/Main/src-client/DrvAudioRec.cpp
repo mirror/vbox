@@ -205,7 +205,7 @@ AudioVideoRec::~AudioVideoRec(void)
  * @returns VBox status code.
  * @param   Settings        Recording settings to apply.
  */
-int AudioVideoRec::applyConfiguration(const settings::RecordingSettings &Settings)
+int AudioVideoRec::applyConfiguration(const settings::Recording &Settings)
 {
     /** @todo Do some validation here. */
     mSettings = Settings; /* Note: Does have an own copy operator. */
@@ -219,7 +219,7 @@ int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg, PCVMMR3VTABLE pVMM)
     unsigned const idxScreen = 0;
 
     AssertReturn(mSettings.mapScreens.size() >= 1, VERR_INVALID_PARAMETER);
-    const settings::RecordingScreenSettings &screenSettings = mSettings.mapScreens[idxScreen];
+    const settings::RecordingScreen &screenSettings = mSettings.mapScreens[idxScreen];
 
     int vrc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "ContainerType", (uint64_t)screenSettings.enmDest);
     AssertRCReturn(vrc, vrc);

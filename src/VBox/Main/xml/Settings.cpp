@@ -2841,13 +2841,13 @@ bool FirmwareSettings::operator==(const FirmwareSettings &d) const
             && strLogoImagePath        == d.strLogoImagePath);
 }
 
-RecordingScreenSettings::RecordingScreenSettings(uint32_t a_idScreen /* = UINT32_MAX */)
+RecordingScreen::RecordingScreen(uint32_t a_idScreen /* = UINT32_MAX */)
     : idScreen(a_idScreen)
 {
     applyDefaults();
 }
 
-RecordingScreenSettings::~RecordingScreenSettings()
+RecordingScreen::~RecordingScreen()
 {
 
 }
@@ -2858,7 +2858,7 @@ RecordingScreenSettings::~RecordingScreenSettings()
  * @returns Default options string for a given screen.
  */
 /* static */
-const char *RecordingScreenSettings::getDefaultOptions(void)
+const char *RecordingScreen::getDefaultOptions(void)
 {
     /* Note: Needs to be kept in sync with FE/Qt's UIMachineSettingsDisplay::putToCache()! */
     return "vc_enabled=true,ac_enabled=false,ac_profile=med";
@@ -2872,7 +2872,7 @@ const char *RecordingScreenSettings::getDefaultOptions(void)
  * @param   featureMap          Where to return the converted features on success.
  */
 /* static */
-int RecordingScreenSettings::featuresFromString(const com::Utf8Str &strFeatures, RecordingFeatureMap &featureMap)
+int RecordingScreen::featuresFromString(const com::Utf8Str &strFeatures, RecordingFeatureMap &featureMap)
 {
     featureMap.clear();
 
@@ -2896,7 +2896,7 @@ int RecordingScreenSettings::featuresFromString(const com::Utf8Str &strFeatures,
  * @param   strFeatures         Where to return the features converted as a string.
  */
 /* static */
-void RecordingScreenSettings::featuresToString(const RecordingFeatureMap &featureMap, com::Utf8Str &strFeatures)
+void RecordingScreen::featuresToString(const RecordingFeatureMap &featureMap, com::Utf8Str &strFeatures)
 {
     strFeatures = "";
 
@@ -2923,7 +2923,7 @@ void RecordingScreenSettings::featuresToString(const RecordingFeatureMap &featur
  * @note    An empty string will return "none" (no codec).
  */
 /* static */
-int RecordingScreenSettings::audioCodecFromString(const com::Utf8Str &strCodec, RecordingAudioCodec_T &enmCodec)
+int RecordingScreen::audioCodecFromString(const com::Utf8Str &strCodec, RecordingAudioCodec_T &enmCodec)
 {
     if (   RTStrIStr(strCodec.c_str(), "none")
         || strCodec.isEmpty())
@@ -2962,7 +2962,7 @@ int RecordingScreenSettings::audioCodecFromString(const com::Utf8Str &strCodec, 
  * @param   strCodec            Where to return the audio codec converted as a string.
  */
 /* static */
-void RecordingScreenSettings::audioCodecToString(const RecordingAudioCodec_T &enmCodec, com::Utf8Str &strCodec)
+void RecordingScreen::audioCodecToString(const RecordingAudioCodec_T &enmCodec, com::Utf8Str &strCodec)
 {
     switch (enmCodec)
     {
@@ -2986,7 +2986,7 @@ void RecordingScreenSettings::audioCodecToString(const RecordingAudioCodec_T &en
  * @note    An empty string will return "none" (no codec).
  */
 /* static */
-int RecordingScreenSettings::videoCodecFromString(const com::Utf8Str &strCodec, RecordingVideoCodec_T &enmCodec)
+int RecordingScreen::videoCodecFromString(const com::Utf8Str &strCodec, RecordingVideoCodec_T &enmCodec)
 {
     if (   RTStrIStr(strCodec.c_str(), "none")
         || strCodec.isEmpty())
@@ -3050,7 +3050,7 @@ int RecordingScreenSettings::videoCodecFromString(const com::Utf8Str &strCodec, 
  * @param   strCodec            Where to return the video codec converted as a string.
  */
 /* static */
-void RecordingScreenSettings::videoCodecToString(const RecordingVideoCodec_T &enmCodec, com::Utf8Str &strCodec)
+void RecordingScreen::videoCodecToString(const RecordingVideoCodec_T &enmCodec, com::Utf8Str &strCodec)
 {
     switch (enmCodec)
     {
@@ -3071,7 +3071,7 @@ void RecordingScreenSettings::videoCodecToString(const RecordingVideoCodec_T &en
 /**
  * Applies the default settings.
  */
-void RecordingScreenSettings::applyDefaults(void)
+void RecordingScreen::applyDefaults(void)
 {
     /*
      * Set sensible defaults.
@@ -3086,7 +3086,7 @@ void RecordingScreenSettings::applyDefaults(void)
     fEnabled             = idScreen == 0 ? true : false;;
     enmDest              = RecordingDestination_File;
     ulMaxTimeS           = 0;
-    strOptions           = RecordingScreenSettings::getDefaultOptions();
+    strOptions           = RecordingScreen::getDefaultOptions();
     File.ulMaxSizeMB     = 0;
     File.strName         = "";
     Video.enmCodec       = RecordingVideoCodec_VP8;
@@ -3121,7 +3121,7 @@ void RecordingScreenSettings::applyDefaults(void)
  *
  * @returns @c true if default, @c false if not.
  */
-bool RecordingScreenSettings::areDefaultSettings(void) const
+bool RecordingScreen::areDefaultSettings(void) const
 {
     return    (   fEnabled                                    == false
                /* Screen 0 is special: There we ALWAYS enable recording by default. */
@@ -3130,7 +3130,7 @@ bool RecordingScreenSettings::areDefaultSettings(void) const
               )
            && enmDest                                         == RecordingDestination_File
            && ulMaxTimeS                                      == 0
-           && strOptions                                      == RecordingScreenSettings::getDefaultOptions()
+           && strOptions                                      == RecordingScreen::getDefaultOptions()
            && File.ulMaxSizeMB                                == 0
            && File.strName                                    == ""
            && Video.enmCodec                                  == RecordingVideoCodec_VP8
@@ -3165,7 +3165,7 @@ bool RecordingScreenSettings::areDefaultSettings(void) const
  * @returns @c true if the feature is enabled, @c false if not.
  * @param   enmFeature          Feature to check.
  */
-bool RecordingScreenSettings::isFeatureEnabled(RecordingFeature_T enmFeature) const
+bool RecordingScreen::isFeatureEnabled(RecordingFeature_T enmFeature) const
 {
     RecordingFeatureMap::const_iterator itFeature = featureMap.find(enmFeature);
     if (itFeature != featureMap.end())
@@ -3179,7 +3179,7 @@ bool RecordingScreenSettings::isFeatureEnabled(RecordingFeature_T enmFeature) co
  * which in turn gets called from Machine::saveSettings to figure out whether
  * machine settings have really changed and thus need to be written out to disk.
  */
-bool RecordingScreenSettings::operator==(const RecordingScreenSettings &d) const
+bool RecordingScreen::operator==(const RecordingScreen &d) const
 {
     return    fEnabled             == d.fEnabled
            && enmDest              == d.enmDest
@@ -3208,7 +3208,7 @@ bool RecordingScreenSettings::operator==(const RecordingScreenSettings &d) const
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
-RecordingCommonSettings::RecordingCommonSettings()
+RecordingCommon::RecordingCommon()
 {
     applyDefaults();
 }
@@ -3216,7 +3216,7 @@ RecordingCommonSettings::RecordingCommonSettings()
 /**
  * Applies the default settings.
  */
-void RecordingCommonSettings::applyDefaults(void)
+void RecordingCommon::applyDefaults(void)
 {
     fEnabled = false;
 }
@@ -3224,7 +3224,7 @@ void RecordingCommonSettings::applyDefaults(void)
 /**
  * Check if all settings have default values.
  */
-bool RecordingCommonSettings::areDefaultSettings(void) const
+bool RecordingCommon::areDefaultSettings(void) const
 {
     return fEnabled == false;
 }
@@ -3234,7 +3234,7 @@ bool RecordingCommonSettings::areDefaultSettings(void) const
  * which in turn gets called from Machine::saveSettings to figure out whether
  * machine settings have really changed and thus need to be written out to disk.
  */
-bool RecordingCommonSettings::operator==(const RecordingCommonSettings &d) const
+bool RecordingCommon::operator==(const RecordingCommon &d) const
 {
     if (this == &d)
         return true;
@@ -3245,7 +3245,7 @@ bool RecordingCommonSettings::operator==(const RecordingCommonSettings &d) const
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
-RecordingSettings::RecordingSettings()
+Recording::Recording()
 {
     applyDefaults();
 }
@@ -3253,7 +3253,7 @@ RecordingSettings::RecordingSettings()
 /**
  * Applies the default settings.
  */
-void RecordingSettings::applyDefaults(void)
+void Recording::applyDefaults(void)
 {
     common.applyDefaults();
 
@@ -3262,7 +3262,7 @@ void RecordingSettings::applyDefaults(void)
     try
     {
         /* Always add screen 0 to the default configuration. */
-        RecordingScreenSettings screenSettings(0 /* Screen ID */);
+        RecordingScreen screenSettings(0 /* Screen ID */);
 
         mapScreens[0 /* Screen ID */] = screenSettings;
     }
@@ -3275,7 +3275,7 @@ void RecordingSettings::applyDefaults(void)
 /**
  * Check if all settings have default values.
  */
-bool RecordingSettings::areDefaultSettings(void) const
+bool Recording::areDefaultSettings(void) const
 {
     AssertReturn(mapScreens.size() >= 1, false); /* The first screen always must be present. */
 
@@ -3298,7 +3298,7 @@ bool RecordingSettings::areDefaultSettings(void) const
  * which in turn gets called from Machine::saveSettings to figure out whether
  * machine settings have really changed and thus need to be written out to disk.
  */
-bool RecordingSettings::operator==(const RecordingSettings &that) const
+bool Recording::operator==(const Recording &that) const
 {
     if (this == &that) /* If pointers match, take a shortcut. */
         return true;
@@ -6589,12 +6589,12 @@ void MachineConfigFile::readAutostart(const xml::ElementNode &elmAutostart, Auto
  * Called for reading the \<VideoCapture\> element under \<Machine|Hardware\>,
  * or \<Recording\> under \<Machine\>,
  */
-void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecording, uint32_t cMonitors, RecordingSettings &recording)
+void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecording, uint32_t cMonitors, Recording &Settings)
 {
     if (cMonitors > 64)
         throw ConfigFileError(this, &elmRecording, N_("Invalid monitor count given"));
 
-    elmRecording.getAttributeValue("enabled", recording.common.fEnabled);
+    elmRecording.getAttributeValue("enabled", Settings.common.fEnabled);
 
     /* Note: Since settings 1.19 the recording settings have a dedicated XML branch "Recording" outside of "Hardware". */
     if (m->sv >= SettingsVersion_v1_19 /* VBox >= 7.0 */)
@@ -6619,12 +6619,12 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
             uint32_t idxScreen;
             (*itScreen)->getAttributeValue("id",        idxScreen);
 
-            RecordingScreenSettings &screenSettings = recording.mapScreens[idxScreen];
+            RecordingScreen &screenSettings = Settings.mapScreens[idxScreen];
 
             (*itScreen)->getAttributeValue("enabled",   screenSettings.fEnabled);
             Utf8Str strTemp;
             (*itScreen)->getAttributeValue("featuresEnabled", strTemp);
-            RecordingScreenSettings::featuresFromString(strTemp, screenSettings.featureMap);
+            RecordingScreen::featuresFromString(strTemp, screenSettings.featureMap);
             (*itScreen)->getAttributeValue("maxTimeS",  screenSettings.ulMaxTimeS);
             (*itScreen)->getAttributeValue("options",   screenSettings.strOptions);
             (*itScreen)->getAttributeValue("dest",      (uint32_t &)screenSettings.enmDest);
@@ -6635,7 +6635,7 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
                                       N_("Not supported Recording/@dest attribute '%#x'"), screenSettings.enmDest);
             (*itScreen)->getAttributeValue("maxSizeMB", screenSettings.File.ulMaxSizeMB);
             if ((*itScreen)->getAttributeValue("videoCodec", strTemp)) /* Stick with default if not set. */
-                RecordingScreenSettings::videoCodecFromString(strTemp, screenSettings.Video.enmCodec);
+                RecordingScreen::videoCodecFromString(strTemp, screenSettings.Video.enmCodec);
             (*itScreen)->getAttributeValue("videoDeadline", (uint32_t &)screenSettings.Video.enmDeadline);
             (*itScreen)->getAttributeValue("videoRateCtlMode", (uint32_t &)screenSettings.Video.enmRateCtlMode);
             (*itScreen)->getAttributeValue("videoScalingMode", (uint32_t &)screenSettings.Video.enmScalingMode);
@@ -6645,7 +6645,7 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
             (*itScreen)->getAttributeValue("fps",           screenSettings.Video.ulFPS);
 
             if ((*itScreen)->getAttributeValue("audioCodec", strTemp)) /* Stick with default if not set. */
-                RecordingScreenSettings::audioCodecFromString(strTemp, screenSettings.Audio.enmCodec);
+                RecordingScreen::audioCodecFromString(strTemp, screenSettings.Audio.enmCodec);
             (*itScreen)->getAttributeValue("audioDeadline", (uint32_t &)screenSettings.Audio.enmDeadline);
             (*itScreen)->getAttributeValue("audioRateCtlMode", (uint32_t &)screenSettings.Audio.enmRateCtlMode);
             (*itScreen)->getAttributeValue("audioHz",       (uint32_t &)screenSettings.Audio.uHz);
@@ -6658,7 +6658,7 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
     {
         /* For settings < 1.19 (< VBox 7.0) we only support one recording configuration, that is,
          * all screens have the same configuration. So load/save to/from screen 0. */
-        RecordingScreenSettings &screen0 = recording.mapScreens[0];
+        RecordingScreen &screen0 = Settings.mapScreens[0];
 
         elmRecording.getAttributeValue("maxTime",   screen0.ulMaxTimeS);
         elmRecording.getAttributeValue("options",   screen0.strOptions);
@@ -6678,11 +6678,11 @@ void MachineConfigFile::readRecordingSettings(const xml::ElementNode &elmRecordi
         for (unsigned i = 0; i < cMonitors; i++)
         {
             /* Apply settings of screen 0 to screen i and enable it. */
-            recording.mapScreens[i] = screen0;
+            Settings.mapScreens[i] = screen0;
 
             /* Screen i enabled? */
-            recording.mapScreens[i].idScreen = i;
-            recording.mapScreens[i].fEnabled = RT_BOOL(uScreensBitmap & RT_BIT_64(i));
+            Settings.mapScreens[i].idScreen = i;
+            Settings.mapScreens[i].fEnabled = RT_BOOL(uScreensBitmap & RT_BIT_64(i));
         }
     }
 }
@@ -8898,12 +8898,12 @@ void MachineConfigFile::buildAutostartXML(xml::ElementNode &elmParent, const Aut
     pElmAutostart->setAttribute("autostop", pcszAutostop);
 }
 
-void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const RecordingSettings &recording)
+void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Recording &Settings)
 {
-    if (recording.areDefaultSettings()) /* Omit branch if we still have the default settings (i.e. nothing to save). */
+    if (Settings.areDefaultSettings()) /* Omit branch if we still have the default settings (i.e. nothing to save). */
         return;
 
-    AssertReturnVoid(recording.mapScreens.size() <= 64); /* Make sure we never exceed the bitmap of 64 monitors. */
+    AssertReturnVoid(Settings.mapScreens.size() <= 64); /* Make sure we never exceed the bitmap of 64 monitors. */
 
     /* Note: Since settings 1.19 the recording settings have a dedicated XML branch outside of Hardware. */
     if (m->sv >= SettingsVersion_v1_19 /* VBox >= 7.0 */)
@@ -8913,14 +8913,14 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
 
         if (!recordingSettings.common.areDefaultSettings())
         {
-            pelmRecording->setAttribute("enabled", recording.common.fEnabled);
+            pelmRecording->setAttribute("enabled", Settings.common.fEnabled);
         }
 
         /* Only serialize screens which have non-default settings. */
         uint32_t cScreensToWrite = 0;
 
-        RecordingScreenSettingsMap::const_iterator itScreen = recording.mapScreens.begin();
-        while (itScreen != recording.mapScreens.end())
+        RecordingScreenSettingsMap::const_iterator itScreen = Settings.mapScreens.begin();
+        while (itScreen != Settings.mapScreens.end())
         {
             if (!itScreen->second.areDefaultSettings())
                 cScreensToWrite++;
@@ -8930,8 +8930,8 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
         if (cScreensToWrite)
             pelmRecording->setAttribute("screens", cScreensToWrite);
 
-        itScreen = recording.mapScreens.begin();
-        while (itScreen != recording.mapScreens.end())
+        itScreen = Settings.mapScreens.begin();
+        while (itScreen != Settings.mapScreens.end())
         {
             if (!itScreen->second.areDefaultSettings()) /* Skip serializing screen settings which have default settings. */
             {
@@ -8940,7 +8940,7 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
                 pelmScreen->setAttribute("id",                  itScreen->first); /* The key equals the monitor ID. */
                 pelmScreen->setAttribute("enabled",             itScreen->second.fEnabled);
                 com::Utf8Str strTemp;
-                RecordingScreenSettings::featuresToString(itScreen->second.featureMap, strTemp);
+                RecordingScreen::featuresToString(itScreen->second.featureMap, strTemp);
                 pelmScreen->setAttribute("featuresEnabled",     strTemp);
                 if (itScreen->second.ulMaxTimeS)
                     pelmScreen->setAttribute("maxTimeS",        itScreen->second.ulMaxTimeS);
@@ -8952,7 +8952,7 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
                 if (itScreen->second.File.ulMaxSizeMB)
                     pelmScreen->setAttribute("maxSizeMB",       itScreen->second.File.ulMaxSizeMB);
 
-                RecordingScreenSettings::videoCodecToString(itScreen->second.Video.enmCodec, strTemp);
+                RecordingScreen::videoCodecToString(itScreen->second.Video.enmCodec, strTemp);
                 pelmScreen->setAttribute("videoCodec",          strTemp);
                 if (itScreen->second.Video.enmDeadline != RecordingCodecDeadline_Default)
                     pelmScreen->setAttribute("videoDeadline",   itScreen->second.Video.enmDeadline);
@@ -8971,7 +8971,7 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
                 if (itScreen->second.Video.ulFPS)
                     pelmScreen->setAttribute("fps",             itScreen->second.Video.ulFPS);
 
-                RecordingScreenSettings::audioCodecToString(itScreen->second.Audio.enmCodec, strTemp);
+                RecordingScreen::audioCodecToString(itScreen->second.Audio.enmCodec, strTemp);
                 pelmScreen->setAttribute("audioCodec",          strTemp);
                 if (itScreen->second.Audio.enmDeadline != RecordingCodecDeadline_Default)
                     pelmScreen->setAttribute("audioDeadline",   itScreen->second.Audio.enmDeadline);
@@ -8995,13 +8995,13 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
 
         if (!recordingSettings.common.areDefaultSettings())
         {
-            pelmVideoCapture->setAttribute("enabled", recording.common.fEnabled);
+            pelmVideoCapture->setAttribute("enabled", Settings.common.fEnabled);
         }
 
         /* Convert the enabled screens to the former uint64_t bit array and vice versa. */
         uint64_t uScreensBitmap = 0;
-        RecordingScreenSettingsMap::const_iterator itScreen = recording.mapScreens.begin();
-        while (itScreen != recording.mapScreens.end())
+        RecordingScreenSettingsMap::const_iterator itScreen = Settings.mapScreens.begin();
+        while (itScreen != Settings.mapScreens.end())
         {
             if (itScreen->second.fEnabled)
                 uScreensBitmap |= RT_BIT_64(itScreen->first);
@@ -9011,9 +9011,9 @@ void MachineConfigFile::buildRecordingXML(xml::ElementNode &elmParent, const Rec
         if (uScreensBitmap)
             pelmVideoCapture->setAttribute("screens",      uScreensBitmap);
 
-        Assert(recording.mapScreens.size());
-        const RecordingScreenSettingsMap::const_iterator itScreen0Settings = recording.mapScreens.find(0);
-        Assert(itScreen0Settings != recording.mapScreens.end());
+        Assert(Settings.mapScreens.size());
+        const RecordingScreenSettingsMap::const_iterator itScreen0Settings = Settings.mapScreens.find(0);
+        Assert(itScreen0Settings != Settings.mapScreens.end());
 
         if (itScreen0Settings->second.ulMaxTimeS)
             pelmVideoCapture->setAttribute("maxTime",      itScreen0Settings->second.ulMaxTimeS);

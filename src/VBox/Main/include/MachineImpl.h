@@ -304,7 +304,7 @@ public:
         ULONG               mMemorySize;
         ULONG               mMemoryBalloonSize;
         BOOL                mPageFusionEnabled;
-        settings::RecordingSettings mRecordSettings;
+        settings::Recording mRecordSettings;
         ULONG               mCPUCount;
         BOOL                mCPUHotPlugEnabled;
         ULONG               mCpuExecutionCap;
@@ -685,7 +685,7 @@ protected:
                            const settings::Hardware &data,
                            const settings::Debugging *pDbg,
                            const settings::Autostart *pAutostart,
-                           const settings::RecordingSettings &recording);
+                           const settings::Recording &recording);
     HRESULT i_loadDebugging(const settings::Debugging *pDbg);
     HRESULT i_loadAutostart(const settings::Autostart *pAutostart);
     HRESULT i_loadStorageControllers(const settings::Storage &data,
@@ -724,7 +724,7 @@ protected:
     void i_copyMachineDataToSettings(settings::MachineConfigFile &config);
     HRESULT i_saveAllSnapshots(settings::MachineConfigFile &config);
     HRESULT i_saveHardware(settings::Hardware &data, settings::Debugging *pDbg,
-                           settings::Autostart *pAutostart, settings::RecordingSettings &recording);
+                           settings::Autostart *pAutostart, settings::Recording &recording);
     HRESULT i_saveStorageControllers(settings::Storage &data);
     HRESULT i_saveStorageDevices(ComObjPtr<StorageController> aStorageController,
                                  settings::StorageController &data);
@@ -1615,7 +1615,7 @@ public:
                              const settings::Hardware &hardware,
                              const settings::Debugging *pDbg,
                              const settings::Autostart *pAutostart,
-                             const settings::RecordingSettings &recording,
+                             const settings::Recording &recording,
                              IN_GUID aSnapshotId,
                              const Utf8Str &aStateFilePath);
     void uninit() RT_OVERRIDE;

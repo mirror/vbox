@@ -649,11 +649,11 @@ typedef std::map<RecordingFeature_T, bool> RecordingFeatureMap;
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
-struct RecordingScreenSettings
+struct RecordingScreen
 {
-    RecordingScreenSettings(uint32_t idScreen = UINT32_MAX);
+    RecordingScreen(uint32_t idScreen = UINT32_MAX);
 
-    virtual ~RecordingScreenSettings();
+    virtual ~RecordingScreen();
 
     void applyDefaults(void);
 
@@ -675,7 +675,7 @@ struct RecordingScreenSettings
 
     static void videoCodecToString(const RecordingVideoCodec_T &enmCodec, com::Utf8Str &strCodec);
 
-    bool operator==(const RecordingScreenSettings &d) const;
+    bool operator==(const RecordingScreen &d) const;
 
     /** Screen ID.
      *  UINT32_MAX if not set. */
@@ -753,7 +753,7 @@ struct RecordingScreenSettings
 
 /** Map for keeping settings per virtual screen.
  *  The key specifies the screen ID. */
-typedef std::map<uint32_t, RecordingScreenSettings> RecordingScreenSettingsMap;
+typedef std::map<uint32_t, RecordingScreen> RecordingScreenSettingsMap;
 
 /**
  * Common recording settings, shared among all per-screen recording settings.
@@ -762,15 +762,15 @@ typedef std::map<uint32_t, RecordingScreenSettings> RecordingScreenSettingsMap;
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
-struct RecordingCommonSettings
+struct RecordingCommon
 {
-    RecordingCommonSettings();
+    RecordingCommon();
 
     void applyDefaults(void);
 
     bool areDefaultSettings(void) const;
 
-    bool operator==(const RecordingCommonSettings &d) const;
+    bool operator==(const RecordingCommon &d) const;
 
     /** Whether recording as a whole is enabled or disabled. */
     bool fEnabled;       // requires settings version 1.14 (VirtualBox 4.3)
@@ -781,18 +781,18 @@ struct RecordingCommonSettings
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
-struct RecordingSettings
+struct Recording
 {
-    RecordingSettings();
+    Recording();
 
     void applyDefaults(void);
 
     bool areDefaultSettings(void) const;
 
-    bool operator==(const RecordingSettings &that) const;
+    bool operator==(const Recording &that) const;
 
     /** Common settings for all per-screen recording settings. */
-    RecordingCommonSettings    common;
+    RecordingCommon    common;
     /** Map of handled recording screen settings.
      *  The key specifies the screen ID. */
     RecordingScreenSettingsMap mapScreens;
@@ -1455,7 +1455,7 @@ struct Snapshot
 
     Debugging           debugging;
     Autostart           autostart;
-    RecordingSettings   recordingSettings;
+    Recording   recordingSettings;
 
     SnapshotsList       llChildSnapshots;
 
@@ -1525,7 +1525,7 @@ public:
     MediaRegistry           mediaRegistry;
     Debugging               debugging;
     Autostart               autostart;
-    RecordingSettings       recordingSettings;
+    Recording       recordingSettings;
 
     StringsMap              mapExtraDataItems;
 
@@ -1585,7 +1585,7 @@ private:
     void readTeleporter(const xml::ElementNode &elmTeleporter, MachineUserData &userData);
     void readDebugging(const xml::ElementNode &elmDbg, Debugging &dbg);
     void readAutostart(const xml::ElementNode &elmAutostart, Autostart &autostrt);
-    void readRecordingSettings(const xml::ElementNode &elmRecording, uint32_t cMonitors, RecordingSettings &recording);
+    void readRecordingSettings(const xml::ElementNode &elmRecording, uint32_t cMonitors, Recording &recording);
     void readGroups(const xml::ElementNode &elmGroups, StringsList &llGroups);
     bool readSnapshot(const com::Guid &curSnapshotUuid, const xml::ElementNode &elmSnapshot, Snapshot &snap);
     static void convertGuestOSTypeFromPre1_5(com::Utf8Str &str);
@@ -1609,7 +1609,7 @@ private:
                                     std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
     void buildDebuggingXML(xml::ElementNode &elmParent, const Debugging &dbg);
     void buildAutostartXML(xml::ElementNode &elmParent, const Autostart &autostrt);
-    void buildRecordingXML(xml::ElementNode &elmParent, const RecordingSettings &recording);
+    void buildRecordingXML(xml::ElementNode &elmParent, const Recording &recording);
     void buildGroupsXML(xml::ElementNode &elmParent, const StringsList &llGroups);
     void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
 
