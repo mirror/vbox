@@ -776,14 +776,52 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllGlobal(PVMCPUCC pVCpu)
 #if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
 
 /** @todo graduate this to cdefs.h or asm-mem.h.   */
+# ifdef RT_ARCH_ARM64              /** @todo RT_CACHELINE_SIZE is wrong for M1 */
+#  undef RT_CACHELINE_SIZE
+#  define RT_CACHELINE_SIZE 128
+# endif
+
 # if defined(_MM_HINT_T0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-#  define MY_PREFETCH(a_pvAddr)     _mm_prefetch((const char *)(a_pvAddr), _MM_HINT_T0);
+#  define MY_PREFETCH(a_pvAddr)     _mm_prefetch((const char *)(a_pvAddr), _MM_HINT_T0)
 # elif defined(_MSC_VER) && (defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32))
-#  define MY_PREFETCH(a_pvAddr)     __prefetch((a_pvAddr));
+#  define MY_PREFETCH(a_pvAddr)     __prefetch((a_pvAddr))
 # elif defined(__GNUC__) || RT_CLANG_HAS_FEATURE(__builtin_prefetch)
 #  define MY_PREFETCH(a_pvAddr)     __builtin_prefetch((a_pvAddr), 0 /*rw*/, 3 /*locality*/)
 # else
 #  define MY_PREFETCH(a_pvAddr)     ((void)0)
+# endif
+# if 0
+#  undef  MY_PREFETCH
+#  define MY_PREFETCH(a_pvAddr)     ((void)0)
+# endif
+
+/** @def MY_PREFETCH_64
+ * 64 byte prefetch hint, could be more depending on cache line size. */
+/** @def MY_PREFETCH_128
+ * 128 byte prefetch hint. */
+/** @def MY_PREFETCH_256
+ * 256 byte prefetch hint. */
+# if RT_CACHELINE_SIZE >= 128
+    /* 128 byte cache lines */
+#  define MY_PREFETCH_64(a_pvAddr)  MY_PREFETCH(a_pvAddr)
+#  define MY_PREFETCH_128(a_pvAddr) MY_PREFETCH(a_pvAddr)
+#  define MY_PREFETCH_256(a_pvAddr) do { \
+        MY_PREFETCH(a_pvAddr); \
+        MY_PREFETCH((uint8_t const *)a_pvAddr + 128); \
+    } while (0)
+# else
+    /* 64 byte cache lines */
+#  define MY_PREFETCH_64(a_pvAddr)  MY_PREFETCH(a_pvAddr)
+#  define MY_PREFETCH_128(a_pvAddr) do { \
+        MY_PREFETCH(a_pvAddr); \
+        MY_PREFETCH((uint8_t const *)a_pvAddr + 64); \
+    } while (0)
+#  define MY_PREFETCH_256(a_pvAddr) do { \
+        MY_PREFETCH(a_pvAddr); \
+        MY_PREFETCH((uint8_t const *)a_pvAddr + 64); \
+        MY_PREFETCH((uint8_t const *)a_pvAddr + 128); \
+        MY_PREFETCH((uint8_t const *)a_pvAddr + 192); \
+    } while (0)
 # endif
 
 template<bool const a_fDataTlb, bool const a_f2MbLargePage, bool const a_fGlobal, bool const a_fNonGlobal>
@@ -808,11 +846,8 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
      */
     /** @todo benchmark this code from the guest side.   */
     bool const      fPartialScan = IEMTLB_ENTRY_COUNT > (a_f2MbLargePage ? 512 : 1024);
-    uintptr_t       idxEven      = fPartialScan ? IEMTLB_TAG_TO_EVEN_INDEX(GCPtrTag)             : 0;
-    MY_PREFETCH(&pTlb->aEntries[0 + !a_fNonGlobal]);
-    MY_PREFETCH(&pTlb->aEntries[2 + !a_fNonGlobal]);
-    MY_PREFETCH(&pTlb->aEntries[4 + !a_fNonGlobal]);
-    MY_PREFETCH(&pTlb->aEntries[6 + !a_fNonGlobal]);
+    uintptr_t       idxEven      = fPartialScan ? IEMTLB_TAG_TO_EVEN_INDEX(GCPtrTag) : 0;
+    MY_PREFETCH_256(&pTlb->aEntries[0 + !a_fNonGlobal]);
     uintptr_t const idxEvenEnd   = fPartialScan ? idxEven + ((a_f2MbLargePage ? 512 : 1024) * 2) : IEMTLB_ENTRY_COUNT * 2;
     RTGCPTR const   GCPtrTagMask = fPartialScan ? ~(RTGCPTR)0
                                  : ~(RTGCPTR)(  (RT_BIT_32(a_f2MbLargePage ? 9 : 10) - 1U)
@@ -862,13 +897,8 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
                 } \
                 GCPtrTagGlob++; \
             }
-        if (idxEven < idxEvenEnd - 8)
-        {
-            MY_PREFETCH(&pTlb->aEntries[idxEven +  8 + !a_fNonGlobal]);
-            MY_PREFETCH(&pTlb->aEntries[idxEven + 10 + !a_fNonGlobal]);
-            MY_PREFETCH(&pTlb->aEntries[idxEven + 12 + !a_fNonGlobal]);
-            MY_PREFETCH(&pTlb->aEntries[idxEven + 14 + !a_fNonGlobal]);
-        }
+        if (idxEven < idxEvenEnd - 4)
+            MY_PREFETCH_256(&pTlb->aEntries[idxEven +  8 + !a_fNonGlobal]);
         ONE_ITERATION(idxEven)
         ONE_ITERATION(idxEven + 2)
         ONE_ITERATION(idxEven + 4)
