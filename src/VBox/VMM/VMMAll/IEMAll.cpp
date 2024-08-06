@@ -854,6 +854,15 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
                                               & ~(uint32_t)(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) - 1U));
 
     /*
+     * Set cbInstrBufTotal to zero if GCPtrInstrBufPcTag is within any of the tag ranges.
+     * We make ASSUMPTIONS about IEMTLB_CALC_TAG_NO_REV here.
+     */
+    AssertCompile(IEMTLB_CALC_TAG_NO_REV((RTGCPTR)0x8731U << GUEST_PAGE_SHIFT) == 0x8731U);
+    if (   !a_fDataTlb
+        && GCPtrInstrBufPcTag - GCPtrTag < (a_f2MbLargePage ? 512U : 1024U))
+        pVCpu->iem.s.cbInstrBufTotal = 0;
+
+    /*
      * Combine TAG values with the TLB revisions.
      */
     RTGCPTR GCPtrTagGlob = a_fGlobal ? GCPtrTag | pTlb->uTlbRevisionGlobal : 0;
@@ -875,8 +884,6 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
                         IEMTLBTRACE_LARGE_EVICT_SLOT(pVCpu, GCPtrTag, pTlb->aEntries[a_idxEvenIter].GCPhys, \
                                                      a_idxEvenIter, a_fDataTlb); \
                         pTlb->aEntries[a_idxEvenIter].uTag = 0; \
-                        if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag) \
-                            pVCpu->iem.s.cbInstrBufTotal = 0; \
                     } \
                 } \
                 GCPtrTag++; \
@@ -891,8 +898,6 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
                         IEMTLBTRACE_LARGE_EVICT_SLOT(pVCpu, GCPtrTag, pTlb->aEntries[a_idxEvenIter + 1].GCPhys, \
                                                      a_idxEvenIter + 1, a_fDataTlb); \
                         pTlb->aEntries[a_idxEvenIter + 1].uTag = 0; \
-                        if (!a_fDataTlb && GCPtrTag == GCPtrInstrBufPcTag) \
-                            pVCpu->iem.s.cbInstrBufTotal = 0; \
                     } \
                 } \
                 GCPtrTagGlob++; \
