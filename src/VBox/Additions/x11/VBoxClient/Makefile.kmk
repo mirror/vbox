@@ -228,9 +228,8 @@ ifdef VBOX_WITH_VBOXCLIENT_LAZY_LOAD
   	$$(VBoxClient_0_OUTDIR)/$(2)LazyLoad.asm
   $$$$(VBoxClient_0_OUTDIR)/$(2)LazyLoad.asm: $$(PATH_ROOT)/src/VBox/GuestHost/$(2).def $(VBOX_DEF_2_LAZY_LOAD) | $$$$(dir $$@)
 	$$(call MSG_TOOL,VBoxDef2LazyLoad,$$(PATH_ROOT)/src/VBox/GuestHost/$(2).def,$$@)
-	$$(eval VBOX_VBOXCLIENT_LIB_TO_LAZYLOAD_SUFF=$$$$(if $(3),$(SUFF_DLL).$(3),$(SUFF_DLL)))
 	$$(QUIET)$$(RM) -f -- "$$@"
-	$$(VBOX_DEF_2_LAZY_LOAD) --system --library $(2)$$(VBOX_VBOXCLIENT_LIB_TO_LAZYLOAD_SUFF) --output "$$@" $$(PATH_ROOT)/src/VBox/GuestHost/$(2).def
+	$$(VBOX_DEF_2_LAZY_LOAD) --system --library $(2)$$(SUFF_DLL)$$(if $(3),.$(3),) --output "$$@" $$(PATH_ROOT)/src/VBox/GuestHost/$(2).def
  endef # VBOXCLIENT_LAZYLOAD_GEN_ASM_FN
 
  VBoxClient_DEFS    += VBOX_WITH_VBOXCLIENT_LAZY_LOAD
