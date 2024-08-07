@@ -641,12 +641,17 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, uint32_t fE
  * Helper for doing large page accounting at TLB load time.
  */
 template<bool const a_fGlobal>
-DECL_FORCE_INLINE(void) iemTlbLoadedLargePage(IEMTLB *pTlb, RTGCPTR uTagNoRev, bool f2MbLargePages)
+DECL_FORCE_INLINE(void) iemTlbLoadedLargePage(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPTR uTagNoRev, bool f2MbLargePages)
 {
     if (a_fGlobal)
         pTlb->cTlbGlobalLargePageCurLoads++;
     else
         pTlb->cTlbNonGlobalLargePageCurLoads++;
+
+# ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+    RTGCPTR const idxBit = IEMTLB_TAG_TO_EVEN_INDEX(uTagNoRev) + a_fGlobal;
+    ASMBitSet(pTlb->bmLargePage, idxBit);
+# endif
 
     AssertCompile(IEMTLB_CALC_TAG_NO_REV((RTGCPTR)0x8731U << GUEST_PAGE_SHIFT) == 0x8731U);
     uint32_t const                 fMask = (f2MbLargePages ? _2M - 1U : _4M - 1U) >> GUEST_PAGE_SHIFT;
@@ -660,6 +665,8 @@ DECL_FORCE_INLINE(void) iemTlbLoadedLargePage(IEMTLB *pTlb, RTGCPTR uTagNoRev, b
     uTagNoRev |= fMask;
     if (uTagNoRev > pRange->uLastTag)
         pRange->uLastTag = uTagNoRev;
+
+    RT_NOREF_PV(pVCpu);
 }
 #endif
 
@@ -831,6 +838,11 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
     IEMTLBTRACE_LARGE_SCAN(pVCpu, a_fGlobal, a_fNonGlobal, a_fDataTlb);
     AssertCompile(IEMTLB_ENTRY_COUNT >= 16); /* prefetching + unroll assumption */
 
+    if (a_fGlobal)
+        pTlb->cTlbInvlPgLargeGlobal += 1;
+    if (a_fNonGlobal)
+        pTlb->cTlbInvlPgLargeNonGlobal += 1;
+
     /*
      * Set up the scan.
      *
@@ -844,11 +856,17 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
      * MY_PREFETCH: Hope that prefetching 256 bytes at the time is okay for
      * relevant host architectures.
      */
-    /** @todo benchmark this code from the guest side.   */
+    /** @todo benchmark this code from the guest side. */
     bool const      fPartialScan = IEMTLB_ENTRY_COUNT > (a_f2MbLargePage ? 512 : 1024);
+#ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+    uintptr_t       idxBitmap    = fPartialScan ? IEMTLB_TAG_TO_EVEN_INDEX(GCPtrTag) / 64 : 0;
+    uintptr_t const idxBitmapEnd = fPartialScan ? idxBitmap + ((a_f2MbLargePage ? 512 : 1024) * 2) / 64
+                                                : IEMTLB_ENTRY_COUNT * 2 / 64;
+#else
     uintptr_t       idxEven      = fPartialScan ? IEMTLB_TAG_TO_EVEN_INDEX(GCPtrTag) : 0;
-    MY_PREFETCH_256(&pTlb->aEntries[0 + !a_fNonGlobal]);
+    MY_PREFETCH_256(&pTlb->aEntries[idxEven + !a_fNonGlobal]);
     uintptr_t const idxEvenEnd   = fPartialScan ? idxEven + ((a_f2MbLargePage ? 512 : 1024) * 2) : IEMTLB_ENTRY_COUNT * 2;
+#endif
     RTGCPTR const   GCPtrTagMask = fPartialScan ? ~(RTGCPTR)0
                                  : ~(RTGCPTR)(  (RT_BIT_32(a_f2MbLargePage ? 9 : 10) - 1U)
                                               & ~(uint32_t)(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) - 1U));
@@ -872,9 +890,176 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
     /*
      * Do the scanning.
      */
+#ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+    uint64_t const bmMask  = a_fGlobal && a_fNonGlobal ? UINT64_MAX
+                           : a_fGlobal ? UINT64_C(0xaaaaaaaaaaaaaaaa) : UINT64_C(0x5555555555555555);
+    /* Scan bitmap entries (64 bits at the time): */
+    for (;;)
+    {
+# if 1
+        uint64_t bmEntry = pTlb->bmLargePage[idxBitmap] & bmMask;
+        if (bmEntry)
+        {
+            /* Scan the non-zero 64-bit value in groups of 8 bits: */
+            uint64_t  bmToClear = 0;
+            uintptr_t idxEven   = idxBitmap * 64;
+            uint32_t  idxTag    = 0;
+            for (;;)
+            {
+                if (bmEntry & 0xff)
+                {
+#  define ONE_PAIR(a_idxTagIter, a_idxEvenIter, a_bmNonGlobal, a_bmGlobal) \
+                        if (a_fNonGlobal) \
+                        { \
+                            if (bmEntry & a_bmNonGlobal) \
+                            { \
+                                Assert(pTlb->aEntries[a_idxEvenIter].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); \
+                                if ((pTlb->aEntries[a_idxEvenIter].uTag & GCPtrTagMask) == (GCPtrTag + a_idxTagIter)) \
+                                { \
+                                    IEMTLBTRACE_LARGE_EVICT_SLOT(pVCpu, GCPtrTag + a_idxTagIter, \
+                                                                 pTlb->aEntries[a_idxEvenIter].GCPhys, \
+                                                                 a_idxEvenIter, a_fDataTlb); \
+                                    pTlb->aEntries[a_idxEvenIter].uTag = 0; \
+                                    bmToClearSub8 |= a_bmNonGlobal; \
+                                } \
+                            } \
+                            else \
+                                Assert(   !(pTlb->aEntries[a_idxEvenIter].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE)\
+                                       ||    (pTlb->aEntries[a_idxEvenIter].uTag & IEMTLB_REVISION_MASK) \
+                                          != (GCPtrTag & IEMTLB_REVISION_MASK)); \
+                        } \
+                        if (a_fGlobal) \
+                        { \
+                            if (bmEntry & a_bmGlobal) \
+                            {  \
+                                Assert(pTlb->aEntries[a_idxEvenIter + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); \
+                                if ((pTlb->aEntries[a_idxEvenIter + 1].uTag & GCPtrTagMask) == (GCPtrTagGlob + a_idxTagIter)) \
+                                { \
+                                    IEMTLBTRACE_LARGE_EVICT_SLOT(pVCpu, GCPtrTagGlob + a_idxTagIter, \
+                                                                 pTlb->aEntries[a_idxEvenIter + 1].GCPhys, \
+                                                                 a_idxEvenIter + 1, a_fDataTlb); \
+                                    pTlb->aEntries[a_idxEvenIter + 1].uTag = 0; \
+                                    bmToClearSub8 |= a_bmGlobal; \
+                                } \
+                            } \
+                            else \
+                                Assert(   !(pTlb->aEntries[a_idxEvenIter + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE)\
+                                       ||    (pTlb->aEntries[a_idxEvenIter + 1].uTag & IEMTLB_REVISION_MASK) \
+                                          != (GCPtrTagGlob & IEMTLB_REVISION_MASK)); \
+                        }
+                    uint64_t bmToClearSub8 = 0;
+                    ONE_PAIR(idxTag + 0, idxEven + 0, 0x01, 0x02)
+                    ONE_PAIR(idxTag + 1, idxEven + 2, 0x04, 0x08)
+                    ONE_PAIR(idxTag + 2, idxEven + 4, 0x10, 0x20)
+                    ONE_PAIR(idxTag + 3, idxEven + 6, 0x40, 0x80)
+                    bmToClear |= bmToClearSub8 << (idxTag * 2);
+#  undef ONE_PAIR
+                }
+
+                /* advance to the next 8 bits. */
+                bmEntry >>= 8;
+                if (!bmEntry)
+                    break;
+                idxEven  += 8;
+                idxTag   += 4;
+            }
+
+            /* Clear the large page flags we covered. */
+            pTlb->bmLargePage[idxBitmap] &= ~bmToClear;
+        }
+# else
+        uint64_t const bmEntry = pTlb->bmLargePage[idxBitmap] & bmMask;
+        if (bmEntry)
+        {
+            /* Scan the non-zero 64-bit value completely unrolled: */
+            uintptr_t const idxEven   = idxBitmap * 64;
+            uint64_t        bmToClear = 0;
+#  define ONE_PAIR(a_idxTagIter, a_idxEvenIter, a_bmNonGlobal, a_bmGlobal) \
+                if (a_fNonGlobal) \
+                { \
+                    if (bmEntry & a_bmNonGlobal) \
+                    { \
+                        Assert(pTlb->aEntries[a_idxEvenIter].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); \
+                        if ((pTlb->aEntries[a_idxEvenIter].uTag & GCPtrTagMask) == (GCPtrTag + a_idxTagIter)) \
+                        { \
+                            IEMTLBTRACE_LARGE_EVICT_SLOT(pVCpu, GCPtrTag + a_idxTagIter, \
+                                                         pTlb->aEntries[a_idxEvenIter].GCPhys, \
+                                                         a_idxEvenIter, a_fDataTlb); \
+                            pTlb->aEntries[a_idxEvenIter].uTag = 0; \
+                            bmToClear |= a_bmNonGlobal; \
+                        } \
+                    } \
+                    else \
+                        Assert(   !(pTlb->aEntriqes[a_idxEvenIter].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE)\
+                               ||    (pTlb->aEntries[a_idxEvenIter].uTag & IEMTLB_REVISION_MASK) \
+                                  != (GCPtrTag & IEMTLB_REVISION_MASK)); \
+                } \
+                if (a_fGlobal) \
+                { \
+                    if (bmEntry & a_bmGlobal) \
+                    {  \
+                        Assert(pTlb->aEntries[a_idxEvenIter + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE); \
+                        if ((pTlb->aEntries[a_idxEvenIter + 1].uTag & GCPtrTagMask) == (GCPtrTagGlob + a_idxTagIter)) \
+                        { \
+                            IEMTLBTRACE_LARGE_EVICT_SLOT(pVCpu, GCPtrTagGlob + a_idxTagIter, \
+                                                         pTlb->aEntries[a_idxEvenIter + 1].GCPhys, \
+                                                         a_idxEvenIter + 1, a_fDataTlb); \
+                            pTlb->aEntries[a_idxEvenIter + 1].uTag = 0; \
+                            bmToClear |= a_bmGlobal; \
+                        } \
+                    } \
+                    else \
+                        Assert(   !(pTlb->aEntries[a_idxEvenIter + 1].fFlagsAndPhysRev & IEMTLBE_F_PT_LARGE_PAGE)\
+                               ||    (pTlb->aEntries[a_idxEvenIter + 1].uTag & IEMTLB_REVISION_MASK) \
+                                  != (GCPtrTagGlob & IEMTLB_REVISION_MASK)); \
+                } ((void)0)
+#  define FOUR_PAIRS(a_iByte, a_cShift) \
+                ONE_PAIR(0 + a_iByte * 4, idxEven + 0 + a_iByte * 8, UINT64_C(0x01) << a_cShift, UINT64_C(0x02) << a_cShift); \
+                ONE_PAIR(1 + a_iByte * 4, idxEven + 2 + a_iByte * 8, UINT64_C(0x04) << a_cShift, UINT64_C(0x08) << a_cShift); \
+                ONE_PAIR(2 + a_iByte * 4, idxEven + 4 + a_iByte * 8, UINT64_C(0x10) << a_cShift, UINT64_C(0x20) << a_cShift); \
+                ONE_PAIR(3 + a_iByte * 4, idxEven + 6 + a_iByte * 8, UINT64_C(0x40) << a_cShift, UINT64_C(0x80) << a_cShift)
+            if (bmEntry & (uint32_t)UINT16_MAX)
+            {
+                FOUR_PAIRS(0,  0);
+                FOUR_PAIRS(1,  8);
+            }
+            if (bmEntry & ((uint32_t)UINT16_MAX << 16))
+            {
+                FOUR_PAIRS(2, 16);
+                FOUR_PAIRS(3, 24);
+            }
+            if (bmEntry & ((uint64_t)UINT16_MAX << 32))
+            {
+                FOUR_PAIRS(4, 32);
+                FOUR_PAIRS(5, 40);
+            }
+            if (bmEntry & ((uint64_t)UINT16_MAX << 16))
+            {
+                FOUR_PAIRS(6, 48);
+                FOUR_PAIRS(7, 56);
+            }
+#  undef FOUR_PAIRS
+
+            /* Clear the large page flags we covered. */
+            pTlb->bmLargePage[idxBitmap] &= ~bmToClear;
+        }
+# endif
+
+        /* advance */
+        idxBitmap++;
+        if (idxBitmap >= idxBitmapEnd)
+            break;
+        if (a_fNonGlobal)
+            GCPtrTag     += 32;
+        if (a_fGlobal)
+            GCPtrTagGlob += 32;
+    }
+
+#else  /* !IEMTLB_WITH_LARGE_PAGE_BITMAP */
+
     for (; idxEven < idxEvenEnd; idxEven += 8)
     {
-#define ONE_ITERATION(a_idxEvenIter) \
+# define ONE_ITERATION(a_idxEvenIter) \
             if (a_fNonGlobal)  \
             { \
                 if ((pTlb->aEntries[a_idxEvenIter].uTag & GCPtrTagMask) == GCPtrTag) \
@@ -908,8 +1093,9 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorkerInner(PVMCPUCC pVCpu, IEMTLB *pT
         ONE_ITERATION(idxEven + 2)
         ONE_ITERATION(idxEven + 4)
         ONE_ITERATION(idxEven + 6)
-#undef ONE_ITERATION
+# undef ONE_ITERATION
     }
+#endif /* !IEMTLB_WITH_LARGE_PAGE_BITMAP */
 }
 
 template<bool const a_fDataTlb, bool const a_f2MbLargePage>
@@ -941,6 +1127,8 @@ DECLINLINE(void) iemTlbInvalidateLargePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, R
 template<bool const a_fDataTlb>
 DECLINLINE(void) iemTlbInvalidatePageWorker(PVMCPUCC pVCpu, IEMTLB *pTlb, RTGCPTR GCPtrTag, uintptr_t idxEven) RT_NOEXCEPT
 {
+    pTlb->cTlbInvlPg += 1;
+
     /*
      * Flush the entry pair.
      */
@@ -1270,9 +1458,9 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             || (pTlbe = pTlbe + 1)->uTag == (uTagNoRev | pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal))
         {
             /* likely when executing lots of code, otherwise unlikely */
-# ifdef IEM_WITH_TLB_STATISTICS
+#  ifdef IEM_WITH_TLB_STATISTICS
             pVCpu->iem.s.CodeTlb.cTlbCoreHits++;
-# endif
+#  endif
             Assert(!(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_ACCESSED));
 
             /* Check TLB page table level access flags. */
@@ -1320,10 +1508,10 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
                 Assert((WalkFast.fInfo & PGM_WALKINFO_SUCCEEDED) && WalkFast.fFailed == PGM_WALKFAIL_SUCCESS);
             else
             {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+#  ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
                 /** @todo Nested VMX: Need to handle EPT violation/misconfig here?  OF COURSE! */
                 Assert(!(Walk.fFailed & PGM_WALKFAIL_EPT));
-#endif
+#  endif
                 Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrFirst, rc));
                 iemRaisePageFaultJmp(pVCpu, GCPtrFirst, 1, IEM_ACCESS_INSTRUCTION, rc);
             }
@@ -1335,14 +1523,22 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
                 pTlbe--;
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.CodeTlb.uTlbRevision;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
-                    iemTlbLoadedLargePage<false>(&pVCpu->iem.s.CodeTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                    iemTlbLoadedLargePage<false>(pVCpu, &pVCpu->iem.s.CodeTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+#  ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+                else
+                    ASMBitClear(pVCpu->iem.s.CodeTlb.bmLargePage, IEMTLB_TAG_TO_EVEN_INDEX(uTagNoRev));
+#  endif
             }
             else
             {
                 pVCpu->iem.s.CodeTlb.cTlbCoreGlobalLoads++;
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.CodeTlb.uTlbRevisionGlobal;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
-                    iemTlbLoadedLargePage<true>(&pVCpu->iem.s.CodeTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                    iemTlbLoadedLargePage<true>(pVCpu, &pVCpu->iem.s.CodeTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+#  ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+                else
+                    ASMBitClear(pVCpu->iem.s.CodeTlb.bmLargePage, IEMTLB_TAG_TO_EVEN_INDEX(uTagNoRev) + 1);
+#  endif
             }
             pTlbe->fFlagsAndPhysRev = (~WalkFast.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D | X86_PTE_A))
                                     | (WalkFast.fEffective >> X86_PTE_PAE_BIT_NX) /*IEMTLBE_F_PT_NO_EXEC*/
@@ -6801,7 +6997,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
     {
 # ifdef IEM_WITH_TLB_STATISTICS
         pVCpu->iem.s.DataTlb.cTlbCoreHits++;
-#endif
+# endif
 
         /* If the page is either supervisor only or non-writable, we need to do
            more careful access checks. */
@@ -6890,14 +7086,22 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
                 pTlbe--;
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
-                    iemTlbLoadedLargePage<false>(&pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                    iemTlbLoadedLargePage<false>(pVCpu, &pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+# ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+                else
+                    ASMBitClear(pVCpu->iem.s.DataTlb.bmLargePage, IEMTLB_TAG_TO_EVEN_INDEX(uTagNoRev));
+# endif
             }
             else
             {
                 pVCpu->iem.s.DataTlb.cTlbCoreGlobalLoads++;
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
-                    iemTlbLoadedLargePage<true>(&pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                    iemTlbLoadedLargePage<true>(pVCpu, &pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+# ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+                else
+                    ASMBitClear(pVCpu->iem.s.DataTlb.bmLargePage, IEMTLB_TAG_TO_EVEN_INDEX(uTagNoRev) + 1);
+# endif
             }
         }
         else
@@ -7294,7 +7498,11 @@ static void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, ui
                 pTlbe--;
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevision;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
-                    iemTlbLoadedLargePage<false>(&pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                    iemTlbLoadedLargePage<false>(pVCpu, &pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+# ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+                else
+                    ASMBitClear(pVCpu->iem.s.DataTlb.bmLargePage, IEMTLB_TAG_TO_EVEN_INDEX(uTagNoRev));
+# endif
             }
             else
             {
@@ -7304,7 +7512,11 @@ static void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, ui
                     pVCpu->iem.s.DataTlb.cTlbCoreGlobalLoads++;
                 pTlbe->uTag         = uTagNoRev | pVCpu->iem.s.DataTlb.uTlbRevisionGlobal;
                 if (WalkFast.fInfo & PGM_WALKINFO_BIG_PAGE)
-                    iemTlbLoadedLargePage<true>(&pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+                    iemTlbLoadedLargePage<true>(pVCpu, &pVCpu->iem.s.DataTlb, uTagNoRev, RT_BOOL(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE));
+# ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+                else
+                    ASMBitClear(pVCpu->iem.s.DataTlb.bmLargePage, IEMTLB_TAG_TO_EVEN_INDEX(uTagNoRev) + 1);
+# endif
             }
         }
         else

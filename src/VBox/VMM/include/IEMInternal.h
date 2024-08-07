@@ -557,6 +557,19 @@ AssertCompile(RT_BIT_32(IEMTLB_ENTRY_COUNT_AS_POWER_OF_TWO) == IEMTLB_ENTRY_COUN
 # define IEMTLB_SLOT_FMT    "%05x"
 #endif
 
+/** Enable the large page bitmap TLB optimization.
+ *
+ * The idea here is to avoid scanning the full 32 KB (2MB pages, 2*512 TLB
+ * entries) or 64 KB (4MB pages, 2*1024 TLB entries) worth of TLB entries during
+ * invlpg when large pages are used, and instead just scan 128 or 256 bytes of
+ * the bmLargePage bitmap to determin which TLB entires that might be containing
+ * large pages and actually require checking.
+ *
+ * There is a good posibility of false positives since we currently don't clear
+ * the bitmap when flushing the TLB, but it should help reduce the workload when
+ * the large pages aren't fully loaded into the TLB in their entirity...
+ */
+#define IEMTLB_WITH_LARGE_PAGE_BITMAP
 
 /**
  * An IEM TLB.
@@ -671,14 +684,29 @@ typedef struct IEMTLB
     /** Physical revision rollovers. */
     uint32_t            cTlbPhysRevRollovers;
 
-    /*uint32_t            au32Padding[2];*/
+    /** Number of INVLPG (and similar) operations. */
+    uint32_t            cTlbInvlPg;
+    /** Subset of cTlbInvlPg that involved non-global large pages. */
+    uint32_t            cTlbInvlPgLargeNonGlobal;
+    /** Subset of cTlbInvlPg that involved global large pages. */
+    uint32_t            cTlbInvlPgLargeGlobal;
+
+    uint32_t            au32Padding[13];
 
     /** The TLB entries.
      * Even entries are for PTE.G=0 and uses uTlbRevision.
      * Odd  entries are for PTE.G=1 and uses uTlbRevisionGlobal. */
     IEMTLBENTRY         aEntries[IEMTLB_ENTRY_COUNT * 2];
+#ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+    /** Bitmap tracking TLB entries for large pages.
+     * This duplicates IEMTLBE_F_PT_LARGE_PAGE for each TLB entry. */
+    uint64_t            bmLargePage[IEMTLB_ENTRY_COUNT * 2 / 64];
+#endif
 } IEMTLB;
 AssertCompileSizeAlignment(IEMTLB, 64);
+#ifdef IEMTLB_WITH_LARGE_PAGE_BITMAP
+AssertCompile(IEMTLB_ENTRY_COUNT >= 32 /* bmLargePage ASSUMPTION */);
+#endif
 /** The width (in bits) of the address portion of the TLB tag.   */
 #define IEMTLB_TAG_ADDR_WIDTH   36
 /** IEMTLB::uTlbRevision increment.  */
@@ -861,10 +889,10 @@ typedef IEMTLBTRACEENTRY const *PCIEMTLBTRACEENTRY;
 # define IEMTLBTRACE_USER3(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) \
     iemTlbTrace(a_pVCpu, kIemTlbTraceType_User3, a_u64Param1, a_u64Param2, a_bParam, a_u32Param)
 #else
+# define IEMTLBTRACE_USER0(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) do { } while (0)
 # define IEMTLBTRACE_USER1(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) do { } while (0)
 # define IEMTLBTRACE_USER2(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) do { } while (0)
 # define IEMTLBTRACE_USER3(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) do { } while (0)
-# define IEMTLBTRACE_USER4(a_pVCpu, a_u64Param1, a_u64Param2, a_u32Param, a_bParam) do { } while (0)
 #endif
 
 

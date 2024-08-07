@@ -386,6 +386,13 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.NonGlobalLargePageRange.uLastTag, STAMTYPE_X64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Code TLB non-global large page range: last tag",   "/IEM/CPU%u/Tlb/Code/LargePageNonGlobalLastTag", idCpu);
 
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbInvlPg, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB page invalidation requests",          "/IEM/CPU%u/Tlb/Code/InvlPg", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbInvlPgLargeGlobal, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB page invlpg scanning for global large pages",     "/IEM/CPU%u/Tlb/Code/InvlPg/LargeGlobal", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbInvlPgLargeNonGlobal, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB page invlpg scanning for non-global large pages", "/IEM/CPU%u/Tlb/Code/InvlPg/LargeNonGlobal", idCpu);
+
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbCoreMisses,      STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Code TLB misses",                              "/IEM/CPU%u/Tlb/Code/Misses", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbCoreGlobalLoads, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
@@ -473,6 +480,13 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Data TLB non-global large page range: lowest tag", "/IEM/CPU%u/Tlb/Data/LargePageNonGlobalFirstTag", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.NonGlobalLargePageRange.uLastTag, STAMTYPE_X64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB non-global large page range: last tag",   "/IEM/CPU%u/Tlb/Data/LargePageNonGlobalLastTag", idCpu);
+
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbInvlPg, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB page invalidation requests",          "/IEM/CPU%u/Tlb/Data/InvlPg", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbInvlPgLargeGlobal, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB page invlpg scanning for global large pages",     "/IEM/CPU%u/Tlb/Data/InvlPg/LargeGlobal", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbInvlPgLargeNonGlobal, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB page invlpg scanning for non-global large pages", "/IEM/CPU%u/Tlb/Data/InvlPg/LargeNonGlobal", idCpu);
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbCoreMisses,      STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB core misses (iemMemMap, direct iemMemMapJmp (not safe path))",
