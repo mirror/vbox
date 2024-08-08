@@ -283,6 +283,7 @@ UIWizardAddCloudVMPageSource::UIWizardAddCloudVMPageSource()
             m_pProviderLabel = new QLabel(this);
             if (m_pProviderLabel)
                 m_pProviderLayout->addWidget(m_pProviderLabel, 0, 0, Qt::AlignRight);
+
             /* Prepare provider combo-box: */
             m_pProviderComboBox = new QIComboBox(this);
             if (m_pProviderComboBox)
