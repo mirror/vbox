@@ -5,15 +5,12 @@
   
   <body>
     <p>Welcome to <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.</p>
-    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> is a cross-platform virtualization
-      application. What does that mean? For one thing, it installs on your existing Intel or
-      AMD-based computers, whether they are running Windows, macOS, Linux, or Oracle Solaris
-      operating systems (OSes). Second, it extends the capabilities of your existing computer so
-      that it can run multiple OSes, inside multiple virtual machines, at the same time. As an
-      example, you can run Windows and Linux on your Mac, run Windows Server on your Linux server,
-      run Linux on your Windows PC, and so on, all alongside your existing applications. You can
-      install and run as many virtual machines as you like. The only practical limits are disk space
-      and memory.</p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> is a cross-platform virtualization application. That means
+      it extends the capabilities of your existing computer so that it can run multiple operating systems, inside
+      multiple virtual machines (VMs), at the same time. As an example, you can run Windows and Linux on your Mac, run
+      Windows Server on your Linux server, run Linux on your Windows PC, and so on, all alongside your existing
+      applications. You can install and run as many virtual machines as you like. The only practical limits are disk
+      space and memory.</p>
     <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> is deceptively simple yet also very powerful. It can run
       everywhere from small embedded systems or desktop class machines all the way up to data center deployments and
       even Cloud environments. </p>

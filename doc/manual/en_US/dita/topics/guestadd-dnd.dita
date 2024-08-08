@@ -26,7 +26,7 @@
       the source and the host is the destination. </p>
     <p>For security reasons drag and drop can be configured at runtime on a per-VM basis either using the <b
         outputclass="bold">Drag and Drop</b> menu item in the <b outputclass="bold">Devices</b> menu of the virtual
-      machine, as shown below, or the <userinput>VBoxManage</userinput> command. </p>
+      machine, or the <userinput>VBoxManage</userinput> command. </p>
     <p>The following drag and drop modes are available: </p>
     <ul>
       <li>

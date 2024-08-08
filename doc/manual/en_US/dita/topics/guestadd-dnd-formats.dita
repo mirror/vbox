@@ -4,25 +4,15 @@
   <title>Supported Formats</title>
   
   <body>
-    <p>
-        As <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can run on a variety of host operating systems
-        and also supports a wide range of guests, certain data formats
-        must be translated after transfer. This is so that the
-        destination operating system, which receives the data, is able
-        to handle them in an appropriate manner.
-      </p>
+    <p>As <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can run on a variety of host operating systems and also
+      supports a wide range of guests, certain data formats must be translated after transfer. This is so that the
+      destination operating system, which receives the data, is able to handle them in an appropriate manner. </p>
     <note>
-      <p>
-          When dragging files no data conversion is done in any way. For
-          example, when transferring a file from a Linux guest to a
-          Windows host the Linux-specific line endings are not converted
-          to Windows line endings.
-        </p>
+      <p>When dragging files no data conversion is done in any way. For example, when transferring a file from a Linux
+        guest to a Windows host the Linux-specific line endings are not converted to Windows line endings. </p>
     </note>
-    <p>
-        The following formats are handled by the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> drag and
-        drop service:
-      </p>
+    <p>The following formats are handled by the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> drag and drop
+      service: </p>
     <ul>
       <li>
         <p><b outputclass="bold">Plain text:</b> From

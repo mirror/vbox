@@ -24,21 +24,15 @@
       are: </p>
                <ul>
                   <li>
-                     <p>
-          Hard disk images, either in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s own Virtual Disk
-          Image (VDI) format, or in the third-party formats listed in
-          <xref href="vdidetails.dita#vdidetails"/>.
-        </p>
+                     <p>Hard disk images, either in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s own Virtual
+               Disk Image (VDI) format, or in the third-party formats listed in <xref href="vdidetails.dita#vdidetails"
+               />. </p>
                   </li>
                   <li>
-                     <p>
-          CD/DVD images in standard ISO format.
-        </p>
+                     <p>CD/DVD images in standard ISO format. </p>
                   </li>
                   <li>
-                     <p>
-          Floppy images in standard RAW format.
-        </p>
+                     <p>Floppy images in standard RAW format. </p>
                   </li>
                </ul>
                <p>For each image, the Virtual Media Manager shows you the full path of the image file and other
@@ -95,9 +89,7 @@
                      <p><b outputclass="bold">Clear</b> all inaccessible disk images from the list. The disk images are
           released from the VMs they are attached to and removed from the known media. </p>
                      <note>
-                        <p>
-            This option is for optical disks and floppy disks only.
-          </p>
+                        <p>This option is for optical disks and floppy disks only. </p>
                      </note>
                   </li>
                   <li>

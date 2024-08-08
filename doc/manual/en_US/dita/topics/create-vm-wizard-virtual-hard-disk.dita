@@ -66,16 +66,15 @@
     <section id="section_bdq_h1r_pbc">
       <title>Use an Existing Virtual Hard Disk</title>
     </section>
-    <p>Follow these steps to use a virtual hard disk that already exists on the host. Ensure the
-      image file is in a suitable location (usually the machine folder) and not in use by other
-        VMs.<ol id="ol_txk_str_pbc">
+    <p>Follow these steps to use a virtual hard disk that already exists on the host. Ensure the image file is in a
+      suitable location (usually the machine folder) and not in use by other VMs.<note id="note_fzl_3tw_hcc"
+        type="caution">Data on the disk image may be deleted.</note><ol id="ol_txk_str_pbc">
         <li>
           <p>Select <b outputclass="bold">Use an Existing Virtual Hard Disk File</b>
           </p>
         </li>
         <li>
-          <p>Select the image file to use with the new VM, and then click <b outputclass="bold"
-              >Add</b>. </p>
+          <p>Select the image file to use with the new VM, and then click <b outputclass="bold">Add</b>. </p>
         </li>
       </ol></p>
     <p> </p>

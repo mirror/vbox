@@ -4,18 +4,13 @@
   <title>Clipboard</title>
   <!-- 7.1: Shared clipboard toggle in guest VM, bugref:10481; input from dev required -->
   <body>
-    <p>
-          The shared clipboard enables users to share data between the
-          host and the guest. Enabling the clipboard in Bidirectional
-          mode enables the guest to read and write the host clipboard.
-          The Host to Guest mode and the Guest to Host mode limit the
-          access to one direction. If the guest is able to access the
-          host clipboard it can also potentially access sensitive data
-          from the host which is shared over the clipboard.
-        </p>
-    <p> If the guest is able to read from or write to the host clipboard then a remote user
-      connecting to the guest over the network will also gain this ability, which may not be
-      appropriate. As a consequence, the shared clipboard is disabled for new machines. </p>
+    <p>The shared clipboard enables users to share data between the host and the guest. Enabling the clipboard in
+      Bidirectional mode enables the guest to read and write the host clipboard. The Host to Guest mode and the Guest to
+      Host mode limit the access to one direction. If the guest is able to access the host clipboard it can also
+      potentially access sensitive data from the host which is shared over the clipboard. </p>
+    <p>If the guest is able to read from or write to the host clipboard then a remote user connecting to the guest over
+      the network will also gain this ability, which may not be appropriate. As a consequence, the shared clipboard is
+      disabled for new machines. </p>
   </body>
   
 </topic>

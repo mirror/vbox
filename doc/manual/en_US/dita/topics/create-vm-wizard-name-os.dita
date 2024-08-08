@@ -15,9 +15,10 @@
           Ensure that the folder location has enough free space, especially if you intend to use the
           snapshots feature. See also <xref href="vboxconfigdata-machine-folder.dita">The Machine
             Folder</xref>.</li>
-        <li>Select the ISO image file for the operating system you intend to install on the new VM.
-          The image file can be used directly to install an OS on the new VM as part of an
-          unattended installation, or it can be attached to a DVD drive on the new VM.</li>
+        <li>Select the ISO image file for the operating system you intend to install on the new VM. The image file can
+          be used directly to install an OS on the new VM as part of an unattended installation, or it can be attached
+          to a DVD drive on the new VM. If the image contains more than one edition, select the edition you want to
+          use.</li>
         <li><ph conkeyref="vbox-conkeyref-phrases/product-name"/> will populate the <b>Type</b>,
             <b>Subtype</b>, and <b>Version</b> fields if it can detect the operating system in the
           ISO. If it cannot detect the OS, then set these according to your OS. For example, if the
@@ -29,14 +30,12 @@
             particularly important for 64-bit guests (see <xref
               href="intro-64bitguests.dita#intro-64bitguests"/>) but you must always set this field
             to the correct value.</p></li>
-        <li>By default, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will install the
-          chosen OS using the ISO image provided, if the image supports unattended installation. See
-          also <xref
-            href="create-vm-wizard-unattended-install.dita#create-vm-wizard-unattended-install"
-            />.<p>If you prefer to install the OS, you can disable the unattended guest operating
-            system install feature by selecting <b outputclass="bold">Skip Unattended
-              Installation</b>. In that case, the selected ISO image is mounted automatically on the
-            DVD drive of the new VM and you must install the OS from there.</p><p>Not all images
+        <li>By default, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will install the chosen OS using the ISO
+          image provided, if the image supports unattended installation. See also <xref
+            href="create-vm-wizard-unattended-install.dita#create-vm-wizard-unattended-install"/>.<p>If you prefer to
+            install the OS manually, you can disable the unattended guest operating system install feature by selecting
+              <b outputclass="bold">Skip Unattended Installation</b>. In that case, the selected ISO image is mounted
+            automatically on the DVD drive of the new VM and you must install the OS from there.</p><p>Not all images
             support unattended installation.</p></li>
         <li>Click Next to <xref
             href="create-vm-wizard-unattended-install.dita#create-vm-wizard-unattended-install"/>
