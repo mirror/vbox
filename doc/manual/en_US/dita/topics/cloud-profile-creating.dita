@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="cloud_profile_creating">
+    <title>Creating a New Cloud Profile</title>
+    <body>
+        <ol id="ol_v4q_hgm_gcc">
+            <li>
+                <p>Click the <b outputclass="bold">Add</b> icon and specify a <b outputclass="bold">Name</b> for the
+                    profile. </p>
+            </li>
+            <li>
+                <p>Click <b outputclass="bold">Properties</b> and specify the following property values for the profile: </p>
+                <ul id="ul_w4q_hgm_gcc">
+                    <li>
+                        <p> Compartment OCID </p>
+                    </li>
+                    <li>
+                        <p> Fingerprint of the public key </p>
+                    </li>
+                    <li>
+                        <p> Location of the private key on the client device </p>
+                    </li>
+                    <li>
+                        <p> Region OCID </p>
+                    </li>
+                    <li>
+                        <p> Tenancy OCID </p>
+                    </li>
+                    <li>
+                        <p> User OCID </p>
+                    </li>
+                </ul>
+                <p>Some of these are settings for your <ph conkeyref="vbox-conkeyref-phrases/oci"/> account, which you
+                    can view from the <ph conkeyref="vbox-conkeyref-phrases/oci-console"/>. </p>
+            </li>
+            <li>
+                <p>(Optional) If you are using the cloud profile to connect to cloud virtual machines, select the <b
+                        outputclass="bold">Show VMs</b> check box. </p>
+                <p>This creates a new subgroup of the <b outputclass="bold">OCI</b> group in <ph
+                        conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. See <xref
+                        href="cloud-vm-oci-group.dita#cloud-vm-oci-group"/>. </p>
+            </li>
+            <li>
+                <p>Click <b outputclass="bold">Apply</b> to save your changes. </p>
+                <p>The cloud profile settings are saved to the <filepath>oci_config</filepath> file in your <ph
+                        conkeyref="vbox-conkeyref-phrases/product-name"/> global settings directory. </p>
+            </li>
+        </ol>
+    </body>
+</topic>

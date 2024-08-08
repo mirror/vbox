@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="cloud_profile_creating">
+    <title>Importing a Cloud Profile</title>
+    <body>
+        <p>Follow these steps to import an existing <ph conkeyref="vbox-conkeyref-phrases/oci"/> configuration file into
+            the Cloud Profile Manager: </p>
+        <ol id="ol_yvv_mgm_gcc">
+            <li>
+                <p>Ensure that a <filepath>config</filepath> file is present in your <ph
+                        conkeyref="vbox-conkeyref-phrases/oci"/> configuration directory. For example, this is
+                        <filepath>$HOME/.oci/config</filepath> on a Linux host. </p>
+            </li>
+            <li>
+                <p>Click the <b outputclass="bold">Import</b> icon to open a dialog that prompts you to import cloud
+                    profiles from external files. </p>
+                <note id="note_zvv_mgm_gcc">
+                    <p>This action overwrites any cloud profiles that are in your <ph
+                            conkeyref="vbox-conkeyref-phrases/product-name"/> global settings directory. </p>
+                </note>
+            </li>
+            <li>
+                <p>Click <b outputclass="bold">Import</b>. </p>
+                <p>Your cloud profile settings are saved to the <filepath>oci_config</filepath> file in your <ph
+                        conkeyref="vbox-conkeyref-phrases/product-name"/> global settings directory. </p>
+            </li>
+            <li>
+                <p>Click <b outputclass="bold">Properties</b> to show the cloud profile settings. </p>
+                <p>Double-click the appropriate field to change the value. </p>
+            </li>
+            <li>
+                <p>Click <b outputclass="bold">Apply</b> to save your changes. </p>
+            </li>
+        </ol>
+    </body>
+</topic>

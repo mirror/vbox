@@ -4,30 +4,17 @@
   <title>Storage Settings</title>
   
   <body>
-    <p>The <b outputclass="bold">Storage</b> category in the VM settings enables you to connect virtual hard disk,
-      CD/DVD, and floppy images and drives to your virtual machine. </p>
+    <p>The <b outputclass="bold">Storage</b> category in the VM settings enables you to connect virtual hard disk and
+      CD/DVD images and drives to your virtual machine. </p>
     <p>In a real computer, so-called <i>storage controllers</i> connect physical disk drives to the rest of the
       computer. Similarly, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> presents virtual storage controllers to
-      a virtual machine. Under each controller, the virtual devices, such as hard disks, CD/DVD or floppy drives,
-      attached to the controller are shown. </p>
+      a virtual machine. Under each controller, the virtual devices, such as hard disks and CD/DVD drives, attached to
+      the controller are shown. </p>
     <note>
       <p>This section gives a quick introduction to the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> storage
         settings. See <xref href="storage.dita#storage"/> for a full description of the available storage settings in
           <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
     </note>
-    <p>If you have used the <b outputclass="bold">Create Virtual Machine</b> wizard to create a machine, you will
-      normally see something like the following: </p>
-    <fig id="fig-storage-settings">
-      <title>Storage Settings for a Virtual Machine</title>
-      <xref href="images/vm-settings-harddisk.png" format="png" platform="htmlhelp">
-        <image href="images/vm-settings-harddisk.png" width="10cm" placement="break">
-          <alt>Storage Settings for a Virtual Machine</alt>
-        </image>
-      </xref>
-      <image platform="ohc" href="images/vm-settings-harddisk.png" width="10cm" placement="break">
-        <alt>Storage Settings for a Virtual Machine</alt>
-      </image>
-    </fig>
     <p>Depending on the guest OS type that you selected when you created the VM, a new VM includes the following storage
       devices: </p>
     <ul>

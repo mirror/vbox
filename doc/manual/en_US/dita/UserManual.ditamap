@@ -95,7 +95,10 @@
             <topicref href="topics/cloud-create-api-keypair.dita"/>
             <topicref href="topics/cloud-upload-public-key.dita"/>
             <topicref href="topics/cloud-create-cloud-profile.dita"/>
-            <topicref href="topics/cloud-using-cloud-profile-manager.dita"/>
+      <topicref href="topics/cloud-using-cloud-profile-manager.dita">
+        <topicref href="topics/cloud-profile-creating.dita"/>
+        <topicref href="topics/cloud-profile-importing.dita"/>
+      </topicref>
             <topicref href="topics/cloud-vbox-oci-tasks.dita"/>
             <topicref href="topics/cloud-vm.dita">
                <topicref href="topics/cloud-vm-oci-group.dita"/>

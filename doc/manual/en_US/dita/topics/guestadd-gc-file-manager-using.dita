@@ -1,19 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="guestadd-gc-file-manager-using">
-  <title>Using the Guest Control File Manager</title>
+  <title>Transferring Files</title>
   
   <body>
-    <p>
-        The following steps describe how to use the Guest Control File
-        Manager.
-      </p>
+    <p>To use the Guest Control File Manager to transfer files, follow these steps. </p>
     <ol>
       <li>
-        <p>
-            Open the Guest Control File Manager. Do either of the
-            following:
-          </p>
+        <p>Open the Guest Control File Manager. Do either of the following: </p>
         <ul>
           <li>
             <p>
@@ -32,39 +26,16 @@
           </p>
       </li>
       <li>
-        <p>
-            Create a guest session.
-          </p>
-        <p>
-            At the bottom of the Guest Control File Manager, enter
-            authentication credentials for a user on the guest system.
-          </p>
-        <p>
-            Click <b outputclass="bold">Create Session</b>.
-          </p>
-        <p>
-            The contents of the guest VM file system appears in the
-            right pane of the Guest Control File Manager.
-          </p>
+        <p>In the Guest Control File Manager, enter authentication credentials for a user on the guest system. </p>
+        <p>Click <b outputclass="bold">Create Session</b>. </p>
+        <p>The contents of the guest VM file system appears in the right pane of the Guest Control File Manager. </p>
       </li>
       <li>
-        <p>
-            Transfer files between the guest and the host system by
-            using the move and copy file transfer icons.
-          </p>
-        <p>
-            You can copy and move files from the guest to the host
-            system or from the host system to the guest.
-          </p>
+        <p>Transfer files between the guest and the host system by using the move and copy file transfer icons. </p>
+        <p>You can copy and move files from the guest to the host system or from the host system to the guest. </p>
       </li>
       <li>
-        <p>
-            Close the Guest Control File Manager.
-          </p>
-        <p>
-            Click <b outputclass="bold">Close</b> to end the
-            guest session.
-          </p>
+        <p>Click <b outputclass="bold">Close</b> to end the guest session and the Guest Control File Manager. </p>
       </li>
     </ol>
   </body>
