@@ -2284,11 +2284,11 @@ int Display::i_recordingScreenUpdate(unsigned uScreenId, uint8_t *pauFramebuffer
     if (uScreenId == 0xFFFFFFFF /* SVGA_ID_INVALID -- The old register interface is single screen only */)
         uScreenId = VBOX_VIDEO_PRIMARY_SCREEN;
 
-    if (!pCtx->IsFeatureEnabled(uScreenId, RecordingFeature_Video))
+    if (   !pCtx->IsFeatureEnabled(uScreenId, RecordingFeature_Video)
+        || !pauFramebuffer)
         return VINF_SUCCESS;
 
 #ifdef VBOX_STRICT /* Skipped in release build for speed reasons. */
-    AssertPtrReturn(pauFramebuffer, VERR_INVALID_POINTER);
     AssertReturn   (cbFramebuffer,  VERR_INVALID_PARAMETER);
     AssertReturn   (uBytesPerLine,  VERR_INVALID_PARAMETER);
     AssertReturn   (w,              VERR_INVALID_PARAMETER);
