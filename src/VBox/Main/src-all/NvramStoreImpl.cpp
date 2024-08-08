@@ -371,12 +371,11 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("No NVRAM store file found"));
 
-    HRESULT hrc;
-
     /* We need a write lock because of the lazy initialization. */
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Check if we have to create the UEFI variable store object */
+    HRESULT hrc = S_OK;
     if (!m->pUefiVarStore)
     {
         /* Load the NVRAM file first if it isn't already. */
