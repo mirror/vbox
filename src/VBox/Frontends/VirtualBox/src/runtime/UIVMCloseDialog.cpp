@@ -99,14 +99,9 @@ bool UIVMCloseDialog::eventFilter(QObject *pObject, QEvent *pEvent)
     /* For now we are interested in double-click events only: */
     if (pEvent->type() == QEvent::MouseButtonDblClick)
     {
-        /* Make sure it's one of the radio-buttons
-         * which has this event-filter installed: */
-        if (qobject_cast<QRadioButton*>(pObject))
-        {
-            /* Since on double-click the button will be also selected
-             * we are just calling for the *accept* slot: */
-            accept();
-        }
+        /* Since on double-click the button will be also selected
+         * we are just calling for the *accept* slot: */
+        accept();
     }
 
     /* Call to base-class: */
