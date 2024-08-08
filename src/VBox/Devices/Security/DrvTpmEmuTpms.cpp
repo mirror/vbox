@@ -319,7 +319,7 @@ static DECLCALLBACK(TPM_RESULT) drvTpmEmuTpmsCbkIoGetPhysicalPresence(TPM_BOOL *
 
 
 /* -=-=-=-=-=-=-=-=- Saved State -=-=-=-=-=-=-=-=- */
-     
+
 /**
  * @callback_method_impl{FNSSMDRVSAVEPREP}
  */
