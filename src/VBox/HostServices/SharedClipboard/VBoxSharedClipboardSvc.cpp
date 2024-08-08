@@ -1531,19 +1531,32 @@ int ShClSvcReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     bool fSkipTransfers = false;
-    if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_F_ENABLED))
+    if (fFormats & VBOX_SHCL_FMT_URI_LIST)
     {
-        LogRel2(("Shared Clipboard: File transfers are disabled, skipping reporting those to the guest\n"));
-        fSkipTransfers = true;
-    }
-    else if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_TRANSFERS))
-    {
-        LogRel2(("Shared Clipboard: File transfers not supported by installed Guest Addtions, skipping reporting those to the guest\n"));
-        fSkipTransfers = true;
-    }
+        if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_F_ENABLED))
+        {
+            static uint8_t s_uTransfersBitchedNotEnabled = 0;
+            if (s_uTransfersBitchedNotEnabled++ < 32)
+            {
+                LogRel(("Shared Clipboard: File transfers are disabled, skipping reporting those to the guest\n"));
+                fSkipTransfers = true;
+            }
+        }
 
-    if (fSkipTransfers)
-        fFormats &= ~VBOX_SHCL_FMT_URI_LIST;
+        if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_TRANSFERS))
+        {
+            static bool s_fTransfersBitchedNotSupported = false;
+            if (!s_fTransfersBitchedNotSupported)
+            {
+                LogRel(("Shared Clipboard: File transfers not supported by installed Guest Addtions, skipping reporting those to the guest\n"));
+                s_fTransfersBitchedNotSupported = true;
+            }
+            fSkipTransfers = true;
+        }
+
+        if (fSkipTransfers)
+            fFormats &= ~VBOX_SHCL_FMT_URI_LIST;
+    }
 #endif
 
 #ifdef LOG_ENABLED
