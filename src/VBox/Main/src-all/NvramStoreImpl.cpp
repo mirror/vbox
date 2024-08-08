@@ -353,25 +353,11 @@ void NvramStore::uninit()
     LogFlowThisFuncLeave();
 }
 
-
 HRESULT NvramStore::getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile)
 {
-#ifndef VBOX_COM_INPROC
-    Utf8Str strTmp;
-    {
-        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        strTmp = m->bd->strNvramPath;
-    }
-
-    AutoReadLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
-    if (strTmp.isEmpty())
-        strTmp = m->pParent->i_getDefaultNVRAMFilename();
-    if (strTmp.isNotEmpty())
-        m->pParent->i_calculateFullPath(strTmp, aNonVolatileStorageFile);
-#else
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    aNonVolatileStorageFile = m->bd->strNvramPath;
-#endif
+    int vrc = i_getNonVolatileStorageFile(aNonVolatileStorageFile);
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL, tr("This machine does not have an NVRAM store file"));
 
     return S_OK;
 }
@@ -381,19 +367,22 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
 {
 #ifndef VBOX_COM_INPROC
     Utf8Str strPath;
-    NvramStore::getNonVolatileStorageFile(strPath);
+    int vrc = i_getNonVolatileStorageFile(strPath);
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL, tr("No NVRAM store file found"));
+
+    HRESULT hrc;
 
     /* We need a write lock because of the lazy initialization. */
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Check if we have to create the UEFI variable store object */
-    HRESULT hrc = S_OK;
     if (!m->pUefiVarStore)
     {
         /* Load the NVRAM file first if it isn't already. */
         if (!m->mapNvram.size())
         {
-            int vrc = i_loadStore(strPath.c_str());
+            vrc = i_loadStore(strPath.c_str());
             if (RT_FAILURE(vrc))
                 hrc = setError(E_FAIL, tr("Loading the NVRAM store failed (%Rrc)\n"), vrc);
         }
@@ -407,7 +396,7 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
                 m->pUefiVarStore->init(this, m->pParent);
             }
             else
-                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The UEFI NVRAM file is not existing for this machine."));
+                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The UEFI NVRAM file is not existing for this machine"));
         }
     }
 
@@ -463,8 +452,7 @@ HRESULT NvramStore::initUefiVariableStore(ULONG aSize)
     AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.hrc())) return adep.hrc();
 
-    Utf8Str strPath;
-    NvramStore::getNonVolatileStorageFile(strPath);
+    Utf8Str strPath = i_getNonVolatileStorageFile();
 
     /* We need a write lock because of the lazy initialization. */
     AutoReadLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
@@ -525,13 +513,53 @@ HRESULT NvramStore::initUefiVariableStore(ULONG aSize)
 }
 
 
+/**
+ * Returns the path of the non-volatile storage file.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_FILE_NOT_FOUND if the storage file was not found.
+ * @param   aNonVolatileStorageFile   Returns path to non-volatile stroage file on success.
+ */
+int NvramStore::i_getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile)
+{
+#ifndef VBOX_COM_INPROC
+    Utf8Str strTmp;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        strTmp = m->bd->strNvramPath;
+    }
+
+    AutoReadLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
+    if (strTmp.isEmpty())
+        strTmp = m->pParent->i_getDefaultNVRAMFilename();
+    if (strTmp.isNotEmpty())
+        m->pParent->i_calculateFullPath(strTmp, aNonVolatileStorageFile);
+#else
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aNonVolatileStorageFile = m->bd->strNvramPath;
+#endif
+
+    if (aNonVolatileStorageFile.isEmpty())
+        return VERR_FILE_NOT_FOUND;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Returns the path of the non-volatile stroage file.
+ *
+ * @returns Path to non-volatile stroage file. Empty if not supported / found.
+ *
+ * @note    Convenience function for machine object or other callers.
+ */
 Utf8Str NvramStore::i_getNonVolatileStorageFile()
 {
     AutoCaller autoCaller(this);
     AssertReturn(autoCaller.isOk(), Utf8Str::Empty);
 
     Utf8Str strTmp;
-    NvramStore::getNonVolatileStorageFile(strTmp);
+    /* rc ignored */ i_getNonVolatileStorageFile(strTmp);
     return strTmp;
 }
 
@@ -694,6 +722,9 @@ void NvramStore::i_releaseEncryptionOrDecryptionResources(RTVFSIOSTREAM hVfsIos,
  */
 int NvramStore::i_loadStore(const char *pszPath)
 {
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_PATH_ZERO_LENGTH); /* IPRT below doesn't like empty strings. */
+
     uint64_t cbStore = 0;
     int vrc = RTFileQuerySizeByPath(pszPath, &cbStore);
     if (RT_SUCCESS(vrc))
@@ -911,15 +942,14 @@ int NvramStore::i_saveStore(void)
 {
     int vrc = VINF_SUCCESS;
 
-    Utf8Str strTmp;
-    NvramStore::getNonVolatileStorageFile(strTmp);
+    Utf8Str strPath = i_getNonVolatileStorageFile();
 
     /*
      * Only store the NVRAM content if the path is not empty, if it is
      * this means the VM was just created and the store was not saved yet,
      * see @bugref{10191}.
      */
-    if (strTmp.isNotEmpty())
+    if (strPath.isNotEmpty())
     {
         /*
          * Skip creating the tar archive if only the UEFI NVRAM content is available in order
@@ -936,7 +966,7 @@ int NvramStore::i_saveStore(void)
             AssertLogRelRC(vrc);
 
             RTVFSIOSTREAM hVfsIosDst;
-            vrc = RTVfsIoStrmOpenNormal(strTmp.c_str(), RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
+            vrc = RTVfsIoStrmOpenNormal(strPath.c_str(), RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
                                         &hVfsIosDst);
             if (RT_SUCCESS(vrc))
             {
@@ -971,7 +1001,7 @@ int NvramStore::i_saveStore(void)
             }
         }
         else if (m->mapNvram.size())
-            vrc = i_saveStoreAsTar(strTmp.c_str());
+            vrc = i_saveStoreAsTar(strPath.c_str());
         /* else: No NVRAM content to store so we are done here. */
     }
 
@@ -1083,10 +1113,10 @@ HRESULT NvramStore::i_retainUefiVarStore(PRTVFS phVfs, bool fReadonly)
                 m->pParent->i_setModified(Machine::IsModified_NvramStore);
         }
         else
-            hrc = setError(E_FAIL, tr("Opening the UEFI variable store failed (%Rrc)."), vrc);
+            hrc = setError(E_FAIL, tr("Opening the UEFI variable store failed (%Rrc)"), vrc);
     }
     else
-        hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The UEFI NVRAM file is not existing for this machine."));
+        hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The UEFI NVRAM file is not existing for this machine"));
 
     return hrc;
 }
