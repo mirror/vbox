@@ -790,6 +790,7 @@ UIMachineLogic::~UIMachineLogic()
 
 void UIMachineLogic::addMachineWindow(UIMachineWindow *pMachineWindow)
 {
+    pMachineWindow->installEventFilter(this);
     m_machineWindowsList << pMachineWindow;
 }
 
