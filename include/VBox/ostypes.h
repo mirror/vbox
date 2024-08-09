@@ -278,11 +278,13 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Ubuntu21_x64     = 0x5C114,  // 64-bit only
     VBOXOSTYPE_Ubuntu22_LTS_x64 = 0x5C115,  // 64-bit only
     VBOXOSTYPE_Ubuntu22_x64     = 0x5C116,  // 64-bit only
-    VBOXOSTYPE_Ubuntu22_arm64   = 0x5C316,
+    VBOXOSTYPE_Ubuntu22_arm64   = 0x5C316,  // 64-bit only
     VBOXOSTYPE_Ubuntu23_x64     = 0x5C117,  // 64-bit only
-    VBOXOSTYPE_Ubuntu23_arm64   = 0x5C317,
-    VBOXOSTYPE_Ubuntu_latest_x64 = VBOXOSTYPE_Ubuntu23_x64,
-    VBOXOSTYPE_Ubuntu_latest_arm64 = VBOXOSTYPE_Ubuntu23_arm64,
+    VBOXOSTYPE_Ubuntu23_arm64   = 0x5C317,  // 64-bit only
+    VBOXOSTYPE_Ubuntu24_LTS_x64 = 0x5C118,  // 64-bit only
+    VBOXOSTYPE_Ubuntu24_LTS_arm64 = 0x5C318,  // 64-bit only
+    VBOXOSTYPE_Ubuntu_latest_x64 = VBOXOSTYPE_Ubuntu24_LTS_x64,
+    VBOXOSTYPE_Ubuntu_latest_arm64 = VBOXOSTYPE_Ubuntu24_LTS_arm64,
     VBOXOSTYPE_Xandros          = 0x5D000,
     VBOXOSTYPE_Xandros_x64      = 0x5D100,
     VBOXOSTYPE_Oracle           = 0x5E000,

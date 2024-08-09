@@ -463,6 +463,8 @@ const Global::OSType Global::sOSTypes[] =
     VBOX_LINUX_SUBTYPE_A_A64("Ubuntu", Ubuntu22,     "Ubuntu 22.10 (Kinetic Kudu) (ARM 64-bit)", 2048, 16, 25),
     VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu23,     "Ubuntu 23.04 (Lunar Lobster) (64-bit)", 2048, 16, 25), // 64-bit only
     VBOX_LINUX_SUBTYPE_A_A64("Ubuntu", Ubuntu23,     "Ubuntu 23.04 (Lunar Lobster) (ARM 64-bit)", 2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu24_LTS, "Ubuntu 24.04 LTS (Noble Numbat) (64-bit)", 2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_A64("Ubuntu", Ubuntu24_LTS, "Ubuntu 24.04 LTS (Noble Numbat) (ARM 64-bit)", 2048, 16, 25),
     VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Lubuntu,      "Lubuntu (32-bit)",  1024, 16, 10),
     VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Lubuntu,      "Lubuntu (64-bit)",  1024, 16, 10),
     VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Xubuntu,      "Xubuntu (32-bit)",  1024, 16, 10),
