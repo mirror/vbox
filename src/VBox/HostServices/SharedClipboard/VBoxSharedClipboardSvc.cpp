@@ -302,6 +302,20 @@ static uint64_t const g_fHostFeatures0 = VBOX_SHCL_HF_0_CONTEXT_ID
                                        ;
 
 
+/*********************************************************************************************************************************
+*   Prototypes                                                                                                                   *
+*********************************************************************************************************************************/
+static void shClSvcClientReset(PSHCLCLIENT pClient);
+static void shClSvcClientDestroy(PSHCLCLIENT pClient);
+
+static void shClSvcClientMsgQueueReset(PSHCLCLIENT pClient);
+static int  shClSvcClientMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg);
+
+static int  shClSvcClientStateInit(PSHCLCLIENTSTATE pState, uint32_t uClientID);
+static int  shClSvcClientStateDestroy(PSHCLCLIENTSTATE pState);
+static void shclSvcClientStateReset(PSHCLCLIENTSTATE pState);
+
+
 /**
  * Returns the current Shared Clipboard service mode.
  *
@@ -388,7 +402,7 @@ void ShClSvcUnlock(void)
  * @param   pClient             Pointer to the client data structure to reset message queue for.
  * @note    Caller enters pClient->CritSect.
  */
-void shClSvcMsgQueueReset(PSHCLCLIENT pClient)
+static void shClSvcClientMsgQueueReset(PSHCLCLIENT pClient)
 {
     Assert(RTCritSectIsOwner(&pClient->CritSect));
     LogFlowFuncEnter();
@@ -396,7 +410,7 @@ void shClSvcMsgQueueReset(PSHCLCLIENT pClient)
     while (!RTListIsEmpty(&pClient->MsgQueue))
     {
         PSHCLCLIENTMSG pMsg = RTListRemoveFirst(&pClient->MsgQueue, SHCLCLIENTMSG, ListEntry);
-        shClSvcMsgFree(pClient, pMsg);
+        ShClSvcClientMsgFree(pClient, pMsg);
     }
     pClient->cMsgAllocated = 0;
 
@@ -416,7 +430,7 @@ void shClSvcMsgQueueReset(PSHCLCLIENT pClient)
  * @param   idMsg       The message ID (VBOX_SHCL_HOST_MSG_XXX) to use
  * @param   cParms      The number of parameters the message takes.
  */
-PSHCLCLIENTMSG shClSvcMsgAlloc(PSHCLCLIENT pClient, uint32_t idMsg, uint32_t cParms)
+PSHCLCLIENTMSG ShClSvcClientMsgAlloc(PSHCLCLIENT pClient, uint32_t idMsg, uint32_t cParms)
 {
     RT_NOREF(pClient);
     PSHCLCLIENTMSG pMsg = (PSHCLCLIENTMSG)RTMemAllocZ(RT_UOFFSETOF_DYN(SHCLCLIENTMSG, aParms[cParms]));
@@ -438,12 +452,12 @@ PSHCLCLIENTMSG shClSvcMsgAlloc(PSHCLCLIENT pClient, uint32_t idMsg, uint32_t cPa
 }
 
 /**
- * Frees a formerly allocated clipboard message.
+ * Frees a formerly allocated client clipboard message.
  *
  * @param   pClient     The client which was the target of this message.
  * @param   pMsg        Clipboard message to free.
  */
-void shClSvcMsgFree(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
+void ShClSvcClientMsgFree(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
 {
     RT_NOREF(pClient);
     /** @todo r=bird: Do accounting. */
@@ -533,7 +547,7 @@ static int shClSvcMsgSetOldWaitReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDs
  *
  * @note    Caller must enter critical section.
  */
-void shClSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
+void ShClSvcClientMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
 {
     Assert(RTCritSectIsOwner(&pClient->CritSect));
     AssertPtr(pMsg);
@@ -559,7 +573,7 @@ void shClSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
  *
  * @note    Caller must enter critical section.
  */
-int shClSvcMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
+int shClSvcClientMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
 {
     Assert(RTCritSectIsOwner(&pClient->CritSect));
     AssertPtr(pMsg);
@@ -567,7 +581,7 @@ int shClSvcMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
     LogFlowFunc(("idMsg=%s (%u) cParms=%u\n", ShClHostMsgToStr(pMsg->idMsg), pMsg->idMsg, pMsg->cParms));
 
     RTListAppend(&pClient->MsgQueue, &pMsg->ListEntry);
-    return shClSvcClientWakeup(pClient); /** @todo r=andy Remove message if waking up failed? */
+    return ShClSvcClientWakeup(pClient); /** @todo r=andy Remove message if waking up failed? */
 }
 
 /**
@@ -576,7 +590,7 @@ int shClSvcMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
  * @param   pClient             Client to initialize.
  * @param   uClientID           HGCM client ID to assign client to.
  */
-int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
+int ShClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
 
@@ -622,14 +636,14 @@ int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
  *
  * @param   pClient             Client to destroy.
  */
-void shClSvcClientDestroy(PSHCLCLIENT pClient)
+static void shClSvcClientDestroy(PSHCLCLIENT pClient)
 {
     AssertPtrReturnVoid(pClient);
 
     LogFlowFunc(("[Client %RU32]\n", pClient->State.uClientID));
 
     /* Make sure to send a quit message to the guest so that it can terminate gracefully. */
-    shClSvcClientLock(pClient);
+    ShClSvcClientLock(pClient);
 
     if (pClient->Pending.uType)
     {
@@ -650,10 +664,9 @@ void shClSvcClientDestroy(PSHCLCLIENT pClient)
 #endif
 
     ShClEventSourceDestroy(&pClient->EventSrc);
-
-    shClSvcClientUnlock(pClient);
-
     shClSvcClientStateDestroy(&pClient->State);
+
+    ShClSvcClientUnlock(pClient);
 
     PSHCLCLIENTLEGACYCID pCidIter, pCidIterNext;
     RTListForEachSafe(&pClient->Legacy.lstCID, pCidIter, pCidIterNext, SHCLCLIENTLEGACYCID, Node)
@@ -671,13 +684,13 @@ void shClSvcClientDestroy(PSHCLCLIENT pClient)
     LogFlowFuncLeave();
 }
 
-void shClSvcClientLock(PSHCLCLIENT pClient)
+void ShClSvcClientLock(PSHCLCLIENT pClient)
 {
     int rc2 = RTCritSectEnter(&pClient->CritSect);
     AssertRC(rc2);
 }
 
-void shClSvcClientUnlock(PSHCLCLIENT pClient)
+void ShClSvcClientUnlock(PSHCLCLIENT pClient)
 {
     int rc2 = RTCritSectLeave(&pClient->CritSect);
     AssertRC(rc2);
@@ -688,7 +701,7 @@ void shClSvcClientUnlock(PSHCLCLIENT pClient)
  *
  * @param   pClient             Client to reset.
  */
-void shClSvcClientReset(PSHCLCLIENT pClient)
+static void shClSvcClientReset(PSHCLCLIENT pClient)
 {
     if (!pClient)
         return;
@@ -697,7 +710,7 @@ void shClSvcClientReset(PSHCLCLIENT pClient)
     RTCritSectEnter(&pClient->CritSect);
 
     /* Reset message queue. */
-    shClSvcMsgQueueReset(pClient);
+    shClSvcClientMsgQueueReset(pClient);
 
     /* Reset event source. */
     ShClEventSourceReset(&pClient->EventSrc);
@@ -969,7 +982,7 @@ static int shClSvcClientMsgOldGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall,
         if (rc != VERR_CANCELLED)
         {
             RTListNodeRemove(&pFirstMsg->ListEntry);
-            shClSvcMsgFree(pClient, pFirstMsg);
+            ShClSvcClientMsgFree(pClient, pFirstMsg);
 
             rc = VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
         }
@@ -1103,7 +1116,7 @@ static int shClSvcClientMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, ui
             if (rc != VERR_CANCELLED)
             {
                 RTListNodeRemove(&pFirstMsg->ListEntry);
-                shClSvcMsgFree(pClient, pFirstMsg);
+                ShClSvcClientMsgFree(pClient, pFirstMsg);
             }
 
             return VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
@@ -1197,7 +1210,7 @@ static int shClSvcClientMsgCancel(PSHCLCLIENT pClient, uint32_t cParms)
  *
  * @note    Caller must enter critical section.
  */
-int shClSvcClientWakeup(PSHCLCLIENT pClient)
+int ShClSvcClientWakeup(PSHCLCLIENT pClient)
 {
     Assert(RTCritSectIsOwner(&pClient->CritSect));
     int rc = VINF_NO_CHANGE;
@@ -1225,7 +1238,7 @@ int shClSvcClientWakeup(PSHCLCLIENT pClient)
             && pClient->Pending.uType == VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT)
         {
             RTListNodeRemove(&pFirstMsg->ListEntry);
-            shClSvcMsgFree(pClient, pFirstMsg);
+            ShClSvcClientMsgFree(pClient, pFirstMsg);
         }
 
         pClient->Pending.hHandle = NULL;
@@ -1292,13 +1305,13 @@ int ShClSvcReadDataFromGuestAsync(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSH
         /*
          * Allocate messages, one for each format.
          */
-        PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient,
-                                              pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID
-                                              ? VBOX_SHCL_HOST_MSG_READ_DATA_CID : VBOX_SHCL_HOST_MSG_READ_DATA,
-                                              2);
+        PSHCLCLIENTMSG pMsg = ShClSvcClientMsgAlloc(pClient,
+                                                      pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID
+                                                    ? VBOX_SHCL_HOST_MSG_READ_DATA_CID : VBOX_SHCL_HOST_MSG_READ_DATA,
+                                                    2);
         if (pMsg)
         {
-            shClSvcClientLock(pClient);
+            ShClSvcClientLock(pClient);
 
             PSHCLEVENT pEvent;
             rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
@@ -1341,9 +1354,9 @@ int ShClSvcReadDataFromGuestAsync(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSH
                         HGCMSvcSetU32(&pMsg->aParms[0], VBOX_SHCL_HOST_MSG_READ_DATA);
                     HGCMSvcSetU32(&pMsg->aParms[1], fFormat);
 
-                    shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+                    ShClSvcClientMsgAdd(pClient, pMsg, true /* fAppend */);
                     /* Wake up the client to let it know that there are new messages. */
-                    shClSvcClientWakeup(pClient);
+                    ShClSvcClientWakeup(pClient);
 
                     /* Return event to caller. */
                     if (ppEvent)
@@ -1363,9 +1376,9 @@ int ShClSvcReadDataFromGuestAsync(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSH
                 rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
 
             if (RT_FAILURE(rc))
-                shClSvcMsgFree(pClient, pMsg);
+                ShClSvcClientMsgFree(pClient, pMsg);
 
-            shClSvcClientUnlock(pClient);
+            ShClSvcClientUnlock(pClient);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -1613,17 +1626,17 @@ int ShClSvcReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     /*
      * Allocate a message, populate parameters and post it to the client.
      */
-    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_FORMATS_REPORT, 2);
+    PSHCLCLIENTMSG pMsg = ShClSvcClientMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_FORMATS_REPORT, 2);
     if (pMsg)
     {
         HGCMSvcSetU32(&pMsg->aParms[0], VBOX_SHCL_HOST_MSG_FORMATS_REPORT);
         HGCMSvcSetU32(&pMsg->aParms[1], fFormats);
 
-        shClSvcClientLock(pClient);
+        ShClSvcClientLock(pClient);
 
-        rc = shClSvcMsgAddAndWakeupClient(pClient, pMsg);
+        rc = shClSvcClientMsgAddAndWakeupClient(pClient, pMsg);
 
-        shClSvcClientUnlock(pClient);
+        ShClSvcClientUnlock(pClient);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -2162,7 +2175,7 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pvClient);
 
-    int rc = shClSvcClientInit(pClient, u32ClientID);
+    int rc = ShClSvcClientInit(pClient, u32ClientID);
     if (RT_SUCCESS(rc))
     {
         /* Assign weak pointer to client map. */
@@ -2318,16 +2331,8 @@ static DECLCALLBACK(void) svcCall(void *,
             {
                 LogRel(("Shared Clipboard: Error reported from guest side: %Rrc\n", rcGuest));
 
-                shClSvcClientLock(pClient);
-
-                /* Reset message queue. */
-                shClSvcMsgQueueReset(pClient);
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                /* Reset transfer state. */
-                shClSvcTransferDestroyAll(pClient);
-#endif
-                shClSvcClientUnlock(pClient);
+                /* Start over. */
+                shClSvcClientReset(pClient);
             }
             break;
         }
@@ -2369,7 +2374,7 @@ static DECLCALLBACK(void) svcCall(void *,
  * @param   pClientState        Client state to initialize.
  * @param   uClientID           Client ID (HGCM) to use for this client state.
  */
-int shClSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID)
+static int shClSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID)
 {
     LogFlowFuncEnter();
 
@@ -2385,13 +2390,13 @@ int shClSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID)
  * Destroys a Shared Clipboard service's client state.
  *
  * @returns VBox status code.
- * @param   pClientState        Client state to destroy.
+ * @param   pState              Client state to destroy.
  */
-int shClSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState)
+static int shClSvcClientStateDestroy(PSHCLCLIENTSTATE pState)
 {
-    RT_NOREF(pClientState);
-
     LogFlowFuncEnter();
+
+    shclSvcClientStateReset(pState);
 
     return VINF_SUCCESS;
 }
@@ -2399,26 +2404,26 @@ int shClSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState)
 /**
  * Resets a Shared Clipboard service's client state.
  *
- * @param   pClientState    Client state to reset.
+ * @param   pState              Client state to reset.
  */
-void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
+static void shclSvcClientStateReset(PSHCLCLIENTSTATE pState)
 {
     LogFlowFuncEnter();
 
-    pClientState->fGuestFeatures0 = VBOX_SHCL_GF_NONE;
-    pClientState->fGuestFeatures1 = VBOX_SHCL_GF_NONE;
+    pState->fGuestFeatures0 = VBOX_SHCL_GF_NONE;
+    pState->fGuestFeatures1 = VBOX_SHCL_GF_NONE;
 
-    pClientState->cbChunkSize     = VBOX_SHCL_DEFAULT_CHUNK_SIZE; /** @todo Make this configurable. */
-    pClientState->enmSource       = SHCLSOURCE_INVALID;
-    pClientState->fFlags          = SHCLCLIENTSTATE_FLAGS_NONE;
+    pState->cbChunkSize     = VBOX_SHCL_DEFAULT_CHUNK_SIZE; /** @todo Make this configurable. */
+    pState->enmSource       = SHCLSOURCE_INVALID;
+    pState->fFlags          = SHCLCLIENTSTATE_FLAGS_NONE;
 
-    pClientState->POD.enmDir             = SHCLTRANSFERDIR_UNKNOWN;
-    pClientState->POD.uFormat            = VBOX_SHCL_FMT_NONE;
-    pClientState->POD.cbToReadWriteTotal = 0;
-    pClientState->POD.cbReadWritten      = 0;
+    pState->POD.enmDir             = SHCLTRANSFERDIR_UNKNOWN;
+    pState->POD.uFormat            = VBOX_SHCL_FMT_NONE;
+    pState->POD.cbToReadWriteTotal = 0;
+    pState->POD.cbReadWritten      = 0;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    pClientState->Transfers.enmTransferDir = SHCLTRANSFERDIR_UNKNOWN;
+    pState->Transfers.enmTransferDir = SHCLTRANSFERDIR_UNKNOWN;
 #endif
 }
 
@@ -2749,18 +2754,18 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
                                   ("Too many HGCM message parameters: %u (%#x)\n", u.Msg.cParms, u.Msg.cParms),
                                   VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-            PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, u.Msg.idMsg, u.Msg.cParms);
+            PSHCLCLIENTMSG pMsg = ShClSvcClientMsgAlloc(pClient, u.Msg.idMsg, u.Msg.cParms);
             AssertReturn(pMsg, VERR_NO_MEMORY);
             pMsg->idCtx = u.Msg.idCtx;
 
             for (uint32_t p = 0; p < pMsg->cParms; p++)
             {
                 rc = HGCMSvcSSMR3Get(&pMsg->aParms[p], pSSM, pVMM);
-                AssertRCReturnStmt(rc, shClSvcMsgFree(pClient, pMsg), rc);
+                AssertRCReturnStmt(rc, ShClSvcClientMsgFree(pClient, pMsg), rc);
             }
 
             RTCritSectEnter(&pClient->CritSect);
-            shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+            ShClSvcClientMsgAdd(pClient, pMsg, true /* fAppend */);
             RTCritSectLeave(&pClient->CritSect);
         }
 

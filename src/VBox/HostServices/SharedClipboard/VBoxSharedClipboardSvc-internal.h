@@ -72,11 +72,13 @@ typedef struct _SHCLCLIENTMSG
 /** Pointer to a queue message for the guest.   */
 typedef SHCLCLIENTMSG *PSHCLCLIENTMSG;
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 typedef struct SHCLCLIENTTRANSFERSTATE
 {
     /** Directory of the transfer to start. */
     SHCLTRANSFERDIR enmTransferDir;
 } SHCLCLIENTTRANSFERSTATE, *PSHCLCLIENTTRANSFERSTATE;
+#endif
 
 /**
  * Structure for holding a single POD (plain old data) transfer.
@@ -168,8 +170,10 @@ typedef struct SHCLCLIENTSTATE
     uint32_t                fFlags;
     /** POD (plain old data) state. */
     SHCLCLIENTPODSTATE      POD;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** The client's transfers state. */
     SHCLCLIENTTRANSFERSTATE Transfers;
+#endif
 } SHCLCLIENTSTATE, *PSHCLCLIENTSTATE;
 
 typedef struct _SHCLCLIENTCMDCTX
@@ -287,23 +291,20 @@ typedef struct _SHCLEXTSTATE
 
 extern SHCLEXTSTATE g_ExtState;
 
-void shClSvcMsgQueueReset(PSHCLCLIENT pClient);
-PSHCLCLIENTMSG shClSvcMsgAlloc(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t cParms);
-void shClSvcMsgFree(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg);
-void shClSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend);
-int shClSvcMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg);
+/** @name Service client functions.
+ * @{
+ */
+PSHCLCLIENTMSG ShClSvcClientMsgAlloc(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t cParms);
+void ShClSvcClientMsgFree(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg);
+void ShClSvcClientMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend);
 
-int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID);
-void shClSvcClientDestroy(PSHCLCLIENT pClient);
-void shClSvcClientLock(PSHCLCLIENT pClient);
-void shClSvcClientUnlock(PSHCLCLIENT pClient);
-void shClSvcClientReset(PSHCLCLIENT pClient);
+int ShClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID); /* For testcases. */
 
-int shClSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID);
-int shClSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState);
-void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState);
+void ShClSvcClientLock(PSHCLCLIENT pClient);
+void ShClSvcClientUnlock(PSHCLCLIENT pClient);
 
-int shClSvcClientWakeup(PSHCLCLIENT pClient);
+int ShClSvcClientWakeup(PSHCLCLIENT pClient);
+/** @} */
 
 /** @name Service functions, accessible by the backends.
  * Locking is between the (host) service thread and the platform-dependent (window) thread.
