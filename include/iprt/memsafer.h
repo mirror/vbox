@@ -75,8 +75,12 @@ RT_C_DECLS_BEGIN
  * @remarks Makes not guarantees with regards to hibernation /
  *          suspend-to-disk. */
 #define RTMEMSAFER_F_REQUIRE_NOT_PAGABLE    RT_BIT_32(0)
+/** Do not use the SUPLib allocator.
+ * The SUPLib allocator may be terminated earlier than IPRT,
+ * automatically rendering the allocations inaccessible. */
+#define RTMEMSAFER_F_NO_SUPLIB_ALLOC        RT_BIT_32(1)
 /** Mask of valid bits.  */
-#define RTMEMSAFER_F_VALID_MASK             UINT32_C(0x00000001)
+#define RTMEMSAFER_F_VALID_MASK             UINT32_C(0x00000003)
 /** @} */
 
 /**

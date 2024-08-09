@@ -174,7 +174,10 @@ void *CRYPTO_secure_malloc(size_t num, const char *file, int line)
 #endif /* OPENSSL_NO_SECURE_MEMORY */
 #else
     RT_NOREF(line);
-    return RTMemSaferAllocZTag(num, file);
+    void *pvRet = NULL;
+    int rc = RTMemSaferAllocZExTag(&pvRet, num, RTMEMSAFER_F_NO_SUPLIB_ALLOC, file);
+    AssertRCReturn(rc, NULL);
+    return pvRet;
 #endif /* VBOX */
 }
 
@@ -189,7 +192,10 @@ void *CRYPTO_secure_zalloc(size_t num, const char *file, int line)
     return CRYPTO_zalloc(num, file, line);
 #else
     RT_NOREF(line);
-    return RTMemSaferAllocZTag(num, file);
+    void *pvRet = NULL;
+    int rc = RTMemSaferAllocZExTag(&pvRet, num, RTMEMSAFER_F_NO_SUPLIB_ALLOC, file);
+    AssertRCReturn(rc, NULL);
+    return pvRet;
 #endif
 }
 

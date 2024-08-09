@@ -421,7 +421,10 @@ RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, con
              * Try allocate the memory, using the best allocator by default and
              * falling back on the less safe one.
              */
-            rc = rtMemSaferSupR3AllocPages(pThis);
+            if (!(fFlags & RTMEMSAFER_F_NO_SUPLIB_ALLOC))
+                rc = rtMemSaferSupR3AllocPages(pThis);
+            else
+                rc = VERR_NO_PAGE_MEMORY;
             if (RT_SUCCESS(rc))
                 pThis->enmAllocator = RTMEMSAFERALLOCATOR_SUPR3;
             else if (!(fFlags & RTMEMSAFER_F_REQUIRE_NOT_PAGABLE))
