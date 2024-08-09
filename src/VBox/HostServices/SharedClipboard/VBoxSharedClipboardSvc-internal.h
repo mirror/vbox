@@ -72,13 +72,11 @@ typedef struct _SHCLCLIENTMSG
 /** Pointer to a queue message for the guest.   */
 typedef SHCLCLIENTMSG *PSHCLCLIENTMSG;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 typedef struct SHCLCLIENTTRANSFERSTATE
 {
     /** Directory of the transfer to start. */
     SHCLTRANSFERDIR enmTransferDir;
 } SHCLCLIENTTRANSFERSTATE, *PSHCLCLIENTTRANSFERSTATE;
-#endif
 
 /**
  * Structure for holding a single POD (plain old data) transfer.
@@ -170,10 +168,8 @@ typedef struct SHCLCLIENTSTATE
     uint32_t                fFlags;
     /** POD (plain old data) state. */
     SHCLCLIENTPODSTATE      POD;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** The client's transfers state. */
     SHCLCLIENTTRANSFERSTATE Transfers;
-#endif
 } SHCLCLIENTSTATE, *PSHCLCLIENTSTATE;
 
 typedef struct _SHCLCLIENTCMDCTX
