@@ -312,8 +312,88 @@ RTR3DECL(int) RTPathRename(const char *pszSrc, const char *pszDst, unsigned fRen
 
 RTR3DECL(int) RTPathUnlink(const char *pszPath, uint32_t fUnlink)
 {
-    RT_NOREF_PV(pszPath); RT_NOREF_PV(fUnlink);
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_NAME);
+    AssertReturn(!(fUnlink & ~RTPATHUNLINK_FLAGS_NO_SYMLINKS), VERR_INVALID_FLAGS);
+
+    /*
+     * Convert the path.
+     */
+    char const *pszNativePath;
+    int rc = rtPathToNative(&pszNativePath, pszPath, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Check if it's a directory using lstat, since unlink() may have adverse
+         * side effects when running as root on some file systems (at least on
+         * Solaris).
+         *
+         * There are of course race conditions here, but w/o a NT style removal
+         * API it is not possible to do this w/o a race.
+         *
+         * Note! We cannot just use rmdir here, in case the final entity is a
+         *       symlink pointing at a directory, as we're supposed to remove
+         *       the symlink when that's the case.
+         */
+        struct stat Stat;
+        rc = lstat(pszNativePath, &Stat);
+        if (rc || !S_ISDIR(Stat.st_mode))
+        {
+            rc = unlink(pszNativePath);
+            if (rc == 0)
+                rc = VINF_SUCCESS;
+            else
+            {
+                rc = errno;
+                if (rc != ENOENT)
+                    rc = RTErrConvertFromErrno(rc);
+                else
+                {
+                    /*
+                     * Make the path-not-found match windows.
+                     */
+                    rc = VERR_FILE_NOT_FOUND;
+                    size_t cch = strlen(pszNativePath);
+                    while (cch > 0 && RTPATH_IS_SLASH(pszNativePath[cch - 1]))
+                        cch--;
+                    while (cch > 0 && !RTPATH_IS_SLASH(pszNativePath[cch - 1]))
+                        cch--;
+                    while (cch > 0 && RTPATH_IS_SLASH(pszNativePath[cch - 1]))
+                        cch--;
+                    if (cch >= 1)
+                    {
+                        char *pszParent = (char *)RTMemTmpAlloc(cch + 1);
+                        if (pszParent)
+                        {
+                            memcpy(pszParent, pszNativePath, cch);
+                            pszParent[cch] = '\0';
+                            if (stat(pszParent, &Stat) && errno == ENOENT)
+                                rc = VERR_PATH_NOT_FOUND;
+                            RTMemTmpFree(pszParent);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            rc = rmdir(pszNativePath);
+            if (rc)
+            {
+                rc = errno;
+                if (rc == EEXIST) /* Solaris returns this, the rest have ENOTEMPTY. */
+                    rc = VERR_DIR_NOT_EMPTY;
+                else
+                    rc = RTErrConvertFromErrno(rc);
+            }
+        }
+
+        rtPathFreeNative(pszNativePath, pszPath);
+    }
+    return rc;
 }
 
 

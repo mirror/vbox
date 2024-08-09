@@ -603,11 +603,13 @@ RTR3DECL(int) RTPathRename(const char *pszSrc, const char *pszDst, unsigned fRen
 }
 
 
+#if 0 /* RTPathUnlink-r3-nt.cpp */
 RTR3DECL(int) RTPathUnlink(const char *pszPath, uint32_t fUnlink)
 {
     RT_NOREF_PV(pszPath); RT_NOREF_PV(fUnlink);
     return VERR_NOT_IMPLEMENTED;
 }
+#endif
 
 
 RTDECL(bool) RTPathExists(const char *pszPath)
