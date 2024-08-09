@@ -2,11 +2,12 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="guestadd-clipboard-limitations">
   <title>Known Limitations</title>
-  
+
   <body>
     <p>The following limitations are known for Shared Clipboard file transfers: </p>
     <p>On Linux hosts and guests, Shared Clipboard file transfers are currently limited to files only, one file per
-      transfer. Transferring symbolic links is not supported. </p>
+      transfer. Transferring symbolic links is not supported.</p>
+    <p>Shared Clipboard file transfers are only tested and supported with the official default
+        file managers of the guest or host operating system unless mentioned otherwise.</p>
   </body>
-
 </topic>
