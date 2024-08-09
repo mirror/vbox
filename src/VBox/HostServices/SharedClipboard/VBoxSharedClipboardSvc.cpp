@@ -1497,6 +1497,63 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
 }
 
 /**
+ * Handles clipboard formats.
+ *
+ * @returns The new Shared Clipboard formats.
+ * @param   fHostToGuest        Reporting direction.
+ *                              \c true from host -> guest.
+ *                              \c false from guest -> host.
+ * @param   pClient             Pointer to client instance.
+ * @param   fFormats            Reported clipboard formats.
+ */
+static SHCLFORMATS shClSvcHandleFormats(bool fHostToGuest, PSHCLCLIENT pClient, SHCLFORMATS fFormats)
+{
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    bool fSkipTransfers = false;
+    if (fFormats & VBOX_SHCL_FMT_URI_LIST)
+    {
+        if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_F_ENABLED))
+        {
+            static uint8_t s_uTransfersBitchedNotEnabled = 0;
+            if (s_uTransfersBitchedNotEnabled++ < 32)
+            {
+                LogRel(("Shared Clipboard: File transfers are disabled on host, skipping reporting those to the guest\n"));
+                fSkipTransfers = true;
+            }
+        }
+
+        if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_TRANSFERS))
+        {
+            static bool s_fTransfersBitchedNotSupported = false;
+            if (!s_fTransfersBitchedNotSupported)
+            {
+                LogRel(("Shared Clipboard: File transfers not supported by installed Guest Addtions, skipping reporting those to the guest\n"));
+                s_fTransfersBitchedNotSupported = true;
+            }
+            fSkipTransfers = true;
+        }
+
+        if (fSkipTransfers)
+            fFormats &= ~VBOX_SHCL_FMT_URI_LIST;
+    }
+#else
+    RT_NOREF(pClient);
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
+
+    char *pszFmts = ShClFormatsToStrA(fFormats);
+    if (pszFmts)
+    {
+        LogRel2(("Shared Clipboard: %s reported formats '%s' to %s\n",
+                 fHostToGuest ? "Host" : "Guest",
+                 pszFmts,
+                 fHostToGuest ? "guest" : "host"));
+        RTStrFree(pszFmts);
+    }
+
+    return fFormats;
+}
+
+/**
  * Reports clipboard formats to the guest.
  *
  * @note    Host backend callers must check if it's active (use
@@ -1529,42 +1586,7 @@ int ShClSvcReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     else
         return VINF_SUCCESS;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    bool fSkipTransfers = false;
-    if (fFormats & VBOX_SHCL_FMT_URI_LIST)
-    {
-        if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_F_ENABLED))
-        {
-            static uint8_t s_uTransfersBitchedNotEnabled = 0;
-            if (s_uTransfersBitchedNotEnabled++ < 32)
-            {
-                LogRel(("Shared Clipboard: File transfers are disabled, skipping reporting those to the guest\n"));
-                fSkipTransfers = true;
-            }
-        }
-
-        if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_TRANSFERS))
-        {
-            static bool s_fTransfersBitchedNotSupported = false;
-            if (!s_fTransfersBitchedNotSupported)
-            {
-                LogRel(("Shared Clipboard: File transfers not supported by installed Guest Addtions, skipping reporting those to the guest\n"));
-                s_fTransfersBitchedNotSupported = true;
-            }
-            fSkipTransfers = true;
-        }
-
-        if (fSkipTransfers)
-            fFormats &= ~VBOX_SHCL_FMT_URI_LIST;
-    }
-#endif
-
-#ifdef LOG_ENABLED
-    char *pszFmts = ShClFormatsToStrA(fFormats);
-    AssertPtrReturn(pszFmts, VERR_NO_MEMORY);
-    LogRel2(("Shared Clipboard: Reporting formats '%s' to guest\n", pszFmts));
-    RTStrFree(pszFmts);
-#endif
+    fFormats = shClSvcHandleFormats(true /* fHostToGuest */, pClient, fFormats);
 
     int rc;
 
@@ -1651,7 +1673,7 @@ static int shClSvcClientMsgReportFormats(PSHCLCLIENT pClient, uint32_t cParms, V
         iParm++;
     }
     ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
-    uint32_t const fFormats = paParms[iParm].u.uint32;
+    uint32_t fFormats = paParms[iParm].u.uint32;
     iParm++;
     if (cParms == VBOX_SHCL_CPARMS_REPORT_FORMATS_61B)
     {
@@ -1675,6 +1697,9 @@ static int shClSvcClientMsgReportFormats(PSHCLCLIENT pClient, uint32_t cParms, V
         rc = VINF_SUCCESS;
     else
     {
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        fFormats = shClSvcHandleFormats(false /* fHostToGuest */, pClient, fFormats);
+#endif
         rc = RTCritSectEnter(&g_CritSect);
         if (RT_SUCCESS(rc))
         {
@@ -1693,14 +1718,6 @@ static int shClSvcClientMsgReportFormats(PSHCLCLIENT pClient, uint32_t cParms, V
             /* Let the backend implementation know if the extension above didn't handle the format(s). */
             if (rc == VERR_NOT_SUPPORTED)
             {
-#ifdef LOG_ENABLED
-                char *pszFmts = ShClFormatsToStrA(fFormats);
-                if (pszFmts)
-                {
-                    LogRel2(("Shared Clipboard: Guest reported formats '%s' to host\n", pszFmts));
-                    RTStrFree(pszFmts);
-                }
-#endif
                 rc = ShClBackendReportFormats(&g_ShClBackend, pClient, fFormats);
                 if (RT_FAILURE(rc))
                     LogRel(("Shared Clipboard: Reporting guest clipboard formats to the host failed with %Rrc\n", rc));
