@@ -5999,10 +5999,10 @@ static void dxSetVertexBuffers(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContex
                      i, pBufferPipeline->bufferId, pBufferPipeline->stride, pBufferPipeline->offset));
         }
 #endif
+        PVMSVGA3DSURFACE pSurface = NULL;
         ID3D11Buffer *pBuffer = NULL;
         if (pBufferPipeline->bufferId != SVGA3D_INVALID_ID)
         {
-            PVMSVGA3DSURFACE pSurface;
             ID3D11Resource *pResource;
             int rc = dxEnsureResource(pThisCC, pBufferPipeline->bufferId, &pSurface, &pResource);
             if (   RT_SUCCESS(rc)
@@ -6016,8 +6016,18 @@ static void dxSetVertexBuffers(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContex
         if (pBuffer)
         {
             LogFunc(("vb[%u]: %p\n", i, pBuffer));
-            paStride[i] = pBufferPipeline->stride;
-            paOffset[i] = pBufferPipeline->offset;
+
+            /* DX11 supports stride up tp 2048. Ignore large values (> 40000) that Ubuntu guest might send. */
+            paStride[i] = pBufferPipeline->stride <= 2048 ? pBufferPipeline->stride : 0;
+
+            if (   paStride[i] <= pSurface->paMipmapLevels[0].cbSurface
+                && pBufferPipeline->offset <= pSurface->paMipmapLevels[0].cbSurface - paStride[i])
+                paOffset[i] = pBufferPipeline->offset;
+            else
+            {
+                paStride[i] = 0;
+                paOffset[i] = 0;
+            }
         }
         else
         {
