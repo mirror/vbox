@@ -911,6 +911,10 @@ endif
 VBOX_WITH_LIBVORBIS = 1
 # Enables libogg (Ogg file format). Required for building libvorbis above.
 VBOX_WITH_LIBOGG = 1
+# Currently OggVorbis is our only choice for audio recording support, so check for that.
+if defined(VBOX_WITH_AUDIO_RECORDING) && !defined(VBOX_WITH_LIBVORBIS)
+ $(error Need libvorbis (VBOX_WITH_LIBVORBIS) in order to enable audio recoding support)
+endif
 if defined(VBOX_WITH_LIBVORBIS) && !defined(VBOX_WITH_LIBOGG)
  $(error Need libogg (VBOX_WITH_LIBOGG) in order to build libvorbis (VBOX_WITH_LIBVORBIS))
 endif
