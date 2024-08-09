@@ -24,6 +24,10 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
+#include <iprt/win/windows.h>
+#include <wtsapi32.h>
+#include <ntsecapi.h>
+
 #include <iprt/errcore.h>
 
 #include <VBox/VBoxGuestLib.h>
@@ -47,6 +51,10 @@ static PFND3DKMT_OPENADAPTERFROMLUID g_pfnD3DKMTOpenAdapterFromLuid;
 static PFND3DKMT_CLOSEADAPTER g_pfnD3DKMTCloseAdapter;
 static PFND3DKMT_ESCAPE g_pfnD3DKMTEscape;
 
+static decltype(WTSFreeMemory)                 *g_pfnWTSFreeMemory = NULL;
+static decltype(WTSQuerySessionInformationA)   *g_pfnWTSQuerySessionInformationA = NULL;
+static decltype(WTSEnumerateSessionsA)         *g_pfnWTSEnumerateSessionsA = NULL;
+
 /**
  * @interface_method_impl{VBOXSERVICE,pfnInit}
  */
@@ -67,7 +75,28 @@ static DECLCALLBACK(int) vgsvcDisplayConfigInit(void)
         RTLdrClose(hLdrMod);
     }
 
-    VGSvcVerbose(2, "DXGK d3dkmthk callbacks are %s\n", RT_SUCCESS(rc) ? "Ok" : "Fail");
+    VGSvcVerbose(3, "DXGK d3dkmthk callbacks are %s\n", RT_SUCCESS(rc) ? "Ok" : "Fail");
+
+    rc = RTLdrLoadSystem("wtsapi32.dll", true /*fNoUnload*/, &hLdrMod);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hLdrMod, "WTSFreeMemory", (void **)&g_pfnWTSFreeMemory);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hLdrMod, "WTSQuerySessionInformationA", (void **)&g_pfnWTSQuerySessionInformationA);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hLdrMod, "WTSEnumerateSessionsA", (void **)&g_pfnWTSEnumerateSessionsA);
+        AssertRC(rc);
+        RTLdrClose(hLdrMod);
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        VGSvcVerbose(1, "WtsApi32.dll APIs are not available (%Rrc)\n", rc);
+        g_pfnWTSFreeMemory = NULL;
+        g_pfnWTSQuerySessionInformationA = NULL;
+        g_pfnWTSEnumerateSessionsA = NULL;
+        // Assert(RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(5, 0, 0));
+    }
 
     return VINF_SUCCESS;
 }
@@ -84,17 +113,17 @@ void ReconnectDisplays(uint32_t cDisplays, VMMDevDisplayDef *paDisplays)
         u32Mask |= (paDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED) ? 0 : RT_BIT(i);
     }
 
-    VGSvcVerbose(2, "ReconnectDisplays u32Mask 0x%x\n", u32Mask);
+    VGSvcVerbose(3, "ReconnectDisplays u32Mask 0x%x\n", u32Mask);
 
     EnumAdapters.NumAdapters = RT_ELEMENTS(EnumAdapters.Adapters);
     rcNt = g_pfnD3DKMTEnumAdapters(&EnumAdapters);
 
-    VGSvcVerbose(2, "D3DKMTEnumAdapters  rcNt=%#x NumAdapters=%d\n", rcNt, EnumAdapters.NumAdapters);
+    VGSvcVerbose(3, "D3DKMTEnumAdapters  rcNt=%#x NumAdapters=%d\n", rcNt, EnumAdapters.NumAdapters);
 
     for(ULONG id = 0; id < EnumAdapters.NumAdapters; id++)
     {
         D3DKMT_ADAPTERINFO *pAdapterInfo = &EnumAdapters.Adapters[id];
-        VGSvcVerbose(2, "#%d: NumOfSources=%d hAdapter=0x%p Luid(%u, %u)\n", id,
+        VGSvcVerbose(3, "#%d: NumOfSources=%d hAdapter=0x%p Luid(%u, %u)\n", id,
             pAdapterInfo->NumOfSources, pAdapterInfo->hAdapter, pAdapterInfo->AdapterLuid.HighPart, pAdapterInfo->AdapterLuid.LowPart);
     }
 
@@ -102,7 +131,7 @@ void ReconnectDisplays(uint32_t cDisplays, VMMDevDisplayDef *paDisplays)
     RT_ZERO(OpenAdapterData);
     OpenAdapterData.AdapterLuid = EnumAdapters.Adapters[0].AdapterLuid;
     rcNt = g_pfnD3DKMTOpenAdapterFromLuid(&OpenAdapterData);
-    VGSvcVerbose(2, "D3DKMTOpenAdapterFromLuid  rcNt=%#x hAdapter=0x%p\n", rcNt, OpenAdapterData.hAdapter);
+    VGSvcVerbose(3, "D3DKMTOpenAdapterFromLuid  rcNt=%#x hAdapter=0x%p\n", rcNt, OpenAdapterData.hAdapter);
 
     hAdapter = OpenAdapterData.hAdapter;
 
@@ -120,14 +149,67 @@ void ReconnectDisplays(uint32_t cDisplays, VMMDevDisplayDef *paDisplays)
         EscapeData.PrivateDriverDataSize = sizeof (EscapeHdr);
 
         rcNt = g_pfnD3DKMTEscape(&EscapeData);
-        VGSvcVerbose(2, "D3DKMTEscape rcNt=%#x\n", rcNt);
+        VGSvcVerbose(3, "D3DKMTEscape rcNt=%#x\n", rcNt);
 
         D3DKMT_CLOSEADAPTER CloseAdapter;
         CloseAdapter.hAdapter = hAdapter;
 
         rcNt = g_pfnD3DKMTCloseAdapter(&CloseAdapter);
-        VGSvcVerbose(2, "D3DKMTCloseAdapter rcNt=%#x\n", rcNt);
+        VGSvcVerbose(3, "D3DKMTCloseAdapter rcNt=%#x\n", rcNt);
     }
+}
+
+static char* WTSSessionState2Str(WTS_CONNECTSTATE_CLASS State)
+{
+    switch(State)
+    {
+        RT_CASE_RET_STR(WTSActive);
+        RT_CASE_RET_STR(WTSConnected);
+        RT_CASE_RET_STR(WTSConnectQuery);
+        RT_CASE_RET_STR(WTSShadow);
+        RT_CASE_RET_STR(WTSDisconnected);
+        RT_CASE_RET_STR(WTSIdle);
+        RT_CASE_RET_STR(WTSListen);
+        RT_CASE_RET_STR(WTSReset);
+        RT_CASE_RET_STR(WTSDown);
+        RT_CASE_RET_STR(WTSInit);
+        default:
+            return "Unknown";
+    }
+}
+
+bool HasActiveLocalUser(void)
+{
+    WTS_SESSION_INFO *paSessionInfos = NULL;
+    DWORD cSessionInfos = 0;
+    bool fRet = false;
+
+    if (g_pfnWTSEnumerateSessionsA(WTS_CURRENT_SERVER_HANDLE, 0, 1, &paSessionInfos, &cSessionInfos))
+    {
+        VGSvcVerbose(3, "WTSEnumerateSessionsA got %u sessions\n", cSessionInfos);
+
+        for(DWORD i = 0; i < cSessionInfos; i++)
+        {
+            VGSvcVerbose(3, "WTS session[%u] SessionId (%u) pWinStationName (%s) State (%s %u)\n", i,
+                paSessionInfos[i].SessionId, paSessionInfos[i].pWinStationName,
+                WTSSessionState2Str(paSessionInfos[i].State), paSessionInfos[i].State);
+
+            if (paSessionInfos[i].State == WTSActive && RTStrNICmpAscii(paSessionInfos[i].pWinStationName, RT_STR_TUPLE("Console")) == 0)
+            {
+                VGSvcVerbose(2, "Found active WTS session %u connected to Console\n", paSessionInfos[i].SessionId);
+                fRet = true;
+            }
+        }
+    }
+    else
+    {
+        VGSvcError("WTSEnumerateSessionsA failed %#x\n", GetLastError());
+    }
+
+    if (paSessionInfos)
+        g_pfnWTSFreeMemory(paSessionInfos);
+
+    return fRet;
 }
 
 /**
@@ -146,49 +228,54 @@ DECLCALLBACK(int) vgsvcDisplayConfigWorker(bool volatile *pfShutdown)
      */
 
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
-    VGSvcVerbose(2, "VbglR3CtlFilterMask set rc=%Rrc\n", rc);
+    VGSvcVerbose(3, "VbglR3CtlFilterMask set rc=%Rrc\n", rc);
 
     for (;;)
     {
         uint32_t fEvents = 0;
 
-        rc = VbglR3AcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, false);
-        VGSvcVerbose(2, "VbglR3AcquireGuestCaps acquire VMMDEV_GUEST_SUPPORTS_GRAPHICS rc=%Rrc\n", rc);
-
-        rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 1000 /*ms*/, &fEvents);
-        VGSvcVerbose(2, "VbglR3WaitEvent rc=%Rrc\n", rc);
-
-        if (RT_SUCCESS(rc))
+        if (HasActiveLocalUser())
         {
-            VMMDevDisplayDef aDisplays[64];
-            uint32_t cDisplays = RT_ELEMENTS(aDisplays);
-
-            rc = VbglR3GetDisplayChangeRequestMulti(cDisplays, &cDisplays, &aDisplays[0], true);
-            VGSvcVerbose(2, "VbglR3GetDisplayChangeRequestMulti rc=%Rrc cDisplays=%d\n", rc, cDisplays);
-            if (cDisplays > 0)
-            {
-                for(uint32_t i = 0; i < cDisplays; i++)
-                {
-                    VGSvcVerbose(2, "Display[%i] flags=%#x (%dx%d)\n", i,
-                        aDisplays[i].fDisplayFlags,
-                        aDisplays[i].cx, aDisplays[i].cy);
-                }
-
-                ReconnectDisplays(cDisplays, &aDisplays[0]);
-            }
+            RTThreadSleep(1000);
         }
+        else
+        {
+            rc = VbglR3AcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, false);
+            VGSvcVerbose(3, "VbglR3AcquireGuestCaps acquire VMMDEV_GUEST_SUPPORTS_GRAPHICS rc=%Rrc\n", rc);
 
-        rc = VbglR3AcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS, false);
-        VGSvcVerbose(2, "VbglR3AcquireGuestCaps release VMMDEV_GUEST_SUPPORTS_GRAPHICS rc=%Rrc\n", rc);
+            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 2000 /*ms*/, &fEvents);
+            VGSvcVerbose(3, "VbglR3WaitEvent rc=%Rrc\n", rc);
 
-        RTThreadSleep(1000);
+            if (RT_SUCCESS(rc))
+            {
+                VMMDevDisplayDef aDisplays[64];
+                uint32_t cDisplays = RT_ELEMENTS(aDisplays);
+
+                rc = VbglR3GetDisplayChangeRequestMulti(cDisplays, &cDisplays, &aDisplays[0], true);
+                VGSvcVerbose(3, "VbglR3GetDisplayChangeRequestMulti rc=%Rrc cDisplays=%d\n", rc, cDisplays);
+                if (cDisplays > 0)
+                {
+                    for(uint32_t i = 0; i < cDisplays; i++)
+                    {
+                        VGSvcVerbose(2, "Display[%i] flags=%#x (%dx%d)\n", i,
+                            aDisplays[i].fDisplayFlags,
+                            aDisplays[i].cx, aDisplays[i].cy);
+                    }
+
+                    ReconnectDisplays(cDisplays, &aDisplays[0]);
+                }
+            }
+
+            rc = VbglR3AcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS, false);
+            VGSvcVerbose(3, "VbglR3AcquireGuestCaps release VMMDEV_GUEST_SUPPORTS_GRAPHICS rc=%Rrc\n", rc);
+        }
 
         if (*pfShutdown)
             break;
     }
 
     rc = VbglR3CtlFilterMask(0, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
-    VGSvcVerbose(2, "VbglR3CtlFilterMask cleared rc=%Rrc\n", rc);
+    VGSvcVerbose(3, "VbglR3CtlFilterMask cleared rc=%Rrc\n", rc);
 
     return rc;
 }
