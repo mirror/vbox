@@ -4,9 +4,8 @@
   <title>Guest Control File Manager</title>
   <!-- 7.1: new icons added, pic removed-->
   <body>
-    <p>If you have Guest Additions installed, you can use the Guest Control File Manager to copy files between a guest
-      and the host system. Other file management operations provide support to create new folders and to rename or
-      delete files. </p>
+    <p>If you have Guest Additions installed, you can use the Guest Control File Manager to copy files between a virtual
+      machine (VM) and the host system. You can also create new folders, rename files and delete files. </p>
     <p>This feature is useful when the VM window of a guest is not visible. For example, when the guest is running in
       headless mode. </p>
     <note>

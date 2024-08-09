@@ -29,12 +29,13 @@
         <p>In the <b>Guest File System</b> pane, enter the <b>User Name</b> and <b>Password</b> for the user you want to
           log in as. </p>
         <p>Click <b outputclass="bold">Open Session</b>. </p>
-        <p>The contents of the guest VM file system appears in the <b>Guest File System</b> pane. </p>
+        <p>The VM file system appears in the <b>Guest File System</b> pane. </p>
       </li>
       <li>
-        <p>Transfer files between the guest and the host system by using the move and copy file transfer icons. </p>
-        <p>You can copy and move files from the guest to the host system or from the host system to the guest. </p>
+        <p>To transfer from the VM to the host, select the file(s) and click <b>Copy From Guest to Host</b>. </p>
+        <p>To transfer from the host to the VM, select the file(s) and click <b>Copy From Host to Guest</b>.</p>
       </li>
+      <li>Check the progress of the transfer in the <b>Operations</b> pane.</li>
       <li>
         <p>Click <b outputclass="bold">Close</b> to end the guest session and the Guest Control File Manager. </p>
       </li>

@@ -28,12 +28,12 @@
       the Virtual Media Manager. </p>
     <fig id="fig-diff-images">
       <title>Differencing Images, Shown in Virtual Media Manager</title>
-      <xref href="images/virtual-disk-manager-2.png" format="png" platform="htmlhelp">
-        <image href="images/virtual-disk-manager-2.png" width="12cm" placement="break">
+      <xref href="images/differencing-images.png" format="png" platform="htmlhelp">
+        <image href="images/differencing-images.png" width="14cm" placement="break">
           <alt>Differencing Images, Shown in Virtual Media Manager</alt>
         </image>
       </xref>
-      <image platform="ohc" href="images/virtual-disk-manager-2.png" width="12cm" placement="break">
+      <image platform="ohc" href="images/differencing-images.png" width="14cm" placement="break">
         <alt>Differencing Images, Shown in Virtual Media Manager</alt>
       </image>
     </fig>
