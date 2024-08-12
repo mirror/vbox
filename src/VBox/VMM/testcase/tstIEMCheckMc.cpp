@@ -692,11 +692,13 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_FETCH_GREG_U8_SX_U16(a_u16Dst, a_iGReg)  do { (a_u16Dst) = 0; CHK_TYPE(uint16_t, a_u16Dst); CHK_VAR(a_u16Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U8_SX_U32(a_u32Dst, a_iGReg)  do { (a_u32Dst) = 0; CHK_TYPE(uint32_t, a_u32Dst); CHK_VAR(a_u32Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U8_SX_U64(a_u64Dst, a_iGReg)  do { (a_u64Dst) = 0; CHK_TYPE(uint64_t, a_u64Dst); CHK_VAR(a_u64Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_GREG_I16(a_i16Dst, a_iGReg)        do { (a_i16Dst) = 0; CHK_TYPE(int16_t,  a_i16Dst); CHK_VAR(a_i16Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U16(a_u16Dst, a_iGReg)        do { (a_u16Dst) = 0; CHK_TYPE(uint16_t, a_u16Dst); CHK_VAR(a_u16Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U16_ZX_U32(a_u32Dst, a_iGReg) do { (a_u32Dst) = 0; CHK_TYPE(uint32_t, a_u32Dst); CHK_VAR(a_u32Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U16_ZX_U64(a_u64Dst, a_iGReg) do { (a_u64Dst) = 0; CHK_TYPE(uint64_t, a_u64Dst); CHK_VAR(a_u64Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U16_SX_U32(a_u32Dst, a_iGReg) do { (a_u32Dst) = 0; CHK_TYPE(uint32_t, a_u32Dst); CHK_VAR(a_u32Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U16_SX_U64(a_u64Dst, a_iGReg) do { (a_u64Dst) = 0; CHK_TYPE(uint64_t, a_u64Dst); CHK_VAR(a_u64Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_GREG_I32(a_i32Dst, a_iGReg)        do { (a_i32Dst) = 0; CHK_TYPE(int32_t,  a_i32Dst); CHK_VAR(a_i32Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U32(a_u32Dst, a_iGReg)        do { (a_u32Dst) = 0; CHK_TYPE(uint32_t, a_u32Dst); CHK_VAR(a_u32Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U32_ZX_U64(a_u64Dst, a_iGReg) do { (a_u64Dst) = 0; CHK_TYPE(uint64_t, a_u64Dst); CHK_VAR(a_u64Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U32_SX_U64(a_u64Dst, a_iGReg) do { (a_u64Dst) = 0; CHK_TYPE(uint64_t, a_u64Dst); CHK_VAR(a_u64Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
@@ -905,6 +907,9 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_FETCH_MEM_U16_DISP(a_u16Dst, a_iSeg, a_GCPtrMem, a_offDisp) do { CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u16Dst); CHK_CONST(uint8_t, a_offDisp); CHK_TYPE(uint16_t, a_u16Dst); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U32_DISP(a_u32Dst, a_iSeg, a_GCPtrMem, a_offDisp) do { CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u32Dst); CHK_CONST(uint8_t, a_offDisp); CHK_TYPE(uint32_t, a_u32Dst); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U64_DISP(a_u64Dst, a_iSeg, a_GCPtrMem, a_offDisp) do { CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u64Dst); CHK_CONST(uint8_t, a_offDisp); CHK_TYPE(uint64_t, a_u64Dst); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+
+#define IEM_MC_FETCH_MEM_I16_DISP(a_i16Dst, a_iSeg, a_GCPtrMem, a_offDisp) do { CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_i16Dst); CHK_CONST(uint8_t, a_offDisp); CHK_TYPE(int16_t, a_i16Dst); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_MEM_I32_DISP(a_i32Dst, a_iSeg, a_GCPtrMem, a_offDisp) do { CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_i32Dst); CHK_CONST(uint8_t, a_offDisp); CHK_TYPE(int32_t, a_i32Dst); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
 
 #define IEM_MC_FETCH_MEM_U8_ZX_U16(a_u16Dst, a_iSeg, a_GCPtrMem)        do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u16Dst);  AssertCompile(sizeof(a_u16Dst) == (sizeof(uint16_t))); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U8_ZX_U32(a_u32Dst, a_iSeg, a_GCPtrMem)        do { CHK_SEG_IDX(a_iSeg); CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_VAR(a_u32Dst);  AssertCompile(sizeof(a_u32Dst) == (sizeof(uint32_t))); (void)fMcBegin; } while (0)

@@ -527,11 +527,13 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 
 #define IEM_MC_ASSIGN_TO_SMALLER(a_VarDst, a_VarSrcEol)             NOP()
 
+#define IEM_MC_FETCH_GREG_I16(a_i16Dst, a_iGReg)                    IEM_LIVENESS_GPR_INPUT(a_iGReg)
 #define IEM_MC_FETCH_GREG_U16(a_u16Dst, a_iGReg)                    IEM_LIVENESS_GPR_INPUT(a_iGReg)
 #define IEM_MC_FETCH_GREG_U16_ZX_U32(a_u32Dst, a_iGReg)             IEM_LIVENESS_GPR_INPUT(a_iGReg)
 #define IEM_MC_FETCH_GREG_U16_ZX_U64(a_u64Dst, a_iGReg)             IEM_LIVENESS_GPR_INPUT(a_iGReg)
 #define IEM_MC_FETCH_GREG_U16_SX_U32(a_u32Dst, a_iGReg)             IEM_LIVENESS_GPR_INPUT(a_iGReg)
 #define IEM_MC_FETCH_GREG_U16_SX_U64(a_u64Dst, a_iGReg)             IEM_LIVENESS_GPR_INPUT(a_iGReg)
+#define IEM_MC_FETCH_GREG_I32(a_i32Dst, a_iGReg)                    IEM_LIVENESS_GPR_INPUT(a_iGReg)
 #define IEM_MC_FETCH_GREG_U32(a_u32Dst, a_iGReg)                    IEM_LIVENESS_GPR_INPUT(a_iGReg)
 #define IEM_MC_FETCH_GREG_U32_ZX_U64(a_u64Dst, a_iGReg)             IEM_LIVENESS_GPR_INPUT(a_iGReg)
 #define IEM_MC_FETCH_GREG_U32_SX_U64(a_u64Dst, a_iGReg)             IEM_LIVENESS_GPR_INPUT(a_iGReg)
@@ -808,18 +810,22 @@ AssertCompile(IEMLIVENESS_STATE_INPUT == IEMLIVENESS_STATE_MASK);
 #define IEM_MC_FETCH_MEM_U16(a_u16Dst, a_iSeg, a_GCPtrMem)                                      IEM_LIVENESS_MEM(a_iSeg)
 #define IEM_MC_FETCH_MEM_U16_DISP(a_u16Dst, a_iSeg, a_GCPtrMem, a_offDisp)                      IEM_LIVENESS_MEM(a_iSeg)
 #define IEM_MC_FETCH_MEM_I16(a_i16Dst, a_iSeg, a_GCPtrMem)                                      IEM_LIVENESS_MEM(a_iSeg)
+#define IEM_MC_FETCH_MEM_I16_DISP(a_i16Dst, a_iSeg, a_GCPtrMem, a_offDisp)                      IEM_LIVENESS_MEM(a_iSeg)
 
 #define IEM_MC_FETCH_MEM_FLAT_U16(a_u16Dst, a_GCPtrMem)                                         IEM_LIVENESS_MEM_FLAT()
 #define IEM_MC_FETCH_MEM_FLAT_U16_DISP(a_u16Dst, a_GCPtrMem, a_offDisp)                         IEM_LIVENESS_MEM_FLAT()
 #define IEM_MC_FETCH_MEM_FLAT_I16(a_i16Dst, a_GCPtrMem)                                         IEM_LIVENESS_MEM_FLAT()
+#define IEM_MC_FETCH_MEM_FLAT_I16_DISP(a_i16Dst, a_GCPtrMem, a_offDisp)                         IEM_LIVENESS_MEM_FLAT()
 
 #define IEM_MC_FETCH_MEM_U32(a_u32Dst, a_iSeg, a_GCPtrMem)                                      IEM_LIVENESS_MEM(a_iSeg)
 #define IEM_MC_FETCH_MEM_U32_DISP(a_u32Dst, a_iSeg, a_GCPtrMem, a_offDisp)                      IEM_LIVENESS_MEM(a_iSeg)
 #define IEM_MC_FETCH_MEM_I32(a_i32Dst, a_iSeg, a_GCPtrMem)                                      IEM_LIVENESS_MEM(a_iSeg)
+#define IEM_MC_FETCH_MEM_I32_DISP(a_i32Dst, a_iSeg, a_GCPtrMem, a_offDisp)                      IEM_LIVENESS_MEM(a_iSeg)
 
 #define IEM_MC_FETCH_MEM_FLAT_U32(a_u32Dst, a_GCPtrMem)                                         IEM_LIVENESS_MEM_FLAT()
 #define IEM_MC_FETCH_MEM_FLAT_U32_DISP(a_u32Dst, a_GCPtrMem, a_offDisp)                         IEM_LIVENESS_MEM_FLAT()
 #define IEM_MC_FETCH_MEM_FLAT_I32(a_i32Dst, a_GCPtrMem)                                         IEM_LIVENESS_MEM_FLAT()
+#define IEM_MC_FETCH_MEM_FLAT_I32_DISP(a_i32Dst, a_GCPtrMem, a_offDisp)                         IEM_LIVENESS_MEM_FLAT()
 
 #define IEM_MC_FETCH_MEM_U64(a_u64Dst, a_iSeg, a_GCPtrMem)                                      IEM_LIVENESS_MEM(a_iSeg)
 #define IEM_MC_FETCH_MEM_U64_DISP(a_u64Dst, a_iSeg, a_GCPtrMem, a_offDisp)                      IEM_LIVENESS_MEM(a_iSeg)

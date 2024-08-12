@@ -3066,37 +3066,37 @@ FNIEMOP_DEF(iemOp_bound_Gv_Ma__evex)
             if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
             {
                 IEM_MC_BEGIN(IEM_MC_F_MIN_186 | IEM_MC_F_NOT_64BIT, 0);
-                IEM_MC_ARG(uint16_t,    u16Index,       0); /* Note! All operands are actually signed. Lazy unsigned bird. */
-                IEM_MC_ARG(uint16_t,    u16LowerBounds, 1);
-                IEM_MC_ARG(uint16_t,    u16UpperBounds, 2);
+                IEM_MC_ARG(int16_t,     i16Index,       0);
+                IEM_MC_ARG(int16_t,     i16LowerBounds, 1);
+                IEM_MC_ARG(int16_t,     i16UpperBounds, 2);
                 IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
-                IEM_MC_FETCH_GREG_U16(u16Index, IEM_GET_MODRM_REG_8(bRm));
-                IEM_MC_FETCH_MEM_U16(u16LowerBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-                IEM_MC_FETCH_MEM_U16_DISP(u16UpperBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 2);
+                IEM_MC_FETCH_GREG_I16(i16Index, IEM_GET_MODRM_REG_8(bRm));
+                IEM_MC_FETCH_MEM_I16(i16LowerBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+                IEM_MC_FETCH_MEM_I16_DISP(i16UpperBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 2);
 
-                IEM_MC_CALL_CIMPL_3(0, 0, iemCImpl_bound_16, u16Index, u16LowerBounds, u16UpperBounds); /* returns */
+                IEM_MC_CALL_CIMPL_3(0, 0, iemCImpl_bound_16, i16Index, i16LowerBounds, i16UpperBounds); /* returns */
                 IEM_MC_END();
             }
             else /* 32-bit operands */
             {
                 IEM_MC_BEGIN(IEM_MC_F_MIN_386 | IEM_MC_F_NOT_64BIT, 0);
-                IEM_MC_ARG(uint32_t,    u32Index,       0); /* Note! All operands are actually signed. Lazy unsigned bird. */
-                IEM_MC_ARG(uint32_t,    u32LowerBounds, 1);
-                IEM_MC_ARG(uint32_t,    u32UpperBounds, 2);
+                IEM_MC_ARG(int32_t,     i32Index,       0);
+                IEM_MC_ARG(int32_t,     i32LowerBounds, 1);
+                IEM_MC_ARG(int32_t,     i32UpperBounds, 2);
                 IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
-                IEM_MC_FETCH_GREG_U32(u32Index, IEM_GET_MODRM_REG_8(bRm));
-                IEM_MC_FETCH_MEM_U32(u32LowerBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-                IEM_MC_FETCH_MEM_U32_DISP(u32UpperBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 4);
+                IEM_MC_FETCH_GREG_I32(i32Index, IEM_GET_MODRM_REG_8(bRm));
+                IEM_MC_FETCH_MEM_I32(i32LowerBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+                IEM_MC_FETCH_MEM_I32_DISP(i32UpperBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 4);
 
-                IEM_MC_CALL_CIMPL_3(0, 0, iemCImpl_bound_32, u32Index, u32LowerBounds, u32UpperBounds); /* returns */
+                IEM_MC_CALL_CIMPL_3(0, 0, iemCImpl_bound_32, i32Index, i32LowerBounds, i32UpperBounds); /* returns */
                 IEM_MC_END();
             }
         }
