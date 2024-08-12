@@ -820,6 +820,29 @@ HRESULT VirtualBoxBase::setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...
 }
 
 /**
+ * Like setErrorBoth(), but disables the "log" flag in the call to setErrorInternal().
+ * @param hrc
+ * @param vrc
+ * @param pcszMsgFmt
+ * @param ...
+ * @return
+ */
+HRESULT VirtualBoxBase::setErrorBothNoLog(HRESULT hrc, int vrc, const char *pcszMsgFmt, ...)
+{
+    va_list va;
+    va_start(va, pcszMsgFmt);
+    hrc = setErrorInternalV(hrc,
+                            this->getClassIID(),
+                            this->getComponentName(),
+                            pcszMsgFmt, va,
+                            false /* aWarning */,
+                            false /* aLogIt */,
+                            vrc /* aResultDetail */);
+    va_end(va);
+    return hrc;
+}
+
+/**
  * Clear the current error information.
  */
 /*static*/

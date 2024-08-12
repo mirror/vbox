@@ -781,6 +781,7 @@ public:
     HRESULT setErrorBoth(HRESULT hrc, int vrc, const char *pcszMsgFmt, ...);
     HRESULT setWarning(HRESULT aResultCode, const char *pcsz, ...);
     HRESULT setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...);
+    HRESULT setErrorBothNoLog(HRESULT hrc, int vrc, const char *pcszMsgFmt, ...);
 
 
     /** Initialize COM for a new thread. */
