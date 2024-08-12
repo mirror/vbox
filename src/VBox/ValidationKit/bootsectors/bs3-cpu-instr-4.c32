@@ -3857,7 +3857,54 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_haddpd(uint8_t bMode)
               /*128:out  */ X86_MXCSR_RC_UP,
               /*256:out  */ X86_MXCSR_RC_UP,
               /*xcpt?    */ false, false },
-          /** @todo Denormals, Invalids etc. */
+    /*
+     * Denormals.
+     */
+    /*26*/{ { /*src2     */ { FP64_DENORM_MAX(0), FP64_0(0),          FP64_DENORM_MAX(0), FP64_0(0)          } },
+            { /*src1     */ { FP64_0(0),          FP64_DENORM_MAX(1), FP64_0(0),          FP64_DENORM_MAX(1) } },
+            { /* =>      */ { FP64_0(0),          FP64_0(0),          FP64_0(0),          FP64_0(0)          } },
+              /*mxcsr:in */ 0,
+              /*128:out  */ X86_MXCSR_DE,
+              /*256:out  */ X86_MXCSR_DE,
+              /*xcpt?    */ true, true },
+          { { /*src2     */ { FP64_DENORM_MAX(0), FP64_DENORM_MAX(0), FP64_DENORM_MIN(1), FP64_DENORM_MIN(1) } },
+            { /*src1     */ { FP64_DENORM_MIN(0), FP64_DENORM_MAX(0), FP64_DENORM_MAX(1), FP64_DENORM_MAX(1) } },
+            { /* =>      */ { FP64_0(0),          FP64_0(0),          FP64_0(1),          FP64_0(1)          } },
+              /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_XCPT_MASK,
+              /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_XCPT_MASK,
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_XCPT_MASK,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_DENORM_MAX(0), FP64_0(0), FP64_0(0),          FP64_0(0) } },
+            { /*src1     */ { FP64_0(0),          FP64_0(0), FP64_DENORM_MIN(0), FP64_0(0) } },
+            { /* =>      */ { FP64_0(0),          FP64_0(0), FP64_0(0),          FP64_0(0) } },
+              /*mxcsr:in */ 0,
+              /*128:out  */ X86_MXCSR_DE,
+              /*256:out  */ X86_MXCSR_DE,
+              /*xcpt?    */ true, true },
+          { { /*src2     */ { FP64_0(0), FP64_0(0),          FP64_DENORM_MIN(1), FP64_DENORM_MAX(1) } },
+            { /*src1     */ { FP64_0(1), FP64_DENORM_MAX(0), FP64_DENORM_MAX(1), FP64_0(0)          } },
+            { /* =>      */ { FP64_0(0), FP64_0(0),          FP64_0(0),          FP64_0(1)          } },
+              /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_XCPT_MASK,
+              /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_XCPT_MASK,
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_XCPT_MASK,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_0(0), FP64_0(0), FP64_DENORM_MAX(0), FP64_DENORM_MAX(0) } },
+            { /*src1     */ { FP64_0(0), FP64_0(0), FP64_DENORM_MIN(1), FP64_DENORM_MIN(1) } },
+            { /* =>      */ { FP64_0(0), FP64_0(0), FP64_0(0),          FP64_0(1)          } },
+              /*mxcsr:in */ 0,
+              /*128:out  */ 0,
+              /*256:out  */ X86_MXCSR_DE,
+              /*xcpt?    */ false, true },
+#if 0
+          { { /*src2     */ { FP32_DENORM_MIN(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MAX(0) } },
+            { /*src1     */ { FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0), FP32_DENORM_MAX(0), FP32_DENORM_MIN(0) } },
+            { /* =>      */ { FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0),          FP32_0(0)          } },
+              /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_UP,
+              /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_UP,
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_UP,
+              /*xcpt?    */ false, false },
+#endif
+          /** @todo Invalids, Rounding etc. */
     };
 
     static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
