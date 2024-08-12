@@ -26,7 +26,6 @@
 
 #include <iprt/win/windows.h>
 #include <wtsapi32.h>
-#include <ntsecapi.h>
 
 #include <iprt/errcore.h>
 
@@ -264,6 +263,11 @@ DECLCALLBACK(int) vgsvcDisplayConfigWorker(bool volatile *pfShutdown)
 
                     ReconnectDisplays(cDisplays, &aDisplays[0]);
                 }
+            }
+            else
+            {
+                /* To prevent CPU throttle in case of multiple failures */
+                RTThreadSleep(200);
             }
 
             rc = VbglR3AcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS, false);
