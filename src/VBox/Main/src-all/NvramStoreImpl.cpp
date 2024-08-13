@@ -1060,7 +1060,7 @@ int NvramStore::i_saveStoreAsDir(const char *pszPath)
         vrc = RTPathUnlink(pszPath, 0 /*fUnlink*/);
     if (RT_FAILURE(vrc))
     {
-        LogRel(("Failed to delete existing NVRAM store '%s': %Rrc\n", vrc));
+        LogRel(("Failed to delete existing NVRAM store '%s': %Rrc\n", pszPath, vrc));
         return vrc;
     }
 
@@ -1143,7 +1143,7 @@ int NvramStore::i_saveStoreAsDir(const char *pszPath)
         {
             int vrc2 = RTDirRemoveRecursive(pszPath, RTDIRRMREC_F_CONTENT_AND_DIR);
             if (RT_FAILURE(vrc2))
-                LogRel(("Cleaning up NVRAM store '%s' failed with %Rrc (after creation failed with %Rrc)\n", vrc2, vrc));
+                LogRel(("Cleaning up NVRAM store '%s' failed with %Rrc (after creation failed with %Rrc)\n", pszPath,   vrc2, vrc));
         }
     }
     else
@@ -1263,7 +1263,7 @@ int NvramStore::i_saveStore(void)
             if (FAILED(hrc))
                 throw hrc;
 
-            bool fSaveAsDir = fSaveAsDir = bstrValue == "1";
+            bool fSaveAsDir = bstrValue == "1";
 
             if (fSaveAsDir)
                 vrc = i_saveStoreAsDir(strPath.c_str());
