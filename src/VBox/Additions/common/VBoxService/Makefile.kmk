@@ -152,7 +152,12 @@ endif
 
 if1of ($(KBUILD_TARGET), win)
  VBoxService_SOURCES     += \
- 	VBoxServicePageSharing.cpp
+ 	VBoxServicePageSharing.cpp \
+ 	VBoxServiceDisplayConfig.cpp
+ VBoxService_INCS += \
+ 	$(PATH_ROOT)/src/VBox/Additions \
+ 	$(PATH_ROOT)/include/VBox/Graphics \
+ 	$(PATH_ROOT)/src/VBox/Additions/WINNT/include
 endif
 
 ifdef VBOX_WITH_VBOXSERVICE_VMINFO
