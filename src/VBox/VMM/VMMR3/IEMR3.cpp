@@ -290,8 +290,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
 #ifdef VBOX_WITH_IEM_RECOMPILER
         /*
-         * Distribute recompiler configuration.
+         * Recompiler state and configuration distribution.
          */
+        pVCpu->iem.s.uRegFpCtrl                    = IEMNATIVE_SIMD_FP_CTRL_REG_NOT_MODIFIED;
         pVCpu->iem.s.uTbNativeRecompileAtUsedCount = uTbNativeRecompileAtUsedCount;
 #endif
 
