@@ -3422,8 +3422,8 @@ DxgkDdiEscape(
                 if (pEscapeHdr->u32CmdSpecific)
                 {
                     WARN(("VBOXESC_CONFIGURETARGETS invalid command %d", pEscapeHdr->u32CmdSpecific));
-//                    Status = STATUS_INVALID_PARAMETER;
-//                    break;
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
                 }
 
                 HANDLE hKey = NULL;
@@ -3506,26 +3506,43 @@ DxgkDdiEscape(
                     break;
                 }
 
-                uint32_t u32Mask = pEscapeHdr->u32CmdSpecific;
+                uint32_t u32ConnectMask = pEscapeHdr->u32CmdSpecific;
+
+                HANDLE hKey = NULL;
+                Status = IoOpenDeviceRegistryKey(pDevExt->pPDO, PLUGPLAY_REGKEY_DRIVER, GENERIC_WRITE, &hKey);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("VBOXESC_CONFIGURETARGETS IoOpenDeviceRegistryKey failed, Status = 0x%x", Status));
+                    hKey = NULL;
+                }
 
                 for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
                 {
                     VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[i];
-                    bool fConnReq = u32Mask & RT_BIT(i);
+                    bool fConnectReq = u32ConnectMask & RT_BIT(i);
 
                     pTarget->fConfigured = true;
 
-                    if (!pTarget->fConnected && fConnReq)
+                    if (pTarget->fConnected != fConnectReq)
                     {
-                        Status = VBoxWddmChildStatusConnect(pDevExt, (uint32_t)i, TRUE);
-                        LOG(("VBOXESC_RECONNECT_TARGETS connecting target %d, status 0x%x", i, Status));
+                        Status = VBoxWddmChildStatusConnect(pDevExt, (uint32_t)i, fConnectReq);
+                        LOG(("VBOXESC_RECONNECT_TARGETS %sconnecting target %d, status 0x%x", fConnectReq ? "" : "dis", i, Status));
+                        pTarget->fConnected = fConnectReq;
+
+                        if (RT_LIKELY(hKey))
+                        {
+                            WCHAR wszNameBuf[sizeof(VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX) / sizeof(WCHAR) + 32];
+                            RTUtf16Printf(wszNameBuf, RT_ELEMENTS(wszNameBuf), "%ls%u", VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX, i);
+                            Status = vboxWddmRegSetValueDword(hKey, wszNameBuf, fConnectReq);
+                        }
                     }
-                    else if (pTarget->fConnected && !fConnReq)
-                    {
-                        Status = VBoxWddmChildStatusConnect(pDevExt, (uint32_t)i, FALSE);
-                        LOG(("VBOXESC_RECONNECT_TARGETS disconnecting target %d, status 0x%x", i, Status));
-                    }
-                 }
+                }
+
+                if (RT_LIKELY(hKey))
+                {
+                    NTSTATUS rcNt2 = ZwClose(hKey);
+                    Assert(rcNt2 == STATUS_SUCCESS); NOREF(rcNt2);
+                }
 
                 Status = STATUS_SUCCESS;
 
