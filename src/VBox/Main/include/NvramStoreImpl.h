@@ -121,7 +121,9 @@ private:
     HRESULT initUefiVariableStore(ULONG aSize);
 
     int i_loadStoreFromTar(RTVFSFSSTREAM hVfsFssTar);
+    int i_loadStoreFromDir(RTVFSDIR hVfsDir, const char *pszNamespace);
     int i_saveStoreAsTar(const char *pszPath);
+    int i_saveStoreAsDir(const char *pszPath);
 
     int i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf);
     int i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf);

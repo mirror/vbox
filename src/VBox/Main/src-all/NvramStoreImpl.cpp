@@ -48,6 +48,7 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/efi.h>
 #include <iprt/file.h>
+#include <iprt/path.h>
 #include <iprt/vfs.h>
 #include <iprt/zip.h>
 
@@ -715,6 +716,98 @@ void NvramStore::i_releaseEncryptionOrDecryptionResources(RTVFSIOSTREAM hVfsIos,
 #endif /* VBOX_WITH_FULL_VM_ENCRYPTION */
 
 /**
+ * Loads the NVRAM store from the given VFS directory handle.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsDir             Handle to the NVRAM root VFS directory.
+ * @param   pszNamespace        The namespace to load the content for.
+ */
+int NvramStore::i_loadStoreFromDir(RTVFSDIR hVfsDir, const char *pszNamespace)
+{
+    int vrc = VINF_SUCCESS;
+
+    RTVFSDIR hNamespaceDir = NIL_RTVFSDIR;
+    vrc = RTVfsDirOpenDir(hVfsDir, pszNamespace, 0 /*fFlags*/, &hNamespaceDir);
+    if (RT_SUCCESS(vrc))
+    {
+        for (;;)
+        {
+            RTDIRENTRYEX DirEntry; /* ASSUMES that no entry has a longer name than what RTDIRENTRYEX provides by default. */
+            size_t cbDir = sizeof(DirEntry);
+            vrc = RTVfsDirReadEx(hNamespaceDir, &DirEntry, &cbDir, RTFSOBJATTRADD_NOTHING);
+            if (RT_FAILURE(vrc))
+            {
+                if (vrc == VERR_NO_MORE_FILES)
+                    vrc = VINF_SUCCESS;
+                break;
+            }
+
+            if (RT_SUCCESS(vrc))
+            {
+                switch (DirEntry.Info.Attr.fMode & RTFS_TYPE_MASK)
+                {
+                    case RTFS_TYPE_FILE:
+                    {
+                        LogRel(("NvramStore: Loading '%s' from directory '%s'\n", DirEntry.szName, pszNamespace));
+
+                        RTVFSIOSTREAM hVfsIosEntry;
+                        vrc = RTVfsDirOpenFileAsIoStream(hNamespaceDir, DirEntry.szName, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hVfsIosEntry);
+                        if (RT_SUCCESS(vrc))
+                        {
+                            RTVFSIOSTREAM hVfsIosDecrypted = NIL_RTVFSIOSTREAM;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                            PCVBOXCRYPTOIF pCryptoIf = NULL;
+                            SecretKey *pKey = NULL;
+
+                            if (   m->bd->strKeyId.isNotEmpty()
+                                && m->bd->strKeyStore.isNotEmpty())
+                                vrc = i_setupEncryptionOrDecryption(hVfsIosEntry, false /*fEncrypt*/,
+                                                                    &pCryptoIf, &pKey, &hVfsIosDecrypted);
+#endif
+                            if (RT_SUCCESS(vrc))
+                            {
+                                RTVFSFILE hVfsFileEntry;
+                                vrc = RTVfsMemorizeIoStreamAsFile(hVfsIosDecrypted != NIL_RTVFSIOSTREAM
+                                                                  ? hVfsIosDecrypted
+                                                                  : hVfsIosEntry,
+                                                                  RTFILE_O_READ | RTFILE_O_WRITE, &hVfsFileEntry);
+                                if (RT_SUCCESS(vrc))
+                                    m->mapNvram[Utf8StrFmt("%s/%s", pszNamespace, DirEntry.szName)] = hVfsFileEntry;
+                            }
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                            if (hVfsIosDecrypted != NIL_RTVFSIOSTREAM)
+                                i_releaseEncryptionOrDecryptionResources(hVfsIosDecrypted, pCryptoIf, pKey);
+#endif
+
+                            RTVfsIoStrmRelease(hVfsIosEntry);
+                        }
+                        else
+                            LogRel(("Failed to open '%s' in NVRAM store '%s', vrc=%Rrc\n", DirEntry.szName, pszNamespace, vrc));
+
+                        break;
+                    }
+                    case RTFS_TYPE_DIRECTORY:
+                        break;
+                    default:
+                        vrc = VERR_NOT_SUPPORTED;
+                        break;
+                }
+            }
+
+            if (RT_FAILURE(vrc))
+                break;
+        }
+
+        RTVfsDirRelease(hNamespaceDir);
+    }
+
+    return vrc;
+}
+
+
+/**
  * Loads the NVRAM store.
  *
  * @returns IPRT status code.
@@ -829,6 +922,57 @@ int NvramStore::i_loadStore(const char *pszPath)
             vrc = VERR_OUT_OF_RANGE;
         }
     }
+    else if (vrc == VERR_IS_A_DIRECTORY) /* Valid if the NVRAM was saved with VBoxInternal2/SaveNvramContentAsDirectory 1. */
+    {
+        RTVFSDIR hNvramDir = NIL_RTVFSDIR;
+        vrc = RTVfsDirOpenNormal(pszPath, 0 /*fFlags*/, &hNvramDir);
+        if (RT_SUCCESS(vrc))
+        {
+            for (;;)
+            {
+                RTDIRENTRYEX DirEntry; /* ASSUMES that no entry has a longer name than what RTDIRENTRYEX provides by default. */
+                size_t cbDir = sizeof(DirEntry);
+
+                vrc = RTVfsDirReadEx(hNvramDir, &DirEntry, &cbDir, RTFSOBJATTRADD_NOTHING);
+                if (RT_FAILURE(vrc))
+                {
+                    if (vrc == VERR_NO_MORE_FILES)
+                        vrc = VINF_SUCCESS;
+                    break;
+                }
+
+                /* This ASSUMES that the structure follows the <namespace>/<file> naming scheme. */
+                if (RT_SUCCESS(vrc))
+                {
+                    switch (DirEntry.Info.Attr.fMode & RTFS_TYPE_MASK)
+                    {
+                        case RTFS_TYPE_FILE:
+                            break;
+                        case RTFS_TYPE_DIRECTORY:
+                        {
+                            if (   (DirEntry.szName[0] == '.' && DirEntry.szName[1] == '\0')
+                                || (DirEntry.szName[0] == '.' && DirEntry.szName[1] == '.' && DirEntry.szName[2] == '\0'))
+                                break;
+
+                            vrc = i_loadStoreFromDir(hNvramDir, DirEntry.szName);
+                            break;
+                        }
+                        default:
+                            vrc = VERR_NOT_SUPPORTED;
+                            break;
+                    }
+                }
+
+                if (RT_FAILURE(vrc))
+                    break;
+            }
+
+            RTVfsDirRelease(hNvramDir);
+        }
+        else
+            LogRelMax(10, ("NVRAM store '%s' couldn't be opened as a directory, vrc=%Rrc\n", pszPath, vrc));
+
+    }
     else if (vrc == VERR_FILE_NOT_FOUND) /* Valid for the first run where no NVRAM file is there. */
         vrc = VINF_SUCCESS;
 
@@ -899,6 +1043,111 @@ int NvramStore::i_saveStoreAsTar(const char *pszPath)
 
         RTVfsIoStrmRelease(hVfsIos);
     }
+
+    return vrc;
+}
+
+
+/**
+ * Saves the NVRAM store as a directory tree.
+ */
+int NvramStore::i_saveStoreAsDir(const char *pszPath)
+{
+    int vrc = VINF_SUCCESS;
+    if (RTDirExists(pszPath))
+        vrc = RTDirRemoveRecursive(pszPath, RTDIRRMREC_F_CONTENT_AND_DIR);
+    else if (RTPathExists(pszPath))
+        vrc = RTPathUnlink(pszPath, 0 /*fUnlink*/);
+    if (RT_FAILURE(vrc))
+    {
+        LogRel(("Failed to delete existing NVRAM store '%s': %Rrc\n", vrc));
+        return vrc;
+    }
+
+    vrc = RTDirCreate(pszPath, 0700 /*fMode*/, RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL);
+    if (RT_SUCCESS(vrc))
+    {
+        NvramStoreIter it = m->mapNvram.begin();
+
+        while (it != m->mapNvram.end())
+        {
+            /** @todo r=aeichner This is pretty in-efficient but not called often (not at all by default)
+             *                   and there aren't many entries anyway. */
+            char szPathOut[RTPATH_MAX];
+            char szPathFile[RTPATH_MAX];
+
+            /* Construct the path excluding the filename. */
+            vrc = RTStrCopy(szPathFile, sizeof(szPathFile), it->first.c_str());
+            if (RT_FAILURE(vrc))
+                break;
+            RTPathStripFilename(szPathFile);
+            vrc = RTPathJoin(szPathOut, sizeof(szPathOut), pszPath, szPathFile);
+            if (RT_FAILURE(vrc))
+                break;
+
+            /* Create the directory structure. */
+            vrc = RTDirCreateFullPathEx(szPathOut, 0700 /*fMode*/, RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL);
+            if (RT_FAILURE(vrc))
+                break;
+
+            vrc = RTVfsFileSeek(it->second, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
+            AssertRC(vrc);
+
+            /* Construct path, including the filename now. */
+            vrc = RTPathJoin(szPathOut, sizeof(szPathOut), pszPath, it->first.c_str());
+            if (RT_FAILURE(vrc))
+                break;
+
+            /* Write the file, encrypting it if required. */
+            RTVFSFILE hVfsFile;
+            vrc = RTVfsFileOpenNormal(szPathOut, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
+                                      &hVfsFile);
+            if (RT_SUCCESS(vrc))
+            {
+                RTVFSIOSTREAM hVfsIos = RTVfsFileToIoStream(hVfsFile);
+                RTVFSIOSTREAM hVfsIosEncrypted = NIL_RTVFSIOSTREAM;
+
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                PCVBOXCRYPTOIF pCryptoIf = NULL;
+                SecretKey *pKey = NULL;
+
+                if (   m->bd->strKeyId.isNotEmpty()
+                    && m->bd->strKeyStore.isNotEmpty())
+                    vrc = i_setupEncryptionOrDecryption(hVfsIos, true /*fEncrypt*/,
+                                                        &pCryptoIf, &pKey, &hVfsIosEncrypted);
+#endif
+
+                if (RT_SUCCESS(vrc))
+                {
+                    RTVFSIOSTREAM hVfsIosSrc = RTVfsFileToIoStream(it->second);
+                    vrc = RTVfsUtilPumpIoStreams(hVfsIosSrc,
+                                                   hVfsIosEncrypted != NIL_RTVFSIOSTREAM
+                                                 ? hVfsIosEncrypted
+                                                 : hVfsIos, 0 /*cbBufHint*/);
+                    RTVfsIoStrmRelease(hVfsIosSrc);
+#ifdef VBOX_WITH_FULL_VM_ENCRYPTION
+                    if (hVfsIosEncrypted != NIL_RTVFSIOSTREAM)
+                        i_releaseEncryptionOrDecryptionResources(hVfsIosEncrypted, pCryptoIf, pKey);
+#endif
+                }
+
+                RTVfsIoStrmRelease(hVfsIos);
+                RTVfsFileRelease(hVfsFile);
+            }
+
+            it++;
+        }
+
+        /* Cleanup in case of error. */
+        if (RT_FAILURE(vrc))
+        {
+            int vrc2 = RTDirRemoveRecursive(pszPath, RTDIRRMREC_F_CONTENT_AND_DIR);
+            if (RT_FAILURE(vrc2))
+                LogRel(("Cleaning up NVRAM store '%s' failed with %Rrc (after creation failed with %Rrc)\n", vrc2, vrc));
+        }
+    }
+    else
+        LogRel(("NVRAM store '%s' directory creation failed: %Rrc\n", pszPath, vrc));
 
     return vrc;
 }
@@ -1000,7 +1249,27 @@ int NvramStore::i_saveStore(void)
             }
         }
         else if (m->mapNvram.size())
-            vrc = i_saveStoreAsTar(strPath.c_str());
+        {
+            /* Check whether the NVRAM content is supposed to be saved under a directory. */
+#ifndef VBOX_COM_INPROC
+            Machine * const         pMachine = m->pParent;
+#else
+            const ComPtr<IMachine> &pMachine = m->pParent->i_machine();
+#endif
+
+            Bstr bstrName("VBoxInternal2/SaveNvramContentAsDirectory");
+            Bstr bstrValue;
+            HRESULT hrc = pMachine->GetExtraData(bstrName.raw(), bstrValue.asOutParam());
+            if (FAILED(hrc))
+                throw hrc;
+
+            bool fSaveAsDir = fSaveAsDir = bstrValue == "1";
+
+            if (fSaveAsDir)
+                vrc = i_saveStoreAsDir(strPath.c_str());
+            else
+                vrc = i_saveStoreAsTar(strPath.c_str());
+        }
         /* else: No NVRAM content to store so we are done here. */
     }
 

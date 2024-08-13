@@ -9560,7 +9560,7 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings,
                         newNVRAMFile = newConfigFile;
                         newNVRAMFile.stripSuffix();
                         newNVRAMFile += ".nvram";
-                        RTFileRename(NVRAMFile.c_str(), newNVRAMFile.c_str(), 0);
+                        RTPathRename(NVRAMFile.c_str(), newNVRAMFile.c_str(), 0);
                     }
                 }
             }
@@ -9609,7 +9609,7 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings,
                 RTFileRename(newConfigFilePrev.c_str(), configFilePrev.c_str(), 0);
                 RTFileRename(newConfigFile.c_str(), configFile.c_str(), 0);
                 if (NVRAMFile.isNotEmpty() && newNVRAMFile.isNotEmpty())
-                    RTFileRename(newNVRAMFile.c_str(), NVRAMFile.c_str(), 0);
+                    RTPathRename(newNVRAMFile.c_str(), NVRAMFile.c_str(), 0);
             }
             if (dirRenamed)
                 RTPathRename(newConfigDir.c_str(), configDir.c_str(), 0);
