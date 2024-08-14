@@ -56,7 +56,7 @@ extern "C"
 {
 #endif
 
-PRTHANDLETABLE pNATHandleTable = NULL;
+extern PRTHANDLETABLE pNATHandleTable;
 
 SOCKET libslirp_wrap_RTHandleTableLookup(int fd);
 

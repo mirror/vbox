@@ -37,6 +37,8 @@
 #ifdef _WIN32
 #include "nathandletable.h"
 
+PRTHANDLETABLE pNATHandleTable = NULL;
+
 SOCKET libslirp_wrap_RTHandleTableLookup(int fd)
 {
     if (pNATHandleTable == NULL)
