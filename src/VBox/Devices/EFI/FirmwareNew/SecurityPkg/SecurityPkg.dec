@@ -23,9 +23,9 @@
   Include
   Test/Mock/Include
 
-#[Includes.Common.Private]
-#  DeviceSecurity/SpdmLib/Include
-#  DeviceSecurity/SpdmLib/libspdm/include
+#[Includes.Common.Private]                 VBox: Commented out
+#  DeviceSecurity/SpdmLib/Include          VBox: Commented out
+#  DeviceSecurity/SpdmLib/libspdm/include  VBox: Commented out
 
 [LibraryClasses]
   ##  @libraryclass  Provides hash interfaces from different implementations.
