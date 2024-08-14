@@ -2830,6 +2830,8 @@ class IEMThreadedGenerator(object):
 
         ( 'DeferToCImpl0',                                      2, True  ),
         ( 'CheckIrq',                                           0, True  ),
+        ( 'CheckTimers',                                        0, True  ),
+        ( 'CheckTimersAndIrq',                                  0, True  ),
         ( 'CheckMode',                                          1, True  ),
         ( 'CheckHwInstrBps',                                    0, False ),
         ( 'CheckCsLim',                                         1, True  ),
@@ -2857,6 +2859,8 @@ class IEMThreadedGenerator(object):
         ( 'CheckCsLimAndOpcodesOnNewPageLoadingTlb',            2, True  ),
         ( 'CheckOpcodesOnNewPageLoadingTlb',                    2, True  ),
         ( 'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',       2, True  ),
+
+        ( 'Jump',                                               1, True  ),
     );
 
     def generateThreadedFunctionsHeader(self, oOut, _):

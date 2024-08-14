@@ -490,6 +490,9 @@ typedef enum
     /** The last fixup for branches that exits the TB. */
     kIemNativeLabelType_LastTbExit        = kIemNativeLabelType_Return,
 
+    /** Loop-jump target. */
+    kIemNativeLabelType_LoopJumpTarget,
+
     /*
      * Labels with data, potentially multiple instances per TB:
      *
@@ -1448,7 +1451,7 @@ typedef struct IEMRECOMPILERSTATE
 
     /** Condition sequence number (for generating unique labels). */
     uint16_t                    uCondSeqNo;
-    /** Check IRQ seqeunce number (for generating unique labels). */
+    /** Check IRQ sequence number (for generating unique labels). */
     uint16_t                    uCheckIrqSeqNo;
     /** TLB load sequence number (for generating unique labels). */
     uint16_t                    uTlbSeqNo;
@@ -1631,6 +1634,8 @@ DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddDelayedPcUpdate(PIEMRECOMPILERSTA
 DECL_HIDDEN_THROW(uint32_t) iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
                                                  uint32_t offWhere = UINT32_MAX, uint16_t uData = 0);
 DECL_HIDDEN_THROW(void)     iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, uint32_t idxLabel, uint32_t offWhere);
+DECLHIDDEN(uint32_t)        iemNativeLabelFind(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
+                                               uint32_t offWhere = UINT32_MAX, uint16_t uData = 0) RT_NOEXCEPT;
 DECL_HIDDEN_THROW(void)     iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idxLabel,
                                               IEMNATIVEFIXUPTYPE enmType, int8_t offAddend = 0);
 #ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE

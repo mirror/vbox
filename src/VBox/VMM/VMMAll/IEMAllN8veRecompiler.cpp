@@ -2092,7 +2092,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 22);
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 23);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -2115,6 +2115,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[19]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[20]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[21]        = UINT32_MAX;
+    pReNative->aidxUniqueLabels[22]        = UINT32_MAX;
 
     pReNative->idxLastCheckIrqCallNo       = UINT32_MAX;
 
@@ -2312,7 +2313,7 @@ iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
 {
     Assert(uData == 0 || enmType >= kIemNativeLabelType_FirstWithMultipleInstances);
 #if defined(IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE) && defined(RT_ARCH_AMD64)
-    Assert(enmType >= kIemNativeLabelType_FirstWithMultipleInstances);
+    Assert(enmType >= kIemNativeLabelType_LoopJumpTarget);
 #endif
 
     /*
@@ -2420,14 +2421,13 @@ DECL_HIDDEN_THROW(void) iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, uint
 }
 
 
-#if !defined(IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE) || !defined(RT_ARCH_AMD64)
 /**
  * Looks up a lable.
  *
  * @returns Label ID if found, UINT32_MAX if not.
  */
-static uint32_t iemNativeLabelFind(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
-                                   uint32_t offWhere = UINT32_MAX, uint16_t uData = 0) RT_NOEXCEPT
+DECLHIDDEN(uint32_t) iemNativeLabelFind(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
+                                        uint32_t offWhere /*= UINT32_MAX*/, uint16_t uData /*= 0*/) RT_NOEXCEPT
 {
     Assert((unsigned)enmType < 64);
     if (RT_BIT_64(enmType) & pReNative->bmLabelTypes)
@@ -2447,7 +2447,6 @@ static uint32_t iemNativeLabelFind(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABEL
     }
     return UINT32_MAX;
 }
-#endif
 
 
 /**
@@ -8947,6 +8946,7 @@ static const char *iemNativeGetLabelName(IEMNATIVELABELTYPE enmLabel, bool fComm
         STR_CASE_CMN(NonZeroRetOrPassUp);
 #undef STR_CASE_CMN
 #define STR_CASE_LBL(a_Label) case kIemNativeLabelType_ ## a_Label: return #a_Label;
+        STR_CASE_LBL(LoopJumpTarget);
         STR_CASE_LBL(If);
         STR_CASE_LBL(Else);
         STR_CASE_LBL(Endif);
@@ -9928,7 +9928,7 @@ l_profile_again:
         uint32_t             cThreadedCalls   = 0;
         uint32_t             cRecompiledCalls = 0;
 #endif
-#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(VBOX_STRICT) || defined(LOG_ENABLED)
+#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(IEM_WITH_INTRA_TB_JUMPS) || defined(VBOX_STRICT) || defined(LOG_ENABLED)
         uint32_t             idxCurCall       = 0;
 #endif
         PCIEMTHRDEDCALLENTRY pCallEntry       = pTb->Thrd.paCalls;
@@ -9938,6 +9938,19 @@ l_profile_again:
             PFNIEMNATIVERECOMPFUNC const pfnRecom = g_apfnIemNativeRecompileFunctions[pCallEntry->enmFunction];
 #ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
             pReNative->idxCurCall                 = idxCurCall;
+#endif
+
+#ifdef IEM_WITH_INTRA_TB_JUMPS
+            /*
+             * Define label for jump targets (currently only the first entry).
+             */
+            if (!(pCallEntry->fFlags & IEMTHREADEDCALLENTRY_F_JUMP_TARGET))
+            { /* likely */ }
+            else
+            {
+                iemNativeLabelCreate(pReNative, kIemNativeLabelType_LoopJumpTarget, off);
+                Assert(idxCurCall == 0); /** @todo when jumping elsewhere, we have to save the register state. */
+            }
 #endif
 
             /*
@@ -10037,7 +10050,7 @@ l_profile_again:
              * Advance.
              */
             pCallEntry++;
-#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(VBOX_STRICT) || defined(LOG_ENABLED)
+#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(IEM_WITH_INTRA_TB_JUMPS) || defined(VBOX_STRICT) || defined(LOG_ENABLED)
             idxCurCall++;
 #endif
         }

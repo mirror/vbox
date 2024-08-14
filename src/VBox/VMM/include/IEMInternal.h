@@ -92,6 +92,13 @@ RT_C_DECLS_BEGIN
 # define IEM_WITH_THROW_CATCH
 #endif /*ASM-NOINC-END*/
 
+/** @def IEM_WITH_INTRA_TB_JUMPS
+ * Enables loop-jumps within a TB (currently only to the first call).
+ */
+#if defined(DOXYGEN_RUNNING) || 1
+# define IEM_WITH_INTRA_TB_JUMPS
+#endif
+
 /** @def IEMNATIVE_WITH_DELAYED_PC_UPDATING
  * Enables the delayed PC updating optimization (see @bugref{10373}).
  */
@@ -1244,8 +1251,8 @@ typedef struct IEMTHRDEDCALLENTRY
      */
     uint8_t     uTbLookup;
 
-    /** Unused atm. */
-    uint8_t     uUnused0;
+    /** Flags - IEMTHREADEDCALLENTRY_F_XXX. */
+    uint8_t     fFlags;
 
     /** Generic parameters. */
     uint64_t    auParams[3];
@@ -1269,6 +1276,11 @@ typedef IEMTHRDEDCALLENTRY const *PCIEMTHRDEDCALLENTRY;
 
 /** Make a IEMTHRDEDCALLENTRY::uTbLookup value. */
 #define IEM_TB_LOOKUP_TAB_MAKE(a_idxTable, a_fLarge)    ((a_idxTable) | ((a_fLarge) ? 0x80 : 0))
+
+
+/** The call entry is a jump target. */
+#define IEMTHREADEDCALLENTRY_F_JUMP_TARGET              UINT8_C(0x01)
+
 
 /**
  * Native IEM TB 'function' typedef.
@@ -2128,7 +2140,8 @@ typedef struct IEMCPU
     /** Alignment padding. */
     uint8_t                 abAlignment9[42];
 
-    /** @name Recompilation
+
+    /** @name Recompiled Exection
      * @{ */
     /** Pointer to the current translation block.
      * This can either be one being executed or one being compiled. */
@@ -2155,23 +2168,45 @@ typedef struct IEMCPU
 #else
     uint64_t                u64Unused;
 #endif
-    /** Fixed TB used for threaded recompilation.
-     * This is allocated once with maxed-out sizes and re-used afterwards. */
-    R3PTRTYPE(PIEMTB)       pThrdCompileTbR3;
     /** Pointer to the ring-3 TB cache for this EMT. */
     R3PTRTYPE(PIEMTBCACHE)  pTbCacheR3;
     /** Pointer to the ring-3 TB lookup entry.
      * This either points to pTbLookupEntryDummyR3 or an actually lookuptable
      * entry, thus it can always safely be used w/o NULL checking. */
     R3PTRTYPE(PIEMTB *)     ppTbLookupEntryR3;
+#if 0 /* unused */
     /** The PC (RIP) at the start of pCurTbR3/pCurTbR0.
      * The TBs are based on physical addresses, so this is needed to correleated
      * RIP to opcode bytes stored in the TB (AMD-V / VT-x). */
     uint64_t                uCurTbStartPc;
+#endif
+
     /** Number of threaded TBs executed. */
     uint64_t                cTbExecThreaded;
     /** Number of native TBs executed. */
     uint64_t                cTbExecNative;
+
+    /** The number of IRQ/FF checks till the next timer poll call. */
+    uint32_t                cIrqChecksTillNextPoll;
+    /** The virtual sync time at the last timer poll call in milliseconds. */
+    uint32_t                msRecompilerPollNow;
+    /** The virtual sync time at the last timer poll call in nanoseconds. */
+    uint64_t                nsRecompilerPollNow;
+    /** The previous cIrqChecksTillNextPoll value. */
+    uint32_t                cIrqChecksTillNextPollPrev;
+    /** The ideal nanosecond interval between two timer polls.
+     * @todo make this adaptive?  */
+    uint32_t                cNsIdealPollInterval;
+
+    /** The current instruction number in a native TB.
+     * This is set by code that may trigger an unexpected TB exit (throw/longjmp)
+     * and will be picked up by the TB execution loop. Only used when
+     * IEMNATIVE_WITH_INSTRUCTION_COUNTING is defined. */
+    uint8_t                 idxTbCurInstr;
+    /** @} */
+
+    /** @name Recompilation
+     * @{ */
     /** Whether we need to check the opcode bytes for the current instruction.
      * This is set by a previous instruction if it modified memory or similar.  */
     bool                    fTbCheckOpcodes;
@@ -2181,6 +2216,11 @@ typedef struct IEMCPU
     bool                    fTbCrossedPage;
     /** Whether to end the current TB. */
     bool                    fEndTb;
+    /** Indicates that the current instruction is an STI.  This is set by the
+     * iemCImpl_sti code and subsequently cleared by the recompiler. */
+    bool                    fTbCurInstrIsSti;
+    /** Spaced reserved for recompiler data / alignment. */
+    bool                    afRecompilerStuff1[1];
     /** Number of instructions before we need emit an IRQ check call again.
      * This helps making sure we don't execute too long w/o checking for
      * interrupts and immediately following instructions that may enable
@@ -2188,20 +2228,10 @@ typedef struct IEMCPU
      * required to make sure we check following the next instruction as well, see
      * fTbCurInstrIsSti. */
     uint8_t                 cInstrTillIrqCheck;
-    /** Indicates that the current instruction is an STI.  This is set by the
-     * iemCImpl_sti code and subsequently cleared by the recompiler. */
-    bool                    fTbCurInstrIsSti;
+    /** The index of the last CheckIrq call during threaded recompilation. */
+    uint16_t                idxLastCheckIrqCallNo;
     /** The size of the IEMTB::pabOpcodes allocation in pThrdCompileTbR3. */
     uint16_t                cbOpcodesAllocated;
-    /** The current instruction number in a native TB.
-     * This is set by code that may trigger an unexpected TB exit (throw/longjmp)
-     * and will be picked up by the TB execution loop. Only used when
-     * IEMNATIVE_WITH_INSTRUCTION_COUNTING is defined. */
-    uint8_t                 idxTbCurInstr;
-    /** Spaced reserved for recompiler data / alignment. */
-    bool                    afRecompilerStuff1[3];
-    /** The virtual sync time at the last timer poll call. */
-    uint32_t                msRecompilerPollNow;
     /** The IEMTB::cUsed value when to attempt native recompilation of a TB. */
     uint32_t                uTbNativeRecompileAtUsedCount;
     /** The IEM_CIMPL_F_XXX mask for the current instruction. */
@@ -2211,8 +2241,16 @@ typedef struct IEMCPU
     /** Strict: Tracking skipped EFLAGS calculations.  Any bits set here are
      *  currently not up to date in EFLAGS. */
     uint32_t                fSkippingEFlags;
+    /** Spaced reserved for recompiler data / alignment. */
+    uint32_t                u32RecompilerStuff2;
+#if 0  /* unused */
     /** Previous GCPhysInstrBuf value - only valid if fTbCrossedPage is set.   */
     RTGCPHYS                GCPhysInstrBufPrev;
+#endif
+
+    /** Fixed TB used for threaded recompilation.
+     * This is allocated once with maxed-out sizes and re-used afterwards. */
+    R3PTRTYPE(PIEMTB)       pThrdCompileTbR3;
     /** Pointer to the ring-3 TB allocator for this EMT. */
     R3PTRTYPE(PIEMTBALLOCATOR) pTbAllocatorR3;
     /** Pointer to the ring-3 executable memory allocator for this EMT. */
@@ -2221,6 +2259,7 @@ typedef struct IEMCPU
     R3PTRTYPE(struct IEMRECOMPILERSTATE *)  pNativeRecompilerStateR3;
     /** Dummy entry for ppTbLookupEntryR3. */
     R3PTRTYPE(PIEMTB)       pTbLookupEntryDummyR3;
+    /** @} */
 
     /** Dummy TLB entry used for accesses to pages with databreakpoints. */
     IEMTLBENTRY             DataBreakpointTlbe;
@@ -2229,6 +2268,8 @@ typedef struct IEMCPU
     STAMCOUNTER             StatTbThreadedExecBreaks;
     /** Statistics: Times BltIn_CheckIrq breaks out of the TB. */
     STAMCOUNTER             StatCheckIrqBreaks;
+    /** Statistics: Times BltIn_CheckTimers breaks direct linking TBs. */
+    STAMCOUNTER             StatCheckTimersBreaks;
     /** Statistics: Times BltIn_CheckMode breaks out of the TB. */
     STAMCOUNTER             StatCheckModeBreaks;
     /** Threaded TB statistics: Times execution break on call with lookup entries. */
@@ -2239,8 +2280,10 @@ typedef struct IEMCPU
     STAMCOUNTER             StatCheckBranchMisses;
     /** Statistics: Times a jump or page crossing required a TB with CS.LIM checking. */
     STAMCOUNTER             StatCheckNeedCsLimChecking;
-    /** Statistics: Times a loop was detected within a TB.. */
+    /** Statistics: Times a loop was detected within a TB. */
     STAMCOUNTER             StatTbLoopInTbDetected;
+    /** Statistics: Times a loop back to the start of the TB was detected. */
+    STAMCOUNTER             StatTbLoopFullTbDetected;
     /** Exec memory allocator statistics: Number of times allocaintg executable memory failed. */
     STAMCOUNTER             StatNativeExecMemInstrBufAllocFailed;
     /** Native TB statistics: Number of fully recompiled TBs. */
@@ -2420,6 +2463,9 @@ typedef struct IEMCPU
     /** Native recompiler: The TB finished executing jumping to the ObsoleteTb label. */
     STAMCOUNTER             StatNativeTbExitObsoleteTb;
 
+    /** Native recompiler: Number of full TB loops (jumps from end to start). */
+    STAMCOUNTER             StatNativeTbExitLoopFullTb;
+
     /** Native recompiler: Failure situations with direct linking scenario \#1.
      * Counter with StatNativeTbExitReturnBreak. Not in release builds.
      * @{  */
@@ -2447,11 +2493,10 @@ typedef struct IEMCPU
     /** @} */
 
 #ifdef IEM_WITH_TLB_TRACE
-    uint64_t                au64Padding[2];
+    uint64_t                au64Padding[6];
 #else
-    uint64_t                au64Padding[4];
+    //uint64_t                au64Padding[1];
 #endif
-    /** @} */
 
 #ifdef IEM_WITH_TLB_TRACE
     /** The end (next) trace entry. */
@@ -2490,6 +2535,7 @@ AssertCompileMemberOffset(IEMCPU, cActiveMappings, 0x4f);
 AssertCompileMemberAlignment(IEMCPU, aMemMappings, 16);
 AssertCompileMemberAlignment(IEMCPU, aMemMappingLocks, 16);
 AssertCompileMemberAlignment(IEMCPU, aBounceBuffers, 64);
+AssertCompileMemberAlignment(IEMCPU, pCurTbR3, 64);
 AssertCompileMemberAlignment(IEMCPU, DataTlb, 64);
 AssertCompileMemberAlignment(IEMCPU, CodeTlb, 64);
 
@@ -6741,6 +6787,8 @@ extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap1[1024];
 extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap2[1024];
 extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap3[1024];
 
+DECLHIDDEN(int)     iemPollTimers(PVMCC pVM, PVMCPUCC pVCpu) RT_NOEXCEPT;
+
 DECLCALLBACK(int)   iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs,
                               uint64_t cbInitialExec, uint64_t cbMaxExec, uint32_t cbChunkExec);
 void                iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb, bool fSafeToFree);
@@ -6776,6 +6824,8 @@ IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_LogCpuState);
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_DeferToCImpl0);
 
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckIrq);
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckTimers);
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckTimersAndIrq);
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckMode);
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckHwInstrBps);
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLim);
@@ -6805,6 +6855,8 @@ IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadi
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb);
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb);
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlbConsiderCsLim);
+
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_Jump);
 
 bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb);
 bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb);

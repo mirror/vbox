@@ -1602,8 +1602,9 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             if (cbDst <= cbMaxRead)
             {
                 pVCpu->iem.s.fTbCrossedPage     |= offPg == 0 || pVCpu->iem.s.fTbBranched != 0; /** @todo Spurious load effect on branch handling? */
+#  if 0 /* unused */
                 pVCpu->iem.s.GCPhysInstrBufPrev  = pVCpu->iem.s.GCPhysInstrBuf;
-
+#  endif
                 pVCpu->iem.s.offInstrNextByte = offPg + (uint32_t)cbDst;
                 pVCpu->iem.s.uInstrBufPc      = GCPtrFirst & ~(RTGCPTR)X86_PAGE_OFFSET_MASK;
                 pVCpu->iem.s.GCPhysInstrBuf   = pTlbe->GCPhys;
@@ -1696,8 +1697,9 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             /* Update the state and probably return. */
             uint32_t const offPg = (GCPtrFirst & X86_PAGE_OFFSET_MASK);
             pVCpu->iem.s.fTbCrossedPage     |= offPg == 0 || pVCpu->iem.s.fTbBranched != 0;
+#  if 0 /* unused */
             pVCpu->iem.s.GCPhysInstrBufPrev  = pVCpu->iem.s.GCPhysInstrBuf;
-
+#  endif
             pVCpu->iem.s.offCurInstrStart = (int16_t)(offPg - cbInstr);
             pVCpu->iem.s.offInstrNextByte = offPg + cbInstr + cbToRead;
             pVCpu->iem.s.cbInstrBuf       = offPg + RT_MIN(15, cbMaxRead + cbInstr) - cbToRead - cbInstr;
@@ -6290,7 +6292,7 @@ VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
                        || (WalkFast.fEffective & X86_PTE_RW)
                        || (   (    IEM_GET_CPL(pVCpu) != 3
                                || (fAccess & IEM_ACCESS_WHAT_SYS))
-                           && (pVCpu->cpum.GstCtx.cr0 & X86_CR0_WP)) )
+                           && !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_WP)) )
                     && (   (WalkFast.fEffective & X86_PTE_US)
                         || IEM_GET_CPL(pVCpu) != 3
                         || (fAccess & IEM_ACCESS_WHAT_SYS) )
@@ -7122,7 +7124,9 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, uint8_t *pbUnmapInfo, size
         pTlbe->pbMappingR3      = NULL;
         Assert(!(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_ACCESSED));
         Assert(!(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_DIRTY) || !(fAccess & IEM_ACCESS_TYPE_WRITE));
-        Assert(!(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_WRITE) || !(fAccess & IEM_ACCESS_TYPE_WRITE));
+        Assert(   !(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_WRITE)
+               || !(fAccess & IEM_ACCESS_TYPE_WRITE)
+               || (fQPage & (PGMQPAGE_F_CR0_WP0 | PGMQPAGE_F_USER_MODE)) == PGMQPAGE_F_CR0_WP0);
         Assert(   !(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_USER)
                || IEM_GET_CPL(pVCpu) != 3
                || (fAccess & IEM_ACCESS_WHAT_SYS));
@@ -7536,7 +7540,8 @@ static void *iemMemMapJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, size_t cbMem, ui
         pTlbe->GCPhys           = GCPhysPg;
         pTlbe->pbMappingR3      = NULL;
         Assert(!(pTlbe->fFlagsAndPhysRev & ((fNoWriteNoDirty & IEMTLBE_F_PT_NO_DIRTY) | IEMTLBE_F_PT_NO_ACCESSED)));
-        Assert(!(pTlbe->fFlagsAndPhysRev & fNoWriteNoDirty & IEMTLBE_F_PT_NO_WRITE));
+        Assert(   !(pTlbe->fFlagsAndPhysRev & fNoWriteNoDirty & IEMTLBE_F_PT_NO_WRITE)
+               || (fQPage & (PGMQPAGE_F_CR0_WP0 | PGMQPAGE_F_USER_MODE)) == PGMQPAGE_F_CR0_WP0);
         Assert(!(pTlbe->fFlagsAndPhysRev & fNoUser & IEMTLBE_F_PT_NO_USER));
 
         if (pTlbe != &pVCpu->iem.s.DataBreakpointTlbe)

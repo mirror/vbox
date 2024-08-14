@@ -2519,6 +2519,8 @@
 /** Recompiled execution: Debug related (hidden) EFLAGS are set and needs
  *  handling. */
 #define VINF_IEM_REEXEC_FINISH_WITH_FLAGS           (5312)
+/** Recompiled execution: Jump back in the same TB. */
+#define VINF_IEM_REEXEC_JUMP                        (5313)
 
 /** Recompilation: End translation block. */
 #define VINF_IEM_RECOMPILE_END_TB                   (5319)

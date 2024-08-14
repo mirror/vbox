@@ -144,6 +144,44 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_DeferToCImpl0)
 
 
 /**
+ * Worker for iemThreadedFunc_BltIn_CheckIrq and
+ * iemThreadedFunc_BltIn_CheckTimersAndIrqs that checks for pending FFs
+ * and IRQs, and if it's only the latter whether we can dispatch them now.
+ */
+DECL_FORCE_INLINE(int) iemThreadedFunc_BltIn_CheckIrqCommon(PVMCPUCC pVCpu)
+{
+    /* Get and mask the per-CPU FFs.*/
+    uint64_t const fCpuRaw = pVCpu->fLocalForcedActions;
+    uint64_t       fFlags  = fCpuRaw & (VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
+                                                              | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                                              | VMCPU_FF_TLB_FLUSH
+                                                              | VMCPU_FF_UNHALT ));
+
+    /* OR in VM-wide FFs and check them together. */
+    uint32_t const fVmRaw = pVCpu->CTX_SUFF(pVM)->fGlobalForcedActions;
+    fFlags |= fVmRaw;
+    if (RT_LIKELY(!fFlags))
+        return VINF_SUCCESS;
+
+    /* Since the VMCPU_FF_INTERUPT_XXX flags was once upon a time in fVm and
+       we haven't reused the bits yet, we can still reliably check whether
+       we're only here for reasons of pending interrupts and whether these
+       are supressed by EFLAGS.IF=0 or interrupt shadowing. */
+    Assert(!(fVmRaw & (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)));
+    AssertCompile((VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC) == 3);
+    if (   fFlags <= (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+        && (   !pVCpu->cpum.GstCtx.rflags.Bits.u1IF
+            || CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx)))
+        return VINF_SUCCESS;
+
+    Log(("%04x:%08RX32: Pending IRQ and/or FF: fCpu=%#RX64 fVm=%#RX32 IF=%d\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, fCpuRaw, fVmRaw, pVCpu->cpum.GstCtx.rflags.Bits.u1IF));
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckIrqBreaks);
+    return VINF_IEM_REEXEC_BREAK;
+}
+
+
+/**
  * Built-in function that checks for pending interrupts that can be delivered or
  * forced action flags.
  *
@@ -151,30 +189,41 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_DeferToCImpl0)
  * the next instruction.  If an IRQ or important FF is pending, this will return
  * a non-zero status that stops TB execution.
  */
+/** @todo add VMX / SVM variants of this. */
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckIrq)
 {
     RT_NOREF(uParam0, uParam1, uParam2);
+    return iemThreadedFunc_BltIn_CheckIrqCommon(pVCpu);
+}
 
-    /*
-     * Check for IRQs and other FFs that needs servicing.
-     */
-    uint64_t fCpu = pVCpu->fLocalForcedActions;
-    fCpu &= VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
-                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
-                                  | VMCPU_FF_TLB_FLUSH
-                                  | VMCPU_FF_UNHALT );
-    /** @todo this isn't even close to the NMI and interrupt conditions in EM! */
-    if (RT_LIKELY(   (   !fCpu
-                      || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
-                          && (   !pVCpu->cpum.GstCtx.rflags.Bits.u1IF
-                              || CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx)) ) )
-                  && !VM_FF_IS_ANY_SET(pVCpu->CTX_SUFF(pVM), VM_FF_ALL_MASK) ))
+
+/**
+ * Built-in function that works the cIrqChecksTillNextPoll counter on direct TB
+ * linking, like loop-jumps.
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckTimers)
+{
+    if (RT_LIKELY(--pVCpu->iem.s.cIrqChecksTillNextPoll > 0))
         return VINF_SUCCESS;
 
-    Log(("%04x:%08RX32: Pending IRQ and/or FF: fCpu=%#RX64 fVm=%#RX32 IF=%d\n",
-         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, fCpu,
-         pVCpu->CTX_SUFF(pVM)->fGlobalForcedActions & VM_FF_ALL_MASK, pVCpu->cpum.GstCtx.rflags.Bits.u1IF));
-    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckIrqBreaks);
+    Log(("%04x:%08RX32: Check timers\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip));
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckTimersBreaks);
+    RT_NOREF(uParam0, uParam1, uParam2);
+    return VINF_IEM_REEXEC_BREAK;
+}
+
+
+/**
+ * Combined BltIn_CheckTimers + BltIn_CheckIrq for direct linking.
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckTimersAndIrq)
+{
+    if (RT_LIKELY(--pVCpu->iem.s.cIrqChecksTillNextPoll > 0))
+        return iemThreadedFunc_BltIn_CheckIrqCommon(pVCpu);
+
+    Log(("%04x:%08RX32: Check timers\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip));
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckTimersBreaks);
+    RT_NOREF(uParam0, uParam1, uParam2);
     return VINF_IEM_REEXEC_BREAK;
 }
 
@@ -826,5 +875,16 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingT
     Assert(pVCpu->iem.s.offCurInstrStart == 0);
     BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Built-in function for jumping in the call sequence.
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_Jump)
+{
+    Assert(uParam1 == 0 && uParam2 == 0);
+    RT_NOREF(pVCpu, uParam0, uParam1, uParam2);
+    return VINF_IEM_REEXEC_JUMP;
 }
 

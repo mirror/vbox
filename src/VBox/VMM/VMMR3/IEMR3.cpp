@@ -225,6 +225,13 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         pVCpu->iem.s.DataTlb.GlobalLargePageRange.uFirstTag    = UINT64_MAX;
 #endif
 
+#ifndef VBOX_VMM_TARGET_ARMV8
+        /* Poll timers every 400 us / 2500 Hz. (source: thin air) */
+        pVCpu->iem.s.cNsIdealPollInterval       = 400U * RT_NS_1US;
+        pVCpu->iem.s.cIrqChecksTillNextPoll     = 128;
+        pVCpu->iem.s.cIrqChecksTillNextPollPrev = 128;
+#endif
+
         /*
          * Host and guest CPU information.
          */
@@ -595,6 +602,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Times threaded TB execution was interrupted/broken off on a call without lookup entries", "/IEM/CPU%u/re/cTbExecThreadedBreaksWithoutLookup", idCpu);
 # endif
 
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cIrqChecksTillNextPollPrev, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Timer polling interval",                       "/IEM/CPU%u/re/cIrqChecksTillNextPollPrev", idCpu);
+
         PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
         STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatAllocs,         STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
                         "Translation block allocations",                "/IEM/CPU%u/re/cTbAllocCalls", idCpu);
@@ -647,16 +657,19 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckIrqBreaks,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "TB breaks by CheckIrq",                        "/IEM/CPU%u/re/CheckIrqBreaks", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckTimersBreaks, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "TB breaks by CheckIrq",                        "/IEM/CPU%u/re/CheckTimersBreaks", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckModeBreaks, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "TB breaks by CheckMode",                       "/IEM/CPU%u/re/CheckModeBreaks", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckBranchMisses, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Branch target misses",                         "/IEM/CPU%u/re/CheckTbJmpMisses", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckNeedCsLimChecking, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Needing CS.LIM checking TB after branch or on page crossing", "/IEM/CPU%u/re/CheckTbNeedCsLimChecking", idCpu);
-# ifdef VBOX_WITH_STATISTICS
+
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbLoopFullTbDetected, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Detected loop full TB",  "/IEM/CPU%u/re/LoopFullTbDetected", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbLoopInTbDetected, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Detected loop within TB", "/IEM/CPU%u/re/LoopInTbDetected", idCpu);
-#endif
 
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatNativeExecMemInstrBufAllocFailed, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Number of times the exec memory allocator failed to allocate a large enough buffer",
@@ -882,6 +895,12 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitRaiseXf, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Number of times the TB finished raising a #XF exception",
                         RAISE_PREFIX "RaiseXf", idCpu);
+
+#  ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitLoopFullTb, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of full TB loops.",
+                        "/IEM/CPU%u/re/NativeTbExit/LoopFullTb", idCpu);
+#  endif
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeTbExitDirectLinking1Irq, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Direct linking #1 with IRQ check succeeded",

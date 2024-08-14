@@ -416,7 +416,7 @@ AssertCompileSizeAlignment(VMCPU, 16384);
  * action mask of a VM.
  *
  * Available VM bits:
- *      0, 1, 5, 6, 7, 13, 14, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30
+ *      5, 6, 7, 13, 14, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30
  *
  *
  * Available VMCPU bits:
@@ -426,6 +426,9 @@ AssertCompileSizeAlignment(VMCPU, 16384);
  *
  * @{
  */
+/* Bit 0, bit 1: Reserved and must not be reused.  The recompiler ASSUMES it
+   can OR the local and global FFs together and keept the two
+   VMCPU_FF_INTERRUPT_XXX flags uncorrupted.  */
 /** The virtual sync clock has been stopped, go to TM until it has been
  *  restarted... */
 #define VM_FF_TM_VIRTUAL_SYNC               RT_BIT_32(VM_FF_TM_VIRTUAL_SYNC_BIT)

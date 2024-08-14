@@ -202,6 +202,168 @@ IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_DeferToCImpl0)
 
 
 /**
+ * Worker for the CheckIrq, CheckTimers and CheckTimersAndIrq builtins below.
+ */
+template<bool const a_fCheckTimers, bool const a_fCheckIrqs>
+DECL_FORCE_INLINE(uint32_t) iemNativeRecompFunc_BltIn_CheckTimersAndIrqsCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+{
+    uint8_t const         idxEflReg  = !a_fCheckIrqs ? UINT8_MAX
+                                     : iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                                       kIemNativeGstRegUse_ReadOnly);
+    uint8_t const         idxTmpReg1 = iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const         idxTmpReg2 = a_fCheckIrqs ? iemNativeRegAllocTmp(pReNative, &off) : UINT8_MAX;
+    PIEMNATIVEINSTR const pCodeBuf   = iemNativeInstrBufEnsure(pReNative, off, RT_ARCH_VAL == RT_ARCH_VAL_AMD64 ? 72 : 32);
+
+    /*
+     * First we decrement the timer poll counter, if so desired.
+     */
+    if (a_fCheckTimers)
+    {
+# ifdef RT_ARCH_AMD64
+        /* dec  [rbx + cIrqChecksTillNextPoll] */
+        pCodeBuf[off++] = 0xff;
+        off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 1, RT_UOFFSETOF(VMCPU, iem.s.cIrqChecksTillNextPoll));
+
+        /* jz   ReturnBreakFF */
+        off = iemNativeEmitJccTbExitEx(pReNative, pCodeBuf, off, kIemNativeLabelType_ReturnBreakFF, kIemNativeInstrCond_e);
+
+# elif defined(RT_ARCH_ARM64)
+        AssertCompile(RTASSERT_OFFSET_OF(VMCPU, iem.s.cIrqChecksTillNextPoll) < _4K * sizeof(uint32_t));
+        off = iemNativeEmitLoadGprFromVCpuU32Ex(pCodeBuf, off, idxTmpReg1, RT_UOFFSETOF(VMCPU, iem.s.cIrqChecksTillNextPoll));
+        pCodeBuf[off++] = Armv8A64MkInstrSubUImm12(idxTmpReg1, idxTmpReg1, 1, false /*f64Bit*/);
+        off = iemNativeEmitStoreGprToVCpuU32Ex(pCodeBuf, off, idxTmpReg1, RT_UOFFSETOF(VMCPU, iem.s.cIrqChecksTillNextPoll));
+
+        /* cbz reg1, ReturnBreakFF */
+        off = iemNativeEmitTestIfGprIsZeroAndTbExitEx(pReNative, pCodeBuf, off, idxTmpReg1, false /*f64Bit*/,
+                                                      kIemNativeLabelType_ReturnBreakFF);
+
+# else
+#  error "port me"
+# endif
+    }
+
+    /*
+     * Second, check forced flags, if so desired.
+     *
+     * We OR them together to save a conditional.  A trick here is that the
+     * two IRQ flags are unused in the global flags, so we can still use the
+     * resulting value to check for suppressed interrupts.
+     */
+    if (a_fCheckIrqs)
+    {
+        /* Load VMCPU::fLocalForcedActions first and mask it.  We can simplify the
+           masking by ASSUMING none of the unwanted flags are located above bit 30.  */
+        uint64_t const fUnwantedCpuFFs = VMCPU_FF_PGM_SYNC_CR3
+                                       | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                       | VMCPU_FF_TLB_FLUSH
+                                       | VMCPU_FF_UNHALT;
+        AssertCompile(fUnwantedCpuFFs < RT_BIT_64(31));
+        off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, idxTmpReg1, RT_UOFFSETOF(VMCPUCC, fLocalForcedActions));
+# if defined(RT_ARCH_AMD64)
+        /* and reg1, ~fUnwantedCpuFFs */
+        pCodeBuf[off++] = idxTmpReg1 >= 8 ? X86_OP_REX_B | X86_OP_REX_W : X86_OP_REX_W;
+        pCodeBuf[off++] = 0x81;
+        pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 4, idxTmpReg1 & 7);
+        *(uint32_t *)&pCodeBuf[off] = ~(uint32_t)fUnwantedCpuFFs;
+        off += 4;
+
+# else
+        off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, idxTmpReg2, ~fUnwantedCpuFFs);
+        off = iemNativeEmitAndGprByGprEx(pCodeBuf, off, idxTmpReg1, idxTmpReg2);
+# endif
+
+        /* OR in VM::fGlobalForcedActions.  We access the member via pVCpu.
+           No need to mask anything here.  Unfortunately, it's a 32-bit
+           variable, so we can't OR it directly on x86. */
+        AssertCompile(VM_FF_ALL_MASK == UINT32_MAX);
+        intptr_t const offGlobalForcedActions = (intptr_t)&pReNative->pVCpu->CTX_SUFF(pVM)->fGlobalForcedActions
+                                              - (intptr_t)pReNative->pVCpu;
+        Assert((int32_t)offGlobalForcedActions == offGlobalForcedActions);
+
+# ifdef RT_ARCH_AMD64
+        if (idxTmpReg2 >= 8)
+            pCodeBuf[off++] = X86_OP_REX_R;
+        pCodeBuf[off++] = 0x8b; /* mov */
+        off = iemNativeEmitGprByVCpuSignedDisp(pCodeBuf, off, idxTmpReg2, (int32_t)offGlobalForcedActions);
+
+        /* or reg1, reg2 */
+        off = iemNativeEmitOrGprByGprEx(pCodeBuf, off, idxTmpReg1, idxTmpReg2);
+
+        /* jz nothing_pending */
+        uint32_t const offFixup1 = off;
+        off = iemNativeEmitJccToFixedEx(pCodeBuf, off, off + 64, kIemNativeInstrCond_e);
+
+# elif defined(RT_ARCH_ARM64)
+        off = iemNativeEmitGprBySignedVCpuLdStEx(pCodeBuf, off, idxTmpReg2, (int32_t)offGlobalForcedActions,
+                                                 kArmv8A64InstrLdStType_Ld_Word, sizeof(uint32_t));
+        off = iemNativeEmitOrGprByGprEx(pCodeBuf, off, idxTmpReg1, idxTmpReg2);
+
+        /* cbz nothing_pending */
+        uint32_t const offFixup1 = off;
+        off = iemNativeEmitTestIfGprIsZeroOrNotZeroAndJmpToFixedEx(pCodeBuf, off, idxTmpReg1, true /*f64Bit*/,
+                                                                   false /*fJmpIfNotZero*/, off + 16);
+# else
+#  error "port me"
+# endif
+
+        /* More than just IRQ FFs pending? */
+        AssertCompile((VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC) == 3);
+        /* cmp reg1, 3 */
+        off = iemNativeEmitCmpGprWithImmEx(pCodeBuf, off, idxTmpReg1, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC);
+        /* ja ReturnBreakFF */
+        off = iemNativeEmitJccTbExitEx(pReNative, pCodeBuf, off, kIemNativeLabelType_ReturnBreakFF, kIemNativeInstrCond_nbe);
+
+        /*
+         * Okay, we've only got pending IRQ related FFs: Can we dispatch IRQs?
+         *
+         * ASSUME that the shadow flags are cleared when they ought to be cleared,
+         * so we can skip the RIP check.
+         */
+        AssertCompile(CPUMCTX_INHIBIT_SHADOW < RT_BIT_32(31));
+        /* reg1 = efl & (IF | INHIBIT_SHADOW) */
+        off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, idxTmpReg1, idxEflReg, X86_EFL_IF | CPUMCTX_INHIBIT_SHADOW);
+        /* reg1 ^= IF */
+        off = iemNativeEmitXorGpr32ByImmEx(pCodeBuf, off, idxTmpReg1, X86_EFL_IF);
+
+# ifdef RT_ARCH_AMD64
+        /* jz   ReturnBreakFF */
+        off = iemNativeEmitJccTbExitEx(pReNative, pCodeBuf, off, kIemNativeLabelType_ReturnBreakFF, kIemNativeInstrCond_e);
+
+# elif defined(RT_ARCH_ARM64)
+        /* cbz  reg1, ReturnBreakFF */
+        off = iemNativeEmitTestIfGprIsZeroAndTbExitEx(pReNative, pCodeBuf, off, idxTmpReg1, false /*f64Bit*/,
+                                                      kIemNativeLabelType_ReturnBreakFF);
+# else
+#  error "port me"
+# endif
+        /*
+         * nothing_pending:
+         */
+        iemNativeFixupFixedJump(pReNative, offFixup1, off);
+    }
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    /*
+     * Cleanup.
+     */
+    iemNativeRegFreeTmp(pReNative, idxTmpReg1);
+    if (a_fCheckIrqs)
+    {
+        iemNativeRegFreeTmp(pReNative, idxTmpReg2);
+        iemNativeRegFreeTmp(pReNative, idxEflReg);
+    }
+    else
+    {
+        Assert(idxTmpReg2 == UINT8_MAX);
+        Assert(idxEflReg == UINT8_MAX);
+    }
+
+    return off;
+}
+
+
+/**
  * Built-in function that checks for pending interrupts that can be delivered or
  * forced action flags.
  *
@@ -211,89 +373,14 @@ IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_DeferToCImpl0)
  */
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
 {
-    RT_NOREF(pCallEntry);
-
     BODY_FLUSH_PENDING_WRITES();
+    off = iemNativeRecompFunc_BltIn_CheckTimersAndIrqsCommon<false, true>(pReNative, off);
 
-    /* It's too convenient to use iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet below
-       and I'm too lazy to create a 'Fixed' version of that one. */
-    uint32_t const idxLabelVmCheck = iemNativeLabelCreate(pReNative, kIemNativeLabelType_CheckIrq,
-                                                          UINT32_MAX, pReNative->uCheckIrqSeqNo++);
-
-    /* Again, we need to load the extended EFLAGS before we actually need them
-       in case we jump.  We couldn't use iemNativeRegAllocTmpForGuestReg if we
-       loaded them inside the check, as the shadow state would not be correct
-       when the code branches before the load.  Ditto PC. */
-    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
-                                                              kIemNativeGstRegUse_ReadOnly);
-
-    uint8_t const idxPcReg  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ReadOnly);
-
-    uint8_t idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
-
-    /*
-     * Start by checking the local forced actions of the EMT we're on for IRQs
-     * and other FFs that needs servicing.
-     */
-    /** @todo this isn't even close to the NMI and interrupt conditions in EM! */
-    /* Load FFs in to idxTmpReg and AND with all relevant flags. */
-    off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, fLocalForcedActions));
-    off = iemNativeEmitAndGprByImm(pReNative, off, idxTmpReg,
-                                   VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
-                                                         | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
-                                                         | VMCPU_FF_TLB_FLUSH
-                                                         | VMCPU_FF_UNHALT ),
-                                   true /*fSetFlags*/);
-    /* If we end up with ZERO in idxTmpReg there is nothing to do.*/
-    uint32_t const offFixupJumpToVmCheck1 = off;
-    off = iemNativeEmitJzToFixed(pReNative, off, off /* ASSUME jz rel8 suffices */);
-
-    /* Some relevant FFs are set, but if's only APIC or/and PIC being set,
-       these may be supressed by EFLAGS.IF or CPUMIsInInterruptShadow. */
-    off = iemNativeEmitAndGprByImm(pReNative, off, idxTmpReg,
-                                   ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC), true /*fSetFlags*/);
-    /* Return VINF_IEM_REEXEC_BREAK if other FFs are set. */
-    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeLabelType_ReturnBreakFF);
-
-    /* So, it's only interrupt releated FFs and we need to see if IRQs are being
-       suppressed by the CPU or not. */
-    off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxEflReg, X86_EFL_IF_BIT, idxLabelVmCheck);
-    off = iemNativeEmitTestAnyBitsInGprAndTbExitIfNoneSet(pReNative, off, idxEflReg, CPUMCTX_INHIBIT_SHADOW,
-                                                          kIemNativeLabelType_ReturnBreakFF);
-
-    /* We've got shadow flags set, so we must check that the PC they are valid
-       for matches our current PC value. */
-    /** @todo AMD64 can do this more efficiently w/o loading uRipInhibitInt into
-     *        a register. */
-    off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.uRipInhibitInt));
-    off = iemNativeEmitTestIfGprNotEqualGprAndTbExit(pReNative, off, idxTmpReg, idxPcReg,
-                                                     kIemNativeLabelType_ReturnBreakFF);
-
-    /*
-     * Now check the force flags of the VM.
-     */
-    iemNativeLabelDefine(pReNative, idxLabelVmCheck, off);
-    iemNativeFixupFixedJump(pReNative, offFixupJumpToVmCheck1, off);
-    off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, CTX_SUFF(pVM))); /* idxTmpReg = pVM */
-    off = iemNativeEmitLoadGprByGprU32(pReNative, off, idxTmpReg, idxTmpReg, RT_UOFFSETOF(VMCC, fGlobalForcedActions));
-    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxTmpReg, VM_FF_ALL_MASK, true /*fSetFlags*/);
-    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeLabelType_ReturnBreakFF);
-
-    /** @todo STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckIrqBreaks); */
-
-    /*
-     * We're good, no IRQs or FFs pending.
-     */
-    iemNativeRegFreeTmp(pReNative, idxTmpReg);
-    iemNativeRegFreeTmp(pReNative, idxEflReg);
-    iemNativeRegFreeTmp(pReNative, idxPcReg);
-
-    /*
-     * Note down that we've been here, so we can skip FFs + IRQ checks when
-     * doing direct linking.
-     */
+    /* Note down that we've been here, so we can skip FFs + IRQ checks when
+       doing direct linking. */
 #ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
     pReNative->idxLastCheckIrqCallNo = pReNative->idxCurCall;
+    RT_NOREF(pCallEntry);
 #else
     pReNative->idxLastCheckIrqCallNo = pCallEntry - pReNative->pTbOrg->Thrd.paCalls;
 #endif
@@ -302,6 +389,42 @@ IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
 }
 
 IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckIrq)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    IEM_LIVENESS_RAW_EFLAGS_ONE_INPUT(pOutgoing, fEflOther);
+    RT_NOREF(pCallEntry);
+}
+
+
+/**
+ * Built-in function that works the cIrqChecksTillNextPoll counter on direct TB
+ * linking, like loop-jumps.
+ */
+IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckTimers)
+{
+    BODY_FLUSH_PENDING_WRITES();
+    RT_NOREF(pCallEntry);
+    return iemNativeRecompFunc_BltIn_CheckTimersAndIrqsCommon<true, false>(pReNative, off);
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckTimers)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    RT_NOREF(pCallEntry);
+}
+
+
+/**
+ * Combined BltIn_CheckTimers + BltIn_CheckIrq for direct linking.
+ */
+IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckTimersAndIrq)
+{
+    BODY_FLUSH_PENDING_WRITES();
+    RT_NOREF(pCallEntry);
+    return iemNativeRecompFunc_BltIn_CheckTimersAndIrqsCommon<true, true>(pReNative, off);
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckTimersAndIrq)
 {
     IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
     IEM_LIVENESS_RAW_EFLAGS_ONE_INPUT(pOutgoing, fEflOther);
@@ -2291,4 +2414,51 @@ IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckOpcodesOnNew
     RT_NOREF(pCallEntry);
 }
 #endif
+
+
+/**
+ * Built-in function for jumping in the call sequence.
+ */
+IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_Jump)
+{
+    PCIEMTB const  pTb         = pReNative->pTbOrg;
+    Assert(pCallEntry->auParams[1] == 0 && pCallEntry->auParams[2] == 0);
+    Assert(pCallEntry->auParams[0] < pTb->Thrd.cCalls);
+#if 1
+    RT_NOREF(pCallEntry, pTb);
+
+# ifdef VBOX_WITH_STATISTICS
+    /* Increment StatNativeTbExitLoopFullTb. */
+    uint32_t const offStat = RT_UOFFSETOF(VMCPU, iem.s.StatNativeTbExitLoopFullTb);
+#  ifdef RT_ARCH_AMD64
+    off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, UINT8_MAX, UINT8_MAX, offStat);
+#  else
+    uint8_t const idxStatsTmp1 = iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const idxStatsTmp2 = iemNativeRegAllocTmp(pReNative, &off);
+    off = iemNativeEmitIncStamCounterInVCpu(pReNative, off, idxStatsTmp1, idxStatsTmp2, offStat);
+    iemNativeRegFreeTmp(pReNative, idxStatsTmp1);
+    iemNativeRegFreeTmp(pReNative, idxStatsTmp2);
+#  endif
+# endif
+# ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    /** @todo
+    off = iemNativeEmitAddU32CounterInVCpuEx(pReNative, off, pTb->cInstructions, RT_UOFFSETOF(VMCPUCC, iem.s.cInstructions));
+    */
+# endif
+
+    /* Jump to the start of the TB. */
+    uint32_t idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_LoopJumpTarget);
+    AssertStmt(idxLabel < pReNative->cLabels, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_IPE_6)); /** @todo better status */
+    return iemNativeEmitJmpToLabel(pReNative, off, idxLabel);
+#else
+    RT_NOREF(pReNative, pCallEntry, pTb);
+    return off;
+#endif
+}
+
+IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_Jump)
+{
+    IEM_LIVENESS_RAW_INIT_WITH_XCPT_OR_CALL(pOutgoing, pIncoming);
+    RT_NOREF(pCallEntry);
+}
 

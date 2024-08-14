@@ -233,7 +233,7 @@
         pCall->cbOpcode    = cbInstrMc2; \
         pCall->offOpcode   = offOpcodeMc2; \
         pCall->uTbLookup   = 0; \
-        pCall->uUnused0    = 0; \
+        pCall->fFlags      = 0; \
         pCall->auParams[0] = 0; \
         pCall->auParams[1] = 0; \
         pCall->auParams[2] = 0; \
@@ -249,7 +249,7 @@
         pCall->cbOpcode    = cbInstrMc2; \
         pCall->offOpcode   = offOpcodeMc2; \
         pCall->uTbLookup   = 0; \
-        pCall->uUnused0    = 0; \
+        pCall->fFlags      = 0; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = 0; \
         pCall->auParams[2] = 0; \
@@ -266,7 +266,7 @@
         pCall->cbOpcode    = cbInstrMc2; \
         pCall->offOpcode   = offOpcodeMc2; \
         pCall->uTbLookup   = 0; \
-        pCall->uUnused0    = 0; \
+        pCall->fFlags      = 0; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = a_uArg1; \
         pCall->auParams[2] = 0; \
@@ -284,7 +284,7 @@
         pCall->offOpcode   = offOpcodeMc2; \
         pCall->cbOpcode    = cbInstrMc2; \
         pCall->uTbLookup   = 0; \
-        pCall->uUnused0    = 0; \
+        pCall->fFlags      = 0; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = a_uArg1; \
         pCall->auParams[2] = a_uArg2; \
@@ -301,7 +301,7 @@
         pCall->offOpcode   = offOpcodeMc2; \
         pCall->uTbLookup   = IEM_TB_LOOKUP_TAB_MAKE(pTb->cTbLookupEntries, a_fLargeTbLookup); \
         pTb->cTbLookupEntries += !(a_fLargeTbLookup) ? 1 : IEM_TB_LOOKUP_TAB_LARGE_SIZE; \
-        pCall->uUnused0    = 0; \
+        pCall->fFlags      = 0; \
         pCall->auParams[0] = 0; \
         pCall->auParams[1] = 0; \
         pCall->auParams[2] = 0; \
@@ -318,7 +318,7 @@
         pCall->offOpcode   = offOpcodeMc2; \
         pCall->uTbLookup   = IEM_TB_LOOKUP_TAB_MAKE(pTb->cTbLookupEntries, a_fLargeTbLookup); \
         pTb->cTbLookupEntries += !(a_fLargeTbLookup) ? 1 : IEM_TB_LOOKUP_TAB_LARGE_SIZE; \
-        pCall->uUnused0    = 0; \
+        pCall->fFlags      = 0; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = 0; \
         pCall->auParams[2] = 0; \
@@ -336,7 +336,7 @@
         pCall->offOpcode   = offOpcodeMc2; \
         pCall->uTbLookup   = IEM_TB_LOOKUP_TAB_MAKE(pTb->cTbLookupEntries, a_fLargeTbLookup); \
         pTb->cTbLookupEntries += !(a_fLargeTbLookup) ? 1 : IEM_TB_LOOKUP_TAB_LARGE_SIZE; \
-        pCall->uUnused0    = 0; \
+        pCall->fFlags      = 0; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = a_uArg1; \
         pCall->auParams[2] = 0; \
@@ -355,7 +355,7 @@
         pCall->offOpcode   = offOpcodeMc2; \
         pCall->uTbLookup   = IEM_TB_LOOKUP_TAB_MAKE(pTb->cTbLookupEntries, a_fLargeTbLookup); \
         pTb->cTbLookupEntries += !(a_fLargeTbLookup) ? 1 : IEM_TB_LOOKUP_TAB_LARGE_SIZE; \
-        pCall->uUnused0    = 0; \
+        pCall->fFlags      = 0; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = a_uArg1; \
         pCall->auParams[2] = a_uArg2; \
