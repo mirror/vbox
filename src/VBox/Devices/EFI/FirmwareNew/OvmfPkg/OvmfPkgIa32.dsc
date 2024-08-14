@@ -944,7 +944,6 @@
   OvmfPkg/VirtioGpuDxe/VirtioGpu.inf
   OvmfPkg/VirtHstiDxe/VirtHstiDxe.inf
 !else
- VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
  VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf {
     <LibraryClasses>
       PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
