@@ -68,7 +68,11 @@
 #  define PAGE_SIZE         16384
 # elif defined(RT_OS_LINUX)
 #  ifdef IN_RING0
-#   define PAGE_SIZE        (1 << CONFIG_ARM64_PAGE_SHIFT)
+#   if RTLNX_VER_MIN(6,9,0)
+#    define PAGE_SIZE        (1 << CONFIG_PAGE_SHIFT)
+#   else
+#    define PAGE_SIZE        (1 << CONFIG_ARM64_PAGE_SHIFT)
+#   endif
 #  elif defined(IPRT_STATIC_ARM64_PAGE_SHIFT)
 #   define PAGE_SIZE        (1 << IPRT_STATIC_ARM64_PAGE_SHIFT)
 #  else
@@ -94,7 +98,11 @@
 #  define PAGE_SHIFT        14
 # elif defined(RT_OS_LINUX)
 #  ifdef IN_RING0
-#   define PAGE_SHIFT       CONFIG_ARM64_PAGE_SHIFT
+#   if RTLNX_VER_MIN(6,9,0)
+#    define PAGE_SHIFT       CONFIG_PAGE_SHIFT
+#   else
+#    define PAGE_SHIFT       CONFIG_ARM64_PAGE_SHIFT
+#   endif
 #  elif defined(IPRT_STATIC_ARM64_PAGE_SHIFT)
 #   define PAGE_SHIFT       IPRT_STATIC_ARM64_PAGE_SHIFT
 #  else
