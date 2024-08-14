@@ -10673,5 +10673,150 @@ IEM_CIMPL_DEF_4(iemCImpl_vpmaskmovq_store_u256, uint8_t, iEffSeg, RTGCPTR, GCPtr
 }
 
 
+/**
+ * Worker for 'VGATHERcxx' / 'VPGATHERxx' masked loads.
+ *
+ * @param   u32PackedArgs   Arguments packed to the tune of IEMGATHERARGS.
+ * @param   u32Disp         The address displacement for the indices.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_vpgather_worker_xx, uint32_t, u32PackedArgs, uint32_t, u32Disp)
+{
+    IEMGATHERARGS const PackedArgs = { u32PackedArgs };
+    int32_t const       offDisp    = (int32_t)u32Disp;
+
+    if (PackedArgs.s.iYRegDst == PackedArgs.s.iYRegIdc ||
+        PackedArgs.s.iYRegIdc == PackedArgs.s.iYRegMsk ||
+        PackedArgs.s.iYRegDst == PackedArgs.s.iYRegMsk)   return iemRaiseUndefinedOpcode(pVCpu);
+
+    Assert(PackedArgs.s.enmEffOpSize <= IEMMODE_64BIT);
+    Assert(PackedArgs.s.enmEffAddrMode <= IEMMODE_64BIT);
+
+    uint32_t const cbMaxWidth = PackedArgs.s.fVex256  ? 32 : 16; /* Width of widest XMM / YMM register we will use: 32 or 16 */
+    uint32_t const cbIdxWidth = PackedArgs.s.fIdxQword ? 8 : 4;  /* Width of one index: 4-byte dword or 8-byte qword */
+    uint32_t const cbValWidth = PackedArgs.s.fValQword ? 8 : 4;  /* Width of one value: 4-byte dword or 8-byte qword */
+    uint32_t const cMasks     = cbMaxWidth / cbValWidth;         /* Count of masks:   8 or 4 or 2 */
+    uint32_t const cIndices   = cbMaxWidth / cbIdxWidth;         /* Count of indices: 8 or 4 or 2 */
+    uint32_t const cValues    = RT_MIN(cMasks, cIndices);        /* Count of values to gather: 8 or 4 or 2 */
+    Assert(cValues == 2 || cValues == 4 || cValues == 8);
+    uint32_t const cbDstWidth = cValues * cbValWidth;   /* Width of the destination & mask XMM / YMM registers: 32 or 16 or 8 */
+    Assert(cbDstWidth == 8 || cbDstWidth == 16 || cbDstWidth == 32);
+
+    /*
+     * Get the base pointer.
+     */
+    uint64_t u64Base = iemGRegFetchU64(pVCpu, PackedArgs.s.iGRegBase);
+    if (PackedArgs.s.enmEffAddrMode != IEMMODE_64BIT)
+        u64Base &= (PackedArgs.s.enmEffAddrMode == IEMMODE_16BIT ? UINT16_MAX : UINT32_MAX);
+
+    PRTUINT128U const apuDst[2] =
+    {
+        &pVCpu->cpum.GstCtx.XState.x87.aXMM[PackedArgs.s.iYRegDst].uXmm,
+        &pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[PackedArgs.s.iYRegDst].uXmm
+    };
+    PCRTUINT128U const apuIdc[2] =
+    {
+        &pVCpu->cpum.GstCtx.XState.x87.aXMM[PackedArgs.s.iYRegIdc].uXmm,
+        &pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[PackedArgs.s.iYRegIdc].uXmm
+    };
+    PRTUINT128U const apuMsk[2] =
+    {
+        &pVCpu->cpum.GstCtx.XState.x87.aXMM[PackedArgs.s.iYRegMsk].uXmm,
+        &pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[PackedArgs.s.iYRegMsk].uXmm
+    };
+
+    /*
+     * Convert the masks to all-0s or all-1s, writing back to the mask
+     * register so it will have the correct value if subsequent memory
+     * accesses fault.  Note that cMasks can be larger than cValues, in
+     * the Qword-index, Dword-value instructions `vgatherqps' and
+     * `vpgatherqd'.  Updating the masks for as many masks as *would*
+     * have been used if the destination register were wide enough --
+     * is the observed behavior of a Core i7-10700.
+     */
+    if (!PackedArgs.s.fValQword)
+        for (uint32_t i = 0; i < cMasks; i++)
+            apuMsk[(i >> 2) & 1]->ai32[i & 3] >>= 31; /* Use arithmetic shift right (SAR/ASR) */
+    else
+        for (uint32_t i = 0; i < cMasks; i++)
+            apuMsk[(i >> 1) & 1]->ai64[i & 1] >>= 63; /* Use arithmetic shift right (SAR/ASR) */
+
+    /*
+     * Zero upper bits of mask if VEX128.
+     */
+    if (!PackedArgs.s.fVex256)
+    {
+        apuMsk[1]->au64[0] = 0;
+        apuMsk[1]->au64[1] = 0;
+    }
+
+    /*
+     * Gather the individual values, as masked.
+     */
+    for (uint32_t i = 0; i < cValues; i++)
+    {
+        /*
+         * Consult the mask determined above.
+         */
+        if (  !PackedArgs.s.fValQword
+            ? apuMsk[(i >> 2) & 1]->au32[i & 3] != 0
+            : apuMsk[(i >> 1) & 1]->au64[i & 1] != 0)
+        {
+            /*
+             * Get the index, scale it, add scaled index + offset to the base pointer.
+             */
+            int64_t offIndex;
+            if (!PackedArgs.s.fIdxQword)
+                offIndex = apuIdc[(i >> 2) & 1]->ai32[i & 3];
+            else
+                offIndex = apuIdc[(i >> 1) & 1]->ai64[i & 1];
+            offIndex <<= PackedArgs.s.iScale;
+            offIndex  += offDisp;
+
+            uint64_t u64Addr = u64Base + offIndex;
+            if (PackedArgs.s.enmEffAddrMode != IEMMODE_64BIT)
+                u64Addr &= UINT32_MAX;
+
+            /*
+             * Gather it -- fetch this gather-item from guest memory.
+             */
+            VBOXSTRICTRC rcStrict;
+            if (!PackedArgs.s.fValQword)
+                rcStrict = iemMemFetchDataU32NoAc(pVCpu, &apuDst[(i >> 2) & 1]->au32[i & 3], PackedArgs.s.iEffSeg, u64Addr);
+            else
+                rcStrict = iemMemFetchDataU64NoAc(pVCpu, &apuDst[(i >> 1) & 1]->au64[i & 1], PackedArgs.s.iEffSeg, u64Addr);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+
+            /*
+             * Now that we *didn't* fault, write all-0s to that part of the mask register.
+             */
+            if (!PackedArgs.s.fValQword)
+                apuMsk[(i >> 2) & 1]->au32[i & 3] = 0;
+            else
+                apuMsk[(i >> 1) & 1]->au64[i & 1] = 0;
+            /** @todo How is data breakpoints handled? The intel docs kind of hints they
+             *        may be raised here... */
+        }
+    }
+
+    /*
+     * Zero upper bits of destination and mask.
+     */
+    if (cbDstWidth != 32)
+    {
+        apuDst[1]->au64[0] = 0;
+        apuDst[1]->au64[1] = 0;
+        apuMsk[1]->au64[0] = 0;
+        apuMsk[1]->au64[1] = 0;
+        if (cbDstWidth == 8)
+        {
+            apuDst[0]->au64[1] = 0;
+            apuMsk[0]->au64[1] = 0;
+        }
+    }
+
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
 /** @} */
 

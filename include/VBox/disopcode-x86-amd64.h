@@ -924,6 +924,10 @@ enum OPCODESX86
     OP_VFNMSUB231PS,
     OP_VFNMSUB231SS,
     OP_VGATHER,
+    OP_VGATHERDPS,
+    OP_VGATHERDPD,
+    OP_VGATHERQPS,
+    OP_VGATHERQPD,
     OP_VHADDPD,
     OP_VHADDPS,
     OP_VHSUBPD,
@@ -1027,6 +1031,10 @@ enum OPCODESX86
     OP_VPEXTRD,
     OP_VPEXTRW,
     OP_VPEXTRQ,
+    OP_VPGATHERDD,
+    OP_VPGATHERDQ,
+    OP_VPGATHERQD,
+    OP_VPGATHERQQ,
     OP_VPHADDD,
     OP_VPHADDSW,
     OP_VPHADDW,
@@ -1086,6 +1094,7 @@ enum OPCODESX86
     OP_VPSLLQ,
     OP_VPSLLDQ,
     OP_VPSLLVD,
+    OP_VPSLLVQ,
     OP_VPSLLW,
     OP_VPSRAD,
     OP_VPSRAVD,
@@ -1094,6 +1103,7 @@ enum OPCODESX86
     OP_VPSRLDQ,
     OP_VPSRLQ,
     OP_VPSRLVD,
+    OP_VPSRLVQ,
     OP_VPSRLW,
     OP_VPSUBB,
     OP_VPSUBD,
@@ -1407,6 +1417,7 @@ enum OP_PARM
 #define OP_PARM_My              (OP_PARM_M+OP_PARM_y)
 #define OP_PARM_Mps             (OP_PARM_M+OP_PARM_ps)
 #define OP_PARM_Mpd             (OP_PARM_M+OP_PARM_pd)
+#define OP_PARM_MVx             (OP_PARM_M+OP_PARM_x) /**< VSIB encoding. AMD uses 'M*x'. @todo add a OP_PARM_VSIB or smth. */
 #define OP_PARM_Ob              (OP_PARM_O+OP_PARM_b)
 #define OP_PARM_Ov              (OP_PARM_O+OP_PARM_v)
 #define OP_PARM_Pq              (OP_PARM_P+OP_PARM_q)
@@ -1468,12 +1479,14 @@ enum OP_PARM
 #define OP_PARM_M_RW            OP_PARM_M               /**< Annotates read-write memory of variable operand size (xsave). */
 #define OP_PARM_Mb_RO           OP_PARM_Mb              /**< Annotates read only memory byte operand. */
 #define OP_PARM_Md_RO           OP_PARM_Md              /**< Annotates read only memory operand. */
+#define OP_PARM_MVx_RO          OP_PARM_MVx             /**< Annotates read only memory operand. */
 #define OP_PARM_Md_WO           OP_PARM_Md              /**< Annotates write only memory operand. */
 #define OP_PARM_Mdq_WO          OP_PARM_Mdq             /**< Annotates write only memory operand. */
 #define OP_PARM_Mq_WO           OP_PARM_Mq              /**< Annotates write only memory quad word operand. */
 #define OP_PARM_Mps_WO          OP_PARM_Mps             /**< Annotates write only memory operand. */
 #define OP_PARM_Mpd_WO          OP_PARM_Mpd             /**< Annotates write only memory operand. */
-#define OP_PARM_Mx_WO           OP_PARM_Mx             /**< Annotates write only memory operand. */
+#define OP_PARM_Mx_WO           OP_PARM_Mx              /**< Annotates write only memory operand. */
+#define OP_PARM_MVx_WO          OP_PARM_MVx             /**< Annotates write only memory operand. */
 #define OP_PARM_PdZx_WO         OP_PARM_Pd              /**< Annotates write only operand and zero extends to 64-bit. */
 #define OP_PARM_Pq_WO           OP_PARM_Pq              /**< Annotates write only operand. */
 #define OP_PARM_Qq_WO           OP_PARM_Qq              /**< Annotates write only operand. */

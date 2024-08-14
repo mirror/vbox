@@ -6198,8 +6198,10 @@ VBOXSTRICTRC    iemOpcodeGetNextU64Slow(PVMCPUCC pVCpu, uint64_t *pu64) RT_NOEXC
 VBOXSTRICTRC    iemMemFetchDataU8(PVMCPUCC pVCpu, uint8_t *pu8Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemFetchDataU16(PVMCPUCC pVCpu, uint16_t *pu16Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemFetchDataU32(PVMCPUCC pVCpu, uint32_t *pu32Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT;
+VBOXSTRICTRC    iemMemFetchDataU32NoAc(PVMCPUCC pVCpu, uint32_t *pu32Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemFetchDataU32_ZX_U64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemFetchDataU64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT;
+VBOXSTRICTRC    iemMemFetchDataU64NoAc(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemFetchDataU64AlignedU128(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemFetchDataR80(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemFetchDataD80(PVMCPUCC pVCpu, PRTPBCD80U pd80Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT;
@@ -6508,6 +6510,7 @@ IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovq_load_u128, uint8_t, iXRegDst, uint8_t, iXR
 IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovq_load_u256, uint8_t, iYRegDst, uint8_t, iYRegMsk, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
 IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovq_store_u128, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iXRegMsk, uint8_t, iXRegSrc);
 IEM_CIMPL_PROTO_4(iemCImpl_vpmaskmovq_store_u256, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, uint8_t, iYRegMsk, uint8_t, iYRegSrc);
+IEM_CIMPL_PROTO_2(iemCImpl_vpgather_worker_xx, uint32_t, u32PackedArgs, uint32_t, u32Disp);
 
 /** @} */
 
@@ -6820,6 +6823,29 @@ void                iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb) R
 DECLASM(DECL_NO_RETURN(void)) iemNativeTbLongJmp(void *pvFramePointer, int rc) RT_NOEXCEPT;
 DECLHIDDEN(struct IEMNATIVEPERCHUNKCTX const *) iemExecMemGetTbChunkCtx(PVMCPU pVCpu, PCIEMTB pTb);
 DECLHIDDEN(struct IEMNATIVEPERCHUNKCTX const *) iemNativeRecompileAttachExecMemChunkCtx(PVMCPU pVCpu, uint32_t idxChunk);
+
+/** Packed 32-bit argument for iemCImpl_vpgather_worker_xx. */
+typedef union IEMGATHERARGS
+{
+    /** Integer view. */
+    uint32_t u;
+    /** Bitfield view. */
+    struct
+    {
+        uint32_t iYRegDst       : 4; /**<  0 - XMM or YMM register number (destination) */
+        uint32_t iYRegIdc       : 4; /**<  4 - XMM or YMM register number (indices)     */
+        uint32_t iYRegMsk       : 4; /**<  8 - XMM or YMM register number (mask)        */
+        uint32_t iGRegBase      : 4; /**< 12 - general register number    (base ptr)    */
+        uint32_t iScale         : 2; /**< 16 - scale factor               (1/2/4/8)     */
+        uint32_t enmEffOpSize   : 2; /**< 18 - operand size               (16/32/64/--) */
+        uint32_t enmEffAddrMode : 2; /**< 20 - addressing  mode           (16/32/64/--) */
+        uint32_t iEffSeg        : 3; /**< 22 - effective segment (ES/CS/SS/DS/FS/GS)    */
+        uint32_t fVex256        : 1; /**< 25 - overall instruction width (128/256 bits) */
+        uint32_t fIdxQword      : 1; /**< 26 - individual index width     (4/8 bytes)   */
+        uint32_t fValQword      : 1; /**< 27 - individual value width     (4/8 bytes)   */
+    } s;
+} IEMGATHERARGS;
+AssertCompileSize(IEMGATHERARGS, sizeof(uint32_t));
 
 #endif /* !RT_IN_ASSEMBLER - ASM-NOINC-END */
 

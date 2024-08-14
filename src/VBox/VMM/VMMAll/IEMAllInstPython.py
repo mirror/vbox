@@ -289,6 +289,9 @@ g_kdOpTypes = {
     'Mpd_WO':       ( 'IDX_UseModRM',       'rm',     '%Mpd', 'Mpd',     'MEM',   ),
     'Mx':           ( 'IDX_UseModRM',       'rm',     '%Mx',  'Mx',      'MEM',   ),
     'Mx_WO':        ( 'IDX_UseModRM',       'rm',     '%Mx',  'Mx',      'MEM',   ),
+    'MVx':          ( 'IDX_UseModRM',       'rm',     '%MVx', 'MVx',     'MEM',   ), ##< VSIB only. 'V' is '*' in AMD manuals.
+    'MVx_RO':       ( 'IDX_UseModRM',       'rm',     '%MVx', 'MVx',     'MEM',   ), ##< VSIB only.
+    'MVx_WO':       ( 'IDX_UseModRM',       'rm',     '%MVx', 'MVx',     'MEM',   ), ##< VSIB only.
     'M_RO':         ( 'IDX_UseModRM',       'rm',     '%M',   'M',       'MEM',   ),
     'M_RW':         ( 'IDX_UseModRM',       'rm',     '%M',   'M',       'MEM',   ),
 

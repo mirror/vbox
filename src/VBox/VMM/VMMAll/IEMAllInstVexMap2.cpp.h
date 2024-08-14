@@ -1563,15 +1563,18 @@ FNIEMOP_DEF(iemOp_vphminposuw_Vdq_Wdq)
 /** Opcode VEX.66.0F38 0x45. */
 FNIEMOP_DEF(iemOp_vpsrlvd_q_Vx_Hx_Wx)
 {
-    IEMOP_MNEMONIC3(VEX_RVM, VPSRLVD, vpsrlvd, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
     {
+        IEMOP_MNEMONIC3(VEX_RVM, VPSRLVQ, vpsrlvq, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
         IEMOPMEDIAOPTF3_INIT_VARS(vpsrlvq);
         return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
     }
     else
     {
+        /**
+         * @opdone
+         */
+        IEMOP_MNEMONIC3(VEX_RVM, VPSRLVD, vpsrlvd, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
         IEMOPMEDIAOPTF3_INIT_VARS(vpsrlvd);
         return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
     }
@@ -1590,15 +1593,18 @@ FNIEMOP_DEF(iemOp_vpsravd_Vx_Hx_Wx)
 /** Opcode VEX.66.0F38 0x47. */
 FNIEMOP_DEF(iemOp_vpsllvd_q_Vx_Hx_Wx)
 {
-    IEMOP_MNEMONIC3(VEX_RVM, VPSLLVD, vpsllvd, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
-
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
     {
+        IEMOP_MNEMONIC3(VEX_RVM, VPSLLVQ, vpsllvq, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
         IEMOPMEDIAOPTF3_INIT_VARS(vpsllvq);
         return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
     }
     else
     {
+        /**
+         * @opdone
+         */
+        IEMOP_MNEMONIC3(VEX_RVM, VPSLLVD, vpsllvd, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
         IEMOPMEDIAOPTF3_INIT_VARS(vpsllvd);
         return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
     }
@@ -2149,7 +2155,6 @@ FNIEMOP_DEF(iemOp_vpmaskmovd_q_Vx_Hx_Mx)
 
 
 /*  Opcode VEX.66.0F38 0x8d - invalid. */
-/** Opcode VEX.66.0F38 0x8e. */
 
 
 /** Opcode VEX.66.0F38 0x8e. */
@@ -2261,14 +2266,112 @@ FNIEMOP_DEF(iemOp_vpmaskmovd_q_Mx_Vx_Hx)
 
 /*  Opcode VEX.66.0F38 0x8f - invalid. */
 
+
+/**
+ * Common worker for xxgatherxx AVX2 instructions
+ */
+FNIEMOP_DEF_1(iemOpCommonAvx2Gather_Vx_Hx_Wx, bool, fIdxQword)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+        IEMOP_RAISE_INVALID_OPCODE_RET(); /* no register form */
+
+    /* Doing a partial IEM_MC_CALC_RM_EFF_ADDR by hand here.  It is simplified
+       by (V)SIB being a hard requirement. */
+    if ((bRm & X86_MODRM_RM_MASK) != 4 /*VSIB*/)
+        IEMOP_RAISE_INVALID_OPCODE_RET();
+
+    uint8_t bSib; IEM_OPCODE_GET_NEXT_U8(&bSib);
+
+    uint32_t u32Disp = 0; /* Should've been 'offDisp', but python script needs the 'u32' type hint to cope. */
+    if ((bRm & X86_MODRM_MOD_MASK) == (X86_MOD_MEM1 << X86_MODRM_MOD_SHIFT))
+        IEM_OPCODE_GET_NEXT_S8_SX_U32(&u32Disp);
+    else if ((bRm & X86_MODRM_MOD_MASK) == (X86_MOD_MEM4 << X86_MODRM_MOD_SHIFT))
+        IEM_OPCODE_GET_NEXT_U32(&u32Disp);
+
+    /* We pack arguments into a single 32-bit value, because passing them individually
+       would greatly exceed the max number of arguments the code generator can handle. */
+    IEMGATHERARGS PackedArgs = {0};
+    PackedArgs.s.iYRegDst       = IEM_GET_MODRM_REG(pVCpu, bRm);
+    PackedArgs.s.iYRegIdc       = ((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK) | pVCpu->iem.s.uRexIndex;
+    PackedArgs.s.iYRegMsk       = IEM_GET_EFFECTIVE_VVVV(pVCpu);
+    PackedArgs.s.iGRegBase      = (bSib & X86_SIB_BASE_MASK) | pVCpu->iem.s.uRexB;
+    PackedArgs.s.iEffSeg        = pVCpu->iem.s.iEffSeg;
+    if (   (PackedArgs.s.iGRegBase == X86_GREG_xSP || PackedArgs.s.iGRegBase == X86_GREG_xBP)
+        && !(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SEG_MASK))
+        PackedArgs.s.iEffSeg    = X86_SREG_SS;
+    PackedArgs.s.iScale         = (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
+    PackedArgs.s.enmEffOpSize   = pVCpu->iem.s.enmEffOpSize;
+    PackedArgs.s.enmEffAddrMode = pVCpu->iem.s.enmEffAddrMode;
+    PackedArgs.s.fVex256        = pVCpu->iem.s.uVexLength;
+    PackedArgs.s.fIdxQword      = fIdxQword;
+    PackedArgs.s.fValQword      = (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) ? 1 : 0;
+
+    uint32_t const u32PackedArgs = PackedArgs.u; /* Workaround: Python gets confused if we directly use 'PackedArgs.u' below. */
+
+    /* Call the C helper: */
+    IEM_MC_BEGIN(IEM_MC_F_NOT_286_OR_OLDER, 0);
+    IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2);
+    IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+    IEM_MC_PREPARE_AVX_USAGE();
+    IEM_MC_ARG_CONST(uint32_t, u32PackedArgsArg, u32PackedArgs, 0);
+    IEM_MC_ARG_CONST(uint32_t, u32DispArg,       u32Disp,       1);
+    IEM_MC_CALL_CIMPL_2(0, 0, iemCImpl_vpgather_worker_xx, u32PackedArgsArg, u32DispArg);
+    IEM_MC_END();
+}
+
 /** Opcode VEX.66.0F38 0x90 (vex only). */
-FNIEMOP_STUB(iemOp_vpgatherdd_q_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpgatherdd_q_Vx_Hx_Wx)
+{
+    if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
+        IEMOP_MNEMONIC3(VEX_RMV_MEM, VPGATHERDQ, vpgatherdq, Vx, MVx, Hx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0); /** @todo? */
+    else
+        /**
+         * @opdone
+         */
+        IEMOP_MNEMONIC3(VEX_RMV_MEM, VPGATHERDD, vpgatherdd, Vx, MVx, Hx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0); /** @todo? */
+    return FNIEMOP_CALL_1(iemOpCommonAvx2Gather_Vx_Hx_Wx, 0);
+}
+
 /** Opcode VEX.66.0F38 0x91 (vex only). */
-FNIEMOP_STUB(iemOp_vpgatherqd_q_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpgatherqd_q_Vx_Hx_Wx)
+{
+    if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
+        IEMOP_MNEMONIC3(VEX_RMV_MEM, VPGATHERQQ, vpgatherqq, Vx, MVx, Hx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0); /** @todo? */
+    else
+        /**
+         * @opdone
+         */
+        IEMOP_MNEMONIC3(VEX_RMV_MEM, VPGATHERQD, vpgatherqd, Vx, MVx, Hx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0); /** @todo? */
+    return FNIEMOP_CALL_1(iemOpCommonAvx2Gather_Vx_Hx_Wx, 1);
+}
+
 /** Opcode VEX.66.0F38 0x92 (vex only). */
-FNIEMOP_STUB(iemOp_vgatherdps_d_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vgatherdps_d_Vx_Hx_Wx)
+{
+    if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
+        IEMOP_MNEMONIC3(VEX_RMV_MEM, VGATHERDPD, vgatherdpd, Vx, MVx, Hx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0); /** @todo? */
+    else
+        /**
+         * @opdone
+         */
+        IEMOP_MNEMONIC3(VEX_RMV_MEM, VGATHERDPS, vgatherdps, Vx, MVx, Hx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0); /** @todo? */
+    return FNIEMOP_CALL_1(iemOpCommonAvx2Gather_Vx_Hx_Wx, 0);
+}
+
 /** Opcode VEX.66.0F38 0x93 (vex only). */
-FNIEMOP_STUB(iemOp_vgatherqps_d_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vgatherqps_d_Vx_Hx_Wx)
+{
+    if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
+        IEMOP_MNEMONIC3(VEX_RMV_MEM, VGATHERQPD, vgatherqpd, Vx, MVx, Hx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0); /** @todo? */
+    else
+        /**
+         * @opdone
+         */
+        IEMOP_MNEMONIC3(VEX_RMV_MEM, VGATHERQPS, vgatherqps, Vx, MVx, Hx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0); /** @todo? */
+    return FNIEMOP_CALL_1(iemOpCommonAvx2Gather_Vx_Hx_Wx, 1);
+}
+
 /*  Opcode VEX.66.0F38 0x94 - invalid. */
 /*  Opcode VEX.66.0F38 0x95 - invalid. */
 /** Opcode VEX.66.0F38 0x96 (vex only). */
