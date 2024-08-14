@@ -15074,7 +15074,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vgatherdps_vpgatherdd(uint8_t bMode)
     };
 
     static BS3CPUINSTR3_TEST7_T const s_aTests16[] =
-    { // inst_worker_func, bXcpt, offset, inst_type, init/dest mm, mem_ptr gp, offs mm, mask/pmsk mm, 
+    {
         {  bs3CpuInstr3_vgatherdps_xmm0_ebx_plus_0_plus_xmm0_x_1_xmm2_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 0, 2,  RT_ELEMENTS(s_aValuesUD),      s_aValuesUD },
         {  bs3CpuInstr3_vgatherdps_xmm0_ebx_plus_0_plus_xmm1_x_1_xmm0_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 1, 0,  RT_ELEMENTS(s_aValuesUD),      s_aValuesUD },
         {  bs3CpuInstr3_vgatherdps_xmm0_ebx_plus_0_plus_xmm1_x_1_xmm1_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 1, 1,  RT_ELEMENTS(s_aValuesUD),      s_aValuesUD },
@@ -15320,7 +15320,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vgatherqps_vpgatherqd(uint8_t bMode)
     };
 
     static BS3CPUINSTR3_TEST7_T const s_aTests16[] =
-    { // inst_worker_func, bXcpt, offset, inst_type, init/dest mm, mem_ptr gp, offs mm, mask/pmsk mm, 
+    {
         {  bs3CpuInstr3_vgatherqps_xmm0_ebx_plus_0_plus_xmm0_x_1_xmm2_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 0, 2,  RT_ELEMENTS(s_aValuesUD),       s_aValuesUD },
         {  bs3CpuInstr3_vgatherqps_xmm0_ebx_plus_0_plus_xmm1_x_1_xmm0_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 1, 0,  RT_ELEMENTS(s_aValuesUD),       s_aValuesUD },
         {  bs3CpuInstr3_vgatherqps_xmm0_ebx_plus_0_plus_xmm1_x_1_xmm1_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 1, 1,  RT_ELEMENTS(s_aValuesUD),       s_aValuesUD },
@@ -15493,7 +15493,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vgatherdpd_vpgatherdq(uint8_t bMode)
             /*offs*/ RTUINT256_INIT_C(0x0000000900000999, 0x123456789abcdef0, 0xfffff68900000006, 0x0000000700000008),
             /*init*/ RTUINT256_INIT_C(0x7878787878787878, 0x7878787878787878, 0x7878787878787878, 0x7878787878787878),
             /* => */ RTUINT256_INIT_C(0x90f68ef68cf68af6, 0x7878787878787878, 0x0e000c000a000800, 0x7878787878787878),
-                                                          
             /*flgs*/ 0 },
     };
     static BS3CPUINSTR3_TEST7_VALUES_T const s_aValues64_32x2[] =
@@ -15522,7 +15521,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vgatherdpd_vpgatherdq(uint8_t bMode)
     };
 
     static BS3CPUINSTR3_TEST7_T const s_aTests16[] =
-    { // inst_worker_func, bXcpt, offset, inst_type, init/dest mm, mem_ptr gp, offs mm, mask/pmsk mm, 
+    {
         {  bs3CpuInstr3_vgatherdpd_xmm0_ebx_plus_0_plus_xmm0_x_1_xmm2_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 0, 2,  RT_ELEMENTS(s_aValuesUD),      s_aValuesUD },
         {  bs3CpuInstr3_vgatherdpd_xmm0_ebx_plus_0_plus_xmm1_x_1_xmm0_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 1, 0,  RT_ELEMENTS(s_aValuesUD),      s_aValuesUD },
         {  bs3CpuInstr3_vgatherdpd_xmm0_ebx_plus_0_plus_xmm1_x_1_xmm1_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 1, 1,  RT_ELEMENTS(s_aValuesUD),      s_aValuesUD },
@@ -15770,7 +15769,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr3_vgatherqpd_vpgatherqq(uint8_t bMode)
     };
 
     static BS3CPUINSTR3_TEST7_T const s_aTests16[] =
-    { // inst_worker_func, bXcpt, offset, inst_type, init/dest mm, mem_ptr gp, offs mm, mask/pmsk mm, 
+    {
         {  bs3CpuInstr3_vgatherqpd_xmm0_ebx_plus_0_plus_xmm0_x_1_xmm2_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 0, 2,  RT_ELEMENTS(s_aValuesUD),       s_aValuesUD },
         {  bs3CpuInstr3_vgatherqpd_xmm0_ebx_plus_0_plus_xmm1_x_1_xmm0_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 1, 0,  RT_ELEMENTS(s_aValuesUD),       s_aValuesUD },
         {  bs3CpuInstr3_vgatherqpd_xmm0_ebx_plus_0_plus_xmm1_x_1_xmm1_icebp_c16,   X86_XCPT_UD, 0,    T_AVX2_128, 0, 3, 1, 1,  RT_ELEMENTS(s_aValuesUD),       s_aValuesUD },
