@@ -26,6 +26,7 @@
   EmbeddedPkg/EmbeddedPkg.dec
   MdeModulePkg/MdeModulePkg.dec
   MdePkg/MdePkg.dec
+  OvmfPkg/OvmfPkg.dec
   VBoxPkg/VBoxPkg.dec           # VBox: Added
 
 [LibraryClasses]
@@ -38,4 +39,4 @@
   VBoxArmPlatformLib
 
 [Pcd]
-  gArmVirtTokenSpaceGuid.PcdDeviceTreeInitialBaseAddress
+  gUefiOvmfPkgTokenSpaceGuid.PcdDeviceTreeInitialBaseAddress

@@ -2,7 +2,8 @@
 # This Package provides UEFI compatible CPU modules and libraries.
 #
 # Copyright (c) 2007 - 2023, Intel Corporation. All rights reserved.<BR>
-# Copyright (C) 2023 Advanced Micro Devices, Inc. All rights reserved.<BR>
+# Copyright (C) 2023 - 2024, Advanced Micro Devices, Inc. All rights reserved.<BR>
+# Copyright (c) 2024, Loongson Technology Corporation Limited. All rights reserved.<BR>
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -52,6 +53,9 @@
   ##  @libraryclass  Provides function to support CcExit processing.
   CcExitLib|Include/Library/CcExitLib.h
 
+  ##  @libraryclass  Provides function to support AmdSvsm processing.
+  AmdSvsmLib|Include/Library/AmdSvsmLib.h
+
   ##  @libraryclass  Provides function to get CPU cache information.
   CpuCacheInfoLib|Include/Library/CpuCacheInfoLib.h
 
@@ -64,10 +68,20 @@
   ## @libraryclass   Provides functions for manipulating smram savestate registers.
   MmSaveStateLib|Include/Library/MmSaveStateLib.h
 
+  ## @libraryclass   Provides functions for SMM CPU Sync Operation.
+  SmmCpuSyncLib|Include/Library/SmmCpuSyncLib.h
+
+  ## @libraryclass   Provides functions for SMM Relocation Operation.
+  SmmRelocationLib|Include/Library/SmmRelocationLib.h
+
 [LibraryClasses.RISCV64]
   ##  @libraryclass  Provides functions to manage MMU features on RISCV64 CPUs.
   ##
   RiscVMmuLib|Include/Library/BaseRiscVMmuLib.h
+
+[LibraryClasses.LoongArch64]
+  ##  @libraryclass  Provides functions for the memory management unit.
+  CpuMmuLib|Include/Library/CpuMmuLib.h
 
 [Guids]
   gUefiCpuPkgTokenSpaceGuid      = { 0xac05bf33, 0x995a, 0x4ed4, { 0xaa, 0xb8, 0xef, 0x7a, 0xe8, 0xf, 0x5c, 0xb0 }}
@@ -84,6 +98,15 @@
 
   ## Include/Guid/SmmBaseHob.h
   gSmmBaseHobGuid      = { 0xc2217ba7, 0x03bb, 0x4f63, {0xa6, 0x47, 0x7c, 0x25, 0xc5, 0xfc, 0x9d, 0x73 }}
+
+  ## Include/Guid/MpInformation2.h
+  gMpInformation2HobGuid         = { 0x417a7f64, 0xf4e9, 0x4b32, {0x84, 0x6a, 0x5c, 0xc4, 0xd8, 0x62, 0x18, 0x79 }}
+
+  ## Include/Guid/ProcessorResourceHob.h
+  gProcessorResourceHobGuid      = { 0xb855c7fe, 0xa758, 0x701f, { 0xa7, 0x30, 0x87, 0xf3, 0x9c, 0x03, 0x46, 0x7e }}
+  #
+  ## Include/Guid/GhcbApicIds.h
+  gGhcbApicIdsGuid               = { 0xbc964338, 0xee39, 0x4fc8, { 0xa2, 0x24, 0x10, 0x10, 0x8b, 0x17, 0x80, 0x1b }}
 
 [Protocols]
   ## Include/Protocol/SmmCpuService.h
@@ -395,6 +418,19 @@
   #   FALSE - Access to any type of non-SMRAM memory after SmmReadyToLock is allowed.<BR>
   # @Prompt Access to non-SMRAM memory is restricted to reserved, runtime and ACPI NVS type after SmmReadyToLock.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmRestrictedMemoryAccess|TRUE|BOOLEAN|0x3213210F
+
+[PcdsFixedAtBuild.RISCV64]
+  ## Indicate the maximum SATP mode allowed.
+  #  0 - Bare mode.
+  #  8 - 39bit mode.
+  #  9 - 48bit mode.
+  #  10 - 57bit mode.
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuRiscVMmuMaxSatpMode|10|UINT32|0x60000021
+
+[PcdsFixedAtBuild.LOONGARCH64, PcdsPatchableInModule.LOONGARCH64, PcdsDynamic.LOONGARCH64, PcdsDynamicEx.LOONGARCH64]
+  ## This PCD Contains the pointer to a CPU exception vector base address.
+  # @Prompt The pointer to a CPU exception vector base address.
+  gUefiCpuPkgTokenSpaceGuid.PcdLoongArchExceptionVectorBaseAddress|0x0|UINT64|0x60000022
 
 [PcdsDynamic, PcdsDynamicEx]
   ## Contains the pointer to a CPU S3 data buffer of structure ACPI_CPU_DATA.

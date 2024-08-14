@@ -9,15 +9,19 @@
 
 #include <PiPei.h>
 
+#include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
 #include <Library/PcdLib.h>
 #include <Library/PeiServicesLib.h>
+#include <Library/FdtSerialPortAddressLib.h>
 #include <libfdt.h>
 #ifdef VBOX
 # include <Library/VBoxArmPlatformLib.h>
 #endif
+
+#include <Chipset/AArch64.h>
 
 #include <Guid/EarlyPL011BaseAddress.h>
 #include <Guid/FdtHob.h>
@@ -40,25 +44,23 @@ PlatformPeim (
   VOID
   )
 {
-  VOID          *Base;
-  VOID          *NewBase;
-  UINTN         FdtSize;
-  UINTN         FdtPages;
-  UINT64        *FdtHobData;
-  UINT64        *UartHobData;
-  INT32         Node, Prev;
-  INT32         Parent, Depth;
-  CONST CHAR8   *Compatible;
-  CONST CHAR8   *CompItem;
-  CONST CHAR8   *NodeStatus;
-  INT32         Len;
-  INT32         RangesLen;
-  INT32         StatusLen;
-  CONST UINT64  *RegProp;
-  CONST UINT32  *RangesProp;
-  UINT64        UartBase;
-  UINT64        TpmBase;
-  EFI_STATUS    Status;
+  VOID                      *Base;
+  VOID                      *NewBase;
+  UINTN                     FdtSize;
+  UINTN                     FdtPages;
+  UINT64                    *FdtHobData;
+  EARLY_PL011_BASE_ADDRESS  *UartHobData;
+  FDT_SERIAL_PORTS          Ports;
+  INT32                     Node, Prev;
+  INT32                     Parent, Depth;
+  CONST CHAR8               *Compatible;
+  CONST CHAR8               *CompItem;
+  INT32                     Len;
+  INT32                     RangesLen;
+  CONST UINT64              *RegProp;
+  CONST UINT32              *RangesProp;
+  UINT64                    TpmBase;
+  EFI_STATUS                Status;
 
 #ifndef VBOX
   Base = (VOID *)(UINTN)PcdGet64 (PcdDeviceTreeInitialBaseAddress);
@@ -80,7 +82,56 @@ PlatformPeim (
 
   UartHobData = BuildGuidHob (&gEarlyPL011BaseAddressGuid, sizeof *UartHobData);
   ASSERT (UartHobData != NULL);
-  *UartHobData = 0;
+  SetMem (UartHobData, sizeof *UartHobData, 0);
+
+  Status = FdtSerialGetPorts (Base, "arm,pl011", &Ports);
+  if (!EFI_ERROR (Status)) {
+    if (Ports.NumberOfPorts == 1) {
+      //
+      // Just one UART; direct both SerialPortLib+console and DebugLib to it.
+      //
+      UartHobData->ConsoleAddress = Ports.BaseAddress[0];
+      UartHobData->DebugAddress   = Ports.BaseAddress[0];
+    } else {
+      UINT64  ConsoleAddress;
+
+      Status = FdtSerialGetConsolePort (Base, &ConsoleAddress);
+      if (EFI_ERROR (Status)) {
+        //
+        // At least two UARTs; but failed to get the console preference. Use the
+        // first UART for SerialPortLib+console, and the second one for
+        // DebugLib.
+        //
+        UartHobData->ConsoleAddress = Ports.BaseAddress[0];
+        UartHobData->DebugAddress   = Ports.BaseAddress[1];
+      } else {
+        //
+        // At least two UARTs; and console preference available. Use the
+        // preferred UART for SerialPortLib+console, and *another* UART for
+        // DebugLib.
+        //
+        UartHobData->ConsoleAddress = ConsoleAddress;
+        if (ConsoleAddress == Ports.BaseAddress[0]) {
+          UartHobData->DebugAddress = Ports.BaseAddress[1];
+        } else {
+          UartHobData->DebugAddress = Ports.BaseAddress[0];
+        }
+      }
+    }
+
+    DEBUG ((
+      DEBUG_INFO,
+      "%a: PL011 UART (console) @ 0x%lx\n",
+      __func__,
+      UartHobData->ConsoleAddress
+      ));
+    DEBUG ((
+      DEBUG_INFO,
+      "%a: PL011 UART (debug) @ 0x%lx\n",
+      __func__,
+      UartHobData->DebugAddress
+      ));
+  }
 
   TpmBase = 0;
 
@@ -107,23 +158,8 @@ PlatformPeim (
     for (CompItem = Compatible; CompItem != NULL && CompItem < Compatible + Len;
          CompItem += 1 + AsciiStrLen (CompItem))
     {
-      if (AsciiStrCmp (CompItem, "arm,pl011") == 0) {
-        NodeStatus = fdt_getprop (Base, Node, "status", &StatusLen);
-        if ((NodeStatus != NULL) && (AsciiStrCmp (NodeStatus, "okay") != 0)) {
-          continue;
-        }
-
-        RegProp = fdt_getprop (Base, Node, "reg", &Len);
-        ASSERT (Len == 16);
-
-        UartBase = fdt64_to_cpu (ReadUnaligned64 (RegProp));
-
-        DEBUG ((DEBUG_INFO, "%a: PL011 UART @ 0x%lx\n", __func__, UartBase));
-
-        *UartHobData = UartBase;
-        break;
-      } else if (FeaturePcdGet (PcdTpm2SupportEnabled) &&
-                 (AsciiStrCmp (CompItem, "tcg,tpm-tis-mmio") == 0))
+      if (FeaturePcdGet (PcdTpm2SupportEnabled) &&
+          (AsciiStrCmp (CompItem, "tcg,tpm-tis-mmio") == 0))
       {
         RegProp = fdt_getprop (Base, Node, "reg", &Len);
         ASSERT (Len == 8 || Len == 16);
@@ -196,6 +232,18 @@ PlatformPeim (
   }
 
   BuildFvHob (PcdGet64 (PcdFvBaseAddress), PcdGet32 (PcdFvSize));
+
+ #ifdef MDE_CPU_AARCH64
+  //
+  // Set the SMCCC conduit to SMC if executing at EL2, which is typically the
+  // exception level that services HVCs rather than the one that invokes them.
+  //
+  if (ArmReadCurrentEL () == AARCH64_EL2) {
+    Status = PcdSetBoolS (PcdMonitorConduitHvc, FALSE);
+    ASSERT_EFI_ERROR (Status);
+  }
+
+ #endif
 
   return EFI_SUCCESS;
 }

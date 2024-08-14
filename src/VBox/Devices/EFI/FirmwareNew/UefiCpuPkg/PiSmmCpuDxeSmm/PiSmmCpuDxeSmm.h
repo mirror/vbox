@@ -14,7 +14,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <PiSmm.h>
 
-#include <Protocol/MpService.h>
 #include <Protocol/SmmConfiguration.h>
 #include <Protocol/SmmCpu.h>
 #include <Protocol/SmmAccess2.h>
@@ -27,6 +26,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Guid/MemoryAttributesTable.h>
 #include <Guid/PiSmmMemoryAttributesTable.h>
 #include <Guid/SmmBaseHob.h>
+#include <Guid/MpInformation2.h>
 
 #include <Library/BaseLib.h>
 #include <Library/IoLib.h>
@@ -54,6 +54,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PerformanceLib.h>
 #include <Library/CpuPageTableLib.h>
 #include <Library/MmSaveStateLib.h>
+#include <Library/SmmCpuSyncLib.h>
 
 #include <AcpiCpuData.h>
 #include <CpuHotPlugData.h>
@@ -186,14 +187,6 @@ typedef struct {
 //
 #define PROTECT_MODE_CODE_SEGMENT  0x08
 #define LONG_MODE_CODE_SEGMENT     0x38
-
-//
-// The size 0x20 must be bigger than
-// the size of template code of SmmInit. Currently,
-// the size of SmmInit requires the 0x16 Bytes buffer
-// at least.
-//
-#define BACK_BUF_SIZE  0x20
 
 #define EXCEPTION_VECTOR_NUMBER  0x20
 
@@ -356,12 +349,11 @@ SmmWriteSaveState (
   );
 
 /**
-  C function for SMI handler. To change all processor's SMMBase Register.
+  Initialize SMM environment.
 
 **/
 VOID
-EFIAPI
-SmmInitHandler (
+InitializeSmm (
   VOID
   );
 
@@ -374,18 +366,9 @@ ExecuteFirstSmiInit (
   VOID
   );
 
-extern BOOLEAN            mSmmRelocated;
 extern volatile  BOOLEAN  *mSmmInitialized;
 extern UINT32             mBspApicId;
 
-extern CONST UINT8        gcSmmInitTemplate[];
-extern CONST UINT16       gcSmmInitSize;
-X86_ASSEMBLY_PATCH_LABEL  gPatchSmmCr0;
-extern UINT32             mSmmCr0;
-X86_ASSEMBLY_PATCH_LABEL  gPatchSmmCr3;
-extern UINT32             mSmmCr4;
-X86_ASSEMBLY_PATCH_LABEL  gPatchSmmCr4;
-X86_ASSEMBLY_PATCH_LABEL  gPatchSmmInitStack;
 X86_ASSEMBLY_PATCH_LABEL  mPatchCetSupported;
 extern BOOLEAN            mCetSupported;
 
@@ -405,7 +388,6 @@ typedef struct {
   SPIN_LOCK                     *Busy;
   volatile EFI_AP_PROCEDURE2    Procedure;
   volatile VOID                 *Parameter;
-  volatile UINT32               *Run;
   volatile BOOLEAN              *Present;
   PROCEDURE_TOKEN               *Token;
   EFI_STATUS                    *Status;
@@ -423,7 +405,6 @@ typedef struct {
   // so that UC cache-ability can be set together.
   //
   SMM_CPU_DATA_BLOCK            *CpuData;
-  volatile UINT32               *Counter;
   volatile UINT32               BspIndex;
   volatile BOOLEAN              *InsideSmm;
   volatile BOOLEAN              *AllCpusInSync;
@@ -433,6 +414,7 @@ typedef struct {
   volatile BOOLEAN              AllApArrivedWithException;
   EFI_AP_PROCEDURE              StartupProcedure;
   VOID                          *StartupProcArgs;
+  SMM_CPU_SYNC_CONTEXT          *SyncContext;
 } SMM_DISPATCHER_MP_SYNC_DATA;
 
 #define SMM_PSD_OFFSET  0xfb00
@@ -441,7 +423,6 @@ typedef struct {
 /// All global semaphores' pointer
 ///
 typedef struct {
-  volatile UINT32     *Counter;
   volatile BOOLEAN    *InsideSmm;
   volatile BOOLEAN    *AllCpusInSync;
   SPIN_LOCK           *PFLock;
@@ -453,7 +434,6 @@ typedef struct {
 ///
 typedef struct {
   SPIN_LOCK           *Busy;
-  volatile UINT32     *Run;
   volatile BOOLEAN    *Present;
   SPIN_LOCK           *Token;
 } SMM_CPU_SEMAPHORE_CPU;
@@ -477,7 +457,6 @@ extern UINTN                         mSmmStackArrayBase;
 extern UINTN                         mSmmStackArrayEnd;
 extern UINTN                         mSmmStackSize;
 extern EFI_SMM_CPU_SERVICE_PROTOCOL  mSmmCpuService;
-extern IA32_DESCRIPTOR               gcSmiInitGdtr;
 extern SMM_CPU_SEMAPHORES            mSmmCpuSemaphores;
 extern UINTN                         mSemaphoreSize;
 extern SPIN_LOCK                     *mPFLock;
@@ -485,6 +464,7 @@ extern SPIN_LOCK                     *mConfigSmmCodeAccessCheckLock;
 extern EFI_SMRAM_DESCRIPTOR          *mSmmCpuSmramRanges;
 extern UINTN                         mSmmCpuSmramRangeCount;
 extern UINT8                         mPhysicalAddressBits;
+extern BOOLEAN                       mSmmDebugAgentSupport;
 
 //
 // Copy of the PcdPteMemoryEncryptionAddressOrMask
@@ -795,18 +775,6 @@ FindSmramInfo (
   );
 
 /**
-  Relocate SmmBases for each processor.
-
-  Execute on first boot and all S3 resumes
-
-**/
-VOID
-EFIAPI
-SmmRelocateBases (
-  VOID
-  );
-
-/**
   Page Fault handler for SMM use.
 
   @param  InterruptType    Defines the type of interrupt or exception that
@@ -851,55 +819,12 @@ InitMsrSpinLockByIndex (
   );
 
 /**
-  Hook return address of SMM Save State so that semaphore code
-  can be executed immediately after AP exits SMM to indicate to
-  the BSP that an AP has exited SMM after SMBASE relocation.
-
-  @param[in] CpuIndex     The processor index.
-  @param[in] RebasedFlag  A pointer to a flag that is set to TRUE
-                          immediately after AP exits SMM.
-
-**/
-VOID
-SemaphoreHook (
-  IN UINTN             CpuIndex,
-  IN volatile BOOLEAN  *RebasedFlag
-  );
-
-/**
 Configure SMM Code Access Check feature for all processors.
 SMM Feature Control MSR will be locked after configuration.
 **/
 VOID
 ConfigSmmCodeAccessCheck (
   VOID
-  );
-
-/**
-  Hook the code executed immediately after an RSM instruction on the currently
-  executing CPU.  The mode of code executed immediately after RSM must be
-  detected, and the appropriate hook must be selected.  Always clear the auto
-  HALT restart flag if it is set.
-
-  @param[in] CpuIndex                 The processor index for the currently
-                                      executing CPU.
-  @param[in] CpuState                 Pointer to SMRAM Save State Map for the
-                                      currently executing CPU.
-  @param[in] NewInstructionPointer32  Instruction pointer to use if resuming to
-                                      32-bit mode from 64-bit SMM.
-  @param[in] NewInstructionPointer    Instruction pointer to use if resuming to
-                                      same mode as SMM.
-
-  @retval The value of the original instruction pointer before it was hooked.
-
-**/
-UINT64
-EFIAPI
-HookReturnFromSmm (
-  IN UINTN              CpuIndex,
-  SMRAM_SAVE_STATE_MAP  *CpuState,
-  UINT64                NewInstructionPointer32,
-  UINT64                NewInstructionPointer
   );
 
 /**
@@ -1106,22 +1031,6 @@ AllocateCodePages (
   IN UINTN  Pages
   );
 
-/**
-  Allocate aligned pages for code.
-
-  @param[in]  Pages                 Number of pages to be allocated.
-  @param[in]  Alignment             The requested alignment of the allocation.
-                                    Must be a power of two.
-                                    If Alignment is zero, then byte alignment is used.
-
-  @return Allocated memory.
-**/
-VOID *
-AllocateAlignedCodePages (
-  IN UINTN  Pages,
-  IN UINTN  Alignment
-  );
-
 //
 // S3 related global variable and function prototype.
 //
@@ -1301,15 +1210,6 @@ EdkiiSmmGetMemoryAttributes (
   IN  EFI_PHYSICAL_ADDRESS                 BaseAddress,
   IN  UINT64                               Length,
   IN  UINT64                               *Attributes
-  );
-
-/**
-  This function fixes up the address of the global variable or function
-  referred in SmmInit assembly files to be the absolute address.
-**/
-VOID
-EFIAPI
-PiSmmCpuSmmInitFixupAddress (
   );
 
 /**
@@ -1553,27 +1453,62 @@ SmmWaitForApArrival (
   );
 
 /**
-  Disable Write Protect on pages marked as read-only if Cr0.Bits.WP is 1.
+  Write unprotect read-only pages if Cr0.Bits.WP is 1.
 
-  @param[out]  WpEnabled      If Cr0.WP is enabled.
-  @param[out]  CetEnabled     If CET is enabled.
+  @param[out]  WriteProtect      If Cr0.Bits.WP is enabled.
+
 **/
 VOID
-DisableReadOnlyPageWriteProtect (
-  OUT BOOLEAN  *WpEnabled,
-  OUT BOOLEAN  *CetEnabled
+SmmWriteUnprotectReadOnlyPage (
+  OUT BOOLEAN  *WriteProtect
   );
 
 /**
-  Enable Write Protect on pages marked as read-only.
+  Write protect read-only pages.
 
-  @param[out]  WpEnabled      If Cr0.WP should be enabled.
-  @param[out]  CetEnabled     If CET should be enabled.
+  @param[in]  WriteProtect      If Cr0.Bits.WP should be enabled.
+
 **/
 VOID
-EnableReadOnlyPageWriteProtect (
-  BOOLEAN  WpEnabled,
-  BOOLEAN  CetEnabled
+SmmWriteProtectReadOnlyPage (
+  IN  BOOLEAN  WriteProtect
   );
+
+///
+/// Define macros to encapsulate the write unprotect/protect
+/// read-only pages.
+/// Below pieces of logic are defined as macros and not functions
+/// because "CET" feature disable & enable must be in the same
+/// function to avoid shadow stack and normal SMI stack mismatch,
+/// thus WRITE_UNPROTECT_RO_PAGES () must be called pair with
+/// WRITE_PROTECT_RO_PAGES () in same function.
+///
+/// @param[in,out] Wp   A BOOLEAN variable local to the containing
+///                     function, carrying write protection status from
+///                     WRITE_UNPROTECT_RO_PAGES() to
+///                     WRITE_PROTECT_RO_PAGES().
+///
+/// @param[in,out] Cet  A BOOLEAN variable local to the containing
+///                     function, carrying control flow integrity
+///                     enforcement status from
+///                     WRITE_UNPROTECT_RO_PAGES() to
+///                     WRITE_PROTECT_RO_PAGES().
+///
+#define WRITE_UNPROTECT_RO_PAGES(Wp, Cet) \
+  do { \
+    Cet = ((AsmReadCr4 () & CR4_CET_ENABLE) != 0); \
+    if (Cet) { \
+      DisableCet (); \
+    } \
+    SmmWriteUnprotectReadOnlyPage (&Wp); \
+  } while (FALSE)
+
+#define WRITE_PROTECT_RO_PAGES(Wp, Cet) \
+  do { \
+    SmmWriteProtectReadOnlyPage (Wp); \
+    if (Cet) { \
+      EnableCet (); \
+    } \
+  } while (FALSE)
 
 #endif

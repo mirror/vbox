@@ -2,7 +2,7 @@
   Definition of Neighbor Discovery support routines.
 
   Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
-
+  Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -56,12 +56,47 @@ VOID
   VOID  *Context
   );
 
+//
+// Per RFC8200 Section 4.2
+//
+//   Two of the currently-defined extension headers -- the Hop-by-Hop
+//   Options header and the Destination Options header -- carry a variable
+//   number of type-length-value (TLV) encoded "options", of the following
+//   format:
+//
+//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- - - - - - - - -
+//      |  Option Type  |  Opt Data Len |  Option Data
+//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+- - - - - - - - -
+//
+//      Option Type          8-bit identifier of the type of option.
+//
+//      Opt Data Len         8-bit unsigned integer.  Length of the Option
+//                           Data field of this option, in octets.
+//
+//      Option Data          Variable-length field.  Option-Type-specific
+//                           data.
+//
 typedef struct _IP6_OPTION_HEADER {
+  ///
+  /// identifier of the type of option.
+  ///
   UINT8    Type;
+  ///
+  /// Length of the Option Data field of this option, in octets.
+  ///
   UINT8    Length;
+  ///
+  /// Option-Type-specific data.
+  ///
 } IP6_OPTION_HEADER;
 
 STATIC_ASSERT (sizeof (IP6_OPTION_HEADER) == 2, "IP6_OPTION_HEADER is expected to be exactly 2 bytes long.");
+
+#define IP6_NEXT_OPTION_OFFSET(offset, length)  (offset + sizeof(IP6_OPTION_HEADER) + length)
+STATIC_ASSERT (
+  IP6_NEXT_OPTION_OFFSET (0, 0) == 2,
+  "The next option is minimally the combined size of the option tag and length"
+  );
 
 typedef struct _IP6_ETHE_ADDR_OPTION {
   UINT8    Type;
@@ -745,10 +780,10 @@ Ip6OnArpResolved (
 /**
   Update the ReachableTime in IP6 service binding instance data, in milliseconds.
 
-  @param[in, out] IpSb     Points to the IP6_SERVICE.
-
+  @retval EFI_SUCCESS           ReachableTime Updated
+  @retval others                Failed to update ReachableTime
 **/
-VOID
+EFI_STATUS
 Ip6UpdateReachableTime (
   IN OUT IP6_SERVICE  *IpSb
   );

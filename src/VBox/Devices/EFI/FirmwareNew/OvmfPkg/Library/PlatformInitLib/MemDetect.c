@@ -1,7 +1,7 @@
 /**@file
   Memory Detection for Virtual Machines.
 
-  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2024, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 Module Name:
@@ -42,6 +42,9 @@ Module Name:
 #include <Library/TdxLib.h>
 
 #include <Library/PlatformInitLib.h>
+
+#include <Guid/AcpiS3Context.h>
+#include <Guid/SmramMemoryReserve.h>
 
 #ifdef VBOX
 # include "VBoxPkg.h"
@@ -289,6 +292,67 @@ PlatformReservationConflictCB (
 }
 
 /**
+  Returns PVH memmap
+  @param Entries      Pointer to PVH memmap
+  @param Count        Number of entries
+  @return EFI_STATUS
+**/
+EFI_STATUS
+GetPvhMemmapEntries (
+  struct hvm_memmap_table_entry  **Entries,
+  UINT32                         *Count
+  )
+{
+  UINT32                 *PVHResetVectorData;
+  struct hvm_start_info  *pvh_start_info;
+
+  PVHResetVectorData = (VOID *)(UINTN)PcdGet32 (PcdXenPvhStartOfDayStructPtr);
+  if (PVHResetVectorData == 0) {
+    return EFI_NOT_FOUND;
+  }
+
+  pvh_start_info = (struct hvm_start_info *)(UINTN)PVHResetVectorData[0];
+
+  *Entries = (struct hvm_memmap_table_entry *)(UINTN)pvh_start_info->memmap_paddr;
+  *Count   = pvh_start_info->memmap_entries;
+
+  return EFI_SUCCESS;
+}
+
+STATIC
+EFI_STATUS
+PlatformScanE820Pvh (
+  IN      E820_SCAN_CALLBACK     Callback,
+  IN OUT  EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
+  )
+{
+  struct hvm_memmap_table_entry  *Memmap;
+  UINT32                         MemmapEntriesCount;
+  struct hvm_memmap_table_entry  *Entry;
+  EFI_E820_ENTRY64               E820Entry;
+  EFI_STATUS                     Status;
+  UINT32                         Loop;
+
+  Status = GetPvhMemmapEntries (&Memmap, &MemmapEntriesCount);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  for (Loop = 0; Loop < MemmapEntriesCount; Loop++) {
+    Entry = Memmap + Loop;
+
+    if (Entry->type == XEN_HVM_MEMMAP_TYPE_RAM) {
+      E820Entry.BaseAddr = Entry->addr;
+      E820Entry.Length   = Entry->size;
+      E820Entry.Type     = Entry->type;
+      Callback (&E820Entry, PlatformInfoHob);
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
   Iterate over the entries in QEMU's fw_cfg E820 RAM map, call the
   passed callback for each entry.
 
@@ -319,6 +383,10 @@ PlatformScanE820 (
   EFI_E820_ENTRY64      E820Entry;
   UINTN                 Processed;
 
+  if (PlatformInfoHob->HostBridgeDevId == CLOUDHV_DEVICE_ID) {
+    return PlatformScanE820Pvh (Callback, PlatformInfoHob);
+  }
+
   Status = QemuFwCfgFindFile ("etc/e820", &FwCfgItem, &FwCfgSize);
   if (EFI_ERROR (Status)) {
     return Status;
@@ -333,36 +401,6 @@ PlatformScanE820 (
     QemuFwCfgReadBytes (sizeof E820Entry, &E820Entry);
     Callback (&E820Entry, PlatformInfoHob);
   }
-
-  return EFI_SUCCESS;
-}
-
-/**
-  Returns PVH memmap
-
-  @param Entries      Pointer to PVH memmap
-  @param Count        Number of entries
-
-  @return EFI_STATUS
-**/
-EFI_STATUS
-GetPvhMemmapEntries (
-  struct hvm_memmap_table_entry  **Entries,
-  UINT32                         *Count
-  )
-{
-  UINT32                 *PVHResetVectorData;
-  struct hvm_start_info  *pvh_start_info;
-
-  PVHResetVectorData = (VOID *)(UINTN)PcdGet32 (PcdXenPvhStartOfDayStructPtr);
-  if (PVHResetVectorData == 0) {
-    return EFI_NOT_FOUND;
-  }
-
-  pvh_start_info = (struct hvm_start_info *)(UINTN)PVHResetVectorData[0];
-
-  *Entries = (struct hvm_memmap_table_entry *)(UINTN)pvh_start_info->memmap_paddr;
-  *Count   = pvh_start_info->memmap_entries;
 
   return EFI_SUCCESS;
 }
@@ -633,11 +671,12 @@ PlatformAddressWidthFromCpuid (
   IN     BOOLEAN                QemuQuirk
   )
 {
-  UINT32   RegEax, RegEbx, RegEcx, RegEdx, Max;
-  UINT8    PhysBits;
-  CHAR8    Signature[13];
-  BOOLEAN  Valid         = FALSE;
-  BOOLEAN  Page1GSupport = FALSE;
+  UINT32    RegEax, RegEbx, RegEcx, RegEdx, Max;
+  UINT8     PhysBits;
+  CHAR8     Signature[13];
+  IA32_CR4  Cr4;
+  BOOLEAN   Valid         = FALSE;
+  BOOLEAN   Page1GSupport = FALSE;
 
   ZeroMem (Signature, sizeof (Signature));
 
@@ -675,30 +714,54 @@ PlatformAddressWidthFromCpuid (
     }
   }
 
+  Cr4.UintN = AsmReadCr4 ();
+
   DEBUG ((
     DEBUG_INFO,
-    "%a: Signature: '%a', PhysBits: %d, QemuQuirk: %a, Valid: %a\n",
+    "%a: Signature: '%a', PhysBits: %d, QemuQuirk: %a, la57: %a, Valid: %a\n",
     __func__,
     Signature,
     PhysBits,
     QemuQuirk ? "On" : "Off",
+    Cr4.Bits.LA57 ? "On" : "Off",
     Valid ? "Yes" : "No"
     ));
 
   if (Valid) {
-    if (PhysBits > 46) {
-      /*
-       * Avoid 5-level paging altogether for now, which limits
-       * PhysBits to 48.  Also avoid using address bit 48, due to sign
-       * extension we can't identity-map these addresses (and lots of
-       * places in edk2 assume we have everything identity-mapped).
-       * So the actual limit is 47.
-       *
-       * Also some older linux kernels apparently have problems handling
-       * phys-bits > 46 correctly, so use that as limit.
-       */
-      DEBUG ((DEBUG_INFO, "%a: limit PhysBits to 46 (avoid 5-level paging)\n", __func__));
-      PhysBits = 46;
+    /*
+     * Due to the sign extension we can use only the lower half of the
+     * virtual address space to identity-map physical address space,
+     * which gives us a 47 bit wide address space with 4 paging levels
+     * and a 56 bit wide address space with 5 paging levels.
+     */
+    if (Cr4.Bits.LA57) {
+      if (PhysBits > 48) {
+        /*
+         * Some Intel CPUs support 5-level paging, have more than 48
+         * phys-bits but support only 4-level EPT, which effectively
+         * limits guest phys-bits to 48.
+         *
+         * AMD Processors have a different but somewhat related
+         * problem: They can handle guest phys-bits larger than 48
+         * only in case the host runs in 5-level paging mode.
+         *
+         * Until we have some way to communicate that kind of
+         * limitations from hypervisor to guest, limit phys-bits
+         * to 48 unconditionally.
+         */
+        DEBUG ((DEBUG_INFO, "%a: limit PhysBits to 48 (5-level paging)\n", __func__));
+        PhysBits = 48;
+      }
+    } else {
+      if (PhysBits > 46) {
+        /*
+         * Some older linux kernels apparently have problems handling
+         * phys-bits > 46 correctly, so use that instead of 47 as
+         * limit.
+         */
+        DEBUG ((DEBUG_INFO, "%a: limit PhysBits to 46 (4-level paging)\n", __func__));
+        PhysBits = 46;
+      }
     }
 
     if (!Page1GSupport && (PhysBits > 40)) {
@@ -879,6 +942,18 @@ PlatformAddressWidthInitialization (
   if (PlatformInfoHob->HostBridgeDevId == 0xffff /* microvm */) {
     PlatformAddressWidthFromCpuid (PlatformInfoHob, FALSE);
     return;
+  } else if (PlatformInfoHob->HostBridgeDevId == CLOUDHV_DEVICE_ID) {
+    PlatformInfoHob->FirstNonAddress = BASE_4GB;
+    Status                           = PlatformScanE820 (PlatformGetFirstNonAddressCB, PlatformInfoHob);
+    if (EFI_ERROR (Status)) {
+      PlatformInfoHob->FirstNonAddress = BASE_4GB + PlatformGetSystemMemorySizeAbove4gb ();
+    }
+
+    PlatformInfoHob->PcdPciMmio64Base = PlatformInfoHob->FirstNonAddress;
+    PlatformAddressWidthFromCpuid (PlatformInfoHob, FALSE);
+    PlatformInfoHob->PcdPciMmio64Size = PlatformInfoHob->FirstNonAddress - PlatformInfoHob->PcdPciMmio64Base;
+
+    return;
   }
 
   //
@@ -951,6 +1026,65 @@ PlatformAddressWidthInitialization (
 }
 
 #ifndef VBOX
+/**
+  Create gEfiSmmSmramMemoryGuid HOB defined in the PI specification Vol. 3,
+  section 5, which is used to describe the SMRAM memory regions supported
+  by the platform.
+
+  @param[in] StartAddress      StartAddress of smram.
+  @param[in] Size              Size of smram.
+
+**/
+STATIC
+VOID
+CreateSmmSmramMemoryHob (
+  IN EFI_PHYSICAL_ADDRESS  StartAddress,
+  IN UINT32                Size
+  )
+{
+  UINTN                           BufferSize;
+  UINT8                           SmramRanges;
+  EFI_PEI_HOB_POINTERS            Hob;
+  EFI_SMRAM_HOB_DESCRIPTOR_BLOCK  *SmramHobDescriptorBlock;
+  VOID                            *GuidHob;
+
+  SmramRanges = 2;
+  BufferSize  = sizeof (EFI_SMRAM_HOB_DESCRIPTOR_BLOCK) + (SmramRanges - 1) * sizeof (EFI_SMRAM_DESCRIPTOR);
+
+  Hob.Raw = BuildGuidHob (
+              &gEfiSmmSmramMemoryGuid,
+              BufferSize
+              );
+  ASSERT (Hob.Raw);
+
+  SmramHobDescriptorBlock                             = (EFI_SMRAM_HOB_DESCRIPTOR_BLOCK *)(Hob.Raw);
+  SmramHobDescriptorBlock->NumberOfSmmReservedRegions = SmramRanges;
+
+  //
+  // 1. Create first SMRAM descriptor, which contains data structures used in S3 resume.
+  // One page is enough for the data structure
+  //
+  SmramHobDescriptorBlock->Descriptor[0].PhysicalStart = StartAddress;
+  SmramHobDescriptorBlock->Descriptor[0].CpuStart      = StartAddress;
+  SmramHobDescriptorBlock->Descriptor[0].PhysicalSize  = EFI_PAGE_SIZE;
+  SmramHobDescriptorBlock->Descriptor[0].RegionState   = EFI_SMRAM_CLOSED | EFI_CACHEABLE | EFI_ALLOCATED;
+
+  //
+  // 1.1 Create gEfiAcpiVariableGuid according SmramHobDescriptorBlock->Descriptor[0] since it's used in S3 resume.
+  //
+  GuidHob = BuildGuidHob (&gEfiAcpiVariableGuid, sizeof (EFI_SMRAM_DESCRIPTOR));
+  ASSERT (GuidHob != NULL);
+  CopyMem (GuidHob, &SmramHobDescriptorBlock->Descriptor[0], sizeof (EFI_SMRAM_DESCRIPTOR));
+
+  //
+  // 2. Create second SMRAM descriptor, which is free and will be used by SMM foundation.
+  //
+  SmramHobDescriptorBlock->Descriptor[1].PhysicalStart = SmramHobDescriptorBlock->Descriptor[0].PhysicalStart + EFI_PAGE_SIZE;
+  SmramHobDescriptorBlock->Descriptor[1].CpuStart      = SmramHobDescriptorBlock->Descriptor[0].CpuStart + EFI_PAGE_SIZE;
+  SmramHobDescriptorBlock->Descriptor[1].PhysicalSize  = Size - EFI_PAGE_SIZE;
+  SmramHobDescriptorBlock->Descriptor[1].RegionState   = EFI_SMRAM_CLOSED | EFI_CACHEABLE;
+}
+
 STATIC
 VOID
 QemuInitializeRamBelow1gb (
@@ -998,48 +1132,43 @@ PlatformQemuInitializeRam (
   //
   PlatformGetSystemMemorySizeBelow4gb (PlatformInfoHob);
 
-  if (PlatformInfoHob->BootMode == BOOT_ON_S3_RESUME) {
+  //
+  // CpuMpPei saves the original contents of the borrowed area in permanent
+  // PEI RAM, in a backup buffer allocated with the normal PEI services.
+  // CpuMpPei restores the original contents ("returns" the borrowed area) at
+  // End-of-PEI. End-of-PEI in turn is emitted by S3Resume2Pei before
+  // transferring control to the OS's wakeup vector in the FACS.
+  //
+  // We expect any other PEIMs that "borrow" memory similarly to CpuMpPei to
+  // restore the original contents. Furthermore, we expect all such PEIMs
+  // (CpuMpPei included) to claim the borrowed areas by producing memory
+  // allocation HOBs, and to honor preexistent memory allocation HOBs when
+  // looking for an area to borrow.
+  //
+  QemuInitializeRamBelow1gb (PlatformInfoHob);
+
+  if (PlatformInfoHob->SmmSmramRequire) {
+    UINT32                TsegSize;
+    EFI_PHYSICAL_ADDRESS  TsegBase;
+
+    TsegSize = PlatformInfoHob->Q35TsegMbytes * SIZE_1MB;
+    TsegBase = PlatformInfoHob->LowMemory - TsegSize;
+    PlatformAddMemoryRangeHob (BASE_1MB, TsegBase);
+    PlatformAddReservedMemoryBaseSizeHob (
+      TsegBase,
+      TsegSize,
+      TRUE
+      );
+
     //
-    // Create the following memory HOB as an exception on the S3 boot path.
+    // Create gEfiSmmSmramMemoryGuid HOB
     //
-    // Normally we'd create memory HOBs only on the normal boot path. However,
-    // CpuMpPei specifically needs such a low-memory HOB on the S3 path as
-    // well, for "borrowing" a subset of it temporarily, for the AP startup
-    // vector.
-    //
-    // CpuMpPei saves the original contents of the borrowed area in permanent
-    // PEI RAM, in a backup buffer allocated with the normal PEI services.
-    // CpuMpPei restores the original contents ("returns" the borrowed area) at
-    // End-of-PEI. End-of-PEI in turn is emitted by S3Resume2Pei before
-    // transferring control to the OS's wakeup vector in the FACS.
-    //
-    // We expect any other PEIMs that "borrow" memory similarly to CpuMpPei to
-    // restore the original contents. Furthermore, we expect all such PEIMs
-    // (CpuMpPei included) to claim the borrowed areas by producing memory
-    // allocation HOBs, and to honor preexistent memory allocation HOBs when
-    // looking for an area to borrow.
-    //
-    QemuInitializeRamBelow1gb (PlatformInfoHob);
+    CreateSmmSmramMemoryHob (TsegBase, TsegSize);
   } else {
-    //
-    // Create memory HOBs
-    //
-    QemuInitializeRamBelow1gb (PlatformInfoHob);
+    PlatformAddMemoryRangeHob (BASE_1MB, PlatformInfoHob->LowMemory);
+  }
 
-    if (PlatformInfoHob->SmmSmramRequire) {
-      UINT32  TsegSize;
-
-      TsegSize = PlatformInfoHob->Q35TsegMbytes * SIZE_1MB;
-      PlatformAddMemoryRangeHob (BASE_1MB, PlatformInfoHob->LowMemory - TsegSize);
-      PlatformAddReservedMemoryBaseSizeHob (
-        PlatformInfoHob->LowMemory - TsegSize,
-        TsegSize,
-        TRUE
-        );
-    } else {
-      PlatformAddMemoryRangeHob (BASE_1MB, PlatformInfoHob->LowMemory);
-    }
-
+  if (PlatformInfoHob->BootMode != BOOT_ON_S3_RESUME) {
     //
     // If QEMU presents an E820 map, then create memory HOBs for the >=4GB RAM
     // entries. Otherwise, create a single memory HOB with the flat >=4GB

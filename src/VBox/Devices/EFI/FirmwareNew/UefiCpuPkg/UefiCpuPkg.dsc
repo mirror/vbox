@@ -2,7 +2,7 @@
 #  UefiCpuPkg Package
 #
 #  Copyright (c) 2007 - 2023, Intel Corporation. All rights reserved.<BR>
-#  Copyright (C) 2023 Advanced Micro Devices, Inc. All rights reserved.<BR>
+#  Copyright (C) 2023 - 2024, Advanced Micro Devices, Inc. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -56,10 +56,12 @@
   PciExpressLib|MdePkg/Library/BasePciExpressLib/BasePciExpressLib.inf
   SmmCpuPlatformHookLib|UefiCpuPkg/Library/SmmCpuPlatformHookLibNull/SmmCpuPlatformHookLibNull.inf
   SmmCpuFeaturesLib|UefiCpuPkg/Library/SmmCpuFeaturesLib/SmmCpuFeaturesLib.inf
+  SmmCpuSyncLib|UefiCpuPkg/Library/SmmCpuSyncLib/SmmCpuSyncLib.inf
   PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
   TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
   CcExitLib|UefiCpuPkg/Library/CcExitLibNull/CcExitLibNull.inf
+  AmdSvsmLib|UefiCpuPkg/Library/AmdSvsmLibNull/AmdSvsmLibNull.inf
   MicrocodeLib|UefiCpuPkg/Library/MicrocodeLib/MicrocodeLib.inf
   SmmCpuRendezvousLib|UefiCpuPkg/Library/SmmCpuRendezvousLib/SmmCpuRendezvousLib.inf
   CpuPageTableLib|UefiCpuPkg/Library/CpuPageTableLib/CpuPageTableLib.inf
@@ -109,6 +111,9 @@
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
 
+[LibraryClasses.LoongArch64]
+  SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
+
 #
 # Drivers/Libraries within this package
 #
@@ -156,7 +161,9 @@
   UefiCpuPkg/Library/SmmCpuFeaturesLib/SmmCpuFeaturesLib.inf
   UefiCpuPkg/Library/SmmCpuFeaturesLib/SmmCpuFeaturesLibStm.inf
   UefiCpuPkg/Library/SmmCpuFeaturesLib/StandaloneMmCpuFeaturesLib.inf
+  UefiCpuPkg/Library/SmmCpuSyncLib/SmmCpuSyncLib.inf
   UefiCpuPkg/Library/CcExitLibNull/CcExitLibNull.inf
+  UefiCpuPkg/Library/AmdSvsmLibNull/AmdSvsmLibNull.inf
   UefiCpuPkg/PiSmmCommunication/PiSmmCommunicationPei.inf
   UefiCpuPkg/PiSmmCommunication/PiSmmCommunicationSmm.inf
   UefiCpuPkg/SecCore/SecCore.inf
@@ -194,6 +201,8 @@
   UefiCpuPkg/Library/MmSaveStateLib/AmdMmSaveStateLib.inf
   UefiCpuPkg/Library/MmSaveStateLib/IntelMmSaveStateLib.inf
   UefiCpuPkg/Library/SmmCpuFeaturesLib/AmdSmmCpuFeaturesLib.inf
+  UefiCpuPkg/Library/SmmRelocationLib/SmmRelocationLib.inf
+  UefiCpuPkg/Library/SmmRelocationLib/AmdSmmRelocationLib.inf
 
 [Components.X64]
   UefiCpuPkg/Library/CpuExceptionHandlerLib/UnitTest/DxeCpuExceptionHandlerLibUnitTest.inf
@@ -204,6 +213,11 @@
   UefiCpuPkg/Library/BaseRiscVMmuLib/BaseRiscVMmuLib.inf
   UefiCpuPkg/CpuTimerDxeRiscV64/CpuTimerDxeRiscV64.inf
   UefiCpuPkg/CpuDxeRiscV64/CpuDxeRiscV64.inf
+  UefiCpuPkg/CpuMmio2Dxe/CpuMmio2Dxe.inf
+
+[Components.LOONGARCH64]
+  UefiCpuPkg/Library/CpuMmuLib/CpuMmuLib.inf
+  UefiCpuPkg/CpuMmio2Dxe/CpuMmio2Dxe.inf
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES

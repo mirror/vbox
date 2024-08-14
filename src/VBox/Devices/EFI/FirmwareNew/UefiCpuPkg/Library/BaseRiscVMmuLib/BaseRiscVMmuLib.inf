@@ -25,3 +25,7 @@
 
 [LibraryClasses]
   BaseLib
+
+[Pcd]
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuRiscVMmuMaxSatpMode  ## CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdRiscVFeatureOverride     ## CONSUMES

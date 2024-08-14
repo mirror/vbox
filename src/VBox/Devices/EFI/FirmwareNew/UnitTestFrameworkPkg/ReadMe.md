@@ -59,7 +59,7 @@ reviewed. The paths to the SecureBootVariableLib unit tests are:
 | Unit Test Source Language   |     C     |    C++     |
 | Register Test Suite         |    YES    |    Auto    |
 | Register Test Case          |    YES    |    Auto    |
-| Death/Expected Assert Tests |    YES    |    YES     |
+| Expected Assert Tests       |    YES    |    YES     |
 | Setup/Teardown Hooks        |    YES    |    YES     |
 | Value-Parameterized Tests   |    NO     |    YES     |
 | Typed Tests                 |    NO     |    YES     |
@@ -1095,22 +1095,6 @@ int main(int argc, char* argv[]) {
   return RUN_ALL_TESTS();
 }
 ```
-
-However, while GoogleTest does not require test suites or test cases to be
-registered, there is still one rule within EDK II that currently needs to be
-followed. This rule is that all tests for a given GoogleTest application must
-be contained within the same source file that contains the `main()` function
-shown above. These tests can be written directly in the file or a `#include`
-can be used to add them into the file indirectly.
-
-The reason for this is due to EDK II taking the host application INF file and
-first compiling all of its source files into a static library. This static
-library is then linked into the final host application. The problem with this
-method is that only the tests in the object file containing the `main()`
-function are linked into the final host application. This is because the other
-tests are contained in their own object files within the static library and
-they have no symbols in them that the final host application depends on, so
-those object files are not linked into the final host application.
 
 ### GoogleTest - A Simple Test Case
 

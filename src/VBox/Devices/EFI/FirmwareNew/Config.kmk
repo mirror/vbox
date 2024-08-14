@@ -47,7 +47,7 @@ endif
 #
 # Globals.
 #
-VBOX_PATH_EFI_FIRMWARE = $(PATH_ROOT)/src/VBox/Devices/EFI/Firmware
+VBOX_PATH_EFI_FIRMWARE = $(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareNew
 VBOX_PATH_STAGE_EFI_BLDPROGS = $(PATH_STAGE)/EfiBldProgs
 VBOX_EFI_BUILD_TARGET  = $(if-expr $(intersects release profile, $(KBUILD_TYPE)),RELEASE,DEBUG)
 VBOX_EFI_OUTPUT_SUBDIR = $(VBOX_EFI_BUILD_TARGET)_$(VBOX_EFI_TOOL_CHAIN)

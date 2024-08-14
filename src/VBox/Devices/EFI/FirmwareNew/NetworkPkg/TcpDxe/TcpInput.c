@@ -724,6 +724,7 @@ TcpInput (
   TCP_SEQNO   Urg;
   UINT16      Checksum;
   INT32       Usable;
+  EFI_STATUS  Status;
 
   ASSERT ((Version == IP_VERSION_4) || (Version == IP_VERSION_6));
 
@@ -872,7 +873,17 @@ TcpInput (
       Tcb->LocalEnd.Port  = Head->DstPort;
       Tcb->RemoteEnd.Port = Head->SrcPort;
 
-      TcpInitTcbLocal (Tcb);
+      Status = TcpInitTcbLocal (Tcb);
+      if (EFI_ERROR (Status)) {
+        DEBUG (
+          (DEBUG_ERROR,
+           "TcpInput: discard a segment because failed to init local end for TCB %p\n",
+           Tcb)
+          );
+
+        goto DISCARD;
+      }
+
       TcpInitTcbPeer (Tcb, Seg, &Option);
 
       TcpSetState (Tcb, TCP_SYN_RCVD);
@@ -1177,7 +1188,7 @@ TcpInput (
   //
   if (TCP_FLG_ON (Option.Flag, TCP_OPTION_RCVD_TS)) {
     //
-    // update TsRecent as specified in page 16 RFC1323.
+    // update TsRecent as specified in page 17 RFC7323.
     // RcvWl2 equals to the variable "LastAckSent"
     // defined there.
     //
