@@ -719,9 +719,12 @@ sffs_readdir(
 	vnode_t		*vp,
 	uio_t		*uiop,
 	cred_t		*cred,
-	int		*eofp,
-	caller_context_t *ct,
-	int		flag)
+	int		*eofp
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct,
+	int		flag
+#endif
+	)
 {
 	sfnode_t *dir = VN2SFN(vp);
 	sfnode_t *node;
@@ -755,6 +758,9 @@ sffs_readdir(
 	mutex_enter(&sffs_lock);
 
 	if (dir->sf_dir_list == NULL) {
+#if defined(VBOX_VFS_SOLARIS_10U6)
+        int flag = 0;
+#endif
 		error = sfprov_readdir(dir->sf_sffs->sf_handle, dir->sf_path,
 		    &dir->sf_dir_list, flag);
 		if (error != 0)
@@ -845,7 +851,6 @@ done:
 }
 
 
-#if defined(VBOX_VFS_SOLARIS_10U6)
 /*
  * HERE JOE.. this may need more logic, need to look at other file systems
  */
@@ -854,33 +859,29 @@ sffs_pathconf(
 	vnode_t	*vp,
 	int	cmd,
 	ulong_t	*valp,
-	cred_t	*cr)
-{
-	return (fs_pathconf(vp, cmd, valp, cr));
-}
-#else
-/*
- * HERE JOE.. this may need more logic, need to look at other file systems
- */
-static int
-sffs_pathconf(
-	vnode_t	*vp,
-	int	cmd,
-	ulong_t	*valp,
-	cred_t	*cr,
-	caller_context_t *ct)
-{
-	return (fs_pathconf(vp, cmd, valp, cr, ct));
-}
+	cred_t	*cr
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct
 #endif
+	)
+{
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	return (fs_pathconf(vp, cmd, valp, cr, ct));
+#else
+	return (fs_pathconf(vp, cmd, valp, cr));
+#endif
+}
 
 static int
 sffs_getattr(
 	vnode_t		*vp,
 	vattr_t		*vap,
 	int		flags,
-	cred_t		*cred,
-	caller_context_t *ct)
+	cred_t		*cred
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct
+#endif
+	)
 {
 	sfnode_t	*node = VN2SFN(vp);
 	sffs_data_t	*sffs = node->sf_sffs;
@@ -1152,7 +1153,15 @@ sffs_write(
 
 /*ARGSUSED*/
 static int
-sffs_access(vnode_t *vp, int mode, int flags, cred_t *cr, caller_context_t *ct)
+sffs_access(
+    vnode_t *vp,
+    int mode,
+    int flags,
+    cred_t *cr
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+    , caller_context_t *ct
+#endif
+    )
 {
 	sfnode_t *node = VN2SFN(vp);
 	int error;
@@ -1175,10 +1184,13 @@ sffs_lookup(
 	struct pathname	*pnp,
 	int		flags,
 	vnode_t		*rdir,
-	cred_t		*cred,
-	caller_context_t *ct,
+	cred_t		*cred
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct,
 	int		*direntflags,
-	struct pathname	*realpnp)
+	struct pathname	*realpnp
+#endif
+	)
 {
 	int		error;
 	sfnode_t	*node;
@@ -1231,9 +1243,12 @@ sffs_create(
         int		mode,
         vnode_t		**vpp,
         cred_t		*cr,
-        int		flag,
-        caller_context_t *ct,
-        vsecattr_t	*vsecp)
+        int		flag
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+        , caller_context_t *ct,
+        vsecattr_t	*vsecp
+#endif
+        )
 {
 	vnode_t		*vp;
 	sfnode_t	*node;
@@ -1252,8 +1267,13 @@ sffs_create(
 	/*
 	 * is this a pre-existing file?
 	 */
+#if defined(VBOX_VFS_SOLARIS_10U6)
+	error = sffs_lookup(dvp, name, &vp,
+	    NULL, 0, NULL, cr);
+#else
 	error = sffs_lookup(dvp, name, &vp,
 	    NULL, 0, NULL, cr, ct, NULL, NULL);
+#endif
 	if (error == ENOENT)
 		vp = NULL;
 	else if (error != 0)
@@ -1335,10 +1355,13 @@ sffs_mkdir(
 	char		*nm,
 	vattr_t		*va,
 	vnode_t		**vpp,
-	cred_t		*cred,
-	caller_context_t *ct,
+	cred_t		*cred
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct,
 	int		flags,
-	vsecattr_t	*vsecp)
+	vsecattr_t	*vsecp
+#endif
+	)
 {
 	sfnode_t	*node;
 	vnode_t		*vp;
@@ -1355,7 +1378,11 @@ sffs_mkdir(
 	/*
 	 * Do an unlocked look up first
 	 */
+#if defined(VBOX_VFS_SOLARIS_10U6)
+	error = sffs_lookup(dvp, nm, &vp, NULL, 0, NULL, cred);
+#else
 	error = sffs_lookup(dvp, nm, &vp, NULL, 0, NULL, cred, ct, NULL, NULL);
+#endif
 	if (error == 0) {
 		VN_RELE(vp);
 		return (EEXIST);
@@ -1394,9 +1421,12 @@ sffs_rmdir(
 	struct vnode	*dvp,
 	char		*nm,
 	vnode_t		*cdir,
-	cred_t		*cred,
-	caller_context_t *ct,
-	int		flags)
+	cred_t		*cred
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct,
+	int		flags
+#endif
+	)
 {
 	sfnode_t	 *node;
 	vnode_t		*vp;
@@ -1410,7 +1440,11 @@ sffs_rmdir(
 	if (strcmp(nm, "..") == 0)
 		return (EEXIST);
 
+#if defined(VBOX_VFS_SOLARIS_10U6)
+	error = sffs_lookup(dvp, nm, &vp, NULL, 0, NULL, cred);
+#else
 	error = sffs_lookup(dvp, nm, &vp, NULL, 0, NULL, cred, ct, NULL, NULL);
+#endif
 	if (error)
 		return (error);
 	if (vp->v_type != VDIR) {
@@ -1875,8 +1909,7 @@ sffs_readlink(
 	uio_t		*uiop,
 	cred_t		*cred
 #if !defined(VBOX_VFS_SOLARIS_10U6)
-	,
-	caller_context_t *ct
+	, caller_context_t *ct
 #endif
 	)
 {
@@ -1919,8 +1952,7 @@ sffs_symlink(
 	char		*target,
 	cred_t		*cred
 #if !defined(VBOX_VFS_SOLARIS_10U6)
-	,
-	caller_context_t *ct,
+	, caller_context_t *ct,
 	int		flags
 #endif
 	)
@@ -1986,9 +2018,12 @@ static int
 sffs_remove(
 	vnode_t		*dvp,
 	char		*name,
-	cred_t		*cred,
-	caller_context_t *ct,
-	int		flags)
+	cred_t		*cred
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct,
+	int		flags
+#endif
+	)
 {
 	vnode_t		*vp;
 	sfnode_t	*node;
@@ -2000,8 +2035,13 @@ sffs_remove(
 	ASSERT(name != NULL);
 	ASSERT(strcmp(name, "..") != 0);
 
+#if defined(VBOX_VFS_SOLARIS_10U6)
+	error = sffs_lookup(dvp, name, &vp,
+	    NULL, 0, NULL, cred);
+#else
 	error = sffs_lookup(dvp, name, &vp,
 	    NULL, 0, NULL, cred, ct, NULL, NULL);
+#endif
 	if (error)
 		return (error);
 	node = VN2SFN(vp);
@@ -2052,9 +2092,12 @@ sffs_rename(
 	char		*old_nm,
 	vnode_t		*new_dir,
 	char		*new_nm,
-	cred_t		*cred,
-	caller_context_t *ct,
-	int		flags)
+	cred_t		*cred
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct,
+	int		flags
+#endif
+	)
 {
 	char		*newpath;
 	int		error;
@@ -2109,7 +2152,14 @@ done:
 
 /*ARGSUSED*/
 static int
-sffs_fsync(vnode_t *vp, int flag, cred_t *cr, caller_context_t *ct)
+sffs_fsync(
+    vnode_t *vp,
+    int flag,
+    cred_t *cr
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+    , caller_context_t *ct
+#endif
+    )
 {
 	sfnode_t *node;
 	int		error;
@@ -2135,11 +2185,13 @@ sffs_fsync(vnode_t *vp, int flag, cred_t *cr, caller_context_t *ct)
  */
 /*ARGSUSED*/
 static void
-#if defined(VBOX_VFS_SOLARIS_10U6)
-sffs_inactive(vnode_t *vp, cred_t *cr)
-#else
-sffs_inactive(vnode_t *vp, cred_t *cr, caller_context_t *ct)
+sffs_inactive(
+    vnode_t *vp,
+    cred_t *cr
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+    , caller_context_t *ct
 #endif
+    )
 {
 	sfnode_t *node;
 
@@ -2207,7 +2259,14 @@ sffs_inactive(vnode_t *vp, cred_t *cr, caller_context_t *ct)
  */
 /*ARGSUSED*/
 static int
-sffs_open(vnode_t **vpp, int flag, cred_t *cr, caller_context_t *ct)
+sffs_open(
+    vnode_t **vpp,
+    int flag,
+    cred_t *cr
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+    , caller_context_t *ct
+#endif
+    )
 {
 	sfnode_t *node;
 	int	error = 0;
@@ -2233,8 +2292,11 @@ sffs_close(
 	int flag,
 	int count,
 	offset_t offset,
-	cred_t *cr,
-	caller_context_t *ct)
+	cred_t *cr
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct
+#endif
+	)
 {
 	sfnode_t *node;
 
@@ -2266,7 +2328,14 @@ sffs_close(
 
 /* ARGSUSED */
 static int
-sffs_seek(vnode_t *v, offset_t o, offset_t *no, caller_context_t *ct)
+sffs_seek(
+    vnode_t *v,
+    offset_t o,
+    offset_t *no
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+    , caller_context_t *ct
+#endif
+    )
 {
 	if (*no < 0 || *no > MAXOFFSET_T)
 		return (EINVAL);
@@ -2298,7 +2367,13 @@ sffs_seek(vnode_t *v, offset_t o, offset_t *no, caller_context_t *ct)
  */
 /* ARGSUSED */
 static int
-sffs_fid(vnode_t *vp, fid_t *fidp, caller_context_t *ct)
+sffs_fid(
+    vnode_t *vp,
+    fid_t *fidp
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+    , caller_context_t *ct
+#endif
+    )
 {
 	return (ENOTSUP);
 }
@@ -2307,40 +2382,6 @@ sffs_fid(vnode_t *vp, fid_t *fidp, caller_context_t *ct)
  * vnode operations for regular files
  */
 const fs_operation_def_t sffs_ops_template[] = {
-#if defined(VBOX_VFS_SOLARIS_10U6)
-	VOPNAME_ACCESS,		sffs_access,
-	VOPNAME_CLOSE,		sffs_close,
-	VOPNAME_CREATE,		sffs_create,
-	VOPNAME_FID,		sffs_fid,
-	VOPNAME_FSYNC,		sffs_fsync,
-	VOPNAME_GETATTR,	sffs_getattr,
-	VOPNAME_INACTIVE,	sffs_inactive,
-	VOPNAME_LOOKUP,		sffs_lookup,
-	VOPNAME_MKDIR,		sffs_mkdir,
-	VOPNAME_OPEN,		sffs_open,
-	VOPNAME_PATHCONF,	sffs_pathconf,
-	VOPNAME_READ,		sffs_read,
-	VOPNAME_READDIR,	sffs_readdir,
-	VOPNAME_READLINK,	sffs_readlink,
-	VOPNAME_REMOVE,		sffs_remove,
-	VOPNAME_RENAME,		sffs_rename,
-	VOPNAME_RMDIR,		sffs_rmdir,
-	VOPNAME_SEEK,		sffs_seek,
-	VOPNAME_SETATTR,	sffs_setattr,
-	VOPNAME_SPACE,		sffs_space,
-	VOPNAME_SYMLINK,	sffs_symlink,
-	VOPNAME_WRITE,		sffs_write,
-
-# ifdef VBOXVFS_WITH_MMAP
-	VOPNAME_MAP,		sffs_map,
-	VOPNAME_ADDMAP,		sffs_addmap,
-	VOPNAME_DELMAP,		sffs_delmap,
-	VOPNAME_GETPAGE,	sffs_getpage,
-	VOPNAME_PUTPAGE,	sffs_putpage,
-# endif
-
-	NULL,			NULL
-#else
 	VOPNAME_ACCESS,		{ .vop_access = sffs_access },
 	VOPNAME_CLOSE,		{ .vop_close = sffs_close },
 	VOPNAME_CREATE,		{ .vop_create = sffs_create },
@@ -2373,7 +2414,6 @@ const fs_operation_def_t sffs_ops_template[] = {
 # endif
 
 	NULL,			NULL
-#endif
 };
 
 /*

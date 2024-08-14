@@ -123,7 +123,16 @@ VBoxVFS_SolAddrMap       g_VBoxVFS_SolAddrMap;
 /*
  * Module linkage information
  */
+#if defined(VBOX_VFS_SOLARIS_10U6)
+struct modlfs_s10 {
+    struct mod_ops   *fs_modops;
+    char             *fs_linkinfo;
+    struct vfsdef_v3 *fs_vfsdef;
+};
+static struct modlfs_s10 modlfs = {
+#else
 static struct modlfs modlfs = {
+#endif
 	&mod_fsops,
 	DEVICE_DESC " " VBOX_VERSION_STRING "r" VBOXSOLQUOTE(VBOX_SVN_REV),
 	&sffs_vfsdef
@@ -205,15 +214,6 @@ _fini()
 static int
 sffs_init(int fstype, char *name)
 {
-#if defined(VBOX_VFS_SOLARIS_10U6)
-	static const fs_operation_def_t sffs_vfsops_template[] = {
-		VFSNAME_MOUNT,		sffs_mount,
-		VFSNAME_UNMOUNT,	sffs_unmount,
-		VFSNAME_ROOT,		sffs_root,
-		VFSNAME_STATVFS,	sffs_statvfs,
-		NULL,			NULL
-	};
-#else
 	static const fs_operation_def_t sffs_vfsops_template[] = {
 		VFSNAME_MOUNT,		{ .vfs_mount = sffs_mount },
 		VFSNAME_UNMOUNT,	{ .vfs_unmount = sffs_unmount },
@@ -221,7 +221,6 @@ sffs_init(int fstype, char *name)
 		VFSNAME_STATVFS,	{ .vfs_statvfs = sffs_statvfs },
 		NULL,			NULL
 	};
-#endif
 	int error;
 
 	ASSERT(fstype != 0);
