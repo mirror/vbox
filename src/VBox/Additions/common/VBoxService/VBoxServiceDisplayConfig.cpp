@@ -28,6 +28,7 @@
 #include <wtsapi32.h>
 
 #include <iprt/errcore.h>
+#include <iprt/system.h>
 
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
@@ -59,6 +60,12 @@ static decltype(WTSEnumerateSessionsA)         *g_pfnWTSEnumerateSessionsA = NUL
  */
 static DECLCALLBACK(int) vgsvcDisplayConfigInit(void)
 {
+    if (RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
+    {
+        VGSvcVerbose(1, "displayconfig requires Windows Vista or later\n");
+        return VERR_SERVICE_DISABLED;
+    }
+
     RTLDRMOD hLdrMod;
     int rc = RTLdrLoadSystem("gdi32.dll", true /*fNoUnload*/, &hLdrMod);
     if (RT_SUCCESS(rc))
@@ -74,7 +81,15 @@ static DECLCALLBACK(int) vgsvcDisplayConfigInit(void)
         RTLdrClose(hLdrMod);
     }
 
-    VGSvcVerbose(3, "DXGK d3dkmthk callbacks are %s\n", RT_SUCCESS(rc) ? "Ok" : "Fail");
+    if (RT_FAILURE(rc))
+    {
+        VGSvcVerbose(1, "d3dkmthk API is not available (%Rrc)\n", rc);
+        g_pfnD3DKMTEnumAdapters = NULL;
+        g_pfnD3DKMTOpenAdapterFromLuid = NULL;
+        g_pfnD3DKMTCloseAdapter = NULL;
+        g_pfnD3DKMTEscape = NULL;
+        return VERR_SERVICE_DISABLED;
+    }
 
     rc = RTLdrLoadSystem("wtsapi32.dll", true /*fNoUnload*/, &hLdrMod);
     if (RT_SUCCESS(rc))
@@ -90,11 +105,11 @@ static DECLCALLBACK(int) vgsvcDisplayConfigInit(void)
 
     if (RT_FAILURE(rc))
     {
-        VGSvcVerbose(1, "WtsApi32.dll APIs are not available (%Rrc)\n", rc);
+        VGSvcVerbose(1, "WtsApi32.dll API is not available (%Rrc)\n", rc);
         g_pfnWTSFreeMemory = NULL;
         g_pfnWTSQuerySessionInformationA = NULL;
         g_pfnWTSEnumerateSessionsA = NULL;
-        // Assert(RTSystemGetNtVersion() < RTSYSTEM_MAKE_NT_VERSION(5, 0, 0));
+        return VERR_SERVICE_DISABLED;
     }
 
     return VINF_SUCCESS;

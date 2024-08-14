@@ -186,6 +186,9 @@ static struct
 #ifdef VBOX_WITH_SHARED_FOLDERS
     { &g_AutoMount,     NIL_RTTHREAD, false, false, false, false, true },
 #endif
+#ifdef RT_OS_WINDOWS
+    { &g_DisplayConfig, NIL_RTTHREAD, false, false, false, false, true },
+#endif
 };
 
 
