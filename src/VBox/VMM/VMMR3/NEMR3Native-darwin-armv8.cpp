@@ -181,6 +181,7 @@ typedef hv_return_t     FN_HV_GIC_SET_REDISTRIBUTOR_REG(hv_vcpu_t vcpu, hv_gic_r
 
 typedef hv_return_t     FN_HV_GIC_GET_INTID(hv_gic_intid_t interrupt, uint32_t *intid);
 
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
