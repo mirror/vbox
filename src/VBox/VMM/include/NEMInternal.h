@@ -320,6 +320,8 @@ typedef struct NEM
     bool                        fCreatedEmts : 1;
     /** Set if hv_vm_create() was called successfully. */
     bool                        fCreatedVm   : 1;
+    /** Set if EL2 is enabled. */
+    bool                        fEl2Enabled  : 1;
 # if defined(VBOX_VMM_TARGET_ARMV8)
     /** @name vTimer related state.
      * @{ */
