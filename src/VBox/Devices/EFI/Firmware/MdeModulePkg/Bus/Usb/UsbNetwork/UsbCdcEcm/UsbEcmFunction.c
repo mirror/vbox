@@ -628,7 +628,7 @@ SetUsbEthMcastFilter (
     return Status;
   }
 
-  if ((UsbEthFunDescriptor.NumberMcFilters << 1) == 0) {
+  if ((UsbEthFunDescriptor.NumberMcFilters & MAC_FILTERS_MASK) == 0) {
     return EFI_UNSUPPORTED;
   }
 
@@ -769,7 +769,7 @@ ConvertFilter (
 
   Count = sizeof (gTable)/sizeof (gTable[0]);
 
-  for (Index = 0; (gTable[Index].Src != 0) && (Index < Count); Index++) {
+  for (Index = 0; (Index < Count) && (gTable[Index].Src != 0); Index++) {
     if (gTable[Index].Src & Value) {
       *CdcFilter |= gTable[Index].Dst;
     }

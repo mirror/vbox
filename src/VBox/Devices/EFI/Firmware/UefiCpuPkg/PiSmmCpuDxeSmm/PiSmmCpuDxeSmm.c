@@ -3,7 +3,7 @@ Agent Module to load other modules to deploy SMM Entry Vector for X86 CPU.
 
 Copyright (c) 2009 - 2023, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
-Copyright (C) 2023 Advanced Micro Devices, Inc. All rights reserved.<BR>
+Copyright (C) 2023 - 2024 Advanced Micro Devices, Inc. All rights reserved.<BR>
 
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -56,11 +56,6 @@ CPU_HOT_PLUG_DATA  mCpuHotPlugData = {
 //
 SMM_CPU_PRIVATE_DATA  *gSmmCpuPrivate = &mSmmCpuPrivateData;
 
-//
-// SMM Relocation variables
-//
-volatile BOOLEAN  *mRebased;
-
 ///
 /// Handle for the SMM CPU Protocol
 ///
@@ -85,7 +80,6 @@ EDKII_SMM_MEMORY_ATTRIBUTE_PROTOCOL  mSmmMemoryAttribute = {
 
 EFI_CPU_INTERRUPT_HANDLER  mExternalVectorTable[EXCEPTION_VECTOR_NUMBER];
 
-BOOLEAN           mSmmRelocated    = FALSE;
 volatile BOOLEAN  *mSmmInitialized = NULL;
 UINT32            mBspApicId       = 0;
 
@@ -99,8 +93,8 @@ UINTN  mSmmStackSize;
 UINTN    mSmmShadowStackSize;
 BOOLEAN  mCetSupported = TRUE;
 
-UINTN  mMaxNumberOfCpus = 1;
-UINTN  mNumberOfCpus    = 1;
+UINTN  mMaxNumberOfCpus = 0;
+UINTN  mNumberOfCpus    = 0;
 
 //
 // SMM ready to lock flag
@@ -111,6 +105,11 @@ BOOLEAN  mSmmReadyToLock = FALSE;
 // Global used to cache PCD for SMM Code Access Check enable
 //
 BOOLEAN  mSmmCodeAccessCheckEnable = FALSE;
+
+//
+// Global used to cache SMM Debug Agent Supported ot not
+//
+BOOLEAN  mSmmDebugAgentSupport = FALSE;
 
 //
 // Global copy of the PcdPteMemoryEncryptionAddressOrMask
@@ -129,12 +128,6 @@ EFI_SMRAM_DESCRIPTOR  *mSmmCpuSmramRanges;
 UINTN                 mSmmCpuSmramRangeCount;
 
 UINT8  mPhysicalAddressBits;
-
-//
-// Control register contents saved for SMM S3 resume state initialization.
-//
-UINT32  mSmmCr0;
-UINT32  mSmmCr4;
 
 /**
   Initialize IDT to setup exception handlers for SMM.
@@ -332,12 +325,11 @@ SmmWriteSaveState (
 }
 
 /**
-  C function for SMI handler. To change all processor's SMMBase Register.
+  Initialize SMM environment.
 
 **/
 VOID
-EFIAPI
-SmmInitHandler (
+InitializeSmm (
   VOID
   )
 {
@@ -345,10 +337,6 @@ SmmInitHandler (
   UINTN    Index;
   BOOLEAN  IsBsp;
 
-  //
-  // Update SMM IDT entries' code segment and load IDT
-  //
-  AsmWriteIdtr (&gcSmiIdtr);
   ApicId = GetApicId ();
 
   IsBsp = (BOOLEAN)(mBspApicId == ApicId);
@@ -358,7 +346,7 @@ SmmInitHandler (
   for (Index = 0; Index < mNumberOfCpus; Index++) {
     if (ApicId == (UINT32)gSmmCpuPrivate->ProcessorInfo[Index].ProcessorId) {
       PERF_CODE (
-        MpPerfBegin (Index, SMM_MP_PERF_PROCEDURE_ID (SmmInitHandler));
+        MpPerfBegin (Index, SMM_MP_PERF_PROCEDURE_ID (InitializeSmm));
         );
       //
       // Initialize SMM specific features on the currently executing CPU
@@ -383,15 +371,8 @@ SmmInitHandler (
         InitializeMpSyncData ();
       }
 
-      if (!mSmmRelocated) {
-        //
-        // Hook return after RSM to set SMM re-based flag
-        //
-        SemaphoreHook (Index, &mRebased[Index]);
-      }
-
       PERF_CODE (
-        MpPerfEnd (Index, SMM_MP_PERF_PROCEDURE_ID (SmmInitHandler));
+        MpPerfEnd (Index, SMM_MP_PERF_PROCEDURE_ID (InitializeSmm));
         );
 
       return;
@@ -452,107 +433,6 @@ ExecuteFirstSmiInit (
 }
 
 /**
-  Relocate SmmBases for each processor.
-
-  Execute on first boot and all S3 resumes
-
-**/
-VOID
-EFIAPI
-SmmRelocateBases (
-  VOID
-  )
-{
-  UINT8                 BakBuf[BACK_BUF_SIZE];
-  SMRAM_SAVE_STATE_MAP  BakBuf2;
-  SMRAM_SAVE_STATE_MAP  *CpuStatePtr;
-  UINT8                 *U8Ptr;
-  UINTN                 Index;
-  UINTN                 BspIndex;
-
-  PERF_FUNCTION_BEGIN ();
-
-  //
-  // Make sure the reserved size is large enough for procedure SmmInitTemplate.
-  //
-  ASSERT (sizeof (BakBuf) >= gcSmmInitSize);
-
-  //
-  // Patch ASM code template with current CR0, CR3, and CR4 values
-  //
-  mSmmCr0 = (UINT32)AsmReadCr0 ();
-  PatchInstructionX86 (gPatchSmmCr0, mSmmCr0, 4);
-  PatchInstructionX86 (gPatchSmmCr3, AsmReadCr3 (), 4);
-  mSmmCr4 = (UINT32)AsmReadCr4 ();
-  PatchInstructionX86 (gPatchSmmCr4, mSmmCr4 & (~CR4_CET_ENABLE), 4);
-
-  //
-  // Patch GDTR for SMM base relocation
-  //
-  gcSmiInitGdtr.Base  = gcSmiGdtr.Base;
-  gcSmiInitGdtr.Limit = gcSmiGdtr.Limit;
-
-  U8Ptr       = (UINT8 *)(UINTN)(SMM_DEFAULT_SMBASE + SMM_HANDLER_OFFSET);
-  CpuStatePtr = (SMRAM_SAVE_STATE_MAP *)(UINTN)(SMM_DEFAULT_SMBASE + SMRAM_SAVE_STATE_MAP_OFFSET);
-
-  //
-  // Backup original contents at address 0x38000
-  //
-  CopyMem (BakBuf, U8Ptr, sizeof (BakBuf));
-  CopyMem (&BakBuf2, CpuStatePtr, sizeof (BakBuf2));
-
-  //
-  // Load image for relocation
-  //
-  CopyMem (U8Ptr, gcSmmInitTemplate, gcSmmInitSize);
-
-  //
-  // Retrieve the local APIC ID of current processor
-  //
-  mBspApicId = GetApicId ();
-
-  //
-  // Relocate SM bases for all APs
-  // This is APs' 1st SMI - rebase will be done here, and APs' default SMI handler will be overridden by gcSmmInitTemplate
-  //
-  BspIndex = (UINTN)-1;
-  for (Index = 0; Index < mNumberOfCpus; Index++) {
-    mRebased[Index] = FALSE;
-    if (mBspApicId != (UINT32)gSmmCpuPrivate->ProcessorInfo[Index].ProcessorId) {
-      SendSmiIpi ((UINT32)gSmmCpuPrivate->ProcessorInfo[Index].ProcessorId);
-      //
-      // Wait for this AP to finish its 1st SMI
-      //
-      while (!mRebased[Index]) {
-      }
-    } else {
-      //
-      // BSP will be Relocated later
-      //
-      BspIndex = Index;
-    }
-  }
-
-  //
-  // Relocate BSP's SMM base
-  //
-  ASSERT (BspIndex != (UINTN)-1);
-  SendSmiIpi (mBspApicId);
-  //
-  // Wait for the BSP to finish its 1st SMI
-  //
-  while (!mRebased[BspIndex]) {
-  }
-
-  //
-  // Restore contents at address 0x38000
-  //
-  CopyMem (CpuStatePtr, &BakBuf2, sizeof (BakBuf2));
-  CopyMem (U8Ptr, BakBuf, sizeof (BakBuf));
-  PERF_FUNCTION_END ();
-}
-
-/**
   SMM Ready To Lock event notification handler.
 
   The CPU S3 data is copied to SMRAM for security and mSmmReadyToLock is set to
@@ -587,6 +467,362 @@ SmmReadyToLockEventNotify (
 }
 
 /**
+  Function to compare 2 SMM_BASE_HOB_DATA pointer based on ProcessorIndex.
+
+  @param[in] Buffer1            pointer to SMM_BASE_HOB_DATA poiner to compare
+  @param[in] Buffer2            pointer to second SMM_BASE_HOB_DATA pointer to compare
+
+  @retval 0                     Buffer1 equal to Buffer2
+  @retval <0                    Buffer1 is less than Buffer2
+  @retval >0                    Buffer1 is greater than Buffer2
+**/
+INTN
+EFIAPI
+SmBaseHobCompare (
+  IN  CONST VOID  *Buffer1,
+  IN  CONST VOID  *Buffer2
+  )
+{
+  if ((*(SMM_BASE_HOB_DATA **)Buffer1)->ProcessorIndex > (*(SMM_BASE_HOB_DATA **)Buffer2)->ProcessorIndex) {
+    return 1;
+  } else if ((*(SMM_BASE_HOB_DATA **)Buffer1)->ProcessorIndex < (*(SMM_BASE_HOB_DATA **)Buffer2)->ProcessorIndex) {
+    return -1;
+  }
+
+  return 0;
+}
+
+/**
+  Extract SmBase for all CPU from SmmBase HOB.
+
+  @param[in]  MaxNumberOfCpus        Max NumberOfCpus.
+
+  @param[out] AllocatedSmBaseBuffer  Pointer to SmBase Buffer allocated
+                                     by this function. Only set if the
+                                     function returns EFI_SUCCESS.
+
+  @retval EFI_SUCCESS           SmBase Buffer output successfully.
+  @retval EFI_OUT_OF_RESOURCES  Memory allocation failed.
+  @retval EFI_NOT_FOUND         gSmmBaseHobGuid was never created.
+**/
+STATIC
+EFI_STATUS
+GetSmBase (
+  IN  UINTN  MaxNumberOfCpus,
+  OUT UINTN  **AllocatedSmBaseBuffer
+  )
+{
+  UINTN              HobCount;
+  EFI_HOB_GUID_TYPE  *GuidHob;
+  SMM_BASE_HOB_DATA  *SmmBaseHobData;
+  UINTN              NumberOfProcessors;
+  SMM_BASE_HOB_DATA  **SmBaseHobs;
+  UINTN              *SmBaseBuffer;
+  UINTN              HobIndex;
+  UINTN              SortBuffer;
+  UINTN              ProcessorIndex;
+  UINT64             PrevProcessorIndex;
+  EFI_HOB_GUID_TYPE  *FirstSmmBaseGuidHob;
+
+  SmmBaseHobData     = NULL;
+  HobIndex           = 0;
+  ProcessorIndex     = 0;
+  HobCount           = 0;
+  NumberOfProcessors = 0;
+
+  FirstSmmBaseGuidHob = GetFirstGuidHob (&gSmmBaseHobGuid);
+  if (FirstSmmBaseGuidHob == NULL) {
+    return EFI_NOT_FOUND;
+  }
+
+  GuidHob = FirstSmmBaseGuidHob;
+  while (GuidHob != NULL) {
+    HobCount++;
+    SmmBaseHobData      = GET_GUID_HOB_DATA (GuidHob);
+    NumberOfProcessors += SmmBaseHobData->NumberOfProcessors;
+
+    if (NumberOfProcessors >= MaxNumberOfCpus) {
+      break;
+    }
+
+    GuidHob = GetNextGuidHob (&gSmmBaseHobGuid, GET_NEXT_HOB (GuidHob));
+  }
+
+  ASSERT (NumberOfProcessors == MaxNumberOfCpus);
+  if (NumberOfProcessors != MaxNumberOfCpus) {
+    CpuDeadLoop ();
+  }
+
+  SmBaseHobs = AllocatePool (sizeof (SMM_BASE_HOB_DATA *) * HobCount);
+  if (SmBaseHobs == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // Record each SmmBaseHob pointer in the SmBaseHobs.
+  // The FirstSmmBaseGuidHob is to speed up this while-loop
+  // without needing to look for SmBaseHob from beginning.
+  //
+  GuidHob = FirstSmmBaseGuidHob;
+  while (HobIndex < HobCount) {
+    SmBaseHobs[HobIndex++] = GET_GUID_HOB_DATA (GuidHob);
+    GuidHob                = GetNextGuidHob (&gSmmBaseHobGuid, GET_NEXT_HOB (GuidHob));
+  }
+
+  SmBaseBuffer = (UINTN *)AllocatePool (sizeof (UINTN) * (MaxNumberOfCpus));
+  ASSERT (SmBaseBuffer != NULL);
+  if (SmBaseBuffer == NULL) {
+    FreePool (SmBaseHobs);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  QuickSort (SmBaseHobs, HobCount, sizeof (SMM_BASE_HOB_DATA *), (BASE_SORT_COMPARE)SmBaseHobCompare, &SortBuffer);
+  PrevProcessorIndex = 0;
+  for (HobIndex = 0; HobIndex < HobCount; HobIndex++) {
+    //
+    // Make sure no overlap and no gap in the CPU range covered by each HOB
+    //
+    ASSERT (SmBaseHobs[HobIndex]->ProcessorIndex == PrevProcessorIndex);
+
+    //
+    // Cache each SmBase in order.
+    //
+    for (ProcessorIndex = 0; ProcessorIndex < SmBaseHobs[HobIndex]->NumberOfProcessors; ProcessorIndex++) {
+      SmBaseBuffer[PrevProcessorIndex + ProcessorIndex] = (UINTN)SmBaseHobs[HobIndex]->SmBase[ProcessorIndex];
+    }
+
+    PrevProcessorIndex += SmBaseHobs[HobIndex]->NumberOfProcessors;
+  }
+
+  FreePool (SmBaseHobs);
+  *AllocatedSmBaseBuffer = SmBaseBuffer;
+  return EFI_SUCCESS;
+}
+
+/**
+  Function to compare 2 MP_INFORMATION2_HOB_DATA pointer based on ProcessorIndex.
+
+  @param[in] Buffer1            pointer to MP_INFORMATION2_HOB_DATA poiner to compare
+  @param[in] Buffer2            pointer to second MP_INFORMATION2_HOB_DATA pointer to compare
+
+  @retval 0                     Buffer1 equal to Buffer2
+  @retval <0                    Buffer1 is less than Buffer2
+  @retval >0                    Buffer1 is greater than Buffer2
+**/
+INTN
+EFIAPI
+MpInformation2HobCompare (
+  IN  CONST VOID  *Buffer1,
+  IN  CONST VOID  *Buffer2
+  )
+{
+  if ((*(MP_INFORMATION2_HOB_DATA **)Buffer1)->ProcessorIndex > (*(MP_INFORMATION2_HOB_DATA **)Buffer2)->ProcessorIndex) {
+    return 1;
+  } else if ((*(MP_INFORMATION2_HOB_DATA **)Buffer1)->ProcessorIndex < (*(MP_INFORMATION2_HOB_DATA **)Buffer2)->ProcessorIndex) {
+    return -1;
+  }
+
+  return 0;
+}
+
+/**
+  Extract NumberOfCpus, MaxNumberOfCpus and EFI_PROCESSOR_INFORMATION for all CPU from gEfiMpServiceProtocolGuid.
+
+  @param[out] NumberOfCpus           Pointer to NumberOfCpus.
+  @param[out] MaxNumberOfCpus        Pointer to MaxNumberOfCpus.
+
+  @retval ProcessorInfo              Pointer to EFI_PROCESSOR_INFORMATION buffer.
+**/
+EFI_PROCESSOR_INFORMATION *
+GetMpInformationFromMpServices (
+  OUT UINTN  *NumberOfCpus,
+  OUT UINTN  *MaxNumberOfCpus
+  )
+{
+  EFI_STATUS                 Status;
+  UINTN                      Index;
+  UINTN                      NumberOfEnabledProcessors;
+  UINTN                      NumberOfProcessors;
+  EFI_MP_SERVICES_PROTOCOL   *MpService;
+  EFI_PROCESSOR_INFORMATION  *ProcessorInfo;
+
+  if ((NumberOfCpus == NULL) || (MaxNumberOfCpus == NULL)) {
+    ASSERT_EFI_ERROR (EFI_INVALID_PARAMETER);
+    return NULL;
+  }
+
+  ProcessorInfo    = NULL;
+  *NumberOfCpus    = 0;
+  *MaxNumberOfCpus = 0;
+
+  /// Get the MP Services Protocol
+  Status = gBS->LocateProtocol (&gEfiMpServiceProtocolGuid, NULL, (VOID **)&MpService);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return NULL;
+  }
+
+  /// Get the number of processors
+  Status = MpService->GetNumberOfProcessors (MpService, &NumberOfProcessors, &NumberOfEnabledProcessors);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return NULL;
+  }
+
+  ASSERT (NumberOfProcessors <= PcdGet32 (PcdCpuMaxLogicalProcessorNumber));
+
+  /// Allocate buffer for processor information
+  ProcessorInfo = AllocateZeroPool (sizeof (EFI_PROCESSOR_INFORMATION) * NumberOfProcessors);
+  if (ProcessorInfo == NULL) {
+    ASSERT_EFI_ERROR (EFI_OUT_OF_RESOURCES);
+    return NULL;
+  }
+
+  /// Get processor information
+  for (Index = 0; Index < NumberOfProcessors; Index++) {
+    Status = MpService->GetProcessorInfo (MpService, Index | CPU_V2_EXTENDED_TOPOLOGY, &ProcessorInfo[Index]);
+    if (EFI_ERROR (Status)) {
+      FreePool (ProcessorInfo);
+      DEBUG ((DEBUG_ERROR, "%a: Failed to get processor information for processor %d\n", __func__, Index));
+      ASSERT_EFI_ERROR (Status);
+      return NULL;
+    }
+  }
+
+  *NumberOfCpus = NumberOfEnabledProcessors;
+
+  ASSERT (*NumberOfCpus <= PcdGet32 (PcdCpuMaxLogicalProcessorNumber));
+  //
+  // If support CPU hot plug, we need to allocate resources for possibly hot-added processors
+  //
+  if (FeaturePcdGet (PcdCpuHotPlugSupport)) {
+    *MaxNumberOfCpus = PcdGet32 (PcdCpuMaxLogicalProcessorNumber);
+  } else {
+    *MaxNumberOfCpus = *NumberOfCpus;
+  }
+
+  return ProcessorInfo;
+}
+
+/**
+  Extract NumberOfCpus, MaxNumberOfCpus and EFI_PROCESSOR_INFORMATION for all CPU from MpInformation2 HOB.
+
+  @param[out] NumberOfCpus           Pointer to NumberOfCpus.
+  @param[out] MaxNumberOfCpus        Pointer to MaxNumberOfCpus.
+
+  @retval ProcessorInfo              Pointer to EFI_PROCESSOR_INFORMATION buffer.
+**/
+EFI_PROCESSOR_INFORMATION *
+GetMpInformation (
+  OUT UINTN  *NumberOfCpus,
+  OUT UINTN  *MaxNumberOfCpus
+  )
+{
+  EFI_HOB_GUID_TYPE          *GuidHob;
+  EFI_HOB_GUID_TYPE          *FirstMpInfo2Hob;
+  MP_INFORMATION2_HOB_DATA   *MpInformation2HobData;
+  UINTN                      HobCount;
+  UINTN                      HobIndex;
+  MP_INFORMATION2_HOB_DATA   **MpInfo2Hobs;
+  UINTN                      SortBuffer;
+  UINTN                      ProcessorIndex;
+  UINT64                     PrevProcessorIndex;
+  MP_INFORMATION2_ENTRY      *MpInformation2Entry;
+  EFI_PROCESSOR_INFORMATION  *ProcessorInfo;
+
+  GuidHob               = NULL;
+  MpInformation2HobData = NULL;
+  FirstMpInfo2Hob       = NULL;
+  MpInfo2Hobs           = NULL;
+  HobIndex              = 0;
+  HobCount              = 0;
+
+  FirstMpInfo2Hob = GetFirstGuidHob (&gMpInformation2HobGuid);
+  if (FirstMpInfo2Hob == NULL) {
+    DEBUG ((DEBUG_INFO, "%a: [INFO] gMpInformation2HobGuid HOB not found.\n", __func__));
+    return GetMpInformationFromMpServices (NumberOfCpus, MaxNumberOfCpus);
+  }
+
+  GuidHob = FirstMpInfo2Hob;
+  while (GuidHob != NULL) {
+    MpInformation2HobData = GET_GUID_HOB_DATA (GuidHob);
+
+    //
+    // This is the last MpInformationHob in the HOB list.
+    //
+    if (MpInformation2HobData->NumberOfProcessors == 0) {
+      ASSERT (HobCount != 0);
+      break;
+    }
+
+    HobCount++;
+    *NumberOfCpus += MpInformation2HobData->NumberOfProcessors;
+    GuidHob        = GetNextGuidHob (&gMpInformation2HobGuid, GET_NEXT_HOB (GuidHob));
+  }
+
+  ASSERT (*NumberOfCpus <= PcdGet32 (PcdCpuMaxLogicalProcessorNumber));
+
+  //
+  // If support CPU hot plug, we need to allocate resources for possibly hot-added processors
+  //
+  if (FeaturePcdGet (PcdCpuHotPlugSupport)) {
+    *MaxNumberOfCpus = PcdGet32 (PcdCpuMaxLogicalProcessorNumber);
+  } else {
+    *MaxNumberOfCpus = *NumberOfCpus;
+  }
+
+  MpInfo2Hobs = AllocatePool (sizeof (MP_INFORMATION2_HOB_DATA *) * HobCount);
+  ASSERT (MpInfo2Hobs != NULL);
+  if (MpInfo2Hobs == NULL) {
+    return NULL;
+  }
+
+  //
+  // Record each MpInformation2Hob pointer in the MpInfo2Hobs.
+  // The FirstMpInfo2Hob is to speed up this while-loop without
+  // needing to look for MpInfo2Hob from beginning.
+  //
+  GuidHob = FirstMpInfo2Hob;
+  while (HobIndex < HobCount) {
+    MpInfo2Hobs[HobIndex++] = GET_GUID_HOB_DATA (GuidHob);
+    GuidHob                 = GetNextGuidHob (&gMpInformation2HobGuid, GET_NEXT_HOB (GuidHob));
+  }
+
+  ProcessorInfo = (EFI_PROCESSOR_INFORMATION *)AllocatePool (sizeof (EFI_PROCESSOR_INFORMATION) * (*MaxNumberOfCpus));
+  ASSERT (ProcessorInfo != NULL);
+  if (ProcessorInfo == NULL) {
+    FreePool (MpInfo2Hobs);
+    return NULL;
+  }
+
+  QuickSort (MpInfo2Hobs, HobCount, sizeof (MP_INFORMATION2_HOB_DATA *), (BASE_SORT_COMPARE)MpInformation2HobCompare, &SortBuffer);
+  PrevProcessorIndex = 0;
+  for (HobIndex = 0; HobIndex < HobCount; HobIndex++) {
+    //
+    // Make sure no overlap and no gap in the CPU range covered by each HOB
+    //
+    ASSERT (MpInfo2Hobs[HobIndex]->ProcessorIndex == PrevProcessorIndex);
+
+    //
+    // Cache each EFI_PROCESSOR_INFORMATION in order.
+    //
+    for (ProcessorIndex = 0; ProcessorIndex < MpInfo2Hobs[HobIndex]->NumberOfProcessors; ProcessorIndex++) {
+      MpInformation2Entry = GET_MP_INFORMATION_ENTRY (MpInfo2Hobs[HobIndex], ProcessorIndex);
+      CopyMem (
+        &ProcessorInfo[PrevProcessorIndex + ProcessorIndex],
+        &MpInformation2Entry->ProcessorInfo,
+        sizeof (EFI_PROCESSOR_INFORMATION)
+        );
+    }
+
+    PrevProcessorIndex += MpInfo2Hobs[HobIndex]->NumberOfProcessors;
+  }
+
+  FreePool (MpInfo2Hobs);
+  return ProcessorInfo;
+}
+
+/**
   The module Entry Point of the CPU SMM driver.
 
   @param  ImageHandle    The firmware allocated handle for the EFI image.
@@ -603,42 +839,32 @@ PiCpuSmmEntry (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS                Status;
-  EFI_MP_SERVICES_PROTOCOL  *MpServices;
-  UINTN                     NumberOfEnabledProcessors;
-  UINTN                     Index;
-  VOID                      *Buffer;
-  UINTN                     BufferPages;
-  UINTN                     TileCodeSize;
-  UINTN                     TileDataSize;
-  UINTN                     TileSize;
-  UINT8                     *Stacks;
-  VOID                      *Registration;
-  UINT32                    RegEax;
-  UINT32                    RegEbx;
-  UINT32                    RegEcx;
-  UINT32                    RegEdx;
-  UINTN                     FamilyId;
-  UINTN                     ModelId;
-  UINT32                    Cr3;
-  EFI_HOB_GUID_TYPE         *GuidHob;
-  SMM_BASE_HOB_DATA         *SmmBaseHobData;
-
-  GuidHob        = NULL;
-  SmmBaseHobData = NULL;
+  EFI_STATUS  Status;
+  UINTN       Index;
+  UINTN       TileCodeSize;
+  UINTN       TileDataSize;
+  UINTN       TileSize;
+  UINT8       *Stacks;
+  VOID        *Registration;
+  UINT32      RegEax;
+  UINT32      RegEbx;
+  UINT32      RegEcx;
+  UINT32      RegEdx;
+  UINTN       FamilyId;
+  UINTN       ModelId;
+  UINT32      Cr3;
 
   PERF_FUNCTION_BEGIN ();
 
   //
   // Initialize address fixup
   //
-  PiSmmCpuSmmInitFixupAddress ();
   PiSmmCpuSmiEntryFixupAddress ();
 
   //
   // Initialize Debug Agent to support source level debug in SMM code
   //
-  InitializeDebugAgent (DEBUG_AGENT_INIT_SMM, NULL, NULL);
+  InitializeDebugAgent (DEBUG_AGENT_INIT_SMM, &mSmmDebugAgentSupport, NULL);
 
   //
   // Report the start of CPU SMM initialization.
@@ -654,17 +880,10 @@ PiCpuSmmEntry (
   FindSmramInfo (&mCpuHotPlugData.SmrrBase, &mCpuHotPlugData.SmrrSize);
 
   //
-  // Get MP Services Protocol
+  // Retrive NumberOfProcessors, MaxNumberOfCpus and EFI_PROCESSOR_INFORMATION for all CPU from MpInformation2 HOB.
   //
-  Status = SystemTable->BootServices->LocateProtocol (&gEfiMpServiceProtocolGuid, NULL, (VOID **)&MpServices);
-  ASSERT_EFI_ERROR (Status);
-
-  //
-  // Use MP Services Protocol to retrieve the number of processors and number of enabled processors
-  //
-  Status = MpServices->GetNumberOfProcessors (MpServices, &mNumberOfCpus, &NumberOfEnabledProcessors);
-  ASSERT_EFI_ERROR (Status);
-  ASSERT (mNumberOfCpus <= PcdGet32 (PcdCpuMaxLogicalProcessorNumber));
+  gSmmCpuPrivate->ProcessorInfo = GetMpInformation (&mNumberOfCpus, &mMaxNumberOfCpus);
+  ASSERT (gSmmCpuPrivate->ProcessorInfo != NULL);
 
   //
   // If support CPU hot plug, PcdCpuSmmEnableBspElection should be set to TRUE.
@@ -689,15 +908,6 @@ PiCpuSmmEntry (
   //
   mAddressEncMask = PcdGet64 (PcdPteMemoryEncryptionAddressOrMask) & PAGING_1G_ADDRESS_MASK_64;
   DEBUG ((DEBUG_INFO, "mAddressEncMask = 0x%lx\n", mAddressEncMask));
-
-  //
-  // If support CPU hot plug, we need to allocate resources for possibly hot-added processors
-  //
-  if (FeaturePcdGet (PcdCpuHotPlugSupport)) {
-    mMaxNumberOfCpus = PcdGet32 (PcdCpuMaxLogicalProcessorNumber);
-  } else {
-    mMaxNumberOfCpus = mNumberOfCpus;
-  }
 
   gSmmCpuPrivate->SmmCoreEntryContext.NumberOfCpus = mMaxNumberOfCpus;
 
@@ -860,57 +1070,34 @@ PiCpuSmmEntry (
   ASSERT (TileSize <= (SMRAM_SAVE_STATE_MAP_OFFSET + sizeof (SMRAM_SAVE_STATE_MAP) - SMM_HANDLER_OFFSET));
 
   //
-  // Retrive the allocated SmmBase from gSmmBaseHobGuid. If found,
+  // Check whether the Required TileSize is enough.
+  //
+  if (TileSize > SIZE_8KB) {
+    DEBUG ((DEBUG_ERROR, "The Range of Smbase in SMRAM is not enough -- Required TileSize = 0x%08x, Actual TileSize = 0x%08x\n", TileSize, SIZE_8KB));
+    FreePool (gSmmCpuPrivate->ProcessorInfo);
+    CpuDeadLoop ();
+    return RETURN_BUFFER_TOO_SMALL;
+  }
+
+  //
+  // Retrieve the allocated SmmBase from gSmmBaseHobGuid. If found,
   // means the SmBase relocation has been done.
   //
-  GuidHob = GetFirstGuidHob (&gSmmBaseHobGuid);
-  if (GuidHob != NULL) {
-    //
-    // Check whether the Required TileSize is enough.
-    //
-    if (TileSize > SIZE_8KB) {
-      DEBUG ((DEBUG_ERROR, "The Range of Smbase in SMRAM is not enough -- Required TileSize = 0x%08x, Actual TileSize = 0x%08x\n", TileSize, SIZE_8KB));
-      CpuDeadLoop ();
-      return RETURN_BUFFER_TOO_SMALL;
-    }
-
-    SmmBaseHobData = GET_GUID_HOB_DATA (GuidHob);
-
-    //
-    // Assume single instance of HOB produced, expect the HOB.NumberOfProcessors equals to the mMaxNumberOfCpus.
-    //
-    ASSERT (SmmBaseHobData->NumberOfProcessors == (UINT32)mMaxNumberOfCpus && SmmBaseHobData->ProcessorIndex == 0);
-    mSmmRelocated = TRUE;
-  } else {
-    //
-    // When the HOB doesn't exist, allocate new SMBASE itself.
-    //
-    DEBUG ((DEBUG_INFO, "PiCpuSmmEntry: gSmmBaseHobGuid not found!\n"));
-    //
-    // very old processors (i486 + pentium) need 32k not 4k alignment, exclude them.
-    //
-    ASSERT (FamilyId >= 6);
-    //
-    // Allocate buffer for all of the tiles.
-    //
-    BufferPages = EFI_SIZE_TO_PAGES (SIZE_32KB + TileSize * (mMaxNumberOfCpus - 1));
-    Buffer      = AllocateAlignedCodePages (BufferPages, SIZE_4KB);
-    if (Buffer == NULL) {
-      DEBUG ((DEBUG_ERROR, "Failed to allocate %Lu pages.\n", (UINT64)BufferPages));
-      CpuDeadLoop ();
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    ASSERT (Buffer != NULL);
-    DEBUG ((DEBUG_INFO, "New Allcoated SMRAM SaveState Buffer (0x%08x, 0x%08x)\n", Buffer, EFI_PAGES_TO_SIZE (BufferPages)));
+  mCpuHotPlugData.SmBase = NULL;
+  Status                 = GetSmBase (mMaxNumberOfCpus, &mCpuHotPlugData.SmBase);
+  ASSERT (!EFI_ERROR (Status));
+  if (EFI_ERROR (Status)) {
+    CpuDeadLoop ();
   }
+
+  //
+  // ASSERT SmBase has been relocated.
+  //
+  ASSERT (mCpuHotPlugData.SmBase != NULL);
 
   //
   // Allocate buffer for pointers to array in  SMM_CPU_PRIVATE_DATA.
   //
-  gSmmCpuPrivate->ProcessorInfo = (EFI_PROCESSOR_INFORMATION *)AllocatePool (sizeof (EFI_PROCESSOR_INFORMATION) * mMaxNumberOfCpus);
-  ASSERT (gSmmCpuPrivate->ProcessorInfo != NULL);
-
   gSmmCpuPrivate->Operation = (SMM_CPU_OPERATION *)AllocatePool (sizeof (SMM_CPU_OPERATION) * mMaxNumberOfCpus);
   ASSERT (gSmmCpuPrivate->Operation != NULL);
 
@@ -928,8 +1115,6 @@ PiCpuSmmEntry (
   //
   mCpuHotPlugData.ApicId = (UINT64 *)AllocatePool (sizeof (UINT64) * mMaxNumberOfCpus);
   ASSERT (mCpuHotPlugData.ApicId != NULL);
-  mCpuHotPlugData.SmBase = (UINTN *)AllocatePool (sizeof (UINTN) * mMaxNumberOfCpus);
-  ASSERT (mCpuHotPlugData.SmBase != NULL);
   mCpuHotPlugData.ArrayLength = (UINT32)mMaxNumberOfCpus;
 
   //
@@ -938,15 +1123,11 @@ PiCpuSmmEntry (
   // size for each CPU in the platform
   //
   for (Index = 0; Index < mMaxNumberOfCpus; Index++) {
-    mCpuHotPlugData.SmBase[Index] = mSmmRelocated ? (UINTN)SmmBaseHobData->SmBase[Index] : (UINTN)Buffer + Index * TileSize - SMM_HANDLER_OFFSET;
-
     gSmmCpuPrivate->CpuSaveStateSize[Index] = sizeof (SMRAM_SAVE_STATE_MAP);
     gSmmCpuPrivate->CpuSaveState[Index]     = (VOID *)(mCpuHotPlugData.SmBase[Index] + SMRAM_SAVE_STATE_MAP_OFFSET);
     gSmmCpuPrivate->Operation[Index]        = SmmCpuNone;
 
     if (Index < mNumberOfCpus) {
-      Status = MpServices->GetProcessorInfo (MpServices, Index | CPU_V2_EXTENDED_TOPOLOGY, &gSmmCpuPrivate->ProcessorInfo[Index]);
-      ASSERT_EFI_ERROR (Status);
       mCpuHotPlugData.ApicId[Index] = gSmmCpuPrivate->ProcessorInfo[Index].ProcessorId;
 
       DEBUG ((
@@ -1038,39 +1219,9 @@ PiCpuSmmEntry (
   }
 
   //
-  // Set SMI stack for SMM base relocation
-  //
-  PatchInstructionX86 (
-    gPatchSmmInitStack,
-    (UINTN)(Stacks + mSmmStackSize - sizeof (UINTN)),
-    sizeof (UINTN)
-    );
-
-  //
   // Initialize IDT
   //
   InitializeSmmIdt ();
-
-  //
-  // Check whether Smm Relocation is done or not.
-  // If not, will do the SmmBases Relocation here!!!
-  //
-  if (!mSmmRelocated) {
-    //
-    // Relocate SMM Base addresses to the ones allocated from SMRAM
-    //
-    mRebased = (BOOLEAN *)AllocateZeroPool (sizeof (BOOLEAN) * mMaxNumberOfCpus);
-    ASSERT (mRebased != NULL);
-    SmmRelocateBases ();
-
-    //
-    // Call hook for BSP to perform extra actions in normal mode after all
-    // SMM base addresses have been relocated on all CPUs
-    //
-    SmmCpuFeaturesSmmRelocationComplete ();
-  }
-
-  DEBUG ((DEBUG_INFO, "mXdSupported - 0x%x\n", mXdSupported));
 
   //
   // SMM Time initialization
@@ -1108,15 +1259,15 @@ PiCpuSmmEntry (
   // Those MSRs & CSRs must be configured before normal SMI sources happen.
   // So, here is to issue SMI IPI (All Excluding  Self SMM IPI + BSP SMM IPI) to execute first SMI init.
   //
-  if (mSmmRelocated) {
-    ExecuteFirstSmiInit ();
+  ExecuteFirstSmiInit ();
 
-    //
-    // Call hook for BSP to perform extra actions in normal mode after all
-    // SMM base addresses have been relocated on all CPUs
-    //
-    SmmCpuFeaturesSmmRelocationComplete ();
-  }
+  //
+  // Call hook for BSP to perform extra actions in normal mode after all
+  // SMM base addresses have been relocated on all CPUs
+  //
+  SmmCpuFeaturesSmmRelocationComplete ();
+
+  DEBUG ((DEBUG_INFO, "mXdSupported - 0x%x\n", mXdSupported));
 
   //
   // Fill in SMM Reserved Regions
@@ -1505,88 +1656,6 @@ AllocateCodePages (
   }
 
   return (VOID *)(UINTN)Memory;
-}
-
-/**
-  Allocate aligned pages for code.
-
-  @param[in]  Pages                 Number of pages to be allocated.
-  @param[in]  Alignment             The requested alignment of the allocation.
-                                    Must be a power of two.
-                                    If Alignment is zero, then byte alignment is used.
-
-  @return Allocated memory.
-**/
-VOID *
-AllocateAlignedCodePages (
-  IN UINTN  Pages,
-  IN UINTN  Alignment
-  )
-{
-  EFI_STATUS            Status;
-  EFI_PHYSICAL_ADDRESS  Memory;
-  UINTN                 AlignedMemory;
-  UINTN                 AlignmentMask;
-  UINTN                 UnalignedPages;
-  UINTN                 RealPages;
-
-  //
-  // Alignment must be a power of two or zero.
-  //
-  ASSERT ((Alignment & (Alignment - 1)) == 0);
-
-  if (Pages == 0) {
-    return NULL;
-  }
-
-  if (Alignment > EFI_PAGE_SIZE) {
-    //
-    // Calculate the total number of pages since alignment is larger than page size.
-    //
-    AlignmentMask = Alignment - 1;
-    RealPages     = Pages + EFI_SIZE_TO_PAGES (Alignment);
-    //
-    // Make sure that Pages plus EFI_SIZE_TO_PAGES (Alignment) does not overflow.
-    //
-    ASSERT (RealPages > Pages);
-
-    Status = gSmst->SmmAllocatePages (AllocateAnyPages, EfiRuntimeServicesCode, RealPages, &Memory);
-    if (EFI_ERROR (Status)) {
-      return NULL;
-    }
-
-    AlignedMemory  = ((UINTN)Memory + AlignmentMask) & ~AlignmentMask;
-    UnalignedPages = EFI_SIZE_TO_PAGES (AlignedMemory - (UINTN)Memory);
-    if (UnalignedPages > 0) {
-      //
-      // Free first unaligned page(s).
-      //
-      Status = gSmst->SmmFreePages (Memory, UnalignedPages);
-      ASSERT_EFI_ERROR (Status);
-    }
-
-    Memory         = AlignedMemory + EFI_PAGES_TO_SIZE (Pages);
-    UnalignedPages = RealPages - Pages - UnalignedPages;
-    if (UnalignedPages > 0) {
-      //
-      // Free last unaligned page(s).
-      //
-      Status = gSmst->SmmFreePages (Memory, UnalignedPages);
-      ASSERT_EFI_ERROR (Status);
-    }
-  } else {
-    //
-    // Do not over-allocate pages in this case.
-    //
-    Status = gSmst->SmmAllocatePages (AllocateAnyPages, EfiRuntimeServicesCode, Pages, &Memory);
-    if (EFI_ERROR (Status)) {
-      return NULL;
-    }
-
-    AlignedMemory = (UINTN)Memory;
-  }
-
-  return (VOID *)AlignedMemory;
 }
 
 /**

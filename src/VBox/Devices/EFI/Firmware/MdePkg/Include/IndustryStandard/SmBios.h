@@ -1,7 +1,7 @@
 /** @file
-  Industry Standard Definitions of SMBIOS Table Specification v3.6.0.
+  Industry Standard Definitions of SMBIOS Table Specification v3.8.0.
 
-Copyright (c) 2006 - 2021, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2024, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015-2017 Hewlett Packard Enterprise Development LP<BR>
 (C) Copyright 2015 - 2019 Hewlett Packard Enterprise Development LP<BR>
 Copyright (c) 2022, AMD Incorporated. All rights reserved.<BR>
@@ -554,6 +554,7 @@ typedef enum {
   ProcessorFamilyM2                              = 0x13,
   ProcessorFamilyIntelCeleronM                   = 0x14,
   ProcessorFamilyIntelPentium4Ht                 = 0x15,
+  ProcessorFamilyIntel                           = 0x16,
   ProcessorFamilyAmdDuron                        = 0x18,
   ProcessorFamilyK5                              = 0x19,
   ProcessorFamilyK6                              = 0x1A,
@@ -773,7 +774,15 @@ typedef enum {
   ProcessorFamilyQuadCoreLoongson3B  = 0x026E,
   ProcessorFamilyMultiCoreLoongson3B = 0x026F,
   ProcessorFamilyMultiCoreLoongson3C = 0x0270,
-  ProcessorFamilyMultiCoreLoongson3D = 0x0271
+  ProcessorFamilyMultiCoreLoongson3D = 0x0271,
+  ProcessorFamilyIntelCore3          = 0x0300,
+  ProcessorFamilyIntelCore5          = 0x0301,
+  ProcessorFamilyIntelCore7          = 0x0302,
+  ProcessorFamilyIntelCore9          = 0x0303,
+  ProcessorFamilyIntelCoreUltra3     = 0x0304,
+  ProcessorFamilyIntelCoreUltra5     = 0x0305,
+  ProcessorFamilyIntelCoreUltra7     = 0x0306,
+  ProcessorFamilyIntelCoreUltra9     = 0x0307
 } PROCESSOR_FAMILY2_DATA;
 
 ///
@@ -863,7 +872,22 @@ typedef enum {
   ProcessorUpgradeSocketLGA1211   = 0x45,
   ProcessorUpgradeSocketLGA2422   = 0x46,
   ProcessorUpgradeSocketLGA5773   = 0x47,
-  ProcessorUpgradeSocketBGA5773   = 0x48
+  ProcessorUpgradeSocketBGA5773   = 0x48,
+  ProcessorUpgradeSocketAM5       = 0x49,
+  ProcessorUpgradeSocketSP5       = 0x4A,
+  ProcessorUpgradeSocketSP6       = 0x4B,
+  ProcessorUpgradeSocketBGA883    = 0x4C,
+  ProcessorUpgradeSocketBGA1190   = 0x4D,
+  ProcessorUpgradeSocketBGA4129   = 0x4E,
+  ProcessorUpgradeSocketLGA4710   = 0x4F,
+  ProcessorUpgradeSocketLGA7529   = 0x50,
+  ProcessorUpgradeSocketBGA1964   = 0x51,
+  ProcessorUpgradeSocketBGA1792   = 0x52,
+  ProcessorUpgradeSocketBGA2049   = 0x53,
+  ProcessorUpgradeSocketBGA2551   = 0x54,
+  ProcessorUpgradeSocketLGA1851   = 0x55,
+  ProcessorUpgradeSocketBGA2114   = 0x56,
+  ProcessorUpgradeSocketBGA2833   = 0x57
 } PROCESSOR_UPGRADE;
 
 ///

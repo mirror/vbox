@@ -9,7 +9,7 @@
 DEFAULT REL
 SECTION .text
 
-%define TDVMCALL_EXPOSE_REGS_MASK       0xffec
+%define TDVMCALL_EXPOSE_REGS_MASK       0xffcc
 %define TDVMCALL                        0x0
 
 %macro tdcall 0
@@ -133,9 +133,7 @@ ASM_PFX(TdVmCall):
        test r9, r9
        jz .no_return_data
 
-       ; On success, propagate TDVMCALL output value to output param
-       test rax, rax
-       jnz .no_return_data
+       ; Propagate TDVMCALL output value to output param
        mov [r9], r11
 .no_return_data:
        tdcall_regs_postamble

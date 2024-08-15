@@ -3,6 +3,7 @@
 #  It implements the interfaces of monitoring the status of all ports and transferring
 #  Control, Bulk, Interrupt and Isochronous requests to those attached usb LS/FS/HS/SS devices.
 #
+#  (C) Copyright 2023 Hewlett Packard Enterprise Development LP<BR>
 #  Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -44,6 +45,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
 
 [LibraryClasses]
   MemoryAllocationLib
@@ -54,6 +56,8 @@
   BaseMemoryLib
   DebugLib
   ReportStatusCodeLib
+  TimerLib
+  PcdLib
 
 [Guids]
   gEfiEventExitBootServicesGuid                 ## SOMETIMES_CONSUMES ## Event
@@ -61,6 +65,9 @@
 [Protocols]
   gEfiPciIoProtocolGuid                         ## TO_START
   gEfiUsb2HcProtocolGuid                        ## BY_START
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayXhciHCReset  ## CONSUMES
 
 # [Event]
 # EVENT_TYPE_PERIODIC_TIMER       ## CONSUMES

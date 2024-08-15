@@ -9,7 +9,7 @@
 # (C) Copyright 2016 - 2019 Hewlett Packard Enterprise Development LP<BR>
 # Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 # Copyright (c) Microsoft Corporation.<BR>
-# Copyright (C) 2023 Advanced Micro Devices, Inc. All rights reserved.<BR>
+# Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -163,6 +163,16 @@
   ##  @libraryclass  Provides services to access UEFI variable flash information.
   #
   VariableFlashInfoLib|Include/Library/VariableFlashInfoLib.h
+
+  ##  @libraryclass   Memory Attribute Table support logic for tracking and reporting
+  #                   runtime images
+  #
+  ImagePropertiesRecordLib|Include/Library/ImagePropertiesRecordLib.h
+
+  ##  @libraryclass   Platform SPI Host Controller library which provides low-level
+  #                   control over the SPI hardware
+  #
+  SpiHcPlatformLib|Include/Library/SpiHcPlatformLib.h
 
 [Guids]
   ## MdeModule package token space guid
@@ -416,7 +426,11 @@
   gEdkiiCapsuleOnDiskNameGuid = { 0x98c80a4f, 0xe16b, 0x4d11, { 0x93, 0x9a, 0xab, 0xe5, 0x61, 0x26, 0x3, 0x30 } }
 
   ## Include/Guid/MigratedFvInfo.h
-  gEdkiiMigratedFvInfoGuid = { 0xc1ab12f7, 0x74aa, 0x408d, { 0xa2, 0xf4, 0xc6, 0xce, 0xfd, 0x17, 0x98, 0x71 } }
+  gEdkiiMigrationInfoGuid   = { 0xb4b140a5, 0x72f6, 0x4c21, { 0x93, 0xe4, 0xac, 0xc4, 0xec, 0xcb, 0x23, 0x23 } }
+  gEdkiiMigratedFvInfoGuid  = { 0xc1ab12f7, 0x74aa, 0x408d, { 0xa2, 0xf4, 0xc6, 0xce, 0xfd, 0x17, 0x98, 0x71 } }
+
+  ## Include/Guid/RngAlgorithm.h
+  gEdkiiRngAlgorithmUnSafe = { 0x869f728c, 0x409d, 0x4ab4, {0xac, 0x03, 0x71, 0xd3, 0x09, 0xc1, 0xb3, 0xf4 }}
 
   #
   # GUID defined in UniversalPayload
@@ -444,6 +458,12 @@
 
   ## GUID used for Boot Discovery Policy FormSet guid and related variables.
   gBootDiscoveryPolicyMgrFormsetGuid = { 0x5b6f7107, 0xbb3c, 0x4660, { 0x92, 0xcd, 0x54, 0x26, 0x90, 0x28, 0x0b, 0xbd } }
+
+  #
+  # SPI NOR flash JEDEC Serial Flash Discoverable Parameters (SFDP) driver GUID
+  #
+  gEdk2JedecSfdpSpiDxeDriverGuid  = { 0xBE71701E, 0xB63C, 0x4574, { 0x9C, 0x5C, 0x36, 0x29, 0xE8, 0xEA, 0xC4, 0x14 }}
+  gEdk2JedecSfdpSpiSmmDriverGuid  = { 0x95A1E915, 0x195C, 0x477C, { 0x92, 0x6F, 0x7E, 0x24, 0x67, 0xC1, 0xB3, 0x1F }}
 
 [Ppis]
   ## Include/Ppi/FirmwareVolumeShadowPpi.h
@@ -1018,6 +1038,11 @@
   # free pages for all of them. The page allocation for the type related to
   # cleared bits keeps the same as ususal.
   #
+  # The heap guard system only supports guarding EfiRuntimeServicesCode, EfiRuntimeServicesData,
+  # EfiReservedMemoryType, and EfiACPIMemoryNVS memory types for systems that have
+  # RUNTIME_PAGE_ALLOCATION_GRANULARITY == EFI_PAGE_SIZE. This is to preserve alignment requirements
+  # without extending the page guard size to very large granularities.
+  #
   # This PCD is only valid if BIT0 and/or BIT2 are set in PcdHeapGuardPropertyMask.
   #
   # Below is bit mask for this PCD: (Order is same as UEFI spec)<BR>
@@ -1048,6 +1073,11 @@
   # before and after corresponding type of pages which the allocated pool occupies,
   # if there's enough free memory for all of them. The pool allocation for the
   # type related to cleared bits keeps the same as ususal.
+  #
+  # The heap guard system only supports guarding EfiRuntimeServicesCode, EfiRuntimeServicesData,
+  # EfiReservedMemoryType, and EfiACPIMemoryNVS memory types for systems that have
+  # RUNTIME_PAGE_ALLOCATION_GRANULARITY == EFI_PAGE_SIZE. This is to preserve alignment requirements
+  # without extending the page guard size to very large granularities.
   #
   # This PCD is only valid if BIT1 and/or BIT3 are set in PcdHeapGuardPropertyMask.
   #
@@ -1121,6 +1151,18 @@
   ## Indicate MMIO address where Trace Hub message output to.
   # @Prompt Output MMIO address of Trace Hub message.
   gEfiMdeModulePkgTokenSpaceGuid.PcdTraceHubDebugMmioAddress|0|UINT64|0x30001058
+
+  ## Indicates if images with large load address (>0x100000) should attempted to load at specified location.
+  #  If enabled, attempt to allocate at specfied location will be attempted with a fall back to any address.
+  #   TRUE  - UEFI will attempt to load at specified location.<BR>
+  #   FALSE - UEFI will load at any address<BR>
+  # @Prompt Enable large address image loading.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdImageLargeAddressLoad|TRUE|BOOLEAN|0x30001059
+
+  ## Indicates time delay for XHCI registers access after it issues HCRST.
+  # Default is 2000, it represent delay is 2 ms.
+  # @Prompt Delay access XHCI register after it issues HCRST (us)
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayXhciHCReset|2000|UINT16|0x30001060
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
@@ -1507,6 +1549,13 @@
   # @Prompt Exposed ACPI table versions.
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiExposedTableVersions|0x3E|UINT32|0x0001004c
 
+  ## Indicates whether ACPI Reclaim memory is not available
+  # Default is FALSE that means ACPI Reclaim memory is available
+  # If it is set to TRUE that means ACPI Reclaim memory is not available
+  # For example ACPI Table protocol will use ACPI NVS memory instead of ACPI Reclaim memory
+  # @Prompt ACPI Reclaim memory is not available.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNoACPIReclaimMemory|FALSE|BOOLEAN|0x0001008b
+
   ## This PCD defines the MAX repair count.
   #  The default value is 0 that means infinite.
   # @Prompt MAX repair count
@@ -1611,6 +1660,26 @@
   ## The Retry Count of AHCI command if there is a failure
   # @Prompt The value of Retry Count,  Default value is 5.
   gEfiMdeModulePkgTokenSpaceGuid.PcdAhciCommandRetryCount|5|UINT32|0x00000032
+
+  ## SPI NOR Flash operation retry counts
+  #  0x00000000:  No retry
+  #  0xFFFFFFFF:  Maximum retry value
+  #
+  # @Prompt SPI NOR Flash Operation Retry Value
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSpiNorFlashOperationRetryCount|0x00000003|UINT32|0x00000033
+
+  ## SPI NOR Flash operation retry counts for the fixed timeout value
+  #  0x00000000:  No retry
+  #  0xFFFFFFFF:  Maximum retry value
+  #
+  # @Prompt SPI NOR Flash Operation Retry Value for the Fixed Timeout Value
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSpiNorFlashFixedTimeoutRetryCount|0x0000FFFF|UINT32|0x00000034
+
+  ## SPI NOR Flash operation delay in microseconds
+  #  Deafult is set to 0x00000010 microseconds
+  #
+  # @Prompt SPI NOR Flash Operation Delay in Microseconds (16 us)
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSpiNorFlashOperationDelayMicroseconds|0x00000010|UINT32|0x00000035
 
 [PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## This PCD defines the Console output row. The default value is 25 according to UEFI spec.
@@ -2112,6 +2181,11 @@
   #       EV_EFI_PLATFORM_FIRMWARE_BLOB2 and EV_EFI_HANDOFF_TABLES2.
   # @Prompt TCG Platform Firmware Profile revision.
   gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision|0|UINT32|0x00010077
+
+  ## Specify whether to enable the state of SPDM device authentication and measurement.<BR><BR>
+  #  0: Platform Firmware not supports SPDM device authentication and measurement.
+  #  1: Platform Firmware supports SPDM device authentication and measurement.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnableSpdmDeviceAuthentication|0|UINT8|0x00010033
 
   ## Indicates if StatusCode is reported via Serial port.<BR><BR>
   #   TRUE  - Reports StatusCode via Serial port.<BR>

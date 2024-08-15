@@ -62,10 +62,10 @@ FV = SECFV
 
 [FD.MEMFD]
 BaseAddress   = $(MEMFD_BASE_ADDRESS)
-Size          = 0xE00000
+Size          = 0xF80000
 ErasePolarity = 1
 BlockSize     = 0x10000
-NumBlocks     = 0xE0
+NumBlocks     = 0xF8
 
 0x000000|0x006000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPageTablesBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPageTablesSize
@@ -86,7 +86,7 @@ gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamBase|gUefiOvmfPkgTokenSpaceGuid.P
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfPeiMemFvBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfPeiMemFvSize
 FV = PEIFV
 
-0x100000|0xD00000
+0x100000|0xE80000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeMemFvBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeMemFvSize
 FV = DXEFV
 
@@ -219,12 +219,7 @@ INF  MdeModulePkg/Universal/SecurityStubDxe/SecurityStubDxe.inf
 INF  MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
 INF  UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
 INF  UefiCpuPkg/CpuDxe/CpuDxe.inf
-!ifdef $(CSM_ENABLE)
-  INF OvmfPkg/8259InterruptControllerDxe/8259.inf
-  INF OvmfPkg/8254TimerDxe/8254Timer.inf
-!else
-  INF OvmfPkg/LocalApicTimerDxe/LocalApicTimerDxe.inf
-!endif
+INF  OvmfPkg/LocalApicTimerDxe/LocalApicTimerDxe.inf
 INF  OvmfPkg/IncompatiblePciDeviceSupportDxe/IncompatiblePciDeviceSupport.inf
 INF  OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
 INF  MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
@@ -282,7 +277,6 @@ INF  MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf
 INF  MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
 INF  MdeModulePkg/Universal/SetupBrowserDxe/SetupBrowserDxe.inf
 INF  MdeModulePkg/Universal/DisplayEngineDxe/DisplayEngineDxe.inf
-INF  MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe.inf
 
 INF  OvmfPkg/SioBusDxe/SioBusDxe.inf
 !if $(SOURCE_DEBUG_ENABLE) == FALSE
@@ -294,7 +288,6 @@ INF  MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
 INF  OvmfPkg/SmbiosPlatformDxe/SmbiosPlatformDxe.inf
 
 !ifdef $(VBOX)
-INF VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
 INF VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
 INF VBoxPkg/VBoxFsDxe/VBoxHfs.inf
 INF VBoxPkg/VBoxSysTables/VBoxSysTables.inf
@@ -318,20 +311,16 @@ INF  FatPkg/EnhancedFatDxe/Fat.inf
 INF  MdeModulePkg/Universal/Disk/UdfDxe/UdfDxe.inf
 INF  OvmfPkg/VirtioFsDxe/VirtioFsDxe.inf
 
-!if $(BUILD_SHELL) == TRUE && $(TOOL_CHAIN_TAG) != "XCODE5"
-INF  ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf
-INF  ShellPkg/DynamicCommand/HttpDynamicCommand/HttpDynamicCommand.inf
-INF  OvmfPkg/LinuxInitrdDynamicShellCommand/LinuxInitrdDynamicShellCommand.inf
-!endif
-!if $(BUILD_SHELL) == TRUE
-INF  ShellPkg/Application/Shell/Shell.inf
-!endif
-
 !ifndef $(VBOX)
 INF MdeModulePkg/Logo/LogoDxe.inf
 !else
 INF VBoxPkg/Logo/LogoDxe.inf
 !endif
+
+#
+# Hash2 Protocol producer
+#
+INF SecurityPkg/Hash2DxeCrypto/Hash2DxeCrypto.inf
 
 #
 # Network modules
@@ -354,22 +343,16 @@ INF  MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
 INF  MdeModulePkg/Bus/Usb/UsbKbDxe/UsbKbDxe.inf
 INF  MdeModulePkg/Bus/Usb/UsbMassStorageDxe/UsbMassStorageDxe.inf
 
-!ifdef $(CSM_ENABLE)
-INF  OvmfPkg/Csm/BiosThunk/VideoDxe/VideoDxe.inf
-INF  OvmfPkg/Csm/LegacyBiosDxe/LegacyBiosDxe.inf
-INF  RuleOverride=CSM OvmfPkg/Csm/Csm16/Csm16.inf
-!else
 !ifndef $(VBOX)
 INF  OvmfPkg/QemuVideoDxe/QemuVideoDxe.inf
-!endif
-!endif
-
-!ifndef $(VBOX)
 INF  OvmfPkg/QemuRamfbDxe/QemuRamfbDxe.inf
 INF  OvmfPkg/VirtioGpuDxe/VirtioGpu.inf
 !endif
 INF  OvmfPkg/PlatformDxe/Platform.inf
 INF  OvmfPkg/IoMmuDxe/IoMmuDxe.inf
+!ifndef $(VBOX)
+INF  OvmfPkg/VirtHstiDxe/VirtHstiDxe.inf
+!endif
 
 !if $(SMM_REQUIRE) == TRUE
 INF  OvmfPkg/SmmAccess/SmmAccess2Dxe.inf
@@ -405,6 +388,8 @@ INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 # TPM support
 #
 !include OvmfPkg/Include/Fdf/OvmfTpmDxe.fdf.inc
+
+!include OvmfPkg/Include/Fdf/ShellDxe.fdf.inc
 
 !if $(LOAD_X64_ON_IA32_ENABLE) == TRUE
 INF  OvmfPkg/CompatImageLoaderDxe/CompatImageLoaderDxe.inf
@@ -522,11 +507,6 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
     PE32      PE32                    |.efi
     UI        STRING="$(MODULE_NAME)" Optional
     VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
-  }
-
-[Rule.Common.USER_DEFINED.CSM]
-  FILE FREEFORM = $(NAMED_GUID) {
-    RAW BIN                |.bin
   }
 
 [Rule.Common.SEC.RESET_VECTOR]

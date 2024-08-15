@@ -255,7 +255,7 @@ INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 #
 # EFI_CC_MEASUREMENT_PROTOCOL
 #
-INF SecurityPkg/Tcg/TdTcg2Dxe/TdTcg2Dxe.inf
+INF OvmfPkg/Tcg/TdTcg2Dxe/TdTcg2Dxe.inf
 
 ################################################################################
 
@@ -300,20 +300,12 @@ INF  MdeModulePkg/Universal/DriverHealthManagerDxe/DriverHealthManagerDxe.inf
 INF  MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskDxe.inf
 INF  MdeModulePkg/Bus/Scsi/ScsiBusDxe/ScsiBusDxe.inf
 INF  MdeModulePkg/Bus/Scsi/ScsiDiskDxe/ScsiDiskDxe.inf
-INF  MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe.inf
 INF  MdeModulePkg/Bus/Isa/Ps2KeyboardDxe/Ps2KeyboardDxe.inf
 INF  MdeModulePkg/Universal/Acpi/S3SaveStateDxe/S3SaveStateDxe.inf
 INF  MdeModulePkg/Universal/Acpi/BootScriptExecutorDxe/BootScriptExecutorDxe.inf
 INF  MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
 INF  MdeModulePkg/Universal/Disk/UdfDxe/UdfDxe.inf
 INF  OvmfPkg/VirtioFsDxe/VirtioFsDxe.inf
-
-!if $(BUILD_SHELL) == TRUE && $(TOOL_CHAIN_TAG) != "XCODE5"
-INF  OvmfPkg/LinuxInitrdDynamicShellCommand/LinuxInitrdDynamicShellCommand.inf
-!endif
-!if $(BUILD_SHELL) == TRUE
-INF  ShellPkg/Application/Shell/Shell.inf
-!endif
 
 INF MdeModulePkg/Logo/LogoDxe.inf
 
@@ -332,6 +324,8 @@ INF  OvmfPkg/QemuVideoDxe/QemuVideoDxe.inf
 INF  OvmfPkg/QemuRamfbDxe/QemuRamfbDxe.inf
 INF  OvmfPkg/VirtioGpuDxe/VirtioGpu.inf
 INF  OvmfPkg/PlatformDxe/Platform.inf
+
+!include OvmfPkg/Include/Fdf/ShellDxe.fdf.inc
 
 ################################################################################
 
@@ -430,11 +424,6 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
     PE32      PE32                    |.efi
     UI        STRING="$(MODULE_NAME)" Optional
     VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
-  }
-
-[Rule.Common.USER_DEFINED.CSM]
-  FILE FREEFORM = $(NAMED_GUID) {
-    RAW BIN                |.bin
   }
 
 [Rule.Common.SEC.RESET_VECTOR]

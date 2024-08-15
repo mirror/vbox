@@ -96,7 +96,6 @@ ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
  	MdeModulePkg/Universal/EbcDxe/EbcDxe/$(VBOX_EFI_DEBUG_DIR)/EbcDxe \
  	MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe/$(VBOX_EFI_DEBUG_DIR)/FaultTolerantWriteDxe \
  	MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe/$(VBOX_EFI_DEBUG_DIR)/HiiDatabase \
- 	MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe/$(VBOX_EFI_DEBUG_DIR)/NullMemoryTestDxe \
  	MdeModulePkg/Universal/Metronome/Metronome/$(VBOX_EFI_DEBUG_DIR)/Metronome \
  	MdeModulePkg/Universal/MonotonicCounterRuntimeDxe/MonotonicCounterRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/MonotonicCounterRuntimeDxe \
  	MdeModulePkg/Universal/PCD/Dxe/Pcd/$(VBOX_EFI_DEBUG_DIR)/PcdDxe \
@@ -145,8 +144,7 @@ ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
  	VBoxPkg/VBoxAppleSim/VBoxAppleSim/$(VBOX_EFI_DEBUG_DIR)/VBoxAppleSim \
  	VBoxPkg/VBoxFsDxe/VBoxHfs/$(VBOX_EFI_DEBUG_DIR)/VBoxHfs \
  	VBoxPkg/VBoxSysTables/VBoxSysTables/$(VBOX_EFI_DEBUG_DIR)/VBoxSysTables \
- 	VBoxPkg/VBoxVgaDxe/VBoxVgaDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaDxe \
- 	VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaMiniPortDxe
+ 	VBoxPkg/VBoxVgaDxe/VBoxVgaDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaDxe
 
  VBOX_EFI_MODULES_ARM = \
  	$(VBOX_EFI_MODULES_CMN)

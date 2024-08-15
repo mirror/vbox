@@ -62,6 +62,9 @@ gUefiOvmfPkgTokenSpaceGuid.PcdOvmfWorkAreaBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvm
 0x00C000|0x001000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBackupBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBackupSize
 
+0x00D000|0x001000
+gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecApicPageTableBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecApicPageTableSize
+
 0x010000|0x010000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamSize
 
@@ -236,7 +239,6 @@ INF  MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf
 INF  MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
 INF  MdeModulePkg/Universal/SetupBrowserDxe/SetupBrowserDxe.inf
 INF  MdeModulePkg/Universal/DisplayEngineDxe/DisplayEngineDxe.inf
-INF  MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe.inf
 
 !if $(SOURCE_DEBUG_ENABLE) == FALSE
 INF  MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
@@ -257,13 +259,6 @@ INF  OvmfPkg/VirtioFsDxe/VirtioFsDxe.inf
 
 INF  EmbeddedPkg/Drivers/FdtClientDxe/FdtClientDxe.inf
 INF  OvmfPkg/Fdt/VirtioFdtDxe/VirtioFdtDxe.inf
-
-!if $(TOOL_CHAIN_TAG) != "XCODE5"
-INF  ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf
-INF  ShellPkg/DynamicCommand/HttpDynamicCommand/HttpDynamicCommand.inf
-INF  OvmfPkg/LinuxInitrdDynamicShellCommand/LinuxInitrdDynamicShellCommand.inf
-!endif
-INF  ShellPkg/Application/Shell/Shell.inf
 
 INF MdeModulePkg/Logo/LogoDxe.inf
 
@@ -302,6 +297,8 @@ INF  OvmfPkg/QemuFlashFvbServicesRuntimeDxe/FvbServicesRuntimeDxe.inf
 INF  OvmfPkg/EmuVariableFvbRuntimeDxe/Fvb.inf
 INF  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe.inf
 INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
+
+!include OvmfPkg/Include/Fdf/ShellDxe.fdf.inc
 
 ################################################################################
 
@@ -415,11 +412,6 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
     PE32      PE32                    |.efi
     UI        STRING="$(MODULE_NAME)" Optional
     VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
-  }
-
-[Rule.Common.USER_DEFINED.CSM]
-  FILE FREEFORM = $(NAMED_GUID) {
-    RAW BIN                |.bin
   }
 
 [Rule.Common.SEC.RESET_VECTOR]

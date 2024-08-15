@@ -5,7 +5,7 @@
   which have xAPIC and x2APIC modes.
 
   Copyright (c) 2010 - 2023, Intel Corporation. All rights reserved.<BR>
-  Copyright (c) 2017 - 2020, AMD Inc. All rights reserved.<BR>
+  Copyright (c) 2017 - 2024, AMD Inc. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -1294,11 +1294,12 @@ GetProcessorLocationByApicId (
       NULL
       );
     //
-    // If CPUID.(EAX=0BH, ECX=0H):EBX returns zero and maximum input value for
-    // basic CPUID information is greater than 0BH, then CPUID.0BH leaf is not
-    // supported on that processor.
+    // Quoting Intel SDM:
+    // Software must detect the presence of CPUID leaf 0BH by
+    // verifying (a) the highest leaf index supported by CPUID is >=
+    // 0BH, and (b) CPUID.0BH:EBX[15:0] reports a non-zero value.
     //
-    if (ExtendedTopologyEbx.Uint32 != 0) {
+    if (ExtendedTopologyEbx.Bits.LogicalProcessors != 0) {
       TopologyLeafSupported = TRUE;
 
       //
@@ -1396,6 +1397,125 @@ GetProcessorLocationByApicId (
 }
 
 /**
+  Get Package ID/Die ID/Module ID/Core ID/Thread ID of a AMD processor family.
+
+  The algorithm assumes the target system has symmetry across physical
+  package boundaries with respect to the number of threads per core, number of
+  cores per module, number of modules per die, number
+  of dies per package.
+
+  @param[in]   InitialApicId Initial APIC ID of the target logical processor.
+  @param[out]  Package       Returns the processor package ID.
+  @param[out]  Die           Returns the processor die ID.
+  @param[out]  Tile          Returns zero.
+  @param[out]  Module        Returns the processor module ID.
+  @param[out]  Core          Returns the processor core ID.
+  @param[out]  Thread        Returns the processor thread ID.
+**/
+VOID
+AmdGetProcessorLocation2ByApicId (
+  IN  UINT32  InitialApicId,
+  OUT UINT32  *Package  OPTIONAL,
+  OUT UINT32  *Die      OPTIONAL,
+  OUT UINT32  *Tile     OPTIONAL,
+  OUT UINT32  *Module   OPTIONAL,
+  OUT UINT32  *Core     OPTIONAL,
+  OUT UINT32  *Thread   OPTIONAL
+  )
+{
+  CPUID_EXTENDED_TOPOLOGY_EAX  ExtendedTopologyEax;
+  CPUID_EXTENDED_TOPOLOGY_EBX  ExtendedTopologyEbx;
+  CPUID_EXTENDED_TOPOLOGY_ECX  ExtendedTopologyEcx;
+  UINT32                       MaxExtendedCpuIdIndex;
+  UINT32                       TopologyLevel;
+  UINT32                       PreviousLevel;
+  UINT32                       Data;
+
+  if (Die != NULL) {
+    *Die = 0;
+  }
+
+  if (Tile != NULL) {
+    *Tile = 0;
+  }
+
+  if (Module != NULL) {
+    *Module = 0;
+  }
+
+  PreviousLevel = 0;
+  TopologyLevel = 0;
+
+  /// Check if extended toplogy supported
+  AsmCpuid (CPUID_EXTENDED_FUNCTION, &MaxExtendedCpuIdIndex, NULL, NULL, NULL);
+  if (MaxExtendedCpuIdIndex >= AMD_CPUID_EXTENDED_TOPOLOGY) {
+    do {
+      AsmCpuidEx (
+        AMD_CPUID_EXTENDED_TOPOLOGY,
+        TopologyLevel,
+        &ExtendedTopologyEax.Uint32,
+        &ExtendedTopologyEbx.Uint32,
+        &ExtendedTopologyEcx.Uint32,
+        NULL
+        );
+
+      if (ExtendedTopologyEbx.Bits.LogicalProcessors == CPUID_EXTENDED_TOPOLOGY_LEVEL_TYPE_INVALID) {
+        /// if this fails at first level
+        /// then will fall back to non-extended topology
+        break;
+      }
+
+      Data  = InitialApicId >> PreviousLevel;
+      Data &= (1 << (ExtendedTopologyEax.Bits.ApicIdShift - PreviousLevel)) - 1;
+
+      switch (ExtendedTopologyEcx.Bits.LevelType) {
+        case CPUID_EXTENDED_TOPOLOGY_LEVEL_TYPE_SMT:
+          if (Thread != NULL) {
+            *Thread = Data;
+          }
+
+          break;
+        case CPUID_EXTENDED_TOPOLOGY_LEVEL_TYPE_CORE:
+          if (Core != NULL) {
+            *Core = Data;
+          }
+
+          break;
+        case CPUID_V2_EXTENDED_TOPOLOGY_LEVEL_TYPE_MODULE:
+          if (Module != NULL) {
+            *Module = Data;
+          }
+
+          break;
+        case CPUID_V2_EXTENDED_TOPOLOGY_LEVEL_TYPE_TILE:
+          if (Die != NULL) {
+            *Die = Data;
+          }
+
+          break;
+        default:
+          break;
+      }
+
+      TopologyLevel++;
+      PreviousLevel = ExtendedTopologyEax.Bits.ApicIdShift;
+    } while (ExtendedTopologyEbx.Bits.LogicalProcessors != CPUID_EXTENDED_TOPOLOGY_LEVEL_TYPE_INVALID);
+
+    if (Package != NULL) {
+      *Package = InitialApicId >> PreviousLevel;
+    }
+  }
+
+  /// If extended topology CPUID is not supported
+  /// OR, execution of AMD_CPUID_EXTENDED_TOPOLOGY at level 0 fails(return 0).
+  if (TopologyLevel == 0) {
+    GetProcessorLocationByApicId (InitialApicId, Package, Core, Thread);
+  }
+
+  return;
+}
+
+/**
   Get Package ID/Die ID/Tile ID/Module ID/Core ID/Thread ID of a processor.
 
   The algorithm assumes the target system has symmetry across physical
@@ -1424,6 +1544,7 @@ GetProcessorLocation2ByApicId (
   )
 {
   CPUID_EXTENDED_TOPOLOGY_EAX  ExtendedTopologyEax;
+  CPUID_EXTENDED_TOPOLOGY_EBX  ExtendedTopologyEbx;
   CPUID_EXTENDED_TOPOLOGY_ECX  ExtendedTopologyEcx;
   UINT32                       MaxStandardCpuIdIndex;
   UINT32                       Index;
@@ -1431,15 +1552,29 @@ GetProcessorLocation2ByApicId (
   UINT32                       Bits[CPUID_V2_EXTENDED_TOPOLOGY_LEVEL_TYPE_DIE + 2];
   UINT32                       *Location[CPUID_V2_EXTENDED_TOPOLOGY_LEVEL_TYPE_DIE + 2];
 
+  if (StandardSignatureIsAuthenticAMD ()) {
+    AmdGetProcessorLocation2ByApicId (InitialApicId, Package, Die, Tile, Module, Core, Thread);
+    return;
+  }
+
   for (LevelType = 0; LevelType < ARRAY_SIZE (Bits); LevelType++) {
     Bits[LevelType] = 0;
   }
 
   //
-  // Get max index of CPUID
+  // Quoting Intel SDM:
+  // Software must detect the presence of CPUID leaf 1FH by verifying
+  // (a) the highest leaf index supported by CPUID is >= 1FH, and (b)
+  // CPUID.1FH:EBX[15:0] reports a non-zero value.
   //
   AsmCpuid (CPUID_SIGNATURE, &MaxStandardCpuIdIndex, NULL, NULL, NULL);
   if (MaxStandardCpuIdIndex < CPUID_V2_EXTENDED_TOPOLOGY) {
+    ExtendedTopologyEbx.Bits.LogicalProcessors = 0;
+  } else {
+    AsmCpuidEx (CPUID_V2_EXTENDED_TOPOLOGY, 0, NULL, &ExtendedTopologyEbx.Uint32, NULL, NULL);
+  }
+
+  if (ExtendedTopologyEbx.Bits.LogicalProcessors == 0) {
     if (Die != NULL) {
       *Die = 0;
     }

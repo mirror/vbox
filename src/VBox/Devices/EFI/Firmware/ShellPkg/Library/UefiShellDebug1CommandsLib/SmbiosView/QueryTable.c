@@ -2,7 +2,7 @@
   Build a table, each item is (Key, Info) pair.
   And give a interface of query a string out of a table.
 
-  Copyright (c) 2005 - 2021, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2005 - 2024, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2016-2019 Hewlett Packard Enterprise Development LP<BR>
   Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -638,6 +638,66 @@ TABLE_ITEM  ProcessorUpgradeTable[] = {
   {
     0x48,
     L"Socket BGA5773"
+  },
+  {
+    0x49,
+    L"Socket AM5"
+  },
+  {
+    0x4A,
+    L"Socket SP5"
+  },
+  {
+    0x4B,
+    L"Socket SP6"
+  },
+  {
+    0x4C,
+    L"Socket BGA883"
+  },
+  {
+    0x4D,
+    L"Socket BGA1190"
+  },
+  {
+    0x4E,
+    L"Socket BGA4129"
+  },
+  {
+    0x4F,
+    L"Socket LGA4710"
+  },
+  {
+    0x50,
+    L"Socket LGA7529"
+  },
+  {
+    0x51,
+    L"Socket BGA1964"
+  },
+  {
+    0x52,
+    L"Socket BGA1792"
+  },
+  {
+    0x53,
+    L"Socket BGA2049"
+  },
+  {
+    0x54,
+    L"Socket BGA2551"
+  },
+  {
+    0x55,
+    L"Socket LGA1851"
+  },
+  {
+    0x56,
+    L"Socket BGA2114"
+  },
+  {
+    0x57,
+    L"Socket BGA2833"
   }
 };
 
@@ -3620,6 +3680,14 @@ TABLE_ITEM  ProcessorArchitectureTypesTable[] = {
   {
     8,
     L" 128-bit RISC-V (RV128) "
+  },
+  {
+    9,
+    L" 32-bit LoongArch (LoongArch32) "
+  },
+  {
+    10,
+    L" 64-bit LoongArch (LoongArch64) "
   }
 };
 

@@ -240,10 +240,17 @@ class PlatformBuilder(UefiBuilder, BuildSettingsManager):
         args += " -serial stdio"
         # Mount disk with startup.nsh
         args += f" -drive file=fat:rw:{VirtualDrive},format=raw,media=disk"
+        # Provides Rng services to the Guest VM
+        args += " -device virtio-rng-pci"
 
         # Conditional Args
         if (self.env.GetValue("QEMU_HEADLESS").upper() == "TRUE"):
             args += " -display none"  # no graphics
+        else:
+            args += " -device virtio-gpu-pci"                         # add recommended QEMU graphics device
+            args += " -device qemu-xhci,id=usb"                       # add USB support for below devices
+            args += " -device usb-tablet,id=input0,bus=usb.0,port=1"  # add a usb mouse
+            args += " -device usb-kbd,id=input1,bus=usb.0,port=2"     # add a usb keyboard
 
         if (self.env.GetValue("MAKE_STARTUP_NSH").upper() == "TRUE"):
             f = open(os.path.join(VirtualDrive, "startup.nsh"), "w")

@@ -48,8 +48,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define DEBUG_CACHE     0x00200000       // Memory range cachability changes
 #define DEBUG_VERBOSE   0x00400000       // Detailed debug messages that may
                                          // significantly impact boot performance
-#define DEBUG_MANAGEABILITY  0x00800000  // Detailed debug and payload message of manageability
-                                         // related modules, such Redfish, IPMI, MCTP and etc.
+#define DEBUG_MANAGEABILITY  0x00800000  // Detailed debug and payload manageability messages
+                                         // related to modules such as Redfish, IPMI, MCTP etc.
 #define DEBUG_ERROR  0x80000000          // Error
 
 //
@@ -375,9 +375,9 @@ UnitTestDebugAssert (
         DebugPrint (PrintLevel, ##__VA_ARGS__);      \
       }                                              \
     } while (FALSE)
-#define _DEBUG(Expression)  _DEBUG_PRINT Expression
+#define _DEBUGLIB_DEBUG(Expression)  _DEBUG_PRINT Expression
 #else
-#define _DEBUG(Expression)  DebugPrint Expression
+#define _DEBUGLIB_DEBUG(Expression)  DebugPrint Expression
 #endif
 
 /**
@@ -422,7 +422,7 @@ UnitTestDebugAssert (
 #define DEBUG(Expression)        \
     do {                           \
       if (DebugPrintEnabled ()) {  \
-        _DEBUG (Expression);       \
+        _DEBUGLIB_DEBUG (Expression);       \
       }                            \
     } while (FALSE)
 #else

@@ -142,6 +142,8 @@ QemuTpmInitPPI (
   if (mPpi == NULL) {
     return EFI_PROTOCOL_ERROR;
   }
+
+  DEBUG ((DEBUG_INFO, "[TPM2PP] mPpi=%p version=%d\n", mPpi, Config.TpmVersion));
 #else
   uint64_t u64TpmPpiBase = 0;
   if (   GetVmVariable(EFI_INFO_INDEX_TPM_PPI_BASE, (CHAR8 *)&u64TpmPpiBase, sizeof(u64TpmPpiBase)) != sizeof(u64TpmPpiBase)
@@ -150,8 +152,6 @@ QemuTpmInitPPI (
 
   mPpi = (QEMU_TPM_PPI *)(UINTN)u64TpmPpiBase;
 #endif
-
-  DEBUG ((DEBUG_INFO, "[TPM2PP] mPpi=%p version=%d\n", mPpi, Config.TpmVersion));
 
   PpiAddress64 = (UINTN)mPpi;
   if ((PpiAddress64 & ~(UINT64)EFI_PAGE_MASK) !=
