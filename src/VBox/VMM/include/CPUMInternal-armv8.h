@@ -104,7 +104,11 @@ typedef struct CPUM
     /** Indicates that a state restore is pending.
      * This is used to verify load order dependencies (PGM). */
     bool                    fPendingRestore;
-    uint8_t                 abPadding0[6];
+    /** The initial exception level (EL) to start the CPU after a reset,
+     * should be either ARMV8_AARCH64_EL_1 or ARMV8_AARCH64_EL_2 for nested virtualization. */
+    uint8_t                 bResetEl;
+
+    uint8_t                 abPadding0[5];
 
     /** The reset value of the program counter. */
     uint64_t                u64ResetPc;

@@ -235,6 +235,60 @@ typedef struct CPUMCTX
     /** TheMDCCINT_EL1 register. */
     CPUMCTXSYSREG       MDccInt;
 
+    /** @name Hypervisor (EL2) support.
+     * @{ */
+    /** The CNTHCTL_EL2 register. */
+    CPUMCTXSYSREG       CntHCtlEl2;
+    /** The CNTP_CTL_EL2 register. */
+    CPUMCTXSYSREG       CntHpCtlEl2;
+    /** The CNTP_CVAL_EL2 register. */
+    CPUMCTXSYSREG       CntHpCValEl2;
+    /** The CNTP_TVAL_EL2 register. */
+    CPUMCTXSYSREG       CntHpTValEl2;
+    /** The CNTVOFF_EL2 register. */
+    CPUMCTXSYSREG       CntVOffEl2;
+    /** The CPTR_EL2 register. */
+    CPUMCTXSYSREG       CptrEl2;
+    /** The ELR_EL2 register. */
+    CPUMCTXSYSREG       ElrEl2;
+    /** The ESR_EL2 register. */
+    CPUMCTXSYSREG       EsrEl2;
+    /** The FAR_EL2 register. */
+    CPUMCTXSYSREG       FarEl2;
+    /** The HCR_EL2 register. */
+    CPUMCTXSYSREG       HcrEl2;
+    /** The HPFAR_EL2 register. */
+    CPUMCTXSYSREG       HpFarEl2;
+    /** The MAIR_EL2 register. */
+    CPUMCTXSYSREG       MairEl2;
+    /** The MDCR_EL2 register. */
+    CPUMCTXSYSREG       MdcrEl2;
+    /** The SCTLR_EL2 register. */
+    CPUMCTXSYSREG       SctlrEl2;
+    /** The SPSR_EL2 register. */
+    CPUMCTXSYSREG       SpsrEl2;
+    /** The SP_EL2 register. */
+    CPUMCTXSYSREG       SpEl2;
+    /** The TCR_EL2 register. */
+    CPUMCTXSYSREG       TcrEl2;
+    /** The TPIDR_EL2 register. */
+    CPUMCTXSYSREG       TpidrEl2;
+    /** The TTBR0_EL2 register. */
+    CPUMCTXSYSREG       Ttbr0El2;
+    /** The TTBR1_EL2 register. */
+    CPUMCTXSYSREG       Ttbr1El2;
+    /** The VBAR_EL2 register. */
+    CPUMCTXSYSREG       VBarEl2;
+    /** The VMPIDR_EL2 register. */
+    CPUMCTXSYSREG       VMpidrEl2;
+    /** The VPIDR_EL2 register. */
+    CPUMCTXSYSREG       VPidrEl2;
+    /** The VTCR_EL2 register. */
+    CPUMCTXSYSREG       VTcrEl2;
+    /** The VTTBR_EL2 register. */
+    CPUMCTXSYSREG       VTtbrEl2;
+    /** @} */
+
     /** Floating point control register. */
     uint64_t            fpcr;
     /** Floating point status register. */
@@ -257,7 +311,7 @@ typedef struct CPUMCTX
     /** The CNTV_CVAL_EL0 register, always synced during VM-exit. */
     uint64_t            CntvCValEl0;
 
-    uint64_t            au64Padding2[4];
+    uint64_t            au64Padding2[3];
 } CPUMCTX;
 
 
@@ -322,8 +376,10 @@ AssertCompileSizeAlignment(CPUMCTX, 8);
 #define CPUMCTX_EXTRN_SYSREG_DEBUG              UINT64_C(0x0000000000010000)
 /** PAuth key system registers are kept externally. */
 #define CPUMCTX_EXTRN_SYSREG_PAUTH_KEYS         UINT64_C(0x0000000000020000)
+/** EL2 system registers are kept externally. */
+#define CPUMCTX_EXTRN_SYSREG_EL2                UINT64_C(0x0000000000040000)
 /** Various system registers (rarely accessed) are kept externally. */
-#define CPUMCTX_EXTRN_SYSREG_MISC               UINT64_C(0x0000000000040000)
+#define CPUMCTX_EXTRN_SYSREG_MISC               UINT64_C(0x0000000000080000)
 
 /** Mask of bits the keepers can use for state tracking. */
 #define CPUMCTX_EXTRN_KEEPER_STATE_MASK         UINT64_C(0xffff000000000000)

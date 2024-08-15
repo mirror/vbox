@@ -156,12 +156,6 @@ CPUMREGALIAS_STD(x29, "w29");
 CPUMREGALIAS_STD(x30, "w30");
 #undef CPUMREGALIAS_STD
 
-static DBGFREGALIAS const g_aCpumRegAliases_pstate[] =
-{
-    { "spsr_el2", DBGFREGVALTYPE_U64     },
-    { NULL,       DBGFREGVALTYPE_INVALID }
-};
-
 
 /*
  * Sub fields.
@@ -269,7 +263,7 @@ static DBGFREGDESC const g_aCpumRegGstDescs[] =
     CPU_GREG_REG(28),
     CPU_GREG_REG(29),
     CPU_GREG_REG(30),
-    CPU_REG_RW_AS("pstate",         PSTATE,         U64, fPState,         cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         g_aCpumRegAliases_pstate,   g_aCpumRegFields_pstate ),
+    CPU_REG_RW_AS("pstate",         PSTATE,         U64, fPState,         cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       g_aCpumRegFields_pstate ),
     CPU_REG_RW_AS("pc",             PC,             U64, Pc,              cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
     CPU_REG_RW_AS("sp_el0",         SP_EL0,         U64, aSpReg[0],       cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
     CPU_REG_RW_AS("sp_el1",         SP_EL1,         U64, aSpReg[1],       cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
@@ -314,6 +308,32 @@ static DBGFREGDESC const g_aCpumRegGstDescs[] =
     CPU_VREG_REG(29),
     CPU_VREG_REG(30),
     CPU_VREG_REG(31),
+    CPU_REG_RW_AS("cnthctl_el2",    CNTHCTL_EL2,    U64, CntHCtlEl2,      cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("cnthp_ctl_el2",  CNTHP_CTL_EL2,  U64, CntHpCtlEl2,     cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("cnthp_cval_el2", CNTHP_CVAL_EL2, U64, CntHpCValEl2,    cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("cnthp_tval_el2", CNTHP_TVAL_EL2, U64, CntHpTValEl2,    cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("cntvoff_el2",    CNTVOFF_EL2,    U64, CntVOffEl2,      cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("cptr_el2",       CPTR_EL2,       U64, CptrEl2,         cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("elr_el2",        ELR_EL2,        U64, ElrEl2,          cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("esr_el2",        ESR_EL2,        U64, EsrEl2,          cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("far_el2",        FAR_EL2,        U64, FarEl2,          cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("hcr_el2",        HCR_EL2,        U64, HcrEl2,          cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("hpfar_el2",      HPFAR_EL2,      U64, HpFarEl2,        cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("mair_el2",       MAIR_EL2,       U64, MairEl2,         cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("mdcr_el2",       MDCR_EL2,       U64, MdcrEl2,         cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("sctlr_el2",      SCTLR_EL2,      U64, SctlrEl2,        cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("spsr_el2",       SPSR_EL2,       U64, SpsrEl2,         cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("sp_el2",         SP_EL2,         U64, SpEl2,           cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("tcr_el2",        TCR_EL2,        U64, TcrEl2,          cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("tpidr_el2",      TPIDR_EL2,      U64, TpidrEl2,        cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("ttbr0_el2",      TTBR0_EL2,      U64, Ttbr0El2,        cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("ttbr1_el2",      TTBR1_EL2,      U64, Ttbr1El2,        cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("vbar_el2",       VBAR_EL2,       U64, VBarEl2,         cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("vmpidr_el2",     VMPIDR_EL2,     U64, VMpidrEl2,       cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("vpidr_el2",      VPIDR_EL2,      U64, VPidrEl2,        cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("vtcr_el2",       VTCR_EL2,       U64, VTcrEl2,         cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("vttbr_el2",      VTTBR_EL2,      U64, VTtbrEl2,        cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+
     DBGFREGDESC_TERMINATOR()
 
 #undef CPU_REG_RW_AS

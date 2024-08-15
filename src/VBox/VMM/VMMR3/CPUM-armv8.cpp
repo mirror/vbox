@@ -315,6 +315,35 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, fOsLck),
     SSMFIELD_ENTRY(         CPUMCTX, CntvCtlEl0),
     SSMFIELD_ENTRY(         CPUMCTX, CntvCValEl0),
+    /** @name EL2 support:
+     * @{ */
+    SSMFIELD_ENTRY(         CPUMCTX, CntHCtlEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, CntHpCtlEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, CntHpCValEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, CntHpTValEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, CntVOffEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, CptrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, ElrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, EsrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, FarEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, HcrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, HpFarEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, MairEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, MdcrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, SctlrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, SpsrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, SpEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, TcrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, TpidrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, Ttbr0El2),
+    SSMFIELD_ENTRY(         CPUMCTX, Ttbr1El2),
+    SSMFIELD_ENTRY(         CPUMCTX, VBarEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, VMpidrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, VPidrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, VTcrEl2),
+    SSMFIELD_ENTRY(         CPUMCTX, VTtbrEl2),
+    /** @} */
+
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -361,13 +390,25 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
 #endif
 
     pVM->cpum.s.GuestInfo.paSysRegRangesR3 = &pVM->cpum.s.GuestInfo.aSysRegRanges[0];
+    pVM->cpum.s.bResetEl                   = ARMV8_AARCH64_EL_1;
 
     PCFGMNODE   pCpumCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM");
 
     /** @cfgm{/CPUM/ResetPcValue, string}
-     * Program counter value after a reset, sets the address of the first isntruction to execute. */
+     * Program counter value after a reset, sets the address of the first instruction to execute. */
     int rc = CFGMR3QueryU64Def(pCpumCfg, "ResetPcValue", &pVM->cpum.s.u64ResetPc, 0);
     AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/NestedHWVirt, bool, false}
+     * Whether to expose the hardware virtualization (EL2) feature to the guest.
+     * The default is false, and when enabled requires a 64-bit CPU and a NEM backend
+     * supporting it.
+     */
+    bool fNestedHWVirt = false;
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedHWVirt", &fNestedHWVirt, false);
+    AssertLogRelRCReturn(rc, rc);
+    if (fNestedHWVirt)
+        pVM->cpum.s.bResetEl = ARMV8_AARCH64_EL_2;
 
     /*
      * Register saved state data item.
@@ -467,7 +508,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
 
     /* Start in Supervisor mode. */
     /** @todo Differentiate between Aarch64 and Aarch32 configuation. */
-    pCtx->fPState =   ARMV8_SPSR_EL2_AARCH64_SET_EL(ARMV8_AARCH64_EL_1)
+    pCtx->fPState =   ARMV8_SPSR_EL2_AARCH64_SET_EL(pVM->cpum.s.bResetEl)
                     | ARMV8_SPSR_EL2_AARCH64_SP
                     | ARMV8_SPSR_EL2_AARCH64_D
                     | ARMV8_SPSR_EL2_AARCH64_A
