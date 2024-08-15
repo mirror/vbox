@@ -4815,8 +4815,8 @@ static DECL_NO_RETURN(void) supR3HardenedWinDoReSpawn(int iWhich)
                         &ProcessInfoW32))
         supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Misc, VERR_INVALID_NAME,
                               "Error relaunching VirtualBox VM process: %u\n"
-                              "Command line: '%ls'",
-                              RtlGetLastWin32Error(), pwszCmdLine);
+                              "Command line: '%ls %ls'",
+                              RtlGetLastWin32Error(), g_wszSupLibHardenedExePath, pwszCmdLine);
     supR3HardenedWinDisableThreadCreation();
 
     SUP_DPRINTF(("supR3HardenedWinDoReSpawn(%d): New child %x.%x [kernel32].\n",
