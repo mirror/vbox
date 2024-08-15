@@ -45,6 +45,7 @@
 #include "NEMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/vmm.h>
+#include <VBox/gic.h>
 #include "dtrace/VBoxVMM.h"
 
 #include <iprt/armv8.h>
@@ -75,10 +76,257 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 150000
+
+/* Since 15.0+ */
+typedef enum hv_gic_distributor_reg_t : uint16_t
+{
+    HV_GIC_DISTRIBUTOR_REG_GICD_CTLR,
+    HV_GIC_DISTRIBUTOR_REG_GICD_ICACTIVER0
+    /** @todo */
+} hv_gic_distributor_reg_t;
+
+
+typedef enum hv_gic_icc_reg_t : uint16_t
+{
+    HV_GIC_ICC_REG_AP0R0_EL1
+    /** @todo */
+} hv_gic_icc_reg_t;
+
+
+typedef enum hv_gic_ich_reg_t : uint16_t
+{
+    HV_GIC_ICH_REG_AP0R0_EL2
+    /** @todo */
+} hv_gic_ich_reg_t;
+
+
+typedef enum hv_gic_icv_reg_t : uint16_t
+{
+    HV_GIC_ICV_REG_AP0R0_EL1
+    /** @todo */
+} hv_gic_icv_reg_t;
+
+
+typedef enum hv_gic_msi_reg_t : uint16_t
+{
+    HV_GIC_REG_GICM_SET_SPI_NSR
+    /** @todo */
+} hv_gic_msi_reg_t;
+
+
+typedef enum hv_gic_redistributor_reg_t : uint16_t
+{
+    HV_GIC_REDISTRIBUTOR_REG_GICR_ICACTIVER0
+    /** @todo */
+} hv_gic_redistributor_reg_t;
+
+
+typedef enum hv_gic_intid_t : uint16_t
+{
+    HV_GIC_INT_EL1_PHYSICAL_TIMER  = 23,
+    HV_GIC_INT_EL1_VIRTUAL_TIMER   = 25,
+    HV_GIC_INT_EL2_PHYSICAL_TIMER  = 26,
+    HV_GIC_INT_MAINTENANCE         = 27,
+    HV_GIC_INT_PERFORMANCE_MONITOR = 30
+} hv_gic_intid_t;
+
+#endif
+
+typedef hv_return_t FN_HV_VM_CONFIG_GET_EL2_SUPPORTED(bool *el2_supported);
+typedef hv_return_t FN_HV_VM_CONFIG_GET_EL2_ENABLED(hv_vm_config_t config, bool *el2_enabled);
+typedef hv_return_t FN_HV_VM_CONFIG_SET_EL2_ENABLED(hv_vm_config_t config, bool el2_enabled);
+
+typedef struct hv_gic_config_s *hv_gic_config_t;
+typedef hv_return_t     FN_HV_GIC_CREATE(hv_gic_config_t gic_config);
+typedef hv_return_t     FN_HV_GIC_RESET(void);
+typedef hv_gic_config_t FN_HV_GIC_CONFIG_CREATE(void);
+typedef hv_return_t     FN_HV_GIC_CONFIG_SET_DISTRIBUTOR_BASE(hv_gic_config_t config, hv_ipa_t distributor_base_address);
+typedef hv_return_t     FN_HV_GIC_CONFIG_SET_REDISTRIBUTOR_BASE(hv_gic_config_t config, hv_ipa_t redistributor_base_address);
+typedef hv_return_t     FN_HV_GIC_CONFIG_SET_MSI_REGION_BASE(hv_gic_config_t config, hv_ipa_t msi_region_base_address);
+typedef hv_return_t     FN_HV_GIC_CONFIG_SET_MSI_INTERRUPT_RANGE(hv_gic_config_t config, uint32_t msi_intid_base, uint32_t msi_intid_count);
+
+typedef hv_return_t     FN_HV_GIC_GET_REDISTRIBUTOR_BASE(hv_vcpu_t vcpu, hv_ipa_t *redistributor_base_address);
+typedef hv_return_t     FN_HV_GIC_GET_REDISTRIBUTOR_REGION_SIZE(size_t *redistributor_region_size);
+typedef hv_return_t     FN_HV_GIC_GET_REDISTRIBUTOR_SIZE(size_t *redistributor_size);
+typedef hv_return_t     FN_HV_GIC_GET_DISTRIBUTOR_SIZE(size_t *distributor_size);
+typedef hv_return_t     FN_HV_GIC_GET_DISTRIBUTOR_BASE_ALIGNMENT(size_t *distributor_base_alignment);
+typedef hv_return_t     FN_HV_GIC_GET_REDISTRIBUTOR_BASE_ALIGNMENT(size_t *redistributor_base_alignment);
+typedef hv_return_t     FN_HV_GIC_GET_MSI_REGION_BASE_ALIGNMENT(size_t *msi_region_base_alignment);
+typedef hv_return_t     FN_HV_GIC_GET_MSI_REGION_SIZE(size_t *msi_region_size);
+typedef hv_return_t     FN_HV_GIC_GET_SPI_INTERRUPT_RANGE(uint32_t *spi_intid_base, uint32_t *spi_intid_count);
+
+typedef struct hv_gic_state_s *hv_gic_state_t;
+typedef hv_gic_state_t  FN_HV_GIC_STATE_CREATE(void);
+typedef hv_return_t     FN_HV_GIC_SET_STATE(const void *gic_state_data, size_t gic_state_size);
+typedef hv_return_t     FN_HV_GIC_STATE_GET_SIZE(hv_gic_state_t state, size_t *gic_state_size);
+typedef hv_return_t     FN_HV_GIC_STATE_GET_DATA(hv_gic_state_t state, void *gic_state_data);
+
+typedef hv_return_t     FN_HV_GIC_SEND_MSI(hv_ipa_t address, uint32_t intid);
+typedef hv_return_t     FN_HV_GIC_SET_SPI(uint32_t intid, bool level);
+
+typedef hv_return_t     FN_HV_GIC_GET_DISTRIBUTOR_REG(hv_gic_distributor_reg_t reg, uint64_t *value);
+typedef hv_return_t     FN_HV_GIC_GET_MSI_REG(hv_gic_msi_reg_t reg, uint64_t *value);
+typedef hv_return_t     FN_HV_GIC_GET_ICC_REG(hv_vcpu_t vcpu, hv_gic_icc_reg_t reg, uint64_t *value);
+typedef hv_return_t     FN_HV_GIC_GET_ICH_REG(hv_vcpu_t vcpu, hv_gic_ich_reg_t reg, uint64_t *value);
+typedef hv_return_t     FN_HV_GIC_GET_ICV_REG(hv_vcpu_t vcpu, hv_gic_icv_reg_t reg, uint64_t *value);
+typedef hv_return_t     FN_HV_GIC_GET_REDISTRIBUTOR_REG(hv_vcpu_t vcpu, hv_gic_redistributor_reg_t reg, uint64_t *value);
+
+typedef hv_return_t     FN_HV_GIC_SET_DISTRIBUTOR_REG(hv_gic_distributor_reg_t reg, uint64_t value);
+typedef hv_return_t     FN_HV_GIC_SET_MSI_REG(hv_gic_msi_reg_t reg, uint64_t value);
+typedef hv_return_t     FN_HV_GIC_SET_ICC_REG(hv_vcpu_t vcpu, hv_gic_icc_reg_t reg, uint64_t value);
+typedef hv_return_t     FN_HV_GIC_SET_ICH_REG(hv_vcpu_t vcpu, hv_gic_ich_reg_t reg, uint64_t value);
+typedef hv_return_t     FN_HV_GIC_SET_ICV_REG(hv_vcpu_t vcpu, hv_gic_icv_reg_t reg, uint64_t value);
+typedef hv_return_t     FN_HV_GIC_SET_REDISTRIBUTOR_REG(hv_vcpu_t vcpu, hv_gic_redistributor_reg_t reg, uint64_t value);
+
+typedef hv_return_t     FN_HV_GIC_GET_INTID(hv_gic_intid_t interrupt, uint32_t *intid);
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/** @name Optional APIs imported from Hypervisor.framework.
+ * @{ */
+static FN_HV_VM_CONFIG_GET_EL2_SUPPORTED *g_pfnHvVmConfigGetEl2Supported                        = NULL; /* Since 15.0 */
+static FN_HV_VM_CONFIG_GET_EL2_ENABLED   *g_pfnHvVmConfigGetEl2Enabled                          = NULL; /* Since 15.0 */
+static FN_HV_VM_CONFIG_SET_EL2_ENABLED   *g_pfnHvVmConfigSetEl2Enabled                          = NULL; /* Since 15.0 */
+
+static FN_HV_GIC_CREATE                             *g_pfnHvGicCreate                           = NULL; /* Since 15.0 */
+static FN_HV_GIC_RESET                              *g_pfnHvGicReset                            = NULL; /* Since 15.0 */
+static FN_HV_GIC_CONFIG_CREATE                      *g_pfnHvGicConfigCreate                     = NULL; /* Since 15.0 */
+static FN_HV_GIC_CONFIG_SET_DISTRIBUTOR_BASE        *g_pfnHvGicConfigSetDistributorBase         = NULL; /* Since 15.0 */
+static FN_HV_GIC_CONFIG_SET_REDISTRIBUTOR_BASE      *g_pfnHvGicConfigSetRedistributorBase       = NULL; /* Since 15.0 */
+static FN_HV_GIC_CONFIG_SET_MSI_REGION_BASE         *g_pfnHvGicConfigSetMsiRegionBase           = NULL; /* Since 15.0 */
+static FN_HV_GIC_CONFIG_SET_MSI_INTERRUPT_RANGE     *g_pfnHvGicConfigSetMsiInterruptRange       = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_REDISTRIBUTOR_BASE             *g_pfnHvGicGetRedistributorBase             = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_REDISTRIBUTOR_REGION_SIZE      *g_pfnHvGicGetRedistributorRegionSize       = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_REDISTRIBUTOR_SIZE             *g_pfnHvGicGetRedistributorSize             = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_DISTRIBUTOR_SIZE               *g_pfnHvGicGetDistributorSize               = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_DISTRIBUTOR_BASE_ALIGNMENT     *g_pfnHvGicGetDistributorBaseAlignment      = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_REDISTRIBUTOR_BASE_ALIGNMENT   *g_pfnHvGicGetRedistributorBaseAlignment    = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_MSI_REGION_BASE_ALIGNMENT      *g_pfnHvGicGetMsiRegionBaseAlignment        = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_MSI_REGION_SIZE                *g_pfnHvGicGetMsiRegionSize                 = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_SPI_INTERRUPT_RANGE            *g_pfnHvGicGetSpiInterruptRange             = NULL; /* Since 15.0 */
+static FN_HV_GIC_STATE_CREATE                       *g_pfnHvGicStateCreate                      = NULL; /* Since 15.0 */
+static FN_HV_GIC_SET_STATE                          *g_pfnHvGicSetState                         = NULL; /* Since 15.0 */
+static FN_HV_GIC_STATE_GET_SIZE                     *g_pfnHvGicStateGetSize                     = NULL; /* Since 15.0 */
+static FN_HV_GIC_STATE_GET_DATA                     *g_pfnHvGicStateGetData                     = NULL; /* Since 15.0 */
+static FN_HV_GIC_SEND_MSI                           *g_pfnHvGicSendMsi                          = NULL; /* Since 15.0 */
+static FN_HV_GIC_SET_SPI                            *g_pfnHvGicSetSpi                           = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_DISTRIBUTOR_REG                *g_pfnHvGicGetDistributorReg                = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_MSI_REG                        *g_pfnHvGicGetMsiReg                        = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_ICC_REG                        *g_pfnHvGicGetIccReg                        = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_ICH_REG                        *g_pfnHvGicGetIchReg                        = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_ICV_REG                        *g_pfnHvGicGetIcvReg                        = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_REDISTRIBUTOR_REG              *g_pfnHvGicGetRedistributorReg              = NULL; /* Since 15.0 */
+static FN_HV_GIC_SET_DISTRIBUTOR_REG                *g_pfnHvGicSetDistributorReg                = NULL; /* Since 15.0 */
+static FN_HV_GIC_SET_MSI_REG                        *g_pfnHvGicSetMsiReg                        = NULL; /* Since 15.0 */
+static FN_HV_GIC_SET_ICC_REG                        *g_pfnHvGicSetIccReg                        = NULL; /* Since 15.0 */
+static FN_HV_GIC_SET_ICH_REG                        *g_pfnHvGicSetIchReg                        = NULL; /* Since 15.0 */
+static FN_HV_GIC_SET_ICV_REG                        *g_pfnHvGicSetIcvReg                        = NULL; /* Since 15.0 */
+static FN_HV_GIC_SET_REDISTRIBUTOR_REG              *g_pfnHvGicSetRedistributorReg              = NULL; /* Since 15.0 */
+static FN_HV_GIC_GET_INTID                          *g_pfnHvGicGetIntid                         = NULL; /* Since 15.0 */
+/** @} */
+
+
+/**
+ * Import instructions.
+ */
+static const struct
+{
+    void        **ppfn;     /**< The function pointer variable. */
+    const char  *pszName;   /**< The function name. */
+} g_aImports[] =
+{
+#define NEM_DARWIN_IMPORT(a_Pfn, a_Name) { (void **)&(a_Pfn), #a_Name }
+    NEM_DARWIN_IMPORT(g_pfnHvVmConfigGetEl2Supported,           hv_vm_config_get_el2_supported),
+    NEM_DARWIN_IMPORT(g_pfnHvVmConfigGetEl2Enabled,             hv_vm_config_get_el2_enabled),
+    NEM_DARWIN_IMPORT(g_pfnHvVmConfigSetEl2Enabled,             hv_vm_config_set_el2_enabled),
+
+    NEM_DARWIN_IMPORT(g_pfnHvGicCreate,                         hv_gic_create),
+    NEM_DARWIN_IMPORT(g_pfnHvGicReset,                          hv_gic_reset),
+    NEM_DARWIN_IMPORT(g_pfnHvGicConfigCreate,                   hv_gic_config_create),
+    NEM_DARWIN_IMPORT(g_pfnHvGicConfigSetDistributorBase,       hv_gic_config_set_distributor_base),
+    NEM_DARWIN_IMPORT(g_pfnHvGicConfigSetRedistributorBase,     hv_gic_config_set_redistributor_base),
+    NEM_DARWIN_IMPORT(g_pfnHvGicConfigSetMsiRegionBase,         hv_gic_config_set_msi_region_base),
+    NEM_DARWIN_IMPORT(g_pfnHvGicConfigSetMsiInterruptRange,     hv_gic_config_set_msi_interrupt_range),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetRedistributorBase,           hv_gic_get_redistributor_base),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetRedistributorRegionSize,     hv_gic_get_redistributor_region_size),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetRedistributorSize,           hv_gic_get_redistributor_size),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetDistributorSize,             hv_gic_get_distributor_size),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetDistributorBaseAlignment,    hv_gic_get_distributor_base_alignment),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetRedistributorBaseAlignment,  hv_gic_get_redistributor_base_alignment),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetMsiRegionBaseAlignment,      hv_gic_get_msi_region_base_alignment),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetMsiRegionSize,               hv_gic_get_msi_region_size),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetSpiInterruptRange,           hv_gic_get_spi_interrupt_range),
+    NEM_DARWIN_IMPORT(g_pfnHvGicStateCreate,                    hv_gic_state_create),
+    NEM_DARWIN_IMPORT(g_pfnHvGicSetState,                       hv_gic_set_state),
+    NEM_DARWIN_IMPORT(g_pfnHvGicStateGetSize,                   hv_gic_state_get_size),
+    NEM_DARWIN_IMPORT(g_pfnHvGicStateGetData,                   hv_gic_state_get_data),
+    NEM_DARWIN_IMPORT(g_pfnHvGicSendMsi,                        hv_gic_send_msi),
+    NEM_DARWIN_IMPORT(g_pfnHvGicSetSpi,                         hv_gic_set_spi),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetDistributorReg,              hv_gic_get_distributor_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetMsiReg,                      hv_gic_get_msi_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetIccReg,                      hv_gic_get_icc_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetIchReg,                      hv_gic_get_ich_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetIcvReg,                      hv_gic_get_icv_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetRedistributorReg,            hv_gic_get_redistributor_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicSetDistributorReg,              hv_gic_set_distributor_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicSetMsiReg,                      hv_gic_set_msi_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicSetIccReg,                      hv_gic_set_icc_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicSetIchReg,                      hv_gic_set_ich_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicSetIcvReg,                      hv_gic_set_icv_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicSetRedistributorReg,            hv_gic_set_redistributor_reg),
+    NEM_DARWIN_IMPORT(g_pfnHvGicGetIntid,                       hv_gic_get_intid)
+#undef NEM_DARWIN_IMPORT
+};
+
+
+/*
+ * Let the preprocessor alias the APIs to import variables for better autocompletion.
+ */
+#ifndef IN_SLICKEDIT
+# define hv_vm_config_get_el2_supported             g_pfnHvVmConfigGetEl2Supported
+# define hv_vm_config_get_el2_enabled               g_pfnHvVmConfigGetEl2Enabled
+# define hv_vm_config_set_el2_enabled               g_pfnHvVmConfigSetEl2Enabled
+
+# define hv_gic_create                              g_pfnHvGicCreate
+# define hv_gic_reset                               g_pfnHvGicReset
+# define hv_gic_config_create                       g_pfnHvGicConfigCreate
+# define hv_gic_config_set_distributor_base         g_pfnHvGicConfigSetDistributorBase
+# define hv_gic_config_set_redistributor_base       g_pfnHvGicConfigSetRedistributorBase
+# define hv_gic_config_set_msi_region_base          g_pfnHvGicConfigSetMsiRegionBase
+# define hv_gic_config_set_msi_interrupt_range      g_pfnHvGicConfigSetMsiInterruptRange
+# define hv_gic_get_redistributor_base              g_pfnHvGicGetRedistributorBase
+# define hv_gic_get_redistributor_region_size       g_pfnHvGicGetRedistributorRegionSize
+# define hv_gic_get_redistributor_size              g_pfnHvGicGetRedistributorSize
+# define hv_gic_get_distributor_size                g_pfnHvGicGetDistributorSize
+# define hv_gic_get_distributor_base_alignment      g_pfnHvGicGetDistributorBaseAlignment
+# define hv_gic_get_redistributor_base_alignment    g_pfnHvGicGetRedistributorBaseAlignment
+# define hv_gic_get_msi_region_base_alignment       g_pfnHvGicGetMsiRegionBaseAlignment
+# define hv_gic_get_msi_region_size                 g_pfnHvGicGetMsiRegionSize
+# define hv_gic_get_spi_interrupt_range             g_pfnHvGicGetSpiInterruptRange
+# define hv_gic_state_create                        g_pfnHvGicStateCreate
+# define hv_gic_set_state                           g_pfnHvGicSetState
+# define hv_gic_state_get_size                      g_pfnHvGicStateGetSize
+# define hv_gic_state_get_data                      g_pfnHvGicStateGetData
+# define hv_gic_send_msi                            g_pfnHvGicSendMsi
+# define hv_gic_set_spi                             g_pfnHvGicSetSpi
+# define hv_gic_get_distributor_reg                 g_pfnHvGicGetDistributorReg
+# define hv_gic_get_msi_reg                         g_pfnHvGicGetMsiReg
+# define hv_gic_get_icc_reg                         g_pfnHvGicGetIccReg
+# define hv_gic_get_ich_reg                         g_pfnHvGicGetIchReg
+# define hv_gic_get_icv_reg                         g_pfnHvGicGetIcvReg
+# define hv_gic_get_redistributor_reg               g_pfnHvGicGetRedistributorReg
+# define hv_gic_set_distributor_reg                 g_pfnHvGicSetDistributorReg
+# define hv_gic_set_msi_reg                         g_pfnHvGicSetMsiReg
+# define hv_gic_set_icc_reg                         g_pfnHvGicSetIccReg
+# define hv_gic_set_ich_reg                         g_pfnHvGicSetIchReg
+# define hv_gic_set_icv_reg                         g_pfnHvGicSetIcvReg
+# define hv_gic_set_redistributor_reg               g_pfnHvGicSetRedistributorReg
+# define hv_gic_get_intid                           g_pfnHvGicGetIntid
+#endif
+
+
 /** The general registers. */
 static const struct
 {
@@ -266,6 +514,39 @@ static const struct
     { HV_SYS_REG_TPIDR_EL1,         CPUMCTX_EXTRN_SYSREG_MISC,      RT_UOFFSETOF(CPUMCTX, aTpIdr[1].u64)    },
     { HV_SYS_REG_MDCCINT_EL1,       CPUMCTX_EXTRN_SYSREG_MISC,      RT_UOFFSETOF(CPUMCTX, MDccInt.u64)      }
 
+};
+/** EL2 support system registers. */
+static const struct
+{
+    uint16_t            idSysReg;
+    uint32_t            offCpumCtx;
+} s_aCpumEl2SysRegs[] =
+{
+    { ARMV8_AARCH64_SYSREG_CNTHCTL_EL2,    RT_UOFFSETOF(CPUMCTX, CntHCtlEl2.u64)    },
+    { ARMV8_AARCH64_SYSREG_CNTHP_CTL_EL2,  RT_UOFFSETOF(CPUMCTX, CntHpCtlEl2.u64)   },
+    { ARMV8_AARCH64_SYSREG_CNTHP_CVAL_EL2, RT_UOFFSETOF(CPUMCTX, CntHpCValEl2.u64)  },
+    { ARMV8_AARCH64_SYSREG_CNTHP_TVAL_EL2, RT_UOFFSETOF(CPUMCTX, CntHpTValEl2.u64)  },
+    { ARMV8_AARCH64_SYSREG_CNTVOFF_EL2,    RT_UOFFSETOF(CPUMCTX, CntVOffEl2.u64)    },
+    { ARMV8_AARCH64_SYSREG_CPTR_EL2,       RT_UOFFSETOF(CPUMCTX, CptrEl2.u64)       },
+    { ARMV8_AARCH64_SYSREG_ELR_EL2,        RT_UOFFSETOF(CPUMCTX, ElrEl2.u64)        },
+    { ARMV8_AARCH64_SYSREG_ESR_EL2,        RT_UOFFSETOF(CPUMCTX, EsrEl2.u64)        },
+    { ARMV8_AARCH64_SYSREG_FAR_EL2,        RT_UOFFSETOF(CPUMCTX, FarEl2.u64)        },
+    { ARMV8_AARCH64_SYSREG_HCR_EL2,        RT_UOFFSETOF(CPUMCTX, HcrEl2.u64)        },
+    { ARMV8_AARCH64_SYSREG_HPFAR_EL2,      RT_UOFFSETOF(CPUMCTX, HpFarEl2.u64)      },
+    { ARMV8_AARCH64_SYSREG_MAIR_EL2,       RT_UOFFSETOF(CPUMCTX, MairEl2.u64)       },
+    //{ ARMV8_AARCH64_SYSREG_MDCR_EL2,       RT_UOFFSETOF(CPUMCTX, MdcrEl2.u64)       },
+    { ARMV8_AARCH64_SYSREG_SCTLR_EL2,      RT_UOFFSETOF(CPUMCTX, SctlrEl2.u64)      },
+    { ARMV8_AARCH64_SYSREG_SPSR_EL2,       RT_UOFFSETOF(CPUMCTX, SpsrEl2.u64)       },
+    { ARMV8_AARCH64_SYSREG_SP_EL2,         RT_UOFFSETOF(CPUMCTX, SpEl2.u64)         },
+    { ARMV8_AARCH64_SYSREG_TCR_EL2,        RT_UOFFSETOF(CPUMCTX, TcrEl2.u64)        },
+    { ARMV8_AARCH64_SYSREG_TPIDR_EL2,      RT_UOFFSETOF(CPUMCTX, TpidrEl2.u64)      },
+    { ARMV8_AARCH64_SYSREG_TTBR0_EL2,      RT_UOFFSETOF(CPUMCTX, Ttbr0El2.u64)      },
+    { ARMV8_AARCH64_SYSREG_TTBR1_EL2,      RT_UOFFSETOF(CPUMCTX, Ttbr1El2.u64)      },
+    { ARMV8_AARCH64_SYSREG_VBAR_EL2,       RT_UOFFSETOF(CPUMCTX, VBarEl2.u64)       },
+    { ARMV8_AARCH64_SYSREG_VMPIDR_EL2,     RT_UOFFSETOF(CPUMCTX, VMpidrEl2.u64)     },
+    { ARMV8_AARCH64_SYSREG_VPIDR_EL2,      RT_UOFFSETOF(CPUMCTX, VPidrEl2.u64)      },
+    { ARMV8_AARCH64_SYSREG_VTCR_EL2,       RT_UOFFSETOF(CPUMCTX, VTcrEl2.u64)       },
+    { ARMV8_AARCH64_SYSREG_VTTBR_EL2,      RT_UOFFSETOF(CPUMCTX, VTtbrEl2.u64)      }
 };
 /** ID registers. */
 static const struct
@@ -550,6 +831,20 @@ static void nemR3DarwinLogState(PVMCC pVM, PVMCPUCC pVCpu)
                            szInstr, sizeof(szInstr), NULL);
 #endif
         Log3(("%s%s\n", szRegs, szInstr));
+
+        if (pVM->nem.s.fEl2Enabled)
+        {
+            DBGFR3RegPrintf(pVM->pUVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
+                            "sp_el2=%016VR{sp_el2} elr_el2=%016VR{elr_el2}\n"
+                            "spsr_el2=%016VR{spsr_el2} tpidr_el2=%016VR{tpidr_el2}\n"
+                            "sctlr_el2=%016VR{sctlr_el2} tcr_el2=%016VR{tcr_el2}\n"
+                            "ttbr0_el2=%016VR{ttbr0_el2} ttbr1_el2=%016VR{ttbr1_el2}\n"
+                            "esr_el2=%016VR{esr_el2} far_el2=%016VR{far_el2}\n"
+                            "hcr_el2=%016VR{hcr_el2} tcr_el2=%016VR{tcr_el2}\n"
+                            "vbar_el2=%016VR{vbar_el2} cptr_el2=%016VR{cptr_el2}\n"
+                            );
+        }
+        Log3(("%s%s\n", szRegs));
     }
 }
 #endif /* LOG_ENABLED */
@@ -620,6 +915,17 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
                 uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumSysRegs[i].offCpumCtx);
                 hrc |= hv_vcpu_get_sys_reg(pVCpu->nem.s.hVCpu, s_aCpumSysRegs[i].enmHvReg, pu64);
             }
+        }
+    }
+
+    if (   hrc == HV_SUCCESS
+        && (fWhat & CPUMCTX_EXTRN_SYSREG_EL2)
+        && pVM->nem.s.fEl2Enabled)
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumEl2SysRegs); i++)
+        {
+            uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumEl2SysRegs[i].offCpumCtx);
+            hrc |= hv_vcpu_get_sys_reg(pVCpu->nem.s.hVCpu, (hv_sys_reg_t)s_aCpumEl2SysRegs[i].idSysReg, pu64);
         }
     }
 
@@ -716,11 +1022,186 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
     }
 
     if (   hrc == HV_SUCCESS
+        && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_SYSREG_EL2)
+        && pVM->nem.s.fEl2Enabled)
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumEl2SysRegs); i++)
+        {
+            uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumEl2SysRegs[i].offCpumCtx);
+            hrc |= hv_vcpu_set_sys_reg(pVCpu->nem.s.hVCpu, (hv_sys_reg_t)s_aCpumEl2SysRegs[i].idSysReg, *pu64);
+            Assert(hrc == HV_SUCCESS);
+        }
+    }
+
+    if (   hrc == HV_SUCCESS
         && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_PSTATE))
         hrc = hv_vcpu_set_reg(pVCpu->nem.s.hVCpu, HV_REG_CPSR, pVCpu->cpum.GstCtx.fPState);
 
     pVCpu->cpum.GstCtx.fExtrn |= CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_NEM;
     return nemR3DarwinHvSts2Rc(hrc);
+}
+
+
+/**
+ * Worker for nemR3NativeInit that loads the Hypervisor.framework shared library.
+ *
+ * @returns VBox status code.
+ * @param   pErrInfo            Where to always return error info.
+ */
+static int nemR3DarwinLoadHv(PRTERRINFO pErrInfo)
+{
+    RTLDRMOD hMod = NIL_RTLDRMOD;
+    static const char *s_pszHvPath = "/System/Library/Frameworks/Hypervisor.framework/Hypervisor";
+
+    int rc = RTLdrLoadEx(s_pszHvPath, &hMod, RTLDRLOAD_FLAGS_NO_UNLOAD | RTLDRLOAD_FLAGS_NO_SUFFIX, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aImports); i++)
+        {
+            int rc2 = RTLdrGetSymbol(hMod, g_aImports[i].pszName, (void **)g_aImports[i].ppfn);
+            if (RT_SUCCESS(rc2))
+            {
+                LogRel(("NEM:  info: Found optional import Hypervisor!%s.\n",
+                        g_aImports[i].pszName));
+            }
+            else
+            {
+                *g_aImports[i].ppfn = NULL;
+
+                LogRel(("NEM:  info: Failed to import Hypervisor!%s: %Rrc\n",
+                        g_aImports[i].pszName, rc2));
+            }
+        }
+        if (RT_SUCCESS(rc))
+        {
+            Assert(!RTErrInfoIsSet(pErrInfo));
+        }
+
+        RTLdrClose(hMod);
+    }
+    else
+    {
+        RTErrInfoAddF(pErrInfo, rc, "Failed to load Hypervisor.framwork: %s: %Rrc", s_pszHvPath, rc);
+        rc = VERR_NEM_INIT_FAILED;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Dumps some GIC information to the release log.
+ */
+static void nemR3DarwinDumpGicInfo(void)
+{
+    size_t val = 0;
+    hv_return_t hrc = hv_gic_get_redistributor_size(&val);
+    LogRel(("GICNem: hv_gic_get_redistributor_size()                    -> hrc=%#x / size=%zu\n", hrc, val));
+    hrc = hv_gic_get_distributor_size(&val);
+    LogRel(("GICNem: hv_gic_get_distributor_size()                      -> hrc=%#x / size=%zu\n", hrc, val));
+    hrc = hv_gic_get_distributor_base_alignment(&val);
+    LogRel(("GICNem: hv_gic_get_distributor_base_alignment()            -> hrc=%#x / size=%zu\n", hrc, val));
+    hrc = hv_gic_get_redistributor_base_alignment(&val);
+    LogRel(("GICNem: hv_gic_get_redistributor_base_alignment()          -> hrc=%#x / size=%zu\n", hrc, val));
+    hrc = hv_gic_get_msi_region_base_alignment(&val);
+    LogRel(("GICNem: hv_gic_get_msi_region_base_alignment()             -> hrc=%#x / size=%zu\n", hrc, val));
+    hrc = hv_gic_get_msi_region_size(&val);
+    LogRel(("GICNem: hv_gic_get_msi_region_size()                       -> hrc=%#x / size=%zu\n", hrc, val));
+    uint32_t u32SpiIntIdBase = 0;
+    uint32_t cSpiIntIds = 0;
+    hrc = hv_gic_get_spi_interrupt_range(&u32SpiIntIdBase, &cSpiIntIds);
+    LogRel(("GICNem: hv_gic_get_spi_interrupt_range()                   -> hrc=%#x / SpiIntIdBase=%u, cSpiIntIds=%u\n", hrc, u32SpiIntIdBase, cSpiIntIds));
+
+    uint32_t u32IntId = 0;
+    hrc = hv_gic_get_intid(HV_GIC_INT_EL1_PHYSICAL_TIMER, &u32IntId);
+    LogRel(("GICNem: hv_gic_get_intid(HV_GIC_INT_EL1_PHYSICAL_TIMER)    -> hrc=%#x / IntId=%u\n", hrc, u32IntId));
+    hrc = hv_gic_get_intid(HV_GIC_INT_EL1_VIRTUAL_TIMER, &u32IntId);
+    LogRel(("GICNem: hv_gic_get_intid(HV_GIC_INT_EL1_VIRTUAL_TIMER)     -> hrc=%#x / IntId=%u\n", hrc, u32IntId));
+    hrc = hv_gic_get_intid(HV_GIC_INT_EL2_PHYSICAL_TIMER, &u32IntId);
+    LogRel(("GICNem: hv_gic_get_intid(HV_GIC_INT_EL2_PHYSICAL_TIMER)    -> hrc=%#x / IntId=%u\n", hrc, u32IntId));
+    hrc = hv_gic_get_intid(HV_GIC_INT_MAINTENANCE, &u32IntId);
+    LogRel(("GICNem: hv_gic_get_intid(HV_GIC_INT_MAINTENANCE)           -> hrc=%#x / IntId=%u\n", hrc, u32IntId));
+    hrc = hv_gic_get_intid(HV_GIC_INT_PERFORMANCE_MONITOR, &u32IntId);
+    LogRel(("GICNem: hv_gic_get_intid(HV_GIC_INT_PERFORMANCE_MONITOR)   -> hrc=%#x / IntId=%u\n", hrc, u32IntId));
+}
+
+
+/**
+ * Sets the given SPI inside the in-kernel KVM GIC.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM instance.
+ * @param   uIntId      The SPI ID to update.
+ * @param   fAsserted   Flag whether the interrupt is asserted (true) or not (false).
+ */
+VMMR3_INT_DECL(int) GICR3NemSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted)
+{
+    RT_NOREF(pVM);
+    Assert(hv_gic_set_spi);
+
+    hv_return_t hrc = hv_gic_set_spi(uIntId + GIC_INTID_RANGE_SPI_START, fAsserted);
+    return nemR3DarwinHvSts2Rc(hrc);
+}
+
+
+/**
+ * Sets the given PPI inside the in-kernel KVM GIC.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The vCPU for whih the PPI state is updated.
+ * @param   uIntId      The PPI ID to update.
+ * @param   fAsserted   Flag whether the interrupt is asserted (true) or not (false).
+ */
+VMMR3_INT_DECL(int) GICR3NemPpiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
+{
+    RT_NOREF(pVCpu, uIntId, fAsserted);
+
+    /* Should never be called as the PPIs are handled entirely in Hypervisor.framework/AppleHV. */
+    AssertFailed();
+    return VERR_NEM_IPE_9;
+}
+
+
+static int nemR3DarwinGicCreate(PVM pVM)
+{
+    nemR3DarwinDumpGicInfo();
+
+    //PCFGMNODE pGicDev = CFGMR3GetChild(CFGMR3GetRoot(pVM), "Devices/gic/0");
+    PCFGMNODE pGicCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "Devices/gic-nem/0/Config");
+
+    hv_gic_config_t hGicCfg = hv_gic_config_create();
+
+    /*
+     * Query the MMIO ranges.
+     */
+    RTGCPHYS GCPhysMmioBaseDist = 0;
+    int rc = CFGMR3QueryU64(pGicCfg, "DistributorMmioBase", &GCPhysMmioBaseDist);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          "Configuration error: Failed to get the \"DistributorMmioBase\" value\n");
+
+    RTGCPHYS GCPhysMmioBaseReDist = 0;
+    rc = CFGMR3QueryU64(pGicCfg, "RedistributorMmioBase", &GCPhysMmioBaseReDist);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          "Configuration error: Failed to get the \"RedistributorMmioBase\" value\n");
+
+    hv_return_t hrc = hv_gic_config_set_distributor_base(hGicCfg, GCPhysMmioBaseDist);
+    if (hrc != HV_SUCCESS)
+        return nemR3DarwinHvSts2Rc(hrc);
+
+    hrc = hv_gic_config_set_redistributor_base(hGicCfg, GCPhysMmioBaseReDist);
+    if (hrc != HV_SUCCESS)
+        return nemR3DarwinHvSts2Rc(hrc);
+
+    hrc = hv_gic_create(hGicCfg);
+    os_release(hGicCfg);
+    if (hrc != HV_SUCCESS)
+        return nemR3DarwinHvSts2Rc(hrc);
+
+    /* Make sure the device is not instantiated as Hypervisor.framework provides it. */
+    //CFGMR3RemoveNode(pGicDev);
+    return rc;
 }
 
 
@@ -754,8 +1235,63 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     RTERRINFOSTATIC ErrInfo;
     PRTERRINFO pErrInfo = RTErrInfoInitStatic(&ErrInfo);
 
-    int rc = VINF_SUCCESS;
-    hv_return_t hrc = hv_vm_create(NULL);
+    /* Resolve optional imports */
+    int rc = nemR3DarwinLoadHv(pErrInfo);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Need to enable nested virt here if supported and reset the CFGM value to false
+     * if not supported. This ASSUMES that NEM is initialized before CPUM.
+     */
+    PCFGMNODE pCfgCpum = CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM/");
+    hv_vm_config_t hVmCfg = hv_vm_config_create();
+
+    if (hv_vm_config_get_el2_supported)
+    {
+        bool fHvEl2Supported = false;
+        hv_return_t hrc = hv_vm_config_get_el2_supported(&fHvEl2Supported);
+        if (   hrc == HV_SUCCESS
+            && fHvEl2Supported)
+        {
+            /** @cfgm{/CPUM/NestedHWVirt, bool, false}
+             * Whether to expose the hardware virtualization (EL2/VHE) feature to the guest.
+             * The default is false. Only supported on M3 and later and macOS 15.0+ (Sonoma).
+             */
+            bool fNestedHWVirt = false;
+            rc = CFGMR3QueryBoolDef(pCfgCpum, "NestedHWVirt", &fNestedHWVirt, false);
+            AssertLogRelRCReturn(rc, rc);
+            if (fNestedHWVirt)
+            {
+                hrc = hv_vm_config_set_el2_enabled(hVmCfg, fNestedHWVirt);
+                if (hrc != HV_SUCCESS)
+                    return VMSetError(pVM, VERR_CPUM_INVALID_HWVIRT_CONFIG, RT_SRC_POS,
+                                      "Cannot enable nested virtualization (hrc=%#x)!\n", hrc);
+                else
+                {
+                    pVM->nem.s.fEl2Enabled = true;
+                    LogRel(("NEM: Enabled nested virtualization (EL2) support\n"));
+                }
+            }
+        }
+        else
+        {
+            /* Ensure nested virt is not set. */
+            rc = CFGMR3RemoveValue(pCfgCpum, "NestedHWVirt");
+
+            LogRel(("NEM: The host doesn't supported nested virtualization! (hrc=%#x fHvEl2Supported=%RTbool)\n",
+                    hrc, fHvEl2Supported));
+        }
+    }
+    else
+    {
+        /* Ensure nested virt is not set. */
+        rc = CFGMR3RemoveValue(pCfgCpum, "NestedHWVirt");
+        LogRel(("NEM: Hypervisor.framework doesn't supported nested virtualization!\n"));
+    }
+
+    hv_return_t hrc = hv_vm_create(hVmCfg);
+    os_release(hVmCfg);
     if (hrc == HV_SUCCESS)
     {
         pVM->nem.s.fCreatedVm  = true;
@@ -780,7 +1316,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
         && pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NATIVE_API)
         return VMSetError(pVM, RT_SUCCESS_NP(rc) ? VERR_NEM_NOT_AVAILABLE : rc, RT_SRC_POS, "%s", pErrInfo->pszMsg);
 
-if (RTErrInfoIsSet(pErrInfo))
+    if (RTErrInfoIsSet(pErrInfo))
         LogRel(("NEM: Not available: %s\n", pErrInfo->pszMsg));
     return VINF_SUCCESS;
 }
@@ -870,6 +1406,14 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
      */
     AssertReturn(!pVM->nem.s.fCreatedEmts, VERR_WRONG_ORDER);
     AssertReturn(pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API, VERR_WRONG_ORDER);
+
+    /* Need to create the GIC here before any vCPU is created according to the Apple docs. */
+    if (hv_gic_create)
+    {
+        int rc = nemR3DarwinGicCreate(pVM);
+        if (RT_FAILURE(rc))
+            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Creating the GIC failed: %Rrc", rc);
+    }
 
     /*
      * Setup the EMTs.
@@ -1208,7 +1752,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedSysInsn(PVM pVM, PVMCPU
  *                          calling EMT.
  * @param   uIss            The instruction specific syndrome value.
  */
-static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU pVCpu, uint32_t uIss)
+static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU pVCpu, uint32_t uIss, bool fAdvancePc = false)
 {
     uint16_t u16Imm = ARMV8_EC_ISS_AARCH64_TRAPPED_HVC_INSN_IMM_GET(uIss);
     LogFlowFunc(("u16Imm=%#RX16\n", u16Imm));
@@ -1277,6 +1821,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU
                         case ARM_PSCI_FUNC_ID_SYSTEM_RESET:
                         case ARM_PSCI_FUNC_ID_SYSTEM_RESET2:
                         case ARM_PSCI_FUNC_ID_CPU_ON:
+                        case ARM_PSCI_FUNC_ID_MIGRATE_INFO_TYPE:
                             nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0,
                                                false /*f64BitReg*/, false /*fSignExtend*/,
                                                (uint64_t)ARM_PSCI_STS_SUCCESS);
@@ -1288,6 +1833,9 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU
                     }
                     break;
                 }
+                case ARM_PSCI_FUNC_ID_MIGRATE_INFO_TYPE:
+                    nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, ARM_PSCI_MIGRATE_INFO_TYPE_TOS_NOT_PRESENT);
+                    break;
                 default:
                     nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, (uint64_t)ARM_PSCI_STS_NOT_SUPPORTED);
             }
@@ -1296,6 +1844,10 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU
             nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, (uint64_t)ARM_PSCI_STS_NOT_SUPPORTED);
     }
     /** @todo What to do if immediate is != 0? */
+
+    if (   rcStrict == VINF_SUCCESS
+        && fAdvancePc)
+        pVCpu->cpum.GstCtx.Pc.u64 += sizeof(uint32_t);
 
     return rcStrict;
 }
@@ -1328,6 +1880,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
             return nemR3DarwinHandleExitExceptionTrappedSysInsn(pVM, pVCpu, uIss, fInsn32Bit);
         case ARMV8_ESR_EL2_EC_AARCH64_HVC_INSN:
             return nemR3DarwinHandleExitExceptionTrappedHvcInsn(pVM, pVCpu, uIss);
+        case ARMV8_ESR_EL2_EC_AARCH64_SMC_INSN:
+            return nemR3DarwinHandleExitExceptionTrappedHvcInsn(pVM, pVCpu, uIss, true);
         case ARMV8_ESR_EL2_EC_TRAPPED_WFX:
         {
             /* No need to halt if there is an interrupt pending already. */
