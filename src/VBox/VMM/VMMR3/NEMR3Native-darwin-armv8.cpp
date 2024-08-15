@@ -133,9 +133,10 @@ typedef enum hv_gic_intid_t : uint16_t
 
 #endif
 
-typedef hv_return_t FN_HV_VM_CONFIG_GET_EL2_SUPPORTED(bool *el2_supported);
-typedef hv_return_t FN_HV_VM_CONFIG_GET_EL2_ENABLED(hv_vm_config_t config, bool *el2_enabled);
-typedef hv_return_t FN_HV_VM_CONFIG_SET_EL2_ENABLED(hv_vm_config_t config, bool el2_enabled);
+typedef hv_vm_config_t  FN_HV_VM_CONFIG_CREATE(void);
+typedef hv_return_t     FN_HV_VM_CONFIG_GET_EL2_SUPPORTED(bool *el2_supported);
+typedef hv_return_t     FN_HV_VM_CONFIG_GET_EL2_ENABLED(hv_vm_config_t config, bool *el2_enabled);
+typedef hv_return_t     FN_HV_VM_CONFIG_SET_EL2_ENABLED(hv_vm_config_t config, bool el2_enabled);
 
 typedef struct hv_gic_config_s *hv_gic_config_t;
 typedef hv_return_t     FN_HV_GIC_CREATE(hv_gic_config_t gic_config);
@@ -187,9 +188,10 @@ typedef hv_return_t     FN_HV_GIC_GET_INTID(hv_gic_intid_t interrupt, uint32_t *
 *********************************************************************************************************************************/
 /** @name Optional APIs imported from Hypervisor.framework.
  * @{ */
-static FN_HV_VM_CONFIG_GET_EL2_SUPPORTED *g_pfnHvVmConfigGetEl2Supported                        = NULL; /* Since 15.0 */
-static FN_HV_VM_CONFIG_GET_EL2_ENABLED   *g_pfnHvVmConfigGetEl2Enabled                          = NULL; /* Since 15.0 */
-static FN_HV_VM_CONFIG_SET_EL2_ENABLED   *g_pfnHvVmConfigSetEl2Enabled                          = NULL; /* Since 15.0 */
+static FN_HV_VM_CONFIG_CREATE                       *g_pfnHvVmConfigCreate                      = NULL; /* Since 13.0 */
+static FN_HV_VM_CONFIG_GET_EL2_SUPPORTED            *g_pfnHvVmConfigGetEl2Supported             = NULL; /* Since 15.0 */
+static FN_HV_VM_CONFIG_GET_EL2_ENABLED              *g_pfnHvVmConfigGetEl2Enabled               = NULL; /* Since 15.0 */
+static FN_HV_VM_CONFIG_SET_EL2_ENABLED              *g_pfnHvVmConfigSetEl2Enabled               = NULL; /* Since 15.0 */
 
 static FN_HV_GIC_CREATE                             *g_pfnHvGicCreate                           = NULL; /* Since 15.0 */
 static FN_HV_GIC_RESET                              *g_pfnHvGicReset                            = NULL; /* Since 15.0 */
@@ -239,6 +241,7 @@ static const struct
 } g_aImports[] =
 {
 #define NEM_DARWIN_IMPORT(a_Pfn, a_Name) { (void **)&(a_Pfn), #a_Name }
+    NEM_DARWIN_IMPORT(g_pfnHvVmConfigCreate,                    hv_vm_config_create),
     NEM_DARWIN_IMPORT(g_pfnHvVmConfigGetEl2Supported,           hv_vm_config_get_el2_supported),
     NEM_DARWIN_IMPORT(g_pfnHvVmConfigGetEl2Enabled,             hv_vm_config_get_el2_enabled),
     NEM_DARWIN_IMPORT(g_pfnHvVmConfigSetEl2Enabled,             hv_vm_config_set_el2_enabled),
@@ -286,6 +289,7 @@ static const struct
  * Let the preprocessor alias the APIs to import variables for better autocompletion.
  */
 #ifndef IN_SLICKEDIT
+# define hv_vm_config_create                        g_pfnHvVmConfigCreate
 # define hv_vm_config_get_el2_supported             g_pfnHvVmConfigGetEl2Supported
 # define hv_vm_config_get_el2_enabled               g_pfnHvVmConfigGetEl2Enabled
 # define hv_vm_config_set_el2_enabled               g_pfnHvVmConfigSetEl2Enabled
@@ -1246,10 +1250,13 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
      * if not supported. This ASSUMES that NEM is initialized before CPUM.
      */
     PCFGMNODE pCfgCpum = CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM/");
-    hv_vm_config_t hVmCfg = hv_vm_config_create();
+    hv_vm_config_t hVmCfg = NULL;
 
-    if (hv_vm_config_get_el2_supported)
+    if (   hv_vm_config_create
+        && hv_vm_config_get_el2_supported)
     {
+        hVmCfg = hv_vm_config_create();
+
         bool fHvEl2Supported = false;
         hv_return_t hrc = hv_vm_config_get_el2_supported(&fHvEl2Supported);
         if (   hrc == HV_SUCCESS
