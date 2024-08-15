@@ -237,7 +237,7 @@ AssertCompileSize(MptMessageHdr, 12);
 #define MPT_MESSAGE_HDR_FUNCTION_TARGET_MODE_ABORT      (0x0D)
 #define MPT_MESSAGE_HDR_FUNCTION_FW_UPLOAD              (0x12)
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
 /**
  * Function names
  */
