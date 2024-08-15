@@ -1752,6 +1752,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedSysInsn(PVM pVM, PVMCPU
  * @param   pVCpu           The cross context virtual CPU structure of the
  *                          calling EMT.
  * @param   uIss            The instruction specific syndrome value.
+ * @param   fAdvancePc      Flag whether to advance the guest program counter.
  */
 static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU pVCpu, uint32_t uIss, bool fAdvancePc = false)
 {
