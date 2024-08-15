@@ -2258,7 +2258,11 @@ void UIMachineLogic::sltChangeSharedClipboardType(QAction *pAction)
 {
     /* Assign new mode (without save): */
     AssertPtrReturnVoid(pAction);
-    uimachine()->setClipboardMode(pAction->data().value<KClipboardMode>());
+    KClipboardMode enmMode = pAction->data().value<KClipboardMode>();
+    uimachine()->setClipboardMode(enmMode);
+    /* Disable the file transfer action if clipboard transfers are disabled: */
+    if (m_pFileTransferToggleAction)
+        m_pFileTransferToggleAction->setEnabled(enmMode != KClipboardMode_Disabled);
 }
 
 void UIMachineLogic::sltFileTransferToggled(bool fChecked)
@@ -2811,6 +2815,7 @@ void UIMachineLogic::updateMenuDevicesSharedClipboard(QMenu *pMenu)
         m_pFileTransferToggleAction = new QAction(UIActionPool::tr("Enable Clipboard File Transfers"));
         m_pFileTransferToggleAction->setCheckable(true);
         m_pFileTransferToggleAction->setChecked(uimachine()->isClipboardFileTransferEnabled());
+        m_pFileTransferToggleAction->setEnabled(enmCurrentMode != KClipboardMode_Disabled);
         /* pMenu takes the ownership of the m_pFileTransferToggleAction. */
         pMenu->addAction(m_pFileTransferToggleAction);
         connect(m_pFileTransferToggleAction, &QAction::toggled, this, &UIMachineLogic::sltFileTransferToggled);
