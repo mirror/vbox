@@ -2919,19 +2919,108 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
 *   Recompiled Execution Core                                                                                                    *
 *********************************************************************************************************************************/
 
+/** Default TB factor.
+ * This is basically the number of nanoseconds we guess executing a TB takes
+ * on average.  We estimates it high if we can.
+ * @note Best if this is a power of two so it can be translated to a shift.  */
+#define IEM_TIMER_POLL_DEFAULT_FACTOR   UINT32_C(64)
+/** The minimum number of nanoseconds we can allow between timer pollings.
+ * This must take the cost of TMTimerPollBoolWithNanoTS into mind.  We put that
+ * cost at 104 ns now, thus this constant is at 256 ns. */
+#define IEM_TIMER_POLL_MIN_NS           UINT32_C(256)
+/** The IEM_TIMER_POLL_MIN_NS value roughly translated to TBs, with some grains
+ * of salt thrown in.
+ * The idea is that we will be able to make progress with guest code execution
+ * before polling timers and between running timers. */
+#define IEM_TIMER_POLL_MIN_ITER         UINT32_C(12)
+/** The maximum number of nanoseconds we can allow between timer pollings.
+ * This probably shouldn't be too high, as we don't have any timer
+ * reprogramming feedback in the polling code.  So, when a device reschedule a
+ * timer for an earlier delivery, we won't know about it.  */
+#define IEM_TIMER_POLL_MAX_NS           UINT32_C(8388608) /* 0x800000 ns = 8.4 ms */
+/** The IEM_TIMER_POLL_MAX_NS value roughly translated to TBs, with some grains
+ * of salt thrown in.
+ * This helps control fluctuations in the NU benchmark. */
+#define IEM_TIMER_POLL_MAX_ITER         _512K
+
+
+DECL_FORCE_INLINE(uint32_t) iemPollTimersCalcDefaultCountdown(uint64_t cNsDelta)
+{
+    if (cNsDelta >= IEM_TIMER_POLL_MAX_NS)
+        return RT_MIN(IEM_TIMER_POLL_MAX_NS / IEM_TIMER_POLL_DEFAULT_FACTOR, IEM_TIMER_POLL_MAX_ITER);
+
+    cNsDelta = RT_BIT_64(ASMBitFirstSetU32(cNsDelta) - 1); /* round down to power of 2 */
+    uint32_t const cRet = cNsDelta / IEM_TIMER_POLL_DEFAULT_FACTOR;
+    if (cRet >= IEM_TIMER_POLL_MIN_ITER)
+    {
+        if (cRet <= IEM_TIMER_POLL_MAX_ITER)
+            return cRet;
+        return IEM_TIMER_POLL_MAX_ITER;
+    }
+    return IEM_TIMER_POLL_MIN_ITER;
+}
+
+
 /**
  * Helper for polling timers.
  */
 DECLHIDDEN(int) iemPollTimers(PVMCC pVM, PVMCPUCC pVCpu) RT_NOEXCEPT
 {
-    /*
-     * Do the polling and calculate the time since the last time.
-     */
-    uint64_t       nsNow        = 0;
-    bool const     fExpired     = TMTimerPollBoolWithNanoTS(pVM, pVCpu, &nsNow);
-    uint64_t const cNsSinceLast = nsNow - pVCpu->iem.s.nsRecompilerPollNow;
+    STAM_PROFILE_START(&pVCpu->iem.s.StatTimerPoll, a);
 
-    /* Store the new timstamps.  */
+    /*
+     * Check for VM_FF_TM_VIRTUAL_SYNC and call TMR3VirtualSyncFF if set.
+     * This is something all EMTs can do.
+     */
+    /* If the virtual sync FF is set, respond to it. */
+    bool fRanTimers = VM_FF_IS_SET(pVM, VM_FF_TM_VIRTUAL_SYNC);
+    if (!fRanTimers)
+    { /* likely */ }
+    else
+    {
+        STAM_PROFILE_START(&pVCpu->iem.s.StatTimerPollRun, b);
+        TMR3VirtualSyncFF(pVM, pVCpu);
+        STAM_PROFILE_STOP(&pVCpu->iem.s.StatTimerPollRun, b);
+    }
+
+    /*
+     * Poll timers.
+     *
+     * On the 10980xe the polling averaging 314 ticks, with a min of 201, while
+     * running a norton utilities DOS benchmark program. TSC runs at 3GHz,
+     * translating that to 104 ns and 67 ns respectively. (An M2 booting win11
+     * has an average of 2 ticks / 84 ns.)
+     *
+     * With the same setup the TMR3VirtualSyncFF and else branch here profiles
+     * to 79751 ticks / 26583 ns on average, with a min of 1194 ticks / 398 ns.
+     * (An M2 booting win11 has an average of 24 ticks / 1008 ns, with a min of
+     * 8 ticks / 336 ns.)
+     *
+     * If we get a zero return value we run timers.  Non-timer EMTs shouldn't
+     * ever see a zero value here, so we just call TMR3TimerQueuesDo.  However,
+     * we do not re-run timers if we already called TMR3VirtualSyncFF above, we
+     * try to make sure some code is executed first.
+     */
+    uint64_t nsNow    = 0;
+    uint64_t cNsDelta = TMTimerPollBoolWithNanoTS(pVM, pVCpu, &nsNow);
+    if (cNsDelta >= 1) /* It is okay to run virtual sync timers a little early. */
+    { /* likely */ }
+    else if (!fRanTimers || VM_FF_IS_SET(pVM, VM_FF_TM_VIRTUAL_SYNC))
+    {
+        STAM_PROFILE_START(&pVCpu->iem.s.StatTimerPollRun, b);
+        TMR3TimerQueuesDo(pVM);
+        fRanTimers = true;
+        nsNow = 0;
+        cNsDelta = TMTimerPollBoolWithNanoTS(pVM, pVCpu, &nsNow);
+        STAM_PROFILE_STOP(&pVCpu->iem.s.StatTimerPollRun, b);
+    }
+    else
+        cNsDelta = 33;
+
+    /*
+     * Calc interval and update the timestamps.
+     */
+    uint64_t const cNsSinceLast = nsNow - pVCpu->iem.s.nsRecompilerPollNow;
     pVCpu->iem.s.nsRecompilerPollNow = nsNow;
     pVCpu->iem.s.msRecompilerPollNow = (uint32_t)(nsNow / RT_NS_1MS);
 
@@ -2943,32 +3032,107 @@ DECLHIDDEN(int) iemPollTimers(PVMCC pVM, PVMCPUCC pVCpu) RT_NOEXCEPT
      * CheckIrq and intra-TB-checks aren't evenly spaced, they depends highly
      * on the guest code.
      */
-/** @todo can we make this even more adaptive based on current timer config as well? */
-    uint32_t       cIrqChecksTillNextPoll = pVCpu->iem.s.cIrqChecksTillNextPollPrev;
-    uint32_t const cNsIdealPollInterval   = pVCpu->iem.s.cNsIdealPollInterval;
-    int64_t const  nsFromIdeal            = cNsSinceLast - cNsIdealPollInterval;
+#ifdef IEM_WITH_ADAPTIVE_TIMER_POLLING
+    uint32_t cItersTillNextPoll = pVCpu->iem.s.cTbsTillNextTimerPollPrev;
+    if (cNsDelta >= RT_NS_1SEC / 4)
+    {
+        /*
+         * Non-timer EMTs should end up here with a fixed 500ms delta, just return
+         * the max and keep the polling over head to the deadicated timer EMT.
+         */
+        AssertCompile(IEM_TIMER_POLL_MAX_ITER * IEM_TIMER_POLL_DEFAULT_FACTOR <= RT_NS_100MS);
+        cItersTillNextPoll = IEM_TIMER_POLL_MAX_ITER;
+    }
+    else
+    {
+        /*
+         * This is the timer EMT.
+         */
+        if (cNsDelta <= IEM_TIMER_POLL_MIN_NS)
+        {
+            STAM_COUNTER_INC(&pVCpu->iem.s.StatTimerPollTiny);
+            cItersTillNextPoll = IEM_TIMER_POLL_MIN_ITER;
+            IEMTLBTRACE_USER0(pVCpu, TMVirtualSyncGetLag(pVM), RT_MAKE_U64(cNsSinceLast, cNsDelta), cItersTillNextPoll, 0);
+        }
+        else
+        {
+            uint32_t const cNsDeltaAdj   = cNsDelta >= IEM_TIMER_POLL_MAX_NS ? IEM_TIMER_POLL_MAX_NS     : (uint32_t)cNsDelta;
+            uint32_t const cNsDeltaSlack = cNsDelta >= IEM_TIMER_POLL_MAX_NS ? IEM_TIMER_POLL_MAX_NS / 2 : cNsDeltaAdj / 4;
+            if (   cNsSinceLast            < RT_MAX(IEM_TIMER_POLL_MIN_NS, 64)
+                || cItersTillNextPoll < IEM_TIMER_POLL_MIN_ITER /* paranoia */)
+            {
+                STAM_COUNTER_INC(&pVCpu->iem.s.StatTimerPollDefaultCalc);
+                cItersTillNextPoll = iemPollTimersCalcDefaultCountdown(cNsDeltaAdj);
+                IEMTLBTRACE_USER1(pVCpu, TMVirtualSyncGetLag(pVM), RT_MAKE_U64(cNsSinceLast, cNsDelta), cItersTillNextPoll, 3);
+            }
+            else if (   cNsSinceLast >= cNsDeltaAdj + cNsDeltaSlack
+                     || cNsSinceLast <= cNsDeltaAdj - cNsDeltaSlack)
+            {
+                if (cNsSinceLast >= cItersTillNextPoll)
+                {
+                    uint32_t uFactor = (uint32_t)(cNsSinceLast + cItersTillNextPoll - 1) / cItersTillNextPoll;
+                    cItersTillNextPoll = cNsDeltaAdj / uFactor;
+                    STAM_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTimerPollFactorDivision, uFactor);
+                    IEMTLBTRACE_USER1(pVCpu, TMVirtualSyncGetLag(pVM), RT_MAKE_U64(cNsSinceLast, cNsDelta), cItersTillNextPoll, 1);
+                }
+                else
+                {
+                    uint32_t uFactor = cItersTillNextPoll / (uint32_t)cNsSinceLast;
+                    cItersTillNextPoll = cNsDeltaAdj * uFactor;
+                    STAM_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTimerPollFactorMultiplication, uFactor);
+                    IEMTLBTRACE_USER1(pVCpu, TMVirtualSyncGetLag(pVM), RT_MAKE_U64(cNsSinceLast, cNsDelta), cItersTillNextPoll, 2);
+                }
+
+                if (cItersTillNextPoll >= IEM_TIMER_POLL_MIN_ITER)
+                {
+                    if (cItersTillNextPoll <= IEM_TIMER_POLL_MAX_ITER)
+                    { /* likely */ }
+                    else
+                    {
+                        STAM_COUNTER_INC(&pVCpu->iem.s.StatTimerPollMax);
+                        cItersTillNextPoll = IEM_TIMER_POLL_MAX_ITER;
+                    }
+                }
+                else
+                    cItersTillNextPoll = IEM_TIMER_POLL_MIN_ITER;
+            }
+            else
+            {
+                STAM_COUNTER_INC(&pVCpu->iem.s.StatTimerPollUnchanged);
+                IEMTLBTRACE_USER3(pVCpu, TMVirtualSyncGetLag(pVM), RT_MAKE_U64(cNsSinceLast, cNsDelta), cItersTillNextPoll, 0x00);
+            }
+        }
+        pVCpu->iem.s.cTbsTillNextTimerPollPrev = cItersTillNextPoll;
+    }
+#else
+/** Poll timers every 400 us / 2500 Hz. (source: thin air) */
+# define IEM_TIMER_POLL_IDEAL_NS     (400U * RT_NS_1US)
+    uint32_t       cItersTillNextPoll   = pVCpu->iem.s.cTbsTillNextTimerPollPrev;
+    uint32_t const cNsIdealPollInterval = IEM_TIMER_POLL_IDEAL_NS;
+    int64_t const  nsFromIdeal          = cNsSinceLast - cNsIdealPollInterval;
     if (nsFromIdeal < 0)
     {
-        if ((uint64_t)-nsFromIdeal > cNsIdealPollInterval / 8 && cIrqChecksTillNextPoll < _64K)
+        if ((uint64_t)-nsFromIdeal > cNsIdealPollInterval / 8 && cItersTillNextPoll < _64K)
         {
-            cIrqChecksTillNextPoll += cIrqChecksTillNextPoll / 8;
-            pVCpu->iem.s.cIrqChecksTillNextPollPrev = cIrqChecksTillNextPoll;
+            cItersTillNextPoll += cItersTillNextPoll / 8;
+            pVCpu->iem.s.cTbsTillNextTimerPollPrev = cItersTillNextPoll;
         }
     }
     else
     {
-        if ((uint64_t)nsFromIdeal > cNsIdealPollInterval / 8 && cIrqChecksTillNextPoll > 256)
+        if ((uint64_t)nsFromIdeal > cNsIdealPollInterval / 8 && cItersTillNextPoll > 256)
         {
-            cIrqChecksTillNextPoll -= cIrqChecksTillNextPoll / 8;
-            pVCpu->iem.s.cIrqChecksTillNextPollPrev = cIrqChecksTillNextPoll;
+            cItersTillNextPoll -= cItersTillNextPoll / 8;
+            pVCpu->iem.s.cTbsTillNextTimerPollPrev = cItersTillNextPoll;
         }
     }
-    pVCpu->iem.s.cIrqChecksTillNextPoll = cIrqChecksTillNextPoll;
+#endif
+    pVCpu->iem.s.cTbsTillNextTimerPoll = cItersTillNextPoll;
 
     /*
      * Repeat the IRQ and FF checks.
      */
-    if (!fExpired)
+    if (cNsDelta > 0)
     {
         uint32_t fCpu = pVCpu->fLocalForcedActions;
         fCpu &= VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
@@ -2980,8 +3144,12 @@ DECLHIDDEN(int) iemPollTimers(PVMCC pVM, PVMCPUCC pVCpu) RT_NOEXCEPT
                               && (   !pVCpu->cpum.GstCtx.rflags.Bits.u1IF
                                   || CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx)) ) )
                       && !VM_FF_IS_ANY_SET(pVCpu->CTX_SUFF(pVM), VM_FF_ALL_MASK) ))
+        {
+            STAM_PROFILE_STOP(&pVCpu->iem.s.StatTimerPoll, a);
             return VINF_SUCCESS;
+        }
     }
+    STAM_PROFILE_STOP(&pVCpu->iem.s.StatTimerPoll, a);
     return VINF_IEM_REEXEC_BREAK_FF;
 }
 
@@ -3264,7 +3432,7 @@ DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
 }
 
 
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu, bool fWasHalted)
 {
     /*
      * See if there is an interrupt pending in TRPM, inject it if we can.
@@ -3290,10 +3458,23 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
     else
 #endif
         iemInitExec(pVCpu, 0 /*fExecOpts*/);
-    if (RT_LIKELY(pVCpu->iem.s.msRecompilerPollNow != 0))
+
+    if (RT_LIKELY(!fWasHalted && pVCpu->iem.s.msRecompilerPollNow != 0))
     { }
     else
-        pVCpu->iem.s.msRecompilerPollNow = (uint32_t)(TMVirtualGetNoCheck(pVM) / RT_NS_1MS);
+    {
+        /* Do polling after halt and the first time we get here. */
+#ifdef IEM_WITH_ADAPTIVE_TIMER_POLLING
+        uint64_t       nsNow      = 0;
+        uint32_t const cItersTillPoll = iemPollTimersCalcDefaultCountdown(TMTimerPollBoolWithNanoTS(pVM, pVCpu, &nsNow));
+        pVCpu->iem.s.cTbsTillNextTimerPollPrev = cItersTillPoll;
+        pVCpu->iem.s.cTbsTillNextTimerPoll     = cItersTillPoll;
+#else
+        uint64_t const nsNow = TMVirtualGetNoCheck(pVM);
+#endif
+        pVCpu->iem.s.nsRecompilerPollNow = nsNow;
+        pVCpu->iem.s.msRecompilerPollNow = (uint32_t)(nsNow / RT_NS_1MS);
+    }
     pVCpu->iem.s.ppTbLookupEntryR3 = &pVCpu->iem.s.pTbLookupEntryDummyR3;
 
     /*
@@ -3351,7 +3532,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
                                   && !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_MASK) ))
                     {
                         /* Once in a while we need to poll timers here. */
-                        if ((int32_t)--pVCpu->iem.s.cIrqChecksTillNextPoll > 0)
+                        if ((int32_t)--pVCpu->iem.s.cTbsTillNextTimerPoll > 0)
                         { /* likely */ }
                         else
                         {

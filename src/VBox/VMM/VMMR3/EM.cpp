@@ -1056,11 +1056,12 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
  *
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   fWasHalted  Set if we're comming out of a CPU HALT state.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  *
  */
-static VBOXSTRICTRC emR3RecompilerExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
+static VBOXSTRICTRC emR3RecompilerExecute(PVM pVM, PVMCPU pVCpu, bool fWasHalted, bool *pfFFDone)
 {
     STAM_REL_PROFILE_START(&pVCpu->em.s.StatREMTotal, a);
 #ifdef VBOX_VMM_TARGET_ARMV8
@@ -1097,7 +1098,7 @@ static VBOXSTRICTRC emR3RecompilerExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             STAM_PROFILE_START(&pVCpu->em.s.StatREMExec, c);
 #ifdef VBOX_WITH_IEM_RECOMPILER
             if (pVM->em.s.fIemRecompiled)
-                rcStrict = IEMExecRecompiler(pVM, pVCpu);
+                rcStrict = IEMExecRecompiler(pVM, pVCpu, fWasHalted);
             else
 #endif
                 rcStrict = IEMExecLots(pVCpu, 8192 /*cMaxInstructions*/, 4095 /*cPollRate*/, NULL /*pcInstructions*/);
@@ -1189,6 +1190,11 @@ static VBOXSTRICTRC emR3RecompilerExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             }
         }
 
+#ifdef VBOX_WITH_IEM_RECOMPILER
+        fWasHalted = false;
+#else
+        RT_NOREF(fWasHalted);
+#endif
     } /* The Inner Loop, recompiled execution mode version. */
 
     STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatREMTotal, a);
@@ -2252,7 +2258,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_RESUME:
                     Log2(("EMR3ExecuteVM: VINF_EM_RESUME: %d -> VINF_EM_RESCHEDULE\n", enmOldState));
-                    /* Don't reschedule in the halted or wait for SIPI case. */
+                    /* Don't reschedule in the halted or wait-for-SIPI cases. */
                     if (    pVCpu->em.s.enmPrevState == EMSTATE_WAIT_SIPI
                         ||  pVCpu->em.s.enmPrevState == EMSTATE_HALTED)
                     {
@@ -2509,7 +2515,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute recompiled.
                  */
                 case EMSTATE_RECOMPILER:
-                    rc = VBOXSTRICTRC_TODO(emR3RecompilerExecute(pVM, pVCpu, &fFFDone));
+                    rc = VBOXSTRICTRC_TODO(emR3RecompilerExecute(pVM, pVCpu, enmOldState == EMSTATE_HALTED, &fFFDone));
                     Log2(("EMR3ExecuteVM: emR3RecompilerExecute -> %Rrc\n", rc));
                     break;
 

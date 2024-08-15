@@ -272,7 +272,7 @@ VMMDECL(uint64_t)       TMTimerFromMilli(PVMCC pVM, TMTIMERHANDLE hTimer, uint64
 
 VMMDECL(bool)           TMTimerPollBool(PVMCC pVM, PVMCPUCC pVCpu);
 VMM_INT_DECL(bool)      TMTimerPollBoolWith32BitMilliTS(PVMCC pVM, PVMCPUCC pVCpu, uint32_t *pmsNow);
-VMM_INT_DECL(bool)      TMTimerPollBoolWithNanoTS(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pnsNow);
+VMM_INT_DECL(uint64_t)  TMTimerPollBoolWithNanoTS(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pnsNow);
 VMM_INT_DECL(void)      TMTimerPollVoid(PVMCC pVM, PVMCPUCC pVCpu);
 VMM_INT_DECL(uint64_t)  TMTimerPollGIP(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64Delta);
 /** @} */

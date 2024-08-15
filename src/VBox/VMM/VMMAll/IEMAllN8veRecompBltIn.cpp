@@ -220,18 +220,18 @@ DECL_FORCE_INLINE(uint32_t) iemNativeRecompFunc_BltIn_CheckTimersAndIrqsCommon(P
     if (a_fCheckTimers)
     {
 # ifdef RT_ARCH_AMD64
-        /* dec  [rbx + cIrqChecksTillNextPoll] */
+        /* dec  [rbx + cTbsTillNextTimerPoll] */
         pCodeBuf[off++] = 0xff;
-        off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 1, RT_UOFFSETOF(VMCPU, iem.s.cIrqChecksTillNextPoll));
+        off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 1, RT_UOFFSETOF(VMCPU, iem.s.cTbsTillNextTimerPoll));
 
         /* jz   ReturnBreakFF */
         off = iemNativeEmitJccTbExitEx(pReNative, pCodeBuf, off, kIemNativeLabelType_ReturnBreakFF, kIemNativeInstrCond_e);
 
 # elif defined(RT_ARCH_ARM64)
-        AssertCompile(RTASSERT_OFFSET_OF(VMCPU, iem.s.cIrqChecksTillNextPoll) < _4K * sizeof(uint32_t));
-        off = iemNativeEmitLoadGprFromVCpuU32Ex(pCodeBuf, off, idxTmpReg1, RT_UOFFSETOF(VMCPU, iem.s.cIrqChecksTillNextPoll));
+        AssertCompile(RTASSERT_OFFSET_OF(VMCPU, iem.s.cTbsTillNextTimerPoll) < _4K * sizeof(uint32_t));
+        off = iemNativeEmitLoadGprFromVCpuU32Ex(pCodeBuf, off, idxTmpReg1, RT_UOFFSETOF(VMCPU, iem.s.cTbsTillNextTimerPoll));
         pCodeBuf[off++] = Armv8A64MkInstrSubUImm12(idxTmpReg1, idxTmpReg1, 1, false /*f64Bit*/);
-        off = iemNativeEmitStoreGprToVCpuU32Ex(pCodeBuf, off, idxTmpReg1, RT_UOFFSETOF(VMCPU, iem.s.cIrqChecksTillNextPoll));
+        off = iemNativeEmitStoreGprToVCpuU32Ex(pCodeBuf, off, idxTmpReg1, RT_UOFFSETOF(VMCPU, iem.s.cTbsTillNextTimerPoll));
 
         /* cbz reg1, ReturnBreakFF */
         off = iemNativeEmitTestIfGprIsZeroAndTbExitEx(pReNative, pCodeBuf, off, idxTmpReg1, false /*f64Bit*/,
@@ -397,7 +397,7 @@ IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(iemNativeLivenessFunc_BltIn_CheckIrq)
 
 
 /**
- * Built-in function that works the cIrqChecksTillNextPoll counter on direct TB
+ * Built-in function that works the cTbsTillNextTimerPoll counter on direct TB
  * linking, like loop-jumps.
  */
 IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckTimers)

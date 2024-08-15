@@ -1154,19 +1154,19 @@ VMM_INT_DECL(bool) TMTimerPollBoolWith32BitMilliTS(PVMCC pVM, PVMCPUCC pVCpu, ui
  * This is used by the IEM recompiler for polling timers while also providing a
  * free time source for recent use tracking and such.
  *
- * @returns true if timers are pending, false if not.
+ * @returns Nanoseconds till the next event, 0 if event already pending.
  *
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pnsNow      Where to return the current virtual time in nanoseconds.
  * @thread  The emulation thread.
  */
-VMM_INT_DECL(bool) TMTimerPollBoolWithNanoTS(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pnsNow)
+VMM_INT_DECL(uint64_t) TMTimerPollBoolWithNanoTS(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pnsNow)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-    uint64_t off = 0;
-    tmTimerPollInternal(pVM, pVCpu, &off, pnsNow);
-    return off == 0;
+    uint64_t offDelta = 0;
+    tmTimerPollInternal(pVM, pVCpu, &offDelta, pnsNow);
+    return offDelta;
 }
 
 

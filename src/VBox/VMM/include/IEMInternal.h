@@ -92,6 +92,13 @@ RT_C_DECLS_BEGIN
 # define IEM_WITH_THROW_CATCH
 #endif /*ASM-NOINC-END*/
 
+/** @def IEM_WITH_ADAPTIVE_TIMER_POLLING
+ * Enables the adaptive timer polling code.
+ */
+#if defined(DOXYGEN_RUNNING) || 0
+# define IEM_WITH_ADAPTIVE_TIMER_POLLING
+#endif
+
 /** @def IEM_WITH_INTRA_TB_JUMPS
  * Enables loop-jumps within a TB (currently only to the first call).
  */
@@ -820,7 +827,7 @@ typedef IEMTLBTRACEENTRY *PIEMTLBTRACEENTRY;
 typedef IEMTLBTRACEENTRY const *PCIEMTLBTRACEENTRY;
 #endif /* !IEM_WITH_TLB_TRACE */
 
-#if defined(IEM_WITH_TLB_TRACE) && defined(IN_RING3)
+#if defined(IEM_WITH_TLB_TRACE) && defined(IN_RING3) && 1
 # define IEMTLBTRACE_INVLPG(a_pVCpu, a_GCPtr) \
     iemTlbTrace(a_pVCpu, kIemTlbTraceType_InvlPg, a_GCPtr)
 # define IEMTLBTRACE_EVICT_SLOT(a_pVCpu, a_GCPtrTag, a_GCPhys, a_idxSlot, a_fDataTlb) \
@@ -2187,16 +2194,13 @@ typedef struct IEMCPU
     uint64_t                cTbExecNative;
 
     /** The number of IRQ/FF checks till the next timer poll call. */
-    uint32_t                cIrqChecksTillNextPoll;
+    uint32_t                cTbsTillNextTimerPoll;
     /** The virtual sync time at the last timer poll call in milliseconds. */
     uint32_t                msRecompilerPollNow;
     /** The virtual sync time at the last timer poll call in nanoseconds. */
     uint64_t                nsRecompilerPollNow;
-    /** The previous cIrqChecksTillNextPoll value. */
-    uint32_t                cIrqChecksTillNextPollPrev;
-    /** The ideal nanosecond interval between two timer polls.
-     * @todo make this adaptive?  */
-    uint32_t                cNsIdealPollInterval;
+    /** The previous cTbsTillNextTimerPoll value. */
+    uint32_t                cTbsTillNextTimerPollPrev;
 
     /** The current instruction number in a native TB.
      * This is set by code that may trigger an unexpected TB exit (throw/longjmp)
@@ -2241,8 +2245,6 @@ typedef struct IEMCPU
     /** Strict: Tracking skipped EFLAGS calculations.  Any bits set here are
      *  currently not up to date in EFLAGS. */
     uint32_t                fSkippingEFlags;
-    /** Spaced reserved for recompiler data / alignment. */
-    uint32_t                u32RecompilerStuff2;
 #if 0  /* unused */
     /** Previous GCPhysInstrBuf value - only valid if fTbCrossedPage is set.   */
     RTGCPHYS                GCPhysInstrBufPrev;
@@ -2492,10 +2494,23 @@ typedef struct IEMCPU
     STAMCOUNTER             StatMemBounceBufferMapPhys;
     /** @} */
 
+    /** Timer polling statistics (debug only).
+     * @{  */
+    STAMPROFILE             StatTimerPoll;
+    STAMPROFILE             StatTimerPollPoll;
+    STAMPROFILE             StatTimerPollRun;
+    STAMCOUNTER             StatTimerPollUnchanged;
+    STAMCOUNTER             StatTimerPollTiny;
+    STAMCOUNTER             StatTimerPollDefaultCalc;
+    STAMCOUNTER             StatTimerPollMax;
+    STAMPROFILE             StatTimerPollFactorDivision;
+    STAMPROFILE             StatTimerPollFactorMultiplication;
+    /** @} */
+
 #ifdef IEM_WITH_TLB_TRACE
-    uint64_t                au64Padding[6];
+    uint64_t                au64Padding[7];
 #else
-    //uint64_t                au64Padding[1];
+    uint64_t                au64Padding[1];
 #endif
 
 #ifdef IEM_WITH_TLB_TRACE

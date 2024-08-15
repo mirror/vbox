@@ -226,10 +226,8 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 #endif
 
 #ifndef VBOX_VMM_TARGET_ARMV8
-        /* Poll timers every 400 us / 2500 Hz. (source: thin air) */
-        pVCpu->iem.s.cNsIdealPollInterval       = 400U * RT_NS_1US;
-        pVCpu->iem.s.cIrqChecksTillNextPoll     = 128;
-        pVCpu->iem.s.cIrqChecksTillNextPollPrev = 128;
+        pVCpu->iem.s.cTbsTillNextTimerPoll      = 128;
+        pVCpu->iem.s.cTbsTillNextTimerPollPrev  = 128;
 #endif
 
         /*
@@ -602,8 +600,26 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Times threaded TB execution was interrupted/broken off on a call without lookup entries", "/IEM/CPU%u/re/cTbExecThreadedBreaksWithoutLookup", idCpu);
 # endif
 
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cIrqChecksTillNextPollPrev, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Timer polling interval",                       "/IEM/CPU%u/re/cIrqChecksTillNextPollPrev", idCpu);
+# ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTimerPoll, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                        "Timer polling profiling",                      "/IEM/CPU%u/re/TimerPoll/", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTimerPollRun, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                        "Timer polling profiling",                      "/IEM/CPU%u/re/TimerPoll/Running", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTimerPollUnchanged, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Timer polling interval unchanged",             "/IEM/CPU%u/re/TimerPoll/Unchanged", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTimerPollTiny, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Timer polling interval tiny",                  "/IEM/CPU%u/re/TimerPoll/Tiny", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTimerPollDefaultCalc, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Timer polling interval calculated using defaults", "/IEM/CPU%u/re/TimerPoll/DefaultCalc", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTimerPollMax, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Timer polling interval maxed out",             "/IEM/CPU%u/re/TimerPoll/Max", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTimerPollFactorDivision, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Timer polling factor",                         "/IEM/CPU%u/re/TimerPoll/FactorDivision", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTimerPollFactorMultiplication, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Timer polling factor",                         "/IEM/CPU%u/re/TimerPoll/FactorMultiplication", idCpu);
+# endif
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbsTillNextTimerPollPrev, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Timer polling interval (in TBs)",              "/IEM/CPU%u/re/TimerPollInterval", idCpu);
 
         PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
         STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatAllocs,         STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
