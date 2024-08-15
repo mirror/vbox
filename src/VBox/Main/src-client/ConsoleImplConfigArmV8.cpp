@@ -419,7 +419,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigNode(pDevices, "gic",                   &pDev);
 #else
         /* On Linux we default to the KVM in-kernel GIC for now. */
-        InsertConfigNode(pDevices, "gic-kvm",               &pDev);
+        InsertConfigNode(pDevices, "gic-nem",               &pDev);
 #endif
         InsertConfigNode(pDev,     "0",                     &pInst);
         InsertConfigInteger(pInst, "Trusted",               1);

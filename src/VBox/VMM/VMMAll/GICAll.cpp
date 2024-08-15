@@ -1292,14 +1292,12 @@ VMM_INT_DECL(int) GICSgiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
 
     /** @todo r=aeichner There must be another way to do this better, maybe create some callback interface
      *                   the GIC can register. */
-#ifdef RT_OS_LINUX
-# ifdef IN_RING3
+#ifdef IN_RING3
     PGIC pGic = VM_TO_GIC(pVCpu->pVMR3);
     /* These should be handled in the kernel and never be set from here. */
-    AssertReturn(!pGic->fKvmGic, VERR_NEM_IPE_6);
-# else
-#  error "Impossible to call the KVM in-kernel GIC from this context!"
-# endif
+    AssertReturn(!pGic->fNemGic, VERR_NEM_IPE_6);
+#else
+# error "Impossible to call the in-kernel GIC from this context!"
 #endif
 
     int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
