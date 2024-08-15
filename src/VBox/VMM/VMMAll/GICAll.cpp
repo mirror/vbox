@@ -1214,13 +1214,11 @@ VMM_INT_DECL(int) GICSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted)
 
     /** @todo r=aeichner There must be another way to do this better, maybe create some callback interface
      *                   the GIC can register. */
-#ifdef RT_OS_LINUX
-# ifdef IN_RING3
-    if (pGic->fKvmGic)
-        return GICR3KvmSpiSet(pVM, uIntId, fAsserted);
-# else
-#  error "Impossible to call the KVM in-kernel GIC from this context!"
-# endif
+#ifdef IN_RING3
+    if (pGic->fNemGic)
+        return GICR3NemSpiSet(pVM, uIntId, fAsserted);
+#else
+# error "Impossible to call the NEM in-kernel GIC from this context!"
 #endif
 
     PPDMDEVINS pDevIns = pGic->CTX_SUFF(pDevIns);
@@ -1258,14 +1256,12 @@ VMM_INT_DECL(int) GICPpiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
 
     /** @todo r=aeichner There must be another way to do this better, maybe create some callback interface
      *                   the GIC can register. */
-#ifdef RT_OS_LINUX
-# ifdef IN_RING3
+#ifdef IN_RING3
     PGIC pGic = VM_TO_GIC(pVCpu->pVMR3);
-    if (pGic->fKvmGic)
-        return GICR3KvmPpiSet(pVCpu, uIntId, fAsserted);
-# else
-#  error "Impossible to call the KVM in-kernel GIC from this context!"
-# endif
+    if (pGic->fNemGic)
+        return GICR3NemPpiSet(pVCpu, uIntId, fAsserted);
+#else
+# error "Impossible to call the NEM in-kernel GIC from this context!"
 #endif
 
     int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);

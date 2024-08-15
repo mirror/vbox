@@ -137,7 +137,7 @@ static int gicR3KvmSetIrq(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32IrqType
  * @param   uIntId      The SPI ID to update.
  * @param   fAsserted   Flag whether the interrupt is asserted (true) or not (false).
  */
-VMMR3_INT_DECL(int) GICR3KvmSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted)
+VMMR3_INT_DECL(int) GICR3NemSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted)
 {
     PGIC pGic = VM_TO_GIC(pVM);
     PPDMDEVINS pDevIns = pGic->CTX_SUFF(pDevIns);
@@ -156,7 +156,7 @@ VMMR3_INT_DECL(int) GICR3KvmSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted)
  * @param   uIntId      The PPI ID to update.
  * @param   fAsserted   Flag whether the interrupt is asserted (true) or not (false).
  */
-VMMR3_INT_DECL(int) GICR3KvmPpiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
+VMMR3_INT_DECL(int) GICR3NemPpiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
 {
     PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
 
@@ -275,7 +275,7 @@ DECLCALLBACK(int) gicR3KvmConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE
      * Init the data.
      */
     pGic->pDevInsR3 = pDevIns;
-    pGic->fKvmGic   = true;
+    pGic->fNemGic   = true;
     pThis->pDevIns  = pDevIns;
     pThis->fdKvmVm  = pVM->nem.s.fdVm;
 
@@ -358,11 +358,11 @@ DECLCALLBACK(int) gicR3KvmConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE
 /**
  * GIC device registration structure.
  */
-const PDMDEVREG g_DeviceGICKvm =
+const PDMDEVREG g_DeviceGICNem =
 {
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
-    /* .szName = */                 "gic-kvm",
+    /* .szName = */                 "gic-nem",
     /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_PIC,
     /* .cMaxInstances = */          1,

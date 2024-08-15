@@ -500,13 +500,14 @@ ifdef VBOX_WITH_VIRT_ARMV8
  endif
 
  VBoxVMMArm_SOURCES.darwin.arm64 += \
- 	VMMR3/NEMR3Native-darwin-armv8.cpp
+ 	VMMR3/NEMR3Native-darwin-armv8.cpp \
+ 	VMMR3/GICR3Nem-darwin.cpp
  VBoxVMMArm_DEFS.darwin.arm64   += VBOX_WITH_NATIVE_NEM
  VBoxVMMArm_LDFLAGS.darwin.arm64 = -framework Hypervisor
 
  VBoxVMMArm_SOURCES.linux.arm64 += \
  	VMMR3/NEMR3Native-linux-armv8.cpp \
- 	VMMR3/GICR3Kvm.cpp
+ 	VMMR3/GICR3Nem-linux.cpp
  VBoxVMMArm_DEFS.linux.arm64    += VBOX_WITH_NATIVE_NEM
 
  VBoxVMMArm_SOURCES.win.arm64 += \
