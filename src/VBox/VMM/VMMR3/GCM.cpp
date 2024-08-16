@@ -115,7 +115,6 @@ VMMR3_INT_DECL(int) GCMR3Init(PVM pVM)
         { RT_STR_TUPLE("DivByZeroOS2"),       GCMFIXER_DBZ_OS2 },
         { RT_STR_TUPLE("DivByZeroWin9x"),     GCMFIXER_DBZ_WIN9X },
         { RT_STR_TUPLE("MesaVmsvgaDrv"),      GCMFIXER_MESA_VMSVGA_DRV },
-        { RT_STR_TUPLE("TripleFltSCOUX"),     GCMFIXER_TF_SCOUX },
     };
 
     /* Assemble valid value names for CFMGR3ValidateConfig. */
@@ -157,7 +156,6 @@ VMMR3_INT_DECL(int) GCMR3Init(PVM pVM)
 #if 0 /* development override */
     pVM->gcm.s.fFixerSet = GCMFIXER_DBZ_OS2 | GCMFIXER_DBZ_DOS | GCMFIXER_DBZ_WIN9X;
 #endif
-    pVM->gcm.s.fFixerSet = GCMFIXER_TF_SCOUX;
 
     /*
      * Log what's enabled.
