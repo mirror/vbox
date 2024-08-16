@@ -2943,8 +2943,15 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
  * This helps control fluctuations in the NU benchmark. */
 #define IEM_TIMER_POLL_MAX_ITER         _512K
 
-
-DECL_FORCE_INLINE(uint32_t) iemPollTimersCalcDefaultCountdown(uint64_t cNsDelta)
+#ifdef IEM_WITH_ADAPTIVE_TIMER_POLLING
+/**
+ * Calculates the number of TBs till the next timer polling using defaults.
+ *
+ * This is used when the previous run wasn't long enough to provide sufficient
+ * data and when comming back from the HALT state and we haven't actually
+ * executed anything for a while.
+ */
+DECL_FORCE_INLINE(uint32_t) iemPollTimersCalcDefaultCountdown(uint64_t cNsDelta) RT_NOEXCEPT
 {
     if (cNsDelta >= IEM_TIMER_POLL_MAX_NS)
         return RT_MIN(IEM_TIMER_POLL_MAX_NS / IEM_TIMER_POLL_DEFAULT_FACTOR, IEM_TIMER_POLL_MAX_ITER);
@@ -2959,6 +2966,7 @@ DECL_FORCE_INLINE(uint32_t) iemPollTimersCalcDefaultCountdown(uint64_t cNsDelta)
     }
     return IEM_TIMER_POLL_MIN_ITER;
 }
+#endif
 
 
 /**
@@ -3052,18 +3060,16 @@ DECLHIDDEN(int) iemPollTimers(PVMCC pVM, PVMCPUCC pVCpu) RT_NOEXCEPT
         {
             STAM_COUNTER_INC(&pVCpu->iem.s.StatTimerPollTiny);
             cItersTillNextPoll = IEM_TIMER_POLL_MIN_ITER;
-            IEMTLBTRACE_USER0(pVCpu, TMVirtualSyncGetLag(pVM), RT_MAKE_U64(cNsSinceLast, cNsDelta), cItersTillNextPoll, 0);
         }
         else
         {
             uint32_t const cNsDeltaAdj   = cNsDelta >= IEM_TIMER_POLL_MAX_NS ? IEM_TIMER_POLL_MAX_NS     : (uint32_t)cNsDelta;
             uint32_t const cNsDeltaSlack = cNsDelta >= IEM_TIMER_POLL_MAX_NS ? IEM_TIMER_POLL_MAX_NS / 2 : cNsDeltaAdj / 4;
-            if (   cNsSinceLast            < RT_MAX(IEM_TIMER_POLL_MIN_NS, 64)
+            if (   cNsSinceLast       < RT_MAX(IEM_TIMER_POLL_MIN_NS, 64)
                 || cItersTillNextPoll < IEM_TIMER_POLL_MIN_ITER /* paranoia */)
             {
                 STAM_COUNTER_INC(&pVCpu->iem.s.StatTimerPollDefaultCalc);
                 cItersTillNextPoll = iemPollTimersCalcDefaultCountdown(cNsDeltaAdj);
-                IEMTLBTRACE_USER1(pVCpu, TMVirtualSyncGetLag(pVM), RT_MAKE_U64(cNsSinceLast, cNsDelta), cItersTillNextPoll, 3);
             }
             else if (   cNsSinceLast >= cNsDeltaAdj + cNsDeltaSlack
                      || cNsSinceLast <= cNsDeltaAdj - cNsDeltaSlack)
@@ -3073,14 +3079,12 @@ DECLHIDDEN(int) iemPollTimers(PVMCC pVM, PVMCPUCC pVCpu) RT_NOEXCEPT
                     uint32_t uFactor = (uint32_t)(cNsSinceLast + cItersTillNextPoll - 1) / cItersTillNextPoll;
                     cItersTillNextPoll = cNsDeltaAdj / uFactor;
                     STAM_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTimerPollFactorDivision, uFactor);
-                    IEMTLBTRACE_USER1(pVCpu, TMVirtualSyncGetLag(pVM), RT_MAKE_U64(cNsSinceLast, cNsDelta), cItersTillNextPoll, 1);
                 }
                 else
                 {
                     uint32_t uFactor = cItersTillNextPoll / (uint32_t)cNsSinceLast;
                     cItersTillNextPoll = cNsDeltaAdj * uFactor;
                     STAM_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTimerPollFactorMultiplication, uFactor);
-                    IEMTLBTRACE_USER1(pVCpu, TMVirtualSyncGetLag(pVM), RT_MAKE_U64(cNsSinceLast, cNsDelta), cItersTillNextPoll, 2);
                 }
 
                 if (cItersTillNextPoll >= IEM_TIMER_POLL_MIN_ITER)
@@ -3097,10 +3101,7 @@ DECLHIDDEN(int) iemPollTimers(PVMCC pVM, PVMCPUCC pVCpu) RT_NOEXCEPT
                     cItersTillNextPoll = IEM_TIMER_POLL_MIN_ITER;
             }
             else
-            {
                 STAM_COUNTER_INC(&pVCpu->iem.s.StatTimerPollUnchanged);
-                IEMTLBTRACE_USER3(pVCpu, TMVirtualSyncGetLag(pVM), RT_MAKE_U64(cNsSinceLast, cNsDelta), cItersTillNextPoll, 0x00);
-            }
         }
         pVCpu->iem.s.cTbsTillNextTimerPollPrev = cItersTillNextPoll;
     }
