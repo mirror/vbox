@@ -4434,7 +4434,7 @@ ifdef VBOX_SIGNING_MODE
   # @param 3  Additional parameters. Optional.
   # @param 4  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
   # @param 5  Disables dual & tripple signing if non-empty.
-  # @param 6  Disables tripple signing if non-empty.
+  # @param 6  Disables triple signing if non-empty.
   #
   # @remarks The parameters are the same as VBOX_SIGN_FILE_FN.
   VBOX_SIGN_IMAGE_WITH_EV_FN = $(call VBOX_SIGN_FILE_FN,$1,$2,$3,$4,$5)$(if-expr "$5" == "" && "$(target)" != "bldRTSignTool", \
@@ -4481,6 +4481,31 @@ ifdef VBOX_SIGNING_MODE
   	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(MV) -f -- "$1.dual" "$1" \
   	,)
 
+  ## Corp code signing for drivers and catalogs, plan C.
+  #
+  # This does a local SHA-1 signature before submitting to corp code signing. The end
+  # result will have just a SHA-256 signature:
+  #   1. Sign $1 using local SHA-1 certificate.
+  #   2. Do SHA-256 corp code signing of $1
+  #
+  # @param 1  The file to sign.
+  # @param 2  File description. Optional.
+  # @param 3  Additional parameters. Optional.
+  # @param 4  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
+  # @param 5  Disables dual signing if non-empty. Ignored because this can't do dual signing.
+  # @remarks The parameters are the same as VBOX_SIGN_FILE_FN.
+  VBOX_SIGN_IMAGE_PLAN_C_FN = $(VBOX_SIGNTOOL_SHA1) \
+  	sign /fd sha1 \
+  	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
+  	$(VBOX_CERTIFICATE_STORE_ARGS) \
+  	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
+  	$(VBOX_CERTIFICATE_FINGERPRINT_ARGS) \
+  	$(VBOX_TSA_URL_ARGS) \
+  	$(if $(strip $(2)),/d "$(strip $(2))",) \
+  	$(3) \
+  	"$(1)" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo SHA2) \
+
   ## Sign an executable image.
   # @param 1  The file to sign.
   # @param 2  File description. Optional.
@@ -4496,6 +4521,9 @@ ifdef VBOX_SIGNING_MODE
   ## Commands for signing a driver image after link.
   if $(intersects win_planb,$(VBOX_WITH_CORP_CODE_SIGNING))
    VBOX_SIGN_DRIVER_CMDS      ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_PLAN_B_FN,$(out),,/ph,2))
+   VBOX_SIGN_DRIVER_ORDERDEPS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_RTSIGNTOOL) $(VBOX_SIGNTOOL_ORDERDEPS))
+  else if $(intersects win_planc,$(VBOX_WITH_CORP_CODE_SIGNING))
+   VBOX_SIGN_DRIVER_CMDS      ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2,nodual))
    VBOX_SIGN_DRIVER_ORDERDEPS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_RTSIGNTOOL) $(VBOX_SIGNTOOL_ORDERDEPS))
   else
    VBOX_SIGN_DRIVER_CMDS      ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
@@ -4530,6 +4558,9 @@ ifdef VBOX_SIGNING_MODE
    ## Commands for signing an executable or a dll image after link.
    if defined(VBOX_CERTIFICATE_SUBJECT_NAME) && $(intersects win_planb,$(VBOX_WITH_CORP_CODE_SIGNING))
     VBOX_SIGN_IMAGE_CMDS           ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_PLAN_B_FN,$(out),,/ph,2))
+    VBOX_SIGN_IMAGE_CMDS_ORDERDEPS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_RTSIGNTOOL) $(VBOX_SIGNTOOL_ORDERDEPS))
+   else if defined(VBOX_CERTIFICATE_SUBJECT_NAME) && $(intersects win_planc,$(VBOX_WITH_CORP_CODE_SIGNING))
+    VBOX_SIGN_IMAGE_CMDS           ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_PLAN_C_FN,$(out),,/ph,2))
     VBOX_SIGN_IMAGE_CMDS_ORDERDEPS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_RTSIGNTOOL) $(VBOX_SIGNTOOL_ORDERDEPS))
    else
     VBOX_SIGN_IMAGE_CMDS           ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
