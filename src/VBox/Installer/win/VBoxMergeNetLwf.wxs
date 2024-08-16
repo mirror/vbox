@@ -42,6 +42,7 @@
         <Substitution Table="CustomAction" Row="setNetworkTypeLWF" Column="Target" Value="[=passedNetworkType]" />
         <CustomAction Id="setNetworkTypeLWF" Property="NETWORKTYPE" Value="[localMSMNetworkType]" Execute="immediate" />
         <CustomAction Id="correctNetworkTypeLWF" Property="NETWORKTYPE" Value="NDIS5" Execute="immediate" />
+<?endif?>
 
         <!-- Here comes the file/directory list -->
          <!-- TARGETDIR -->
