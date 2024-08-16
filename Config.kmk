@@ -4504,7 +4504,7 @@ ifdef VBOX_SIGNING_MODE
   	$(if $(strip $(2)),/d "$(strip $(2))",) \
   	$(3) \
   	"$(1)" \
-  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo SHA2) \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo SHA2)
 
   ## Sign an executable image.
   # @param 1  The file to sign.
