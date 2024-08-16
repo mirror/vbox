@@ -1611,6 +1611,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     if (uCounterReg == 0)
         return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iEffSeg) | CPUMCTX_EXTRN_ES);
     PCCPUMSELREGHID pHid      = iemSRegGetHid(pVCpu, iEffSeg);
     uint64_t        uBaseAddr = 0; /* gcc may not be used uninitialized */
     rcStrict = iemMemSegCheckReadAccessEx(pVCpu, pHid, iEffSeg, &uBaseAddr);
