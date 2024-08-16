@@ -1390,9 +1390,6 @@ static void buslogicR3SendIncomingMailbox(PPDMDEVINS pDevIns, PBUSLOGIC pThis, R
     MbxIn.u.in.uReserved           = 0;
     MbxIn.u.in.uCompletionCode     = uMailboxCompletionCode;
 
-    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSectIntr, VINF_SUCCESS);
-    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSectIntr, rc);
-
     RTGCPHYS GCPhysAddrMailboxIncoming = pThis->GCPhysAddrMailboxIncomingBase
                                        + (   pThis->uMailboxIncomingPositionCurrent
                                           * (pThis->fMbxIs24Bit ? sizeof(Mailbox24) : sizeof(Mailbox32)) );
@@ -1431,6 +1428,9 @@ static void buslogicR3SendIncomingMailbox(PPDMDEVINS pDevIns, PBUSLOGIC pThis, R
         Log(("32-bit mailbox: completion code=%u, CCB at %RGp\n", MbxIn.u.in.uCompletionCode, GCPhysAddrCCB));
         blPhysWriteMeta(pDevIns, pThis, GCPhysAddrMailboxIncoming, &MbxIn, sizeof(Mailbox32));
     }
+
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSectIntr, VINF_SUCCESS);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSectIntr, rc);
 
     /* Advance to next mailbox position. */
     pThis->uMailboxIncomingPositionCurrent++;
