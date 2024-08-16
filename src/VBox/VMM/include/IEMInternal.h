@@ -95,7 +95,7 @@ RT_C_DECLS_BEGIN
 /** @def IEM_WITH_ADAPTIVE_TIMER_POLLING
  * Enables the adaptive timer polling code.
  */
-#if defined(DOXYGEN_RUNNING) || 0
+#if defined(DOXYGEN_RUNNING) || 1
 # define IEM_WITH_ADAPTIVE_TIMER_POLLING
 #endif
 
