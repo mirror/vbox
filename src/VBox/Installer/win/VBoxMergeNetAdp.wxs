@@ -40,8 +40,8 @@
         <Property Id="localMSMNetworkType" Value="Empty" />
         <Configuration Name="passedNetworkType" Format="Text" DefaultValue="Not passed" />
         <Substitution Table="CustomAction" Row="setNetworkTypeADP" Column="Target" Value="[=passedNetworkType]" />
-        <CustomAction Id="setNetworkTypeADP" Property="localMSMNetworkType" Value="[localMSMNetworkType]" Execute="immediate" />
-        <CustomAction Id="correctNetworkTypeADP" Property="localMSMNetworkType" Value="NDIS5" Execute="immediate" />
+        <CustomAction Id="setNetworkTypeADP" Property="NETWORKTYPE" Value="[localMSMNetworkType]" Execute="immediate" />
+        <CustomAction Id="correctNetworkTypeADP" Property="NETWORKTYPE" Value="NDIS5" Execute="immediate" />
 <?endif?>
 
         <!-- Here comes the file/directory list -->

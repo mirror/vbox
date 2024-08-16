@@ -40,9 +40,8 @@
         <Property Id="localMSMNetworkType" Value="NDIS6" />
         <Configuration Name="passedNetworkType" Format="Text" DefaultValue="Not passed" />
         <Substitution Table="CustomAction" Row="setNetworkTypeLWF" Column="Target" Value="[=passedNetworkType]" />
-        <CustomAction Id="setNetworkTypeLWF" Property="localMSMNetworkType" Value="[localMSMNetworkType]" Execute="immediate" />
-        <CustomAction Id="correctNetworkTypeLWF" Property="localMSMNetworkType" Value="NDIS5" Execute="immediate" />
-<?endif?>
+        <CustomAction Id="setNetworkTypeLWF" Property="NETWORKTYPE" Value="[localMSMNetworkType]" Execute="immediate" />
+        <CustomAction Id="correctNetworkTypeLWF" Property="NETWORKTYPE" Value="NDIS5" Execute="immediate" />
 
         <!-- Here comes the file/directory list -->
          <!-- TARGETDIR -->

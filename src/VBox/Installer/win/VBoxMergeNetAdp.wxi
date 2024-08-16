@@ -25,7 +25,7 @@
 
 <Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
-    <Component Id="cp_NetAdpDriver" Guid="7adf3e12-af3c-4d36-8bec-36d5064cf84f" Bitness="$(var.Property_Bitness)" Condition="(localMSMNetworkType=&quot;NDIS5&quot;)">
+    <Component Id="cp_NetAdpDriver" Guid="7adf3e12-af3c-4d36-8bec-36d5064cf84f" Bitness="$(var.Property_Bitness)" Condition="(NETWORKTYPE=&quot;NDIS5&quot;)">
         <File Id="file_VBoxNetAdp.sys" Name="VBoxNetAdp.sys" KeyPath="yes" Source="$(env.PATH_OUT)\bin\VBoxNetAdp.sys" Checksum="yes" />
         <File Id="file_VBoxNetAdp.inf" Name="VBoxNetAdp.inf" Source="$(env.PATH_OUT)\bin\VBoxNetAdp.inf" />
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
