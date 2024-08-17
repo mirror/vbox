@@ -72,6 +72,7 @@ static FNDBGFINFOARGVINT iemR3InfoTlbTrace;
 #endif
 #if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
 static FNDBGFINFOARGVINT iemR3InfoTb;
+static FNDBGFINFOARGVINT iemR3InfoTbTop;
 #endif
 #ifdef VBOX_WITH_DEBUGGER
 static void iemR3RegisterDebuggerCommands(void);
@@ -1030,7 +1031,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
     DBGFR3InfoRegisterInternalArgv(pVM, "tlbtrace", "IEM TLB trace log", iemR3InfoTlbTrace, DBGFINFO_FLAGS_RUN_ON_EMT);
 #endif
 #if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
-    DBGFR3InfoRegisterInternalArgv(pVM, "tb",   "IEM translation block", iemR3InfoTb, DBGFINFO_FLAGS_RUN_ON_EMT);
+    DBGFR3InfoRegisterInternalArgv(pVM, "tb",    "IEM translation block", iemR3InfoTb, DBGFINFO_FLAGS_RUN_ON_EMT);
+    DBGFR3InfoRegisterInternalArgv(pVM, "tbtop", "IEM translation blocks most used or most recently used",
+                                   iemR3InfoTbTop, DBGFINFO_FLAGS_RUN_ON_EMT);
 #endif
 #ifdef VBOX_WITH_DEBUGGER
     iemR3RegisterDebuggerCommands();
@@ -1772,6 +1775,7 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
 #endif /* IEM_WITH_TLB_TRACE */
 
 #if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
+
 /**
  * @callback_method_impl{FNDBGFINFOARGVINT, tb}
  */
@@ -1944,6 +1948,284 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
         }
     }
 }
+
+
+/**
+ * @callback_method_impl{FNDBGFINFOARGVINT, tbtop}
+ */
+static DECLCALLBACK(void) iemR3InfoTbTop(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs)
+{
+    /*
+     * Parse arguments.
+     */
+    static RTGETOPTDEF const s_aOptions[] =
+    {
+        { "--cpu",                  'c', RTGETOPT_REQ_UINT32   },
+        { "--vcpu",                 'c', RTGETOPT_REQ_UINT32   },
+        { "--dis",                  'd', RTGETOPT_REQ_NOTHING  },
+        { "--disas",                'd', RTGETOPT_REQ_NOTHING  },
+        { "--disasm",               'd', RTGETOPT_REQ_NOTHING  },
+        { "--disassemble",          'd', RTGETOPT_REQ_NOTHING  },
+        { "--no-dis",               'D', RTGETOPT_REQ_NOTHING  },
+        { "--no-disas",             'D', RTGETOPT_REQ_NOTHING  },
+        { "--no-disasm",            'D', RTGETOPT_REQ_NOTHING  },
+        { "--no-disassemble",       'D', RTGETOPT_REQ_NOTHING  },
+        { "--most-freq",            'f', RTGETOPT_REQ_NOTHING  },
+        { "--most-frequent",        'f', RTGETOPT_REQ_NOTHING  },
+        { "--most-frequently",      'f', RTGETOPT_REQ_NOTHING  },
+        { "--most-frequently-used", 'f', RTGETOPT_REQ_NOTHING  },
+        { "--most-recent",          'r', RTGETOPT_REQ_NOTHING  },
+        { "--most-recently",        'r', RTGETOPT_REQ_NOTHING  },
+        { "--most-recently-used",   'r', RTGETOPT_REQ_NOTHING  },
+        { "--count",                'n', RTGETOPT_REQ_UINT32   },
+    };
+
+    RTGETOPTSTATE State;
+    int rc = RTGetOptInit(&State, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 0 /*iFirst*/, 0 /*fFlags*/);
+    AssertRCReturnVoid(rc);
+
+    PVMCPU const    pVCpuThis    = VMMGetCpu(pVM);
+    PVMCPU          pVCpu        = pVCpuThis ? pVCpuThis : VMMGetCpuById(pVM, 0);
+    enum { kTbTop_MostFrequentlyUsed, kTbTop_MostRececentlyUsed }
+                    enmTop       = kTbTop_MostFrequentlyUsed;
+    bool            fDisassemble = false;
+    uint32_t const  cTopDefault  = 64;
+    uint32_t const  cTopMin      = 1;
+    uint32_t const  cTopMax      = 1024;
+    uint32_t        cTop         = cTopDefault;
+
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(&State, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'c':
+                if (ValueUnion.u32 >= pVM->cCpus)
+                    pHlp->pfnPrintf(pHlp, "error: Invalid CPU ID: %u\n", ValueUnion.u32);
+                else if (!pVCpu || pVCpu->idCpu != ValueUnion.u32)
+                    pVCpu = VMMGetCpuById(pVM, ValueUnion.u32);
+                break;
+
+            case 'd':
+                fDisassemble = true;
+                break;
+
+            case 'D':
+                fDisassemble = true;
+                break;
+
+            case 'f':
+                enmTop = kTbTop_MostFrequentlyUsed;
+                break;
+
+            case 'r':
+                enmTop = kTbTop_MostRececentlyUsed;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                rc = RTStrToUInt32Full(ValueUnion.psz, 0, &cTop);
+                if (RT_FAILURE(rc))
+                {
+                    pHlp->pfnPrintf(pHlp, "error: failed to convert '%s' to a number: %Rrc\n", ValueUnion.psz, rc);
+                    return;
+                }
+                ValueUnion.u32 = cTop;
+                RT_FALL_THROUGH();
+            case 'n':
+                if (!ValueUnion.u32)
+                    cTop = cTopDefault;
+                else
+                {
+                    cTop = RT_MAX(RT_MIN(ValueUnion.u32, cTopMax), cTopMin);
+                    if (cTop != ValueUnion.u32)
+                        pHlp->pfnPrintf(pHlp, "warning: adjusted %u to %u (valid range: [%u..%u], 0 for default (%d))",
+                                        ValueUnion.u32, cTop, cTopMin, cTopMax, cTopDefault);
+                }
+                break;
+
+            case 'h':
+                pHlp->pfnPrintf(pHlp,
+                                "Usage: info tbtop [options]\n"
+                                "\n"
+                                "Options:\n"
+                                "  -c<n>, --cpu=<n>, --vcpu=<n>\n"
+                                "    Selects the CPU which TBs we're looking at. Default: Caller / 0\n"
+                                "  -d, --dis[as[m]], --disassemble\n"
+                                "    Show full TB disassembly.\n"
+                                "  -D, --no-dis[as[m]], --no-disassemble\n"
+                                "    Do not show TB diassembly. The default.\n"
+                                "  -f, --most-freq[ent[ly[-used]]]\n"
+                                "    Shows the most frequently used TBs (IEMTB::cUsed). The default.\n"
+                                "  -r, --most-recent[ly[-used]]\n"
+                                "    Shows the most recently used TBs (IEMTB::msLastUsed).\n"
+                                "  -n<num>, --count=<num>\n"
+                                "    The number of TBs to display. Default: %u\n"
+                                "    This is also what non-option arguments will be taken as.\n"
+                                , cTopDefault);
+                return;
+
+            default:
+                pHlp->pfnGetOptError(pHlp, rc, &ValueUnion, &State);
+                return;
+        }
+    }
+
+    /* Currently, only do work on the same EMT. */
+    if (pVCpu != pVCpuThis)
+    {
+        pHlp->pfnPrintf(pHlp, "TODO: Cross EMT calling not supported yet: targeting %u, caller on %d\n",
+                        pVCpu->idCpu, pVCpuThis ? (int)pVCpuThis->idCpu : -1);
+        return;
+    }
+
+    /*
+     * Collect the data by scanning the TB allocation map.
+     */
+    struct IEMTBTOPENTRY
+    {
+        /** Pointer to the translation block. */
+        PCIEMTB     pTb;
+        /** The sorting key. */
+        uint64_t    uSortKey;
+    }               aTop[cTopMax] = { { NULL, 0 }, };
+    uint32_t        cValid        = 0;
+    PIEMTBALLOCATOR pTbAllocator  = pVCpu->iem.s.pTbAllocatorR3;
+    if (pTbAllocator)
+    {
+        uint32_t const cTbsPerChunk = pTbAllocator->cTbsPerChunk;
+        for (uint32_t iChunk = 0; iChunk < pTbAllocator->cAllocatedChunks; iChunk++)
+        {
+            for (uint32_t iTb = 0; iTb < cTbsPerChunk; iTb++)
+            {
+                PCIEMTB const pTb = &pTbAllocator->aChunks[iChunk].paTbs[iTb];
+                AssertContinue(pTb);
+                if (pTb->fFlags & IEMTB_F_TYPE_MASK)
+                {
+                    /* Extract and compose the sort key. */
+                    uint64_t const uSortKey = enmTop == kTbTop_MostFrequentlyUsed
+                                            ? RT_MAKE_U64(pTb->msLastUsed, pTb->cUsed)
+                                            : RT_MAKE_U64(pTb->cUsed, pTb->msLastUsed);
+
+                    /*
+                     * Discard the key if it's smaller than the smallest in the table when it is full.
+                     */
+                    if (   cValid   >= cTop
+                        && uSortKey <= aTop[cTop - 1].uSortKey)
+                    { /* discard it */ }
+                    else
+                    {
+                        /*
+                         * Do binary search to find the insert location
+                         */
+                        uint32_t idx;
+                        if (cValid > 0)
+                        {
+                            uint32_t idxEnd   = cValid;
+                            uint32_t idxStart = 0;
+                            idx = cValid / 2;
+                            for (;;)
+                            {
+                                if (uSortKey > aTop[idx].uSortKey)
+                                {
+                                    if (idx > idxStart)
+                                        idxEnd = idx;
+                                    else
+                                        break;
+                                }
+                                else if (uSortKey < aTop[idx].uSortKey)
+                                {
+                                    idx += 1;
+                                    if (idx < idxEnd)
+                                        idxStart = idx;
+                                    else
+                                        break;
+                                }
+                                else
+                                {
+                                    do
+                                        idx++;
+                                    while (idx < cValid && uSortKey == aTop[idx].uSortKey);
+                                    break;
+                                }
+                                idx = idxStart + (idxEnd - idxStart) / 2;
+                            }
+                            AssertContinue(idx < RT_ELEMENTS(aTop));
+
+                            /*
+                             * Shift entries as needed.
+                             */
+                            if (cValid >= cTop)
+                            {
+                                if (idx != cTop - 1U)
+                                    memmove(&aTop[idx + 1], &aTop[idx], (cTop - idx - 1) * sizeof(aTop[0]));
+                            }
+                            else
+                            {
+                                if (idx != cValid)
+                                    memmove(&aTop[idx + 1], &aTop[idx], (cValid - idx) * sizeof(aTop[0]));
+                                cValid++;
+                            }
+                        }
+                        else
+                        {
+                            /* Special case: The first insertion. */
+                            cValid = 1;
+                            idx    = 0;
+                        }
+
+                        /*
+                         * Fill in the new entry.
+                         */
+                        aTop[idx].uSortKey = uSortKey;
+                        aTop[idx].pTb      = pTb;
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * Display the result.
+     */
+    if (cTop > cValid)
+        cTop = cValid;
+    pHlp->pfnPrintf(pHlp, "Displaying the top %u TBs for CPU #%u ordered by %s:\n",
+                    cTop, pVCpu->idCpu, enmTop == kTbTop_MostFrequentlyUsed ? "cUsed" : "msLastUsed");
+    if (fDisassemble)
+        pHlp->pfnPrintf(pHlp, "================================================================================\n");
+
+    for (uint32_t idx = 0; idx < cTop; idx++)
+    {
+        if (fDisassemble && idx)
+            pHlp->pfnPrintf(pHlp, "\n------------------------------- %u -------------------------------\n", idx);
+
+        PCIEMTB pTb = aTop[idx].pTb;
+        switch (pTb->fFlags & IEMTB_F_TYPE_MASK)
+        {
+# ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+            case IEMTB_F_TYPE_NATIVE:
+                pHlp->pfnPrintf(pHlp, "PC=%RGp cUsed=%u msLastUsed=%u fFlags=%#010x - native\n",
+                                pTb->GCPhysPc, pTb->cUsed, pTb->msLastUsed, pTb->fFlags);
+                if (fDisassemble)
+                    iemNativeDisassembleTb(pVCpu, pTb, pHlp);
+                break;
+# endif
+
+            case IEMTB_F_TYPE_THREADED:
+                pHlp->pfnPrintf(pHlp, "PC=%RGp cUsed=%u msLastUsed=%u fFlags=%#010x - threaded\n",
+                                pTb->GCPhysPc, pTb->cUsed, pTb->msLastUsed, pTb->fFlags);
+                if (fDisassemble)
+                    iemThreadedDisassembleTb(pTb, pHlp);
+                break;
+
+            default:
+                pHlp->pfnPrintf(pHlp, "PC=%RGp cUsed=%u msLastUsed=%u fFlags=%#010x - ???\n",
+                                pTb->GCPhysPc, pTb->cUsed, pTb->msLastUsed, pTb->fFlags);
+                break;
+        }
+    }
+}
+
 #endif /* VBOX_WITH_IEM_RECOMPILER && !VBOX_VMM_TARGET_ARMV8 */
 
 
