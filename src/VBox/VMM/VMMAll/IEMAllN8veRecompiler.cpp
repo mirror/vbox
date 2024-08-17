@@ -210,7 +210,6 @@ IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMCPUCC pV
                 if (!a_fWithIrqCheck || !iemNativeHlpReturnBreakViaLookupIsIrqOrForceFlagPending(pVCpu) )
                 {
                     /* Do polling. */
-                    uint64_t const cTbExecNative = pVCpu->iem.s.cTbExecNative;
                     if (   RT_LIKELY((int32_t)--pVCpu->iem.s.cTbsTillNextTimerPoll > 0)
                         || iemPollTimers(pVCpu->CTX_SUFF(pVM), pVCpu) == VINF_SUCCESS)
                     {
