@@ -211,13 +211,12 @@ IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMCPUCC pV
                 {
                     /* Do polling. */
                     uint64_t const cTbExecNative = pVCpu->iem.s.cTbExecNative;
-                    if (   RT_LIKELY(cTbExecNative & 511)
-                        || !TMTimerPollBoolWith32BitMilliTS(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->iem.s.msRecompilerPollNow) )
+                    if (   RT_LIKELY((int32_t)--pVCpu->iem.s.cTbsTillNextTimerPoll > 0)
+                        || iemPollTimers(pVCpu->CTX_SUFF(pVM), pVCpu) == VINF_SUCCESS)
                     {
                         /*
                          * Success. Update statistics and switch to the next TB.
                          */
-                        pVCpu->iem.s.cTbExecNative = cTbExecNative + 1;
                         if (a_fWithIrqCheck)
                             STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking1Irq);
                         else
@@ -227,6 +226,7 @@ IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookup,(PVMCPUCC pV
                         pNewTb->msLastUsed             = pVCpu->iem.s.msRecompilerPollNow;
                         pVCpu->iem.s.pCurTbR3          = pNewTb;
                         pVCpu->iem.s.ppTbLookupEntryR3 = IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pNewTb, 0);
+                        pVCpu->iem.s.cTbExecNative    += 1;
                         Log10(("iemNativeHlpReturnBreakViaLookupWithPc: match at %04x:%08RX64 (%RGp): pTb=%p[%#x]-> %p\n",
                                pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPhysPc, pTb, idxTbLookup, pNewTb));
                         return (uintptr_t)pNewTb->Native.paInstructions;
@@ -341,14 +341,12 @@ IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookupWithTlb,(PVMC
                 if (!a_fWithIrqCheck || !iemNativeHlpReturnBreakViaLookupIsIrqOrForceFlagPending(pVCpu) )
                 {
                     /* Do polling. */
-                    uint64_t const cTbExecNative = pVCpu->iem.s.cTbExecNative;
-                    if (   RT_LIKELY(cTbExecNative & 511)
-                        || !TMTimerPollBoolWith32BitMilliTS(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->iem.s.msRecompilerPollNow) )
+                    if (   RT_LIKELY((int32_t)--pVCpu->iem.s.cTbsTillNextTimerPoll > 0)
+                        || iemPollTimers(pVCpu->CTX_SUFF(pVM), pVCpu) == VINF_SUCCESS)
                     {
                         /*
                          * Success. Update statistics and switch to the next TB.
                          */
-                        pVCpu->iem.s.cTbExecNative = cTbExecNative + 1;
                         if (a_fWithIrqCheck)
                             STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatNativeTbExitDirectLinking2Irq);
                         else
@@ -358,6 +356,7 @@ IEM_DECL_NATIVE_HLP_DEF(uintptr_t, iemNativeHlpReturnBreakViaLookupWithTlb,(PVMC
                         pNewTb->msLastUsed             = pVCpu->iem.s.msRecompilerPollNow;
                         pVCpu->iem.s.pCurTbR3          = pNewTb;
                         pVCpu->iem.s.ppTbLookupEntryR3 = IEMTB_GET_TB_LOOKUP_TAB_ENTRY(pNewTb, 0);
+                        pVCpu->iem.s.cTbExecNative    += 1;
                         Log10(("iemNativeHlpReturnBreakViaLookupWithTlb: match at %04x:%08RX64 (%RGp): pTb=%p[%#x]-> %p\n",
                                pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPhysPc, pTb, idxTbLookup, pNewTb));
                         return (uintptr_t)pNewTb->Native.paInstructions;
