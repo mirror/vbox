@@ -103,6 +103,8 @@ class ResourceStore;
 struct VUSBIRHCONFIG;
 typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 
+struct PDMINETWORKNATDNSCONFIG;
+
 #include <list>
 #include <vector>
 
@@ -436,7 +438,8 @@ private:
     HRESULT removeEncryptionPassword(const com::Utf8Str &aId);
     HRESULT clearAllEncryptionPasswords();
 
-    void notifyNatDnsChange(PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszDevice, ULONG ulInstanceMax);
+    void notifyNatDnsChange(PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszDevice, ULONG ulInstanceMax,
+                            struct PDMINETWORKNATDNSCONFIG const *pDnsConfig);
     Utf8Str VRDPServerErrorToMsg(int vrc);
 
     /**

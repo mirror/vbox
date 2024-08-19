@@ -1652,3 +1652,23 @@ void slirp_send_packet_all(Slirp *slirp, const void *buf, size_t len)
                     (unsigned long)len);
     }
 }
+
+#ifdef VBOX
+
+char *slirp_set_vdomainname(Slirp *pSlirp, const char *vdomainname)
+{
+    pSlirp->vdomainname = g_strdup(vdomainname);
+    return pSlirp->vdomainname;
+}
+
+char *slirp_get_vdomainname(Slirp *pSlirp)
+{
+    return pSlirp->vdomainname;
+}
+
+int slirp_set_vdnssearch(Slirp *pSlirp, const char * const *ppszSearchDomains)
+{
+    return translate_dnssearch(pSlirp, (const char **)ppszSearchDomains);
+}
+
+#endif /* VBOX */

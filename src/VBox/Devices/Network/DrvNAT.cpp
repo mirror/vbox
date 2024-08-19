@@ -1096,8 +1096,9 @@ int slirp_call_hostres(void *pvUser, PRTREQ *ppReq, RTMSINTERVAL cMillies,
  * the current setup we don't get any details and just reread that
  * information ourselves.
  */
-static DECLCALLBACK(void) drvNATNotifyDnsChanged(PPDMINETWORKNATCONFIG pInterface)
+static DECLCALLBACK(void) drvNATNotifyDnsChanged(PPDMINETWORKNATCONFIG pInterface, PCPDMINETWORKNATDNSCONFIG pDnsConf)
 {
+    RT_NOREF(pDnsConf);
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkNATCfg);
     drvNATUpdateDNS(pThis, /* fFlapLink */ true);
 }

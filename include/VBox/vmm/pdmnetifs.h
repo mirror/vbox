@@ -432,6 +432,29 @@ typedef struct PDMINETWORKCONFIG
 #define PDMINETWORKCONFIG_IID                   "d6d909e8-716d-415d-b109-534e4478ff4e"
 
 
+/**
+ * DNS Setting Update Payload
+ * @sa PGMINETWORKNATCONFIG::pfnNotifyDnsChanged
+ */
+typedef struct PDMINETWORKNATDNSCONFIG
+{
+    /** Domain name.
+     * (The length is per RFC2821 plus null char.) */
+    char                szDomainName[256];
+    /** Number of entries in the ppszNameServers array.   */
+    size_t              cNameServers;
+    /** Name servers (NULL terminated array). */
+    const char * const *papszNameServers;
+    /** Number of entries in the ppszSearchDomains array. */
+    size_t              cSearchDomains;
+    /** Search domains (NULL terminated array). */
+    const char * const *papszSearchDomains;
+} PDMINETWORKNATDNSCONFIG;
+/** Pointer to a const DNS settings update payload.
+ * @sa PGMINETWORKNATCONFIG::pfnNotifyDnsChanged */
+typedef PDMINETWORKNATDNSCONFIG const *PCPDMINETWORKNATDNSCONFIG;
+
+
 /** Pointer to a NAT configuration port.   */
 typedef struct PDMINETWORKNATCONFIG *PPDMINETWORKNATCONFIG;
 /**
@@ -454,11 +477,11 @@ typedef struct PDMINETWORKNATCONFIG
      *
      * IHostNameResolutionConfigurationChangeEvent.
      */
-    DECLR3CALLBACKMEMBER(void, pfnNotifyDnsChanged, (PPDMINETWORKNATCONFIG pInterface));
+    DECLR3CALLBACKMEMBER(void, pfnNotifyDnsChanged, (PPDMINETWORKNATCONFIG pInterface, PCPDMINETWORKNATDNSCONFIG pDnsConfig));
 
 } PDMINETWORKNATCONFIG;
 /** PDMINETWORKNATCONFIG interface ID. */
-#define PDMINETWORKNATCONFIG_IID                "dc961028-3523-4b52-a93b-e38168a4a9fa"
+#define PDMINETWORKNATCONFIG_IID                "16de6afe-e48f-4cad-abc0-f96507683376"
 /** @} */
 
 RT_C_DECLS_END

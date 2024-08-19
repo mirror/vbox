@@ -4511,7 +4511,44 @@ HRESULT Console::i_onNATRedirectRuleChanged(ULONG ulInstance, BOOL aNatRuleRemov
 }
 
 
-/*
+/** Helper that converts a BSTR safe array into a C-string array. */
+static char **bstrSafeArrayToC(SafeArray<BSTR> const &a_rStrings, size_t *pcEntries) RT_NOEXCEPT
+{
+    if (pcEntries)
+        *pcEntries = 0;
+
+    /*
+     * The array is NULL terminated.
+     */
+    const size_t cStrings = a_rStrings.size();
+    char **papszRet = (char **)RTMemAllocZ((cStrings + 1) * sizeof(papszRet[0]));
+    AssertReturn(papszRet, NULL);
+
+    /*
+     * The individual strings.
+     */
+    for (size_t i = 0; i < cStrings; i++)
+    {
+        int vrc = RTUtf16ToUtf8Ex((PCRTUTF16)a_rStrings[i], RTSTR_MAX, &papszRet[i], 0, NULL);
+        AssertRC(vrc);
+        if (RT_FAILURE(vrc))
+        {
+            while (i-- > 0)
+            {
+                RTStrFree(papszRet[i]);
+                papszRet[i] = NULL;
+            }
+            return NULL;
+        }
+
+    }
+        if (pcEntries)
+            *pcEntries = cStrings;
+    return papszRet;
+}
+
+
+/**
  * IHostNameResolutionConfigurationChangeEvent
  *
  * Currently this event doesn't carry actual resolver configuration,
@@ -4519,49 +4556,105 @@ HRESULT Console::i_onNATRedirectRuleChanged(ULONG ulInstance, BOOL aNatRuleRemov
  */
 HRESULT Console::i_onNATDnsChanged()
 {
-    HRESULT hrc;
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.hrc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-#if 0 /* XXX: We don't yet pass this down to pfnNotifyDnsChanged */
-    ComPtr<IVirtualBox> pVirtualBox;
-    hrc = mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
-    if (FAILED(hrc))
-        return S_OK;
-
-    ComPtr<IHost> pHost;
-    hrc = pVirtualBox->COMGETTER(Host)(pHost.asOutParam());
-    if (FAILED(hrc))
-        return S_OK;
-
-    SafeArray<BSTR> aNameServers;
-    hrc = pHost->COMGETTER(NameServers)(ComSafeArrayAsOutParam(aNameServers));
-    if (FAILED(hrc))
-        return S_OK;
-
-    const size_t cNameServers = aNameServers.size();
-    Log(("DNS change - %zu nameservers\n", cNameServers));
-
-    for (size_t i = 0; i < cNameServers; ++i)
+    /* We wrap PDMINETWORKNATDNSCONFIG to simplify freeing memory allocations
+       in it (exceptions, AssertReturn, regular returns). */
+    struct DnsConfigCleanupWrapper
     {
-        com::Utf8Str strNameServer(aNameServers[i]);
-        Log(("- nameserver[%zu] = \"%s\"\n", i, strNameServer.c_str()));
+        PDMINETWORKNATDNSCONFIG Core;
+
+        DnsConfigCleanupWrapper()
+        {
+            Core.szDomainName[0]    = '\0';
+            Core.cNameServers       = 0;
+            Core.papszNameServers   = NULL;
+            Core.cSearchDomains     = 0;
+            Core.papszSearchDomains = NULL;
+        }
+
+        void freeStrArray(char **papsz)
+        {
+            if (papsz)
+            {
+                for (size_t i = 0; papsz[i] != NULL; i++)
+                    RTStrFree(papsz[i]);
+                RTMemFree(papsz);
+            }
+        }
+
+        ~DnsConfigCleanupWrapper()
+        {
+            freeStrArray((char **)Core.papszNameServers);
+            Core.papszNameServers   = NULL;
+            freeStrArray((char **)Core.papszSearchDomains);
+            Core.papszSearchDomains = NULL;
+        }
+    } DnsConfig;
+
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /** @todo r=bird: Why a write lock? */
+
+    ComPtr<IVirtualBox> ptrVirtualBox;
+    HRESULT hrc = mMachine->COMGETTER(Parent)(ptrVirtualBox.asOutParam());
+    if (FAILED(hrc))
+        return S_OK;
+
+    ComPtr<IHost> ptrHost;
+    hrc = ptrVirtualBox->COMGETTER(Host)(ptrHost.asOutParam());
+    if (FAILED(hrc))
+        return S_OK;
+
+    /* Domain name: */
+    {
+        com::Bstr bstrDomain;
+        ptrHost->COMGETTER(DomainName)(bstrDomain.asOutParam());
+        com::Utf8Str const strDomainName(bstrDomain);
+        int vrc = RTStrCopy(DnsConfig.Core.szDomainName, sizeof(DnsConfig.Core.szDomainName), strDomainName.c_str());
+        AssertRC(vrc);
     }
+    Log(("domain name = \"%s\"\n", DnsConfig.Core.szDomainName));
 
-    com::Bstr domain;
-    pHost->COMGETTER(DomainName)(domain.asOutParam());
-    Log(("domain name = \"%s\"\n", com::Utf8Str(domain).c_str()));
-#endif /* 0 */
+    /* Name servers: */
+    {
+        SafeArray<BSTR> nameServers;
+        hrc = ptrHost->COMGETTER(NameServers)(ComSafeArrayAsOutParam(nameServers));
+        if (FAILED(hrc))
+            return S_OK;
+        DnsConfig.Core.papszNameServers = bstrSafeArrayToC(nameServers, &DnsConfig.Core.cNameServers);
+        if (!DnsConfig.Core.papszNameServers)
+            return E_OUTOFMEMORY;
+    }
+    Log(("DNS change - %zu nameservers\n", DnsConfig.Core.cNameServers));
+    for (size_t i = 0; i < DnsConfig.Core.cNameServers; i++)
+        Log(("- papszNameServers[%zu] = \"%s\"\n", i, DnsConfig.Core.papszNameServers[i]));
 
-    ComPtr<IPlatform> pPlatform;
-    hrc = mMachine->COMGETTER(Platform)(pPlatform.asOutParam());
+    /* Search domains: */
+    {
+        SafeArray<BSTR> searchDomains;
+        hrc = ptrHost->COMGETTER(SearchStrings)(ComSafeArrayAsOutParam(searchDomains));
+        if (FAILED(hrc))
+            return S_OK;
+        DnsConfig.Core.papszSearchDomains = bstrSafeArrayToC(searchDomains, &DnsConfig.Core.cSearchDomains);
+        if (!DnsConfig.Core.papszSearchDomains)
+            return E_OUTOFMEMORY;
+    }
+    Log(("Search Domain change - %u domains\n", DnsConfig.Core.cSearchDomains));
+    for (size_t i = 0; i < DnsConfig.Core.cSearchDomains; i++)
+        Log(("- papszSearchDomain[%zu] = \"%s\"\n", i, DnsConfig.Core.papszSearchDomains[i]));
+
+    /*
+     * Notify all the NAT drivers.
+     */
+    /** @todo r=bird: This is the worst way of "enumerating" network devices
+     *        ever conceived. */
+    ComPtr<IPlatform> ptrPlatform;
+    hrc = mMachine->COMGETTER(Platform)(ptrPlatform.asOutParam());
     AssertComRCReturn(hrc, hrc);
 
     ChipsetType_T enmChipsetType;
-    hrc = pPlatform->COMGETTER(ChipsetType)(&enmChipsetType);
+    hrc = ptrPlatform->COMGETTER(ChipsetType)(&enmChipsetType);
     AssertComRCReturn(hrc, hrc);
 
     SafeVMPtrQuiet ptrVM(this);
@@ -4569,21 +4662,22 @@ HRESULT Console::i_onNATDnsChanged()
     {
         ULONG const ulInstanceMax = PlatformProperties::s_getMaxNetworkAdapters(enmChipsetType);
 
-        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "pcnet", ulInstanceMax);
-        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "e1000", ulInstanceMax);
-        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "virtio-net", ulInstanceMax);
+        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "pcnet", ulInstanceMax, &DnsConfig.Core);
+        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "e1000", ulInstanceMax, &DnsConfig.Core);
+        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "virtio-net", ulInstanceMax, &DnsConfig.Core);
     }
 
     return S_OK;
 }
 
 
-/*
+/**
  * This routine walks over all network device instances, checking if
  * device instance has DrvNAT attachment and triggering DrvNAT DNS
  * change callback.
  */
-void Console::notifyNatDnsChange(PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszDevice, ULONG ulInstanceMax)
+void Console::notifyNatDnsChange(PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszDevice, ULONG ulInstanceMax,
+                                 PCPDMINETWORKNATDNSCONFIG pDnsConfig)
 {
     Log(("notifyNatDnsChange: looking for DrvNAT attachment on %s device instances\n", pszDevice));
     for (ULONG ulInstance = 0; ulInstance < ulInstanceMax; ulInstance++)
@@ -4599,7 +4693,7 @@ void Console::notifyNatDnsChange(PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszD
             PPDMINETWORKNATCONFIG pNetNatCfg = NULL;
             pNetNatCfg = (PPDMINETWORKNATCONFIG)pBase->pfnQueryInterface(pBase, PDMINETWORKNATCONFIG_IID);
             if (pNetNatCfg && pNetNatCfg->pfnNotifyDnsChanged)
-                pNetNatCfg->pfnNotifyDnsChanged(pNetNatCfg);
+                pNetNatCfg->pfnNotifyDnsChanged(pNetNatCfg, pDnsConfig);
         }
     }
 }

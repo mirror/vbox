@@ -350,6 +350,12 @@ int slirp_state_load(Slirp *s, int version_id, SlirpReadCb read_cb,
 SLIRP_EXPORT
 const char *slirp_version_string(void);
 
+#ifdef VBOX
+char *slirp_set_vdomainname(Slirp *, char const *);
+char *slirp_get_vdomainname(Slirp *);
+int slirp_set_vdnssearch(Slirp *, const char * const *);
+#endif
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
