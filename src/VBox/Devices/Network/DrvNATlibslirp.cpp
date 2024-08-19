@@ -1288,7 +1288,7 @@ static DECLCALLBACK(void *) drvNAT_TimerNewCb(SlirpTimerCb slirpTimeCb, void *cb
         return NULL;
 
     pNewTimer->next = pThis->pNATState->pTimerHead;
-    pNewTimer->uTimeExpire = -1; /** @todo r=bird: uTimeExpire is unsigned, not signed. Visual C++ barfs at this mixup. */
+    pNewTimer->uTimeExpire = 0;
     pNewTimer->pHandler = slirpTimeCb;
     pNewTimer->opaque = cb_opaque;
     pThis->pNATState->pTimerHead = pNewTimer;
