@@ -8559,7 +8559,7 @@ iemNativeEmitMemMapCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     uint32_t const idxLabelTlbLookup = !TlbState.fSkip
                                      ? iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbLookup, UINT32_MAX, uTlbSeqNo)
                                      : UINT32_MAX;
-//off=iemNativeEmitBrk(pReNative, off, 0);
+
     /*
      * Jump to the TLB lookup code.
      */
@@ -10161,8 +10161,8 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCallSseAvxAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t pfnAImpl, uint8_t cArgs, uint8_t idxInstr)
 {
     /* Grab the MXCSR register, it must not be call volatile or we end up freeing it when setting up the call below. */
-    uint8_t const  idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr,
-                                                                 kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
+    uint8_t const idxRegMxCsr = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_MxCsr,
+                                                                kIemNativeGstRegUse_ForUpdate, true /*fNoVolatileRegs*/);
     AssertRelease(!(RT_BIT_32(idxRegMxCsr) & IEMNATIVE_CALL_VOLATILE_GREG_MASK));
 
 #if 0 /* This is not required right now as the called helper will set up the SSE/AVX state if it is an assembly one. */

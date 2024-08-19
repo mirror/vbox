@@ -4390,20 +4390,18 @@ iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
     Assert(cArgs <= IEMNATIVE_CALL_MAX_ARG_COUNT);
 
     /* fKeepVars will reduce this mask. */
-    uint32_t fRegsToFree = IEMNATIVE_CALL_VOLATILE_GREG_MASK;
+    uint32_t fRegsToFree = IEMNATIVE_CALL_VOLATILE_NOTMP_GREG_MASK;
+
+#ifdef RT_ARCH_ARM64
+AssertCompile(IEMNATIVE_CALL_VOLATILE_NOTMP_GREG_MASK == UINT32_C(0x37fff));
+#endif
 
     /*
      * Move anything important out of volatile registers.
      */
     if (cArgs > RT_ELEMENTS(g_aidxIemNativeCallRegs))
         cArgs = RT_ELEMENTS(g_aidxIemNativeCallRegs);
-    uint32_t fRegsToMove = IEMNATIVE_CALL_VOLATILE_GREG_MASK
-#ifdef IEMNATIVE_REG_FIXED_TMP0
-                         & ~RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0)
-#endif
-#ifdef IEMNATIVE_REG_FIXED_TMP1
-                         & ~RT_BIT_32(IEMNATIVE_REG_FIXED_TMP1)
-#endif
+    uint32_t fRegsToMove = IEMNATIVE_CALL_VOLATILE_NOTMP_GREG_MASK
 #ifdef IEMNATIVE_REG_FIXED_PC_DBG
                          & ~RT_BIT_32(IEMNATIVE_REG_FIXED_PC_DBG)
 #endif
@@ -4481,7 +4479,8 @@ iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
     if (fHstRegsWithGstShadow)
     {
         Log12(("iemNativeRegMoveAndFreeAndFlushAtCall: bmHstRegsWithGstShadow %#RX32 -> %#RX32; removed %#RX32\n",
-               pReNative->Core.bmHstRegsWithGstShadow, pReNative->Core.bmHstRegsWithGstShadow & ~IEMNATIVE_CALL_VOLATILE_GREG_MASK, fHstRegsWithGstShadow));
+               pReNative->Core.bmHstRegsWithGstShadow, pReNative->Core.bmHstRegsWithGstShadow & ~IEMNATIVE_CALL_VOLATILE_GREG_MASK,
+               fHstRegsWithGstShadow));
         pReNative->Core.bmHstRegsWithGstShadow &= ~fHstRegsWithGstShadow;
         do
         {
@@ -7776,7 +7775,7 @@ iemNativeVarRegisterAcquireForGuestReg(PIEMRECOMPILERSTATE pReNative, uint8_t id
 DECL_HIDDEN_THROW(uint32_t)
 iemNativeVarSaveVolatileRegsPreHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fHstRegsNotToSave)
 {
-    uint32_t fHstRegs = pReNative->Core.bmHstRegs & IEMNATIVE_CALL_VOLATILE_GREG_MASK & ~fHstRegsNotToSave;
+    uint32_t fHstRegs = pReNative->Core.bmHstRegs & IEMNATIVE_CALL_VOLATILE_NOTMP_GREG_MASK & ~fHstRegsNotToSave;
     if (fHstRegs)
     {
         do
@@ -7917,7 +7916,7 @@ iemNativeVarSaveVolatileRegsPreHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t o
 DECL_HIDDEN_THROW(uint32_t)
 iemNativeVarRestoreVolatileRegsPostHlpCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fHstRegsNotToSave)
 {
-    uint32_t fHstRegs = pReNative->Core.bmHstRegs & IEMNATIVE_CALL_VOLATILE_GREG_MASK & ~fHstRegsNotToSave;
+    uint32_t fHstRegs = pReNative->Core.bmHstRegs & IEMNATIVE_CALL_VOLATILE_NOTMP_GREG_MASK & ~fHstRegsNotToSave;
     if (fHstRegs)
     {
         do

@@ -183,6 +183,9 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
  * @note This not available on AMD64, only ARM64. */
 /** @def IEMNATIVE_REG_FIXED_TMP0
  * Dedicated temporary register.
+ * @note This has extremely short lifetime, must be used with great care to make
+ *       sure any calling code or code being called is making use of it.
+ *       It will definitely not survive a call or anything of that nature.
  * @todo replace this by a register allocator and content tracker.  */
 /** @def IEMNATIVE_REG_FIXED_MASK
  * Mask GPRs with fixes assignments, either by us or dictated by the CPU/OS
@@ -407,6 +410,21 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #  undef IEMNATIVE_CALL_MAX_ARG_COUNT
 #  define IEMNATIVE_CALL_MAX_ARG_COUNT      8
 # endif
+#endif
+
+/** @def IEMNATIVE_CALL_VOLATILE_NOTMP_GREG_MASK
+ * Variant of IEMNATIVE_CALL_VOLATILE_GREG_MASK that excludes
+ * IEMNATIVE_REG_FIXED_TMP0 on hosts that uses it. */
+#ifdef IEMNATIVE_REG_FIXED_TMP0
+# ifdef IEMNATIVE_REG_FIXED_TMP1
+#  define IEMNATIVE_CALL_VOLATILE_NOTMP_GREG_MASK   (  IEMNATIVE_CALL_VOLATILE_GREG_MASK \
+                                                     & ~(  RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) \
+                                                         | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP1)))
+# else
+#  define IEMNATIVE_CALL_VOLATILE_NOTMP_GREG_MASK   (IEMNATIVE_CALL_VOLATILE_GREG_MASK & ~RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0))
+# endif
+#else
+# define IEMNATIVE_CALL_VOLATILE_NOTMP_GREG_MASK    IEMNATIVE_CALL_VOLATILE_GREG_MASK
 #endif
 /** @} */
 
