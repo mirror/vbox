@@ -520,6 +520,37 @@ enum OPCODESARMV8
 };
 
 
+/** Armv8 Condition codes.    */
+typedef enum DISARMV8INSTRCOND
+{
+    kDisArmv8InstrCond_Eq = 0,                     /**< 0 - Equal - Zero set. */
+    kDisArmv8InstrCond_Ne,                         /**< 1 - Not equal - Zero clear. */
+
+    kDisArmv8InstrCond_Cs,                         /**< 2 - Carry set (also known as 'HS'). */
+    kDisArmv8InstrCond_Hs = kDisArmv8InstrCond_Cs, /**< 2 - Unsigned higher or same. */
+    kDisArmv8InstrCond_Cc,                         /**< 3 - Carry clear (also known as 'LO'). */
+    kDisArmv8InstrCond_Lo = kDisArmv8InstrCond_Cc, /**< 3 - Unsigned lower. */
+
+    kDisArmv8InstrCond_Mi,                         /**< 4 - Negative result (minus). */
+    kDisArmv8InstrCond_Pl,                         /**< 5 - Positive or zero result (plus). */
+
+    kDisArmv8InstrCond_Vs,                         /**< 6 - Overflow set. */
+    kDisArmv8InstrCond_Vc,                         /**< 7 - Overflow clear. */
+
+    kDisArmv8InstrCond_Hi,                         /**< 8 - Unsigned higher. */
+    kDisArmv8InstrCond_Ls,                         /**< 9 - Unsigned lower or same. */
+
+    kDisArmv8InstrCond_Ge,                         /**< a - Signed greater or equal. */
+    kDisArmv8InstrCond_Lt,                         /**< b - Signed less than. */
+
+    kDisArmv8InstrCond_Gt,                         /**< c - Signed greater than. */
+    kDisArmv8InstrCond_Le,                         /**< d - Signed less or equal. */
+
+    kDisArmv8InstrCond_Al,                         /**< e - Condition is always true. */
+    kDisArmv8InstrCond_Al1                         /**< f - Condition is always true. */
+} DISARMV8INSTRCOND;
+
+
 /** @defgroup grp_dis_opparam_armv8 Opcode parameters (DISOPCODE::fParam1,
  *            DISOPCODE::fParam2, DISOPCODE::fParam3)
  * @ingroup grp_dis

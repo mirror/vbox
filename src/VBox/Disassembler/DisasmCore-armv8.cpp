@@ -273,7 +273,7 @@ static int disArmV8ParseHw(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS
 static int disArmV8ParseCond(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
 {
     RT_NOREF(pInsnClass, pParam, pf64Bit);
-    pDis->armv8.enmCond = (ARMV8INSTRCOND)disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
+    pDis->armv8.enmCond = (DISARMV8INSTRCOND)disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
     return VINF_SUCCESS;
 }
 
@@ -340,7 +340,7 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
     pDis->aParams[2].armv8.fParam = pOp->Opc.fParam3;
     pDis->aParams[3].armv8.fParam = pOp->Opc.fParam4;
     pDis->armv8.pInsnClass        = pInsnClass;
-    pDis->armv8.enmCond           = kArmv8InstrCond_Al;
+    pDis->armv8.enmCond           = kDisArmv8InstrCond_Al;
 
     pDis->pCurInstr = &pOp->Opc;
     Assert(&pOp->Opc != &g_ArmV8A64InvalidOpcode[0]);

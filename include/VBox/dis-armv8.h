@@ -41,7 +41,6 @@
 
 #include <VBox/types.h>
 #include <VBox/disopcode-armv8.h>
-#include <iprt/armv8.h>
 #include <iprt/assert.h>
 
 
@@ -89,7 +88,7 @@ typedef const struct DISARMV8INSNCLASS *PCDISARMV8INSNCLASS;
 typedef struct
 {
     /** Condition flag for the instruction - kArmv8InstrCond_Al if not conditional instruction. */
-    ARMV8INSTRCOND      enmCond;
+    DISARMV8INSTRCOND   enmCond;
     /** Internal: Pointer to the instruction class table. */
     PCDISARMV8INSNCLASS pInsnClass;
 } DIS_STATE_ARMV8_T;
