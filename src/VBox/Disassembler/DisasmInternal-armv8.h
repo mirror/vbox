@@ -50,6 +50,7 @@
 typedef enum DISPARMPARSEIDX
 {
     kDisParmParseNop = 0,
+    kDisParmParseIs32Bit,
     kDisParmParseImm,
     kDisParmParseImmRel,
     kDisParmParseImmAdr,
@@ -85,18 +86,28 @@ typedef struct DISARMV8INSNPARAM
 {
     /** The parser to use for the parameter. */
     DISPARMPARSEIDX     idxParse;
+    /** Additional flags for the parameter. */
+    uint32_t            fFlags;
     /** Bit index at which the field starts. */
     uint8_t             idxBitStart;
     /** Size of the bit field. */
     uint8_t             cBits;
+    /** The parameter this decoder param contributes to. */
+    uint8_t             idxParam;
 } DISARMV8INSNPARAM;
 typedef DISARMV8INSNPARAM *PDISARMV8INSNPARAM;
 typedef const DISARMV8INSNPARAM *PCDISARMV8INSNPARAM;
 
-#define DIS_ARMV8_INSN_PARAM_NONE { kDisParmParseNop, 0, 0 }
-#define DIS_ARMV8_INSN_PARAM_CREATE(a_idxParse, a_idxBitStart, a_cBits) \
-    { a_idxParse, a_idxBitStart, a_cBits }
+#define DIS_ARMV8_INSN_PARAM_NONE { kDisParmParseNop, 0, 0, 0, DIS_ARMV8_INSN_PARAM_UNSET }
+#define DIS_ARMV8_INSN_PARAM_CREATE(a_idxParse, a_idxBitStart, a_cBits, a_idxParam) \
+    { a_idxParse, 0, a_idxBitStart, a_cBits, a_idxParam }
+#define DIS_ARMV8_INSN_PARAM_CREATE_EX(a_idxParse, a_idxBitStart, a_cBits, a_idxParam, a_fFlags) \
+    { a_idxParse, a_fFlags, a_idxBitStart, a_cBits, a_idxParam }
 
+#define DIS_ARMV8_INSN_PARAM_UNSET        UINT8_MAX
+
+#define DIS_ARMV8_INSN_PARAM_F_ADDR_BEGIN RT_BIT_32(0)
+#define DIS_ARMV8_INSN_PARAM_F_ADDR_END   RT_BIT_32(1)
 
 /**
  * Opcode decode index.

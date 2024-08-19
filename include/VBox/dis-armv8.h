@@ -60,6 +60,8 @@ typedef struct
         /** General register index (DISGREG_XXX), applicable if DISUSE_REG_GEN32
          * or DISUSE_REG_GEN64 is set in fUse. */
         uint8_t         idxGenReg;
+        /** IPRT System register encoding. */
+        uint32_t        idSysReg;
     } Reg;
     /** Scale factor. */
     uint8_t         uScale;
@@ -76,12 +78,17 @@ typedef DIS_OP_PARAM_ARMV8_T *PDIS_OP_PARAM_ARMV8_T;
 typedef const DIS_OP_PARAM_ARMV8_T *PCDIS_OP_PARAM_ARMV8_T;
 
 
+/** Pointer to a constant instruction class descriptor. */
+typedef const struct DISARMV8INSNCLASS *PCDISARMV8INSNCLASS;
+
+
 /**
  * The armv8 specific disassembler state and result.
  */
 typedef struct
 {
-    uint8_t         bDummy;
+    /** Internal: Pointer to the instruction class table. */
+    PCDISARMV8INSNCLASS pInsnClass;
 } DIS_STATE_ARMV8_T;
 AssertCompile(sizeof(DIS_STATE_ARMV8_T) <= 32);
 
