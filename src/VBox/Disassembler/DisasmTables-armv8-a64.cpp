@@ -174,7 +174,7 @@ DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(g_ArmV8A64CondBr)
 DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(g_ArmV8A64CondBr, 0 /*fClass*/,
                                           kDisArmV8OpcDecodeNop, RT_BIT_32(4), 4)
     DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseCond,           0,  4, DIS_ARMV8_INSN_PARAM_UNSET),
-    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImmRel,         5, 19, 1 /*idxParam*/),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImmRel,         5, 19, 0 /*idxParam*/),
     DIS_ARMV8_INSN_PARAM_NONE,
     DIS_ARMV8_INSN_PARAM_NONE
 DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
