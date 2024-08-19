@@ -75,7 +75,7 @@ Rules for adding a changelog entry to make them look more uniform:
 
     <title>Version 7.1.0 (2024-07-25)</title>
 
-    <para>This is a major update. The following major new features were added:</para>
+    <para>This is a major update. The following new features were added:</para>
 
     <itemizedlist>
 
@@ -85,21 +85,21 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>OCI: Performance dashboard shows resource usage like for local VMs</para>
+        <para>OCI Integration: Performance dashboard now shows resource usage for cloud VMs</para>
       </listitem>
 
       <listitem>
-        <para>OCI: Function to clone compute instances</para>
+        <para>OCI Integration: Clone compute instances</para>
       </listitem>
 
       <listitem>
-        <para>OCI: Function to reset compute instances</para>
+        <para>OCI Integration: Reset compute instances</para>
       </listitem>
 
       <listitem>
-        <para>Oracle VirtualBox Extension Pack: Ajustments to the PUEL license,
-          removing the duplicated evaluation option. For limited time evaluation
-          use please download it from the Oracle Software Delivery Cloud</para>
+        <para>Oracle VirtualBox Extension Pack: Update to the PUEL license,
+          removing the evaluation option. For evaluation use of the
+          Extension Pack, please download it from the Oracle Software Delivery Cloud</para>
       </listitem>
 
       <listitem>
@@ -112,7 +112,7 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>macOS/ARM host: ARM virtualization for Linux and BSD VMs</para>
+        <para>macOS/Arm host: Arm virtualization for Linux and BSD VMs</para>
       </listitem>
 
       <listitem>
@@ -123,11 +123,11 @@ Rules for adding a changelog entry to make them look more uniform:
       <listitem>
         <para>Shared Clipboard: Added initial support for transferring files on
           Linux and Windows hosts / guests. This requires the 7.1 Guest Additions to
-          be installed. See manual for known limitations</para>
+          be installed. See User Guide for known limitations</para>
       </listitem>
 
       <listitem>
-        <para>Recording: Bigger general performance improvements for the encoding
+        <para>Screen Recording: Significant performance improvements for the encoding
           pipeline, resulting in less CPU usage while recording is active. This
           requires 7.1 Guest Additions to be installed on Windows guests</para>
       </listitem>
@@ -148,7 +148,7 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>EFI: Added new Microsoft DB/KEX certificates to newly created VMs</para>
+        <para>EFI: Ability to add new Microsoft DB/KEX certificates to newly created VMs</para>
       </listitem>
 
       <listitem>
@@ -161,7 +161,7 @@ Rules for adding a changelog entry to make them look more uniform:
       </listitem>
 
       <listitem>
-        <para>GUI: Migration to recent Qt version</para>
+        <para>GUI: Update the version of Qt used</para>
       </listitem>
 
       <listitem>
