@@ -309,14 +309,33 @@ VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)
 /**
  * Get the current exception level of the guest.
  *
- * @returns EL
+ * @returns Exception Level 0 - 3
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
-VMMDECL(uint32_t) CPUMGetGuestEL(PVMCPU pVCpu)
+VMM_INT_DECL(uint8_t) CPUMGetGuestEL(PVMCPU pVCpu)
 {
-    RT_NOREF(pVCpu);
-    AssertReleaseFailed();
-    return 0;
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PSTATE);
+    return ARMV8_SPSR_EL2_AARCH64_GET_EL(pVCpu->cpum.s.Guest.fPState);
+}
+
+
+/**
+ * Returns whether the guest has the MMU enabled for address translation.
+ *
+ * @returns true if address translation is enabled, false if not.
+ */
+VMM_INT_DECL(bool) CPUMGetGuestMmuEnabled(PVMCPUCC pVCpu)
+{
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PSTATE | CPUMCTX_EXTRN_SCTLR_TCR_TTBR);
+    uint8_t bEl = ARMV8_SPSR_EL2_AARCH64_GET_EL(pVCpu->cpum.s.Guest.fPState);
+    if (bEl == ARMV8_AARCH64_EL_2)
+    {
+        CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_SYSREG_EL2);
+        return RT_BOOL(pVCpu->cpum.s.Guest.SctlrEl2.u64 & ARMV8_SCTLR_EL2_M);
+    }
+
+    Assert(bEl == ARMV8_AARCH64_EL_0 || bEl == ARMV8_AARCH64_EL_1);
+    return RT_BOOL(pVCpu->cpum.s.Guest.Sctlr.u64 & ARMV8_SCTLR_EL2_M);
 }
 
 

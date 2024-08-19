@@ -2665,6 +2665,62 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** @} */
 
 
+
+/** @name SCTLR_EL1 - AArch64 System Control Register (EL1).
+ * @{ */
+/** Bit 0 - MMU enable for EL1 and EL0 stage 1 address translation. */
+#define ARMV8_SCTLR_EL1_M                                       RT_BIT_64(0)
+/** Bit 1 - Alignment check enable for EL1 and EL0. */
+#define ARMV8_SCTLR_EL1_A                                       RT_BIT_64(1)
+/** Bit 2 - Stage 1 cacheability control, for data accesses. */
+#define ARMV8_SCTLR_EL1_C                                       RT_BIT_64(2)
+/** Bit 3 - SP alignment check enable. */
+#define ARMV8_SCTLR_EL1_SA                                      RT_BIT_64(3)
+/** Bit 4 - SP alignment check enable for EL0. */
+#define ARMV8_SCTLR_EL1_SA0                                     RT_BIT_64(4)
+/** Bit 5 - System instruction memory barrier enable from AArch32 EL0. */
+#define ARMV8_SCTLR_EL1_CP15BEN                                 RT_BIT_64(5)
+/** Bit 6 - Non-aligned access enable. */
+#define ARMV8_SCTLR_EL1_nAA                                     RT_BIT_64(6)
+/** Bit 7 - IT disable, disables some uses of IT instructions at EL0 using AArch32. */
+#define ARMV8_SCTLR_EL1_ITD                                     RT_BIT_64(7)
+/** Bit 8 - SETEND instruction disable, disables SETEND instructions at EL0 using AArch32. */
+#define ARMV8_SCTLR_EL1_SED                                     RT_BIT_64(8)
+/** Bit 9 - User Mask Access. Traps EL0 execution of MSR and MRS instructions that access the PSTATE.{D,A,I,F} masks to EL1. */
+#define ARMV8_SCTLR_EL1_UMA                                     RT_BIT_64(9)
+/** Bit 10 - Enable EL0 acccess to the CFP*, DVP* and CPP* instructions if FEAT_SPECRES is supported. */
+#define ARMV8_SCTLR_EL1_EnRCTX                                  RT_BIT_64(10)
+/** Bit 11 - Exception Exit is Context Synchronizing (FEAT_ExS required). */
+#define ARMV8_SCTLR_EL1_EOS                                     RT_BIT_64(11)
+/** Bit 12 - Stage 1 instruction access cacheability control, for access at EL0 and EL1. */
+#define ARMV8_SCTLR_EL1_I                                       RT_BIT_64(12)
+/** @todo Finish (lazy developer). */
+/** @} */
+
+
+/** @name SCTLR_EL2 - AArch64 System Control Register (EL2) - 32-bit.
+ * @{ */
+/** Bit 0 - MMU enable for EL2. */
+#define ARMV8_SCTLR_EL2_M                                       RT_BIT_64(0)
+/** Bit 1 - Alignment check enable. */
+#define ARMV8_SCTLR_EL2_A                                       RT_BIT_64(1)
+/** Bit 2 - Global enable for data and unified caches. */
+#define ARMV8_SCTLR_EL2_C                                       RT_BIT_64(2)
+/** Bit 3 - SP alignment check enable. */
+#define ARMV8_SCTLR_EL2_SA                                      RT_BIT_64(3)
+/* Bit 4 - 11 - Reserved. */
+/** Bit 12 - Instruction cache enable. */
+#define ARMV8_SCTLR_EL2_I                                       RT_BIT_64(12)
+/* Bit 13 - 18 - Reserved. */
+/** Bit 19 - Force treatment of all memory regions with write permissions as XN. */
+#define ARMV8_SCTLR_EL2_WXN                                     RT_BIT_64(19)
+/* Bit 20 - 24 - Reserved. */
+/** Bit 25 - Exception endianess - set means big endian, clear little endian. */
+#define ARMV8_SCTLR_EL2_EE                                      RT_BIT_64(25)
+/* Bit 26 - 31 - Reserved. */
+/** @} */
+
+
 #if (!defined(VBOX_FOR_DTRACE_LIB) && defined(__cplusplus) && !defined(ARMV8_WITHOUT_MK_INSTR)) || defined(DOXYGEN_RUNNING)
 /** @defgroup grp_rt_armv8_mkinstr   Instruction Encoding Helpers
  * @ingroup grp_rt_armv8

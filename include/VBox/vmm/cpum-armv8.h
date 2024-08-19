@@ -857,6 +857,8 @@ VMMR3_INT_DECL(int)     CPUMR3QueryGuestIdRegs(PVM pVM, PCCPUMIDREGS *ppIdRegs);
  * @{ */
 VMMDECL(bool)           CPUMGetGuestIrqMasked(PVMCPUCC pVCpu);
 VMMDECL(bool)           CPUMGetGuestFiqMasked(PVMCPUCC pVCpu);
+VMM_INT_DECL(uint8_t)   CPUMGetGuestEL(PVMCPUCC pVCpu);
+VMM_INT_DECL(bool)      CPUMGetGuestMmuEnabled(PVMCPUCC pVCpu);
 VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestSysReg(PVMCPUCC pVCpu, uint32_t idSysReg, uint64_t *puValue);
 /** @} */
 
