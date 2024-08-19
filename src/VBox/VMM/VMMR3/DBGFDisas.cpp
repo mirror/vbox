@@ -608,10 +608,10 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     {
         pDisState->pCurInstr = State.Dis.pCurInstr;
         pDisState->cbInstr   = State.Dis.cbInstr;
-        pDisState->Param1    = State.Dis.Param1;
-        pDisState->Param2    = State.Dis.Param2;
-        pDisState->Param3    = State.Dis.Param3;
-        pDisState->Param4    = State.Dis.Param4;
+        pDisState->Param1    = State.Dis.aParams[0];
+        pDisState->Param2    = State.Dis.aParams[1];
+        pDisState->Param3    = State.Dis.aParams[2];
+        pDisState->Param4    = State.Dis.aParams[3];
     }
 
     dbgfR3DisasInstrDone(&State);

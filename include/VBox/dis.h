@@ -311,10 +311,8 @@ typedef struct DISSTATE
     uint32_t            uPtrPadding2;
 #endif
 
-    DISOPPARAM          Param1;
-    DISOPPARAM          Param2;
-    DISOPPARAM          Param3;
-    DISOPPARAM          Param4;
+    /** Array of opcode parameters. */
+    DISOPPARAM          aParams[4];
 
     /** The number of valid bytes in DISSTATE::Instr. */
     uint8_t             cbCachedInstr;

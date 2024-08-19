@@ -792,7 +792,7 @@ DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pC
         return true;
     }
 
-    LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pCtx->rip, pDis->pCurInstr->uOpcode, pvFault, pDis->Param1.fUse,  pDis->Param1.x86.Base.idxGenReg));
+    LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pCtx->rip, pDis->pCurInstr->uOpcode, pvFault, pDis->aParams[0].fUse,  pDis->aParams[0].x86.Base.idxGenReg));
 
     /* Non-supervisor mode write means it's used for something else. */
     if (CPUMGetGuestCPL(pVCpu) == 3)
@@ -839,9 +839,9 @@ DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pC
             /*
              * Anything having ESP on the left side means stack writes.
              */
-            if (    (    (pDis->Param1.fUse & DISUSE_REG_GEN32)
-                     ||  (pDis->Param1.fUse & DISUSE_REG_GEN64))
-                &&  (pDis->Param1.x86.Base.idxGenReg == DISGREG_ESP))
+            if (    (    (pDis->aParams[0].fUse & DISUSE_REG_GEN32)
+                     ||  (pDis->aParams[0].fUse & DISUSE_REG_GEN64))
+                &&  (pDis->aParams[0].x86.Base.idxGenReg == DISGREG_ESP))
             {
                 Log4(("pgmRZPoolMonitorIsReused: ESP\n"));
                 return true;
@@ -853,7 +853,7 @@ DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pC
      * Page table updates are very very unlikely to be crossing page boundraries,
      * and we don't want to deal with that in pgmPoolMonitorChainChanging and such.
      */
-    uint32_t const cbWrite = DISGetParamSize(pDis, &pDis->Param1);
+    uint32_t const cbWrite = DISGetParamSize(pDis, &pDis->aParams[0]);
     if ( (((uintptr_t)pvFault + cbWrite) >> X86_PAGE_SHIFT) != ((uintptr_t)pvFault >> X86_PAGE_SHIFT) )
     {
         Log4(("pgmRZPoolMonitorIsReused: cross page write\n"));
@@ -941,7 +941,7 @@ static int pgmRZPoolAccessPfHandlerFlush(PVMCC pVM, PVMCPUCC pVCpu, PPGMPOOL pPo
 DECLINLINE(int) pgmRZPoolAccessPfHandlerSTOSD(PVMCC pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISSTATE pDis,
                                               PCPUMCTX pCtx, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
 {
-    unsigned uIncrement = pDis->Param1.x86.cb;
+    unsigned uIncrement = pDis->aParams[0].x86.cb;
     NOREF(pVM);
 
     Assert(pDis->uCpuMode == DISCPUMODE_32BIT || pDis->uCpuMode == DISCPUMODE_64BIT);
@@ -1017,7 +1017,7 @@ DECLINLINE(int) pgmRZPoolAccessPfHandlerSimple(PVMCC pVM, PVMCPUCC pVCpu, PPGMPO
     /*
      * Clear all the pages.
      */
-    uint32_t cbWrite = DISGetParamSize(pDis, &pDis->Param1);
+    uint32_t cbWrite = DISGetParamSize(pDis, &pDis->aParams[0]);
     if (cbWrite <= 8)
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, NULL, cbWrite);
     else if (cbWrite <= 16)
@@ -1186,7 +1186,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
     pVCpu->pgm.s.cPoolAccessHandler++;
     if (    pPage->GCPtrLastAccessHandlerRip >= pCtx->rip - 0x40      /* observed loops in Windows 7 x64 */
         &&  pPage->GCPtrLastAccessHandlerRip <  pCtx->rip + 0x40
-        &&  pvFault == (pPage->GCPtrLastAccessHandlerFault + pDis->Param1.x86.cb)
+        &&  pvFault == (pPage->GCPtrLastAccessHandlerFault + pDis->aParams[0].x86.cb)
         &&  pVCpu->pgm.s.cPoolAccessHandler == pPage->cLastAccessHandler + 1)
     {
         Log(("Possible page reuse cMods=%d -> %d (locked=%d type=%s)\n", pPage->cModifications, pPage->cModifications * 2, pgmPoolIsPageLocked(pPage), pgmPoolPoolKindToStr(pPage->enmKind)));

@@ -307,9 +307,10 @@ disInitializeState(PDISSTATE pDis, RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, 
     RT_ZERO(*pDis);
 
 #ifdef VBOX_STRICT
-    pDis->Param1.uValue     = UINT64_C(0xb1b1b1b1b1b1b1b1);
-    pDis->Param2.uValue     = UINT64_C(0xb2b2b2b2b2b2b2b2);
-    pDis->Param3.uValue     = UINT64_C(0xb3b3b3b3b3b3b3b3);
+    pDis->aParams[0].uValue = UINT64_C(0xb1b1b1b1b1b1b1b1);
+    pDis->aParams[1].uValue = UINT64_C(0xb2b2b2b2b2b2b2b2);
+    pDis->aParams[2].uValue = UINT64_C(0xb3b3b3b3b3b3b3b3);
+    pDis->aParams[3].uValue = UINT64_C(0xb4b4b4b4b4b4b4b4);
 #endif
 
     pDis->rc                = VINF_SUCCESS;

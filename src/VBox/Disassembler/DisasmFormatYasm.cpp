@@ -641,10 +641,10 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                         if (pszSpace == NULL) pszSpace = strchr(pszDelim, 0);
                         if (   (*pszFmt == '#' && !(pDis->x86.bVexByte2 & DISPREFIX_VEX_F_W)) /** @todo check this*/
                             || (*pszFmt == '@' && !VEXREG_IS256B(pDis->x86.bVexDestReg))
-                            || (*pszFmt == '&' && (   DISUSE_IS_EFFECTIVE_ADDR(pDis->Param1.fUse)
-                                                   || DISUSE_IS_EFFECTIVE_ADDR(pDis->Param2.fUse)
-                                                   || DISUSE_IS_EFFECTIVE_ADDR(pDis->Param3.fUse)
-                                                   || DISUSE_IS_EFFECTIVE_ADDR(pDis->Param4.fUse))))
+                            || (*pszFmt == '&' && (   DISUSE_IS_EFFECTIVE_ADDR(pDis->aParams[0].fUse)
+                                                   || DISUSE_IS_EFFECTIVE_ADDR(pDis->aParams[1].fUse)
+                                                   || DISUSE_IS_EFFECTIVE_ADDR(pDis->aParams[2].fUse)
+                                                   || DISUSE_IS_EFFECTIVE_ADDR(pDis->aParams[3].fUse))))
                         {
                             strncpy(pszFmtDst, pszFmt + 1, pszDelim - pszFmt - 1);
                             pszFmtDst += pszDelim - pszFmt - 1;
@@ -665,11 +665,11 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
              */
             case OP_FLD:
                 if (pDis->x86.bOpCode == 0xdb) /* m80fp workaround. */
-                    *(int *)&pDis->Param1.x86.fParam &= ~0x1f; /* make it pure OP_PARM_M */
+                    *(int *)&pDis->aParams[0].x86.fParam &= ~0x1f; /* make it pure OP_PARM_M */
                 break;
             case OP_LAR: /* hack w -> v, probably not correct. */
-                *(int *)&pDis->Param2.x86.fParam &= ~0x1f;
-                *(int *)&pDis->Param2.x86.fParam |= OP_PARM_v;
+                *(int *)&pDis->aParams[1].x86.fParam &= ~0x1f;
+                *(int *)&pDis->aParams[2].x86.fParam |= OP_PARM_v;
                 break;
         }
 
@@ -697,8 +697,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
         /*
          * Formatting context and associated macros.
          */
-        PCDISOPPARAM pParam = &pDis->Param1;
-        int iParam = 1;
+        PCDISOPPARAM pParam = &pDis->aParams[0];
+        uint32_t iParam = 0;
 
 #define PUT_FAR() \
             do { \
@@ -786,9 +786,9 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
          * Segment prefixing for instructions that doesn't do memory access.
          */
         if (    (pDis->x86.fPrefix & DISPREFIX_SEG)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param1.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param2.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param3.fUse))
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->aParams[0].fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->aParams[1].fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->aParams[2].fUse))
         {
             PUT_STR(s_szSegPrefix[pDis->x86.idxSegPrefix], 2);
             PUT_C(' ');
@@ -1084,7 +1084,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     case 'J': /* Relative jump offset (ParseImmBRel + ParseImmVRel). */
                     {
                         int32_t offDisplacement;
-                        Assert(iParam == 1);
+                        Assert(iParam == 0);
                         bool fPrefix = (fFlags & DIS_FMT_FLAGS_STRICT)
                                     && pOp->uOpcode != OP_CALL
                                     && pOp->uOpcode != OP_LOOP
@@ -1286,13 +1286,14 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                 {
                     Assert(*pszFmt != ' ');
                     PUT_C(' ');
-                    switch (++iParam)
+                    iParam++;
+                    if (iParam >= RT_ELEMENTS(pDis->aParams))
                     {
-                        case 2: pParam = &pDis->Param2; break;
-                        case 3: pParam = &pDis->Param3; break;
-                        case 4: pParam = &pDis->Param4; break;
-                        default: pParam = NULL; break;
+                        AssertFailed();
+                        pParam = NULL;
                     }
+                    else
+                        pParam = &pDis->aParams[iParam];
                 }
             }
         } /* while more to format */
@@ -1477,9 +1478,9 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
     {
         /* no effective address which it may apply to. */
         Assert((pDis->x86.fPrefix & DISPREFIX_SEG) || pDis->uCpuMode == DISCPUMODE_64BIT);
-        if (    !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param1.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param2.fUse)
-            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->Param3.fUse))
+        if (    !DISUSE_IS_EFFECTIVE_ADDR(pDis->aParams[0].fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->aParams[1].fUse)
+            &&  !DISUSE_IS_EFFECTIVE_ADDR(pDis->aParams[2].fUse))
             return true;
 
         /* Yasm puts the segment prefixes before the operand prefix with no
@@ -1688,7 +1689,7 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
 
     /* shl eax,1 will be assembled to the form without the immediate byte. */
     if (    pDis->pCurInstr->fParam2 == OP_PARM_Ib
-        &&  (uint8_t)pDis->Param2.uValue == 1)
+        &&  (uint8_t)pDis->aParams[1].uValue == 1)
     {
         switch (pDis->pCurInstr->uOpcode)
         {

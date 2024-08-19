@@ -264,10 +264,10 @@ static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
     }
 
     // Should contain the parameter type on input
-    pDis->Param1.x86.fParam = pOp->fParam1;
-    pDis->Param2.x86.fParam = pOp->fParam2;
-    pDis->Param3.x86.fParam = pOp->fParam3;
-    pDis->Param4.x86.fParam = pOp->fParam4;
+    pDis->aParams[0].x86.fParam = pOp->fParam1;
+    pDis->aParams[1].x86.fParam = pOp->fParam2;
+    pDis->aParams[2].x86.fParam = pOp->fParam3;
+    pDis->aParams[3].x86.fParam = pOp->fParam4;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
     if (!(pOp->fOpType & (DISOPTYPE_X86_FORCED_64_OP_SIZE | DISOPTYPE_X86_DEFAULT_64_OP_SIZE | DISOPTYPE_X86_FORCED_32_OP_SIZE_X86)))
@@ -292,26 +292,26 @@ static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
 
     if (pOp->idxParse1 != IDX_ParseNop)
     {
-        offInstr = pDis->x86.pfnDisasmFnTable[pOp->idxParse1](offInstr, pOp, pDis, &pDis->Param1);
-        if (fFiltered == false) pDis->Param1.x86.cb = DISGetParamSize(pDis, &pDis->Param1);
+        offInstr = pDis->x86.pfnDisasmFnTable[pOp->idxParse1](offInstr, pOp, pDis, &pDis->aParams[0]);
+        if (fFiltered == false) pDis->aParams[0].x86.cb = DISGetParamSize(pDis, &pDis->aParams[0]);
     }
 
     if (pOp->idxParse2 != IDX_ParseNop)
     {
-        offInstr = pDis->x86.pfnDisasmFnTable[pOp->idxParse2](offInstr, pOp, pDis, &pDis->Param2);
-        if (fFiltered == false) pDis->Param2.x86.cb = DISGetParamSize(pDis, &pDis->Param2);
+        offInstr = pDis->x86.pfnDisasmFnTable[pOp->idxParse2](offInstr, pOp, pDis, &pDis->aParams[1]);
+        if (fFiltered == false) pDis->aParams[1].x86.cb = DISGetParamSize(pDis, &pDis->aParams[1]);
     }
 
     if (pOp->idxParse3 != IDX_ParseNop)
     {
-        offInstr = pDis->x86.pfnDisasmFnTable[pOp->idxParse3](offInstr, pOp, pDis, &pDis->Param3);
-        if (fFiltered == false) pDis->Param3.x86.cb = DISGetParamSize(pDis, &pDis->Param3);
+        offInstr = pDis->x86.pfnDisasmFnTable[pOp->idxParse3](offInstr, pOp, pDis, &pDis->aParams[2]);
+        if (fFiltered == false) pDis->aParams[2].x86.cb = DISGetParamSize(pDis, &pDis->aParams[2]);
     }
 
     if (pOp->idxParse4 != IDX_ParseNop)
     {
-        offInstr = pDis->x86.pfnDisasmFnTable[pOp->idxParse4](offInstr, pOp, pDis, &pDis->Param4);
-        if (fFiltered == false) pDis->Param4.x86.cb = DISGetParamSize(pDis, &pDis->Param4);
+        offInstr = pDis->x86.pfnDisasmFnTable[pOp->idxParse4](offInstr, pOp, pDis, &pDis->aParams[3]);
+        if (fFiltered == false) pDis->aParams[3].x86.cb = DISGetParamSize(pDis, &pDis->aParams[3]);
     }
     // else simple one byte instruction
 
@@ -333,8 +333,8 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
         pDis->pCurInstr = fpop;
 
         // Should contain the parameter type on input
-        pDis->Param1.x86.fParam = fpop->fParam1;
-        pDis->Param2.x86.fParam = fpop->fParam2;
+        pDis->aParams[0].x86.fParam = fpop->fParam1;
+        pDis->aParams[1].x86.fParam = fpop->fParam2;
     }
     else
     {
@@ -1478,7 +1478,7 @@ static size_t ParseFixedReg(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
         }
 
         if (    (pOp->fOpType & DISOPTYPE_X86_REXB_EXTENDS_OPREG)
-            &&  pParam == &pDis->Param1             /* ugly assumption that it only applies to the first parameter */
+            &&  pParam == &pDis->aParams[0]         /* ugly assumption that it only applies to the first parameter */
             &&  (pDis->x86.fPrefix & DISPREFIX_REX)
             &&  (pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_B))
         {
@@ -1509,7 +1509,7 @@ static size_t ParseFixedReg(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 
         if (   pDis->uCpuMode == DISCPUMODE_64BIT
             && (pOp->fOpType & DISOPTYPE_X86_REXB_EXTENDS_OPREG)
-            &&  pParam == &pDis->Param1             /* ugly assumption that it only applies to the first parameter */
+            &&  pParam == &pDis->aParams[0]         /* ugly assumption that it only applies to the first parameter */
             &&  (pDis->x86.fPrefix & DISPREFIX_REX))
         {
             if (pDis->x86.fRexPrefix & DISPREFIX_REX_FLAGS_B)
@@ -2451,8 +2451,8 @@ static void disValidateLockSequence(PDISSTATE pDis)
         case OP_SUB:
         case OP_XCHG:
         case OP_XOR:
-            if (pDis->Param1.fUse & (DISUSE_BASE | DISUSE_INDEX | DISUSE_DISPLACEMENT64 | DISUSE_DISPLACEMENT32
-                                     | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT8 | DISUSE_RIPDISPLACEMENT32))
+            if (pDis->aParams[0].fUse & (  DISUSE_BASE | DISUSE_INDEX | DISUSE_DISPLACEMENT64 | DISUSE_DISPLACEMENT32
+                                         | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT8 | DISUSE_RIPDISPLACEMENT32))
                 return;
             break;
 
@@ -2599,21 +2599,21 @@ DECLHIDDEN(int) disInstrWorkerX86(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint
 DECLHIDDEN(PCDISOPCODE) disInitializeStateX86(PDISSTATE pDis, DISCPUMODE enmCpuMode, uint32_t fFilter)
 {
 #ifdef VBOX_STRICT /* poison */
-    pDis->Param1.x86.Base.idxGenReg    = 0xc1;
-    pDis->Param2.x86.Base.idxGenReg    = 0xc2;
-    pDis->Param3.x86.Base.idxGenReg    = 0xc3;
-    pDis->Param1.x86.Index.idxGenReg   = 0xc4;
-    pDis->Param2.x86.Index.idxGenReg   = 0xc5;
-    pDis->Param3.x86.Index.idxGenReg   = 0xc6;
-    pDis->Param1.x86.uDisp.u64         = UINT64_C(0xd1d1d1d1d1d1d1d1);
-    pDis->Param2.x86.uDisp.u64         = UINT64_C(0xd2d2d2d2d2d2d2d2);
-    pDis->Param3.x86.uDisp.u64         = UINT64_C(0xd3d3d3d3d3d3d3d3);
-    pDis->Param1.uValue                     = UINT64_C(0xb1b1b1b1b1b1b1b1);
-    pDis->Param2.uValue                     = UINT64_C(0xb2b2b2b2b2b2b2b2);
-    pDis->Param3.uValue                     = UINT64_C(0xb3b3b3b3b3b3b3b3);
-    pDis->Param1.x86.uScale            = 28;
-    pDis->Param2.x86.uScale            = 29;
-    pDis->Param3.x86.uScale            = 30;
+    pDis->aParams[0].x86.Base.idxGenReg    = 0xc1;
+    pDis->aParams[1].x86.Base.idxGenReg    = 0xc2;
+    pDis->aParams[2].x86.Base.idxGenReg    = 0xc3;
+    pDis->aParams[0].x86.Index.idxGenReg   = 0xc4;
+    pDis->aParams[1].x86.Index.idxGenReg   = 0xc5;
+    pDis->aParams[2].x86.Index.idxGenReg   = 0xc6;
+    pDis->aParams[0].x86.uDisp.u64         = UINT64_C(0xd1d1d1d1d1d1d1d1);
+    pDis->aParams[1].x86.uDisp.u64         = UINT64_C(0xd2d2d2d2d2d2d2d2);
+    pDis->aParams[2].x86.uDisp.u64         = UINT64_C(0xd3d3d3d3d3d3d3d3);
+    pDis->aParams[0].uValue                = UINT64_C(0xb1b1b1b1b1b1b1b1);
+    pDis->aParams[1].uValue                = UINT64_C(0xb2b2b2b2b2b2b2b2);
+    pDis->aParams[2].uValue                = UINT64_C(0xb3b3b3b3b3b3b3b3);
+    pDis->aParams[0].x86.uScale            = 28;
+    pDis->aParams[1].x86.uScale            = 29;
+    pDis->aParams[2].x86.uScale            = 30;
 #endif
 
     pDis->x86.fPrefix           = DISPREFIX_NONE;

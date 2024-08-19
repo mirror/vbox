@@ -300,10 +300,10 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
     Assert((u32Insn & pOp->fMask) == pOp->fValue);
 
     /* Should contain the parameter type on input. */
-    pDis->Param1.armv8.fParam = pOp->Opc.fParam1;
-    pDis->Param2.armv8.fParam = pOp->Opc.fParam2;
-    pDis->Param3.armv8.fParam = pOp->Opc.fParam3;
-    pDis->Param4.armv8.fParam = pOp->Opc.fParam4;
+    pDis->aParams[0].armv8.fParam = pOp->Opc.fParam1;
+    pDis->aParams[1].armv8.fParam = pOp->Opc.fParam2;
+    pDis->aParams[2].armv8.fParam = pOp->Opc.fParam3;
+    pDis->aParams[3].armv8.fParam = pOp->Opc.fParam4;
 
     pDis->pCurInstr = &pOp->Opc;
     Assert(&pOp->Opc != &g_ArmV8A64InvalidOpcode[0]);
@@ -317,29 +317,29 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
 
     int rc = VINF_SUCCESS;
     if (pInsnClass->aParms[0].idxParse != kDisParmParseNop)
-        rc = g_apfnDisasm[pInsnClass->aParms[0].idxParse](pDis, u32Insn, pInsnClass, &pDis->Param1, &pInsnClass->aParms[0], f64Bit);
+        rc = g_apfnDisasm[pInsnClass->aParms[0].idxParse](pDis, u32Insn, pInsnClass, &pDis->aParams[0], &pInsnClass->aParms[0], f64Bit);
 
     if (   pInsnClass->aParms[1].idxParse != kDisParmParseNop
         && RT_SUCCESS(rc))
-        rc = g_apfnDisasm[pInsnClass->aParms[1].idxParse](pDis, u32Insn, pInsnClass, &pDis->Param2, &pInsnClass->aParms[1], f64Bit);
+        rc = g_apfnDisasm[pInsnClass->aParms[1].idxParse](pDis, u32Insn, pInsnClass, &pDis->aParams[1], &pInsnClass->aParms[1], f64Bit);
 
     if (   pInsnClass->aParms[2].idxParse != kDisParmParseNop
         && RT_SUCCESS(rc))
-        rc = g_apfnDisasm[pInsnClass->aParms[2].idxParse](pDis, u32Insn, pInsnClass, &pDis->Param3, &pInsnClass->aParms[2], f64Bit);
+        rc = g_apfnDisasm[pInsnClass->aParms[2].idxParse](pDis, u32Insn, pInsnClass, &pDis->aParams[2], &pInsnClass->aParms[2], f64Bit);
 
     if (   pInsnClass->aParms[3].idxParse != kDisParmParseNop
         && RT_SUCCESS(rc))
-        rc = g_apfnDisasm[pInsnClass->aParms[3].idxParse](pDis, u32Insn, pInsnClass, &pDis->Param4, &pInsnClass->aParms[3], f64Bit);
+        rc = g_apfnDisasm[pInsnClass->aParms[3].idxParse](pDis, u32Insn, pInsnClass, &pDis->aParams[3], &pInsnClass->aParms[3], f64Bit);
 
     /* If parameter parsing returned an invalid opcode error the encoding is invalid. */
     if (rc == VERR_DIS_INVALID_OPCODE)
     {
         pDis->pCurInstr = &g_ArmV8A64InvalidOpcode[0];
 
-        pDis->Param1.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam1;
-        pDis->Param2.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam2;
-        pDis->Param3.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam3;
-        pDis->Param4.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam4;
+        pDis->aParams[0].armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam1;
+        pDis->aParams[1].armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam2;
+        pDis->aParams[2].armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam3;
+        pDis->aParams[3].armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam4;
     }
     pDis->rc = rc;
     return rc;

@@ -9458,12 +9458,12 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PVMCPU pVCpu, PCIEMTB pTb, PCDBGFINFOHLP
                                     | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
                                     iemNativeDisasmGetSymbolCb, &SymCtx);
                     PCDISOPPARAM pMemOp;
-                    if (DISUSE_IS_EFFECTIVE_ADDR(Dis.Param1.fUse))
-                        pMemOp = &Dis.Param1;
-                    else if (DISUSE_IS_EFFECTIVE_ADDR(Dis.Param2.fUse))
-                        pMemOp = &Dis.Param2;
-                    else if (DISUSE_IS_EFFECTIVE_ADDR(Dis.Param3.fUse))
-                        pMemOp = &Dis.Param3;
+                    if (DISUSE_IS_EFFECTIVE_ADDR(Dis.aParams[0].fUse))
+                        pMemOp = &Dis.aParams[0];
+                    else if (DISUSE_IS_EFFECTIVE_ADDR(Dis.aParams[1].fUse))
+                        pMemOp = &Dis.aParams[1];
+                    else if (DISUSE_IS_EFFECTIVE_ADDR(Dis.aParams[2].fUse))
+                        pMemOp = &Dis.aParams[2];
                     else
                         pMemOp = NULL;
                     if (   pMemOp

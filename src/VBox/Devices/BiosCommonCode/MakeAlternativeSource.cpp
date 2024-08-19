@@ -913,10 +913,10 @@ static bool disIsMemoryParameter(PCDISOPPARAM pParam, uint16_t fParam)
 static bool disAccessesMemory(PCDISSTATE pDis)
 {
     PCDISOPCODE pCurInstr = pDis->pCurInstr;
-    return disIsMemoryParameter(&pDis->Param1, pCurInstr->fParam1)
-        || disIsMemoryParameter(&pDis->Param2, pCurInstr->fParam2)
-        || disIsMemoryParameter(&pDis->Param3, pCurInstr->fParam3)
-        || disIsMemoryParameter(&pDis->Param4, pCurInstr->fParam4);
+    return disIsMemoryParameter(&pDis->aParams[0], pCurInstr->fParam1)
+        || disIsMemoryParameter(&pDis->aParams[1], pCurInstr->fParam2)
+        || disIsMemoryParameter(&pDis->aParams[2], pCurInstr->fParam3)
+        || disIsMemoryParameter(&pDis->aParams[3], pCurInstr->fParam4);
 }
 
 

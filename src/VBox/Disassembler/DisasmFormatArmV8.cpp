@@ -285,8 +285,8 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
         /*
          * Formatting context and associated macros.
          */
-        PCDISOPPARAM pParam = &pDis->Param1;
-        int iParam = 1;
+        PCDISOPPARAM pParam = &pDis->aParams[0];
+        uint32_t iParam = 0;
 
         const char *pszFmt = pOp->pszOpcode;
 
@@ -400,13 +400,14 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                         while (*pszFmt == ' ')
                             pszFmt++;
 
-                        switch (++iParam)
+                        iParam++;
+                        if (iParam >= RT_ELEMENTS(pDis->aParams))
                         {
-                            case 2: pParam = &pDis->Param2; break;
-                            case 3: pParam = &pDis->Param3; break;
-                            case 4: pParam = &pDis->Param4; break;
-                            default: pParam = NULL; break;
+                            AssertFailed();
+                            pParam = NULL;
                         }
+                        else
+                            pParam = &pDis->aParams[iParam];
                         break;
                     }
 
@@ -423,13 +424,14 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                 {
                     Assert(*pszFmt != ' ');
                     PUT_C(' ');
-                    switch (++iParam)
+                    iParam++;
+                    if (iParam >= RT_ELEMENTS(pDis->aParams))
                     {
-                        case 2: pParam = &pDis->Param2; break;
-                        case 3: pParam = &pDis->Param3; break;
-                        case 4: pParam = &pDis->Param4; break;
-                        default: pParam = NULL; break;
+                        AssertFailed();
+                        pParam = NULL;
                     }
+                    else
+                        pParam = &pDis->aParams[iParam];
                 }
             }
         } /* while more to format */

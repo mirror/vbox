@@ -2346,21 +2346,21 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
 
         pPatch->cbOp = cbOp;
 
-        if (Dis.Param1.fUse == DISUSE_DISPLACEMENT32)
+        if (Dis.aParams[0].fUse == DISUSE_DISPLACEMENT32)
         {
             /* write. */
-            if (Dis.Param2.fUse == DISUSE_REG_GEN32)
+            if (Dis.aParams[1].fUse == DISUSE_REG_GEN32)
             {
                 pPatch->enmType     = HMTPRINSTR_WRITE_REG;
-                pPatch->uSrcOperand = Dis.Param2.x86.Base.idxGenReg;
-                Log(("hmR3ReplaceTprInstr: HMTPRINSTR_WRITE_REG %u\n", Dis.Param2.x86.Base.idxGenReg));
+                pPatch->uSrcOperand = Dis.aParams[1].x86.Base.idxGenReg;
+                Log(("hmR3ReplaceTprInstr: HMTPRINSTR_WRITE_REG %u\n", Dis.aParams[1].x86.Base.idxGenReg));
             }
             else
             {
-                Assert(Dis.Param2.fUse == DISUSE_IMMEDIATE32);
+                Assert(Dis.aParams[1].fUse == DISUSE_IMMEDIATE32);
                 pPatch->enmType     = HMTPRINSTR_WRITE_IMM;
-                pPatch->uSrcOperand = Dis.Param2.uValue;
-                Log(("hmR3ReplaceTprInstr: HMTPRINSTR_WRITE_IMM %#llx\n", Dis.Param2.uValue));
+                pPatch->uSrcOperand = Dis.aParams[1].uValue;
+                Log(("hmR3ReplaceTprInstr: HMTPRINSTR_WRITE_IMM %#llx\n", Dis.aParams[1].uValue));
             }
             rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, s_abVMMCall, sizeof(s_abVMMCall));
             AssertRC(rc);
@@ -2379,9 +2379,9 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
              * Check if next instruction is:
              *   shr eax, 4
              */
-            Assert(Dis.Param1.fUse == DISUSE_REG_GEN32);
+            Assert(Dis.aParams[0].fUse == DISUSE_REG_GEN32);
 
-            uint8_t  const idxMmioReg = Dis.Param1.x86.Base.idxGenReg;
+            uint8_t  const idxMmioReg = Dis.aParams[0].x86.Base.idxGenReg;
             uint8_t  const cbOpMmio   = cbOp;
             uint64_t const uSavedRip  = pCtx->rip;
 
@@ -2392,10 +2392,10 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
 
             if (    rc == VINF_SUCCESS
                 &&  Dis.pCurInstr->uOpcode == OP_SHR
-                &&  Dis.Param1.fUse == DISUSE_REG_GEN32
-                &&  Dis.Param1.x86.Base.idxGenReg == idxMmioReg
-                &&  Dis.Param2.fUse == DISUSE_IMMEDIATE8
-                &&  Dis.Param2.uValue == 4
+                &&  Dis.aParams[0].fUse == DISUSE_REG_GEN32
+                &&  Dis.aParams[0].x86.Base.idxGenReg == idxMmioReg
+                &&  Dis.aParams[1].fUse == DISUSE_IMMEDIATE8
+                &&  Dis.aParams[1].uValue == 4
                 &&  cbOpMmio + cbOp < sizeof(pVM->hm.s.aPatches[idx].aOpcode))
             {
                 uint8_t abInstr[15];
@@ -2411,7 +2411,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
                 abInstr[0] = 0xf0;
                 abInstr[1] = 0x0f;
                 abInstr[2] = 0x20;
-                abInstr[3] = 0xc0 | Dis.Param1.x86.Base.idxGenReg;
+                abInstr[3] = 0xc0 | Dis.aParams[0].x86.Base.idxGenReg;
                 for (unsigned i = 4; i < pPatch->cbOp; i++)
                     abInstr[i] = 0x90;  /* nop */
 
@@ -2524,7 +2524,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
         pPatch->cbOp    = cbOp;
         pPatch->enmType = HMTPRINSTR_JUMP_REPLACEMENT;
 
-        if (Dis.Param1.fUse == DISUSE_DISPLACEMENT32)
+        if (Dis.aParams[0].fUse == DISUSE_DISPLACEMENT32)
         {
             /*
              * TPR write:
@@ -2543,7 +2543,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
              * pop ECX                       [59]
              * jmp return_address            [E9 return_address]
              */
-            bool fUsesEax = (Dis.Param2.fUse == DISUSE_REG_GEN32 && Dis.Param2.x86.Base.idxGenReg == DISGREG_EAX);
+            bool fUsesEax = (Dis.aParams[1].fUse == DISUSE_REG_GEN32 && Dis.aParams[1].x86.Base.idxGenReg == DISGREG_EAX);
 
             aPatch[off++] = 0x51;    /* push ecx */
             aPatch[off++] = 0x52;    /* push edx */
@@ -2551,19 +2551,19 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
                 aPatch[off++] = 0x50;    /* push eax */
             aPatch[off++] = 0x31;    /* xor edx, edx */
             aPatch[off++] = 0xd2;
-            if (Dis.Param2.fUse == DISUSE_REG_GEN32)
+            if (Dis.aParams[1].fUse == DISUSE_REG_GEN32)
             {
                 if (!fUsesEax)
                 {
                     aPatch[off++] = 0x89;    /* mov eax, src_reg */
-                    aPatch[off++] = MAKE_MODRM(3, Dis.Param2.x86.Base.idxGenReg, DISGREG_EAX);
+                    aPatch[off++] = MAKE_MODRM(3, Dis.aParams[1].x86.Base.idxGenReg, DISGREG_EAX);
                 }
             }
             else
             {
-                Assert(Dis.Param2.fUse == DISUSE_IMMEDIATE32);
+                Assert(Dis.aParams[1].fUse == DISUSE_IMMEDIATE32);
                 aPatch[off++] = 0xb8;    /* mov eax, immediate */
-                *(uint32_t *)&aPatch[off] = Dis.Param2.uValue;
+                *(uint32_t *)&aPatch[off] = Dis.aParams[1].uValue;
                 off += sizeof(uint32_t);
             }
             aPatch[off++] = 0xb9;    /* mov ecx, 0xc0000082 */
@@ -2593,13 +2593,13 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
              * pop ECX                       [59]
              * jmp return_address            [E9 return_address]
              */
-            Assert(Dis.Param1.fUse == DISUSE_REG_GEN32);
+            Assert(Dis.aParams[0].fUse == DISUSE_REG_GEN32);
 
-            if (Dis.Param1.x86.Base.idxGenReg != DISGREG_ECX)
+            if (Dis.aParams[0].x86.Base.idxGenReg != DISGREG_ECX)
                 aPatch[off++] = 0x51;    /* push ecx */
-            if (Dis.Param1.x86.Base.idxGenReg != DISGREG_EDX )
+            if (Dis.aParams[0].x86.Base.idxGenReg != DISGREG_EDX )
                 aPatch[off++] = 0x52;    /* push edx */
-            if (Dis.Param1.x86.Base.idxGenReg != DISGREG_EAX)
+            if (Dis.aParams[0].x86.Base.idxGenReg != DISGREG_EAX)
                 aPatch[off++] = 0x50;    /* push eax */
 
             aPatch[off++] = 0x31;    /* xor edx, edx */
@@ -2612,17 +2612,17 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
             aPatch[off++] = 0x0f;    /* rdmsr */
             aPatch[off++] = 0x32;
 
-            if (Dis.Param1.x86.Base.idxGenReg != DISGREG_EAX)
+            if (Dis.aParams[0].x86.Base.idxGenReg != DISGREG_EAX)
             {
                 aPatch[off++] = 0x89;    /* mov dst_reg, eax */
-                aPatch[off++] = MAKE_MODRM(3, DISGREG_EAX, Dis.Param1.x86.Base.idxGenReg);
+                aPatch[off++] = MAKE_MODRM(3, DISGREG_EAX, Dis.aParams[0].x86.Base.idxGenReg);
             }
 
-            if (Dis.Param1.x86.Base.idxGenReg != DISGREG_EAX)
+            if (Dis.aParams[0].x86.Base.idxGenReg != DISGREG_EAX)
                 aPatch[off++] = 0x58;    /* pop eax */
-            if (Dis.Param1.x86.Base.idxGenReg != DISGREG_EDX )
+            if (Dis.aParams[0].x86.Base.idxGenReg != DISGREG_EDX )
                 aPatch[off++] = 0x5a;    /* pop edx */
-            if (Dis.Param1.x86.Base.idxGenReg != DISGREG_ECX)
+            if (Dis.aParams[0].x86.Base.idxGenReg != DISGREG_ECX)
                 aPatch[off++] = 0x59;    /* pop ecx */
         }
         aPatch[off++] = 0xe9;    /* jmp return_address */

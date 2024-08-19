@@ -159,16 +159,16 @@ static void testTwo(void)
         if (rc == VINF_SUCCESS)
         {
             uint32_t cb2;
-            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param1)) == s_gInstrs[i].cbParam1,
+            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.aParams[0])) == s_gInstrs[i].cbParam1,
                               ("%u: %#x vs %#x\n", i , cb2, s_gInstrs[i].cbParam1));
 #ifndef DIS_CORE_ONLY
-            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param2)) == s_gInstrs[i].cbParam2,
+            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.aParams[1])) == s_gInstrs[i].cbParam2,
                               ("%u: %#x vs %#x (%s)\n", i , cb2, s_gInstrs[i].cbParam2, Dis.pCurInstr->pszOpcode));
 #else
-            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param2)) == s_gInstrs[i].cbParam2,
+            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.aParams[1])) == s_gInstrs[i].cbParam2,
                               ("%u: %#x vs %#x\n", i , cb2, s_gInstrs[i].cbParam2));
 #endif
-            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param3)) == s_gInstrs[i].cbParam3,
+            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.aParams[2])) == s_gInstrs[i].cbParam3,
                               ("%u: %#x vs %#x\n", i , cb2, s_gInstrs[i].cbParam3));
         }
     }
