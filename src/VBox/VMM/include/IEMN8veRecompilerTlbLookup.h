@@ -1056,43 +1056,54 @@ off = iemNativeEmitBrkEx(pCodeBuf, off, 1); /** @todo this needs testing */
      *    For code TLB lookups we have some more work to do here to set various
      *    IEMCPU members and we return a GCPhys address rather than a host pointer.
      */
+# if defined(RT_ARCH_ARM64)
+    uint8_t const idxRegMappingPtr = a_fDataTlb && idxRegFlatPtr != idxRegMemResult /* See step 1b. */
+                                   ? idxRegMemResult /* saves one instruction */ : pTlbState->idxReg1;
+# else
+    uint8_t const idxRegMappingPtr = pTlbState->idxReg1; /** @todo optimize the AMD64 case as well. */
+# endif
 # if defined(RT_ARCH_ARM64) && defined(IEMNATIVE_WITH_TLB_LOOKUP_LOAD_STORE_PAIR)
     if (!a_fDataTlb)
     {
         /* ldp  reg4, reg1, [reg2->GCPhys+pbMappingR3] */
         AssertCompileMemberAlignment(IEMTLBENTRY, GCPhys, 16);
         AssertCompileAdjacentMembers(IEMTLBENTRY, GCPhys, pbMappingR3);
-        pCodeBuf[off++] = Armv8A64MkInstrLdPairGpr(pTlbState->idxReg4, pTlbState->idxReg1,
+        pCodeBuf[off++] = Armv8A64MkInstrLdPairGpr(pTlbState->idxReg4, idxRegMappingPtr,
                                                    pTlbState->idxReg2, RT_UOFFSETOF(IEMTLBENTRY, GCPhys) / 8);
     }
     else
 # endif
     {
         /* mov  reg1, [reg2->pbMappingR3] */
-        off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, pTlbState->idxReg1, pTlbState->idxReg2,
+        off = iemNativeEmitLoadGprByGprU64Ex(pCodeBuf, off, idxRegMappingPtr, pTlbState->idxReg2,
                                              RT_UOFFSETOF(IEMTLBENTRY, pbMappingR3));
     }
-    /* if (!reg1) goto tlbmiss; */
-    /** @todo eliminate the need for this test? */
-    off = iemNativeEmitTestIfGprIsZeroAndJmpToLabelEx(pReNative, pCodeBuf, off, pTlbState->idxReg1,
-                                                      true /*f64Bit*/, idxLabelTlbMiss);
 
     if (a_fDataTlb)
     {
         if (idxRegFlatPtr == idxRegMemResult) /* See step 1b. */
         {
+            Assert(idxRegMappingPtr == pTlbState->idxReg1);
             /* and result, 0xfff */
             off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxRegMemResult, GUEST_PAGE_OFFSET_MASK);
+            /* add result, reg1 */
+            off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, idxRegMappingPtr);
         }
         else
         {
             Assert(idxRegFlatPtr == pTlbState->idxRegPtr);
+# if defined(RT_ARCH_ARM64)
+            Assert(idxRegMappingPtr == idxRegMemResult);
+            AssertCompile(GUEST_PAGE_SIZE <= HOST_PAGE_SIZE);
+            pCodeBuf[off++] = Armv8A64MkInstrBfxil(idxRegMemResult, idxRegFlatPtr, 0, GUEST_PAGE_SHIFT);
+# else
+            Assert(idxRegMappingPtr == pTlbState->idxReg1);
             /* result = regflat & 0xfff */
             off = iemNativeEmitGpr32EqGprAndImmEx(pCodeBuf, off, idxRegMemResult, idxRegFlatPtr, GUEST_PAGE_OFFSET_MASK);
+            /* add result, reg1 */
+            off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, pTlbState->idxReg1);
+# endif
         }
-
-        /* add result, reg1 */
-        off = iemNativeEmitAddTwoGprsEx(pCodeBuf, off, idxRegMemResult, pTlbState->idxReg1);
     }
     else
     {
