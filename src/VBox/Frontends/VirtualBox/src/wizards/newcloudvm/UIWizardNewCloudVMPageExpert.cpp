@@ -41,7 +41,6 @@
 #include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
 #include "UINotificationCenter.h"
-#include "UIToolBox.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardNewCloudVM.h"
@@ -53,8 +52,7 @@ using namespace UIWizardNewCloudVMProperties;
 
 
 UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
-    : m_pToolBox(0)
-    , m_pLayoutProvider(0)
+    : m_pLayoutProvider(0)
     , m_pProviderLabel(0)
     , m_pProviderComboBox(0)
     , m_pProfileLabel(0)
@@ -68,148 +66,155 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
     if (pLayoutMain)
     {
-        /* Prepare tool-box: */
-        m_pToolBox = new UIToolBox(this);
-        if (m_pToolBox)
+        /* Prepare location widget: */
+        QWidget *pWidgetLocation = new QWidget(this);
+        if (pWidgetLocation)
         {
-            /* Prepare location widget: */
-            QWidget *pWidgetLocation = new QWidget(m_pToolBox);
-            if (pWidgetLocation)
+            /* Prepare location layout: */
+            QVBoxLayout *pLayoutLocation = new QVBoxLayout(pWidgetLocation);
+            if (pLayoutLocation)
             {
-                /* Prepare location layout: */
-                QVBoxLayout *pLayoutLocation = new QVBoxLayout(pWidgetLocation);
-                if (pLayoutLocation)
+                pLayoutLocation->setContentsMargins(0, 0, 0, 0);
+
+                /* Prepare provider layout: */
+                m_pLayoutProvider = new QGridLayout;
+                if (m_pLayoutProvider)
                 {
-                    pLayoutLocation->setContentsMargins(0, 0, 0, 0);
+                    m_pLayoutProvider->setContentsMargins(0, 0, 0, 0);
+                    m_pLayoutProvider->setColumnStretch(0, 0);
+                    m_pLayoutProvider->setColumnStretch(1, 1);
 
-                    /* Prepare provider layout: */
-                    m_pLayoutProvider = new QGridLayout;
-                    if (m_pLayoutProvider)
+                    /* Prepare provider label: */
+                    m_pProviderLabel = new QLabel(this);
+                    if (m_pProviderLabel)
+                        m_pLayoutProvider->addWidget(m_pProviderLabel, 0, 0, Qt::AlignRight);
+
+                    /* Prepare provider combo-box: */
+                    m_pProviderComboBox = new QIComboBox(pWidgetLocation);
+                    if (m_pProviderComboBox)
                     {
-                        m_pLayoutProvider->setContentsMargins(0, 0, 0, 0);
-                        m_pLayoutProvider->setColumnStretch(0, 0);
-                        m_pLayoutProvider->setColumnStretch(1, 1);
+                        m_pProviderLabel->setBuddy(m_pProviderComboBox);
+                        m_pLayoutProvider->addWidget(m_pProviderComboBox, 0, 1);
+                    }
 
-                        /* Prepare provider label: */
-                        m_pProviderLabel = new QLabel(this);
-                        if (m_pProviderLabel)
-                            m_pLayoutProvider->addWidget(m_pProviderLabel, 0, 0, Qt::AlignRight);
+                    /* Prepare profile label: */
+                    m_pProfileLabel = new QLabel(this);
+                    if (m_pProfileLabel)
+                        m_pLayoutProvider->addWidget(m_pProfileLabel, 1, 0, Qt::AlignRight);
 
-                        /* Prepare provider combo-box: */
-                        m_pProviderComboBox = new QIComboBox(pWidgetLocation);
-                        if (m_pProviderComboBox)
+                    /* Prepare profile layout: */
+                    QHBoxLayout *pLayoutProfile = new QHBoxLayout;
+                    if (pLayoutProfile)
+                    {
+                        pLayoutProfile->setContentsMargins(0, 0, 0, 0);
+                        pLayoutProfile->setSpacing(1);
+
+                        /* Prepare profile combo-box: */
+                        m_pProfileComboBox = new QIComboBox(pWidgetLocation);
+                        if (m_pProfileComboBox)
                         {
-                            m_pProviderLabel->setBuddy(m_pProviderComboBox);
-                            m_pLayoutProvider->addWidget(m_pProviderComboBox, 0, 1);
+                            m_pProfileLabel->setBuddy(m_pProfileComboBox);
+                            pLayoutProfile->addWidget(m_pProfileComboBox);
                         }
 
-                        /* Prepare profile label: */
-                        m_pProfileLabel = new QLabel(this);
-                        if (m_pProfileLabel)
-                            m_pLayoutProvider->addWidget(m_pProfileLabel, 1, 0, Qt::AlignRight);
-
-                        /* Prepare profile layout: */
-                        QHBoxLayout *pLayoutProfile = new QHBoxLayout;
-                        if (pLayoutProfile)
+                        /* Prepare profile tool-button: */
+                        m_pProfileToolButton = new QIToolButton(pWidgetLocation);
+                        if (m_pProfileToolButton)
                         {
-                            pLayoutProfile->setContentsMargins(0, 0, 0, 0);
-                            pLayoutProfile->setSpacing(1);
-
-                            /* Prepare profile combo-box: */
-                            m_pProfileComboBox = new QIComboBox(pWidgetLocation);
-                            if (m_pProfileComboBox)
-                            {
-                                m_pProfileLabel->setBuddy(m_pProfileComboBox);
-                                pLayoutProfile->addWidget(m_pProfileComboBox);
-                            }
-
-                            /* Prepare profile tool-button: */
-                            m_pProfileToolButton = new QIToolButton(pWidgetLocation);
-                            if (m_pProfileToolButton)
-                            {
-                                m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
-                                                                                  ":/cloud_profile_manager_disabled_16px.png"));
-                                pLayoutProfile->addWidget(m_pProfileToolButton);
-                            }
-
-                            /* Add into layout: */
-                            m_pLayoutProvider->addLayout(pLayoutProfile, 1, 1);
+                            m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                                                                              ":/cloud_profile_manager_disabled_16px.png"));
+                            pLayoutProfile->addWidget(m_pProfileToolButton);
                         }
 
                         /* Add into layout: */
-                        pLayoutLocation->addLayout(m_pLayoutProvider);
+                        m_pLayoutProvider->addLayout(pLayoutProfile, 1, 1);
                     }
+
+                    /* Add into layout: */
+                    pLayoutLocation->addLayout(m_pLayoutProvider);
                 }
-
-                /* Add into tool-box: */
-                m_pToolBox->insertPage(0, pWidgetLocation, QString());
-            }
-
-            /* Prepare source widget: */
-            QWidget *pWidgetSource = new QWidget(m_pToolBox);
-            if (pWidgetSource)
-            {
-                /* Prepare source layout: */
-                QVBoxLayout *pLayoutSource = new QVBoxLayout(pWidgetSource);
-                if (pLayoutSource)
-                {
-                    pLayoutSource->setContentsMargins(0, 0, 0, 0);
-                    pLayoutSource->setSpacing(0);
-
-                    /* Prepare source tab-bar: */
-                    m_pSourceTabBar = new QTabBar(pWidgetSource);
-                    if (m_pSourceTabBar)
-                    {
-                        m_pSourceTabBar->addTab(QString());
-                        m_pSourceTabBar->addTab(QString());
-
-                        /* Add into layout: */
-                        pLayoutSource->addWidget(m_pSourceTabBar);
-                    }
-
-                    /* Prepare source image list: */
-                    m_pSourceImageList = new QIListWidget(pWidgetSource);
-                    if (m_pSourceImageList)
-                    {
-                        /* We want to have sorting enabled: */
-                        m_pSourceImageList->setSortingEnabled(true);
-                        /* A bit of look&feel: */
-                        m_pSourceImageList->setAlternatingRowColors(true);
-
-                        /* Add into layout: */
-                        pLayoutSource->addWidget(m_pSourceImageList);
-                    }
-                }
-
-                /* Add into tool-box: */
-                m_pToolBox->insertPage(1, pWidgetSource, QString());
-            }
-
-            /* Prepare settings widget: */
-            QWidget *pWidgetSettings = new QWidget(m_pToolBox);
-            if (pWidgetSettings)
-            {
-                /* Prepare settings layout: */
-                QVBoxLayout *pLayoutSettings = new QVBoxLayout(pWidgetSettings);
-                if (pLayoutSettings)
-                {
-                    pLayoutSettings->setContentsMargins(0, 0, 0, 0);
-
-                    /* Prepare form editor widget: */
-                    m_pFormEditor = new UIFormEditorWidget(pWidgetSettings);
-                    if (m_pFormEditor)
-                    {
-                        /* Add into layout: */
-                        pLayoutSettings->addWidget(m_pFormEditor);
-                    }
-                }
-
-                /* Add into tool-box: */
-                m_pToolBox->insertPage(2, pWidgetSettings, QString());
             }
 
             /* Add into layout: */
-            pLayoutMain->addWidget(m_pToolBox);
+            pLayoutMain->addWidget(pWidgetLocation);
+        }
+
+        /* Prepare source widget: */
+        QWidget *pWidgetSource = new QWidget(this);
+        if (pWidgetSource)
+        {
+            /* Prepare source layout: */
+            QVBoxLayout *pLayoutSource = new QVBoxLayout(pWidgetSource);
+            if (pLayoutSource)
+            {
+                pLayoutSource->setContentsMargins(0, 0, 0, 0);
+                pLayoutSource->setSpacing(0);
+
+                /* Prepare source tab-bar: */
+                m_pSourceTabBar = new QTabBar(pWidgetSource);
+                if (m_pSourceTabBar)
+                {
+                    m_pSourceTabBar->addTab(QString());
+                    m_pSourceTabBar->addTab(QString());
+
+                    /* Add into layout: */
+                    pLayoutSource->addWidget(m_pSourceTabBar);
+                }
+
+                /* Prepare source image list: */
+                m_pSourceImageList = new QIListWidget(pWidgetSource);
+                if (m_pSourceImageList)
+                {
+                    /* Make source image list fit 50 symbols
+                     * horizontally and 8 lines vertically: */
+                    const QFontMetrics fm(m_pSourceImageList->font());
+                    const int iFontWidth = fm.horizontalAdvance('x');
+                    const int iTotalWidth = 50 * iFontWidth;
+                    const int iFontHeight = fm.height();
+                    const int iTotalHeight = 8 * iFontHeight;
+                    m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                    /* We want to have sorting enabled: */
+                    m_pSourceImageList->setSortingEnabled(true);
+                    /* A bit of look&feel: */
+                    m_pSourceImageList->setAlternatingRowColors(true);
+
+                    /* Add into layout: */
+                    pLayoutSource->addWidget(m_pSourceImageList);
+                }
+            }
+
+            /* Add into layout: */
+            pLayoutMain->addWidget(pWidgetSource);
+        }
+
+        /* Prepare settings widget: */
+        QWidget *pWidgetSettings = new QWidget(this);
+        if (pWidgetSettings)
+        {
+            /* Prepare settings layout: */
+            QVBoxLayout *pLayoutSettings = new QVBoxLayout(pWidgetSettings);
+            if (pLayoutSettings)
+            {
+                pLayoutSettings->setContentsMargins(0, 0, 0, 0);
+
+                /* Prepare form editor widget: */
+                m_pFormEditor = new UIFormEditorWidget(pWidgetSettings);
+                if (m_pFormEditor)
+                {
+                    /* Make form-editor fit 6 sections in height by default: */
+                    const int iDefaultSectionHeight = m_pFormEditor->verticalHeader()
+                                                    ? m_pFormEditor->verticalHeader()->defaultSectionSize()
+                                                    : 0;
+                    if (iDefaultSectionHeight > 0)
+                        m_pFormEditor->setMinimumHeight(6 * iDefaultSectionHeight);
+
+                    /* Add into layout: */
+                    pLayoutSettings->addWidget(m_pFormEditor);
+                }
+            }
+
+            /* Add into layout: */
+            pLayoutMain->addWidget(pWidgetSettings);
         }
     }
 
@@ -237,14 +242,6 @@ UIWizardNewCloudVM *UIWizardNewCloudVMPageExpert::wizard() const
 
 void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
 {
-    /* Translate tool-box: */
-    if (m_pToolBox)
-    {
-        m_pToolBox->setPageTitle(0, UIWizardNewCloudVM::tr("Location"));
-        m_pToolBox->setPageTitle(1, UIWizardNewCloudVM::tr("Source"));
-        m_pToolBox->setPageTitle(2, UIWizardNewCloudVM::tr("Settings"));
-    }
-
     /* Translate provider label: */
     if (m_pProviderLabel)
         m_pProviderLabel->setText(UIWizardNewCloudVM::tr("&Provider:"));
@@ -286,8 +283,6 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
 
 void UIWizardNewCloudVMPageExpert::initializePage()
 {
-    /* Choose 1st tool to be chosen initially: */
-    m_pToolBox->setCurrentPage(0);
     /* Make sure form-editor knows notification-center: */
     m_pFormEditor->setNotificationCenter(wizard()->notificationCenter());
     /* Populate providers: */

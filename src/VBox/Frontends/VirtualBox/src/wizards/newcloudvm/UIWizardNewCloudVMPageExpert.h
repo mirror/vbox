@@ -39,7 +39,6 @@
 class QGridLayout;
 class QLabel;
 class QIListWidget;
-class UIToolBox;
 class UIWizardNewCloudVM;
 
 /** UINativeWizardPage extension for Expert page of the New Cloud VM wizard,
@@ -95,9 +94,6 @@ private:
     bool     m_fFullWizard;
     /** Holds the image ID. */
     QString  m_strSourceImageId;
-
-    /** Holds the tool-box instance. */
-    UIToolBox *m_pToolBox;
 
     /** Holds the provider layout instance. */
     QGridLayout  *m_pLayoutProvider;
