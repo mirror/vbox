@@ -278,12 +278,6 @@
  * IPRT specific and not part of the ARMv8 specification.
  * @{  */
 #define ARMV8_AARCH64_SYSREG_ID_CREATE(a_Op0, a_Op1, a_CRn, a_CRm, a_Op2) \
-    UINT16_C(  (((a_Op0) & 0x3) << 14) \
-             | (((a_Op1) & 0x7) << 11) \
-             | (((a_CRn) & 0xf) <<  7) \
-             | (((a_CRm) & 0xf) <<  3) \
-             |  ((a_Op2) & 0x7))
-#define ARMV8_AARCH64_SYSREG_ID_CREATE_DYN(a_Op0, a_Op1, a_CRn, a_CRm, a_Op2) \
     (uint16_t)(  (((a_Op0) & 0x3) << 14) \
                | (((a_Op1) & 0x7) << 11) \
                | (((a_CRn) & 0xf) <<  7) \

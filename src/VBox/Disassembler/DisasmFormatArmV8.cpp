@@ -54,6 +54,11 @@ static const char g_aszArmV8RegGen64[32][4] =
     "x0\0",  "x1\0",  "x2\0",  "x3\0",  "x4\0",  "x5\0",  "x6\0",  "x7\0",  "x8\0",  "x9\0",  "x10",  "x11",  "x12",  "x13",  "x14",  "x15",
     "x16",   "x17",   "x18",   "x19",   "x20",   "x21",   "x22",   "x23",   "x24",   "x25",   "x26",  "x27",  "x28",  "x29",  "x30",  "xzr"
 };
+static const char g_aszArmV8Cond[16][4] =
+{
+    "eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "al", "al"
+};
+
 
 /**
  * List of known system registers.
@@ -581,6 +586,14 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
     {
         /* Start with the instruction. */
         PUT_PSZ(pOp->pszOpcode);
+
+        /* Add any conditionals. */
+        if (pDis->armv8.enmCond != kArmv8InstrCond_Al)
+        {
+            PUT_C('.');
+            Assert((uint16_t)pDis->armv8.enmCond < RT_ELEMENTS(g_aszArmV8Cond));
+            PUT_STR(g_aszArmV8Cond[pDis->armv8.enmCond], sizeof(g_aszArmV8Cond[0]) - 1);
+        }
 
         /*
          * Format the parameters.

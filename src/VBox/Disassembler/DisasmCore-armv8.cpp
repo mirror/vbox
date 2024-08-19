@@ -272,9 +272,8 @@ static int disArmV8ParseHw(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS
 
 static int disArmV8ParseCond(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
 {
-    RT_NOREF(pDis, u32Insn, pInsnClass, pParam, pInsnParm, pf64Bit);
-    //AssertFailed();
-    /** @todo */
+    RT_NOREF(pInsnClass, pParam, pf64Bit);
+    pDis->armv8.enmCond = (ARMV8INSTRCOND)disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
     return VINF_SUCCESS;
 }
 
@@ -295,11 +294,11 @@ static int disArmV8ParseSysReg(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNC
 
     /* Assumes a op0:op1:CRn:CRm:op2 encoding in the instruction starting at the given bit position. */
     uint32_t u32ImmRaw = disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
-    pParam->armv8.Reg.idSysReg = ARMV8_AARCH64_SYSREG_ID_CREATE_DYN(2 + ((u32ImmRaw >> 14) & 0x1),
-                                                                    (u32ImmRaw >> 11) & 0x7,
-                                                                    (u32ImmRaw >> 7) & 0xf,
-                                                                    (u32ImmRaw >> 3) & 0xf,
-                                                                    u32ImmRaw & 0x7);
+    pParam->armv8.Reg.idSysReg = ARMV8_AARCH64_SYSREG_ID_CREATE(2 + ((u32ImmRaw >> 14) & 0x1),
+                                                                (u32ImmRaw >> 11) & 0x7,
+                                                                (u32ImmRaw >> 7) & 0xf,
+                                                                (u32ImmRaw >> 3) & 0xf,
+                                                                u32ImmRaw & 0x7);
     pParam->armv8.cb = 0;
     pParam->fUse    |= DISUSE_REG_SYSTEM;
     return VINF_SUCCESS;
@@ -340,7 +339,8 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
     pDis->aParams[1].armv8.fParam = pOp->Opc.fParam2;
     pDis->aParams[2].armv8.fParam = pOp->Opc.fParam3;
     pDis->aParams[3].armv8.fParam = pOp->Opc.fParam4;
-    pDis->armv8.pInsnClass    = pInsnClass;
+    pDis->armv8.pInsnClass        = pInsnClass;
+    pDis->armv8.enmCond           = kArmv8InstrCond_Al;
 
     pDis->pCurInstr = &pOp->Opc;
     Assert(&pOp->Opc != &g_ArmV8A64InvalidOpcode[0]);
