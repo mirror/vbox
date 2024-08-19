@@ -36,7 +36,6 @@
 #include "UIWizardNewCloudVMPageProperties.h"
 
 /* Forward declarations: */
-class QGridLayout;
 class QLabel;
 class QIListWidget;
 class UIWizardNewCloudVM;
@@ -95,8 +94,6 @@ private:
     /** Holds the image ID. */
     QString  m_strSourceImageId;
 
-    /** Holds the provider layout instance. */
-    QGridLayout  *m_pLayoutProvider;
     /** Holds the provider type label instance. */
     QLabel       *m_pProviderLabel;
     /** Holds the provider type combo-box instance. */
@@ -108,11 +105,15 @@ private:
     /** Holds the profile management tool-button instance. */
     QIToolButton *m_pProfileToolButton;
 
+    /** Holds the source image label instance. */
+    QLabel       *m_pSourceImageLabel;
     /** Holds the source tab-bar instance. */
     QTabBar      *m_pSourceTabBar;
     /** Holds the source image list instance. */
     QIListWidget *m_pSourceImageList;
 
+    /** Holds the option label instance. */
+    QLabel             *m_pLabelOptions;
     /** Holds the Form Editor widget instance. */
     UIFormEditorWidget *m_pFormEditor;
 };

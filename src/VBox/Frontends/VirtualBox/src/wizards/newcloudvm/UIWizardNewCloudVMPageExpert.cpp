@@ -31,7 +31,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QTabBar>
-#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIComboBox.h"
@@ -52,92 +51,79 @@ using namespace UIWizardNewCloudVMProperties;
 
 
 UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
-    : m_pLayoutProvider(0)
-    , m_pProviderLabel(0)
+    : m_pProviderLabel(0)
     , m_pProviderComboBox(0)
     , m_pProfileLabel(0)
     , m_pProfileComboBox(0)
     , m_pProfileToolButton(0)
+    , m_pSourceImageLabel(0)
     , m_pSourceTabBar(0)
     , m_pSourceImageList(0)
+    , m_pLabelOptions(0)
     , m_pFormEditor(0)
 {
     /* Prepare main layout: */
-    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
+    QGridLayout *pLayoutMain = new QGridLayout(this);
     if (pLayoutMain)
     {
-        /* Prepare location widget: */
-        QWidget *pWidgetLocation = new QWidget(this);
-        if (pWidgetLocation)
+        pLayoutMain->setContentsMargins(0, 0, 0, 0);
+        pLayoutMain->setColumnStretch(0, 0);
+        pLayoutMain->setColumnStretch(1, 1);
+        pLayoutMain->setRowStretch(2, 0);
+        pLayoutMain->setRowStretch(3, 1);
+        pLayoutMain->setRowStretch(4, 0);
+        pLayoutMain->setRowStretch(5, 1);
+
+        /* Prepare provider label: */
+        m_pProviderLabel = new QLabel(this);
+        if (m_pProviderLabel)
+            pLayoutMain->addWidget(m_pProviderLabel, 0, 0, Qt::AlignRight);
+
+        /* Prepare provider combo-box: */
+        m_pProviderComboBox = new QIComboBox(this);
+        if (m_pProviderComboBox)
         {
-            /* Prepare location layout: */
-            QVBoxLayout *pLayoutLocation = new QVBoxLayout(pWidgetLocation);
-            if (pLayoutLocation)
+            m_pProviderLabel->setBuddy(m_pProviderComboBox);
+            pLayoutMain->addWidget(m_pProviderComboBox, 0, 1);
+        }
+
+        /* Prepare profile label: */
+        m_pProfileLabel = new QLabel(this);
+        if (m_pProfileLabel)
+            pLayoutMain->addWidget(m_pProfileLabel, 1, 0, Qt::AlignRight);
+
+        /* Prepare profile layout: */
+        QHBoxLayout *pLayoutProfile = new QHBoxLayout;
+        if (pLayoutProfile)
+        {
+            pLayoutProfile->setContentsMargins(0, 0, 0, 0);
+            pLayoutProfile->setSpacing(1);
+
+            /* Prepare profile combo-box: */
+            m_pProfileComboBox = new QIComboBox(this);
+            if (m_pProfileComboBox)
             {
-                pLayoutLocation->setContentsMargins(0, 0, 0, 0);
+                m_pProfileLabel->setBuddy(m_pProfileComboBox);
+                pLayoutProfile->addWidget(m_pProfileComboBox);
+            }
 
-                /* Prepare provider layout: */
-                m_pLayoutProvider = new QGridLayout;
-                if (m_pLayoutProvider)
-                {
-                    m_pLayoutProvider->setContentsMargins(0, 0, 0, 0);
-                    m_pLayoutProvider->setColumnStretch(0, 0);
-                    m_pLayoutProvider->setColumnStretch(1, 1);
-
-                    /* Prepare provider label: */
-                    m_pProviderLabel = new QLabel(this);
-                    if (m_pProviderLabel)
-                        m_pLayoutProvider->addWidget(m_pProviderLabel, 0, 0, Qt::AlignRight);
-
-                    /* Prepare provider combo-box: */
-                    m_pProviderComboBox = new QIComboBox(pWidgetLocation);
-                    if (m_pProviderComboBox)
-                    {
-                        m_pProviderLabel->setBuddy(m_pProviderComboBox);
-                        m_pLayoutProvider->addWidget(m_pProviderComboBox, 0, 1);
-                    }
-
-                    /* Prepare profile label: */
-                    m_pProfileLabel = new QLabel(this);
-                    if (m_pProfileLabel)
-                        m_pLayoutProvider->addWidget(m_pProfileLabel, 1, 0, Qt::AlignRight);
-
-                    /* Prepare profile layout: */
-                    QHBoxLayout *pLayoutProfile = new QHBoxLayout;
-                    if (pLayoutProfile)
-                    {
-                        pLayoutProfile->setContentsMargins(0, 0, 0, 0);
-                        pLayoutProfile->setSpacing(1);
-
-                        /* Prepare profile combo-box: */
-                        m_pProfileComboBox = new QIComboBox(pWidgetLocation);
-                        if (m_pProfileComboBox)
-                        {
-                            m_pProfileLabel->setBuddy(m_pProfileComboBox);
-                            pLayoutProfile->addWidget(m_pProfileComboBox);
-                        }
-
-                        /* Prepare profile tool-button: */
-                        m_pProfileToolButton = new QIToolButton(pWidgetLocation);
-                        if (m_pProfileToolButton)
-                        {
-                            m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
-                                                                              ":/cloud_profile_manager_disabled_16px.png"));
-                            pLayoutProfile->addWidget(m_pProfileToolButton);
-                        }
-
-                        /* Add into layout: */
-                        m_pLayoutProvider->addLayout(pLayoutProfile, 1, 1);
-                    }
-
-                    /* Add into layout: */
-                    pLayoutLocation->addLayout(m_pLayoutProvider);
-                }
+            /* Prepare profile tool-button: */
+            m_pProfileToolButton = new QIToolButton(this);
+            if (m_pProfileToolButton)
+            {
+                m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                                                                  ":/cloud_profile_manager_disabled_16px.png"));
+                pLayoutProfile->addWidget(m_pProfileToolButton);
             }
 
             /* Add into layout: */
-            pLayoutMain->addWidget(pWidgetLocation);
+            pLayoutMain->addLayout(pLayoutProfile, 1, 1);
         }
+
+        /* Prepare source image label: */
+        m_pSourceImageLabel = new QLabel(this);
+        if (m_pSourceImageLabel)
+            pLayoutMain->addWidget(m_pSourceImageLabel, 2, 0, Qt::AlignRight);
 
         /* Prepare source widget: */
         QWidget *pWidgetSource = new QWidget(this);
@@ -165,6 +151,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
                 m_pSourceImageList = new QIListWidget(pWidgetSource);
                 if (m_pSourceImageList)
                 {
+                    m_pSourceImageLabel->setBuddy(m_pSourceImageList);
                     /* Make source image list fit 50 symbols
                      * horizontally and 8 lines vertically: */
                     const QFontMetrics fm(m_pSourceImageList->font());
@@ -184,37 +171,28 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
             }
 
             /* Add into layout: */
-            pLayoutMain->addWidget(pWidgetSource);
+            pLayoutMain->addWidget(pWidgetSource, 2, 1, 2, 1);
         }
 
-        /* Prepare settings widget: */
-        QWidget *pWidgetSettings = new QWidget(this);
-        if (pWidgetSettings)
+        /* Prepare label: */
+        m_pLabelOptions = new QLabel(this);
+        if (m_pLabelOptions)
+            pLayoutMain->addWidget(m_pLabelOptions, 4, 0);
+
+        /* Prepare form editor widget: */
+        m_pFormEditor = new UIFormEditorWidget(this);
+        if (m_pFormEditor)
         {
-            /* Prepare settings layout: */
-            QVBoxLayout *pLayoutSettings = new QVBoxLayout(pWidgetSettings);
-            if (pLayoutSettings)
-            {
-                pLayoutSettings->setContentsMargins(0, 0, 0, 0);
-
-                /* Prepare form editor widget: */
-                m_pFormEditor = new UIFormEditorWidget(pWidgetSettings);
-                if (m_pFormEditor)
-                {
-                    /* Make form-editor fit 6 sections in height by default: */
-                    const int iDefaultSectionHeight = m_pFormEditor->verticalHeader()
-                                                    ? m_pFormEditor->verticalHeader()->defaultSectionSize()
-                                                    : 0;
-                    if (iDefaultSectionHeight > 0)
-                        m_pFormEditor->setMinimumHeight(6 * iDefaultSectionHeight);
-
-                    /* Add into layout: */
-                    pLayoutSettings->addWidget(m_pFormEditor);
-                }
-            }
+            m_pLabelOptions->setBuddy(m_pSourceImageList);
+            /* Make form-editor fit 6 sections in height by default: */
+            const int iDefaultSectionHeight = m_pFormEditor->verticalHeader()
+                                            ? m_pFormEditor->verticalHeader()->defaultSectionSize()
+                                            : 0;
+            if (iDefaultSectionHeight > 0)
+                m_pFormEditor->setMinimumHeight(6 * iDefaultSectionHeight);
 
             /* Add into layout: */
-            pLayoutMain->addWidget(pWidgetSettings);
+            pLayoutMain->addWidget(m_pFormEditor, 4, 1, 2, 1);
         }
     }
 
@@ -266,6 +244,8 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
     }
 
     /* Translate source tab-bar: */
+    if (m_pSourceImageLabel)
+        m_pSourceImageLabel->setText(UIWizardNewCloudVM::tr("&Source:"));
     if (m_pSourceTabBar)
     {
         m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Images"));
@@ -277,6 +257,8 @@ void UIWizardNewCloudVMPageExpert::sltRetranslateUI()
         m_pSourceImageList->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the source images or boot volumes."));
 
     /* Translate cloud VM properties table: */
+    if (m_pLabelOptions)
+        m_pLabelOptions->setText(UIWizardNewCloudVM::tr("&Options:"));
     if (m_pFormEditor)
         m_pFormEditor->setWhatsThis(UIWizardNewCloudVM::tr("Lists all the cloud VM properties."));
 }
