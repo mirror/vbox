@@ -385,7 +385,7 @@ VBOX_DESKTOP_ICONS = \
 	$(addprefix $(PATH_ROOT)/src/VBox/Artwork/$(if $(VBOX_OSE),OSE,NonOSE)/, \
 		$(foreach s,16 20 32 40 48 64 128, \
 			virtualbox-$(s)px.png=>$(s)x$(s)/virtualbox.png) \
-		virtualbox.svg=>scalable/virtualbox.svg)
+		$(if-expr defined(VBOX_INCLUDE_SVG_ICON_PLEASE_REMOVE_WHEN_UPDATED),virtualbox.svg=>scalable/virtualbox.svg,))
 
 #
 # All the bin files that goes into the archives.
