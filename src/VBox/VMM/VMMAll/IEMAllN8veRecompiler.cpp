@@ -9104,9 +9104,15 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PVMCPU pVCpu, PCIEMTB pTb, PCDBGFINFOHLP
      * Print TB info.
      */
     pHlp->pfnPrintf(pHlp,
-                    "pTb=%p: GCPhysPc=%RGp cInstructions=%u LB %#x cRanges=%u\n"
+                    "pTb=%p: GCPhysPc=%RGp (%%%RGv) cInstructions=%u LB %#x cRanges=%u\n"
                     "pTb=%p: cUsed=%u msLastUsed=%u fFlags=%#010x %s\n",
-                    pTb, pTb->GCPhysPc, pTb->cInstructions, pTb->cbOpcodes, pTb->cRanges,
+                    pTb, pTb->GCPhysPc,
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+                    pTb->pDbgInfo ? pTb->pDbgInfo->FlatPc : RTGCPTR_MAX,
+#else
+                    pTb->FlatPc,
+#endif
+                    pTb->cInstructions, pTb->cbOpcodes, pTb->cRanges,
                     pTb, pTb->cUsed, pTb->msLastUsed, pTb->fFlags, iemTbFlagsToString(pTb->fFlags, szDisBuf, sizeof(szDisBuf)));
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
     if (pDbgInfo && pDbgInfo->cEntries > 1)
@@ -9119,6 +9125,7 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PVMCPU pVCpu, PCIEMTB pTb, PCDBGFINFOHLP
          * where labels are and such things.
          */
         uint32_t                idxThreadedCall  = 0;
+        uint32_t                idxGuestInstr    = 0;
         uint32_t                fExec            = pTb->fFlags & UINT32_C(0x00ffffff);
         uint8_t                 idxRange         = UINT8_MAX;
         uint8_t const           cRanges          = RT_MIN(pTb->cRanges, RT_ELEMENTS(pTb->aRanges));
@@ -9207,14 +9214,15 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PVMCPU pVCpu, PCIEMTB pTb, PCDBGFINFOHLP
                                 if (cch + sizeof(s_szMarker) <= sizeof(szDisBuf))
                                     memcpy(&szDisBuf[cch], s_szMarker, sizeof(s_szMarker));
 
-                                pHlp->pfnPrintf(pHlp, "  %%%%%RGp: %s\n", GCPhysPc, szDisBuf);
+                                pHlp->pfnPrintf(pHlp, "\n  %%%%%RGp: %s #%u\n", GCPhysPc, szDisBuf, idxGuestInstr);
                             }
                             else
                             {
-                                pHlp->pfnPrintf(pHlp, "  %%%%%RGp: %.*Rhxs - guest disassembly failure %Rrc\n",
+                                pHlp->pfnPrintf(pHlp, "\n  %%%%%RGp: %.*Rhxs - guest disassembly failure %Rrc\n",
                                                 GCPhysPc, cbInstrMax, &pTb->pabOpcodes[offOpcodes], rc);
                                 cbInstr = 1;
                             }
+                            idxGuestInstr++;
                             GCPhysPc   += cbInstr;
                             offOpcodes += cbInstr;
                             offRange   += cbInstr;
@@ -9488,13 +9496,13 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PVMCPU pVCpu, PCIEMTB pTb, PCDBGFINFOHLP
                                     DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(10) | DIS_FMT_FLAGS_BYTES_LEFT
                                     | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
-                    pHlp->pfnPrintf(pHlp, "    %RGp: %s\n", GCPhysPc, szDisBuf);
+                    pHlp->pfnPrintf(pHlp, "    %%%%%RGp: %s\n", GCPhysPc, szDisBuf);
                     GCPhysPc += cbInstr;
                     off      += cbInstr;
                 }
                 else
                 {
-                    pHlp->pfnPrintf(pHlp, "    %RGp: %.*Rhxs - disassembly failure %Rrc\n",
+                    pHlp->pfnPrintf(pHlp, "    %%%%%RGp: %.*Rhxs - disassembly failure %Rrc\n",
                                     GCPhysPc, cbOpcodes - off, &pTb->pabOpcodes[off], rc);
                     break;
                 }
@@ -10336,6 +10344,7 @@ l_profile_again:
     pTb->Native.cInstructions   = off;
     pTb->fFlags                 = (pTb->fFlags & ~IEMTB_F_TYPE_MASK) | IEMTB_F_TYPE_NATIVE;
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    pReNative->pDbgInfo->FlatPc = pTb->FlatPc;
     pTb->pDbgInfo               = (PIEMTBDBG)RTMemDup(pReNative->pDbgInfo, /* non-fatal, so not return check. */
                                                       RT_UOFFSETOF_DYN(IEMTBDBG, aEntries[pReNative->pDbgInfo->cEntries]));
 #endif

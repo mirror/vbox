@@ -1517,9 +1517,9 @@ DECLHIDDEN(void) iemThreadedDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NO
      * Print TB info.
      */
     pHlp->pfnPrintf(pHlp,
-                    "pTb=%p: GCPhysPc=%RGp cInstructions=%u LB %#x cRanges=%u cTbLookupEntries=%u\n"
+                    "pTb=%p: GCPhysPc=%RGp (%RGv) cInstructions=%u LB %#x cRanges=%u cTbLookupEntries=%u\n"
                     "pTb=%p: cUsed=%u msLastUsed=%u fFlags=%#010x %s\n",
-                    pTb, pTb->GCPhysPc, pTb->cInstructions, pTb->cbOpcodes, pTb->cRanges, pTb->cTbLookupEntries,
+                    pTb, pTb->GCPhysPc, pTb->FlatPc, pTb->cInstructions, pTb->cbOpcodes, pTb->cRanges, pTb->cTbLookupEntries,
                     pTb, pTb->cUsed, pTb->msLastUsed, pTb->fFlags, iemTbFlagsToString(pTb->fFlags, szDisBuf, sizeof(szDisBuf)));
 
     /*
@@ -2779,6 +2779,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
         AssertReturn(pTb, VERR_IEM_TB_ALLOC_FAILED);
         pVCpu->iem.s.pThrdCompileTbR3 = pTb;
     }
+    pTb->FlatPc = pVCpu->iem.s.uInstrBufPc | (GCPhysPc & GUEST_PAGE_OFFSET_MASK);
 
     /* Set the current TB so iemThreadedCompileLongJumped and the CIMPL
        functions may get at it. */

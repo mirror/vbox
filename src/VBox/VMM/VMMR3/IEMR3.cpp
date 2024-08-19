@@ -1777,6 +1777,22 @@ static DECLCALLBACK(void) iemR3InfoTlbTrace(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
 #if defined(VBOX_WITH_IEM_RECOMPILER) && !defined(VBOX_VMM_TARGET_ARMV8)
 
 /**
+ * Get get compile time flat PC for the TB.
+ */
+DECL_FORCE_INLINE(RTGCPTR) iemR3GetTbFlatPc(PCIEMTB pTb)
+{
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    if (pTb->fFlags & IEMTB_F_TYPE_NATIVE)
+    {
+        PCIEMTBDBG const pDbgInfo = pTb->pDbgInfo;
+        return pDbgInfo ? pDbgInfo->FlatPc : RTGCPTR_MAX;
+    }
+#endif
+    return pTb->FlatPc;
+}
+
+
+/**
  * @callback_method_impl{FNDBGFINFOARGVINT, tb}
  */
 static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs)
@@ -1796,6 +1812,8 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
         { "--phys-address",     'p', RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX },
         { "--physical-address", 'p', RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX },
         { "--flags",            'f', RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX },
+        { "--tb",               't', RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX },
+        { "--tb-id",            't', RTGETOPT_REQ_UINT32 },
     };
 
     RTGETOPTSTATE State;
@@ -1807,6 +1825,7 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
     RTGCPHYS        GCPhysPc    = NIL_RTGCPHYS;
     RTGCPHYS        GCVirt      = NIL_RTGCPTR;
     uint32_t        fFlags      = UINT32_MAX;
+    uint32_t        idTb        = UINT32_MAX;
 
     RTGETOPTUNION ValueUnion;
     while ((rc = RTGetOpt(&State, &ValueUnion)) != 0)
@@ -1823,16 +1842,44 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
             case 'a':
                 GCVirt   = ValueUnion.u64;
                 GCPhysPc = NIL_RTGCPHYS;
+                idTb     = UINT32_MAX;
                 break;
 
             case 'p':
                 GCVirt   = NIL_RTGCPHYS;
                 GCPhysPc = ValueUnion.u64;
+                idTb     = UINT32_MAX;
                 break;
 
             case 'f':
-                fFlags = ValueUnion.u32;
+                fFlags   = ValueUnion.u32;
                 break;
+
+            case 't':
+                GCVirt   = NIL_RTGCPHYS;
+                GCPhysPc = NIL_RTGCPHYS;
+                idTb     = ValueUnion.u32;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                if (   (ValueUnion.psz[0] == 'T' || ValueUnion.psz[0] == 't')
+                    && (ValueUnion.psz[1] == 'B' || ValueUnion.psz[1] == 'b')
+                    &&  ValueUnion.psz[2] == '#')
+                {
+                    rc = RTStrToUInt32Full(&ValueUnion.psz[3], 0, &idTb);
+                    if (RT_SUCCESS(rc))
+                    {
+                        GCVirt   = NIL_RTGCPHYS;
+                        GCPhysPc = NIL_RTGCPHYS;
+                        break;
+                    }
+                    pHlp->pfnPrintf(pHlp, "error: failed to convert '%s' to TD ID: %Rrc\n", ValueUnion.psz, rc);
+                }
+                else
+                    pHlp->pfnGetOptError(pHlp, rc, &ValueUnion, &State);
+                return;
+            }
 
             case 'h':
                 pHlp->pfnPrintf(pHlp,
@@ -1845,6 +1892,8 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
                                 "    Shows the TB for the specified guest virtual address.\n"
                                 "  -p<phys>, --phys=<phys>, --phys-addr=<phys>\n"
                                 "    Shows the TB for the specified guest physical address.\n"
+                                "  -t<id>, --tb=<id>, --tb-id=<id>, TD#<id>\n"
+                                "    Show the TB specified by the identifier/number (from tbtop).\n"
                                 "  -f<flags>,--flags=<flags>\n"
                                 "    The TB flags value (hex) to use when looking up the TB.\n"
                                 "\n"
@@ -1868,7 +1917,7 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
     /*
      * Defaults.
      */
-    if (GCPhysPc == NIL_RTGCPHYS)
+    if (GCPhysPc == NIL_RTGCPHYS && idTb == UINT32_MAX)
     {
         if (GCVirt == NIL_RTGCPTR)
             GCVirt = CPUMGetGuestFlatPC(pVCpu);
@@ -1879,7 +1928,7 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
             return;
         }
     }
-    if (fFlags == UINT32_MAX)
+    if (fFlags == UINT32_MAX && idTb == UINT32_MAX)
     {
         /* Note! This is duplicating code in IEMAllThrdRecompiler. */
         fFlags = iemCalcExecFlags(pVCpu);
@@ -1897,53 +1946,80 @@ static DECLCALLBACK(void) iemR3InfoTb(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, ch
         }
     }
 
-    /*
-     * Do the lookup...
-     *
-     * Note! This is also duplicating code in IEMAllThrdRecompiler.  We don't
-     *       have much choice since we don't want to increase use counters and
-     *       trigger native recompilation.
-     */
-    fFlags &= IEMTB_F_KEY_MASK;
-    IEMTBCACHE const * const pTbCache = pVCpu->iem.s.pTbCacheR3;
-    uint32_t const           idxHash  = IEMTBCACHE_HASH(pTbCache, fFlags, GCPhysPc);
-    PCIEMTB                  pTb      = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
-    while (pTb)
+    PCIEMTB pTb;
+    if (idTb == UINT32_MAX)
     {
-        if (pTb->GCPhysPc == GCPhysPc)
+        /*
+         * Do the lookup...
+         *
+         * Note! This is also duplicating code in IEMAllThrdRecompiler.  We don't
+         *       have much choice since we don't want to increase use counters and
+         *       trigger native recompilation.
+         */
+        fFlags &= IEMTB_F_KEY_MASK;
+        IEMTBCACHE const * const pTbCache = pVCpu->iem.s.pTbCacheR3;
+        uint32_t const           idxHash  = IEMTBCACHE_HASH(pTbCache, fFlags, GCPhysPc);
+        pTb = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
+        while (pTb)
         {
-            if ((pTb->fFlags & IEMTB_F_KEY_MASK) == fFlags)
+            if (pTb->GCPhysPc == GCPhysPc)
             {
-                /// @todo if (pTb->x86.fAttr == (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u)
-                break;
+                if ((pTb->fFlags & IEMTB_F_KEY_MASK) == fFlags)
+                {
+                    /// @todo if (pTb->x86.fAttr == (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u)
+                    break;
+                }
             }
+            pTb = pTb->pNext;
         }
-        pTb = pTb->pNext;
+        if (!pTb)
+            pHlp->pfnPrintf(pHlp, "PC=%RGp fFlags=%#x - no TB found on #%u\n", GCPhysPc, fFlags, pVCpu->idCpu);
     }
-    if (!pTb)
-        pHlp->pfnPrintf(pHlp, "PC=%RGp fFlags=%#x - no TB found on #%u\n", GCPhysPc, fFlags, pVCpu->idCpu);
     else
+    {
+        /*
+         * Use the TB ID for indexing.
+         */
+        pTb = NULL;
+        PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
+        if (pTbAllocator)
+        {
+            size_t const idxTbChunk   = idTb / pTbAllocator->cTbsPerChunk;
+            size_t const idxTbInChunk = idTb % pTbAllocator->cTbsPerChunk;
+            if (idxTbChunk < pTbAllocator->cAllocatedChunks)
+                pTb = &pTbAllocator->aChunks[idxTbChunk].paTbs[idxTbInChunk];
+            else
+                pHlp->pfnPrintf(pHlp, "Invalid TB ID: %u (%#x)\n", idTb, idTb);
+        }
+    }
+
+    if (pTb)
     {
         /*
          * Disassemble according to type.
          */
+        size_t const  idxTbChunk = pTb->idxAllocChunk;
+        size_t const  idxTbNo    = (pTb - &pVCpu->iem.s.pTbAllocatorR3->aChunks[idxTbChunk].paTbs[0])
+                                 + idxTbChunk * pVCpu->iem.s.pTbAllocatorR3->cTbsPerChunk;
         switch (pTb->fFlags & IEMTB_F_TYPE_MASK)
         {
 # ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
             case IEMTB_F_TYPE_NATIVE:
-                pHlp->pfnPrintf(pHlp, "PC=%RGp fFlags=%#x on #%u: %p - native\n", GCPhysPc, fFlags, pVCpu->idCpu, pTb);
+                pHlp->pfnPrintf(pHlp, "PC=%RGp (%%%RGv) fFlags=%#x on #%u: TB#%#zx/%p - native\n",
+                                GCPhysPc, iemR3GetTbFlatPc(pTb),  fFlags, pVCpu->idCpu, idxTbNo, pTb);
                 iemNativeDisassembleTb(pVCpu, pTb, pHlp);
                 break;
 # endif
 
             case IEMTB_F_TYPE_THREADED:
-                pHlp->pfnPrintf(pHlp, "PC=%RGp fFlags=%#x on #%u: %p - threaded\n", GCPhysPc, fFlags, pVCpu->idCpu, pTb);
+                pHlp->pfnPrintf(pHlp, "PC=%RGp (%%%RGv) fFlags=%#x on #%u: TB#%#zx/%p - threaded\n",
+                                GCPhysPc, pTb->FlatPc, fFlags, pVCpu->idCpu, idxTbNo, pTb);
                 iemThreadedDisassembleTb(pTb, pHlp);
                 break;
 
             default:
-                pHlp->pfnPrintf(pHlp, "PC=%RGp fFlags=%#x on #%u: %p - ??? %#x\n",
-                                GCPhysPc, fFlags, pVCpu->idCpu, pTb, pTb->fFlags);
+                pHlp->pfnPrintf(pHlp, "PC=%RGp (%%%RGv) fFlags=%#x on #%u: TB#%#zx/%p - ??? %#x\n",
+                                GCPhysPc, pTb->FlatPc, fFlags, pVCpu->idCpu, idxTbNo, pTb, pTb->fFlags);
                 break;
         }
     }
@@ -2199,28 +2275,32 @@ static DECLCALLBACK(void) iemR3InfoTbTop(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs,
         if (fDisassemble && idx)
             pHlp->pfnPrintf(pHlp, "\n------------------------------- %u -------------------------------\n", idx);
 
-        PCIEMTB pTb = aTop[idx].pTb;
+        PCIEMTB const pTb        = aTop[idx].pTb;
+        size_t const  idxTbChunk = pTb->idxAllocChunk;
+        Assert(idxTbChunk < pTbAllocator->cAllocatedChunks);
+        size_t const  idxTbNo    = (pTb - &pTbAllocator->aChunks[idxTbChunk].paTbs[0])
+                                 + idxTbChunk * pTbAllocator->cTbsPerChunk;
         switch (pTb->fFlags & IEMTB_F_TYPE_MASK)
         {
 # ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
             case IEMTB_F_TYPE_NATIVE:
-                pHlp->pfnPrintf(pHlp, "PC=%RGp cUsed=%u msLastUsed=%u fFlags=%#010x - native\n",
-                                pTb->GCPhysPc, pTb->cUsed, pTb->msLastUsed, pTb->fFlags);
+                pHlp->pfnPrintf(pHlp, "TB#%#zx: PC=%RGp (%%%RGv) cUsed=%u msLastUsed=%u fFlags=%#010x - native\n",
+                                idxTbNo, pTb->GCPhysPc, iemR3GetTbFlatPc(pTb), pTb->cUsed, pTb->msLastUsed, pTb->fFlags);
                 if (fDisassemble)
                     iemNativeDisassembleTb(pVCpu, pTb, pHlp);
                 break;
 # endif
 
             case IEMTB_F_TYPE_THREADED:
-                pHlp->pfnPrintf(pHlp, "PC=%RGp cUsed=%u msLastUsed=%u fFlags=%#010x - threaded\n",
-                                pTb->GCPhysPc, pTb->cUsed, pTb->msLastUsed, pTb->fFlags);
+                pHlp->pfnPrintf(pHlp, "TB#%#zx: PC=%RGp (%%%RGv) cUsed=%u msLastUsed=%u fFlags=%#010x - threaded\n",
+                                idxTbNo, pTb->GCPhysPc, pTb->FlatPc, pTb->cUsed, pTb->msLastUsed, pTb->fFlags);
                 if (fDisassemble)
                     iemThreadedDisassembleTb(pTb, pHlp);
                 break;
 
             default:
-                pHlp->pfnPrintf(pHlp, "PC=%RGp cUsed=%u msLastUsed=%u fFlags=%#010x - ???\n",
-                                pTb->GCPhysPc, pTb->cUsed, pTb->msLastUsed, pTb->fFlags);
+                pHlp->pfnPrintf(pHlp, "TB#%#zx:%zu: PC=%RGp (%%%RGv) cUsed=%u msLastUsed=%u fFlags=%#010x - ???\n",
+                                idxTbNo, pTb->GCPhysPc, pTb->FlatPc, pTb->cUsed, pTb->msLastUsed, pTb->fFlags);
                 break;
         }
     }
