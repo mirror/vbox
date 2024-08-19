@@ -8962,8 +8962,12 @@ static const char *iemNativeGetLabelName(IEMNATIVELABELTYPE enmLabel, bool fComm
 typedef struct IEMNATIVDISASMSYMCTX
 {
     PVMCPU                  pVCpu;
+    PCIEMTB                 pTb;
 # ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
     PCIEMNATIVEPERCHUNKCTX  pCtx;
+# endif
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    PCIEMTBDBG              pDbgInfo;
 # endif
 } IEMNATIVDISASMSYMCTX;
 typedef IEMNATIVDISASMSYMCTX *PIEMNATIVDISASMSYMCTX;
@@ -8972,15 +8976,95 @@ typedef IEMNATIVDISASMSYMCTX *PIEMNATIVDISASMSYMCTX;
 /**
  * Resolve address to symbol, if we can.
  */
-static const char *iemNativeDisasmGetSymbol(PIEMNATIVDISASMSYMCTX pSymCtx, uintptr_t uAddress)
+static const char *iemNativeDisasmGetSymbol(PIEMNATIVDISASMSYMCTX pSymCtx, uintptr_t uAddress, char *pszBuf, size_t cbBuf)
 {
-#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
-    PCIEMNATIVEPERCHUNKCTX pChunkCtx = pSymCtx->pCtx;
-    if (pChunkCtx)
-        for (uint32_t i = 1; i < RT_ELEMENTS(pChunkCtx->apExitLabels); i++)
-            if ((PIEMNATIVEINSTR)uAddress == pChunkCtx->apExitLabels[i])
-                return iemNativeGetLabelName((IEMNATIVELABELTYPE)i, true /*fCommonCode*/);
+#if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE)
+    PCIEMTB const   pTb       = pSymCtx->pTb;
+    uintptr_t const offNative = (uAddress - (uintptr_t)pTb->Native.paInstructions) / sizeof(IEMNATIVEINSTR);
+    if (offNative <= pTb->Native.cInstructions)
+    {
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        /*
+         * Scan debug info for a matching label.
+         * Since the debug info should be 100% linear, we can do a binary search here.
+         */
+        PCIEMTBDBG const pDbgInfo = pSymCtx->pDbgInfo;
+        if (pDbgInfo)
+        {
+            uint32_t const cEntries = pDbgInfo->cEntries;
+            uint32_t       idxEnd   = cEntries;
+            uint32_t       idxStart = 0;
+            for (;;)
+            {
+                /* Find a NativeOffset record close to the midpoint. */
+                uint32_t idx = idxStart + (idxEnd - idxStart) / 2;
+                while (idx > idxStart && pDbgInfo->aEntries[idx].Gen.uType != kIemTbDbgEntryType_NativeOffset)
+                    idx--;
+                if (pDbgInfo->aEntries[idx].Gen.uType != kIemTbDbgEntryType_NativeOffset)
+                {
+                    idx = idxStart + (idxEnd - idxStart) / 2 + 1;
+                    while (idx < idxEnd && pDbgInfo->aEntries[idx].Gen.uType != kIemTbDbgEntryType_NativeOffset)
+                        idx++;
+                    if (idx >= idxEnd)
+                        break;
+                }
+
+                /* Do the binary searching thing. */
+                if (offNative < pDbgInfo->aEntries[idx].NativeOffset.offNative)
+                {
+                    if (idx > idxStart)
+                        idxEnd = idx;
+                    else
+                        break;
+                }
+                else if (offNative > pDbgInfo->aEntries[idx].NativeOffset.offNative)
+                {
+                    idx += 1;
+                    if (idx < idxEnd)
+                        idxStart = idx;
+                    else
+                        break;
+                }
+                else
+                {
+                    /* Got a matching offset, scan forward till we hit a label, but
+                       stop when the native offset changes. */
+                    while (++idx < cEntries)
+                        switch (pDbgInfo->aEntries[idx].Gen.uType)
+                        {
+                            case kIemTbDbgEntryType_Label:
+                            {
+                                IEMNATIVELABELTYPE const enmLabel = (IEMNATIVELABELTYPE)pDbgInfo->aEntries[idx].Label.enmLabel;
+                                const char * const       pszName  = iemNativeGetLabelName(enmLabel);
+                                if (enmLabel < kIemNativeLabelType_FirstWithMultipleInstances)
+                                    return pszName;
+                                RTStrPrintf(pszBuf, cbBuf, "%s_%u", pszName, pDbgInfo->aEntries[idx].Label.uData);
+                                return pszBuf;
+                            }
+
+                            case kIemTbDbgEntryType_NativeOffset:
+                                if (pDbgInfo->aEntries[idx].NativeOffset.offNative != offNative)
+                                    return NULL;
+                                break;
+                        }
+                    break;
+                }
+            }
+        }
+# endif
+    }
+# ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+    else
+    {
+        PCIEMNATIVEPERCHUNKCTX const pChunkCtx = pSymCtx->pCtx;
+        if (pChunkCtx)
+            for (uint32_t i = 1; i < RT_ELEMENTS(pChunkCtx->apExitLabels); i++)
+                if ((PIEMNATIVEINSTR)uAddress == pChunkCtx->apExitLabels[i])
+                    return iemNativeGetLabelName((IEMNATIVELABELTYPE)i, true /*fCommonCode*/);
+    }
+# endif
 #endif
+    RT_NOREF(pSymCtx, uAddress, pszBuf, cbBuf);
     return NULL;
 }
 
@@ -8990,13 +9074,15 @@ static const char *iemNativeDisasmGetSymbol(PIEMNATIVDISASMSYMCTX pSymCtx, uintp
  * @callback_method_impl{FNDISGETSYMBOL}
  */
 static DECLCALLBACK(int) iemNativeDisasmGetSymbolCb(PCDISSTATE pDis, uint32_t u32Sel, RTUINTPTR uAddress,
-                                                   char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser)
+                                                    char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser)
 {
-    const char * const pszSym = iemNativeDisasmGetSymbol((PIEMNATIVDISASMSYMCTX)pvUser, uAddress);
+    const char * const pszSym = iemNativeDisasmGetSymbol((PIEMNATIVDISASMSYMCTX)pvUser, uAddress, pszBuf, cchBuf);
     if (pszSym)
     {
         *poff = 0;
-        return RTStrCopy(pszBuf, cchBuf, pszSym);
+        if (pszSym != pszBuf)
+            return RTStrCopy(pszBuf, cchBuf, pszSym);
+        return VINF_SUCCESS;
     }
     RT_NOREF(pDis, u32Sel);
     return VERR_SYMBOL_NOT_FOUND;
@@ -9042,11 +9128,11 @@ iemNativeDisasmAnnotateCapstone(PIEMNATIVDISASMSYMCTX pSymCtx, cs_insn const *pI
         {
             uint64_t uAddr = RTStrToUInt64(pszAddr + 1);
             if (uAddr != 0)
-                return iemNativeDisasmGetSymbol(pSymCtx, uAddr);
+                return iemNativeDisasmGetSymbol(pSymCtx, uAddr, pszBuf, cchBuf);
         }
     }
 # endif
-    RT_NOREF(pszBuf, cchBuf);
+    RT_NOREF(pSymCtx, pInstr, pszBuf, cchBuf);
     return NULL;
 }
 #endif /* VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER */
@@ -9075,9 +9161,15 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PVMCPU pVCpu, PCIEMTB pTb, PCDBGFINFOHLP
                                           : (pTb->fFlags & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT ? DISCPUMODE_32BIT
                                           :                                                            DISCPUMODE_64BIT;
 #ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
-    IEMNATIVDISASMSYMCTX    SymCtx        = { pVCpu, iemExecMemGetTbChunkCtx(pVCpu, pTb) };
+# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    IEMNATIVDISASMSYMCTX    SymCtx        = { pVCpu, pTb, iemExecMemGetTbChunkCtx(pVCpu, pTb), pDbgInfo };
+# else
+    IEMNATIVDISASMSYMCTX    SymCtx        = { pVCpu, pTb, iemExecMemGetTbChunkCtx(pVCpu, pTb) };
+# endif
+#elif defined(IEMNATIVE_WITH_TB_DEBUG_INFO)
+    IEMNATIVDISASMSYMCTX    SymCtx        = { pVCpu, pTb, pDbgInfo };
 #else
-    IEMNATIVDISASMSYMCTX    SymCtx        = { pVCpu };
+    IEMNATIVDISASMSYMCTX    SymCtx        = { pVCpu, pTb };
 #endif
 #if   defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER)
     DISCPUMODE const        enmHstCpuMode = DISCPUMODE_64BIT;
@@ -9380,10 +9472,10 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PVMCPU pVCpu, PCIEMTB pTb, PCDBGFINFOHLP
                         pszAnnotation = iemNativeDbgVCpuOffsetToName(pMemOp->fUse & DISUSE_DISPLACEMENT32
                                                                      ? pMemOp->x86.uDisp.u32 : pMemOp->x86.uDisp.u8);
 
-#elif defined(RT_ARCH_ARM64)
+#  elif defined(RT_ARCH_ARM64)
                     DISFormatArmV8Ex(&Dis, szDisBuf, sizeof(szDisBuf),
                                      DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
-                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+                                     iemNativeDisasmGetSymbolCb, &SymCtx);
 #  else
 #   error "Port me"
 #  endif
