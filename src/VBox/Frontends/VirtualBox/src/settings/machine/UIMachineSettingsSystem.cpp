@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2008-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -621,6 +621,13 @@ void UIMachineSettingsSystem::sltRetranslateUI()
     updateMinimumLayoutHint();
 }
 
+void UIMachineSettingsSystem::sltHandleFirmwareTypeChanged()
+{
+    /// @todo move all the System page editors to new encapsulated UISystemSettingsEditor class,
+    ///       cause we are hiding logic in separate editors, not pages, this is the 1st bit of logic.
+    m_pEditorBootOrder->setEnabled(!m_pEditorMotherboardFeatures->isEnabledEfi());
+}
+
 void UIMachineSettingsSystem::handleFilterChange()
 {
     /* Update some stuff: */
@@ -656,6 +663,7 @@ void UIMachineSettingsSystem::polishPage()
         m_pEditorTpm->setEnabled(isMachineOffline());
     m_pEditorPointingHID->setEnabled(isMachineOffline());
     m_pEditorMotherboardFeatures->setEnabled(isMachineOffline());
+    sltHandleFirmwareTypeChanged();
 
     /* Polish 'Processor' availability: */
     m_pEditorVCPU->setEnabled(isMachineOffline() && systemData.m_fSupportedHwVirtEx);
@@ -889,6 +897,8 @@ void UIMachineSettingsSystem::prepareConnections()
             this, &UIMachineSettingsSystem::revalidate);
     connect(m_pEditorMotherboardFeatures, &UIMotherboardFeaturesEditor::sigChangedIoApic,
             this, &UIMachineSettingsSystem::revalidate);
+    connect(m_pEditorMotherboardFeatures, &UIMotherboardFeaturesEditor::sigChangedEfi,
+            this, &UIMachineSettingsSystem::sltHandleFirmwareTypeChanged);
 
     /* Configure 'Processor' connections: */
     connect(m_pEditorVCPU, &UIVirtualCPUEditor::sigValueChanged,
