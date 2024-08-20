@@ -39,10 +39,10 @@ VBOX_VERSION_BUILD  = 0
 # For the convention, see checks near the end of Config.kmk.
 VBOX_BUILD_PUBLISHER =
 # Just the BETA[n],ALPHA[n],RC[n] indicators. Set to empty string for release.
-VBOX_VERSION_PRERELEASE = BETA1
+VBOX_VERSION_PRERELEASE = BETA2
 # Force a release-type build with exactly matching Additions etc, even if
 # our numbering does not say this is a release build, by setting this non-empty.
-VBOX_RELEASE_EXACT_MATCH =
+VBOX_RELEASE_EXACT_MATCH = 1
 
 # Fallback revision when there is no other source. See Config.kmk.
 VBOX_SVN_REV_VERSION_FALLBACK := $(patsubst %:,,  $Rev$  )
