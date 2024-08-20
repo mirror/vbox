@@ -541,9 +541,9 @@ void UIBootOrderEditor::sltRetranslateUI()
     if (m_pLabel)
         m_pLabel->setText(tr("&Boot Order:"));
     if (m_pTable)
-        m_pTable->setWhatsThis(tr("Defines the boot device order. Use the "
-                                  "checkboxes on the left to enable or disable individual boot devices. "
-                                  "Move items up and down to change the device order."));
+        m_pTable->setToolTip(tr("Defines the boot device order. Use the checkboxes on the left to enable or disable "
+                                "individual boot devices. Move items up and down to change the device order. "
+                                "Note: only supported for BIOS firmware type, i.e. when below EFI option is off."));
     if (m_pMoveUp)
         m_pMoveUp->setToolTip(tr("Moves selected boot item up."));
     if (m_pMoveDown)
