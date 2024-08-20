@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -36,11 +36,11 @@
 
 /* Forward declarations: */
 class QCheckBox;
+class QComboBox;
 class QGridLayout;
 class QLabel;
 class QListWidget;
 class QStackedWidget;
-class QIComboBox;
 class QIToolButton;
 class UIApplianceImportEditorWidget;
 class UIEmptyFilePathSelector;
@@ -122,7 +122,7 @@ private:
     /** Holds the source type label instance. */
     QLabel      *m_pSourceLabel;
     /** Holds the source type combo-box instance. */
-    QIComboBox  *m_pSourceComboBox;
+    QComboBox   *m_pSourceComboBox;
 
     /** Holds the settings widget 1 instance. */
     QStackedWidget *m_pSettingsWidget1;
@@ -139,7 +139,7 @@ private:
     /** Holds the profile label instance. */
     QLabel       *m_pProfileLabel;
     /** Holds the profile combo-box instance. */
-    QIComboBox   *m_pProfileComboBox;
+    QComboBox    *m_pProfileComboBox;
     /** Holds the profile management tool-button instance. */
     QIToolButton *m_pProfileToolButton;
     /** Holds the profile instance label instance. */
@@ -159,7 +159,7 @@ private:
     /** Holds the MAC address label instance. */
     QLabel                        *m_pLabelMACImportPolicy;
     /** Holds the MAC address combo instance. */
-    QIComboBox                    *m_pComboMACImportPolicy;
+    QComboBox                     *m_pComboMACImportPolicy;
     /** Holds the additional options label instance. */
     QLabel                        *m_pLabelAdditionalOptions;
     /** Holds the 'import HDs as VDI' checkbox instance. */

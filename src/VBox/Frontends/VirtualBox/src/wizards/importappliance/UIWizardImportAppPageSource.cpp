@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
@@ -33,7 +34,6 @@
 #include <QStackedWidget>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
@@ -61,7 +61,7 @@ using namespace UIWizardImportAppSource;
 *   Class UIWizardImportAppSource implementation.                                                                                *
 *********************************************************************************************************************************/
 
-void UIWizardImportAppSource::populateSources(QIComboBox *pCombo,
+void UIWizardImportAppSource::populateSources(QComboBox *pCombo,
                                               UINotificationCenter *pCenter,
                                               bool fImportFromOCIByDefault,
                                               const QString &strSource)
@@ -136,7 +136,7 @@ void UIWizardImportAppSource::populateSources(QIComboBox *pCombo,
     pCombo->blockSignals(false);
 }
 
-QString UIWizardImportAppSource::source(QIComboBox *pCombo)
+QString UIWizardImportAppSource::source(QComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, QString());
@@ -145,7 +145,7 @@ QString UIWizardImportAppSource::source(QIComboBox *pCombo)
     return pCombo->currentData(SourceData_ShortName).toString();
 }
 
-bool UIWizardImportAppSource::isSourceCloudOne(QIComboBox *pCombo, int iIndex /* = -1 */)
+bool UIWizardImportAppSource::isSourceCloudOne(QComboBox *pCombo, int iIndex /* = -1 */)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, false);
@@ -168,7 +168,7 @@ void UIWizardImportAppSource::refreshStackedWidget(QStackedWidget *pStackedWidge
     pStackedWidget->setCurrentIndex((int)fIsSourceCloudOne);
 }
 
-void UIWizardImportAppSource::refreshProfileCombo(QIComboBox *pCombo,
+void UIWizardImportAppSource::refreshProfileCombo(QComboBox *pCombo,
                                                   UINotificationCenter *pCenter,
                                                   const QString &strSource,
                                                   const QString &strProfileName,
@@ -403,7 +403,7 @@ QString UIWizardImportAppSource::path(UIEmptyFilePathSelector *pFileSelector)
     return pFileSelector->path();
 }
 
-QString UIWizardImportAppSource::profileName(QIComboBox *pCombo)
+QString UIWizardImportAppSource::profileName(QComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, QString());
@@ -422,7 +422,7 @@ QString UIWizardImportAppSource::machineId(QListWidget *pListWidget)
     return pItem ? pItem->data(Qt::UserRole).toString() : QString();
 }
 
-void UIWizardImportAppSource::updateSourceComboToolTip(QIComboBox *pCombo)
+void UIWizardImportAppSource::updateSourceComboToolTip(QComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -478,7 +478,7 @@ UIWizardImportAppPageSource::UIWizardImportAppPageSource(bool fImportFromOCIByDe
             if (m_pSourceLabel)
                 m_pSourceLayout->addWidget(m_pSourceLabel, 0, 0, Qt::AlignRight);
             /* Prepare source selector: */
-            m_pSourceComboBox = new QIComboBox(this);
+            m_pSourceComboBox = new QComboBox(this);
             if (m_pSourceComboBox)
             {
                 m_pSourceLabel->setBuddy(m_pSourceComboBox);
@@ -558,7 +558,7 @@ UIWizardImportAppPageSource::UIWizardImportAppPageSource(bool fImportFromOCIByDe
                         pSubLayout->setSpacing(1);
 
                         /* Prepare profile combo-box: */
-                        m_pProfileComboBox = new QIComboBox(pContainerCloud);
+                        m_pProfileComboBox = new QComboBox(pContainerCloud);
                         if (m_pProfileComboBox)
                         {
                             m_pProfileLabel->setBuddy(m_pProfileComboBox);
@@ -612,11 +612,11 @@ UIWizardImportAppPageSource::UIWizardImportAppPageSource(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageSource::sltHandleSourceComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
             this, &UIWizardImportAppPageSource::sltHandleSourceComboChange);
-    connect(m_pSourceComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pSourceComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardImportAppPageSource::sltHandleSourceComboChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardImportAppPageSource::completeChanged);
-    connect(m_pProfileComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pProfileComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardImportAppPageSource::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardImportAppPageSource::sltHandleProfileButtonClick);

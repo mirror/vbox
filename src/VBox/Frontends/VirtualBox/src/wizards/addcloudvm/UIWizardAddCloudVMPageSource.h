@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -38,9 +38,9 @@
 #include "CCloudClient.h"
 
 /* Forward declarations: */
+class QComboBox;
 class QGridLayout;
 class QLabel;
-class QIComboBox;
 class QIListWidget;
 class QIRichTextLabel;
 class QIToolButton;
@@ -64,11 +64,14 @@ enum
 namespace UIWizardAddCloudVMSource
 {
     /** Populates @a pCombo with known providers. */
-    void populateProviders(QIComboBox *pCombo, UINotificationCenter *pCenter);
+    void populateProviders(QComboBox *pCombo, UINotificationCenter *pCenter);
     /** Populates @a pCombo with known profiles.
       * @param  strProviderShortName  Brings the short name of provider profiles related to.
       * @param  strProfileName        Brings the name of profile to be chosen by default. */
-    void populateProfiles(QIComboBox *pCombo, UINotificationCenter *pCenter, const QString &strProviderShortName, const QString &strProfileName);
+    void populateProfiles(QComboBox *pCombo,
+                          UINotificationCenter *pCenter,
+                          const QString &strProviderShortName,
+                          const QString &strProfileName);
     /** Populates @a pList with profile instances available in @a comClient. */
     void populateProfileInstances(QIListWidget *pList, UINotificationCenter *pCenter, const CCloudClient &comClient);
 
@@ -127,7 +130,7 @@ private:
     /** Holds the provider type label instance. */
     QLabel      *m_pProviderLabel;
     /** Holds the provider type combo-box instance. */
-    QIComboBox  *m_pProviderComboBox;
+    QComboBox   *m_pProviderComboBox;
 
     /** Holds the description label instance. */
     QIRichTextLabel *m_pLabelDescription;
@@ -137,7 +140,7 @@ private:
     /** Holds the profile label instance. */
     QLabel       *m_pProfileLabel;
     /** Holds the profile combo-box instance. */
-    QIComboBox   *m_pProfileComboBox;
+    QComboBox    *m_pProfileComboBox;
     /** Holds the profile management tool-button instance. */
     QIToolButton *m_pProfileToolButton;
     /** Holds the source instance label instance. */

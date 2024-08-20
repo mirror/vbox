@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -46,12 +46,12 @@
 class QAbstractButton;
 class QButtonGroup;
 class QCheckBox;
+class QComboBox;
 class QGridLayout;
 class QGroupBox;
 class QLabel;
 class QIListWidget;
 class QStackedWidget;
-class QIComboBox;
 class QIToolButton;
 class UIApplianceExportEditorWidget;
 class UIEmptyFilePathSelector;
@@ -153,7 +153,7 @@ private:
     /** Holds the format combo-box label instance. */
     QLabel      *m_pFormatComboBoxLabel;
     /** Holds the format combo-box instance. */
-    QIComboBox  *m_pFormatComboBox;
+    QComboBox   *m_pFormatComboBox;
 
     /** Holds the settings widget 1 instance. */
     QStackedWidget *m_pSettingsWidget1;
@@ -167,7 +167,7 @@ private:
     /** Holds the MAC address policy combo-box label instance. */
     QLabel                  *m_pMACComboBoxLabel;
     /** Holds the MAC address policy check-box instance. */
-    QIComboBox              *m_pMACComboBox;
+    QComboBox               *m_pMACComboBox;
     /** Holds the additional label instance. */
     QLabel                  *m_pAdditionalLabel;
     /** Holds the manifest check-box instance. */
@@ -180,7 +180,7 @@ private:
     /** Holds the profile label instance. */
     QLabel        *m_pProfileLabel;
     /** Holds the profile combo-box instance. */
-    QIComboBox    *m_pProfileComboBox;
+    QComboBox     *m_pProfileComboBox;
     /** Holds the profile management tool-button instance. */
     QIToolButton  *m_pProfileToolButton;
 

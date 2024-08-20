@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -46,10 +46,10 @@
 class QAbstractButton;
 class QButtonGroup;
 class QCheckBox;
+class QComboBox;
 class QGridLayout;
 class QLabel;
 class QStackedWidget;
-class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
 class UIEmptyFilePathSelector;
@@ -73,14 +73,14 @@ enum
 namespace UIWizardExportAppFormat
 {
     /** Populates formats. */
-    void populateFormats(QIComboBox *pCombo, UINotificationCenter *pCenter, bool fExportToOCIByDefault);
+    void populateFormats(QComboBox *pCombo, UINotificationCenter *pCenter, bool fExportToOCIByDefault);
     /** Populates MAC address policies. */
-    void populateMACAddressPolicies(QIComboBox *pCombo);
+    void populateMACAddressPolicies(QComboBox *pCombo);
 
     /** Returns current format of @a pCombo specified. */
-    QString format(QIComboBox *pCombo);
+    QString format(QComboBox *pCombo);
     /** Returns whether format under certain @a iIndex is cloud one. */
-    bool isFormatCloudOne(QIComboBox *pCombo, int iIndex = -1);
+    bool isFormatCloudOne(QComboBox *pCombo, int iIndex = -1);
 
     /** Refresh stacked widget. */
     void refreshStackedWidget(QStackedWidget *pStackedWidget,
@@ -113,7 +113,7 @@ namespace UIWizardExportAppFormat
                            const QString &strUri);
 
     /** Refresh profile combo. */
-    void refreshProfileCombo(QIComboBox *pCombo,
+    void refreshProfileCombo(QComboBox *pCombo,
                              UINotificationCenter *pCenter,
                              const QString &strFormat,
                              bool fIsFormatCloudOne);
@@ -138,14 +138,14 @@ namespace UIWizardExportAppFormat
                            const CloudExportMode enmCloudExportMode);
 
     /** Returns current profile name of @a pCombo specified. */
-    QString profileName(QIComboBox *pCombo);
+    QString profileName(QComboBox *pCombo);
     /** Returns current cloud export mode chosen in @a radioButtons specified. */
     CloudExportMode cloudExportMode(const QMap<CloudExportMode, QAbstractButton*> &radioButtons);
 
     /** Updates format combo tool-tips. */
-    void updateFormatComboToolTip(QIComboBox *pCombo);
+    void updateFormatComboToolTip(QComboBox *pCombo);
     /** Updates MAC address export policy combo tool-tips. */
-    void updateMACAddressExportPolicyComboToolTip(QIComboBox *pCombo);
+    void updateMACAddressExportPolicyComboToolTip(QComboBox *pCombo);
 }
 
 /** UINativeWizardPage extension for Format page of the Export Appliance wizard,
@@ -233,7 +233,7 @@ private:
     /** Holds the format combo-box label instance. */
     QLabel      *m_pFormatComboBoxLabel;
     /** Holds the format combo-box instance. */
-    QIComboBox  *m_pFormatComboBox;
+    QComboBox   *m_pFormatComboBox;
 
     /** Holds the settings widget 1 instance. */
     QStackedWidget *m_pSettingsWidget1;
@@ -247,7 +247,7 @@ private:
     /** Holds the MAC address policy combo-box label instance. */
     QLabel                  *m_pMACComboBoxLabel;
     /** Holds the MAC address policy check-box instance. */
-    QIComboBox              *m_pMACComboBox;
+    QComboBox               *m_pMACComboBox;
     /** Holds the additional label instance. */
     QLabel                  *m_pAdditionalLabel;
     /** Holds the manifest check-box instance. */
@@ -260,7 +260,7 @@ private:
     /** Holds the profile label instance. */
     QLabel        *m_pProfileLabel;
     /** Holds the profile combo-box instance. */
-    QIComboBox    *m_pProfileComboBox;
+    QComboBox     *m_pProfileComboBox;
     /** Holds the profile management tool-button instance. */
     QIToolButton  *m_pProfileToolButton;
 

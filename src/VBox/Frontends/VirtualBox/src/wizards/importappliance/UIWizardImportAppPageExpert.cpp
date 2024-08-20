@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QCheckBox>
+#include <QComboBox>
 #include <QFileInfo>
 #include <QGroupBox>
 #include <QHeaderView>
@@ -38,7 +39,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "QIToolButton.h"
 #include "UIApplianceImportEditorWidget.h"
 #include "UICommon.h"
@@ -122,7 +122,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                         if (m_pSourceLabel)
                             m_pSourceLayout->addWidget(m_pSourceLabel, 0, 0, Qt::AlignRight);
                         /* Prepare source combo: */
-                        m_pSourceComboBox = new QIComboBox(pWidgetSourceWrapper);
+                        m_pSourceComboBox = new QComboBox(pWidgetSourceWrapper);
                         if (m_pSourceComboBox)
                         {
                             m_pSourceLabel->setBuddy(m_pSourceComboBox);
@@ -197,7 +197,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                                     pLayoutProfile->setSpacing(1);
 
                                     /* Prepare profile combo-box: */
-                                    m_pProfileComboBox = new QIComboBox(pContainerCloud);
+                                    m_pProfileComboBox = new QComboBox(pContainerCloud);
                                     if (m_pProfileComboBox)
                                     {
                                         m_pProfileLabel->setBuddy(m_pProfileComboBox);
@@ -298,7 +298,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                             pLayoutAppliance->addWidget(m_pLabelMACImportPolicy, 2, 0);
                         }
                         /* Prepare MAC address policy combo: */
-                        m_pComboMACImportPolicy = new QIComboBox(pContainerAppliance);
+                        m_pComboMACImportPolicy = new QComboBox(pContainerAppliance);
                         if (m_pComboMACImportPolicy)
                         {
                             m_pComboMACImportPolicy->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -362,11 +362,11 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageExpert::sltHandleSourceComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
             this, &UIWizardImportAppPageExpert::sltHandleSourceComboChange);
-    connect(m_pSourceComboBox, &QIComboBox::activated,
+    connect(m_pSourceComboBox, &QComboBox::activated,
             this, &UIWizardImportAppPageExpert::sltHandleSourceComboChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardImportAppPageExpert::sltHandleImportedFileSelectorChange);
-    connect(m_pProfileComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pProfileComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardImportAppPageExpert::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardImportAppPageExpert::sltHandleProfileButtonClick);
@@ -374,7 +374,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageExpert::sltHandleInstanceListChange);
     connect(m_pEditorImportFilePath, &UIFilePathSelector::pathChanged,
             this, &UIWizardImportAppPageExpert::sltHandleImportPathEditorChange);
-    connect(m_pComboMACImportPolicy, &QIComboBox::currentIndexChanged,
+    connect(m_pComboMACImportPolicy, &QComboBox::currentIndexChanged,
             this, &UIWizardImportAppPageExpert::sltHandleMACImportPolicyComboChange);
     connect(m_pCheckboxImportHDsAsVDI, &QCheckBox::stateChanged,
             this, &UIWizardImportAppPageExpert::sltHandleImportHDsAsVDICheckBoxChange);

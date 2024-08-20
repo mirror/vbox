@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -27,12 +27,12 @@
 
 /* Qt includes: */
 #include <QCheckBox>
+#include <QComboBox>
 #include <QLabel>
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "UIApplianceImportEditorWidget.h"
 #include "UIApplianceUnverifiedCertificateViewer.h"
@@ -89,7 +89,7 @@ void UIWizardImportAppSettings::refreshApplianceWidget(UIApplianceImportEditorWi
     }
 }
 
-void UIWizardImportAppSettings::refreshMACAddressImportPolicies(QIComboBox *pCombo,
+void UIWizardImportAppSettings::refreshMACAddressImportPolicies(QComboBox *pCombo,
                                                                 bool fIsSourceCloudOne)
 {
     /* Sanity check: */
@@ -192,7 +192,7 @@ void UIWizardImportAppSettings::refreshFormPropertiesTable(UIFormEditorWidget *p
     }
 }
 
-MACAddressImportPolicy UIWizardImportAppSettings::macAddressImportPolicy(QIComboBox *pCombo)
+MACAddressImportPolicy UIWizardImportAppSettings::macAddressImportPolicy(QComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, MACAddressImportPolicy_MAX);
@@ -210,7 +210,7 @@ bool UIWizardImportAppSettings::isImportHDsAsVDI(QCheckBox *pCheckBox)
     return pCheckBox->isChecked();
 }
 
-void UIWizardImportAppSettings::retranslateMACImportPolicyCombo(QIComboBox *pCombo)
+void UIWizardImportAppSettings::retranslateMACImportPolicyCombo(QComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -286,7 +286,7 @@ void UIWizardImportAppSettings::retranslateCertificateLabel(QLabel *pLabel, cons
     }
 }
 
-void UIWizardImportAppSettings::updateMACImportPolicyComboToolTip(QIComboBox *pCombo)
+void UIWizardImportAppSettings::updateMACImportPolicyComboToolTip(QComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -375,7 +375,7 @@ UIWizardImportAppPageSettings::UIWizardImportAppPageSettings(const QString &strF
                         pLayoutAppliance->addWidget(m_pLabelMACImportPolicy, 2, 0);
                     }
                     /* Prepare MAC address policy combo: */
-                    m_pComboMACImportPolicy = new QIComboBox(pContainerAppliance);
+                    m_pComboMACImportPolicy = new QComboBox(pContainerAppliance);
                     if (m_pComboMACImportPolicy)
                     {
                         m_pComboMACImportPolicy->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -435,7 +435,7 @@ UIWizardImportAppPageSettings::UIWizardImportAppPageSettings(const QString &strF
     /* Setup connections: */
     connect(m_pEditorImportFilePath, &UIFilePathSelector::pathChanged,
             this, &UIWizardImportAppPageSettings::sltHandleImportPathEditorChange);
-    connect(m_pComboMACImportPolicy, &QIComboBox::currentIndexChanged,
+    connect(m_pComboMACImportPolicy, &QComboBox::currentIndexChanged,
             this, &UIWizardImportAppPageSettings::sltHandleMACImportPolicyComboChange);
     connect(m_pCheckboxImportHDsAsVDI, &QCheckBox::stateChanged,
             this, &UIWizardImportAppPageSettings::sltHandleImportHDsAsVDICheckBoxChange);

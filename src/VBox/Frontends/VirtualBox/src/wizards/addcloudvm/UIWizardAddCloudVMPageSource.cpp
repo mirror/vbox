@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QLabel>
@@ -33,7 +34,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "QIListWidget.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
@@ -56,7 +56,7 @@ using namespace UIWizardAddCloudVMSource;
 *   Namespace UIWizardAddCloudVMSource implementation.                                                                           *
 *********************************************************************************************************************************/
 
-void UIWizardAddCloudVMSource::populateProviders(QIComboBox *pCombo, UINotificationCenter *pCenter)
+void UIWizardAddCloudVMSource::populateProviders(QComboBox *pCombo, UINotificationCenter *pCenter)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -111,7 +111,7 @@ void UIWizardAddCloudVMSource::populateProviders(QIComboBox *pCombo, UINotificat
     pCombo->blockSignals(false);
 }
 
-void UIWizardAddCloudVMSource::populateProfiles(QIComboBox *pCombo,
+void UIWizardAddCloudVMSource::populateProfiles(QComboBox *pCombo,
                                                 UINotificationCenter *pCenter,
                                                 const QString &strProviderShortName,
                                                 const QString &strProfileName)
@@ -285,7 +285,7 @@ UIWizardAddCloudVMPageSource::UIWizardAddCloudVMPageSource()
                 m_pProviderLayout->addWidget(m_pProviderLabel, 0, 0, Qt::AlignRight);
 
             /* Prepare provider combo-box: */
-            m_pProviderComboBox = new QIComboBox(this);
+            m_pProviderComboBox = new QComboBox(this);
             if (m_pProviderComboBox)
             {
                 m_pProviderLabel->setBuddy(m_pProviderComboBox);
@@ -324,7 +324,7 @@ UIWizardAddCloudVMPageSource::UIWizardAddCloudVMPageSource()
                 pProfileLayout->setSpacing(1);
 
                 /* Prepare profile combo-box: */
-                m_pProfileComboBox = new QIComboBox(this);
+                m_pProfileComboBox = new QComboBox(this);
                 if (m_pProfileComboBox)
                 {
                     m_pProfileLabel->setBuddy(m_pProfileComboBox);
@@ -381,9 +381,9 @@ UIWizardAddCloudVMPageSource::UIWizardAddCloudVMPageSource()
             this, &UIWizardAddCloudVMPageSource::sltHandleProviderComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
             this, &UIWizardAddCloudVMPageSource::sltHandleProviderComboChange);
-    connect(m_pProviderComboBox, &QIComboBox::activated,
+    connect(m_pProviderComboBox, &QComboBox::activated,
             this, &UIWizardAddCloudVMPageSource::sltHandleProviderComboChange);
-    connect(m_pProfileComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pProfileComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardAddCloudVMPageSource::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardAddCloudVMPageSource::sltHandleProfileButtonClick);

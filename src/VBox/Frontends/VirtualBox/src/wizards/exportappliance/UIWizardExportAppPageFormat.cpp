@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -29,6 +29,7 @@
 #include <QApplication>
 #include <QButtonGroup>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDir>
 #include <QGridLayout>
 #include <QLabel>
@@ -38,7 +39,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
@@ -65,7 +65,7 @@ using namespace UIWizardExportAppFormat;
 *   Class UIWizardExportAppFormat implementation.                                                                                *
 *********************************************************************************************************************************/
 
-void UIWizardExportAppFormat::populateFormats(QIComboBox *pCombo, UINotificationCenter *pCenter, bool fExportToOCIByDefault)
+void UIWizardExportAppFormat::populateFormats(QComboBox *pCombo, UINotificationCenter *pCenter, bool fExportToOCIByDefault)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -139,7 +139,7 @@ void UIWizardExportAppFormat::populateFormats(QIComboBox *pCombo, UINotification
     pCombo->blockSignals(false);
 }
 
-void UIWizardExportAppFormat::populateMACAddressPolicies(QIComboBox *pCombo)
+void UIWizardExportAppFormat::populateMACAddressPolicies(QComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -199,7 +199,7 @@ void UIWizardExportAppFormat::populateMACAddressPolicies(QIComboBox *pCombo)
     pCombo->blockSignals(false);
 }
 
-QString UIWizardExportAppFormat::format(QIComboBox *pCombo)
+QString UIWizardExportAppFormat::format(QComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, QString());
@@ -208,7 +208,7 @@ QString UIWizardExportAppFormat::format(QIComboBox *pCombo)
     return pCombo->currentData(FormatData_ShortName).toString();
 }
 
-bool UIWizardExportAppFormat::isFormatCloudOne(QIComboBox *pCombo, int iIndex /* = -1 */)
+bool UIWizardExportAppFormat::isFormatCloudOne(QComboBox *pCombo, int iIndex /* = -1 */)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, false);
@@ -373,7 +373,7 @@ void UIWizardExportAppFormat::refreshLocalStuff(CAppliance &comLocalAppliance,
     }
 }
 
-void UIWizardExportAppFormat::refreshProfileCombo(QIComboBox *pCombo,
+void UIWizardExportAppFormat::refreshProfileCombo(QComboBox *pCombo,
                                                   UINotificationCenter *pCenter,
                                                   const QString &strFormat,
                                                   bool fIsFormatCloudOne)
@@ -590,12 +590,12 @@ void UIWizardExportAppFormat::refreshCloudStuff(CAppliance &comCloudAppliance,
     comCloudVsdExportForm = comVsdExportForm;
 }
 
-QString UIWizardExportAppFormat::profileName(QIComboBox *pCombo)
+QString UIWizardExportAppFormat::profileName(QComboBox *pCombo)
 {
     return pCombo->currentData(ProfileData_Name).toString();
 }
 
-void UIWizardExportAppFormat::updateFormatComboToolTip(QIComboBox *pCombo)
+void UIWizardExportAppFormat::updateFormatComboToolTip(QComboBox *pCombo)
 {
     AssertPtrReturnVoid(pCombo);
     QString strCurrentToolTip;
@@ -607,7 +607,7 @@ void UIWizardExportAppFormat::updateFormatComboToolTip(QIComboBox *pCombo)
     pCombo->setToolTip(strCurrentToolTip);
 }
 
-void UIWizardExportAppFormat::updateMACAddressExportPolicyComboToolTip(QIComboBox *pCombo)
+void UIWizardExportAppFormat::updateMACAddressExportPolicyComboToolTip(QComboBox *pCombo)
 {
     AssertPtrReturnVoid(pCombo);
     QString strCurrentToolTip;
@@ -678,7 +678,7 @@ UIWizardExportAppPageFormat::UIWizardExportAppPageFormat(bool fExportToOCIByDefa
                 m_pFormatLayout->addWidget(m_pFormatComboBoxLabel, 0, 0);
             }
             /* Create format combo-box: */
-            m_pFormatComboBox = new QIComboBox(this);
+            m_pFormatComboBox = new QComboBox(this);
             if (m_pFormatComboBox)
             {
                 m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
@@ -736,7 +736,7 @@ UIWizardExportAppPageFormat::UIWizardExportAppPageFormat(bool fExportToOCIByDefa
                     }
 
                     /* Create MAC policy combo-box: */
-                    m_pMACComboBox = new QIComboBox(pSettingsPane1);
+                    m_pMACComboBox = new QComboBox(pSettingsPane1);
                     if (m_pMACComboBox)
                         m_pSettingsLayout1->addWidget(m_pMACComboBox, 1, 1, 1, 2);
                     /* Create format combo-box label: */
@@ -809,7 +809,7 @@ UIWizardExportAppPageFormat::UIWizardExportAppPageFormat(bool fExportToOCIByDefa
                         pSubLayout->setSpacing(1);
 
                         /* Create profile combo-box: */
-                        m_pProfileComboBox = new QIComboBox(pSettingsPane2);
+                        m_pProfileComboBox = new QComboBox(pSettingsPane2);
                         if (m_pProfileComboBox)
                         {
                             m_pProfileLabel->setBuddy(m_pProfileComboBox);
@@ -880,15 +880,15 @@ UIWizardExportAppPageFormat::UIWizardExportAppPageFormat(bool fExportToOCIByDefa
             this, &UIWizardExportAppPageFormat::sltHandleFormatComboChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardExportAppPageFormat::sltHandleFileSelectorChange);
-    connect(m_pFormatComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pFormatComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardExportAppPageFormat::sltHandleFormatComboChange);
-    connect(m_pMACComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pMACComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardExportAppPageFormat::sltHandleMACAddressExportPolicyComboChange);
     connect(m_pManifestCheckbox, &QCheckBox::stateChanged,
             this, &UIWizardExportAppPageFormat::sltHandleManifestCheckBoxChange);
     connect(m_pIncludeISOsCheckbox, &QCheckBox::stateChanged,
             this, &UIWizardExportAppPageFormat::sltHandleIncludeISOsCheckBoxChange);
-    connect(m_pProfileComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pProfileComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardExportAppPageFormat::sltHandleProfileComboChange);
     connect(m_pExportModeButtonGroup, &QButtonGroup::buttonToggled,
             this, &UIWizardExportAppPageFormat::sltHandleRadioButtonToggled);

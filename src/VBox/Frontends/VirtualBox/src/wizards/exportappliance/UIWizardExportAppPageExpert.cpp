@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -28,6 +28,7 @@
 /* Qt includes: */
 #include <QButtonGroup>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHeaderView>
@@ -40,7 +41,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "QIListWidget.h"
 #include "QIToolButton.h"
 #include "UICommon.h"
@@ -149,7 +149,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             m_pFormatLayout->addWidget(m_pFormatComboBoxLabel, 0, 0);
                         }
                         /* Create format combo-box: */
-                        m_pFormatComboBox = new QIComboBox(pWidgetSettings);
+                        m_pFormatComboBox = new QComboBox(pWidgetSettings);
                         if (m_pFormatComboBox)
                         {
                             m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
@@ -206,7 +206,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                     m_pSettingsLayout1->addWidget(m_pMACComboBoxLabel, 1, 0);
                                 }
                                 /* Create MAC policy combo-box: */
-                                m_pMACComboBox = new QIComboBox(pSettingsPane1);
+                                m_pMACComboBox = new QComboBox(pSettingsPane1);
                                 if (m_pMACComboBox)
                                 {
                                     m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
@@ -269,7 +269,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                     pSubLayout->setSpacing(1);
 
                                     /* Create profile combo-box: */
-                                    m_pProfileComboBox = new QIComboBox(pSettingsPane2);
+                                    m_pProfileComboBox = new QComboBox(pSettingsPane2);
                                     if (m_pProfileComboBox)
                                     {
                                         m_pProfileLabel->setBuddy(m_pProfileComboBox);
@@ -410,15 +410,15 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             this, &UIWizardExportAppPageExpert::sltHandleVMItemSelectionChanged);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardExportAppPageExpert::sltHandleFileSelectorChange);
-    connect(m_pFormatComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pFormatComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
-    connect(m_pMACComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pMACComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardExportAppPageExpert::sltHandleMACAddressExportPolicyComboChange);
     connect(m_pManifestCheckbox, &QCheckBox::stateChanged,
             this, &UIWizardExportAppPageExpert::sltHandleManifestCheckBoxChange);
     connect(m_pIncludeISOsCheckbox, &QCheckBox::stateChanged,
             this, &UIWizardExportAppPageExpert::sltHandleIncludeISOsCheckBoxChange);
-    connect(m_pProfileComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pProfileComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardExportAppPageExpert::sltHandleProfileComboChange);
     connect(m_pExportModeButtonGroup, &QButtonGroup::buttonToggled,
             this, &UIWizardExportAppPageExpert::sltHandleRadioButtonToggled);

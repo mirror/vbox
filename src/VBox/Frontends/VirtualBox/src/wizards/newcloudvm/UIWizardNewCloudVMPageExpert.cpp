@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QLabel>
@@ -33,7 +34,6 @@
 #include <QTabBar>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "QIListWidget.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
@@ -80,7 +80,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
             pLayoutMain->addWidget(m_pProviderLabel, 0, 0, Qt::AlignRight);
 
         /* Prepare provider combo-box: */
-        m_pProviderComboBox = new QIComboBox(this);
+        m_pProviderComboBox = new QComboBox(this);
         if (m_pProviderComboBox)
         {
             m_pProviderLabel->setBuddy(m_pProviderComboBox);
@@ -100,7 +100,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
             pLayoutProfile->setSpacing(1);
 
             /* Prepare profile combo-box: */
-            m_pProfileComboBox = new QIComboBox(this);
+            m_pProfileComboBox = new QComboBox(this);
             if (m_pProfileComboBox)
             {
                 m_pProfileLabel->setBuddy(m_pProfileComboBox);
@@ -201,9 +201,9 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
             this, &UIWizardNewCloudVMPageExpert::sltHandleProviderComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
             this, &UIWizardNewCloudVMPageExpert::sltHandleProviderComboChange);
-    connect(m_pProviderComboBox, &QIComboBox::activated,
+    connect(m_pProviderComboBox, &QComboBox::activated,
             this, &UIWizardNewCloudVMPageExpert::sltHandleProviderComboChange);
-    connect(m_pProfileComboBox, &QIComboBox::currentIndexChanged,
+    connect(m_pProfileComboBox, &QComboBox::currentIndexChanged,
             this, &UIWizardNewCloudVMPageExpert::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardNewCloudVMPageExpert::sltHandleProfileButtonClick);

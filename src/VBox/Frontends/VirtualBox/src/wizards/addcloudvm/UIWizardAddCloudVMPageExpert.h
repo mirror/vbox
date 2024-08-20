@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2009-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -35,6 +35,7 @@
 #include "UIWizardAddCloudVMPageSource.h"
 
 /* Forward declarations: */
+class QComboBox;
 class QGridLayout;
 class QLabel;
 class QIListWidget;
@@ -88,11 +89,11 @@ private:
     /** Holds the provider type label instance. */
     QLabel       *m_pProviderLabel;
     /** Holds the provider type combo-box instance. */
-    QIComboBox   *m_pProviderComboBox;
+    QComboBox    *m_pProviderComboBox;
     /** Holds the profile label instance. */
     QLabel       *m_pProfileLabel;
     /** Holds the profile combo-box instance. */
-    QIComboBox   *m_pProfileComboBox;
+    QComboBox    *m_pProfileComboBox;
     /** Holds the profile management tool-button instance. */
     QIToolButton *m_pProfileToolButton;
     /** Holds the source instance label instance. */
