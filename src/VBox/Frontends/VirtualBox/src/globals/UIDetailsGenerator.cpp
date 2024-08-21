@@ -1549,7 +1549,7 @@ void UIDetailsGenerator::acquireFeaturesStatusInfo(CMachine &comMachine, QString
     /* Add CPU count optional info: */
     const int cCpuCount = comMachine.GetCPUCount();
     if (cCpuCount > 1)
-        strInfo += e_strTableRow2.arg(QApplication::translate("UIIndicatorFeatures", "Processors", "details report"), QString::number(cCpuCount));
+        strInfo += e_strTableRow2.arg(QApplication::translate("UIDetails", "Processors", "details (system)"), QString::number(cCpuCount));
 }
 
 QString UIDetailsGenerator::summarizeGenericProperties(const CNetworkAdapter &comAdapter)
