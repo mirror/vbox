@@ -461,7 +461,7 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
 {
     AssertPtr(pOp);
     AssertPtr(pDis);
-    Assert((u32Insn & pOp->fMask) == pOp->fValue);
+    Assert((u32Insn & pInsnClass->fFixedInsn) == pOp->fValue);
 
     /* Should contain the parameter type on input. */
     pDis->aParams[0].armv8.enmType  = pInsnClass->aenmParamTypes[0];
