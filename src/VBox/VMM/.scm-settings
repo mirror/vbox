@@ -41,6 +41,7 @@
 /VMMAll/PGMAllGst.h: --no-fix-header-guards
 /VMMAll/PGMAllShw.h: --no-fix-header-guards
 /VMMAll/IEMAllInstCommonBodyMacros.h: --no-fix-header-guards
+/VMMAll/IEMAllN8veLiveness.h: --no-fix-header-guards
 /VMMAll/IEMAllN8veRecompFuncs.h: --no-fix-header-guards
 /testcase/tstVMStruct.h: --no-fix-header-guards
 /testcase/tstIEMAImplData.h: --no-fix-header-guards
