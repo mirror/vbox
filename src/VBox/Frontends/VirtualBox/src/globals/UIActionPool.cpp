@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2010-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -1178,12 +1178,6 @@ public:
 
 protected:
 
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("LogViewerMenu");
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -1504,12 +1498,6 @@ public:
 
 protected:
 
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("FileManagerMenu");
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -1530,12 +1518,6 @@ public:
 
 protected:
 
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("FileManagerHostSubmenu");
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -1555,12 +1537,6 @@ public:
     {}
 
 protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("FileManagerGuestSubmenu");
-    }
 
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
@@ -2361,12 +2337,6 @@ public:
 
 protected:
 
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("VISOCreatorMenu");
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -2923,12 +2893,6 @@ public:
 
 protected:
 
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("MediumSelector");
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -3187,12 +3151,6 @@ public:
     {}
 
 protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const RT_OVERRIDE
-    {
-        return QString("VMActivityMonitorMenu");
-    }
 
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
