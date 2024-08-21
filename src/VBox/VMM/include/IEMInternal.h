@@ -2294,6 +2294,8 @@ typedef struct IEMCPU
     STAMCOUNTER             StatTbLoopInTbDetected;
     /** Statistics: Times a loop back to the start of the TB was detected. */
     STAMCOUNTER             StatTbLoopFullTbDetected;
+    /** Statistics: Times a loop back to the start of the TB was detected, var 2. */
+    STAMCOUNTER             StatTbLoopFullTbDetected2;
     /** Exec memory allocator statistics: Number of times allocaintg executable memory failed. */
     STAMCOUNTER             StatNativeExecMemInstrBufAllocFailed;
     /** Native TB statistics: Number of fully recompiled TBs. */
@@ -2516,9 +2518,9 @@ typedef struct IEMCPU
     /** @} */
 
 #ifdef IEM_WITH_TLB_TRACE
-    uint64_t                au64Padding[7];
+    uint64_t                au64Padding[6];
 #else
-    uint64_t                au64Padding[1];
+    //uint64_t                au64Padding[0];
 #endif
 
 #ifdef IEM_WITH_TLB_TRACE
@@ -6883,6 +6885,9 @@ IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_Jump);
 
 bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb);
 bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb);
+#ifdef IEM_WITH_INTRA_TB_JUMPS
+DECLHIDDEN(int)     iemThreadedCompileBackAtFirstInstruction(PVMCPU pVCpu, PIEMTB pTb) RT_NOEXCEPT;
+#endif
 
 /* Native recompiler public bits: */
 

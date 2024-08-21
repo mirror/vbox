@@ -2118,8 +2118,8 @@ DECLINLINE(void) iemThreadedCopyOpcodeBytesInline(PCVMCPUCC pVCpu, uint8_t *pbDs
     }
 }
 
-
 #ifdef IEM_WITH_INTRA_TB_JUMPS
+
 /**
  * Emits the necessary tail calls for a full TB loop-jump.
  */
@@ -2170,6 +2170,25 @@ static bool iemThreadedCompileFullTbJump(PVMCPUCC pVCpu, PIEMTB pTb)
 
     return false;
 }
+
+/**
+ * Called by IEM_MC2_BEGIN_EMIT_CALLS when it detects that we're back at the
+ * first instruction and we didn't just branch to it (that's handled below).
+ *
+ * This will emit a loop iff everything is compatible with that.
+ */
+DECLHIDDEN(int) iemThreadedCompileBackAtFirstInstruction(PVMCPU pVCpu, PIEMTB pTb) RT_NOEXCEPT
+{
+    /* Check if the mode matches. */
+    if (   (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK & IEMTB_F_KEY_MASK)
+        == (pTb->fFlags        & IEMTB_F_KEY_MASK   & ~IEMTB_F_CS_LIM_CHECKS))
+    {
+        STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatTbLoopFullTbDetected2);
+        iemThreadedCompileFullTbJump(pVCpu, pTb);
+    }
+    return VINF_IEM_RECOMPILE_END_TB;
+}
+
 #endif /* IEM_WITH_INTRA_TB_JUMPS */
 
 
