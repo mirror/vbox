@@ -274,12 +274,6 @@ protected:
         return QString("FileManagerDialog");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {

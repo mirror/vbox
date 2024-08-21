@@ -1420,18 +1420,6 @@ protected:
         return QString("ReloadAllLogs");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
-    /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -1566,12 +1554,6 @@ protected:
         return QString("FileManagerCopyToGuest");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -1602,12 +1584,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerCopyToHost");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -1645,12 +1621,6 @@ protected:
         return QString("ToggleFileManagerOptionsPanel");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -1684,12 +1654,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleFileManagerLogPanel");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -1727,12 +1691,6 @@ protected:
         return QString("ToggleFileManagerOperationsPanel");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -1768,12 +1726,6 @@ protected:
         return QString("ToggleFileManagerGuestSessionPanel");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -1805,12 +1757,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerGoUp");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -1846,12 +1792,6 @@ protected:
         return QString("FileManagerGoHome");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -1883,12 +1823,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerGoForward");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -1924,12 +1858,6 @@ protected:
         return QString("FileManagerGoBackward");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -1961,12 +1889,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerDelete");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -2002,12 +1924,6 @@ protected:
         return QString("FileManagerRefresh");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -2038,12 +1954,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerRename");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -2078,12 +1988,6 @@ protected:
         return QString("FileManagerCreateNewDirectory");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -2114,12 +2018,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerCopy");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -2154,12 +2052,6 @@ protected:
         return QString("FileManagerCut");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -2190,12 +2082,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerPaste");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -2230,12 +2116,6 @@ protected:
         return QString("FileManagerSelectAll");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -2268,12 +2148,6 @@ protected:
         return QString("FileManagerInvertSelection");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -2304,12 +2178,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerShowProperties");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -2368,12 +2236,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleVISOCreatorPreferences");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -2754,12 +2616,6 @@ protected:
         return QString("VISOCreatorGoUp");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -2791,12 +2647,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VISOCreatorGoHome");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
@@ -2832,12 +2682,6 @@ protected:
         return QString("VISOCreatorGoForward");
     }
 
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
@@ -2869,12 +2713,6 @@ protected:
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VISOCreatorGoBackward");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIType) const RT_OVERRIDE
-    {
-        return QKeySequence();
     }
 
     /** Handles translation event. */
