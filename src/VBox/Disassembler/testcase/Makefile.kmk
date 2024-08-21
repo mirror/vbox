@@ -59,6 +59,48 @@ ifdef VBOX_WITH_TESTCASES
  	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
  	$(LIB_RUNTIME)
 
+
+ ifeq ($(KBUILD_TARGET_ARCH), arm64)
+  #
+  # tstDisasmArmv8-1 assembly files -> .cpp
+  #
+  TST_DISASM_ARMV8_1_FILE = $(tstDisasmArmv8-1_0_OUTDIR)/tstDisasmArmv8-1-asm.cpp
+  TST_DISASM_ARMV8_1_SOURCES := \
+  	tstDisasmArmv8_1=tstDisasmArmv8-1-asm.S
+
+  TST_DISASM_ARMV8_1_NAMES := $(foreach cert,$(VBOX_SVC_CERTS),$(firstword $(subst =,$(SP),$(cert))))
+  TST_DISASM_ARMV8_1_PATH_SOURCES := $(PATH_SUB_CURRENT)
+
+  $$(TST_DISASM_ARMV8_1_FILE): $(MAKEFILE_CURRENT) \
+  		$(foreach source,$(TST_DISASM_ARMV8_1_SOURCES),$(TST_DISASM_ARMV8_1_PATH_SOURCES)/$(lastword $(subst =,$(SP),$(source)))) \
+  		$(VBOX_BIN2C) \
+  		| $$(dir $$@)
+	$(QUIET)$(RM) -f -- $@
+	$(QUIET)$(APPEND) -n "$@" \
+        	'' \
+        	'#include "tstDisasmArmv8-1-tests.h"' \
+                ''
+	$(foreach source,$(TST_DISASM_ARMV8_1_SOURCES), $(NLTAB)$(VBOX_BIN2C) -ascii --append \
+		"$(firstword $(subst =,$(SP),$(source)))" \
+		"$(TST_DISASM_ARMV8_1_PATH_SOURCES)/$(lastword $(subst =,$(SP),$(source)))" \
+		"$@")
+
+  OTHER_CLEAN += $(TST_DISASM_ARMV8_1_FILE)
+
+  PROGRAMS += tstDisasmArmv8-1
+  tstDisasmArmv8-1_TEMPLATE   = VBoxR3TstExe
+  tstDisasmArmv8-1_DEFS       = IN_DIS
+  tstDisasmArmv8-1_INCS = \
+  	.
+  tstDisasmArmv8-1_SOURCES    = \
+  	$(TST_DISASM_ARMV8_1_FILE) \
+  	tstDisasmArmv8-1-asm.S \
+  	tstDisasmArmv8-1.cpp
+  tstDisasmArmv8-1_LIBS       = \
+  	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
+  	$(LIB_RUNTIME)
+ endif
+
  # Tests that will be build, disassembled and re-build from disassembly.
  VBOX_DISAS_TESTS_BUILD = \
  	tstAsmFnstsw-1.asm \
