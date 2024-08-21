@@ -1654,7 +1654,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
-        setName(QApplication::translate("UIActionPool", "Preferences"));
+        setName(QApplication::translate("UIActionPool", "&Preferences"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager preferences"));
         setToolTip(  QApplication::translate("UIActionPool", "Open Preferences Pane")
@@ -1935,7 +1935,7 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Go Backward"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Go forward"));
+        setStatusTip(QApplication::translate("UIActionPool", "Go backward"));
         setToolTip(  QApplication::translate("UIActionPool", "Go Backward")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
