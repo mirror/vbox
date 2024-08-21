@@ -53,6 +53,7 @@
 #include <iprt/utf16.h>
 
 #include "internal-r3-win.h"
+#include "internal-r3-registry-win.h"
 
 
 /*********************************************************************************************************************************
@@ -123,81 +124,6 @@ static int rtSystemFirmwareGetPrivileges(LPCTSTR pcszPrivilege)
         rc = RTErrConvertFromWin32(GetLastError());
 
     CloseHandle(hToken);
-
-    return rc;
-}
-
-
-/**
- * Queries a DWORD value from a Windows registry key, Unicode (wide char) version.
- *
- * @returns IPRT status code.
- * @retval  VERR_FILE_NOT_FOUND if the value has not been found.
- * @param   hKey                    Registry handle to use.
- * @param   pwszKey                 Registry key to query \a pwszName in.
- * @param   pwszName                Name of the value to query.
- * @param   pdwValue                Where to return the actual value on success.
- */
-static int rtSystemWinRegistryGetDWORDW(HKEY hKey, LPCWSTR pwszKey, LPCWSTR pwszName, DWORD *pdwValue)
-{
-    LONG lErr = RegOpenKeyExW(hKey, pwszKey, 0, KEY_QUERY_VALUE, &hKey);
-    if (lErr != ERROR_SUCCESS)
-        return RTErrConvertFromWin32(lErr);
-
-    int rc = VINF_SUCCESS;
-
-    DWORD cbType = sizeof(DWORD);
-    DWORD dwType = 0;
-    DWORD dwValue;
-    lErr = RegQueryValueExW(hKey, pwszName, NULL, &dwType, (BYTE *)&dwValue, &cbType);
-    if (lErr == ERROR_SUCCESS)
-    {
-        if (cbType == sizeof(DWORD))
-        {
-            if (dwType == REG_DWORD)
-            {
-                *pdwValue = dwValue;
-            }
-            else
-                rc = VERR_WRONG_TYPE;
-        }
-        else
-            rc = VERR_MISMATCH;
-    }
-    else
-        rc = RTErrConvertFromWin32(lErr);
-
-    RegCloseKey(hKey);
-
-    return rc;
-}
-
-
-/**
- * Queries a DWORD value from a Windows registry key.
- *
- * @returns IPRT status code.
- * @retval  VERR_FILE_NOT_FOUND if the value has not been found.
- * @param   hKey                    Registry handle to use.
- * @param   pszKey                  Registry key to query \a pszName in.
- * @param   pszName                 Name of the value to query.
- * @param   pdwValue                Where to return the actual value on success.
- */
-static int rtSystemRegistryGetDWORDA(HKEY hKey, const char *pszKey, const char *pszName, DWORD *pdwValue)
-{
-    PRTUTF16 pwszKey;
-    int rc = RTStrToUtf16Ex(pszKey, RTSTR_MAX, &pwszKey, 0, NULL);
-    if (RT_SUCCESS(rc))
-    {
-        PRTUTF16 pwszName;
-        rc = RTStrToUtf16Ex(pszName, RTSTR_MAX, &pwszName, 0, NULL);
-        if (RT_SUCCESS(rc))
-        {
-            rc = rtSystemWinRegistryGetDWORDW(hKey, pwszKey, pwszName, pdwValue);
-            RTUtf16Free(pwszName);
-        }
-        RTUtf16Free(pwszKey);
-    }
 
     return rc;
 }
@@ -309,8 +235,8 @@ RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWBOOL enmBoolean, bool *pfValue)
         case RTSYSFWBOOL_SECURE_BOOT:
         {
             DWORD dwEnabled;
-            rc = rtSystemRegistryGetDWORDA(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\SecureBoot\\State",
-                                           "UEFISecureBootEnabled", &dwEnabled);
+            rc = RTSystemWinRegistryQueryDWORD(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\SecureBoot\\State",
+                                               "UEFISecureBootEnabled", &dwEnabled);
             if (RT_SUCCESS(rc))
             {
                 *pfValue = RT_BOOL(dwEnabled);

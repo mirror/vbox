@@ -1070,6 +1070,7 @@ RuntimeBaseR3_SOURCES.win = \
 	r3/win/RTSystemQueryDmiString-win.cpp \
 	r3/win/RTSystemFirmware-win.cpp \
 	r3/win/RTSystemQueryTotalRam-win.cpp \
+	r3/win/RTSystemRegistry-win.cpp \
 	r3/win/RTTimeZoneGetCurrent-win.cpp \
 	r3/win/RTMemProtect-win.cpp \
 	r3/win/allocex-win.cpp \

@@ -398,6 +398,32 @@ RTDECL(uint64_t) RTSystemGetNtVersion(void);
  */
 RTDECL(uint8_t) RTSystemGetNtProductType(void);
 
+/**
+ * Windows NT feature types.
+ */
+typedef enum RTSYSNTFEATURE
+{
+    /** Invalid feature. */
+    RTSYSNTFEATURE_INVALID = 0,
+    /** Memory integrity is a feature of the Core Isolation facility.
+     *  Introduced in Windows 10. */
+    RTSYSNTFEATURE_CORE_ISOLATION_MEMORY_INTEGRITY,
+    /** The usual 32-bit hack.  */
+    RTSYSNTFEATURE_32_BIT_HACK = 0x7fffffff
+} RTSYSNTFEATURE;
+/** Pointer to a Windows NT feature type. */
+typedef RTSYSNTFEATURE *PRTSYSNTFEATURE;
+
+/**
+ * Queries whether an NT feature is enabled or not.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if the feature is not supported on this platform.
+ * @param   enmFeature  Feature to query enabled status for.
+ * @param   pfEnabled   Where to return the enabled status on success.
+ */
+RTDECL(int) RTSystemQueryNtFeatureEnabled(RTSYSNTFEATURE enmFeature, bool *pfEnabled);
+
 #endif /* RT_OS_WINDOWS */
 
 /** @} */

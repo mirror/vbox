@@ -137,6 +137,33 @@ int main()
             RTTestIFailed("level=%d: rc=%Rrc when specifying exactly right buffer length (%zu)\n", i, rc, cchInfo + 1);
     }
 
+#if defined RT_OS_WINDOWS
+    RTTestISub("Windows Features");
+    struct
+    {
+        const char    *pszDesc;
+        RTSYSNTFEATURE enmFeature;
+        int            rc;
+    } s_aNtFeatures[] =
+    {
+        { "Core Isolation (Memory Integrity)", RTSYSNTFEATURE_CORE_ISOLATION_MEMORY_INTEGRITY, VINF_SUCCESS }
+    };
+
+    for (size_t i = 0; i < RT_ELEMENTS(s_aNtFeatures); i++)
+    {
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "Testing '%s': ", s_aNtFeatures[i].pszDesc);
+        bool fEnabled = false;
+        int rcTst = RTSystemQueryNtFeatureEnabled(s_aNtFeatures[i].enmFeature, &fEnabled);
+        if (RT_SUCCESS(rcTst))
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", fEnabled ? "ENABLED\n" : "DISABLED\n");
+        else if (rc == VERR_NOT_SUPPORTED) /* Don't freak out on older (host) OSes which don't have this feature. */
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "SKIPPED (not supported)\n");
+        else
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "ERROR (%Rrc)\n", rcTst);
+        RTTESTI_CHECK_RC(rcTst, s_aNtFeatures[i].rc);
+    }
+#endif
+
     return RTTestSummaryAndDestroy(hTest);
 }
 
