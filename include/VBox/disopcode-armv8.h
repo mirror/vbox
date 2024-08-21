@@ -334,6 +334,7 @@ enum OPCODESARMV8
     OP_ARMV8_A64_NGCS,
     OP_ARMV8_A64_NOP,
     OP_ARMV8_A64_ORR,
+    OP_ARMV8_A64_ORN,
     OP_ARMV8_A64_PACDA,
     OP_ARMV8_A64_PACDZA,
     OP_ARMV8_A64_PACDB,
@@ -557,16 +558,43 @@ typedef enum DISARMV8INSTRCOND
  * @{
  */
 
-enum OP_ARMV8_PARM
+/**
+ * Basic parameter type.
+ */
+enum DISARMV8OPPARM
 {
-    OP_ARMV8_PARM_NONE
+    /** Parameter is not used. */
+    kDisArmv8OpParmNone = 0,
+    /** Imediate value. */
+    kDisArmv8OpParmImm,
+    /** Relative address immediate. */
+    kDisArmv8OpParmImmRel,
+    /** General purpose register. */
+    kDisArmv8OpParmGpr,
+    /** System register. */
+    kDisArmv8OpParmSysReg,
+    /** Accessing memory from address in base register + potential offset. */
+    kDisArmv8OpParmAddrInGpr
 };
 
+
+/**
+ * Shift types.
+ */
+typedef enum DISARMV8OPPARMSHIFT
+{
+    /** No shift applied. */
+    kDisArmv8OpParmShiftNone = 0,
+    /** Left shift applied. */
+    kDisArmv8OpParmShiftLeft,
+    /** Right shift applied. */
+    kDisArmv8OpParmShiftRight,
+    /** Arithmetic right shift applied. */
+    kDisArmv8OpParmShiftArithRight,
+    /** Rotation applied. */
+    kDisArmv8OpParmShiftRotate,
+} DISARMV8OPPARMSHIFT;
 /** @} */
-
-
-/** Immediate (the instruction class gives the range of the immediate). */
-#define OP_ARMV8_PARM_Imm               1
 
 /** @} */
 

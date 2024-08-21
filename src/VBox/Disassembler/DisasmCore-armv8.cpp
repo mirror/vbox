@@ -32,6 +32,7 @@
 #define LOG_GROUP LOG_GROUP_DIS
 #include <VBox/dis.h>
 #include <VBox/log.h>
+#include <iprt/asm.h> /* Required to get Armv8A64ConvertImmRImmS2Mask64() from armv8.h. */
 #include <iprt/armv8.h>
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
@@ -82,6 +83,10 @@ static FNDISPARSEARMV8 disArmV8ParseHw;
 static FNDISPARSEARMV8 disArmV8ParseCond;
 static FNDISPARSEARMV8 disArmV8ParsePState;
 static FNDISPARSEARMV8 disArmV8ParseSysReg;
+static FNDISPARSEARMV8 disArmV8ParseSh12;
+static FNDISPARSEARMV8 disArmV8ParseImmTbz;
+static FNDISPARSEARMV8 disArmV8ParseShift;
+static FNDISPARSEARMV8 disArmV8ParseShiftAmount;
 /** @}  */
 
 
@@ -109,7 +114,11 @@ static PFNDISPARSEARMV8 const g_apfnDisasm[kDisParmParseMax] =
     disArmV8ParseCond,
     disArmV8ParsePState,
     NULL,
-    disArmV8ParseSysReg
+    disArmV8ParseSysReg,
+    disArmV8ParseSh12,
+    disArmV8ParseImmTbz,
+    disArmV8ParseShift,
+    disArmV8ParseShiftAmount
 };
 
 
@@ -253,19 +262,35 @@ static int disArmV8ParseImmsImmrN(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8IN
             && (pInsnClass->fClass & DISARMV8INSNCLASS_F_N_FORCED_1_ON_64BIT)))
         return VERR_DIS_INVALID_OPCODE;
 
-    /** @todo Decode according to spec. */
-    pParam->uValue        = u32ImmRaw;
-    pParam->armv8.cb = sizeof(uint32_t);
-    pParam->fUse         |= DISUSE_IMMEDIATE32;
+    uint32_t uImm7SizeLen   = ((u32ImmRaw & RT_BIT_32(12)) >> 6) | (u32ImmRaw & 0x3f);
+    uint32_t uImm6Rotations = (u32ImmRaw >> 6) & 0x3f;
+    pParam->uValue        =   *pf64Bit
+                            ? Armv8A64ConvertImmRImmS2Mask64(uImm7SizeLen, uImm6Rotations)
+                            : Armv8A64ConvertImmRImmS2Mask32(uImm7SizeLen, uImm6Rotations);
+    pParam->armv8.cb      = pParam->uValue > UINT32_MAX ? sizeof(uint64_t) : sizeof(uint32_t);
+    pParam->fUse         |= pParam->uValue > UINT32_MAX ? DISUSE_IMMEDIATE64 : DISUSE_IMMEDIATE32;
     return VINF_SUCCESS;
 }
 
 
 static int disArmV8ParseHw(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
 {
-    RT_NOREF(pDis, u32Insn, pInsnClass, pParam, pInsnParm, pf64Bit);
-    AssertFailed();
-    /** @todo */
+    RT_NOREF(pDis, pInsnClass, pParam);
+    Assert(pInsnParm->cBits == 2);
+
+    uint32_t u32 = disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
+    /* hw<1> must be 0 if this is the 32-bit variant. */
+    if (   !*pf64Bit
+        && (u32 & RT_BIT_32(1)))
+        return VERR_DIS_INVALID_OPCODE;
+
+    Assert(pParam->armv8.enmType == kDisArmv8OpParmImm);
+    Assert(pParam->fUse & (DISUSE_IMMEDIATE8 | DISUSE_IMMEDIATE16 | DISUSE_IMMEDIATE32));
+    if (u32)
+    {
+        pParam->armv8.enmShift = kDisArmv8OpParmShiftLeft;
+        pParam->armv8.cShift   = ((uint8_t)u32 & 0x3) << 4;
+    }
     return VINF_SUCCESS;
 }
 
@@ -305,6 +330,95 @@ static int disArmV8ParseSysReg(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNC
 }
 
 
+static int disArmV8ParseSh12(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
+{
+    RT_NOREF(pDis, pInsnClass, pf64Bit);
+    Assert(pInsnParm->cBits == 1);
+    if (u32Insn & RT_BIT_32(pInsnParm->idxBitStart))
+    {
+        /* Shift the immediate pointed to. */
+        pParam->uValue <<= 12;
+
+        /* Re-evaluate the immediate data size. */
+        pParam->fUse &= ~(DISUSE_IMMEDIATE8 | DISUSE_IMMEDIATE16 | DISUSE_IMMEDIATE32);
+        if (pParam->uValue <= UINT8_MAX)
+        {
+            pParam->armv8.cb = sizeof(uint8_t);
+            pParam->fUse |= DISUSE_IMMEDIATE8;
+        }
+        else if (pParam->uValue <= UINT16_MAX)
+        {
+            pParam->armv8.cb = sizeof(uint16_t);
+            pParam->fUse |= DISUSE_IMMEDIATE16;
+        }
+        else if (pParam->uValue <= UINT32_MAX)
+        {
+            pParam->armv8.cb = sizeof(uint32_t);
+            pParam->fUse |= DISUSE_IMMEDIATE32;
+        }
+        else
+            AssertReleaseFailed();
+
+    }
+    return VINF_SUCCESS;
+}
+
+
+static int disArmV8ParseImmTbz(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
+{
+    RT_NOREF(pDis, pInsnClass, pf64Bit);
+
+    AssertReturn(!pInsnParm->idxBitStart && !pInsnParm->cBits, VERR_INTERNAL_ERROR_2);
+
+    pParam->uValue = disArmV8ExtractBitVecFromInsn(u32Insn, 19, 5);
+    pParam->uValue |= (u32Insn & RT_BIT_32(31)) >> 26;
+
+    pParam->armv8.cb = sizeof(uint8_t);
+    pParam->fUse |= DISUSE_IMMEDIATE8;
+    return VINF_SUCCESS;
+}
+
+
+static int disArmV8ParseShift(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
+{
+    RT_NOREF(pDis, pInsnClass, pf64Bit);
+
+    AssertReturn(pInsnParm->cBits == 2, VERR_INTERNAL_ERROR_2);
+
+    uint32_t u32Shift = disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
+    switch (u32Shift)
+    {
+        case 0: pParam->armv8.enmShift = kDisArmv8OpParmShiftLeft;       break;
+        case 1: pParam->armv8.enmShift = kDisArmv8OpParmShiftRight;      break;
+        case 2: pParam->armv8.enmShift = kDisArmv8OpParmShiftArithRight; break;
+        case 3: pParam->armv8.enmShift = kDisArmv8OpParmShiftRotate;     break;
+        default:
+            AssertReleaseFailed();
+    }
+    return VINF_SUCCESS;
+}
+
+
+static int disArmV8ParseShiftAmount(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
+{
+    RT_NOREF(pDis, pInsnClass, pf64Bit);
+
+    uint32_t u32Amount = disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
+    /* For a 32-bit operand it is impossible to shift/rotate more than 31 bits. */
+    if (   !*pf64Bit
+        && u32Amount > 31)
+        return VERR_DIS_INVALID_OPCODE;
+
+    Assert(pParam->armv8.enmShift != kDisArmv8OpParmShiftNone);
+    Assert(u32Amount < 64);
+    pParam->armv8.cShift = (uint8_t)u32Amount;
+    /* Any shift operation with a 0 is essentially no shift being applied. */
+    if (pParam->armv8.cShift == 0)
+        pParam->armv8.enmShift = kDisArmv8OpParmShiftNone;
+    return VINF_SUCCESS;
+}
+
+
 static uint32_t disArmV8DecodeIllegal(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass)
 {
     RT_NOREF(pDis, u32Insn, pInsnClass);
@@ -335,12 +449,15 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
     Assert((u32Insn & pOp->fMask) == pOp->fValue);
 
     /* Should contain the parameter type on input. */
-    pDis->aParams[0].armv8.fParam = pOp->Opc.fParam1;
-    pDis->aParams[1].armv8.fParam = pOp->Opc.fParam2;
-    pDis->aParams[2].armv8.fParam = pOp->Opc.fParam3;
-    pDis->aParams[3].armv8.fParam = pOp->Opc.fParam4;
-    pDis->armv8.pInsnClass        = pInsnClass;
-    pDis->armv8.enmCond           = kDisArmv8InstrCond_Al;
+    pDis->aParams[0].armv8.enmType  = pInsnClass->aenmParamTypes[0];
+    pDis->aParams[1].armv8.enmType  = pInsnClass->aenmParamTypes[1];
+    pDis->aParams[2].armv8.enmType  = pInsnClass->aenmParamTypes[2];
+    pDis->aParams[3].armv8.enmType  = pInsnClass->aenmParamTypes[3];
+    pDis->aParams[0].armv8.enmShift = kDisArmv8OpParmShiftNone;
+    pDis->aParams[1].armv8.enmShift = kDisArmv8OpParmShiftNone;
+    pDis->aParams[2].armv8.enmShift = kDisArmv8OpParmShiftNone;
+    pDis->aParams[3].armv8.enmShift = kDisArmv8OpParmShiftNone;
+    pDis->armv8.enmCond             = kDisArmv8InstrCond_Al;
 
     pDis->pCurInstr = &pOp->Opc;
     Assert(&pOp->Opc != &g_ArmV8A64InvalidOpcode[0]);
@@ -371,10 +488,10 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
     {
         pDis->pCurInstr = &g_ArmV8A64InvalidOpcode[0];
 
-        pDis->aParams[0].armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam1;
-        pDis->aParams[1].armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam2;
-        pDis->aParams[2].armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam3;
-        pDis->aParams[3].armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam4;
+        pDis->aParams[0].armv8.enmType = kDisArmv8OpParmNone;
+        pDis->aParams[1].armv8.enmType = kDisArmv8OpParmNone;
+        pDis->aParams[2].armv8.enmType = kDisArmv8OpParmNone;
+        pDis->aParams[3].armv8.enmType = kDisArmv8OpParmNone;
     }
     pDis->rc = rc;
     return rc;

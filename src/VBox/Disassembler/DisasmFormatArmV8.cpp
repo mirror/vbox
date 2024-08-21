@@ -47,7 +47,7 @@ static const char g_szSpaces[] =
 static const char g_aszArmV8RegGen32[32][4] =
 {
     "w0\0",  "w1\0",  "w2\0",  "w3\0",  "w4\0",  "w5\0",  "w6\0",  "w7\0",  "w8\0",  "w9\0",  "w10",  "w11",  "w12",  "w13",  "w14",  "w15",
-    "w16",   "w17",   "w18",   "w19",   "w20",   "w21",   "w22",   "w23",   "w24",   "w25",   "w26",  "w27",  "w28",  "w29", "w30",   "zr"
+    "w16",   "w17",   "w18",   "w19",   "w20",   "w21",   "w22",   "w23",   "w24",   "w25",   "w26",  "w27",  "w28",  "w29", "w30",   "wzr"
 };
 static const char g_aszArmV8RegGen64[32][4] =
 {
@@ -426,8 +426,7 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
     if (fFlags & DIS_FMT_FLAGS_BYTES_COMMENT)
         fFlags = (fFlags & ~DIS_FMT_FLAGS_BYTES_LEFT) | DIS_FMT_FLAGS_BYTES_RIGHT;
 
-    PCDISOPCODE         const pOp        = pDis->pCurInstr;
-    PCDISARMV8INSNCLASS const pInsnClass = pDis->armv8.pInsnClass;
+    PCDISOPCODE const pOp = pDis->pCurInstr;
 
     /*
      * Output macros
@@ -600,32 +599,21 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
          */
         RTINTPTR off;
         char szSymbol[128];
-        for (uint32_t i = 0; i < RT_ELEMENTS(pInsnClass->aParms); i++)
+        for (uint32_t i = 0; i < RT_ELEMENTS(pDis->aParams); i++)
         {
-            PCDISARMV8INSNPARAM pInsnParam = &pInsnClass->aParms[i];
+            PCDISOPPARAM pParam = &pDis->aParams[i];
 
-            /* First NOP parameter marks end of parameters. */
-            if (pInsnParam->idxParse == kDisParmParseNop)
+            /* First None parameter marks end of parameters. */
+            if (pParam->armv8.enmType == kDisArmv8OpParmNone)
                 break;
 
-            /* Step over decoding steps which don't produce any parameters. */
-            if (pInsnParam->idxParse == kDisParmParseIs32Bit)
-                continue;
-
-            PCDISOPPARAM pParam =   pInsnParam->idxParam != DIS_ARMV8_INSN_PARAM_UNSET
-                                  ? &pDis->aParams[pInsnParam->idxParam]
-                                  : NULL;
-            if (   pParam
-                && pInsnParam->idxParam > 0)
+            if (i > 0)
                 PUT_C(',');
             PUT_C(' '); /** @todo Make the indenting configurable. */
 
-            if (pInsnParam->fFlags & DIS_ARMV8_INSN_PARAM_F_ADDR_BEGIN)
-                PUT_C('[');
-
-            switch (pInsnParam->idxParse)
+            switch (pParam->armv8.enmType)
             {
-                case kDisParmParseImm:
+                case kDisArmv8OpParmImm:
                 {
                     PUT_C('#');
                     switch (pParam->fUse & (  DISUSE_IMMEDIATE8 | DISUSE_IMMEDIATE16 | DISUSE_IMMEDIATE32 | DISUSE_IMMEDIATE64
@@ -660,8 +648,8 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     }
                     break;
                 }
-                case kDisParmParseImmRel:
-                case kDisParmParseImmAdr:
+                case kDisArmv8OpParmImmRel:
+                /*case kDisParmParseImmAdr:*/
                 {
                     int32_t offDisplacement;
 
@@ -705,7 +693,7 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                         PUT_SYMBOL(DIS_FMT_SEL_FROM_REG(DISSELREG_CS), uTrgAddr, " (", ')');
                     break;
                 }
-                case kDisParmParseReg:
+                case kDisArmv8OpParmGpr:
                 {
                     Assert(!(pParam->fUse & (DISUSE_DISPLACEMENT8 | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT64 | DISUSE_RIPDISPLACEMENT32)));
 
@@ -714,7 +702,7 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     PUT_STR(pszReg, cchReg);
                     break;
                 }
-                case kDisParmParseSysReg:
+                case kDisArmv8OpParmSysReg:
                 {
                     Assert(pParam->fUse == DISUSE_REG_SYSTEM);
 
@@ -724,21 +712,34 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     PUT_STR(pszReg, cchReg);
                     break;
                 }
-                case kDisParmParseImmsImmrN:
-                case kDisParmParseHw:
-                case kDisParmParseCond:
-                case kDisParmParsePState:
-                case kDisParmParseCRnCRm:
-                    break;
-                case kDisParmParseIs32Bit:
-                case kDisParmParseNop:
-                case kDisParmParseMax:
                 default:
                     AssertFailed();
             }
 
-            if (pInsnParam->fFlags & DIS_ARMV8_INSN_PARAM_F_ADDR_END)
-                PUT_C(']');
+            if (pParam->armv8.enmShift != kDisArmv8OpParmShiftNone)
+            {
+                Assert(   pParam->armv8.enmType == kDisArmv8OpParmImm
+                       || pParam->armv8.enmType == kDisArmv8OpParmGpr);
+                PUT_SZ(", ");
+                switch (pParam->armv8.enmShift)
+                {
+                    case kDisArmv8OpParmShiftLeft:
+                        PUT_SZ("LSL #");
+                        break;
+                    case kDisArmv8OpParmShiftRight:
+                        PUT_SZ("LSR #");
+                        break;
+                    case kDisArmv8OpParmShiftArithRight:
+                        PUT_SZ("ASR #");
+                        break;
+                    case kDisArmv8OpParmShiftRotate:
+                        PUT_SZ("ROR #");
+                        break;
+                    default:
+                        AssertFailed();
+                }
+                PUT_NUM_8(pParam->armv8.cShift);
+            }
         }
     }
 

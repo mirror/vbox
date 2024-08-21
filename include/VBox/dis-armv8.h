@@ -54,6 +54,8 @@ RT_C_DECLS_BEGIN
  */
 typedef struct
 {
+    /** Parameter type. */
+    DISARMV8OPPARM      enmType;
     /** The register operand. */
     union
     {
@@ -63,13 +65,17 @@ typedef struct
         /** IPRT System register encoding. */
         uint32_t        idSysReg;
     } Reg;
-    /** Scale factor. */
-    uint8_t         uScale;
+    /** Any shift applied. */
+    DISARMV8OPPARMSHIFT enmShift;
     /** Parameter size. */
-    uint8_t         cb;
-    uint8_t         bPadding;
-    /** Copy of the corresponding DISOPCODE::fParam1 / DISOPCODE::fParam2 / DISOPCODE::fParam3. */
-    uint32_t        fParam;
+    uint8_t             cb;
+    union
+    {
+        /** Scale factor. */
+        uint8_t         uScale;
+        /** Amount of bits to shift. */
+        uint8_t         cShift;
+    };
 } DIS_OP_PARAM_ARMV8_T;
 AssertCompile(sizeof(DIS_OP_PARAM_ARMV8_T) <= 16);
 /** Pointer to opcode parameter. */
@@ -89,8 +95,6 @@ typedef struct
 {
     /** Condition flag for the instruction - kArmv8InstrCond_Al if not conditional instruction. */
     DISARMV8INSTRCOND   enmCond;
-    /** Internal: Pointer to the instruction class table. */
-    PCDISARMV8INSNCLASS pInsnClass;
 } DIS_STATE_ARMV8_T;
 AssertCompile(sizeof(DIS_STATE_ARMV8_T) <= 32);
 
