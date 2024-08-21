@@ -544,8 +544,8 @@ void UIAcquireCloudMachineCloneNameDialog::prepareWidgets()
 
 void UIAcquireCloudMachineCloneNameDialog::sltRetranslateUI()
 {
-    setWindowTitle(tr("Clone name"));
-    m_pEditor->setPlaceholderText(tr("Enter clone name"));
+    setWindowTitle(tr("Clone Virtual Machine"));
+    m_pEditor->setPlaceholderText(tr("Enter machine name..."));
 }
 
 void UIAcquireCloudMachineCloneNameDialog::sltRevalidate()
