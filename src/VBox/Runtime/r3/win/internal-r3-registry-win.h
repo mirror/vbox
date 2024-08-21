@@ -34,8 +34,8 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
-#ifndef IPRT_INCLUDED_SRC_r3_win_registry_win_h
-#define IPRT_INCLUDED_SRC_r3_win_registry_win_h
+#ifndef IPRT_INCLUDED_SRC_r3_win_internal_r3_registry_win_h
+#define IPRT_INCLUDED_SRC_r3_win_internal_r3_registry_win_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -57,4 +57,4 @@
 RTDECL(int) RTSystemWinRegistryQueryDWORD(HKEY hKey, const char *pszKey, const char *pszName, DWORD *pdwValue);
 
 
-#endif /* !IPRT_INCLUDED_SRC_r3_win_registry_win_h */
+#endif /* !IPRT_INCLUDED_SRC_r3_win_internal_r3_registry_win_h */
