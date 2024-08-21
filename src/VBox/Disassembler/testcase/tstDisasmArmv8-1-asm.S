@@ -71,5 +71,7 @@ _TestProcA64:
 
         and x0, x0, #0xffff
 
+        ret x30
+
 .private_extern _TestProcA64_EndProc
 _TestProcA64_EndProc:

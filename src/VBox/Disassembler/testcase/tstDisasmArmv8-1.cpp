@@ -165,7 +165,7 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
 
     Rdr.pb = (const char *)pbSrc;
     Rdr.cb = cbSrc;
-    int rc = RTScriptLexCreateFromReader(&hLexSource, testDisasmLexerRead, 
+    int rc = RTScriptLexCreateFromReader(&hLexSource, testDisasmLexerRead,
                                          NULL /*pfnDtor*/, &Rdr /*pvUser*/, cbSrc,
                                          NULL /*phStrCacheId*/, NULL /*phStrCacheStringLit*/,
                                          &s_LexCfg);
