@@ -243,7 +243,7 @@ void UIBootFailureDialog::sltFileSelectorPathChanged(const QString &strPath)
     Q_UNUSED(strPath);
     bool fISOValid = checkISOImage();
     if (m_pBootImageSelector)
-        m_pBootImageSelector->mark(!fISOValid, tr("The path is invalid."), tr("The path is valid."));
+        m_pBootImageSelector->mark(!fISOValid, tr("The path is invalid"), tr("The path is valid"));
 
     if (m_pResetButton)
         m_pResetButton->setEnabled(fISOValid);
