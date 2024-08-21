@@ -563,7 +563,7 @@ static int rtScriptLexPopulate(PRTSCRIPTLEXINT pThis)
 RTDECL(int) RTScriptLexCreateFromReader(PRTSCRIPTLEX phScriptLex, PFNRTSCRIPTLEXRDR pfnReader,
                                         PFNRTSCRIPTLEXDTOR pfnDtor, void *pvUser,
                                         size_t cchBuf, PRTSTRCACHE phStrCacheId, PRTSTRCACHE phStrCacheStringLit,
-                                        PCRTSCRIPTLEXCFG pCfg) RT_NO_THROW_DEF
+                                        PCRTSCRIPTLEXCFG pCfg)
 {
     AssertPtrReturn(phScriptLex, VERR_INVALID_POINTER);
     AssertPtrReturn(pfnReader, VERR_INVALID_POINTER);
@@ -657,7 +657,7 @@ static DECLCALLBACK(int) rtScriptLexReaderStr(RTSCRIPTLEX hScriptLex, size_t off
 
 
 RTDECL(int) RTScriptLexCreateFromString(PRTSCRIPTLEX phScriptLex, const char *pszSrc, PRTSTRCACHE phStrCacheId,
-                                        PRTSTRCACHE phStrCacheStringLit, PCRTSCRIPTLEXCFG pCfg) RT_NO_THROW_DEF
+                                        PRTSTRCACHE phStrCacheStringLit, PCRTSCRIPTLEXCFG pCfg)
 {
     return RTScriptLexCreateFromReader(phScriptLex, rtScriptLexReaderStr, NULL, (void *)pszSrc, 0,
                                        phStrCacheId, phStrCacheStringLit, pCfg);
@@ -680,7 +680,7 @@ static DECLCALLBACK(int) rtScriptLexReaderFile(RTSCRIPTLEX hScriptLex, size_t of
 /**
  * @callback_method_impl{FNRTSCRIPTLEXDTOR, Destructor for the file variant.}
  */
-static DECLCALLBACK(void) rtScriptLexDtorFile(RTSCRIPTLEX hScriptLex, void *pvUser) RT_NO_THROW_DEF
+static DECLCALLBACK(void) rtScriptLexDtorFile(RTSCRIPTLEX hScriptLex, void *pvUser)
 {
     RT_NOREF(hScriptLex);
 
@@ -690,7 +690,7 @@ static DECLCALLBACK(void) rtScriptLexDtorFile(RTSCRIPTLEX hScriptLex, void *pvUs
 
 
 RTDECL(int) RTScriptLexCreateFromFile(PRTSCRIPTLEX phScriptLex, const char *pszFilename, PRTSTRCACHE phStrCacheId,
-                                      PRTSTRCACHE phStrCacheStringLit, PCRTSCRIPTLEXCFG pCfg) RT_NO_THROW_DEF
+                                      PRTSTRCACHE phStrCacheStringLit, PCRTSCRIPTLEXCFG pCfg)
 {
     RTFILE hFile;
     int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN);
@@ -706,7 +706,7 @@ RTDECL(int) RTScriptLexCreateFromFile(PRTSCRIPTLEX phScriptLex, const char *pszF
 }
 
 
-RTDECL(void) RTScriptLexDestroy(RTSCRIPTLEX hScriptLex) RT_NO_THROW_DEF
+RTDECL(void) RTScriptLexDestroy(RTSCRIPTLEX hScriptLex)
 {
     PRTSCRIPTLEXINT pThis = hScriptLex;
     AssertPtrReturnVoid(pThis);
@@ -726,7 +726,7 @@ RTDECL(void) RTScriptLexDestroy(RTSCRIPTLEX hScriptLex) RT_NO_THROW_DEF
 }
 
 
-RTDECL(int) RTScriptLexQueryToken(RTSCRIPTLEX hScriptLex, PCRTSCRIPTLEXTOKEN *ppToken) RT_NO_THROW_DEF
+RTDECL(int) RTScriptLexQueryToken(RTSCRIPTLEX hScriptLex, PCRTSCRIPTLEXTOKEN *ppToken)
 {
     PRTSCRIPTLEXINT pThis = hScriptLex;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -739,7 +739,7 @@ RTDECL(int) RTScriptLexQueryToken(RTSCRIPTLEX hScriptLex, PCRTSCRIPTLEXTOKEN *pp
 }
 
 
-RTDECL(RTSCRIPTLEXTOKTYPE) RTScriptLexGetTokenType(RTSCRIPTLEX hScriptLex) RT_NO_THROW_DEF
+RTDECL(RTSCRIPTLEXTOKTYPE) RTScriptLexGetTokenType(RTSCRIPTLEX hScriptLex)
 {
     PRTSCRIPTLEXINT pThis = hScriptLex;
     AssertPtrReturn(pThis, RTSCRIPTLEXTOKTYPE_INVALID);
@@ -751,7 +751,7 @@ RTDECL(RTSCRIPTLEXTOKTYPE) RTScriptLexGetTokenType(RTSCRIPTLEX hScriptLex) RT_NO
 }
 
 
-RTDECL(RTSCRIPTLEXTOKTYPE) RTScriptLexPeekNextTokenType(RTSCRIPTLEX hScriptLex) RT_NO_THROW_DEF
+RTDECL(RTSCRIPTLEXTOKTYPE) RTScriptLexPeekNextTokenType(RTSCRIPTLEX hScriptLex)
 {
     PRTSCRIPTLEXINT pThis = hScriptLex;
     AssertPtrReturn(pThis, RTSCRIPTLEXTOKTYPE_INVALID);
@@ -763,7 +763,7 @@ RTDECL(RTSCRIPTLEXTOKTYPE) RTScriptLexPeekNextTokenType(RTSCRIPTLEX hScriptLex) 
 }
 
 
-RTDECL(PCRTSCRIPTLEXTOKEN) RTScriptLexConsumeToken(RTSCRIPTLEX hScriptLex) RT_NO_THROW_DEF
+RTDECL(PCRTSCRIPTLEXTOKEN) RTScriptLexConsumeToken(RTSCRIPTLEX hScriptLex)
 {
     PRTSCRIPTLEXINT pThis = hScriptLex;
     AssertPtrReturn(pThis, NULL);
@@ -791,13 +791,13 @@ RTDECL(PCRTSCRIPTLEXTOKEN) RTScriptLexConsumeToken(RTSCRIPTLEX hScriptLex) RT_NO
 }
 
 
-RTDECL(char) RTScriptLexConsumeCh(RTSCRIPTLEX hScriptLex) RT_NO_THROW_DEF
+RTDECL(char) RTScriptLexConsumeCh(RTSCRIPTLEX hScriptLex)
 {
     return RTScriptLexConsumeChEx(hScriptLex, RTSCRIPT_LEX_CONV_F_DEFAULT);
 }
 
 
-RTDECL(char) RTScriptLexConsumeChEx(RTSCRIPTLEX hScriptLex, uint32_t fFlags) RT_NO_THROW_DEF
+RTDECL(char) RTScriptLexConsumeChEx(RTSCRIPTLEX hScriptLex, uint32_t fFlags)
 {
     PRTSCRIPTLEXINT pThis = hScriptLex;
     AssertPtrReturn(pThis, '\0');
@@ -811,13 +811,13 @@ RTDECL(char) RTScriptLexConsumeChEx(RTSCRIPTLEX hScriptLex, uint32_t fFlags) RT_
 }
 
 
-RTDECL(char) RTScriptLexPeekCh(RTSCRIPTLEX hScriptLex, unsigned idx) RT_NO_THROW_DEF
+RTDECL(char) RTScriptLexPeekCh(RTSCRIPTLEX hScriptLex, unsigned idx)
 {
     return RTScriptLexPeekChEx(hScriptLex, idx, RTSCRIPT_LEX_CONV_F_DEFAULT);
 }
 
 
-RTDECL(char) RTScriptLexPeekChEx(RTSCRIPTLEX hScriptLex, unsigned idx, uint32_t fFlags) RT_NO_THROW_DEF
+RTDECL(char) RTScriptLexPeekChEx(RTSCRIPTLEX hScriptLex, unsigned idx, uint32_t fFlags)
 {
     PRTSCRIPTLEXINT pThis = hScriptLex;
     AssertPtrReturn(pThis, '\0');
@@ -841,19 +841,19 @@ RTDECL(char) RTScriptLexPeekChEx(RTSCRIPTLEX hScriptLex, unsigned idx, uint32_t 
 }
 
 
-RTDECL(char) RTScriptLexGetCh(RTSCRIPTLEX hScriptLex) RT_NO_THROW_DEF
+RTDECL(char) RTScriptLexGetCh(RTSCRIPTLEX hScriptLex)
 {
     return RTScriptLexPeekCh(hScriptLex, 0);
 }
 
 
-RTDECL(char) RTScriptLexGetChEx(RTSCRIPTLEX hScriptLex, uint32_t fFlags) RT_NO_THROW_DEF
+RTDECL(char) RTScriptLexGetChEx(RTSCRIPTLEX hScriptLex, uint32_t fFlags)
 {
     return RTScriptLexPeekChEx(hScriptLex, 0, fFlags);
 }
 
 
-RTDECL(void) RTScriptLexSkipWhitespace(RTSCRIPTLEX hScriptLex) RT_NO_THROW_DEF
+RTDECL(void) RTScriptLexSkipWhitespace(RTSCRIPTLEX hScriptLex)
 {
     PRTSCRIPTLEXINT pThis = hScriptLex;
     AssertPtrReturnVoid(pThis);
@@ -881,7 +881,7 @@ RTDECL(void) RTScriptLexSkipWhitespace(RTSCRIPTLEX hScriptLex) RT_NO_THROW_DEF
 
 
 RTDECL(int) RTScriptLexScanNumber(RTSCRIPTLEX hScriptLex, uint8_t uBase, bool fAllowReal,
-                                  PRTSCRIPTLEXTOKEN pTok) RT_NO_THROW_DEF
+                                  PRTSCRIPTLEXTOKEN pTok)
 {
     RT_NOREF(uBase, fAllowReal, pTok);
     PRTSCRIPTLEXINT pThis = hScriptLex;
@@ -942,7 +942,7 @@ RTDECL(int) RTScriptLexScanNumber(RTSCRIPTLEX hScriptLex, uint8_t uBase, bool fA
 
 
 RTDECL(int) RTScriptLexScanIdentifier(RTSCRIPTLEX hScriptLex, char ch,
-                                      PRTSCRIPTLEXTOKEN pTok, void *pvUser) RT_NO_THROW_DEF
+                                      PRTSCRIPTLEXTOKEN pTok, void *pvUser)
 {
     PRTSCRIPTLEXINT pThis = hScriptLex;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -984,7 +984,7 @@ RTDECL(int) RTScriptLexScanIdentifier(RTSCRIPTLEX hScriptLex, char ch,
  * @param   ch                     The character to add.
  * @param   idx                    At which position to add the character in the string.
  */
-static int rtScriptLexScanStringLiteralChAdd(PRTSCRIPTLEXINT pThis, char ch, uint32_t idx) RT_NO_THROW_DEF
+static int rtScriptLexScanStringLiteralChAdd(PRTSCRIPTLEXINT pThis, char ch, uint32_t idx)
 {
     int rc = VINF_SUCCESS;
 
@@ -1013,7 +1013,7 @@ static int rtScriptLexScanStringLiteralChAdd(PRTSCRIPTLEXINT pThis, char ch, uin
 
 
 RTDECL(int) RTScriptLexScanStringLiteralC(RTSCRIPTLEX hScriptLex, char ch,
-                                          PRTSCRIPTLEXTOKEN pTok, void *pvUser) RT_NO_THROW_DEF
+                                          PRTSCRIPTLEXTOKEN pTok, void *pvUser)
 {
     RT_NOREF(ch, pvUser);
     PRTSCRIPTLEXINT pThis = hScriptLex;
@@ -1111,7 +1111,7 @@ RTDECL(int) RTScriptLexScanStringLiteralC(RTSCRIPTLEX hScriptLex, char ch,
 
 
 RTDECL(int) RTScriptLexScanStringLiteralPascal(RTSCRIPTLEX hScriptLex, char ch,
-                                               PRTSCRIPTLEXTOKEN pTok, void *pvUser) RT_NO_THROW_DEF
+                                               PRTSCRIPTLEXTOKEN pTok, void *pvUser)
 {
     RT_NOREF(ch, pvUser);
     PRTSCRIPTLEXINT pThis = hScriptLex;
