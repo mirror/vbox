@@ -34,8 +34,7 @@
                     can view from the <ph conkeyref="vbox-conkeyref-phrases/oci-console"/>. </p>
             </li>
             <li>
-                <p>(Optional) If you are using the cloud profile to connect to cloud virtual machines, select the <b
-                        outputclass="bold">Show VMs</b> check box. </p>
+                <p>(Optional) If you are using the cloud profile to connect to cloud virtual machines, select the <b outputclass="bold">Show VMs</b> check box.</p>
                 <p>This creates a new subgroup of the <b outputclass="bold">OCI</b> group in <ph
                         conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. See <xref
                         href="cloud-vm-oci-group.dita#cloud-vm-oci-group"/>. </p>

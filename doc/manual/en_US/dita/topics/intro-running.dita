@@ -4,9 +4,7 @@
   <title>Running a Virtual Machine</title>
   
   <body>
-    <p>
-      To start a virtual machine, you have the following options:
-    </p>
+    <p> To start a virtual machine (VM), you have the following options: </p>
     <ul>
       <li>
         <p> Double-click the VM's name in the machine list in <ph
@@ -23,9 +21,7 @@
           machine settings file. This file has a <filepath>.vbox</filepath> file extension. </p>
       </li>
     </ul>
-    <p>Starting a virtual machine displays a new window, and the virtual machine which you selected will boot up.
-      Everything which would normally be seen on the virtual system's monitor is shown in the window. See <xref
-        href="Introduction.dita#Introduction/fig-win2016-intro"/>. </p>
+    <p>The VM you started appears in a new window and you will see it start to boot up, or prompt you to install an operating system as required. Everything that would normally be seen on the virtual system's monitor is shown in the window. </p>
     <p>In general, you can use the virtual machine as you would use a real computer. The following topics describe a few
       points to note when running a VM. </p>
   </body>

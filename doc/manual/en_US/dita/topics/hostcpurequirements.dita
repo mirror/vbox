@@ -1,13 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="hostcpurequirements">
-  <title>Host CPU Requirements</title>
+  <title>Intel Host CPU Requirements</title>
   
   <body>
-    <p>
-        SSE2 (Streaming SIMD Extensions 2) support is required for host
-        CPUs.
-      </p>
+    <p>Intel host CPUs must have SSE2 (Streaming SIMD Extensions 2). </p>
   </body>
   
 </topic>

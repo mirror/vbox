@@ -29,14 +29,7 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">Input.</b> Enables you to specify
-          keyboard shortcuts, such as the <b outputclass="bold">Host
-          key</b>. This is the key that toggles whether the
-          cursor is in the focus of the VM or the Host OS windows, see
-          <xref href="keyb_mouse_normal.dita#keyb_mouse_normal"/>. The Host key is also used
-          to trigger certain VM actions, see
-          <xref href="specialcharacters.dita#specialcharacters"/>.
-        </p>
+        <p><b outputclass="bold">Input.</b> Enables you to specify keyboard shortcuts, both in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> and in individual VMs. For example you might want to specify a different <b outputclass="bold">Host key</b>. This is the key that toggles whether the cursor is in the focus of the VM or the Host OS windows, see <xref href="keyb_mouse_normal.dita#keyb_mouse_normal"/>. The Host key is also used to trigger certain VM actions, see <xref href="specialcharacters.dita#specialcharacters"/>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Update.</b> Enables you to

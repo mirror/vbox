@@ -1,15 +1,14 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="hostossupport">
-  <title>Supported Host Operating Systems</title>
+  <title>Available Installation Packages</title>
   <!-- 7.1: Arm platforms; require statement on host support -->
   <body>
-    <p>Currently, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> runs on the following host
-      OSes: </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> runs on the following host Operating Systems (OSs): </p>
     <ul>
       <li>
         <p>
-          <b outputclass="bold">Windows hosts (64-bit):</b>
+          <b outputclass="bold">x86-64 Windows hosts:</b>
         </p>
         <ul>
           <li>
@@ -19,17 +18,13 @@
             <p>Windows 11 </p>
           </li>
           <li>
-            <p>Windows Server 2019 </p>
-          </li>
-          <li>
             <p>Windows Server 2022 </p>
           </li>
-          <li>Windows Server 2025</li>
         </ul>
       </li>
       <li>
         <p>
-          <b outputclass="bold">macOS hosts (64-bit):</b>
+          <b outputclass="bold">Intel x86-64 macOS hosts:</b>
         </p>
         <ul>
           <li>
@@ -41,25 +36,33 @@
           <li>
             <p>13 (Ventura) </p>
           </li>
-          <li>14 (Sonoma)</li>
+          <li>
+            <p>14 (Sonoma)</p>
+          </li>
         </ul>
-        <p>Intel hardware is required. See also <xref href="KnownIssues.dita">Known
-            Limitations</xref>. </p>
-        <p>An installer package is available for macOS/Arm64, for systems using an Apple silicon
-          CPU. With this package, you can run some guest operating systems for Intel x86/x64 CPUs in
-          an emulation. </p>
-        <p>The macOS/Arm64 installer package for Apple silicon platform is available as a Developer
-          Preview release. This package represents a work in progress project and the performance is
-          very modest. </p>
-        <note>
-          <p>Developer Preview is a public release for developers, which provides early access to unsupported software
-            release and features. </p>
-        </note>
+        <p>See also <xref href="KnownIssues.dita">Known Limitations</xref>. </p>
       </li>
       <li>
-        <p><b outputclass="bold">Linux hosts (64-bit).</b>
-          Includes the following:
-        </p>
+        <p>
+          <b outputclass="bold">Arm macOS hosts (64-bit):</b></p>
+        <ul>
+          <li>
+            <p>11 (Big Sur) </p>
+          </li>
+          <li>
+            <p>12 (Monterey) </p>
+          </li>
+          <li>
+            <p>13 (Ventura) </p>
+          </li>
+          <li>
+            <p>14 (Sonoma)</p>
+          </li>
+        </ul>
+        <p>See also <xref href="guest-os.dita"/> for limitations on the VMs you can create on an Arm host. </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">x86-64 Linux hosts.</b> Includes the following: </p>
         <ul>
           <li>
             <p>Ubuntu 20.04 LTS, 22.04 and 24.04</p>
@@ -68,16 +71,16 @@
             <p>Debian GNU/Linux 11 (Bullseye) and 12 (Bookworm)</p>
           </li>
           <li>
-            <p>Oracle Linux 7, 8 and 9 </p>
+            <p>Oracle Linux 8 and 9 </p>
           </li>
           <li>
             <p>CentOS/Red Hat Enterprise Linux 8 and 9 </p>
           </li>
           <li>
-            <p>Fedora 39 and 40 </p>
+            <p>Fedora 39 and 40</p>
           </li>
           <li>
-            <p>SUSE Linux Enterprise server 15 </p>
+            <p>SUSE Linux Enterprise server 15</p>
           </li>
           <li>
             <p>openSUSE Leap 15.3, 15.4 and 15.5</p>
@@ -105,7 +108,6 @@
         </ul>
       </li>
     </ul>
-    <p>Note that any feature which is marked as <i>experimental</i> is not supported. Feedback and suggestions about
-      such features are welcome. </p>
+    <p>Note that any feature that is marked as <i>experimental</i> is not supported. Feedback and suggestions about such features are welcome. </p>
   </body>
 </topic>

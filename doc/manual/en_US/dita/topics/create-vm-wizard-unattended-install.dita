@@ -16,10 +16,9 @@
           <li>Enter the <b outputclass="bold">Username and Password</b> for a default user on the
             guest OS. </li>
           <li>
-            <p>For Windows guests, enter the <b outputclass="bold">Product Key.</b> supplied with
-              Windows. </p>
-      </li>
-      <li>
+            <p>For Windows guests, enter the <b outputclass="bold">Product Key</b> supplied with Windows. </p>
+          </li>
+          <li>
             <p>Enter the <b outputclass="bold">Hostname</b> for the VM. By default, this is the same
               as the VM name.</p>
       </li>
@@ -28,10 +27,7 @@
           </li>
           <li>Select <b outputclass="bold">Install in Background</b> if you want to enable headless
             mode for the VM rather than using a graphical user interface. </li>
-          <li>Select <b outputclass="bold">Guest Additions</b> if you would like <ph
-              conkeyref="vbox-conkeyref-phrases/product-name"/> to install the Guest Additions after
-            the OS. Download the Guest Additions installation ISO to the host, and select the file
-            location.</li>
+          <li>Unattended Guest Additions installation is available for some x86 guests. Select <b outputclass="bold">Guest Additions</b> if you would like <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to install the Guest Additions after the OS. Download the Guest Additions installation ISO to the host, and select the file location.</li>
           <li>Click <b outputclass="bold">Next</b> to <xref href="create-vm-wizard-hardware.dita"/>.
           </li>
         </ol>

@@ -14,8 +14,8 @@
     <p>To enable or disable listing of cloud VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> for a specific
       cloud profile, follow these steps. </p>
     <ol id="ol_uly_nwf_gcc">
-      <li>Display the <b outputclass="bold">Cloud Profile Manager</b> .</li>
-      <li>Select or deselect the <b outputclass="bold">List VMs</b> check box for each cloud profile.</li>
+      <li>Display the <b outputclass="bold">Cloud Profile Manager</b>.</li>
+      <li>Select or clear the <b outputclass="bold">List VMs</b> check box for each cloud profile.</li>
     </ol>
   </body>
   

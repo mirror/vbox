@@ -30,11 +30,7 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">Configure an <ph conkeyref="vbox-conkeyref-phrases/oci"/>
-            instance.</b> You can change settings for the
-            instance, such as display name and shape. See
-            <xref href="cloud-vm-settings.dita#cloud-vm-settings"/>.
-          </p>
+        <p><b outputclass="bold">Configure an <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance.</b> You can change settings for the instance, such as display name. See <xref href="cloud-vm-settings.dita#cloud-vm-settings"/>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Control an <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance.</b>

@@ -61,11 +61,8 @@
             <p>The display name for the custom image in <ph conkeyref="vbox-conkeyref-phrases/oci"/>. </p>
           </li>
           <li>
-            <p>The launch mode for the custom image. </p>
-            <p><b outputclass="bold">Paravirtualized</b> mode
-                gives improved performance and should be suitable for
-                most <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VMs.
-              </p>
+            <p>The launch mode for the cloud instance.</p>
+            <p><b outputclass="bold">Paravirtualized</b> mode gives improved performance and is suitable for most <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VMs. </p>
             <p><b outputclass="bold">Emulated</b> mode is
                 suitable for legacy OS images.
               </p>
