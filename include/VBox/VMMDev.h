@@ -1762,7 +1762,7 @@ typedef struct
 AssertCompileSize(VMMDevHGCMCancel, 32);
 
 /**
- * HGCM cancel request structure, version 2.
+ * HGCM cancel request structure, version 2/old.
  *
  * Used by VMMDevReq_HGCMCancel2.
  *
@@ -1776,8 +1776,34 @@ typedef struct
     VMMDevRequestHeader header;
     /** The physical address of the request to cancel. */
     RTGCPHYS32 physReqToCancel;
+} VMMDevHGCMCancel2Old;
+AssertCompileSize(VMMDevHGCMCancel2Old, 24+4);
+
+/**
+ * HGCM cancel request structure, version 2 w/ 64-bit address.
+ *
+ * Used by VMMDevReq_HGCMCancel2.
+ *
+ * VINF_SUCCESS when cancelled.
+ * VERR_NOT_FOUND if the specified request cannot be found.
+ * VERR_INVALID_PARAMETER if the address is invalid valid.
+ *
+ * @note  For little endian guests, this is backwards compatible with
+ *        VMMDevHGCMCancel2Old since the hosts prior to 7.1 only checked for a
+ *        minimum sizeof(VMMDevHGCMCancel2Old) and would ignore any additional
+ *        bytes in the request.  Growing physReqToCancel to 64-bit makes use of
+ *        this, though the host code now require either the exactly old size or
+ *        a minimum size of this amended structure.
+ * @since VBox 7.1
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** The physical address of the request to cancel. */
+    RTGCPHYS physReqToCancel;
 } VMMDevHGCMCancel2;
-AssertCompileSize(VMMDevHGCMCancel2, 24+4);
+AssertCompileSize(VMMDevHGCMCancel2, 24+8);
 
 #endif /* VBOX_WITH_HGCM */
 

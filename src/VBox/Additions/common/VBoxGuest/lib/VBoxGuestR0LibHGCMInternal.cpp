@@ -732,6 +732,16 @@ static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, PFNVBGLHGCMCALLBA
              * the RC from the callback indicates which. Try cancel the request.
              *
              * This is a bit messy because we're racing request completion. Sorry.
+             *
+             * Note! The VMMDevHGCMCancel2 request size was increased in 7.1 to fully
+             *       handle 64-bit addresses.  Using the new structure size with older
+             *       VBox host versions will work, though, since they check for a
+             *       minimum request size and will ignore any extra stuff they don't
+             *       understand.  Both ARM and x86 guests are little endian, this
+             *       naturally wouldn't work for big-endian guests.
+             *
+             *       Of course, they won't find requests with addresses above 4GB, but
+             *       that's not a real issue since it is used by ARM guests only.
              */
             /** @todo It would be nice if we could use the waiter callback to do further
              *  waiting in case of a completion race. If it wasn't for WINNT having its own
@@ -744,19 +754,6 @@ static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, PFNVBGLHGCMCALLBA
                 rc2 = VbglR0GRPerform(&pCancelReq->header);
                 VbglR0GRFree(&pCancelReq->header);
             }
-#if 1 /** @todo ADDVER: Remove this on next minor version change. */
-            if (rc2 == VERR_NOT_IMPLEMENTED)
-            {
-                /* host is too old, or we're out of heap. */
-                pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
-                pHGCMCall->header.header.requestType = VMMDevReq_HGCMCancel;
-                rc2 = VbglR0GRPerform(&pHGCMCall->header.header);
-                if (rc2 == VERR_INVALID_PARAMETER)
-                    rc2 = VERR_NOT_FOUND;
-                else if (RT_SUCCESS(rc))
-                    RTThreadSleep(1);
-            }
-#endif
             if (RT_SUCCESS(rc)) rc = VERR_INTERRUPTED; /** @todo weed this out from the WINNT VBoxGuest code. */
             if (RT_SUCCESS(rc2))
             {

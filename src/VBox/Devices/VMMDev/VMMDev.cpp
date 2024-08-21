@@ -2000,13 +2000,21 @@ static int vmmdevReqHandler_HGCMCancel(PVMMDEVCC pThisCC, VMMDevRequestHeader *p
  */
 static int vmmdevReqHandler_HGCMCancel2(PVMMDEVCC pThisCC, VMMDevRequestHeader *pReqHdr)
 {
-    VMMDevHGCMCancel2 *pReq = (VMMDevHGCMCancel2 *)pReqHdr;
-    AssertMsgReturn(pReq->header.size >= sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);  /** @todo Not sure why this >= ... */
+    /* Note! Using '>=' for the size check because that simplifies amending the
+             structure (like we did already) */
+    RTGCPHYS GCPhysReqToCancel;
+    if (pReqHdr->size >= sizeof(VMMDevHGCMCancel2))
+        GCPhysReqToCancel = ((VMMDevHGCMCancel2 const *)pReqHdr)->physReqToCancel;
+    else if (pReqHdr->size == sizeof(VMMDevHGCMCancel2Old))
+        GCPhysReqToCancel = ((VMMDevHGCMCancel2Old const *)pReqHdr)->physReqToCancel;
+    else
+        AssertMsgFailedReturn(("%u\n", pReqHdr->size), VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
     if (pThisCC->pHGCMDrv)
     {
-        Log(("VMMDevReq_HGCMCancel2\n"));
-        return vmmdevR3HgcmCancel2(pThisCC, pReq->physReqToCancel);
+        Log(("VMMDevReq_HGCMCancel2: %RGp\n", GCPhysReqToCancel));
+        return vmmdevR3HgcmCancel2(pThisCC, GCPhysReqToCancel);
     }
 
     Log(("VMMDevReq_HGCMCancel2: HGCM Connector is NULL!\n"));
