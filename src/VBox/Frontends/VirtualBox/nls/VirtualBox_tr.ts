@@ -157,7 +157,7 @@
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver is either not loaded or not set up correctly. Please try setting it up again by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.&lt;br/&gt;&lt;br/&gt;If your system has EFI Secure Boot enabled you may also need to sign the kernel modules (vboxdrv, vboxnetflt, vboxnetadp, vboxpci) before you can load them. Please see your Linux system&apos;s documentation for more information.</source>
-        <translation>VirtualBox Linux çekirdek sürücüsü ya yüklenmedi ya da doğru olarak ayarlanmadı. Lütfen root kullanıcısı olarak &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; dosyasını çalıştırarak bunu ayarlamaya çalışın. Eğer sisteminizde EFI Secure Boot etkinleştirildiyse, çekirdek modüllerini (vboxdrv, vboxnetflt, vboxnetadp, vboxpci) yüklemeden önce ayrıca bunları imzalamanız gerekebilir. Lütfen daha fazla bilgi için Linux sisteminin belgelerine bakın.</translation>
+        <translation>VirtualBox Linux çekirdek sürücüsü ya yüklenmedi ya da doğru olarak ayarlanmadı. Lütfen root kullanıcısı olarak &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; dosyasını çalıştırarak bunu tekrar ayarlamayı deneyin. Eğer sisteminizde EFI Secure Boot etkinleştirildiyse, çekirdek modüllerini (vboxdrv, vboxnetflt, vboxnetadp, vboxpci) yüklemeden önce ayrıca bunları imzalamanız gerekebilir. Lütfen daha fazla bilgi için Linux sisteminin belgelerine bakın.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you are not mixing builds of VirtualBox from different sources.</source>
@@ -312,7 +312,7 @@
     <name>QIRichTextLabel</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">&amp;Kopyala</translation>
+        <translation>&amp;Kopyala</translation>
     </message>
 </context>
 <context>
@@ -3241,19 +3241,19 @@
     </message>
     <message>
         <source>&amp;Upgrade Guest Additions...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Misafir Eklentilerini yükselt...</translation>
     </message>
     <message>
         <source>Upgrade Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir Eklentilerini yükselt</translation>
     </message>
     <message>
         <source>Virtual Screen %1</source>
-        <translation type="unfinished">Sanal Ekran %1</translation>
+        <translation>Sanal Ekran %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation type="unfinished">Anamakine Ekranı %1 kullan</translation>
+        <translation>Anamakine Ekranı %1 kullan</translation>
     </message>
     <message>
         <source>Enable Clipboard File Transfers</source>
@@ -4991,12 +4991,12 @@
     <message>
         <source>Immutable</source>
         <comment>MediumType</comment>
-        <translation>Sabit</translation>
+        <translation>Değiştirilemez</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>MediumType</comment>
-        <translation>Doğrudan yazım</translation>
+        <translation>Doğrudan Yazım</translation>
     </message>
     <message>
         <source>Shareable</source>
@@ -5006,12 +5006,12 @@
     <message>
         <source>Readonly</source>
         <comment>MediumType</comment>
-        <translation>Salt okunur</translation>
+        <translation>Salt Okunur</translation>
     </message>
     <message>
         <source>Multi-attach</source>
         <comment>MediumType</comment>
-        <translation>Çoklu takma</translation>
+        <translation>Çoklu Takma</translation>
     </message>
     <message>
         <source>Dynamically allocated storage</source>
@@ -5071,7 +5071,7 @@
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Takılmadı</translation>
+        <translation>Takılı değil</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -5698,7 +5698,7 @@
     <message>
         <source>Not Attached</source>
         <comment>network adapter</comment>
-        <translation type="vanished">Takılmadı</translation>
+        <translation type="vanished">Takılı Değil</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -6163,12 +6163,12 @@
     <message>
         <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
         <comment>image</comment>
-        <translation type="vanished">&lt;p&gt;Şuna takıldı:  %1&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Şuna takılı:  %1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
         <comment>image</comment>
-        <translation type="vanished">&lt;i&gt;Takılmadı&lt;/i&gt;</translation>
+        <translation type="vanished">&lt;i&gt;Takılı Değil&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
@@ -6832,7 +6832,7 @@
     <message>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation>Takılmadı</translation>
+        <translation>Takılı Değil</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -7104,6 +7104,11 @@
         <translation>Etkinleştirildi</translation>
     </message>
     <message>
+        <source>Nested VT-x/AMD-V</source>
+        <comment>details (system)</comment>
+        <translation>İç İçe VT-x/AMD-V</translation>
+    </message>
+    <message>
         <source>Enabled</source>
         <comment>details (display/3D Acceleration)</comment>
         <translation type="unfinished"></translation>
@@ -7207,11 +7212,6 @@
         <source>TCP</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">TCP</translation>
-    </message>
-    <message>
-        <source>Nested VT-x/AMD-V</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8560,7 +8560,7 @@
     </message>
     <message>
         <source> bytes</source>
-        <translation>bayt</translation>
+        <translation> bayt</translation>
     </message>
     <message>
         <source>File Count</source>
@@ -8828,11 +8828,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>File manager cannot work since the selected guest is not currently running.</source>
-        <translation>Dosya yöneticisi, seçilen misafir şu anda çalışmadığından çalışamaz.</translation>
+        <translation>Seçilen misafir şu anda çalışmadığından dosya yöneticisi çalışamıyor.</translation>
     </message>
     <message>
         <source>File manager cannot work since the guest is paused.</source>
-        <translation>Misafir duraklatıldığından dosya yöneticisi çalışamaz.</translation>
+        <translation>Misafir duraklatıldığından dosya yöneticisi çalışamıyor.</translation>
     </message>
     <message>
         <source>File manager cannot work since the selected guest does not have the guest additions.</source>
@@ -8852,11 +8852,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>File manager cannot work since no guest additions were detected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiçbir misafir eklentisi algılanmadığından dosya yöneticisi çalışamıyor.</translation>
     </message>
     <message>
         <source>File manager cannot work. The guest additions need to be updated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yöneticisi çalışamıyor. Misafir eklentilerinin güncellenmesi gerekiyor.</translation>
     </message>
     <message>
         <source>Preferences</source>
@@ -9448,7 +9448,7 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation type="vanished">Takılmadı</translation>
+        <translation type="vanished">Takılı Değil</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -11177,7 +11177,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source> bytes</source>
-        <translation type="vanished">bayt</translation>
+        <translation type="vanished"> bayt</translation>
     </message>
     <message>
         <source>File Count</source>
@@ -14927,7 +14927,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&amp;Attached to:</source>
-        <translation type="vanished">Şun&amp;a takıldı:</translation>
+        <translation type="vanished">Şun&amp;a takılı:</translation>
     </message>
     <message>
         <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
@@ -15058,7 +15058,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation type="vanished">Dahili bir ağa, yalnızca-anamakine ağına ya da bir köprüye takıldığında ağ bağdaştırıcısının karma kipi politikasını seçer.</translation>
+        <translation type="vanished">Dahili bir ağa, yalnızca anamakine ağına ya da bir köprüye takıldığında ağ bağdaştırıcısının karma kipi ilkesini seçer.</translation>
     </message>
     <message>
         <source>Generic Properties:</source>
@@ -15160,14 +15160,6 @@ Oturum Panelini kullanın</translation>
         <source>No host-only network name is currently specified.</source>
         <translation>Şu anda belirtilmiş yalnızca-anamakine adı yok.</translation>
     </message>
-    <message>
-        <source>No host network interface is selected</source>
-        <translation type="obsolete">Hiç sunucu ağ arayüzü seçilmedi</translation>
-    </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">İç ağ adı belirtilmedi</translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
@@ -15186,6 +15178,17 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="obsolete">Sanal ağ kablosunun başlangıçta makineye takılı olup olmadığını gösterir.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>No host network interface is selected</source>
+        <translation type="obsolete">Hiç sunucu ağ arayüzü seçilmedi</translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">İç ağ adı belirtilmedi</translation>
     </message>
 </context>
 <context>
@@ -15883,7 +15886,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="vanished">Şuna Takıldı:</translation>
+        <translation type="vanished">Şuna Takılı:</translation>
     </message>
     <message>
         <source>Allows to use host I/O caching capabilities.</source>
@@ -17061,12 +17064,12 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
         <comment>to machines</comment>
-        <translation type="unfinished">&lt;p&gt;Şuna takıldı:  %1&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Şuna takılı:  %1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
         <comment>to machines</comment>
-        <translation type="unfinished">&lt;i&gt;Takılmadı&lt;/i&gt;</translation>
+        <translation type="unfinished">&lt;i&gt;Takılı Değil&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
@@ -17253,7 +17256,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation>Şuna takıldı:</translation>
+        <translation>Şuna takılı:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
@@ -17265,7 +17268,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Takılmadı&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Takılı&amp;nbsp;Değil&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
@@ -17338,7 +17341,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="vanished">Şuna takıldı:</translation>
+        <translation type="vanished">Şuna takılı:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
@@ -17350,7 +17353,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="vanished">&lt;i&gt;Takılmadı&lt;/i&gt;</translation>
+        <translation type="vanished">&lt;i&gt;Takılı&amp;nbsp;Değil&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
@@ -19300,11 +19303,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Aşağıdaki sanal makineleri makine listesinden kaldırmak üzeresiniz:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Sanal makineleri içeren dosyaları da sabit diskinizden silmek ister misiniz? Bunu yapmak, aynı zamanda makinelerin sanal sabit disklerini içeren dosyaları başka bir makine tarafından kullanımda değilseler kaldıracak.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Aşağıdaki sanal makineleri makine listesinden kaldırmak üzeresiniz:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Sanal makineleri içeren dosyaları da sabit diskinizden silmek ister misiniz? Bunu yapmak, aynı zamanda makinenin sanal sabit disklerini içeren dosyaları başka bir makine tarafından kullanımda değilseler kaldıracak.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Aşağıdaki sanal makineleri makine listesinden kaldırmak üzeresiniz:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Sanal makineleri içeren dosyaları da sabit diskinizden silmek ister misiniz?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Aşağıdaki sanal makineleri makine listesinden kaldırmak üzeresiniz:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Sanal makineyi içeren dosyaları da sabit diskinizden silmek ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Do you wish to cancel all current network operations?</source>
@@ -20503,11 +20506,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Host only network failure ...</source>
-        <translation>Yalnızca-anamakine ağı arızası ...</translation>
+        <translation>Yalnızca anamakine ağı arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire host only network parameter.</source>
-        <translation>Yalnızca-anamakine ağı parametresini alma başarısız.</translation>
+        <translation>Yalnızca anamakine ağı parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>NAT network failure ...</source>
@@ -20595,7 +20598,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Failed to change host only network parameter.</source>
-        <translation>Yalnızca-anamakine ağı parametresini değiştirme başarısız.</translation>
+        <translation>Yalnızca anamakine ağı parametresini değiştirme başarısız.</translation>
     </message>
     <message>
         <source>Failed to change NAT network parameter.</source>
@@ -20707,11 +20710,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Can&apos;t find host only network ...</source>
-        <translation>Yalnızca-anamakine ağı bulunamıyor ...</translation>
+        <translation>Yalnızca anamakine ağı bulunamıyor ...</translation>
     </message>
     <message>
         <source>Unable to find the host only network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt; yalnızca-anamakine ağı bulunamıyor.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; yalnızca anamakine ağı bulunamıyor.</translation>
     </message>
     <message>
         <source>Can&apos;t find NAT network ...</source>
@@ -20747,19 +20750,19 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Can&apos;t create host only network ...</source>
-        <translation>Yalnızca-anamakine ağı oluşturulamıyor ...</translation>
+        <translation>Yalnızca anamakine ağı oluşturulamıyor ...</translation>
     </message>
     <message>
         <source>Failed to create a host only network.</source>
-        <translation>Yalnızca-anamakine ağı oluşturma başarısız.</translation>
+        <translation>Yalnızca anamakine ağı oluşturma başarısız.</translation>
     </message>
     <message>
         <source>Can&apos;t remove host only network ...</source>
-        <translation>Yalnızca-anamakine ağı kaldırılamıyor ...</translation>
+        <translation>Yalnızca anamakine ağı kaldırılamıyor ...</translation>
     </message>
     <message>
         <source>Failed to remove the host only network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt; yalnızca-anamakine ağını kaldırma başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; yalnızca anamakine ağını kaldırma başarısız.</translation>
     </message>
     <message>
         <source>Can&apos;t create NAT network ...</source>
@@ -20815,7 +20818,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Can&apos;t discard saved state ...</source>
-        <translation>Kaydedilmiş durumdan vazgeçilemiyor...</translation>
+        <translation>Kaydedildi durumundan vazgeçilemiyor...</translation>
     </message>
     <message>
         <source>Can&apos;t remove machine ...</source>
@@ -21372,7 +21375,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Machine Folder:</source>
-        <translation type="vanished"> Makine Klasörü:</translation>
+        <translation type="vanished">Makine Klasörü:</translation>
     </message>
     <message>
         <source>Invalid name</source>
@@ -21498,7 +21501,7 @@ Oturum Panelini kullanın</translation>
     <name>UINetworkAttachmentEditor</name>
     <message>
         <source>&amp;Attached to:</source>
-        <translation>Şun&amp;a takıldı:</translation>
+        <translation>Şun&amp;a takılı:</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -21586,7 +21589,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Holds the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation>Dahili bir ağa, yalnızca-anamakine ağına ya da bir köprüye takıldığında ağ bağdaştırıcısının karma kipi ilkesini tutar.</translation>
+        <translation>Dahili bir ağa, yalnızca anamakine ağına ya da bir köprüye takıldığında ağ bağdaştırıcısının karma kipi ilkesini tutar.</translation>
     </message>
     <message>
         <source>&amp;MAC Address:</source>
@@ -21933,7 +21936,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&amp;Enable IPv6</source>
-        <translation> IPv6 &amp;etkinleştir</translation>
+        <translation>IPv6 &amp;etkinleştir</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
@@ -24483,7 +24486,8 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <source>The file will be saved under:
 </source>
-        <translation type="vanished">Dosya şunun altına kaydedilecektir:</translation>
+        <translation type="vanished">Dosya şunun altına kaydedilecektir:
+</translation>
     </message>
     <message>
         <source> is an invalid file name</source>
@@ -24785,7 +24789,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Attached to:</source>
-        <translation>Şuna takıldı:</translation>
+        <translation>Şuna takılı:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
@@ -24957,7 +24961,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
-            <numerusform>Uyarı: Takılı %n sabit kalıba sahip çalışan makinenin anlık görüntüsünü alıyorsunuz. Bu anlık görüntüyle çalıştığınız sürece sabit kalıp(lar) veri kaybını önlemek için sıfırlanmayacaktır.</numerusform>
+            <numerusform>Uyarı: Takılı %n değiştirilemez kalıba sahip çalışan makinenin anlık görüntüsünü alıyorsunuz. Bu anlık görüntüyle çalıştığınız sürece değiştirilemez kalıp(lar) veri kaybını önlemek için sıfırlanmayacaktır.</numerusform>
         </translation>
     </message>
     <message>
@@ -28075,7 +28079,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation>Seçildiğinde, kaynak VM&apos;in tüm kaydedilmiş durumları da çoğaltılır.</translation>
+        <translation>Seçildiğinde, kaynak VM&apos;in tüm kaydedildi durumları da çoğaltılır.</translation>
     </message>
     <message>
         <source>When checked, disk names will be preserved during cloning.</source>
@@ -28170,11 +28174,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation type="vanished">&amp;Anamakine Adı:</translation>
+        <translation type="vanished">&amp;Anamakine adı:</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation type="vanished">K&amp;ova:</translation>
+        <translation type="vanished">&amp;Demet:</translation>
     </message>
     <message>
         <source>&amp;File:</source>
@@ -28226,7 +28230,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="vanished">&amp;Yerel Dosya Sistemi</translation>
+        <translation type="vanished">&amp;Yerel Dosya Sistemi </translation>
     </message>
     <message>
         <source>Storage settings</source>
@@ -28489,11 +28493,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="vanished">Lütfen kullanıcı adı, parola ve kova gibi ilave alanları tamamlayın ve QVF hedefi için bir dosya adı verin.</translation>
+        <translation type="vanished">Lütfen kullanıcı adı, parola ve demet gibi ilave alanları tamamlayın ve QVF hedefi için bir dosya adı verin.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="vanished">Lütfen kullanıcı adı, parola, anamakine adı ve kova gibi ilave alanları tamamlayın ve QVF hedefi için bir dosya adı verin.</translation>
+        <translation type="vanished">Lütfen kullanıcı adı, parola, anamakine adı ve demet gibi ilave alanları tamamlayın ve QVF hedefi için bir dosya adı verin.</translation>
     </message>
     <message>
         <source>Choose a file to export the virtual appliance to...</source>
@@ -31076,7 +31080,7 @@ Version %1</source>
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="vanished">Takılmadı</translation>
+        <translation type="vanished">Takılı değil</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -31634,7 +31638,7 @@ Version %1</source>
     <message>
         <source>Not Attached</source>
         <comment>details report (Storage)</comment>
-        <translation type="vanished">Takılmadı</translation>
+        <translation type="vanished">Takılı Değil</translation>
     </message>
     <message>
         <source>Storage</source>
@@ -31714,12 +31718,12 @@ Version %1</source>
     <message>
         <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
         <comment>image</comment>
-        <translation type="vanished">&lt;p&gt;Şuna takıldı:  %1&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Şuna takılı:  %1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
         <comment>image</comment>
-        <translation type="vanished">&lt;i&gt;Takılmadı&lt;/i&gt;</translation>
+        <translation type="vanished">&lt;i&gt;Takılı Değil&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
@@ -31998,12 +32002,12 @@ Version %1</source>
     <message>
         <source>Immutable</source>
         <comment>MediumType</comment>
-        <translation type="vanished">Sabit</translation>
+        <translation type="vanished">Değiştirilemez</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>MediumType</comment>
-        <translation type="vanished">Doğrudan yazım</translation>
+        <translation type="vanished">Doğrudan Yazım</translation>
     </message>
     <message>
         <source>Shareable</source>
@@ -32013,12 +32017,12 @@ Version %1</source>
     <message>
         <source>Readonly</source>
         <comment>MediumType</comment>
-        <translation type="vanished">Salt okunur</translation>
+        <translation type="vanished">Salt Okunur</translation>
     </message>
     <message>
         <source>Multi-attach</source>
         <comment>MediumType</comment>
-        <translation type="vanished">Çoklu takma</translation>
+        <translation type="vanished">Çoklu Takma</translation>
     </message>
     <message>
         <source>Dynamically allocated storage</source>
@@ -32766,7 +32770,7 @@ Version %1</source>
     </message>
     <message>
         <source>Not Attached</source>
-        <translation type="vanished">Takılmadı</translation>
+        <translation type="vanished">Takılı Değil</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -32905,7 +32909,7 @@ Version %1</source>
     <message>
         <source>Not Attached</source>
         <comment>network adapter</comment>
-        <translation type="vanished">Takılmadı</translation>
+        <translation type="vanished">Takılı Değil</translation>
     </message>
     <message>
         <source>Disconnected</source>
@@ -33609,7 +33613,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="vanished">&lt;i&gt;Takılmadı&lt;/i&gt;</translation>
+        <translation type="vanished">&lt;i&gt;Takılı&amp;nbsp;Değil&lt;/i&gt;</translation>
     </message>
     <message>
         <source>--</source>
@@ -33685,7 +33689,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="vanished">Şuna takıldı:</translation>
+        <translation type="vanished">Şuna takılı:</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
@@ -34635,7 +34639,7 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation type="vanished">
-            <numerusform>Uyarı: Takılı %n sabit kalıba sahip çalışan makinenin anlık görüntüsünü alıyorsunuz. Bu anlık görüntüyle çalıştığınız sürece sabit kalıp(lar) veri kaybını önlemek için sıfırlanmayacaktır.</numerusform>
+            <numerusform>Uyarı: Takılı %n değiştirilemez kalıba sahip çalışan makinenin anlık görüntüsünü alıyorsunuz. Bu anlık görüntüyle çalıştığınız sürece değiştirilemez kalıp(lar) veri kaybını önlemek için sıfırlanmayacaktır.</numerusform>
         </translation>
     </message>
     <message>

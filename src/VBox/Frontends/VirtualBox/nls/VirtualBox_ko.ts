@@ -49,7 +49,7 @@
     </message>
     <message>
         <source>Please try reinstalling VirtualBox.</source>
-        <translation>VirtualBox를 다시 설치하면 해결될 수도 있습니다.</translation>
+        <translation>VirtualBox를 다시 설치해 보십시오.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
@@ -73,19 +73,19 @@
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
-        <translation>이 버전의 VirtualBox에서는 현재 설치되어 있는 커널 모듈을 사용할 수 없습니다. VirtualBox 설치 과정이 실패했을 수도 있습니다. 완전히 삭제한 다음 다시 설치해 보십시오.</translation>
+        <translation>VirtualBox 커널 모듈과 설치된 VirtualBox 버전이 일치하지 않습니다. VirtualBox 설치 과정이 실패했을 수도 있습니다. 완전히 삭제한 다음 다시 설치해 보십시오.</translation>
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
-        <translation>이 버전의 VirtualBox에서는 현재 설치되어 있는 커널 모듈을 사용할 수 없습니다. VirtualBox 설치 과정이 실패했을 수도 있습니다. &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/rcvboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; 명령을 실행시키면 문제를 해결할 수도 있습니다. VirtualBox OSE 버전과 PUEL 버전을 같이 설치하지 마십시오..</translation>
+        <translation>커널 드라이버에서 충분한 메모리를 할당하지 못했거나 매핑 작업이 실패했을 수도 있습니다.</translation>
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver is either not loaded or not set up correctly. Please try setting it up again by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.&lt;br/&gt;&lt;br/&gt;If your system has EFI Secure Boot enabled you may also need to sign the kernel modules (vboxdrv, vboxnetflt, vboxnetadp, vboxpci) before you can load them. Please see your Linux system&apos;s documentation for more information.</source>
-        <translation>VirtualBox 리눅스 커널 드라이버가 로드되지 않았거나 올바르게 설치되지 않았습니다. 루트 권한으로 다음 명령을 실행하여 다시 설치하십시오:&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; 시스템에 EFI 시큐어 부트를 활성화했다면 커널 모듈(vboxdrv, vboxnetflt, vboxnetadp, vboxpci)을 불러오기 전에 활성화해야 할 수도 있습니다. 자세한 사항은 리눅스 시스템 설명서를 참조하십시오.</translation>
+        <translation>VirtualBox 리눅스 커널 드라이버가 로드되지 않았거나 올바르게 설치되지 않았습니다. 루트 권한으로 다음 명령을 실행하여 다시 설치하십시오:&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; 시스템에 EFI 보안 부트를 활성화했다면 커널 모듈(vboxdrv, vboxnetflt, vboxnetadp, vboxpci)을 불러오기 전에 서명해야 할 수도 있습니다. 자세한 사항은 리눅스 시스템 설명서를 참조하십시오.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you are not mixing builds of VirtualBox from different sources.</source>
-        <translation>VirtualBox 커널 모듈이 현재 VirtualBox 버전과 호환되지 않습니다. VirtualBox 설치에 문제가 있는 것 같습니다. &lt;br/&gt;&lt;br/&gt;&lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;명령을 다시 실행하여 다시 설정하십시오. 여러 종류의 VirtualBox 빌드가 같이 설치되어 있는지 확인하십시오.</translation>
+        <translation>VirtualBox 커널 모듈과 설치된 VirtualBox 버전이 일치하지 않습니다. VirtualBox 설치 과정이 실패했을 수도 있습니다.&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;명령을 다시 실행하여 다시 설정하십시오. 서로 다른 VirtualBox 빌드가 같이 설치되어 있는지 확인하십시오.</translation>
     </message>
 </context>
 <context>
@@ -114,7 +114,7 @@
     <name>QIDialogContainer</name>
     <message>
         <source>Loading</source>
-        <translation type="unfinished"></translation>
+        <translation>불러오는 중</translation>
     </message>
 </context>
 <context>
@@ -135,7 +135,7 @@
     <name>QILineEdit</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">복사(&amp;C)</translation>
+        <translation>복사(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -158,7 +158,7 @@
     </message>
     <message>
         <source>Copy all errors to the clipboard</source>
-        <translation>모든 오류를 클립보드로 복사</translation>
+        <translation>모든 오류를 클립보드에 복사</translation>
     </message>
     <message>
         <source>Copy</source>
@@ -166,7 +166,7 @@
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">도움말</translation>
+        <translation>도움말</translation>
     </message>
 </context>
 <context>
@@ -200,7 +200,7 @@
     <name>UIAccelerationFeaturesEditor</name>
     <message>
         <source>Hardware Virtualization:</source>
-        <translation type="unfinished">하드웨어 가상화:</translation>
+        <translation>하드웨어 가상화:</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
@@ -212,11 +212,11 @@
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished">네스티드 페이징 사용하기(&amp;G)</translation>
+        <translation>네스티드 페이징 활성화(&amp;G)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">선택하면 가상 머신에서 인텔 VT-x 및 AMD-V의 네스티드 페이징을 사용할 것입니다.</translation>
+        <translation>선택하면 가상 머신에서 인텔 VT-x 및 AMD-V의 네스티드 페이징을 사용합니다.</translation>
     </message>
 </context>
 <context>
@@ -234,27 +234,27 @@
     <name>UIAcquirePublicKeyDialog</name>
     <message>
         <source>Choose a public key file</source>
-        <translation type="unfinished"></translation>
+        <translation>공개 키 파일 선택</translation>
     </message>
     <message>
         <source>Public key</source>
-        <translation type="unfinished"></translation>
+        <translation>공개 키</translation>
     </message>
     <message>
         <source>We haven&apos;t found public key id_rsa[.pub] in suitable locations. If you have one, please put it under one of those folders OR copy content to the edit box below:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;If you don&apos;t have one, please consider using one of the following tools to generate it:&lt;br&gt;&lt;br&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>공개 키 id_rsa[.pub] 파일을 예상한 위치에서 찾지 못했습니다. 해당 파일이 있다면 다음 폴더 중 한 곳에 복사하거나 아래쪽에 있는 편집 상자에 내용을 복사하십시오:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;해당 파일이 없다면 다음 도구를 사용하여 생성하십시오:&lt;br&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <source>We haven&apos;t found public key id_rsa[.pub] in suitable location. If you have one, please put it under specified folder OR copy content to the edit box below:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;If you don&apos;t have one, please consider using the following tool to generate it:&lt;br&gt;&lt;br&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>공개 키 id_rsa[.pub] 파일을 예상한 위치에서 찾지 못했습니다. 해당 파일이 있다면 다음 폴더 중 한 곳에 복사하거나 아래쪽에 있는 편집 상자에 내용을 복사하십시오:&lt;br&gt;&lt;br&gt;%1&lt;br&gt;&lt;br&gt;해당 파일이 없다면 다음 도구를 사용하여 생성하십시오:&lt;br&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <source>Paste public key</source>
-        <translation type="unfinished"></translation>
+        <translation>공개 키 붙여넣기</translation>
     </message>
     <message>
         <source>Browse</source>
-        <translation type="unfinished"></translation>
+        <translation>찾아보기</translation>
     </message>
 </context>
 <context>
@@ -277,7 +277,7 @@
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>게스트 디스플레이에 맞게 창 크기를 조정합니다</translation>
+        <translation>게스트 디스플레이에 맞게 창 크기와 위치를 조정합니다</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
@@ -289,7 +289,7 @@
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>가상 머신의 실행을 일시 중지합니다</translation>
+        <translation>가상 머신의 실행을 일시 정지합니다</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -343,7 +343,7 @@
     </message>
     <message>
         <source>Show Monitor Preview</source>
-        <translation>모니터 미리보기 표시</translation>
+        <translation>모니터 미리 보기 표시</translation>
     </message>
     <message>
         <source>Show Application Icon</source>
@@ -379,7 +379,7 @@
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>모든 경고 메시지를 다시 보이도록 설정합니다</translation>
+        <translation>모든 경고 메시지를 다시 표시하도록 설정합니다</translation>
     </message>
     <message>
         <source>&amp;Network Operations Manager...</source>
@@ -387,7 +387,7 @@
     </message>
     <message>
         <source>Check for a new VirtualBox version</source>
-        <translation>새 VirtualBox 버전을 찾습니다</translation>
+        <translation>새 VirtualBox 버전을 확인합니다</translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
@@ -417,7 +417,7 @@
     </message>
     <message>
         <source>Display the Virtual Media Manager window</source>
-        <translation type="vanished">가상 미디어 관리자 대화상자를 표시합니다</translation>
+        <translation type="vanished">가상 미디어 관리자 대화 상자를 표시합니다</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
@@ -497,7 +497,7 @@
     </message>
     <message>
         <source>C&amp;heck for Updates...</source>
-        <translation>업데이트 찾기(&amp;H)...</translation>
+        <translation>업데이트 확인(&amp;H)...</translation>
     </message>
     <message>
         <source>Rena&amp;me Group...</source>
@@ -614,7 +614,7 @@
     </message>
     <message>
         <source>Display the Extra Data Manager window</source>
-        <translation>추가 데이터 관리자 대화상자를 표시합니다</translation>
+        <translation>추가 데이터 관리자 대화 상자를 표시합니다</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -642,7 +642,7 @@
     </message>
     <message>
         <source>Send the %1 sequence to the virtual machine</source>
-        <translation>가상 머신에 %1 키를 입력합니다</translation>
+        <translation>가상 머신에 %1 키 입력을 전달합니다</translation>
     </message>
     <message>
         <source>&amp;Mouse Integration</source>
@@ -728,7 +728,7 @@
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized</source>
-        <translation>창 크기를 조정했을 때 게스트 디스플레이를 자동으로 조정합니다</translation>
+        <translation>창 크기를 조정했을 때 게스트 디스플레이 크기를 자동으로 조정합니다</translation>
     </message>
     <message>
         <source>Take guest display screenshot</source>
@@ -811,7 +811,7 @@
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation>모니터 %1 미리보기</translation>
+        <translation>모니터 %1 미리 보기</translation>
     </message>
     <message>
         <source>&amp;Connect Network Adapter</source>
@@ -927,7 +927,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Finder</source>
-        <translation>VirtualBox 가상 머신 정의 파일을 Finder에 표시합니다.</translation>
+        <translation>VirtualBox 가상 머신 정의 파일을 Finder에 표시합니다</translation>
     </message>
     <message>
         <source>S&amp;how in Explorer</source>
@@ -935,7 +935,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Explorer</source>
-        <translation>VirtualBox 가상 머신 정의 파일을 탐색기에 표시합니다.</translation>
+        <translation>VirtualBox 가상 머신 정의 파일을 탐색기에 표시합니다</translation>
     </message>
     <message>
         <source>S&amp;how in File Manager</source>
@@ -947,19 +947,20 @@
     </message>
     <message>
         <source>Cr&amp;eate Alias on Desktop</source>
-        <translation>데스크톱에 바로 가기 만들기(&amp;E)</translation>
+        <translatorcomment>macOS 용어</translatorcomment>
+        <translation>데스크톱에 가상본 만들기(&amp;E)</translation>
     </message>
     <message>
         <source>Create alias files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation>데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다</translation>
+        <translation>데스크톱에 VirtualBox 가상 머신 정의 파일의 가상본을 만듭니다</translation>
     </message>
     <message>
         <source>Cr&amp;eate Shortcut on Desktop</source>
-        <translation>데스크톱에 바로 가기 만들기(&amp;E)</translation>
+        <translation>바탕 화면에 바로 가기 만들기(&amp;E)</translation>
     </message>
     <message>
         <source>Create shortcut files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation>데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다</translation>
+        <translation>바탕 화면에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다</translation>
     </message>
     <message>
         <source>Sort group of first selected virtual machine alphabetically</source>
@@ -1007,7 +1008,7 @@
     </message>
     <message>
         <source>Detach the GUI from headless VM</source>
-        <translation>헤드리스 VM의 GUI를 떼냅니다</translation>
+        <translation>헤드리스 가상 머신의 GUI를 떼냅니다</translation>
     </message>
     <message>
         <source>Disable Dock Icon Overlay</source>
@@ -1522,7 +1523,7 @@
     </message>
     <message>
         <source>Try</source>
-        <translation>시도</translation>
+        <translation>시험해 보기</translation>
     </message>
     <message>
         <source>&amp;Try Oracle Cloud for Free...</source>
@@ -1800,459 +1801,487 @@
     <message>
         <source>[Root]</source>
         <comment>group</comment>
-        <translation type="unfinished"></translation>
+        <translation>[루트]</translation>
     </message>
     <message>
         <source>Copy Key Fingerprint (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>키 지문 복사(%1)</translation>
     </message>
     <message>
         <source>Connect</source>
         <comment>to cloud VM</comment>
-        <translation type="unfinished"></translation>
+        <translation>연결</translation>
     </message>
     <message>
         <source>Connect with %1 (%2)</source>
         <comment>with terminal application (profile)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1(%2)으(로) 연결</translation>
     </message>
     <message>
         <source>Connect with %1</source>
         <comment>with terminal application</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1(으)로 연결</translation>
     </message>
     <message>
         <source>Refresh the currently viewed log</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 보고 있는 로그 새로 고침</translation>
     </message>
     <message>
         <source>&amp;Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>새로 고침(&amp;R)</translation>
     </message>
     <message>
         <source>Reread all the log files and refresh pages</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 로그 파일을 다시 읽고 페이지 새로 고치기</translation>
     </message>
     <message>
         <source>Toggle guest session panel of the file manager</source>
-        <translation type="unfinished"></translation>
+        <translation>파일 관리자의 게스트 세션 패널 전환</translation>
     </message>
     <message>
         <source>Toggle Guest Session Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 세션 패널 전환</translation>
     </message>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished">VISO 생성기</translation>
+        <translation>VISO 생성기</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="obsolete">설정</translation>
+        <translation type="vanished">설정</translation>
+    </message>
+    <message>
+        <source>Open panel for VISO Creator configuration</source>
+        <translation type="vanished">VISO 생성기 설정 패널 열기</translation>
+    </message>
+    <message>
+        <source>Open Configuration Panel</source>
+        <translation type="vanished">설정 패널 열기</translation>
+    </message>
+    <message>
+        <source>Open panel for VISO Creator options</source>
+        <translation type="vanished">VISO 생성기 옵션 패널 열기</translation>
+    </message>
+    <message>
+        <source>Open Options Panel</source>
+        <translation type="vanished">옵션 패널 열기</translation>
     </message>
     <message>
         <source>&amp;Add</source>
-        <translation type="unfinished"></translation>
+        <translation>추가(&amp;A)</translation>
     </message>
     <message>
         <source>Add selected item(s) to VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 항목을 VISO에 추가</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation type="unfinished">삭제(&amp;R)</translation>
+        <translation>삭제(&amp;R)</translation>
     </message>
     <message>
         <source>Remove selected item(s) from VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 항목을 VISO에서 삭제</translation>
     </message>
     <message>
         <source>&amp;New Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>새 디렉터리(&amp;N)</translation>
     </message>
     <message>
         <source>Create a new directory under the current location</source>
-        <translation type="unfinished">현재 위치에 새로운 디렉터리 만들기</translation>
+        <translation>현재 위치에 새로운 디렉터리 만들기</translation>
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>이름 바꾸기(&amp;R)</translation>
     </message>
     <message>
         <source>Rename the selected object</source>
-        <translation type="unfinished">선택한 객체 이름 바꾸기</translation>
+        <translation>선택한 객체 이름 바꾸기</translation>
     </message>
     <message>
         <source>R&amp;eset</source>
-        <translation type="unfinished"></translation>
+        <translation>초기화(&amp;E)</translation>
     </message>
     <message>
         <source>Reset the VISO content.</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO 내용을 초기화합니다.</translation>
     </message>
     <message>
         <source>&amp;Medium Selector</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어 선택기(&amp;M)</translation>
     </message>
     <message>
         <source>Medium Selector</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어 선택기</translation>
     </message>
     <message>
         <source>Add existing disk image file</source>
-        <translation type="unfinished">이미 존재하는 디스크 이미지 파일 추가</translation>
+        <translation>이미 존재하는 디스크 이미지 파일 추가</translation>
     </message>
     <message>
         <source>Create a new disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>새 디스크 이미지 파일 만들기</translation>
     </message>
     <message>
         <source>&amp;Refresh...</source>
-        <translation type="unfinished"></translation>
+        <translation>새로 고침(&amp;R)...</translation>
     </message>
     <message>
         <source>Refresh disk images</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 이미지 새로 고침</translation>
     </message>
     <message>
         <source>&amp;Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>활동(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Export...</source>
-        <translation type="unfinished"></translation>
+        <translation>내보내기(&amp;E)...</translation>
     </message>
     <message>
         <source>VM Activity Monitor</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 활동 모니터</translation>
     </message>
     <message>
         <source>Export the chart data into a text file</source>
-        <translation type="unfinished"></translation>
+        <translation>차트 데이터를 텍스트 파일로 내보내기</translation>
     </message>
     <message>
         <source>Export Data to File</source>
-        <translation type="unfinished"></translation>
+        <translation>데이터를 파일로 내보내기</translation>
     </message>
     <message>
         <source>&amp;Activity Overview...</source>
-        <translation type="unfinished"></translation>
+        <translation>활동 요약(&amp;A)...</translation>
     </message>
     <message>
         <source>Activity Monitor</source>
-        <translation type="unfinished"></translation>
+        <translation>활동 모니터</translation>
     </message>
     <message>
         <source>Navigate to the vm activity overview</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 활동 요약으로 탐색</translation>
     </message>
     <message>
         <source>&amp;Welcome Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>환영 화면(&amp;W)</translation>
     </message>
     <message>
         <source>Open the Welcome Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>환영 화면 열기</translation>
     </message>
     <message>
         <source>&amp;Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 관리자(&amp;E)</translation>
     </message>
     <message>
         <source>Open the Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 관리자 열기</translation>
     </message>
     <message>
         <source>&amp;Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 관리자(&amp;N)</translation>
     </message>
     <message>
         <source>Open the Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 관리자 열기</translation>
     </message>
     <message>
         <source>&amp;VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 활동 요약(&amp;V)</translation>
     </message>
     <message>
         <source>Open the VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 활동 요약 열기</translation>
     </message>
     <message>
         <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
+        <translation>끝내기(&amp;Q)</translation>
     </message>
     <message>
         <source>[New]</source>
         <comment>group</comment>
-        <translation type="unfinished"></translation>
+        <translation>[새로운]</translation>
     </message>
     <message>
         <source>Move to Gro&amp;up</source>
-        <translation type="unfinished"></translation>
+        <translation>그룹으로 이동(&amp;U)</translation>
     </message>
     <message>
         <source>C&amp;onsole</source>
-        <translation type="unfinished"></translation>
+        <translation>콘솔(&amp;O)</translation>
     </message>
     <message>
         <source>&amp;Create Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>연결 만들기(&amp;C)</translation>
     </message>
     <message>
         <source>Create console connection to be able to use ssh/vnc clients</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH/VNC 클라이언트에서 사용할 수 있는 콘솔 만들기</translation>
     </message>
     <message>
         <source>&amp;Delete Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>연결 삭제(&amp;D)</translation>
     </message>
     <message>
         <source>Delete console connection to disconnect ssh/vnc clients</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH/VNC 클라이언트의 연결 해제 및 콘솔 연결 삭제</translation>
     </message>
     <message>
         <source>&amp;Configure Console Applications</source>
-        <translation type="unfinished"></translation>
+        <translation>콘솔 프로그램 설정(&amp;C)</translation>
     </message>
     <message>
         <source>Open configuration dialog to edit console application settings</source>
-        <translation type="unfinished"></translation>
+        <translation>콘솔 프로그램 설정을 편집하는 설정 대화 상자 표시</translation>
     </message>
     <message>
         <source>&amp;Copy Command (serial) for Unix</source>
-        <translation type="unfinished"></translation>
+        <translation>Unix용 명령(직렬) 복사(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Copy Command (serial) for Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Windows용 명령(직렬) 복사(&amp;C)</translation>
     </message>
     <message>
         <source>Copy console command for serial connection</source>
-        <translation type="unfinished"></translation>
+        <translation>직렬 연결을 위한 콘솔 명령 복사</translation>
     </message>
     <message>
         <source>&amp;Copy Command (VNC) for Unix</source>
-        <translation type="unfinished"></translation>
+        <translation>Unix용 명령(VNC) 복사(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Copy Command (VNC) for Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Windows용 명령(VNC) 복사(&amp;C)</translation>
     </message>
     <message>
         <source>Copy console command for VNC connection</source>
-        <translation type="unfinished"></translation>
+        <translation>VNC 연결을 위한 콘솔 명령 복사</translation>
     </message>
     <message>
         <source>Show &amp;Log</source>
-        <translation type="unfinished"></translation>
+        <translation>로그 보기(&amp;L)</translation>
     </message>
     <message>
         <source>Show cloud console log</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 로그 보기</translation>
     </message>
     <message>
         <source>Terminate</source>
-        <translation type="unfinished"></translation>
+        <translation>종료</translation>
     </message>
     <message>
         <source>&amp;Terminate Cloud Instance...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 인스턴스 종료(&amp;T)...</translation>
     </message>
     <message>
         <source>Terminate cloud instance of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 가상 머신의 클라우드 인스턴스 종료</translation>
     </message>
     <message>
         <source>Open the machine activity monitor pane</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 활동 모니터 패널 열기</translation>
     </message>
     <message>
         <source>&amp;File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>파일 관리자(&amp;F)</translation>
     </message>
     <message>
         <source>Open the File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>파일 관리자 열기</translation>
     </message>
     <message>
         <source>&amp;Extension</source>
-        <translation type="unfinished"></translation>
+        <translation>확장(&amp;E)</translation>
     </message>
     <message>
         <source>&amp;Install...</source>
-        <translation type="unfinished"></translation>
+        <translation>설치(&amp;I)...</translation>
     </message>
     <message>
         <source>Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 관리자</translation>
     </message>
     <message>
         <source>Install extension pack</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 설치</translation>
     </message>
     <message>
         <source>Install Extension Pack</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 설치</translation>
     </message>
     <message>
         <source>&amp;Uninstall...</source>
-        <translation type="unfinished"></translation>
+        <translation>설치 삭제(&amp;U)...</translation>
     </message>
     <message>
         <source>Uninstall selected extension pack</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 확장 패키지 설치 삭제</translation>
     </message>
     <message>
         <source>Uninstall Extension Pack</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 설치 삭제</translation>
     </message>
     <message>
         <source>&amp;Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>지우기(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Console</source>
-        <translation type="unfinished"></translation>
+        <translation>콘솔(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Add Application...</source>
-        <translation type="unfinished"></translation>
+        <translation>프로그램 추가(&amp;A)...</translation>
     </message>
     <message>
         <source>Cloud Console Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 관리자</translation>
     </message>
     <message>
         <source>Add new cloud console application</source>
-        <translation type="unfinished"></translation>
+        <translation>새 클라우드 콘솔 프로그램 추가</translation>
     </message>
     <message>
         <source>Add Cloud Console Application</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 프로그램 추가</translation>
     </message>
     <message>
         <source>&amp;Remove Application...</source>
-        <translation type="unfinished"></translation>
+        <translation>프로그램 삭제(&amp;R)...</translation>
     </message>
     <message>
         <source>Remove selected cloud console application</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 클라우드 콘솔 프로그램 삭제</translation>
     </message>
     <message>
         <source>Remove Cloud Console Application</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 프로그램 삭제</translation>
     </message>
     <message>
         <source>Add new cloud console profile</source>
-        <translation type="unfinished"></translation>
+        <translation>새 클라우드 콘솔 프로필 추가</translation>
     </message>
     <message>
         <source>Add Cloud Console Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 프로필 추가</translation>
     </message>
     <message>
         <source>Remove selected cloud console profile</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 클라우드 콘솔 프로필 삭제</translation>
     </message>
     <message>
         <source>Remove Cloud Console Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 프로필 삭제</translation>
     </message>
     <message>
         <source>Console &amp;Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>콘솔 속성(&amp;P)</translation>
     </message>
     <message>
         <source>Open pane with selected cloud console properties</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 클라우드 콘솔 속성 패널 열기</translation>
     </message>
     <message>
         <source>Open Cloud Console Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 속성 열기</translation>
     </message>
     <message>
         <source>&amp;Resources</source>
-        <translation type="unfinished"></translation>
+        <translation>리소스(&amp;R)</translation>
     </message>
     <message>
         <source>Columns</source>
-        <translation type="unfinished"></translation>
+        <translation>열</translation>
     </message>
     <message>
         <source>VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 활동 요약</translation>
     </message>
     <message>
         <source>Show/Hide Columns</source>
-        <translation type="unfinished"></translation>
+        <translation>열 표시/숨기기</translation>
     </message>
     <message>
         <source>VM Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 활동</translation>
     </message>
     <message>
         <source>Switch to selected virtual machine&apos;s activity monitor pane</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 가상 머신의 활동 모니터 패널로 전환</translation>
     </message>
     <message>
         <source>Refresh Viewed Log</source>
-        <translation type="unfinished"></translation>
+        <translation>보고 있는 로그 새로 고침</translation>
     </message>
     <message>
         <source>Reload Log Files</source>
-        <translation type="unfinished"></translation>
+        <translation>로그 파일 새로 고침</translation>
     </message>
     <message>
         <source>Add Item(s) to VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO에 항목 추가</translation>
+    </message>
+    <message>
+        <source>Remove Item(s) from VISO</source>
+        <translation type="vanished">VISO에서 항목 삭제</translation>
+    </message>
+    <message>
+        <source>Rename Object</source>
+        <translation type="vanished">객체 이름 바꾸기</translation>
     </message>
     <message>
         <source>Add Disk Image File</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 이미지 파일 추가</translation>
     </message>
     <message>
         <source>Create Disk Image File</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 이미지 파일 만들기</translation>
     </message>
     <message>
         <source>Navigate to VM Activity Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 활동 요약으로 탐색</translation>
     </message>
     <message>
         <source>Remove Inaccessible Media</source>
-        <translation type="unfinished"></translation>
+        <translation>접근할 수 없는 미디어 삭제</translation>
     </message>
     <message>
         <source>&amp;Online Documentation...</source>
-        <translation type="unfinished"></translation>
+        <translation>온라인 문서(&amp;O)...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox user manual</source>
+        <translation type="vanished">웹 브라우저를 열고 VirtualBox 사용자 설명서 표시</translation>
     </message>
     <message>
         <source>Remove all inaccessible media</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 접근할 수 없는 미디어 삭제</translation>
     </message>
     <message>
         <source>Display the log viewer window</source>
-        <translation type="unfinished"></translation>
+        <translation>로그 뷰어 대화 상자 표시</translation>
     </message>
     <message>
         <source>&amp;Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>정지(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Upgrade Guest Additions...</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장 업그레이드(&amp;U)...</translation>
     </message>
     <message>
         <source>Upgrade Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장 업그레이드</translation>
     </message>
     <message>
         <source>Virtual Screen %1</source>
-        <translation type="unfinished">가상 화면 %1</translation>
+        <translation>가상 화면 %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation type="unfinished">호스트 화면 %1 사용하기</translation>
+        <translation>호스트 화면 %1 사용</translation>
     </message>
     <message>
         <source>Enable Clipboard File Transfers</source>
@@ -2284,7 +2313,7 @@
     </message>
     <message>
         <source>Go Forward</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">앞으로 이동</translation>
     </message>
     <message>
         <source>Go forward</source>
@@ -2292,7 +2321,7 @@
     </message>
     <message>
         <source>Go Backward</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">뒤로 이동</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -2449,7 +2478,7 @@
     </message>
     <message>
         <source>Interface</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">인터페이스</translation>
     </message>
     <message>
         <source>Preferences</source>
@@ -2464,7 +2493,7 @@
     <name>UIAdvancedSettingsDialogMachine</name>
     <message>
         <source>Allows to navigate through VM Settings categories</source>
-        <translation type="unfinished">VM 속성 분류를 탐색합니다</translation>
+        <translation type="unfinished">가상 머신 속성 분류를 탐색합니다</translation>
     </message>
     <message>
         <source>General</source>
@@ -2643,7 +2672,7 @@
     </message>
     <message>
         <source>Storage Controller (VirtioSCSI)</source>
-        <translation type="unfinished"></translation>
+        <translation>저장소 컨트롤러(VirtioSCSI)</translation>
     </message>
     <message>
         <source>Storage Controller (NVMe)</source>
@@ -2799,30 +2828,30 @@
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished">가상 사운드 카드의 종류를 선택합니다. 이 값에 따라서 VirtualBox 가상 머신의 오디오 하드웨어 종류가 달라집니다.</translation>
+        <translation>가상 사운드 카드의 종류를 선택합니다. 이 값에 따라서 VirtualBox 가상 머신의 오디오 하드웨어 종류가 달라집니다.</translation>
     </message>
 </context>
 <context>
     <name>UIAudioFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>확장된 기능:</translation>
     </message>
     <message>
         <source>Enable Audio &amp;Output</source>
-        <translation type="unfinished">오디오 출력 사용하기(&amp;O)</translation>
+        <translation>오디오 출력 활성화(&amp;O)</translation>
     </message>
     <message>
         <source>When checked, output to the virtual audio device will reach the host. Otherwise the guest is muted.</source>
-        <translation type="unfinished">선택하면 가상 오디오 장치의 출력을 호스트로 전달합니다. 선택하지 않으면 가상 머신을 음소거합니다.</translation>
+        <translation>선택하면 가상 오디오 장치의 출력을 호스트로 전달합니다. 선택하지 않으면 가상 머신을 음소거합니다.</translation>
     </message>
     <message>
         <source>Enable Audio &amp;Input</source>
-        <translation type="unfinished">오디오 입력 사용하기(&amp;I)</translation>
+        <translation>오디오 입력 활성화(&amp;I)</translation>
     </message>
     <message>
         <source>When checked, the guest will be able to capture audio input from the host. Otherwise the guest will capture only silence.</source>
-        <translation type="unfinished">선택하면 게스트에서 호스트의 오디오 출력을 캡처합니다. 선택하지 않으면 게스트에서 오디오를 캡처하지 않습니다.</translation>
+        <translation>선택하면 게스트에서 호스트의 오디오 입력을 캡처할 수 있습니다. 선택하지 않으면 게스트에서 오디오를 캡처하지 않습니다.</translation>
     </message>
 </context>
 <context>
@@ -2833,33 +2862,33 @@
     </message>
     <message>
         <source>Selects the audio output driver. The Null Audio Driver makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished"></translation>
+        <translation>오디오 출력 드라이버를 선택합니다. 빈 오디오 드라이버를 선택하면 게스트 운영 체제에서는 사운드 카드를 볼 수 있지만 모든 요청이 무시됩니다.</translation>
     </message>
 </context>
 <context>
     <name>UIAudioSettingsEditor</name>
     <message>
         <source>Enable &amp;Audio</source>
-        <translation type="unfinished">오디오 사용하기(&amp;A)</translation>
+        <translation>오디오 활성화(&amp;A)</translation>
     </message>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation type="unfinished">선택하면 지정한 드라이버를 사용하여 호스트 오디오 카드와 통신하는 가상 PCI 오디오 카드를 가상 머신에 설치합니다.</translation>
+        <translation>선택하면 지정한 드라이버를 사용하여 호스트 오디오 시스템과 통신하는 가상 PCI 오디오 카드를 가상 머신에 설치합니다.</translation>
     </message>
 </context>
 <context>
     <name>UIAutoCaptureKeyboardEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>확장된 기능:</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished">자동으로 키보드 잡기(&amp;A)</translation>
+        <translation>자동으로 키보드 잡기(&amp;A)</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished">이 옵션을 선택하면 가상 머신 창이 활성화되었을 때 키보드가 자동으로 가상 머신 쪽으로 넘어갑니다. 이 때 모든 키보드 입력은 가상 머신으로 전달됩니다.</translation>
+        <translation>이 옵션을 선택하면 가상 머신 창이 활성화되었을 때 키보드가 자동으로 가상 머신 쪽으로 넘어갑니다. 이때 모든 키보드 입력(Alt-Tab과 같은 시스템 입력 포함)은 가상 머신으로 전달됩니다.</translation>
     </message>
 </context>
 <context>
@@ -2878,58 +2907,58 @@
     </message>
     <message>
         <source>Holds the amount of base memory the virtual machine will have.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신에 할당할 기본 메모리 크기를 설정합니다.</translation>
     </message>
     <message>
         <source>Minimum possible base memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>최소 사용 가능 기본 메모리 크기입니다.</translation>
     </message>
     <message>
         <source>Maximum possible base memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>최대 사용 가능 기본 메모리 크기입니다.</translation>
     </message>
 </context>
 <context>
     <name>UIBootFailureDialog</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">취소(&amp;C)</translation>
+        <translation>취소(&amp;C)</translation>
     </message>
     <message>
         <source>Closes this dialog without resetting the guest or mounting a medium</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트를 재시동하거나 미디어를 마운트하지 않고 이 대화 상자 닫기</translation>
     </message>
     <message>
         <source>&amp;Mount and Retry Boot</source>
-        <translation type="unfinished"></translation>
+        <translation>마운트 후 부트 재시도(&amp;M)</translation>
     </message>
     <message>
         <source>Mounts the selected ISO if any and reboots the vm</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 ISO를 마운트하고 가상 머신을 재시동합니다</translation>
     </message>
     <message>
         <source>The virtual machine failed to boot. That might be caused by a missing operating system or misconfigured boot order. Mounting an operating system install DVD might solve this problem. Selecting an ISO file will attempt to mount it after the dialog is closed.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 부팅이 실패했습니다. 운영 체제가 없거나 부팅 순서가 잘못되었을 수도 있습니다. 운영 체제 설치 DVD를 마운트하면 문제를 해결할 수도 있습니다. ISO 파일을 선택하면 이 대화 상자를 닫은 후 마운트를 시도합니다.</translation>
     </message>
     <message>
         <source>DVD:</source>
-        <translation type="unfinished"></translation>
+        <translation>DVD:</translation>
     </message>
     <message>
         <source>Do not show this dialog again</source>
-        <translation type="unfinished"></translation>
+        <translation>이 대화 상자를 다시 표시하지 않기</translation>
     </message>
     <message>
         <source>When checked this dialog will not be shown again.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 이 대화 상자를 다시 표시하지 않습니다.</translation>
     </message>
     <message>
         <source>Holds the path of the ISO to be attached to machine as boot medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 머신에 연결하여 부팅 미디어로 사용할 ISO 파일의 경로를 지정합니다.</translation>
     </message>
     <message>
         <source>The selected path is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 경로가 잘못되었습니다.</translation>
     </message>
     <message>
         <source>The path is valid.</source>
@@ -2951,12 +2980,16 @@
         <translation type="vanished">아래로 이동</translation>
     </message>
     <message>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices.Move items up and down to change the device order.</source>
+        <translation type="vanished">부트 장치의 순서를 정합니다. 체크 상자를 사용해서 각각 부트 장치를 켜거나 끌 수 있습니다. 항목을 위나 아래로 이동해서 순서를 바꿀 수 있습니다.</translation>
+    </message>
+    <message>
         <source>Moves selected boot item up.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 부트 항목을 위로 이동합니다.</translation>
     </message>
     <message>
         <source>Moves selected boot item down.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 부트 항목을 아래로 이동합니다.</translation>
     </message>
     <message>
         <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order. Note: only supported for BIOS firmware type, i.e. when below EFI option is off.</source>
@@ -2967,11 +3000,11 @@
     <name>UIChipsetEditor</name>
     <message>
         <source>&amp;Chipset:</source>
-        <translation type="unfinished">칩셋(&amp;C):</translation>
+        <translation>칩셋(&amp;C):</translation>
     </message>
     <message>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation type="unfinished">이 가상 머신에 사용할 칩셋을 사용합니다. ICH9 칩셋 에뮬레이션은 현재 실험적이며, Mac OS X과 같이 이 칩셋이 필수적인 시스템이 아니라면 사용하는 것을 추천하지 않습니다.</translation>
+        <translation>이 가상 머신에 사용할 칩셋을 선택합니다. ICH9 칩셋 에뮬레이션은 현재 실험적이며, Mac OS X과 같이 이 칩셋이 필수적인 시스템이 아니라면 사용하는 것을 추천하지 않습니다.</translation>
     </message>
 </context>
 <context>
@@ -3041,7 +3074,7 @@
     </message>
     <message>
         <source>Item</source>
-        <translation type="unfinished"></translation>
+        <translation>항목</translation>
     </message>
 </context>
 <context>
@@ -3183,106 +3216,106 @@
     <name>UICloudConsoleManager</name>
     <message>
         <source>Cloud Console Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 관리자</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>초기화</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">적용</translation>
+        <translation>적용</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">닫기</translation>
+        <translation>닫기</translation>
     </message>
     <message>
         <source>Reset changes in current cloud console details</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 클라우드 콘솔 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Apply changes in current cloud console details</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 클라우드 콘솔 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">저장하지 않고 대화 상자 닫기</translation>
+        <translation>저장하지 않고 대화 상자 닫기</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">변경 사항 초기화(%1)</translation>
+        <translation>변경 사항 초기화(%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">변경 사항 적용(%1)</translation>
+        <translation>변경 사항 적용(%1)</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">창 닫기(%1)</translation>
+        <translation>창 닫기(%1)</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">이름:</translation>
+        <translation>이름:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished">경로:</translation>
+        <translation>경로:</translation>
     </message>
     <message>
         <source>Argument:</source>
-        <translation type="unfinished"></translation>
+        <translation>인자:</translation>
     </message>
     <message>
         <source>Enter a name for this console application...</source>
-        <translation type="unfinished"></translation>
+        <translation>이 콘솔 프로그램의 이름 입력...</translation>
     </message>
     <message>
         <source>Enter a path for this console application...</source>
-        <translation type="unfinished"></translation>
+        <translation>이 콘솔 프로그램의 경로 입력...</translation>
     </message>
     <message>
         <source>Enter an argument for this console application...</source>
-        <translation type="unfinished"></translation>
+        <translation>이 콘솔 프로그램의 인자 입력...</translation>
     </message>
     <message>
         <source>Enter a name for this console profile...</source>
-        <translation type="unfinished"></translation>
+        <translation>이 콘솔 프로필의 이름 입력...</translation>
     </message>
     <message>
         <source>Enter an argument for this console profile...</source>
-        <translation type="unfinished"></translation>
+        <translation>이 콘솔 프로필의 인자 입력...</translation>
     </message>
     <message>
         <source>Reset changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 콘솔 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Apply changes in current console details</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 콘솔 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>Add Application</source>
-        <translation type="unfinished"></translation>
+        <translation>프로그램 추가</translation>
     </message>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">프로필 추가</translation>
+        <translation>프로필 추가</translation>
     </message>
     <message>
         <source>Application</source>
-        <translation type="unfinished"></translation>
+        <translation>프로그램</translation>
     </message>
     <message>
         <source>List in Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>메뉴에 표시</translation>
     </message>
 </context>
 <context>
     <name>UICloudMachineSettingsDialog</name>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">설정</translation>
+        <translation>설정</translation>
     </message>
     <message>
         <source>%1 - %2</source>
@@ -3290,7 +3323,7 @@
     </message>
     <message>
         <source>Contains a list of cloud machine settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 머신 설정의 목록을 포함합니다.</translation>
     </message>
 </context>
 <context>
@@ -3400,67 +3433,67 @@
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">도움말</translation>
+        <translation>도움말</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>대화 상자 도움말 표시</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 표시(%1)</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation type="unfinished">이름:</translation>
+        <translation>이름:</translation>
     </message>
     <message>
         <source>Properties:</source>
-        <translation type="unfinished">속성:</translation>
+        <translation>속성:</translation>
     </message>
     <message>
         <source>Contains cloud profile settings</source>
-        <translation type="unfinished">클라우드 프로필 속성 포함</translation>
+        <translation>클라우드 프로필 속성 포함</translation>
     </message>
     <message>
         <source>Enter a name for the new profile...</source>
-        <translation type="unfinished">새 프로필 이름 입력...</translation>
+        <translation>새 프로필 이름 입력...</translation>
     </message>
     <message>
         <source>Enter a name for this profile...</source>
-        <translation type="unfinished">이 프로필 이름 입력...</translation>
+        <translation>이 프로필 이름 입력...</translation>
     </message>
     <message>
         <source>Reset changes in current profile details</source>
-        <translation type="unfinished">현재 프로필 설정의 변경된 사항 초기화</translation>
+        <translation>현재 프로필 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">추가</translation>
+        <translation>추가</translation>
     </message>
     <message>
         <source>Add a new profile with following name</source>
-        <translation type="unfinished">다음 이름으로 새 프로필 추가</translation>
+        <translation>다음 이름으로 새 프로필 추가</translation>
     </message>
     <message>
         <source>Add Profile (%1)</source>
-        <translation type="unfinished">프로필 추가(%1)</translation>
+        <translation>프로필 추가(%1)</translation>
     </message>
     <message>
         <source>Apply changes in current profile details</source>
-        <translation type="unfinished">현재 프로필 설정의 변경된 사항 적용</translation>
+        <translation>현재 프로필 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation type="unfinished">원본</translation>
+        <translation>원본</translation>
     </message>
     <message>
         <source>List VMs</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 목록 표시</translation>
     </message>
     <message>
         <source>Registered cloud providers and profiles</source>
-        <translation type="unfinished"></translation>
+        <translation>등록된 클라우드 공급자와 프로필</translation>
     </message>
 </context>
 <context>
@@ -3474,11 +3507,11 @@
     <name>UIColorThemeEditor</name>
     <message>
         <source>Color &amp;Theme:</source>
-        <translation type="unfinished"></translation>
+        <translation>색 테마(&amp;T):</translation>
     </message>
     <message>
         <source>Selects the color theme. It can be Light, Dark or automatically detected (default).</source>
-        <translation type="unfinished"></translation>
+        <translation>색 테마를 선택합니다. 밝음, 어두움, 자동 감지(기본값) 중에서 선택할 수 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -3634,7 +3667,7 @@
     <message>
         <source>Teleporting Paused VM</source>
         <comment>MachineState</comment>
-        <translation>일시 정지된 VM 텔레포트 중</translation>
+        <translation>일시 정지된 가상 머신 텔레포트 중</translation>
     </message>
     <message>
         <source>Deleting Snapshot</source>
@@ -4284,22 +4317,22 @@
     <message>
         <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">IDE 프라이머리 마스터</translation>
+        <translation>IDE 프라이머리 장치 0</translation>
     </message>
     <message>
         <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">IDE 프라이머리 슬레이브</translation>
+        <translation>IDE 프라이머리 장치 1</translation>
     </message>
     <message>
         <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">IDE 세컨더리 마스터</translation>
+        <translation>IDE 세컨더리 장치 0</translation>
     </message>
     <message>
         <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">IDE 세컨더리 슬레이브</translation>
+        <translation>IDE 세컨더리 장치 1</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
@@ -4562,7 +4595,7 @@
     <message>
         <source>Optical Disks</source>
         <comment>IndicatorType</comment>
-        <translation>광학 디스크</translation>
+        <translation>광 디스크</translation>
     </message>
     <message>
         <source>Floppy Disks</source>
@@ -4722,17 +4755,17 @@
     <message>
         <source>Video/Audio</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation>비디오/오디오</translation>
+        <translation>동영상/소리</translation>
     </message>
     <message>
         <source>Video Only</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation>비디오만</translation>
+        <translation>동영상만</translation>
     </message>
     <message>
         <source>Audio Only</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation>오디오만</translation>
+        <translation>소리만</translation>
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
@@ -4998,345 +5031,361 @@
     <message>
         <source>Cloud Network [EXPERIMENTAL]</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 네트워크[실험적]</translation>
     </message>
     <message>
         <source>Provisioning</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>프로비전 중</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">실행 중</translation>
+        <translation>실행 중</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">시작하는 중</translation>
+        <translation>시작하는 중</translation>
     </message>
     <message>
         <source>Stopping</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished">멈추는 중</translation>
+        <translation>멈추는 중</translation>
     </message>
     <message>
         <source>Stopped</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>멈춤</translation>
     </message>
     <message>
         <source>Creating Image</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>이미지 생성 중</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료 중</translation>
     </message>
     <message>
         <source>Terminated</source>
         <comment>CloudMachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료됨</translation>
     </message>
     <message>
         <source>Aborted-Saved</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>중단됨-저장됨</translation>
     </message>
     <message>
         <source>None</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished">없음</translation>
+        <translation>없음</translation>
     </message>
     <message>
         <source>USB MT TouchScreen and TouchPad</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB 멀티터치 터치스크린과 터치패드</translation>
     </message>
     <message>
         <source>Host-only Adapter [DEPRECATED]</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 어댑터[지원 종료 예정]</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크</translation>
     </message>
     <message>
         <source>Novell NE2000 (NE2000)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Novell NE2000(NE2000)</translation>
     </message>
     <message>
         <source>Novell NE1000 (NE1000)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Novell NE1000(NE1000)</translation>
     </message>
     <message>
         <source>WD EtherCard Plus 16 (WD8013EBT)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>WD EtherCard Plus 16(WD8013EBT)</translation>
     </message>
     <message>
         <source>WD EtherCard Plus (WD8013E)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>WD EtherCard Plus(WD8013E)</translation>
     </message>
     <message>
         <source>3Com EtherLink II (3C503)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>3Com EtherLink II(3C503)</translation>
     </message>
     <message>
         <source>3Com EtherLink (3C501)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>3Com EtherLink(3C501)</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished">기본값</translation>
+        <translation>기본값</translation>
     </message>
     <message>
         <source>Null Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>빈 오디오</translation>
     </message>
     <message>
         <source>OSS Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>OSS 오디오</translation>
     </message>
     <message>
         <source>ALSA Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ALSA 오디오</translation>
     </message>
     <message>
         <source>Windows Audio Session</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Windows 오디오 세션</translation>
     </message>
     <message>
         <source>Core Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Core Audio</translation>
     </message>
     <message>
         <source>Undefined</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>정의되지 않음</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished">시작하는 중</translation>
+        <translation>시작하는 중</translation>
     </message>
     <message>
         <source>Started</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>시작됨</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료 중</translation>
     </message>
     <message>
         <source>Terminated</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료됨</translation>
     </message>
     <message>
         <source>Timed Out (Killed)</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>시간 초과됨(죽었음)</translation>
     </message>
     <message>
         <source>Timed Out (Abnormally)</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>시간 초과됨(비정상적)</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>내려감</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>GuestSessionStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>오류</translation>
     </message>
     <message>
         <source>Undefined</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>정의되지 않음</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">시작하는 중</translation>
+        <translation>시작하는 중</translation>
     </message>
     <message>
         <source>Started</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>시작됨</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished">일시 정지됨</translation>
+        <translation>일시 정지됨</translation>
     </message>
     <message>
         <source>Terminating</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료 중</translation>
     </message>
     <message>
         <source>Terminated (Normally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료됨(정상적)</translation>
     </message>
     <message>
         <source>Terminated (Signal)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료됨(시그널)</translation>
     </message>
     <message>
         <source>Terminated (Abnormally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료됨(비정상적)</translation>
     </message>
     <message>
         <source>Timed Out (Killed)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료됨(죽었음)</translation>
     </message>
     <message>
         <source>Timed Out (Abnormally)</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료됨(비정상적)</translation>
     </message>
     <message>
         <source>Down</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>내려감</translation>
     </message>
     <message>
         <source>Error</source>
         <comment>ProcessStatus</comment>
-        <translation type="unfinished"></translation>
+        <translation>오류</translation>
     </message>
     <message>
         <source>Cloud Network</source>
-        <translation type="obsolete">클라우드 네트워크</translation>
+        <translation type="vanished">클라우드 네트워크</translation>
+    </message>
+    <message>
+        <source>Host Only Network</source>
+        <translation type="vanished">호스트 전용 네트워크</translation>
+    </message>
+    <message>
+        <source>Visual State</source>
+        <translation type="vanished">표시 상태</translation>
     </message>
     <message>
         <source>Follow System Settings</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>시스템 설정 사용</translation>
     </message>
     <message>
         <source>Light</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>밝음</translation>
     </message>
     <message>
         <source>Dark</source>
         <comment>color theme</comment>
-        <translation type="unfinished"></translation>
+        <translation>어두움</translation>
     </message>
     <message>
         <source>Normal (window)</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>일반(창)</translation>
     </message>
     <message>
         <source>Full-screen</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>전체 화면</translation>
     </message>
     <message>
         <source>Seamless</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>심리스</translation>
     </message>
     <message>
         <source>Scaled</source>
         <comment>visual state</comment>
-        <translation type="unfinished"></translation>
+        <translation>크기 조절됨</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="unfinished">변경하지 않음</translation>
+        <translation>변경하지 않음</translation>
     </message>
     <message>
         <source>Any</source>
         <comment>USB filter remote</comment>
-        <translation type="unfinished">둘 다</translation>
+        <translation>둘 다</translation>
     </message>
     <message>
         <source>Yes</source>
         <comment>USB filter remote</comment>
-        <translation type="unfinished">예</translation>
+        <translation>예</translation>
     </message>
     <message>
         <source>No</source>
         <comment>USB filter remote</comment>
-        <translation type="unfinished">아니요</translation>
+        <translation>아니요</translation>
     </message>
     <message>
         <source>None</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished">없음</translation>
+        <translation>없음</translation>
     </message>
     <message>
         <source>Hint</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished">힌트</translation>
+        <translation>힌트</translation>
     </message>
     <message>
         <source>Automatic</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished">자동</translation>
+        <translation>자동</translation>
     </message>
     <message>
         <source>None</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished">없음</translation>
+        <translation>없음</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
-        <translation type="obsolete">어댑터에 브리지</translation>
+        <translation type="vanished">어댑터에 브리지</translation>
     </message>
     <message>
         <source>None</source>
         <comment>TpmType</comment>
-        <translation type="unfinished">없음</translation>
+        <translation>없음</translation>
     </message>
     <message>
         <source>v1.2</source>
         <comment>TpmType</comment>
-        <translation type="unfinished"></translation>
+        <translation>v1.2</translation>
     </message>
     <message>
         <source>v2.0</source>
         <comment>TpmType</comment>
-        <translation type="unfinished"></translation>
+        <translation>v2.0</translation>
     </message>
     <message>
         <source>Host</source>
         <comment>TpmType</comment>
-        <translation type="unfinished">호스트</translation>
+        <translation>호스트</translation>
     </message>
     <message>
         <source>SWTPM</source>
         <comment>TpmType</comment>
-        <translation type="unfinished"></translation>
+        <translation>SWTPM</translation>
+    </message>
+    <message>
+        <source>TPM Type</source>
+        <translation type="vanished">TPM 형식</translation>
+    </message>
+    <message>
+        <source>Secure Boot</source>
+        <translation type="vanished">보안 부트</translation>
     </message>
     <message>
         <source>QemuRamFB</source>
@@ -5398,18 +5447,18 @@
     <name>UIDefaultMachineFolderEditor</name>
     <message>
         <source>Default &amp;Machine Folder:</source>
-        <translation type="unfinished">기본 머신 폴더(&amp;M):</translation>
+        <translation>기본 머신 폴더(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished">기본값으로 선택된 가상 머신 폴더를 표시합니다. 새 가상 머신을 만들 때 폴더를 지정하지 않으면 이 폴더를 사용합니다.</translation>
+        <translation>기본 가상 머신 폴더를 표시합니다. 새 가상 머신을 만들 때 폴더를 지정하지 않으면 이 폴더를 사용합니다.</translation>
     </message>
 </context>
 <context>
     <name>UIDescriptionEditor</name>
     <message>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation type="unfinished">가상 머신의 설명을 표시합니다. 설치한 게스트 운영 체제의 설정을 적어두는 데 도움이 될 수 있습니다.</translation>
+        <translation>가상 머신의 설명을 표시합니다. 설치한 게스트 운영 체제의 설정을 적어두는 데 도움이 될 수 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -5820,37 +5869,42 @@
     <message>
         <source>Enabled</source>
         <comment>details (cloud value)</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation>사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (cloud value)</comment>
-        <translation type="unfinished">사용 안 함</translation>
+        <translation>사용 안 함</translation>
     </message>
     <message>
         <source>Host-only Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Visual State</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>표시 상태</translation>
     </message>
     <message>
         <source>TPM Type</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>TPM 형식</translation>
     </message>
     <message>
         <source>Secure Boot</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>보안 부트</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (system/secure boot)</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation>사용함</translation>
+    </message>
+    <message>
+        <source>Nested VT-x/AMD-V</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5930,7 +5984,7 @@
     <message>
         <source>Host-only Network</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">호스트 전용 네트워크</translation>
     </message>
     <message>
         <source>Disconnected</source>
@@ -5957,11 +6011,6 @@
         <comment>details (serial)</comment>
         <translation type="unfinished">TCP</translation>
     </message>
-    <message>
-        <source>Nested VT-x/AMD-V</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIDetailsElement</name>
@@ -5972,18 +6021,18 @@
     </message>
     <message>
         <source>Copy value (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>값 복사(%1)</translation>
     </message>
     <message>
         <source>Edit value...</source>
-        <translation type="unfinished"></translation>
+        <translation>값 편집...</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsSet</name>
     <message>
         <source>Contains the details of virtual machine &apos;%1&apos;</source>
-        <translation>가상 머신 &apos;%1&apos;의 자세한 정보를 표시합니다</translation>
+        <translation>&apos;%1&apos; 가상 머신의 자세한 정보를 표시합니다</translation>
     </message>
 </context>
 <context>
@@ -5994,7 +6043,7 @@
     </message>
     <message>
         <source>Contains a list of Virtual Machine details.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신의 자세한 정보 목록을 포함합니다.</translation>
     </message>
 </context>
 <context>
@@ -6198,104 +6247,104 @@
     <name>UIDialogPanel</name>
     <message>
         <source>Close the pane</source>
-        <translation type="obsolete">패널 닫기</translation>
+        <translation type="vanished">패널 닫기</translation>
     </message>
 </context>
 <context>
     <name>UIDiskEncryptionSettingsEditor</name>
     <message>
         <source>En&amp;able Disk Encryption</source>
-        <translation type="unfinished">디스크 암호화 사용(&amp;A)</translation>
+        <translation>디스크 암호화 사용(&amp;A)</translation>
     </message>
     <message>
         <source>When checked, disks attached to this virtual machine will be encrypted.</source>
-        <translation type="unfinished">선택하면 가상 머신에 연결된 가상 디스크를 암호화합니다.</translation>
+        <translation>선택하면 가상 머신에 연결된 가상 디스크를 암호화합니다.</translation>
     </message>
     <message>
         <source>Disk Encryption C&amp;ipher:</source>
-        <translation type="unfinished">디스크 암호화 방식(&amp;I):</translation>
+        <translation>디스크 암호화 방식(&amp;I):</translation>
     </message>
     <message>
         <source>Holds the cipher to be used for encrypting the virtual machine disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신의 디스크를 암호화할 방식을 포함합니다.</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
-        <translation type="unfinished">새 암호 입력(&amp;N):</translation>
+        <translation>새 암호 입력(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the encryption password for disks attached to this virtual machine.</source>
-        <translation type="unfinished">이 가상 머신에 연결된 디스크를 암호화할 때 사용할 암호를 지정합니다.</translation>
+        <translation>이 가상 머신에 연결된 디스크를 암호화할 때 사용할 암호를 지정합니다.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
-        <translation type="unfinished">새 암호 확인(&amp;O):</translation>
+        <translation>새 암호 확인(&amp;O):</translation>
     </message>
     <message>
         <source>Confirms the disk encryption password.</source>
-        <translation type="unfinished">디스크 암호화 암호를 확인합니다.</translation>
+        <translation>디스크 암호화 암호를 확인합니다.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="unfinished">변경하지 않음</translation>
+        <translation>변경하지 않음</translation>
     </message>
 </context>
 <context>
     <name>UIDiskVariantWidget</name>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>미리 전체 크기 할당(&amp;F)</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 가상 머신을 생성할 때 가상 디스크 이미지에 전체 크기를 할당합니다</translation>
     </message>
     <message>
         <source>&amp;Split into 2GB parts</source>
-        <translation type="unfinished"></translation>
+        <translation>2GB 단위로 분할(&amp;S)</translation>
     </message>
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 가상 하드 디스크 파일을 2GB 단위로 분할합니다.</translation>
     </message>
 </context>
 <context>
     <name>UIDisplayFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>확장된 기능:</translation>
     </message>
     <message>
         <source>&amp;Raise Window Under Mouse Pointer</source>
-        <translation type="unfinished"></translation>
+        <translation>마우스 아래 창 올리기(&amp;R)</translation>
     </message>
     <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished">선택하면 마우스 포인터가 머신 창 위로 지나갈 때 머신 창이 위로 올라옵니다.</translation>
+        <translation>선택하면 마우스 포인터가 머신 창 위로 지나갈 때 머신 창이 위로 올라옵니다.</translation>
     </message>
     <message>
         <source>&amp;Disable Host Screen Saver</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 화면 보호기 비활성화(&amp;D)</translation>
     </message>
     <message>
         <source>When checked, screen saver of the host OS is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 호스트 OS의 화면 보호기를 비활성화합니다.</translation>
     </message>
 </context>
 <context>
     <name>UIDisplayScreenFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>확장된 기능:</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">3차원 가속 사용하기(&amp;3)</translation>
+        <translation>3차원 가속 활성화(&amp;3)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">호스트 머신에서 3차원 그래픽을 사용할 수 있는 경우 선택하면 가상 머신에서도 3차원 그래픽을 사용할 수 있습니다.</translation>
+        <translation>선택하면 가상 머신에서도 호스트의 3차원 그래픽 기능에 접근할 수 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -6350,11 +6399,11 @@
     <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>VirtualBox Guest Additions</source>
-        <translation type="unfinished">VirtualBox 게스트 확장</translation>
+        <translation>VirtualBox 게스트 확장</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
-        <translation type="unfinished">게스트 확장 이미지를 저장할 폴더 선택</translation>
+        <translation>게스트 확장 이미지를 저장할 폴더 선택</translation>
     </message>
 </context>
 <context>
@@ -6380,11 +6429,11 @@
     <name>UIDragAndDropEditor</name>
     <message>
         <source>D&amp;rag&apos;n&apos;Drop:</source>
-        <translation type="unfinished">드래그 앤 드롭(&amp;D):</translation>
+        <translation>드래그 앤 드롭(&amp;D):</translation>
     </message>
     <message>
         <source>Holds which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트와 게스트 운영 체제 사이에서 드래그 앤 드롭 시 복사할 데이터를 포함합니다. 이 기능을 사용하려면 게스트 확장이 게스트 운영 체제에 설치되어야 합니다.</translation>
     </message>
 </context>
 <context>
@@ -6428,27 +6477,27 @@
     <message>
         <source>Result&amp;nbsp;Code:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>결과&amp;nbsp;코드:</translation>
     </message>
     <message>
         <source>Component:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>구성 요소: </translation>
     </message>
     <message>
         <source>Interface:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>인터페이스: </translation>
     </message>
     <message>
         <source>Callee:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>호출자: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>호출자&amp;nbsp;RC: </translation>
     </message>
     <message>
         <source>Result&amp;nbsp;Detail:</source>
@@ -6460,11 +6509,11 @@
     <name>UIExecutionCapEditor</name>
     <message>
         <source>&amp;Execution Cap:</source>
-        <translation type="unfinished">실행 제한(&amp;E):</translation>
+        <translation>실행 제한(&amp;E):</translation>
     </message>
     <message>
         <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU.</source>
-        <translation type="unfinished"></translation>
+        <translation>각 가상 CPU가 허용된 실행 시간을 제한합니다. 가상 CPU가 물리적 CPU에서 1개에서 차지할 수 있는 시간의 백분율입니다.</translation>
     </message>
     <message>
         <source>%</source>
@@ -6476,42 +6525,42 @@
     </message>
     <message>
         <source>Minimum possible execution cap.</source>
-        <translation type="unfinished"></translation>
+        <translation>최소 가능한 실행 제한입니다.</translation>
     </message>
     <message>
         <source>Maximum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
+        <translation>최대 가능한 가상 CPU 개수입니다.</translation>
     </message>
 </context>
 <context>
     <name>UIExtensionPackManager</name>
     <message>
         <source>Extension Pack Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 관리자</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">닫기</translation>
+        <translation>닫기</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">도움말</translation>
+        <translation>도움말</translation>
     </message>
     <message>
         <source>Close dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>대화 상자 닫기</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>대화 상자 도움말 표시</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">창 닫기(%1)</translation>
+        <translation>창 닫기(%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 표시(%1)</translation>
     </message>
     <message>
         <source>%1, %2: %3, %4</source>
@@ -6529,28 +6578,28 @@
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished">버전</translation>
+        <translation>버전</translation>
     </message>
     <message>
         <source>Registered extension packs</source>
-        <translation type="unfinished"></translation>
+        <translation>등록된 확장 패키지</translation>
     </message>
     <message>
         <source>Select an extension package file</source>
-        <translation type="unfinished">확장 패키지 파일 선택</translation>
+        <translation>확장 패키지 파일 선택</translation>
     </message>
     <message>
         <source>Extension package files (%1)</source>
-        <translation type="unfinished">확장 패키지 파일 (%1)</translation>
+        <translation>확장 패키지 파일 (%1)</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>ext pack</comment>
-        <translation type="unfinished">활성화됨</translation>
+        <translation>활성화됨</translation>
     </message>
 </context>
 <context>
@@ -6625,39 +6674,39 @@
     </message>
     <message>
         <source>File &amp;Path:</source>
-        <translation type="unfinished">파일 경로(&amp;P):</translation>
+        <translation>파일 경로(&amp;P):</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation type="unfinished">크기(&amp;S):</translation>
+        <translation>크기(&amp;S):</translation>
     </message>
     <message>
         <source>Sets the size of the floppy disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>플로피 디스크의 크기를 설정합니다.</translation>
     </message>
     <message>
         <source>&amp;Format disk as FAT12</source>
-        <translation type="unfinished"></translation>
+        <translation>FAT12로 디스크 포맷(&amp;F)</translation>
     </message>
     <message>
         <source>Formats the floppy disk as FAT12.</source>
-        <translation type="unfinished"></translation>
+        <translation>플로피 디스크를 FAT12로 포맷합니다.</translation>
     </message>
     <message>
         <source>2.88M</source>
-        <translation type="unfinished">360K {2.88M?}</translation>
+        <translation>2.88M</translation>
     </message>
     <message>
         <source>Create the disk and close this dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크를 만들고 이 대화 상자를 닫습니다.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <source>File already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>파일이 이미 존재함</translation>
     </message>
     <message>
         <source>File path is valid</source>
@@ -6960,87 +7009,91 @@
     </message>
     <message>
         <source>File Manager</source>
-        <translation type="unfinished">파일 관리자</translation>
+        <translation>파일 관리자</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">저장하지 않고 대화 상자 닫기</translation>
+        <translation>저장하지 않고 대화 상자 닫기</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">변경 사항 초기화(%1)</translation>
+        <translation>변경 사항 초기화(%1)</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">도움말</translation>
+        <translation>도움말</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>대화 상자 도움말 표시</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 표시(%1)</translation>
     </message>
     <message>
         <source>Open Session</source>
-        <translation type="unfinished"></translation>
+        <translation>세션 열기</translation>
     </message>
     <message>
         <source>Guest File System:</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 파일 시스템:</translation>
     </message>
     <message>
         <source>Host File System:</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 파일 시스템:</translation>
     </message>
     <message>
         <source>Host</source>
-        <translation type="unfinished">호스트</translation>
+        <translation>호스트</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">크기</translation>
+        <translation>크기</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation type="unfinished">변경 시간</translation>
+        <translation>변경 시간</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation type="unfinished">소유자</translation>
+        <translation>소유자</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation type="unfinished">권한</translation>
+        <translation>권한</translation>
     </message>
     <message>
         <source>Machine reference is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 참조가 잘못되었습니다.</translation>
     </message>
     <message>
         <source>File manager cannot work since the selected guest is not currently running.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 게스트가 실행 중이 아니기 때문에 파일 관리자를 사용할 수 없습니다.</translation>
     </message>
     <message>
         <source>File manager cannot work since the guest is paused.</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트가 일시 정지되어 있어서 파일 관리자를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>File manager cannot work since the selected guest does not have the guest additions.</source>
+        <translation type="vanished">선택한 게스트에 게스트 확장이 설치되어 있지 않아서 파일 관리자를 사용할 수 없습니다.</translation>
     </message>
     <message>
         <source>Enter a valid user name and password to initiate the file manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>파일 관리자를 시작하려면 올바른 사용자 이름과 암호를 입력하십시오.</translation>
     </message>
     <message>
         <source>Guest control session is running.</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 제어 세션이 실행 중입니다.</translation>
     </message>
     <message>
         <source>Some error has occurred. Please check the log panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>오류가 발생했습니다. 로그 패널을 확인하십시오.</translation>
     </message>
     <message>
         <source>File manager cannot work since no guest additions were detected.</source>
@@ -7129,19 +7182,19 @@
     <name>UIFontScaleEditor</name>
     <message>
         <source>F&amp;ont Scaling:</source>
-        <translation type="unfinished"></translation>
+        <translation>글꼴 크기 조정(&amp;O):</translation>
     </message>
     <message>
         <source>Holds the scaling factor for the font size.</source>
-        <translation type="unfinished"></translation>
+        <translation>글꼴 크기 조정 비율을 포함합니다.</translation>
     </message>
     <message>
         <source>Minimum possible scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>최소 가능한 크기 조정 비율입니다.</translation>
     </message>
     <message>
         <source>Maximum possible scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>최대 가능한 크기 조정 비율입니다.</translation>
     </message>
 </context>
 <context>
@@ -7667,7 +7720,7 @@
     </message>
     <message>
         <source>Selects the graphics adapter type the virtual machine will use.</source>
-        <translation type="unfinished">가상 머신에서 사용할 그래픽 어댑터 종류를 선택하십시오.</translation>
+        <translation>가상 머신에서 사용할 그래픽 어댑터 종류를 선택하십시오.</translation>
     </message>
 </context>
 <context>
@@ -7772,192 +7825,204 @@
 <context>
     <name>UIHelpBrowserWidget</name>
     <message>
+        <source>Oracle VM VirtualBox User Manual</source>
+        <translation type="vanished">Oracle VM VirtualBox 사용자 설명서</translation>
+    </message>
+    <message>
         <source>Copy Selected Text</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 텍스트 복사</translation>
     </message>
     <message>
         <source>Open Link</source>
-        <translation type="unfinished"></translation>
+        <translation>링크 열기</translation>
     </message>
     <message>
         <source>Open Link in New Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>새 탭으로 링크 열기</translation>
     </message>
     <message>
         <source>Copy Link</source>
-        <translation type="unfinished"></translation>
+        <translation>링크 복사</translation>
     </message>
     <message>
         <source>Find in Page</source>
-        <translation type="unfinished"></translation>
+        <translation>페이지에서 찾기</translation>
     </message>
     <message>
         <source>Zoom</source>
-        <translation type="unfinished"></translation>
+        <translation>확대/축소</translation>
     </message>
     <message>
         <source>Close Other Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>다른 탭 닫기</translation>
     </message>
     <message>
         <source>Close Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>탭 닫기</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation type="unfinished">파일(&amp;F)</translation>
+        <translation>파일(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished">편집(&amp;E)</translation>
+        <translation>편집(&amp;E)</translation>
     </message>
     <message>
         <source>&amp;Navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>탐색(&amp;N)</translation>
     </message>
     <message>
         <source>&amp;View</source>
-        <translation type="unfinished">보기(&amp;V)</translation>
+        <translation>보기(&amp;V)</translation>
     </message>
     <message>
         <source>&amp;Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>탭(&amp;C)</translation>
     </message>
     <message>
         <source>Contents</source>
-        <translation type="unfinished"></translation>
+        <translation>내용</translation>
     </message>
     <message>
         <source>Index</source>
-        <translation type="unfinished"></translation>
+        <translation>색인</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>검색</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>책갈피</translation>
     </message>
     <message>
         <source>Show &amp;Side Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>사이드바 표시(&amp;S)</translation>
     </message>
     <message>
         <source>Show &amp;Tool Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>도구 모음 표시(&amp;T)</translation>
     </message>
     <message>
         <source>Show St&amp;atus Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>상태 표시줄 표시(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Print...</source>
-        <translation type="unfinished">인쇄(&amp;P)...</translation>
+        <translation>인쇄(&amp;P)...</translation>
     </message>
     <message>
         <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
+        <translation>끝내기(&amp;Q)</translation>
     </message>
     <message>
         <source>&amp;Copy Selected Text</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 텍스트 복사(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Find in Page</source>
-        <translation type="unfinished"></translation>
+        <translation>페이지에서 찾기(&amp;F)</translation>
     </message>
     <message>
         <source>Find Ne&amp;xt</source>
-        <translation type="unfinished"></translation>
+        <translation>다음 찾기(&amp;X)</translation>
     </message>
     <message>
         <source>Find &amp;Previous</source>
-        <translation type="unfinished"></translation>
+        <translation>이전 찾기(&amp;P)</translation>
     </message>
     <message>
         <source>Go Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>뒤로 이동</translation>
     </message>
     <message>
         <source>Go Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>앞으로 이동</translation>
     </message>
     <message>
         <source>Go to Start Page</source>
-        <translation type="unfinished"></translation>
+        <translation>시작 페이지로 이동</translation>
     </message>
     <message>
         <source>Reload Page</source>
-        <translation type="unfinished"></translation>
+        <translation>페이지 새로 고침</translation>
     </message>
     <message>
         <source>Add Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>책갈피 추가</translation>
+    </message>
+    <message>
+        <source>Click to open this link in an external browser</source>
+        <translation type="vanished">외부 브라우저로 링크를 열려면 클릭하십시오</translation>
     </message>
     <message>
         <source>Click to enlarge the image</source>
-        <translation type="unfinished"></translation>
+        <translation>그림을 확대하려면 클릭하십시오</translation>
     </message>
     <message>
         <source>Delete Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>책갈피 삭제</translation>
     </message>
     <message>
         <source>Delete All Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 책갈피 삭제</translation>
     </message>
     <message>
         <source>Close T&amp;ab</source>
-        <translation type="unfinished"></translation>
+        <translation>탭 닫기(&amp;A)</translation>
     </message>
     <message>
         <source>Close &amp;Other Tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>다른 탭 닫기(&amp;O)</translation>
     </message>
     <message>
         <source>Return to Start Page</source>
-        <translation type="unfinished"></translation>
+        <translation>시작 페이지로 돌아가기</translation>
     </message>
     <message>
         <source>Reload the Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 페이지 새로 고침</translation>
     </message>
     <message>
         <source>Go Forward to Next Page</source>
-        <translation type="unfinished"></translation>
+        <translation>다음 페이지로 이동</translation>
     </message>
     <message>
         <source>Go Back to Previous Page</source>
-        <translation type="unfinished"></translation>
+        <translation>이전 페이지로 이동</translation>
     </message>
     <message>
         <source>Add a New Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>새 책갈피 추가</translation>
+    </message>
+    <message>
+        <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
+        <translation type="vanished">&lt;div&gt;&lt;p&gt;&lt;h3&gt;404. 찾을 수 없습니다.&lt;/h3&gt;&lt;b&gt;%1&lt;/b&gt; 페이지를 찾을 수 없습니다.&lt;/p&gt;&lt;/div&gt;</translation>
     </message>
     <message>
         <source>Home</source>
-        <translation type="unfinished"></translation>
+        <translation>홈</translation>
     </message>
     <message>
         <source>Backward</source>
-        <translation type="unfinished"></translation>
+        <translation>뒤로</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>앞으로</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>새로 고침</translation>
     </message>
     <message>
         <source>Find a String in the Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 페이지에서 문자열 검색</translation>
     </message>
     <message>
         <source>Bookmark added:</source>
-        <translation type="unfinished"></translation>
+        <translation>책갈피 추가됨:</translation>
     </message>
     <message>
         <source>%1 User Guide</source>
@@ -8289,27 +8354,27 @@
     <name>UIHostnameDomainNameEditor</name>
     <message>
         <source>Hostname should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 이름은 2글자 이상이어야 합니다. 알파벳, 숫자, &quot;-&quot;, &quot;.&quot; 문자만 사용할 수 있습니다.</translation>
     </message>
     <message>
         <source>Domain name should be at least 2 character long. Allowed characters are alphanumerics, &quot;-&quot; and &quot;.&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>도메인 이름은 2글자 이상이어야 합니다. 알파벳, 숫자, &quot;-&quot;, &quot;.&quot; 문자만 사용할 수 있습니다.</translation>
     </message>
     <message>
         <source>Hostna&amp;me:</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 이름(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the hostname.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Domain Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>도메인 이름(&amp;D):</translation>
     </message>
     <message>
         <source>Holds the domain name.</source>
-        <translation type="unfinished"></translation>
+        <translation>도메인 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>Hostname is valid</source>
@@ -8351,7 +8416,7 @@
     <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation>&lt;b&gt;가상 시스템 &quot;%1&quot;을(를) 사용하려면 아래의 라이선스 조항에 동의해야 합니다.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;&lt;b&gt;동의합니다&lt;/b&gt; 단추를 클릭하면 계속 진행하며, &lt;b&gt;동의하지 않습니다&lt;/b&gt; 단추를 클릭하면 가져오지 않습니다.</translation>
+        <translation>&lt;b&gt;&quot;%1&quot; 가상 시스템을 사용하려면 아래의 라이선스 조항에 동의해야 합니다.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;&lt;b&gt;동의합니다&lt;/b&gt; 단추를 클릭하면 계속 진행하며, &lt;b&gt;동의하지 않습니다&lt;/b&gt; 단추를 클릭하면 가져오지 않습니다.</translation>
     </message>
     <message>
         <source>Software License Agreement</source>
@@ -9093,35 +9158,35 @@
     <name>UILanguageSettingsEditor</name>
     <message>
         <source>&amp;Interface Languages</source>
-        <translation type="obsolete">인터페이스 언어(&amp;I)</translation>
+        <translation type="vanished">인터페이스 언어(&amp;I)</translation>
     </message>
     <message>
         <source>Lists all available user interface languages. The effective language is written in bold. Select Default to reset to the system default language.</source>
-        <translation type="unfinished"></translation>
+        <translation>사용 가능한 사용자 인터페이스 언어의 목록입니다. 현재 사용하고 있는 언어는 굵게 표시되어 있습니다. 기본값을 선택하면 시스템 기본 언어를 사용합니다.</translation>
     </message>
     <message>
         <source>Author</source>
-        <translation type="unfinished">작성자</translation>
+        <translation>작성자</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished">언어</translation>
+        <translation>언어</translation>
     </message>
     <message>
         <source>Id</source>
-        <translation type="unfinished">ID</translation>
+        <translation>ID</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation type="unfinished">언어:</translation>
+        <translation>언어:</translation>
     </message>
     <message>
         <source>Author(s):</source>
-        <translation type="unfinished">작성자:</translation>
+        <translation>작성자:</translation>
     </message>
 </context>
 <context>
@@ -9188,7 +9253,7 @@
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation type="unfinished">접근할 수 없음</translation>
+        <translation>접근할 수 없음</translation>
     </message>
 </context>
 <context>
@@ -9759,11 +9824,11 @@
     </message>
     <message>
         <source>Host-only adapters are no longer supported, use host-only networks instead.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 어댑터는 더 이상 지원하지 않습니다. 호스트 전용 네트워크를 사용하십시오.</translation>
     </message>
     <message>
         <source>No host-only network name is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 이름이 지정되지 않았습니다.</translation>
     </message>
 </context>
 <context>
@@ -9904,7 +9969,7 @@
     </message>
     <message>
         <source>&amp;Enable Serial Port</source>
-        <translation type="vanished">직렬 포트 사용하기(&amp;E)</translation>
+        <translation type="vanished">직렬 포트 활성화(&amp;E)</translation>
     </message>
     <message>
         <source>Port &amp;Number:</source>
@@ -9944,7 +10009,7 @@
     </message>
     <message>
         <source>&lt;p&gt;In &lt;b&gt;Host Pipe&lt;/b&gt; mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Host Device&lt;/b&gt; mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Raw File&lt;/b&gt; mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;TCP&lt;/b&gt; mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="vanished">&lt;p&gt;&lt;b&gt;호스트 파이프&lt;/b&gt; 모드: 호스트의 시리얼 포트 파이프 이름을 지정합니다. 예: Windows의 경우 &quot;\\.\pipe\myvbox&quot;, 유닉스 계열 시스템의 경우 &quot;/tmp/myvbox&quot;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 장치&lt;/b&gt; 모드: 호스트의 시리얼 포트 장치 이름을 지정합니다. 예: &quot;COM1&quot;, &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;원본 파일&lt;/b&gt; 모드: 시리얼 출력을 저장할 호스트의 파일 경로를 지정합니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;TCP&lt;/b&gt; 모드: 서버 모드의 경우 TCP &quot;포트&quot;, 클라이언트 모드의 경우 &quot;호스트이름:포트&quot;를 지정합니다.</translation>
+        <translation type="vanished">&lt;p&gt;&lt;b&gt;호스트 파이프&lt;/b&gt; 모드: 호스트의 시리얼 포트 파이프 이름을 지정합니다. 예: Windows의 경우 &quot;\\.\pipe\myvbox&quot;, Unix 계열 시스템의 경우 &quot;/tmp/myvbox&quot;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 장치&lt;/b&gt; 모드: 호스트의 시리얼 포트 장치 이름을 지정합니다. 예: &quot;COM1&quot;, &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;원본 파일&lt;/b&gt; 모드: 시리얼 출력을 저장할 호스트의 파일 경로를 지정합니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;TCP&lt;/b&gt; 모드: 서버 모드의 경우 TCP &quot;포트&quot;, 클라이언트 모드의 경우 &quot;호스트이름:포트&quot;를 지정합니다.</translation>
     </message>
     <message>
         <source>Selects the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
@@ -9973,6 +10038,26 @@
     <message>
         <source>There are currently duplicate port paths specified.</source>
         <translation>중복된 포트 경로가 지정되었습니다.</translation>
+    </message>
+    <message>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select User-defined and specify port parameters manually.</source>
+        <translation type="vanished">직렬 포트 번호를 선택합니다. 표준 직렬 포트를 사용하거나 사용자 정의를 선택하여 포트 설정을 정의할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the I/O APIC setting is enabled for this virtual machine.</source>
+        <translation type="vanished">이 직렬 포트의 IRQ 번호를 표시합니다. &lt;tt&gt;0&lt;/tt&gt;부터 &lt;tt&gt;255&lt;/tt&gt; 까지의 숫자를 사용할 수 있으며, &lt;tt&gt;15&lt;/tt&gt; 이상의 숫자는 이 가상 머신의 I/O APIC 설정이 활성화되어 있어야만 사용 가능합니다.</translation>
+    </message>
+    <message>
+        <source>Selects the working mode of this serial port. If you select Disconnected, the guest OS will detect the serial port but will not be able to operate it.</source>
+        <translation type="vanished">이 직렬 포트의 작동 상태를 조정합니다. 연결되지 않음을 선택하면 게스트 운영 체제에서는 직렬 포트를 감지할 것이지만 작동하지는 않을 것입니다.</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will assume that the pipe or socket specified in the Path/Address field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
+        <translation type="vanished">선택하면 가상 머신에 지정한 경로/주소에 있는 파이프나 소켓을 존재하는 것으로 간주하고 사용합니다. 선택하지 않으면 가상 머신을 시작할 때 파이프나 소켓을 만듭니다.</translation>
+    </message>
+    <message>
+        <source>In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively. In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;. In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped. In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
+        <translation type="vanished">호스트 파이프 모드: 호스트의 직렬 포트 파이프 이름을 지정합니다. 예: Windows의 경우 &quot;\\.\pipe\myvbox&quot;, Unix 계열 시스템의 경우 &quot;/tmp/myvbox&quot;. 호스트 장치 모드: 호스트의 직렬 포트 장치 이름을 지정합니다. 예: &quot;COM1&quot;, &quot;/dev/ttyS0&quot;. 원시 파일 모드: 직렬 포트 출력을 저장할 호스트의 파일 경로를 지정합니다. TCP 모드: 서버 모드의 경우 TCP &quot;포트&quot;, 클라이언트 모드의 경우 &quot;호스트이름:포트&quot;를 지정합니다.</translation>
     </message>
 </context>
 <context>
@@ -10294,7 +10379,7 @@
     </message>
     <message>
         <source>Choose/Create a Virtual Optical Disk...</source>
-        <translation type="vanished">가상 광학 디스크 선택/만들기...</translation>
+        <translation type="vanished">가상 광 디스크 선택/만들기...</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
@@ -10449,7 +10534,7 @@
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="vanished">선택하면 RTC 장치는 현재 시간을 UTC로 보고하며, 선택하지 않으면 지역 시간으로 보고합니다. 일부 유닉스는 하드웨어 시간이 UTC로 되어 있다고 가정합니다.</translation>
+        <translation type="vanished">선택하면 RTC 장치는 현재 시간을 UTC로 보고하며, 선택하지 않으면 지역 시간으로 보고합니다. 일부 Unix는 하드웨어 시간이 UTC로 되어 있다고 가정합니다.</translation>
     </message>
     <message>
         <source>%</source>
@@ -10741,27 +10826,27 @@
     <name>UIMaximumGuestScreenSizeEditor</name>
     <message>
         <source>Maximum Guest Screen &amp;Size:</source>
-        <translation type="unfinished">최대 게스트 화면 크기(&amp;S):</translation>
+        <translation>최대 게스트 화면 크기(&amp;S):</translation>
     </message>
     <message>
         <source>&amp;Width:</source>
-        <translation type="unfinished">너비(&amp;W):</translation>
+        <translation>너비(&amp;W):</translation>
     </message>
     <message>
         <source>Holds the maximum width which we would like the guest to use.</source>
-        <translation type="unfinished">게스트 화면 최대 너비를 설정합니다.</translation>
+        <translation>게스트 화면 최대 너비를 설정합니다.</translation>
     </message>
     <message>
         <source>&amp;Height:</source>
-        <translation type="unfinished">높이(&amp;H):</translation>
+        <translation>높이(&amp;H):</translation>
     </message>
     <message>
         <source>Holds the maximum height which we would like the guest to use.</source>
-        <translation type="unfinished">게스트 화면 최대 높이를 설정합니다.</translation>
+        <translation>게스트 화면 최대 높이를 설정합니다.</translation>
     </message>
     <message>
         <source>Selects maximum guest screen size policy.</source>
-        <translation type="unfinished"></translation>
+        <translation>최대 게스트 화면 크기 정책을 선택합니다.</translation>
     </message>
 </context>
 <context>
@@ -11108,103 +11193,103 @@
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">도움말</translation>
+        <translation>도움말</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>대화 상자 도움말 표시</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 표시(%1)</translation>
     </message>
     <message>
         <source>&amp;Attributes</source>
-        <translation type="unfinished">속성(&amp;A)</translation>
+        <translation>속성(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Information</source>
-        <translation type="unfinished">정보(&amp;I)</translation>
+        <translation>정보(&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished">종류(&amp;T):</translation>
+        <translation>종류(&amp;T):</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation type="unfinished">위치(&amp;L):</translation>
+        <translation>위치(&amp;L):</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation type="unfinished">설명(&amp;D):</translation>
+        <translation>설명(&amp;D):</translation>
     </message>
     <message>
         <source>&amp;Size:</source>
-        <translation type="unfinished">크기(&amp;S):</translation>
+        <translation>크기(&amp;S):</translation>
     </message>
     <message>
         <source>Holds the type of this medium.</source>
-        <translation type="unfinished">이 미디어의 크기를 표시합니다.</translation>
+        <translation>이 미디어의 크기를 표시합니다.</translation>
     </message>
     <message>
         <source>Holds the location of this medium.</source>
-        <translation type="unfinished">이 미디어의 위치를 표시합니다.</translation>
+        <translation>이 미디어의 위치를 표시합니다.</translation>
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation type="unfinished">미디어 위치 선택</translation>
+        <translation>미디어 위치 선택</translation>
     </message>
     <message>
         <source>Holds the description of this medium.</source>
-        <translation type="unfinished">이 미디어의 설명을 표시합니다.</translation>
+        <translation>이 미디어의 설명을 표시합니다.</translation>
     </message>
     <message>
         <source>Holds the size of this medium.</source>
-        <translation type="unfinished">이 미디어의 크기를 표시합니다.</translation>
+        <translation>이 미디어의 크기를 표시합니다.</translation>
     </message>
     <message>
         <source>Location cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>위치가 비어 있을 수 없습니다.</translation>
     </message>
     <message>
         <source>Cannot change medium size from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt; as storage shrinking is currently not implemented.</source>
-        <translation type="unfinished">저장소 축소가 현재 구현되어 있지 않아서 미디어 크기를 &lt;b&gt;%1&lt;/b&gt;에서 &lt;b&gt;%2&lt;/b&gt;(으)로 축소할 수 없습니다.</translation>
+        <translation>저장소 축소가 현재 구현되어 있지 않아서 미디어 크기를 &lt;b&gt;%1&lt;/b&gt;에서 &lt;b&gt;%2&lt;/b&gt;(으)로 축소할 수 없습니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished">이 형식의 미디어는 직접 및 간접적으로 연결되며 스냅샷을 찍을 때 보존됩니다.</translation>
+        <translation>이 형식의 미디어는 직접 및 간접적으로 연결되며 스냅샷을 찍을 때 보존됩니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished">이 형식의 미디어는 간접적으로 연결되며 가상 머신을 다음에 다시 시작할 때 변경 사항이 삭제됩니다.</translation>
+        <translation>이 형식의 미디어는 간접적으로 연결되며 가상 머신을 다음에 다시 시작할 때 변경 사항이 삭제됩니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished">이 형식의 미디어는 직접적으로 연결되며 스냅샷을 찍을 때 무시합니다.</translation>
+        <translation>이 형식의 미디어는 직접적으로 연결되며 스냅샷을 찍을 때 무시합니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished">이 형식의 미디어는 직접적으로 연결되며 여러 가상 머신에서 동시에 사용할 수 있습니다.</translation>
+        <translation>이 형식의 미디어는 직접적으로 연결되며 여러 가상 머신에서 동시에 사용할 수 있습니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished">이 형식의 미디어는 직접적으로 연결되며 여러 가상 머신에서 사용할 수 있습니다.</translation>
+        <translation>이 형식의 미디어는 직접적으로 연결되며 여러 가상 머신에서 사용할 수 있습니다.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished">이 형식의 미디어는 간접적으로 연결되며 한 기반 미디어를 여러 VM에서 사용할 때 가상 머신별 차이를 별도의 미디어에 기록합니다.</translation>
+        <translation>이 형식의 미디어는 간접적으로 연결되며 한 기반 미디어를 여러 가상 머신에서 사용할 때 가상 머신별 차이를 별도의 미디어에 기록합니다.</translation>
     </message>
     <message>
         <source>Registered hard drives</source>
-        <translation type="unfinished"></translation>
+        <translation>등록된 하드 드라이브</translation>
     </message>
     <message>
         <source>Registered optical disks</source>
-        <translation type="unfinished"></translation>
+        <translation>등록된 광 디스크</translation>
     </message>
     <message>
         <source>Registered floppy disks</source>
-        <translation type="unfinished"></translation>
+        <translation>등록된 플로피 디스크</translation>
     </message>
 </context>
 <context>
@@ -11222,8 +11307,16 @@
         <translation>검색 형식 선택</translation>
     </message>
     <message>
+        <source>Show the previous item matching the search term</source>
+        <translation type="vanished">찾을 문자열과 일치하는 이전 항목 표시</translation>
+    </message>
+    <message>
+        <source>Show the next item matching the search term</source>
+        <translation type="vanished">찾을 문자열과 일치하는 다음 항목 표시</translation>
+    </message>
+    <message>
         <source>Enter the search term and press Enter/Return</source>
-        <translation type="unfinished"></translation>
+        <translation>검색 항목을 입력하고 Enter/Return 키 입력</translation>
     </message>
     <message>
         <source>Navigates to the previous item matching the search term</source>
@@ -11318,7 +11411,7 @@
     </message>
     <message>
         <source>Optical Disk Selector</source>
-        <translation>광학 디스크 선택기</translation>
+        <translation>광 디스크 선택기</translation>
     </message>
     <message>
         <source>Floppy Disk Selector</source>
@@ -11334,23 +11427,23 @@
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">취소(&amp;C)</translation>
+        <translation>취소(&amp;C)</translation>
     </message>
     <message>
         <source>Leave &amp;Empty</source>
-        <translation type="unfinished"></translation>
+        <translation>비워 두기(&amp;E)</translation>
     </message>
     <message>
         <source>Leave the drive empty</source>
-        <translation type="unfinished"></translation>
+        <translation>드라이브를 비워 두기</translation>
     </message>
     <message>
         <source>C&amp;hoose</source>
-        <translation type="unfinished"></translation>
+        <translation>선택(&amp;H)</translation>
     </message>
     <message>
         <source>Attach the selected medium to the drive</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 미디어를 드라이브에 연결</translation>
     </message>
     <message>
         <source>Shows a list of all registered media</source>
@@ -11361,31 +11454,31 @@
     <name>UIMediumSizeAndPathGroupBox</name>
     <message>
         <source>Disk file name is not unique</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 파일 이름이 중복됨</translation>
     </message>
     <message>
         <source>Holds the location of the virtual disk file.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 디스크 파일의 위치를 저장합니다.</translation>
     </message>
     <message>
         <source>Opens file selection dialog so that a location for the disk file can be selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 파일 위치를 선택할 수 있는 파일 선택 대화 상자를 엽니다.</translation>
     </message>
     <message>
         <source>Hard Disk File Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation>하드 디스크 파일 위치와 크기</translation>
     </message>
     <message>
         <source>Specify a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>새 가상 하드 디스크 파일의 위치 지정...</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished">새 가상 하드 디스크 파일의 이름을 아래 상자에 입력하거나 폴더 아이콘을 클릭해서 파일을 생성할 폴더를 지정할 수 있습니다.</translation>
+        <translation>새 가상 하드 디스크 파일의 이름을 아래 상자에 입력하거나 폴더 아이콘을 클릭해서 파일을 생성할 폴더를 지정할 수 있습니다.</translation>
     </message>
     <message>
         <source>Select the size of the virtual hard disk in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard disk.</source>
-        <translation type="unfinished">새 가상 하드 디스크 크기를 메가바이트 단위로 입력하십시오. 가상 머신에서 가상 하드 드라이브에 저장할 수 있는 데이터의 최대 크기입니다.</translation>
+        <translation>새 가상 하드 디스크 크기를 메가바이트 단위로 입력하십시오. 가상 머신에서 가상 하드 드라이브에 저장할 수 있는 데이터의 최대 크기입니다.</translation>
     </message>
     <message>
         <source>Disk file path does not exists</source>
@@ -11412,11 +11505,11 @@
     </message>
     <message>
         <source>Minimum size for this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 미디어의 최소 크기입니다.</translation>
     </message>
     <message>
         <source>Maximum size for this medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 미디어의 최대 크기입니다.</translation>
     </message>
     <message>
         <source>%1 (%2 B)</source>
@@ -11494,7 +11587,7 @@
     </message>
     <message>
         <source>Allows to modify VM menu-bar contents.</source>
-        <translation type="unfinished">VM 메뉴 표시줄을 수정할 수 있도록 합니다.</translation>
+        <translation>가상 머신 메뉴 표시줄을 수정할 수 있도록 합니다.</translation>
     </message>
 </context>
 <context>
@@ -11551,15 +11644,15 @@
     </message>
     <message>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 시작하는 데 실패했습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신을 시작하는 데 실패했습니다.</translation>
     </message>
     <message>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 실행을 일시 정지시키는 데 실패했습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 실행을 일시 정지시키는 데 실패했습니다.</translation>
     </message>
     <message>
         <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 실행을 다시 시작시키는 데 실패했습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 실행을 다시 시작시키는 데 실패했습니다.</translation>
     </message>
     <message>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -11575,15 +11668,15 @@
     </message>
     <message>
         <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하는 데 실패했습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신을 삭제하는 데 실패했습니다.</translation>
     </message>
     <message>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 저장된 상태를 삭제하는 데 실패했습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 저장된 상태를 삭제하는 데 실패했습니다.</translation>
     </message>
     <message>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;이(가) 존재하지 않습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신이 존재하지 않습니다.</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
@@ -11591,7 +11684,7 @@
     </message>
     <message>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 세션을 열 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 세션을 열 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -11599,11 +11692,11 @@
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;에 USB 장치 &lt;b&gt;%1&lt;/b&gt;을(를) 추가할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%2&lt;/b&gt; 가상 머신에 &lt;b&gt;%1&lt;/b&gt; USB 장치를 추가할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;에서 USB 장치 &lt;b&gt;%1&lt;/b&gt;을(를) 제거할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%2&lt;/b&gt; 가상 머신에서 &lt;b&gt;%1&lt;/b&gt;USB 장치를 제거할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
@@ -11652,11 +11745,11 @@
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;에 ACPI 전원 단추 눌림 이벤트를 보낼 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신에 ACPI 전원 단추 눌림 이벤트를 보낼 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 설정을 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에 저장할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 설정을 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에 저장할 수 없습니다.</translation>
     </message>
     <message>
         <source>Discard</source>
@@ -11799,7 +11892,7 @@
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>파일 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 존재합니다. 새 파일로 덮어쓰시겠습니까?&lt;br /&gt;&lt;br /&gt;파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 파일이 이미 존재합니다. 새 파일로 덮어쓰시겠습니까?&lt;br /&gt;&lt;br /&gt;파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
@@ -11831,7 +11924,7 @@
     </message>
     <message>
         <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;의 스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%2&lt;/b&gt; 가상 머신의 &lt;b&gt;%1&lt;/b&gt;스냅샷을 복원할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -11868,7 +11961,7 @@
     </message>
     <message>
         <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation>이미 존재하기 때문에 &lt;i&gt;%2&lt;/i&gt;에 있는 가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 추가할 수 없습니다.</translation>
+        <translation>이미 존재하기 때문에 &lt;i&gt;%2&lt;/i&gt;에 있는 &lt;b&gt;%1&lt;/b&gt;가상 머신을 추가할 수 없습니다.</translation>
     </message>
     <message>
         <source>Delete all files</source>
@@ -11884,7 +11977,7 @@
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>하드 디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 하드 디스크를 &lt;b&gt;%3&lt;/b&gt;가상 머신의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
@@ -11912,7 +12005,7 @@
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>하드 디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 하드 디스크를 &lt;b&gt;%3&lt;/b&gt; 가상 머신의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
@@ -11928,11 +12021,11 @@
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 열 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 확장 기능 패키지를 열 수 없습니다.</translation>
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation> 확장 기능 패키지는 VirtualBox의 기능을 보완하며, 시스템에 영향을 줄 수 있는 소프트웨어를 포함할 수도 있습니다. 아래쪽에 있는 설명을 읽어 보시고, 확장 기능 패키지를 믿을 수 있는 곳에서 다운로드한 경우에만 설치하십시오.</translation>
+        <translation>확장 기능 패키지는 VirtualBox의 기능을 보완하며, 시스템에 영향을 줄 수 있는 소프트웨어를 포함할 수도 있습니다. 아래쪽에 있는 설명을 읽어 본 후  확장 기능 패키지를 믿을 수 있는 곳에서 다운로드한 경우에만 설치하십시오.</translation>
     </message>
     <message>
         <source>&amp;Upgrade</source>
@@ -11948,7 +12041,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 제거하려고 합니다.&lt;/p&gt;&lt;p&gt;계속 진행하시겠습니까?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VirtualBox 확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하려고 합니다.&lt;/p&gt;&lt;p&gt;계속 진행하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
@@ -12103,7 +12196,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;그룹 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 그룹 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;(으)로 옮기려고 하고 있으며, 이 그룹에는 같은 이름으로 된 항목이 존재합니다.&lt;/p&gt;&lt;p&gt;자동으로 이름을 바꾸시겠습니까?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 그룹을 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;그룹으로 옮기려고 하고 있으며, 이 그룹에는 같은 이름으로 된 항목이 존재합니다.&lt;/p&gt;&lt;p&gt;자동으로 이름을 바꾸시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Rename</source>
@@ -12111,19 +12204,19 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;스냅샷 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 복원하려고 합니다.&lt;/p&gt;&lt;p&gt;아래 상자를 선택하면 가상 머신의 현재 상태를 스냅샷으로 저장할 수 있습니다. 현재 상태를 저장하지 않으면 복원할 수 없습니다. 계속 진행하시겠습니까?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 스냅샷을 복원하려고 합니다.&lt;/p&gt;&lt;p&gt;아래 상자를 선택하면 가상 머신의 현재 상태를 스냅샷으로 저장할 수 있습니다. 현재 상태를 저장하지 않으면 복원할 수 없습니다. 계속 진행하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;스냅샷 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 복원하시겠습니까?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 스냅샷을 복원하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 그룹을 지정하는 데 실패했습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 그룹을 지정하는 데 실패했습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;다음 물리적 네트워크 인터페이스를 찾을 수 없어서 가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 시작할 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;가상 머신의 네트워크 설정을 편집하거나 가상 머신 실행을 취소할 수 있습니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;다음 물리적 네트워크 인터페이스를 찾을 수 없어서 &lt;b&gt;%1&lt;/b&gt; 가상 머신을 시작할 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;가상 머신의 네트워크 설정을 편집하거나 가상 머신 실행을 취소할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change Network Settings</source>
@@ -12135,11 +12228,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;디렉터리 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에서 &lt;b&gt;%1&lt;/b&gt;을(를) 위한 파일을 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;언어를 시스템 기본값으로 초기화합니다. VirtualBox 관리자 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; 디렉터리에서 &lt;b&gt;%1&lt;/b&gt;을(를) 위한 파일을 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;언어를 시스템 기본값으로 초기화합니다. VirtualBox 관리자 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화 상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;언어 파일 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) 불러올 수 없습니다.&lt;p&gt;언어를 내장되어 있는 영어로 초기화합니다. VirtualBox 관리자 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;언어 파일 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) 불러올 수 없습니다.&lt;p&gt;언어를 내장되어 있는 영어로 초기화합니다. VirtualBox 관리자 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화 상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -12151,7 +12244,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;알려진 디스크 이미지 목록에서 가상 하드 디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;알려진 디스크 이미지 목록에서 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;가상 하드 디스크를 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;As this hard disk is inaccessible its image file can not be deleted.&lt;/p&gt;</source>
@@ -12159,15 +12252,15 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;알려진 광 이미지 목록에서 가상 광 디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;알려진 광 이미지 목록에서 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 가상 광 디스크를 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;알려진 플로피 이미지 목록에서 가상 플로피 디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;알려진 플로피 이미지 목록에서 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 가상 플로피 디스크를 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 광 디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%2&lt;/b&gt;에 삽입할 수 없습니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 가상 광 디스크를 &lt;b&gt;%2&lt;/b&gt; 가상 머신에 삽입할 수 없습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
@@ -12175,7 +12268,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 광 디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%2&lt;/b&gt;에서 꺼낼 수 없습니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 가상 광 디스크를 &lt;b&gt;%2&lt;/b&gt; 가상 머신에서 꺼낼 수 없습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
@@ -12183,11 +12276,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 플로피 디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%2&lt;/b&gt;에 삽입할 수 없습니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 가상 플로피 디스크를 &lt;b&gt;%2&lt;/b&gt; 가상 머신에 삽입할 수 없습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 플로피 디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%2&lt;/b&gt;에서 꺼낼 수 없습니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 가상 플로피 디스크를 &lt;b&gt;%2&lt;/b&gt; 가상 머신에서 꺼낼 수 없습니다.&lt;/p&gt;</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
@@ -12202,11 +12295,11 @@
     </message>
     <message>
         <source>Failed to enable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 원격 데스크톱 서버를 활성화시킬 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 원격 데스크톱 서버를 활성화할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to disable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 원격 데스크톱 서버를 비활성화시킬 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 원격 데스크톱 서버를 비활성화할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
@@ -12254,15 +12347,15 @@
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;NAT 네트워크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;하나 이상의 가상 머신 네트워크 어댑터에서 이 네트워크 어댑터를 사용 중이라면 다른 네트워크 이름을 지정하거나 다른 연결 방식을 지정하지 않으면 해당하는 네트워크 어댑터를 사용할 수 없습니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; NAT 네트워크를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;하나 이상의 가상 머신 네트워크 어댑터에서 이 네트워크 어댑터를 사용 중이라면 다른 네트워크 이름을 지정하거나 다른 연결 방식을 지정하지 않으면 해당하는 네트워크 어댑터를 사용할 수 없습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the webcam &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;에 웹캠 &lt;b&gt;%1&lt;/b&gt;을(를) 추가할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%2&lt;/b&gt; 가상 머신에 &lt;b&gt;%1&lt;/b&gt; 웹캠을 추가할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to detach the webcam &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;에서 웹캠 &lt;b&gt;%1&lt;/b&gt;을(를) 제거할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%2&lt;/b&gt; 가상 머신에서 &lt;b&gt;%1&lt;/b&gt; 웹캠을 제거할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
@@ -12295,7 +12388,7 @@
     </message>
     <message>
         <source>Failed to set the extra data for key &lt;i&gt;%1&lt;/i&gt; of machine &lt;i&gt;%2&lt;/i&gt; to value &lt;i&gt;{%3}&lt;/i&gt;.</source>
-        <translation>가상 머신 &lt;i&gt;%2&lt;/i&gt;의 추가 데이터의 키 &lt;i&gt;%1&lt;/i&gt;의 값 &lt;i&gt;{%3}&lt;/i&gt;을(를) 설정할 수 없습니다.</translation>
+        <translation>&lt;i&gt;%2&lt;/i&gt; 가상 머신의 추가 데이터의 키 &lt;i&gt;%1&lt;/i&gt;의 값 &lt;i&gt;{%3}&lt;/i&gt;을(를) 설정할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to save the settings.</source>
@@ -12307,19 +12400,19 @@
     </message>
     <message>
         <source>Failed to attach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>광학 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
+        <translation>광학 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 &lt;b&gt;%3&lt;/b&gt; 가상 머신의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to attach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>플로피 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
+        <translation>플로피 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 &lt;b&gt;%3&lt;/b&gt; 가상 머신의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to detach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>광학 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
+        <translation>광학 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 &lt;b&gt;%3&lt;/b&gt; 가상 머신의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to detach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>플로피 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
+        <translation>플로피 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 &lt;b&gt;%3&lt;/b&gt; 가상 머신의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
@@ -12343,11 +12436,11 @@
     </message>
     <message>
         <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;에 네트워크 어댑터 케이블을 연결할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신에 네트워크 어댑터 케이블을 연결할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 네트워크 어댑터 케이블의 연결을 해제할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 네트워크 어댑터 케이블의 연결을 해제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Drag and drop operation from host to guest failed.</source>
@@ -12371,23 +12464,23 @@
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;스냅샷 %1을(를) 삭제하려면 임시로 디스크 공간이 더 필요합니다. 최악의 경우 현재 이미지 크기 %2가 %3로 증가할 수 있지만, 현재 파일시스템에는 %4만 남아 있습니다.&lt;/p&gt;&lt;p&gt;이미지 병합 과정에서 디스크 공간이 부족하면 이미지와 가상 머신 설정이 꼬일 수 있으며, 가상 머신과 데이터를 잃어버릴 수 있습니다.&lt;/p&gt;&lt;p&gt;위험 사항에 대해서 잘 알고 있다면 스냅샷을 삭제할 수 있습니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;%1 스냅샷을 삭제하려면 임시로 디스크 공간이 더 필요합니다. 최악의 경우 현재 이미지 크기 %2가 %3로 증가할 수 있지만, 현재 파일시스템에는 %4만 남아 있습니다.&lt;/p&gt;&lt;p&gt;이미지 병합 과정에서 디스크 공간이 부족하면 이미지와 가상 머신 설정이 꼬일 수 있으며, 가상 머신과 데이터를 잃어버릴 수 있습니다.&lt;/p&gt;&lt;p&gt;위험 사항에 대해서 잘 알고 있다면 스냅샷을 삭제할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;디스크 이미지 파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;의 연결을 해제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 다음 가상 머신에서 연결을 끊습니다: &lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디스크 이미지 파일의 연결을 해제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 다음 가상 머신에서 연결을 끊습니다: &lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 하드 디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;의 저장소 유닛을 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;&lt;b&gt;삭제&lt;/b&gt;를 선택하면 선택한 저장소 유닛도 같이 삭제됩니다. 이 작업은 &lt;b&gt;실행 취소할 수 없습니다.&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;유지&lt;/b&gt;를 선택하면 하드 디스크 목록에서만 삭제되며 저장소 유닛은 삭제되지 않으므로 다음에 하드 디스크를 다시 추가할 수 있습니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 가상 하드 디스크의 저장소 유닛을 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;&lt;b&gt;삭제&lt;/b&gt;를 선택하면 선택한 저장소 유닛도 같이 삭제됩니다. 이 작업은 &lt;b&gt;실행 취소할 수 없습니다.&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;유지&lt;/b&gt;를 선택하면 하드 디스크 목록에서만 삭제되며 저장소 유닛은 삭제되지 않으므로 다음에 하드 디스크를 다시 추가할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>디스크 이미지 파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 열 수 없습니다.</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디스크 이미지 파일을 열 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to close the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>디스크 이미지 파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 닫을 수 없습니다.</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디스크 이미지 파일을 닫을 수 없습니다.</translation>
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard disk. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
@@ -12428,7 +12521,7 @@
     </message>
     <message>
         <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
-        <translation>파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 삭제하시겠습니까?</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 파일을 삭제하시겠습니까?</translation>
     </message>
     <message>
         <source>&lt;p&gt;The reason for this error are most likely wrong permissions of the IPC daemon socket due to an installation problem. Please check the permissions of &lt;font color=blue&gt;&apos;/tmp&apos;&lt;/font&gt; and &lt;font color=blue&gt;&apos;/tmp/.vbox-*-ipc/&apos;&lt;/font&gt;&lt;/p&gt;</source>
@@ -12488,11 +12581,11 @@
     </message>
     <message>
         <source>Failed to create a DHCP server for the network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>네트워크 인터페이스 &lt;b&gt;%1&lt;/b&gt;의 DHCP 서버를 만들 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 네트워크 인터페이스의 DHCP 서버를 만들 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to remove the DHCP server for the network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>네트워크 인터페이스 &lt;b&gt;%1&lt;/b&gt;의 DHCP 서버를 삭제할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 네트워크 인터페이스의 DHCP 서버를 삭제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to acquire DHCP server parameter.</source>
@@ -12520,19 +12613,19 @@
     </message>
     <message>
         <source>Failed to enable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 오디오 어댑터 출력을 활성화할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 오디오 어댑터 출력을 활성화할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to disable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 오디오 어댑터 출력을 비활성화할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 오디오 어댑터 출력을 비활성화할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to enable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 오디오 어댑터 입력을 활성화할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 오디오 어댑터 입력을 활성화할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to disable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 오디오 어댑터 입력을 비활성화할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 오디오 어댑터 입력을 비활성화할 수 없습니다.</translation>
     </message>
     <message>
         <source>Unknown option &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -12557,11 +12650,11 @@
     </message>
     <message>
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;의 스냅샷 &lt;b&gt;%1&lt;/b&gt;(으)로 변경할 수 없습니다.</translation>
+        <translation>&lt;b&gt;%2&lt;/b&gt; 가상 머신의 &lt;b&gt;%1&lt;/b&gt; 스냅샷으로 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;요청한 변경 사항을 디스크에 적용하려면 연결되어 있는 가상 머신에서 분리해야 합니다.&lt;/p&gt;&lt;p&gt;디스크 이미지 파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를)&lt;/nobr&gt; 분리하시겠습니까?&lt;/p&gt;&lt;p&gt;다음 가상 머신에서 연결을 해제할 것입니다: &lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;요청한 변경 사항을 디스크에 적용하려면 연결되어 있는 가상 머신에서 분리해야 합니다.&lt;/p&gt;&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디스크 이미지 파일을 분리하시겠습니까?&lt;/p&gt;&lt;p&gt;다음 가상 머신에서 연결을 해제할 것입니다: &lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to acquire cloud provider manager.</source>
@@ -12613,7 +12706,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the cloud profile &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;클라우드 프로필 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를) 삭제하시겠습니까?&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 클라우드 프로필을 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to import cloud profiles from external files?&lt;/p&gt;&lt;p&gt;VirtualBox cloud profiles will be overwritten and their data will be lost.&lt;/p&gt;</source>
@@ -12629,19 +12722,19 @@
     </message>
     <message>
         <source>Failed to create the virtual disk image storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>가상 디스크 이미지 저장소  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를)&lt;/nobr&gt; 만들 수 없습니다.</translation>
+        <translation>가상 디스크 이미지 저장소 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를)&lt;/nobr&gt; 만들 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to enable recording for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 녹화를 활성화하는 데 실패했습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 녹화를 활성화하는 데 실패했습니다.</translation>
     </message>
     <message>
         <source>Failed to disable recording for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 녹화를 비활성화하는 데 실패했습니다.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 녹화를 비활성화하는 데 실패했습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%2&lt;/b&gt;에는 광학 드라이브가 없기 때문에 디스크 이미지 파일 &lt;b&gt;%1&lt;/b&gt;을(를) 마운트할 수 없습니다. 가상 머신 설정 대화상자에서 드라이브를 추가해 주십시오.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;%2&lt;/b&gt; 가상 머신에는 광학 드라이브가 없기 때문에 &lt;b&gt;%1&lt;/b&gt; 디스크 이미지 파일을 마운트할 수 없습니다. 가상 머신 설정 대화 상자에서 드라이브를 추가해 주십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to acquire machine parameter.</source>
@@ -12713,880 +12806,884 @@
     </message>
     <message>
         <source>Failed to set global host settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>전역 호스트 설정을 저장할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to terminate the cloud instance of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;다음 가상 머신의 클라우드 인스턴스를 종료하시겠습니까?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Terminate</source>
         <comment>cloud instance</comment>
-        <translation type="unfinished"></translation>
+        <translation>종료</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following cloud virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the instances and boot volumes of these machines as well?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;다음 클라우드 가상 머신을 머신 목록에서 삭제할 것입니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;해당 머신의 인스턴스와 부트 볼륨도 같이 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete everything</source>
-        <translation type="unfinished"></translation>
+        <translation>모두 삭제</translation>
     </message>
     <message>
         <source>&lt;p&gt;As this hard disk is inaccessible its image file cannot be deleted.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;이 하드 디스크에 접근할 수 없기 때문에 이미지 파일을 삭제할 수 없습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The list of inaccessible DVDs is as follows:</source>
-        <translation type="unfinished"></translation>
+        <translation>접근할 수 없는 DVD 목록은 다음과 같습니다:</translation>
     </message>
     <message>
         <source>The list of inaccessible floppy disks is as follows:</source>
-        <translation type="unfinished"></translation>
+        <translation>접근할 수 없는 플로피 디스크 목록은 다음과 같습니다:</translation>
     </message>
     <message>
         <source>&lt;p&gt;This will clear the optical disk list by releasing inaccessible DVDs from the virtual machines they are attached to and removing them from the list of registered media.&lt;p&gt;Are you sure?</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;접근할 수 없는 DVD를 가상 머신에서 연결 해제하고 등록된 미디어 목록에서 삭제하여 광 디스크 목록을 비울 것입니다.&lt;p&gt;계속 진행하시겠습니까?</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished">지우기</translation>
+        <translation>지우기</translation>
     </message>
     <message>
         <source>&lt;p&gt;This will clear the floppy disk list by releasing inaccessible disks from the virtual machines they are attached to and removing them from the list of registered media.&lt;p&gt;Are you sure?</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;접근할 수 없는 디스크를 가상 머신에서 연결 해제하고 등록된 미디어 목록에서 삭제하여 플로피 디스크 목록을 비울 것입니다.&lt;p&gt;계속 진행하시겠습니까?</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the cloud network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 클라우드 네트워크를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;하나 이상의 가상 머신 네트워크 어댑터에서 이 네트워크 어댑터를 사용 중이라면 다른 네트워크 이름을 지정하거나 다른 연결 방식을 지정하지 않으면 해당하는 네트워크 어댑터를 사용할 수 없습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the host-only network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 호스트 전용 네트워크를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;하나 이상의 가상 머신 네트워크 어댑터에서 이 네트워크 어댑터를 사용 중이라면 다른 네트워크 이름을 지정하거나 다른 연결 방식을 지정하지 않으면 해당하는 네트워크 어댑터를 사용할 수 없습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to close the Cloud Profile Manager?&lt;/p&gt;&lt;p&gt;There seems to be an unsaved changes. You can choose to &lt;b&gt;Accept&lt;/b&gt; or &lt;b&gt;Reject&lt;/b&gt; them automatically or cancel to keep the dialog opened.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;클라우드 프로필 관리자를 닫으시겠습니까?&lt;/p&gt;&lt;p&gt;저장되지 않은 변경 사항이 있는 것 같습니다. 해당 사항을 자동으로 &lt;b&gt;수락&lt;/b&gt; 또는 &lt;b&gt;거절&lt;/b&gt;할 수 있으며, 취소하면 대화 상자를 열어 둡니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Accept</source>
         <comment>cloud profile manager changes</comment>
-        <translation type="unfinished"></translation>
+        <translation>수락</translation>
     </message>
     <message>
         <source>Reject</source>
         <comment>cloud profile manager changes</comment>
-        <translation type="unfinished"></translation>
+        <translation>거절</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the cloud console application &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 클라우드 콘솔 프로그램을 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the cloud console profile &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 클라우드 콘솔 프로필을 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Can&apos;t find help file ...</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 파일을 찾을 수 없음...</translation>
     </message>
     <message>
         <source>Failed to find the following help file: &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>다음 도움말 파일을 찾을 수 없음: &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Can&apos;t open URL ...</source>
-        <translation type="unfinished"></translation>
+        <translation>URL을 열 수 없음...</translation>
     </message>
     <message>
         <source>BETA build warning!</source>
-        <translation type="unfinished"></translation>
+        <translation>베타 빌드 경고!</translation>
     </message>
     <message>
         <source>Experimental build warning!</source>
-        <translation type="unfinished"></translation>
+        <translation>실험적 빌드 경고!</translation>
     </message>
     <message>
         <source>Invalid Password ...</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 암호...</translation>
     </message>
     <message>
         <source>Nothing to update ...</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트할 항목 없음...</translation>
     </message>
     <message>
         <source>New version found ...</source>
-        <translation type="unfinished"></translation>
+        <translation>새 버전을 찾았음...</translation>
     </message>
     <message>
         <source>Update is required ...</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트가 필요함...</translation>
+    </message>
+    <message>
+        <source>User manual downloaded ...</source>
+        <translation type="vanished">사용자 설명서 다운로드됨...</translation>
     </message>
     <message>
         <source>Can&apos;t create machine folder ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 폴더를 만들 수 없음...</translation>
     </message>
     <message>
         <source>Failed to create machine folder at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 머신 폴더를 만들 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t overwrite machine folder ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 폴더를 덮어쓸 수 없음...</translation>
     </message>
     <message>
         <source>Failed to overwrite machine folder at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 있는 머신 폴더를 덮어쓸 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t remove machine folder ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 폴더를 삭제할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to remove machine folder at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 있는 머신 폴더를 삭제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t add machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 추가할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t resolve collision ...</source>
-        <translation type="unfinished"></translation>
+        <translation>충돌을 해결할 수 없음...</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Please resolve this name conflict and try again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 가상 머신을 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 그룹으로 옮기려고 하고 있으며, 이 그룹에는 이름이 같은 항목이 이미 존재합니다.&lt;/p&gt;&lt;p&gt;문제점을 해결한 다음 다시 시도하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to acquire cloud machine settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 머신 설정을 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t create medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어를 만들 수 없음...</translation>
     </message>
     <message>
         <source>Failed to create medium storage at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 미디어 저장소를 만들 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t overwrite medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어를 덮어쓸 수 없음...</translation>
     </message>
     <message>
         <source>Failed to overwrite medium storage at &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 있는 미디어 저장소를 덮어쓸 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t open license file ...</source>
-        <translation type="unfinished"></translation>
+        <translation>라이선스 파일을 열 수 없음...</translation>
     </message>
     <message>
         <source>Public key missing ...</source>
-        <translation type="unfinished"></translation>
+        <translation>공개 키 없음...</translation>
     </message>
     <message>
         <source>Public key file path is empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>공개 키 파일 경로가 비어 있습니다.</translation>
     </message>
     <message>
         <source>Failed to open the public key file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. File doesn&apos;t exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 공개 키 파일을 열 수 없습니다. 파일이 존재하지 않습니다.</translation>
     </message>
     <message>
         <source>Public key too large ...</source>
-        <translation type="unfinished"></translation>
+        <translation>공개 키가 너무 큼...</translation>
     </message>
     <message>
         <source>Failed to open the public key file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. File is too large for the key.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 공개 키 파일을 열 수 없습니다. 파일이 키로 사용하기에 너무 큽니다.</translation>
     </message>
     <message>
         <source>Public key isn&apos;t readable ...</source>
-        <translation type="unfinished"></translation>
+        <translation>공개 키를 읽을 수 없음...</translation>
     </message>
     <message>
         <source>Failed to open the public key file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 공개 키 파일을 열 수 없습니다. 파일 권한을 확인하십시오.</translation>
     </message>
     <message>
         <source>DHCP server isn&apos;t enabled ...</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 서버가 활성화되지 않았음...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; is set to obtain the address automatically but the corresponding DHCP server is not enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 네트워크에서 자동으로 주소를 가져오도록 설정되어 있으나 DHCP 서버가 활성화되어 있지 않습니다.</translation>
     </message>
     <message>
         <source>Invalid IPv4 address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 IPv4 주소...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 address.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 네트워크에 올바른 IPv4 주소가 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>Invalid IPv4 mask ...</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 IPv4 마스크...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv4 mask.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 네트워크에 올바른 IPv4 마스크가 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>Invalid IPv6 address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 IPv6 주소...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 address.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 네트워크에 올바른 IPv6 주소가 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>Invalid IPv6 prefix length ...</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 IPv6 접두사 길이...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid IPv6 prefix length.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 네트워크에 올바른 IPv6 접두사 길이가 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>Invalid DHCP server address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 DHCP 서버 주소...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 네트워크에 올바른 DHCP 서버 주소가 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>Invalid DHCP server mask ...</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 DHCP 서버 마스크...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server mask.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 네트워크에 올바른 DHCP 서버 마스크가 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>Invalid DHCP lower address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 DHCP 서버 최저 주소...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server lower address bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 네트워크에 올바른 DHCP 서버 최소 주소가 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>Invalid DHCP upper address ...</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 DHCP 서버 최대 주소...</translation>
     </message>
     <message>
         <source>Network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; does not currently have a valid DHCP server upper address bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 네트워크에 올바른 DHCP 서버 최대 주소가 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>No name specified ...</source>
-        <translation type="unfinished"></translation>
+        <translation>이름이 지정되지 않았음...</translation>
     </message>
     <message>
         <source>No new name specified for the network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>이전 이름이 &lt;b&gt;%1&lt;/b&gt;인 네트워크의 새 이름이 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>Name already busy ...</source>
-        <translation type="unfinished"></translation>
+        <translation>이름이 이미 사용 중...</translation>
     </message>
     <message>
         <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>여러 개의 NAT 네트워크에서 이름 &lt;b&gt;%1&lt;/b&gt;을(를) 사용 중입니다.</translation>
     </message>
     <message>
         <source>No IPv4 prefix specified ...</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 접두사가 지정되지 않았음...</translation>
     </message>
     <message>
         <source>No IPv4 prefix specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; NAT 네트워크의 IPv4 접두사가 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>No IPv6 prefix specified ...</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 접두사가 지정되지 않았음...</translation>
     </message>
     <message>
         <source>No IPv6 prefix specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; NAT 네트워크의 IPv6 접두사가 지정되지 않았습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t mount image ...</source>
-        <translation type="unfinished"></translation>
+        <translation>이미지를 마운트할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t send ACPI shutdown ...</source>
-        <translation type="unfinished"></translation>
+        <translation>ACPI 종료 신호를 보낼 수 없음...</translation>
     </message>
     <message>
         <source>Auto capture keyboard ...</source>
-        <translation type="unfinished"></translation>
+        <translation>자동으로 키보드 잡기...</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;현재 &lt;b&gt;자동으로 키보드 잡기&lt;/b&gt; 옵션이 켜져 있습니다. 가상 머신 창이 활성화되어 있을 때 자동으로 키보드를 &lt;b&gt;잡게 되며&lt;/b&gt; 호스트에서 실행 중인 다른 프로그램으로 전달되지 않을 것입니다. 키보드가 잡혀 있을 경우에는 Alt-Tab 같은 시스템 동작을 비롯한 모든 키보드 입력이 가상 머신으로 전달됩니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 키&lt;/b&gt;를 눌러서 키보드와 마우스가 &lt;b&gt;잡힌 상태를 해제&lt;/b&gt;할 수 있으며 정상적인 작동을 할 수 있도록 합니다. 현재 할당된 호스트 키는 가상 머신 창 아래쪽의 상태 표시줄에 나타나 있습니다. 마우스 아이콘 근처에 있는 이 아이콘은 현재 키보드와 마우스 잡기 상태를 나타냅니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Mouse integration ...</source>
-        <translation type="unfinished"></translation>
+        <translation>마우스 통합...</translation>
     </message>
     <message>
         <source>Paused VM input ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 입력 일시 정지됨...</translation>
     </message>
     <message>
         <source>Wrong color depth ...</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 색 농도...</translation>
     </message>
     <message>
         <source>VirtualBox failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire VirtualBox parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Appliance failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire appliance parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Host failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire host parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Medium failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire medium parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Session failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>세션 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire session parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>세션 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Machine failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 오류...</translation>
     </message>
     <message>
         <source>Snapshot failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire snapshot parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>DHCP server failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 서버 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire cloud network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 네트워크 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Host network interface failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 네트워크 인터페이스 오류...</translation>
     </message>
     <message>
         <source>Host only network failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire host only network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>NAT network failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT 네트워크 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire NAT network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT 네트워크 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Display failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>디스플레이 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire display parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>디스플레이 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Update failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire update agent parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트 에이전트 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>VSD failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD 오류...</translation>
     </message>
     <message>
         <source>VSD form failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD 폼 오류...</translation>
     </message>
     <message>
         <source>Cloud failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire cloud machine parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 머신 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to change the parameter of the medium &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 미디어의 인자를 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to change the parameter of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신의 인자를 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>Graphics adapter failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>그래픽 어댑터 오류...</translation>
     </message>
     <message>
         <source>Failed to change graphics adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>그래픽 어댑터 속성을 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>Audio adapter failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>오디오 어댑터 오류...</translation>
     </message>
     <message>
         <source>Failed to change audio adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>오디오 어댑터 속성을 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>Network adapter failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 어댑터 오류...</translation>
     </message>
     <message>
         <source>Failed to change network adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 어댑터 속성을 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to change DHCP server parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 서버 인자를 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to change cloud network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 네트워크 인자를 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to change host network interface parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 네트워크 인터페이스 인자를 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to change host only network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 인자를 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to change NAT network parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT 네트워크 인자를 변경할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to assign update agent parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트 에이전트 인자를 할당할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t enumerate USB devices ...</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 장치 목록을 가져올 수 없음...</translation>
     </message>
     <message>
         <source>Failed to enumerate host USB devices.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 USB 장치 목록을 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t open medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어를 열 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t pause machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 일시 정지할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t resume machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 다시 시작할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t shutdown machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 종료할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t create appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템을 만들 수 없음...</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템을 만들 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t register machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 등록할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to register machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신을 등록할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t create machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 생성할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to create machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 생성할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t find machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 찾을 수 없음...</translation>
     </message>
     <message>
         <source>Failed to find the machine with following ID: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>다음 ID를 사용하는 머신을 찾을 수 없습니다: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Can&apos;t open machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 열 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t create medium storage ...</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어 저장소를 만들 수 없음...</translation>
     </message>
     <message>
         <source>Failed to acquire Extension Pack Manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 관리자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t create VFS explorer ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VFS 탐색기를 생성할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to create VFS explorer to check files.</source>
-        <translation type="unfinished"></translation>
+        <translation>파일을 검사하기 위하여 VFS 탐색기를 생성할 수 없습니다.</translation>
     </message>
     <message>
         <source>Bad password ...</source>
-        <translation type="unfinished"></translation>
+        <translation>암호가 잘못됨...</translation>
     </message>
     <message>
         <source>Can&apos;t interpret appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템을 해석할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to interpret appliance being imported.</source>
-        <translation type="unfinished"></translation>
+        <translation>가져올 가상 시스템을 해석할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t create VSD ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD를 생성할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t find cloud network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 네트워크를 찾을 수 없음...</translation>
     </message>
     <message>
         <source>Unable to find the cloud network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 클라우드 네트워크를 찾을 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t find host network interface ...</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 네트워크 인터페이스를 찾을 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t find host only network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크를 찾을 수 없음...</translation>
     </message>
     <message>
         <source>Unable to find the host only network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 호스트 전용 네트워크를 찾을 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t find NAT network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT 네트워크를 찾을 수 없음...</translation>
     </message>
     <message>
         <source>Unable to find the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; NAT 네트워크를 찾을 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t create DHCP server ...</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 서버를 생성할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t remove DHCP server ...</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 서버를 삭제할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t create cloud network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 네트워크를 생성할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to create a cloud network.</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 네트워크를 생성할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t remove cloud network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 네트워크를 삭제할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to remove the cloud network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 클라우드 네트워크를 삭제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t create host only network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크를 생성할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to create a host only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 인터페이스를 생성할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t remove host only network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크를 삭제할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to remove the host only network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 호스트 전용 네트워크를 삭제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t create NAT network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT 네트워크를 생성할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to create a NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT 네트워크를 생성할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t remove NAT network ...</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT 네트워크를 삭제할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to remove the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; NAT 네트워크를 삭제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t create cloud profile ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 프로필을 생성할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t remove cloud profile ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 프로필을 삭제할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to remove cloud profile.</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 프로필을 삭제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t save cloud profiles ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 프로필을 저장할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t import cloud profiles ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 프로필을 가져올 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t refresh cloud machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 머신을 새로 고칠 수 없음...</translation>
     </message>
     <message>
         <source>Failed to refresh cloud machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 머신을 새로 고칠 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t create cloud client ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 클라이언트를 생성할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t close medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어를 닫을 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t discard saved state ...</source>
-        <translation type="unfinished"></translation>
+        <translation>저장된 상태를 삭제할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t remove machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 삭제할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t export machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신을 내보낼 수 없음...</translation>
     </message>
     <message>
         <source>Failed to export virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 가상 머신을 내보내는 데 실패했습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t attach device ...</source>
-        <translation type="unfinished"></translation>
+        <translation>장치를 연결할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t find snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷을 찾을 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t change snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷을 변경할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t run guest install ...</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 설치를 실행할 수 없음...</translation>
     </message>
     <message>
         <source>Failed to run unattended guest installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>무인 게스트 OS 설치를 실행할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t attach USB device ...</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 장치를 연결할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t detach USB device ...</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 장치를 연결 해제할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t attach webcam ...</source>
-        <translation type="unfinished"></translation>
+        <translation>웹캠을 연결할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t detach webcam ...</source>
-        <translation type="unfinished"></translation>
+        <translation>웹캠을 연결 해제할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t save machine settings ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 설정을 저장할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle audio input ...</source>
-        <translation type="unfinished"></translation>
+        <translation>오디오 입력을 전환할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle audio output ...</source>
-        <translation type="unfinished"></translation>
+        <translation>오디오 출력을 전환할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle network cable ...</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 케이블을 전환할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle recording ...</source>
-        <translation type="unfinished"></translation>
+        <translation>녹음을 전환할 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t toggle VRDE server ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDE 서버를 전환할 수 없음...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Error ID:&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;오류 ID:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity:</source>
         <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>심각성: </translation>
     </message>
     <message>
         <source>Unable to validate guest additions image ...</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장 이미지를 검증할 수 없음...</translation>
     </message>
     <message>
         <source>Unable to validate extension pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지를 검증할 수 없음...</translation>
     </message>
     <message>
         <source>Guest additions inactive ...</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장이 비활성화됨...</translation>
     </message>
     <message>
         <source>Extension Pack failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 오류...</translation>
     </message>
     <message>
         <source>Failed to acquire Extension Pack Manager parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 관리자 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to acquire Extension Pack parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to acquire VSD parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to acquire VSD form parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD 폼 인자를 가져올 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to assign VSD parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD 인자를 할당할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t get Extension Pack Manager ...</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 관리자를 가져올 수 없음...</translation>
     </message>
     <message>
         <source>Failed to create VSD.</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD를 생성할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t open extension pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지를 열 수 없음...</translation>
     </message>
     <message>
         <source>Can&apos;t read extension pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지를 읽을 수 없음...</translation>
     </message>
     <message>
         <source>Failed to read the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 읽을 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>ID=&lt;b&gt;%1&lt;/b&gt;인 스냅샷을 찾을 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to find snapshot with name=&lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>이름=&lt;b&gt;%1&lt;/b&gt;인 스냅샷을 찾을 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed.&lt;/p&gt;&lt;p&gt;Would you like to discard the changed settings or to keep editing them?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;머신 설정이 변경되었습니다.&lt;/p&gt;&lt;p&gt;변경 사항을 무시하거나 계속해서 편집하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Discard changes</source>
-        <translation type="unfinished"></translation>
+        <translation>변경 사항 무시</translation>
     </message>
     <message>
         <source>Keep editing</source>
-        <translation type="unfinished"></translation>
+        <translation>계속 편집</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;기본 보안 부트 키를 복원하시겠습니까?&lt;/p&gt;&lt;p&gt;계속 진행하면 현재 키를 덮어씁니다. 해당하는 가상 머신을 더 이상 부트하지 못할 수도 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;To open a Viso file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
@@ -13821,65 +13918,65 @@
     <name>UIMiniToolbarSettingsEditor</name>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished">작은 도구 모음:</translation>
+        <translation>작은 도구 모음:</translation>
     </message>
     <message>
         <source>Show in &amp;Full-screen/Seamless</source>
-        <translation type="unfinished">전체 화면/심리스 모드에서 표시(&amp;F)</translation>
+        <translation>전체 화면/심리스 모드에서 표시(&amp;F)</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar in full-screen and seamless modes.</source>
-        <translation type="unfinished">선택하면 전체 화면 및 심리스 모드에서 작은 도구 모음을 표시합니다.</translation>
+        <translation>선택하면 전체 화면 및 심리스 모드에서 작은 도구 모음을 표시합니다.</translation>
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation type="unfinished">화면 위에 표시(&amp;T)</translation>
+        <translation>화면 위에 표시(&amp;T)</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished">선택하면 작은 도구 모음을 화면 아래 대신 위에 표시합니다.</translation>
+        <translation>선택하면 작은 도구 모음을 화면 아래 대신 위에 표시합니다.</translation>
     </message>
 </context>
 <context>
     <name>UIMonitorCountEditor</name>
     <message>
         <source>Mo&amp;nitor Count:</source>
-        <translation type="unfinished">모니터 개수(&amp;N):</translation>
+        <translation>모니터 개수(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the amount of virtual monitors provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신에 연결된 모니터 개수를 조정합니다.</translation>
     </message>
     <message>
         <source>Minimum possible monitor count.</source>
-        <translation type="unfinished"></translation>
+        <translation>최소 가능한 모니터 개수입니다.</translation>
     </message>
     <message>
         <source>Maximum possible monitor count.</source>
-        <translation type="unfinished"></translation>
+        <translation>최대 가능한 모니터 개수입니다.</translation>
     </message>
 </context>
 <context>
     <name>UIMotherboardFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>확장된 기능:</translation>
     </message>
     <message>
         <source>Enable &amp;I/O APIC</source>
-        <translation type="unfinished">I/O APIC 사용하기(&amp;I)</translation>
+        <translation>I/O APIC 활성화(&amp;I)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. Note: don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 가상 머신에서 I/O APIC를 사용합니다. 이 경우 가상 머신의 성능이 저하될 수도 있습니다. 주의: 게스트 운영 체제로 Windows를 설치한 후에 이 기능을 끄지 마십시오!</translation>
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
-        <translation type="unfinished">EFI 사용하기(지원하는 운영 체제만)(&amp;E)</translation>
+        <translation>EFI 활성화(지원하는 운영 체제만)(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished">선택하면 가상 머신에서 EFI(확장 펌웨어 인터페이스)를 사용하며, 일부 게스트 OS를 시작할 때 필요합니다. EFI를 지원하지 않는 운영 체제는 이 옵션이 활성화되어 있으면 부팅할 수 없습니다.</translation>
+        <translation>선택하면 가상 머신에서 EFI(확장 펌웨어 인터페이스)를 사용하며, 일부 게스트 OS를 시작할 때 필요합니다. EFI를 지원하지 않는 운영 체제는 이 옵션이 활성화되어 있으면 부팅할 수 없습니다.</translation>
     </message>
     <message>
         <source>Hardware Clock in &amp;UTC Time</source>
@@ -13887,27 +13984,27 @@
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished">선택하면 RTC 장치는 현재 시간을 UTC로 보고하며, 선택하지 않으면 지역 시간으로 보고합니다. 일부 유닉스는 하드웨어 시간이 UTC로 되어 있다고 가정합니다.</translation>
+        <translation>선택하면 RTC 장치는 현재 시간을 UTC로 보고하며, 선택하지 않으면 지역 시간으로 보고합니다. 일부 Unix는 하드웨어 시간이 UTC로 되어 있다고 가정합니다.</translation>
     </message>
     <message>
         <source>Enable Hardware Clock in &amp;UTC Time</source>
-        <translation type="unfinished"></translation>
+        <translation>하드웨어 시각을 UTC로 보고(&amp;U)</translation>
     </message>
     <message>
         <source>Enable &amp;Secure Boot</source>
-        <translation type="unfinished"></translation>
+        <translation>보안 부트 활성화(&amp;S)</translation>
     </message>
     <message>
         <source>When checked, the secure boot emulation will be enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 보안 부트 에뮬레이션을 활성화합니다.</translation>
     </message>
     <message>
         <source>&amp;Reset Keys to Default</source>
-        <translation type="unfinished"></translation>
+        <translation>기본값으로 키 복원(&amp;R)</translation>
     </message>
     <message>
         <source>Resets secure boot keys to default.</source>
-        <translation type="unfinished"></translation>
+        <translation>보안 부트 키를 기본값으로 복원합니다.</translation>
     </message>
 </context>
 <context>
@@ -13948,32 +14045,36 @@
         <translation type="vanished">머신 폴더:</translation>
     </message>
     <message>
+        <source>Invalid name</source>
+        <translation type="vanished">잘못된 이름</translation>
+    </message>
+    <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">이름(&amp;N):</translation>
+        <translation>이름(&amp;N):</translation>
     </message>
     <message>
         <source>&amp;Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>폴더(&amp;F):</translation>
     </message>
     <message>
         <source>&amp;ISO Image:</source>
-        <translation type="unfinished"></translation>
+        <translation>ISO 이미지(&amp;I):</translation>
     </message>
     <message>
         <source>&amp;Edition:</source>
-        <translation type="unfinished"></translation>
+        <translation>에디션(&amp;E):</translation>
     </message>
     <message>
         <source>Holds the name for virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신의 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>Selects the folder hosting virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신을 포함하는 폴더를 선택합니다.</translation>
     </message>
     <message>
         <source>Selects an ISO image to be attached to the virtual machine or used in unattended install.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신에 연결하거나 자동 설치에 사용할 ISO 이미지를 선택합니다.</translation>
     </message>
     <message>
         <source>Invalid guest machine name</source>
@@ -14008,51 +14109,59 @@
     <name>UINativeWizard</name>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished">도움말(&amp;H)</translation>
+        <translation>도움말(&amp;H)</translation>
     </message>
     <message>
         <source>Open corresponding Help topic.</source>
-        <translation type="unfinished"></translation>
+        <translation>문맥에 해당하는 도움말을 엽니다.</translation>
     </message>
     <message>
         <source>&amp;Expert Mode</source>
-        <translation type="obsolete">전문가 모드(&amp;E)</translation>
+        <translation type="vanished">전문가 모드(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Switch to the Expert Mode, a one-page dialog for experienced users.</source>
+        <translation type="vanished">단일 페이지 대화 상자를 사용하는 전문가 모드로 전환합니다.</translation>
     </message>
     <message>
         <source>&amp;Guided Mode</source>
-        <translation type="obsolete">가이드 모드(&amp;G)</translation>
+        <translation type="vanished">가이드 모드(&amp;G)</translation>
+    </message>
+    <message>
+        <source>Switch to the Guided Mode, a step-by-step dialog with detailed explanations.</source>
+        <translation type="vanished">설명을 포함한 단계별 대화 상자를 사용하는 가이드 모드로 전환합니다.</translation>
     </message>
     <message>
         <source>&amp;Back</source>
-        <translation type="unfinished">이전(&amp;B)</translation>
+        <translation>이전(&amp;B)</translation>
     </message>
     <message>
         <source>Go to previous wizard page.</source>
-        <translation type="unfinished"></translation>
+        <translation>이전 마법사 페이지로 이동합니다.</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished">다음(&amp;N)</translation>
+        <translation>다음(&amp;N)</translation>
     </message>
     <message>
         <source>Go to next wizard page.</source>
-        <translation type="unfinished"></translation>
+        <translation>다음 마법사 페이지로 이동합니다.</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>완료(&amp;F)</translation>
     </message>
     <message>
         <source>Commit all wizard data.</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 마법사 데이터를 적용합니다.</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">취소(&amp;C)</translation>
+        <translation>취소(&amp;C)</translation>
     </message>
     <message>
         <source>Cancel wizard execution.</source>
-        <translation type="unfinished"></translation>
+        <translation>마법사 실행을 취소합니다.</translation>
     </message>
 </context>
 <context>
@@ -14096,543 +14205,547 @@
     </message>
     <message>
         <source>Holds how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 어댑터가 호스트 운영 체제의 실제 네트워크에 어떻게 연결되어 있는지를 제어합니다.</translation>
     </message>
     <message>
         <source>Holds the network adapter on the host system that traffic to and from this network card will go through.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크 카드의 트래픽을 담당할 호스트 시스템의 네트워크 어댑터를 선택합니다.</translation>
     </message>
     <message>
         <source>Holds the driver to be used with this network card.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크 카드에 사용할 드라이버를 선택합니다.</translation>
     </message>
     <message>
         <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크 카드를 연결할 NAT 네트워크의 이름을 지정합니다. 가상 머신 관리자 창의 네트워크 관리자 도구를 통하여 네트워크를 추가 및 삭제할 수 있습니다.</translation>
     </message>
     <message>
         <source>Holds the name of the host-only network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크 카드를 연결할 호스트 전용 네트워크의 이름을 지정합니다. 가상 머신 관리자 창의 네트워크 관리자 도구를 통하여 네트워크를 추가 및 삭제할 수 있습니다.</translation>
     </message>
     <message>
         <source>Holds the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크 카드의 트래픽을 담당할 호스트 시스템의 가상 네트워크 어댑터를 지정합니다. 가상 머신 관리자 창의 네트워크 관리자 도구에서 어댑터를 추가하거나 삭제할 수 있습니다.</translation>
     </message>
     <message>
         <source>(experimental) Holds the name of the cloud network that this network card will be connected to. You can add and remove networks using the Network Manager tool in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>(실험적) 이 네트워크 카드를 연결할 클라우드 네트워크의 이름을 지정합니다. 가상 머신 관리자 창의 네트워크 관리자 도구를 통하여 클라우드 네트워크를 추가 및 삭제할 수 있습니다.</translation>
     </message>
 </context>
 <context>
     <name>UINetworkFeaturesEditor</name>
     <message>
+        <source>A&amp;dvanced</source>
+        <translation type="vanished">고급(&amp;D)</translation>
+    </message>
+    <message>
         <source>Shows additional network adapter options.</source>
-        <translation type="obsolete">추가 네트워크 어댑터 옵션을 보이거나 숨깁니다.</translation>
+        <translation type="vanished">추가 네트워크 어댑터 옵션을 표시하거나 숨깁니다.</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
-        <translation type="unfinished">어댑터 종류(&amp;T):</translation>
+        <translation>어댑터 종류(&amp;T):</translation>
     </message>
     <message>
         <source>Holds the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 네트워크 어댑터의 종류를 선택합니다. 이 값에 따라서 VirtualBox 가상 머신의 네트워크 하드웨어 종류가 달라집니다.</translation>
     </message>
     <message>
         <source>&amp;Promiscuous Mode:</source>
-        <translation type="unfinished">무작위 모드(&amp;P):</translation>
+        <translation>무작위 모드(&amp;P):</translation>
     </message>
     <message>
         <source>Holds the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation type="unfinished"></translation>
+        <translation>내부 네트워크, 호스트 전용 네트워크, 브리지에 연결되었을 때 네트워크 어댑터의 무작위 모드를 선택합니다.</translation>
     </message>
     <message>
         <source>&amp;MAC Address:</source>
-        <translation type="unfinished">MAC 주소(&amp;M):</translation>
+        <translation>MAC 주소(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">이 어댑터의 MAC 주소를 표시합니다. {0-9,A-F} 사이의 글자만 사용해서 총 12글자입니다. 두 번째 숫자는 짝수여야 합니다.</translation>
+        <translation>이 어댑터의 MAC 주소를 표시합니다. {0-9,A-F} 사이의 글자만 사용해서 총 12글자입니다. 두 번째 숫자는 짝수여야 합니다.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">새 무작위적 MAC 주소를 생성합니다.</translation>
+        <translation>새 무작위적 MAC 주소를 생성합니다.</translation>
     </message>
     <message>
         <source>Generic Properties:</source>
-        <translation type="unfinished">일반 속성:</translation>
+        <translation>일반 속성:</translation>
     </message>
     <message>
         <source>Holds the configuration settings for the network attachment driver. The settings should be of the form name=value and will depend on the driver. Use shift-enter to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 연결 드라이버의 설정 사항을 지정합니다. 설정 사항은 드라이버마다 다르며 이름=값 형식을 가집니다. 새 항목을 입력하려면 Shift+Enter 키를 누르십시오.</translation>
     </message>
     <message>
         <source>&amp;Cable Connected</source>
-        <translation type="unfinished">케이블 연결됨(&amp;C)</translation>
+        <translation>케이블 연결됨(&amp;C)</translation>
     </message>
     <message>
         <source>When checked, the virtual network cable is plugged in.</source>
-        <translation type="unfinished">선택하면 가상 네트워크 케이블을 연결합니다.</translation>
+        <translation>선택하면 가상 네트워크 케이블을 연결합니다.</translation>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">포트 포워딩(&amp;P)</translation>
+        <translation>포트 포워딩(&amp;P)</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="unfinished">포트 포워딩 규칙을 편집하는 대화 상자를 엽니다.</translation>
+        <translation>포트 포워딩 규칙을 편집하는 대화 상자를 엽니다.</translation>
     </message>
 </context>
 <context>
     <name>UINetworkManager</name>
     <message>
         <source>Host-only Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크</translation>
     </message>
     <message>
         <source>NAT Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT 네트워크</translation>
     </message>
     <message>
         <source>Cloud Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 네트워크</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
     <message>
         <source>Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>마스크</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished">최저 주소</translation>
+        <translation>최저 주소</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished">최고 주소</translation>
+        <translation>최고 주소</translation>
     </message>
     <message>
         <source>IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 접두사</translation>
     </message>
     <message>
         <source>IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 접두사</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished">DHCP 서버</translation>
+        <translation>DHCP 서버</translation>
     </message>
     <message>
         <source>Provider</source>
-        <translation type="unfinished"></translation>
+        <translation>공급자</translation>
     </message>
     <message>
         <source>Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>프로필</translation>
     </message>
     <message>
         <source>Network Manager</source>
-        <translation type="unfinished">네트워크 관리자</translation>
+        <translation>네트워크 관리자</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>초기화</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">적용</translation>
+        <translation>적용</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">닫기</translation>
+        <translation>닫기</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">도움말</translation>
+        <translation>도움말</translation>
     </message>
     <message>
         <source>Reset changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 네트워크 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Apply changes in current network details</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 네트워크 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">저장하지 않고 대화 상자 닫기</translation>
+        <translation>저장하지 않고 대화 상자 닫기</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>대화 상자 도움말 표시</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">변경 사항 초기화(%1)</translation>
+        <translation>변경 사항 초기화(%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">변경 사항 적용(%1)</translation>
+        <translation>변경 사항 적용(%1)</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">창 닫기(%1)</translation>
+        <translation>창 닫기(%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 표시(%1)</translation>
     </message>
     <message>
         <source>Select Subnet</source>
-        <translation type="unfinished"></translation>
+        <translation>서브넷 선택</translation>
     </message>
     <message>
         <source>N&amp;ame:</source>
-        <translation type="unfinished"></translation>
+        <translation>이름(&amp;A):</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished">이 네트워크의 이름을 표시합니다.</translation>
+        <translation>이 네트워크의 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
+        <translation>공급자(&amp;P):</translation>
     </message>
     <message>
         <source>Holds the cloud provider for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크의 클라우드 공급자를 표시합니다.</translation>
     </message>
     <message>
         <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
+        <translation>프로필(&amp;R):</translation>
     </message>
     <message>
         <source>Holds the cloud profile for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크의 클라우드 프로필을 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Id:</source>
-        <translation type="unfinished"></translation>
+        <translation>ID(&amp;I):</translation>
     </message>
     <message>
         <source>Holds the id for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크의 ID를 표시합니다.</translation>
     </message>
     <message>
         <source>Selects the id for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크의 ID를 선택합니다.</translation>
     </message>
     <message>
         <source>Reset changes in current interface details</source>
-        <translation type="unfinished">현재 인터페이스 설정의 변경된 사항 초기화</translation>
+        <translation>현재 인터페이스 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Apply changes in current interface details</source>
-        <translation type="unfinished">현재 인터페이스 설정의 변경된 사항 적용</translation>
+        <translation>현재 인터페이스 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">이름(&amp;N):</translation>
+        <translation>이름(&amp;N):</translation>
     </message>
     <message>
         <source>&amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>마스크(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the mask for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크의 마스크를 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Lower Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>최저 한계(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the lower address bound for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크의 최저 주소 한계를 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Upper Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>최고 한계(&amp;U):</translation>
     </message>
     <message>
         <source>Holds the upper address bound for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크의 최고 주소 한계를 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">어댑터(&amp;A)</translation>
+        <translation>어댑터(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">DHCP 서버(&amp;D)</translation>
+        <translation>DHCP 서버(&amp;D)</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Automatically</source>
-        <translation type="unfinished">자동으로 어댑터 설정(&amp;A)</translation>
+        <translation>자동으로 어댑터 설정(&amp;A)</translation>
     </message>
     <message>
         <source>Configure Adapter &amp;Manually</source>
-        <translation type="unfinished">수동으로 어댑터 설정(&amp;M)</translation>
+        <translation>수동으로 어댑터 설정(&amp;M)</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">IPv4 주소(&amp;I):</translation>
+        <translation>IPv4 주소(&amp;I):</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">이 어댑터의 호스트 IPv4 주소를 표시합니다.</translation>
+        <translation>이 어댑터의 호스트 IPv4 주소를 표시합니다.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4 서브넷 마스크(&amp;M):</translation>
+        <translation>IPv4 서브넷 마스크(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">이 어댑터의 호스트 IPv4 서브넷 마스크를 표시합니다.</translation>
+        <translation>이 어댑터의 호스트 IPv4 서브넷 마스크를 표시합니다.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">IPv6 주소(&amp;P):</translation>
+        <translation>IPv6 주소(&amp;P):</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 주소를 표시합니다.</translation>
+        <translation>IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 주소를 표시합니다.</translation>
     </message>
     <message>
         <source>IPv6 Prefix &amp;Length:</source>
-        <translation type="unfinished">IPv6 접두사 길이(&amp;L):</translation>
+        <translation>IPv6 접두사 길이(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the host IPv6 prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 네트워크 마스크 접두사 길이를 표시합니다.</translation>
+        <translation>IPv6을 지원하는 경우 이 어댑터의 호스트 IPv6 네트워크 마스크 접두사 길이를 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation>서버 활성화(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished">선택하면 가상 머신을 시작할 때 이 네트워크에서 DHCP 서버를 활성화합니다.</translation>
+        <translation>선택하면 가상 머신을 시작할 때 이 네트워크에서 DHCP 서버를 활성화합니다.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">서버 주소(&amp;R):</translation>
+        <translation>서버 주소(&amp;R):</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버 주소를 표시합니다.</translation>
+        <translation>이 호스트 전용 어댑터에 연결된 DHCP 서버 주소를 표시합니다.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">서버 마스크(&amp;M):</translation>
+        <translation>서버 마스크(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버의 네트워크 마스크를 표시합니다.</translation>
+        <translation>이 호스트 전용 어댑터에 연결된 DHCP 서버의 네트워크 마스크를 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">최저 주소 한계(&amp;L):</translation>
+        <translation>최저 주소 한계(&amp;L):</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최저 주소입니다.</translation>
+        <translation>이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최저 주소입니다.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">최고 주소 한계(&amp;U):</translation>
+        <translation>최고 주소 한계(&amp;U):</translation>
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최고 주소입니다.</translation>
+        <translation>이 호스트 전용 어댑터에 연결된 DHCP 서버에서 제공하는 최고 주소입니다.</translation>
     </message>
     <message>
         <source>Reset changes in current DHCP server details</source>
-        <translation type="unfinished">현재 DHCP 서버 설정의 변경된 사항 초기화</translation>
+        <translation>현재 DHCP 서버 설정의 변경된 사항 초기화</translation>
     </message>
     <message>
         <source>Apply changes in current DHCP server details</source>
-        <translation type="unfinished">현재 DHCP 서버 설정의 변경된 사항 적용</translation>
+        <translation>현재 DHCP 서버 설정의 변경된 사항 적용</translation>
     </message>
     <message>
         <source>&amp;General Options</source>
-        <translation type="unfinished"></translation>
+        <translation>일반 옵션(&amp;G)</translation>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">포트 포워딩(&amp;P)</translation>
+        <translation>포트 포워딩(&amp;P)</translation>
     </message>
     <message>
         <source>IPv&amp;4 Prefix:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 접두사(&amp;4):</translation>
     </message>
     <message>
         <source>Holds the IPv4 prefix for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크의 IPv4 접두사를 표시합니다.</translation>
     </message>
     <message>
         <source>IPv&amp;6 Prefix:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 접두사(&amp;6):</translation>
     </message>
     <message>
         <source>Holds the IPv6 prefix for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 네트워크의 IPv6 접두사를 표시합니다.</translation>
     </message>
     <message>
         <source>Enable &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 활성화(&amp;D)</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished">선택하면 이 네트워크는 DHCP를 지원합니다.</translation>
+        <translation>선택하면 이 네트워크는 DHCP를 지원합니다.</translation>
     </message>
     <message>
         <source>&amp;Enable IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 활성화(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished">선택하면 이 네트워크는 IPv6을 지원합니다.</translation>
+        <translation>선택하면 이 네트워크는 IPv6을 지원합니다.</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished">기본 IPv6 경로 알리기(&amp;R)</translation>
+        <translation>기본 IPv6 경로 알리기(&amp;R)</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished">선택하면 이 네트워크를 기본 IPv6 경로로 알립니다.</translation>
+        <translation>선택하면 이 네트워크를 기본 IPv6 경로로 알립니다.</translation>
     </message>
     <message>
         <source>IPv&amp;4</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4(&amp;4)</translation>
     </message>
     <message>
         <source>IPv&amp;6</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6(&amp;6)</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation>사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">사용 안 함</translation>
+        <translation>사용 안 함</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">어댑터</translation>
+        <translation>어댑터</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">자동 설정됨</translation>
+        <translation>자동 설정됨</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">수동 설정됨</translation>
+        <translation>수동 설정됨</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">IPv4 주소</translation>
+        <translation>IPv4 주소</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished">설정되지 않음</translation>
+        <translation>설정되지 않음</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">IPv4 서브넷 마스크</translation>
+        <translation>IPv4 서브넷 마스크</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished">설정되지 않음</translation>
+        <translation>설정되지 않음</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">IPv6 주소</translation>
+        <translation>IPv6 주소</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">IPv6 접두사 길이</translation>
+        <translation>IPv6 접두사 길이</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished">설정되지 않음</translation>
+        <translation>설정되지 않음</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation>사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished">사용 안 함</translation>
+        <translation>사용 안 함</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished">주소</translation>
+        <translation>주소</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">서브넷 마스크</translation>
+        <translation>서브넷 마스크</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished">설정되지 않음</translation>
+        <translation>설정되지 않음</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">네트워크 이름</translation>
+        <translation>네트워크 이름</translation>
     </message>
     <message>
         <source>Network IPv4 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 IPv4 접두사</translation>
     </message>
     <message>
         <source>Network IPv6 Prefix</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 IPv6 접두사</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">DHCP 지원</translation>
+        <translation>DHCP 지원</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">예</translation>
+        <translation>예</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">아니요</translation>
+        <translation>아니요</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">IPv6 지원</translation>
+        <translation>IPv6 지원</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">기본 IPv6 경로</translation>
+        <translation>기본 IPv6 경로</translation>
     </message>
     <message>
         <source>Registered NAT networks</source>
-        <translation type="unfinished"></translation>
+        <translation>등록된 NAT 네트워크</translation>
     </message>
     <message>
         <source>Registered cloud networks</source>
-        <translation type="unfinished"></translation>
+        <translation>등록된 클라우드 네트워크</translation>
     </message>
     <message>
         <source>Registered host-only networks</source>
-        <translation type="unfinished"></translation>
+        <translation>등록된 호스트 전용 네트워크</translation>
     </message>
     <message>
         <source>Select Network ID</source>
@@ -14765,49 +14878,53 @@
     <name>UINetworkSettingsEditor</name>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished">네트워크 어댑터 사용하기(&amp;E)</translation>
+        <translation>네트워크 어댑터 활성화(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished">선택하면 가상 네트워크 어댑터를 가상 머신에 설치합니다.</translation>
+        <translation>선택하면 가상 네트워크 어댑터를 가상 머신에 설치합니다.</translation>
     </message>
 </context>
 <context>
     <name>UINotificationCenter</name>
     <message>
         <source>Open notification center</source>
-        <translation type="unfinished"></translation>
+        <translation>알림 센터 열기</translation>
     </message>
     <message>
         <source>Toggle ascending/descending order</source>
-        <translation type="unfinished"></translation>
+        <translation>오름차순/내림차순 전환</translation>
     </message>
     <message>
         <source>Keep finished progresses</source>
-        <translation type="unfinished"></translation>
+        <translation>완료된 진행 항목 유지</translation>
     </message>
     <message>
         <source>Delete finished notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>완료된 알림 삭제</translation>
     </message>
     <message>
         <source>Align Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>아래쪽으로 정렬</translation>
     </message>
     <message>
         <source>Align Top</source>
-        <translation type="unfinished"></translation>
+        <translation>위쪽으로 정렬</translation>
     </message>
 </context>
 <context>
     <name>UINotificationDownloader</name>
     <message>
         <source>Downloading Extension Pack ...</source>
-        <translation type="unfinished"></translation>
+        <translation>확장 패키지 다운로드 중...</translation>
     </message>
     <message>
         <source>Downloading Guest Additions ...</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장 다운로드 중...</translation>
+    </message>
+    <message>
+        <source>Downloading User Manual ...</source>
+        <translation type="vanished">사용자 설명서 다운로드 중...</translation>
     </message>
     <message>
         <source>Downloading User Guide ...</source>
@@ -14818,259 +14935,259 @@
     <name>UINotificationProgress</name>
     <message>
         <source>Creating medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어 생성 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Location:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Size:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;위치:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;크기:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Copying medium ...</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어 복사 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;From:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;To:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;원본:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;대상:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Moving medium ...</source>
-        <translation type="unfinished">미디어 이동 중...</translation>
+        <translation>미디어 이동 중...</translation>
     </message>
     <message>
         <source>Resizing medium ...</source>
-        <translation type="unfinished">미디어 크기 조정 중...</translation>
+        <translation>미디어 크기 조정 중...</translation>
     </message>
     <message>
         <source>Deleting medium storage ...</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어 저장소 삭제 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Location:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;위치:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Copying machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 복사 중...</translation>
     </message>
     <message>
         <source>Powering VM up ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 전원 켜는 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;VM Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;가상 머신 이름:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Moving machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 이동 중...</translation>
     </message>
     <message>
         <source>Saving VM state ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 상태 저장 중...</translation>
     </message>
     <message>
         <source>Powering VM off ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 전원 끄는 중...</translation>
     </message>
     <message>
         <source>Removing machine media ...</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 미디어 제거 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Machine Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;머신 이름:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Updating VFS explorer ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VFS 탐색기 업데이트 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Path:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;경로:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Removing VFS explorer files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VFS 탐색기 파일 삭제 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Path:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Files:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;경로:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;파일:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Creating subnet selection VSD form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD 서브넷 선택 폼 생성 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Provider:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profile:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;공급자:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;프로필:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Creating launch VSD form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD 실행 폼 생성 중...</translation>
     </message>
     <message>
         <source>Creating export VSD form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD 내보내기 폼 생성 중...</translation>
     </message>
     <message>
         <source>Creating import VSD form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD 가져오기 폼 생성 중...</translation>
     </message>
     <message>
         <source>Listing cloud images ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 이미지 목록 가져오는 중...</translation>
     </message>
     <message>
         <source>Listing cloud source boot volumes ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 소스 부트 볼륨 목록 가져오는 중...</translation>
     </message>
     <message>
         <source>Listing cloud instances ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 인스턴스 목록 가져오는 중...</translation>
     </message>
     <message>
         <source>Listing cloud source instances ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 소스 인스턴스 목록 가져오는 중...</translation>
     </message>
     <message>
         <source>Adding cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 추가 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Provider:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profile:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Instance Name:&lt;/b&gt; %3</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;공급자:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;프로필:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;인스턴스 이름:&lt;/b&gt; %3</translation>
     </message>
     <message>
         <source>Creating cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 생성 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Provider:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Profile:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;VM Name:&lt;/b&gt; %3</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;공급자:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;프로필:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;가상 머신 이름:&lt;/b&gt; %3</translation>
     </message>
     <message>
         <source>Deleting cloud VM files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 파일 삭제 중...</translation>
     </message>
     <message>
         <source>Removing cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 삭제 중...</translation>
     </message>
     <message>
         <source>Powering cloud VM up ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 전원 켜는 중...</translation>
     </message>
     <message>
         <source>Powering cloud VM off ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 전원 끄는 중...</translation>
     </message>
     <message>
         <source>Shutting cloud VM down ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 종료 중...</translation>
     </message>
     <message>
         <source>Terminating cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 중단 중...</translation>
     </message>
     <message>
         <source>Creating cloud VM settings form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 설정 폼 생성 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Cloud VM Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;클라우드 가상 머신 이름:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Applying cloud VM settings form ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 설정 폼 적용 중...</translation>
     </message>
     <message>
         <source>Creating cloud console connection ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 연결 생성 중...</translation>
     </message>
     <message>
         <source>Deleting cloud console connection ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 연결 삭제 중...</translation>
     </message>
     <message>
         <source>Acquire cloud console log ...</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 콘솔 로그 획득 중...</translation>
     </message>
     <message>
         <source>Taking snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷 찍는 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;VM Name:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;Snapshot Name:&lt;/b&gt; %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;가상 머신 이름:&lt;/b&gt; %1&lt;br&gt;&lt;b&gt;스냅샷 이름:&lt;/b&gt; %2</translation>
     </message>
     <message>
         <source>Restoring snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷 복원 중...</translation>
     </message>
     <message>
         <source>Deleting snapshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷 삭제 중...</translation>
     </message>
     <message>
         <source>Writing appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 기록 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;To:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;대상:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Reading appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 읽는 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;From:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;원본:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Importing appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 가져오는 중...</translation>
     </message>
     <message>
         <source>Installing package ...</source>
-        <translation type="unfinished"></translation>
+        <translation>패키지 설치 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;이름:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Uninstalling package ...</source>
-        <translation type="unfinished"></translation>
+        <translation>패키지 삭제 중...</translation>
     </message>
     <message>
         <source>Installing image ...</source>
-        <translation type="unfinished"></translation>
+        <translation>이미지 설치 중...</translation>
     </message>
     <message>
         <source>Creating Host-only Network Interface ...</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 인터페이스 생성 중...</translation>
     </message>
     <message>
         <source>Removing Host-only Network Interface ...</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 네트워크 인터페이스 삭제 중...</translation>
     </message>
     <message>
         <source>Set VSD form value ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD 폼 값 설정 중...</translation>
     </message>
     <message>
         <source>&lt;b&gt;Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;값:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Checking for new version of %1 ...</source>
-        <translation type="unfinished"></translation>
+        <translation>%1의 새 버전 확인 중...</translation>
     </message>
     <message>
         <source>Checking for new version ...</source>
-        <translation type="unfinished"></translation>
+        <translation>새 버전 확인 중...</translation>
     </message>
     <message>
         <source>Cloning cloud VM ...</source>
@@ -15100,22 +15217,22 @@
     <name>UIParavirtProviderEditor</name>
     <message>
         <source>&amp;Paravirtualization Interface:</source>
-        <translation type="unfinished">반가상화 인터페이스(&amp;P):</translation>
+        <translation>반가상화 인터페이스(&amp;P):</translation>
     </message>
     <message>
         <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
-        <translation type="unfinished">현재 가상 머신에서 사용할 반가상화 게스트 인터페이스 공급자를 선택합니다.</translation>
+        <translation>현재 가상 머신에서 사용할 반가상화 게스트 인터페이스 공급자를 선택합니다.</translation>
     </message>
 </context>
 <context>
     <name>UIPointingHIDEditor</name>
     <message>
         <source>&amp;Pointing Device:</source>
-        <translation type="unfinished">포인팅 장치(&amp;P):</translation>
+        <translation>포인팅 장치(&amp;P):</translation>
     </message>
     <message>
         <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
-        <translation type="unfinished">가상 머신에서 사용할 포인팅 장치를 PS/2 마우스, USB 태블릿, USB 멀티터치 태블릿 중에서 선택합니다.</translation>
+        <translation>가상 머신에서 사용할 포인팅 장치를 PS/2 마우스, USB 태블릿, USB 멀티터치 태블릿 중에서 선택합니다.</translation>
     </message>
 </context>
 <context>
@@ -15195,23 +15312,23 @@
     <name>UIProcessorFeaturesEditor</name>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>확장된 기능:</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished">PAE/NX 사용하기(&amp;E)</translation>
+        <translation>PAE/NX 활성화(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished">선택하면 호스트 CPU의 물리적 주소 확장(PAE) 기능을 가상 머신에서도 사용할 수 있게 됩니다.</translation>
+        <translation>선택하면 호스트 CPU의 물리적 주소 확장(PAE) 기능을 가상 머신에서도 사용할 수 있게 됩니다.</translation>
     </message>
     <message>
         <source>Enable Nested &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">네스티드 VT-x/AMD-V 사용하기(&amp;V)</translation>
+        <translation>네스티드 VT-x/AMD-V 활성화(&amp;V)</translation>
     </message>
     <message>
         <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
-        <translation type="unfinished">선택하면 네스티드 하드웨어 가상화 CPU 기능을 가상 머신에서도 사용할 수 있게 됩니다.</translation>
+        <translation>선택하면 네스티드 하드웨어 가상화 CPU 기능을 가상 머신에서도 사용할 수 있게 됩니다.</translation>
     </message>
 </context>
 <context>
@@ -15247,153 +15364,153 @@
     <name>UIProxyFeaturesEditor</name>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished">프록시 설정 자동 감지(&amp;A)</translation>
+        <translation>프록시 설정 자동 감지(&amp;A)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">선택하면 VirtualBox에서 게스트 확장을 다운로드하거나 업데이트를 확인할 때 호스트 프록시 설정을 자동으로 확인합니다.</translation>
+        <translation>선택하면 VirtualBox에서 게스트 확장을 다운로드하거나 업데이트를 확인할 때 호스트 프록시 설정을 자동으로 확인합니다.</translation>
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished">인터넷에 직접 연결(&amp;D)</translation>
+        <translation>인터넷에 직접 연결(&amp;D)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업 시 인터넷에 직접 연결합니다.</translation>
+        <translation>선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업 시 인터넷에 직접 연결합니다.</translation>
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished">수동 프록시 설정(&amp;M)</translation>
+        <translation>수동 프록시 설정(&amp;M)</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished">선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업에 아래 프록시를 사용합니다.</translation>
+        <translation>선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업에 아래 프록시를 사용합니다.</translation>
     </message>
     <message>
         <source>&amp;URL:</source>
-        <translation type="unfinished">URL(&amp;U):</translation>
+        <translation>URL(&amp;U):</translation>
     </message>
     <message>
         <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished">프록시 URL을 지정합니다. 형식은 다음과 같습니다:&lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation>프록시 URL을 지정합니다. 형식은 다음과 같습니다:&lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIRecordingSettingsEditor</name>
     <message>
         <source>&amp;Enable Recording</source>
-        <translation type="unfinished">녹화 사용하기(&amp;E)</translation>
+        <translation>녹화 활성화(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
-        <translation type="unfinished">선택하면 VirtualBox에서 가상 머신 세션을 비디오 파일로 녹화합니다.</translation>
+        <translation>선택하면 VirtualBox에서 가상 머신 세션을 비디오 파일로 녹화합니다.</translation>
     </message>
     <message>
         <source>Recording &amp;Mode:</source>
-        <translation type="unfinished">녹화 모드(&amp;M):</translation>
+        <translation>녹화 모드(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the recording mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>녹화 모드를 지정합니다.</translation>
     </message>
     <message>
         <source>File &amp;Path:</source>
-        <translation type="unfinished">파일 경로(&amp;P):</translation>
+        <translation>파일 경로(&amp;P):</translation>
     </message>
     <message>
         <source>Holds the filename VirtualBox uses to save the recorded content.</source>
-        <translation type="unfinished">VirtualBox에서 녹화한 파일을 저장할 경로를 지정합니다.</translation>
+        <translation>VirtualBox에서 녹화한 파일을 저장할 경로를 지정합니다.</translation>
     </message>
     <message>
         <source>Frame Si&amp;ze:</source>
-        <translation type="unfinished"></translation>
+        <translation>프레임 크기(&amp;Z):</translation>
     </message>
     <message>
         <source>User Defined</source>
-        <translation type="unfinished">사용자 정의</translation>
+        <translation>사용자 정의</translation>
     </message>
     <message>
         <source>Holds the resolution (frame size) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>녹화된 비디오의 해상도(프레임 크기)를 지정합니다.</translation>
     </message>
     <message>
         <source>Holds the horizontal resolution (frame width) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>녹화된 비디오의 수평 해상도(프레임 너비)를 설정합니다.</translation>
     </message>
     <message>
         <source>Holds the vertical resolution (frame height) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>녹화된 비디오의 수직 해상도(프레임 높이)를 설정합니다.</translation>
     </message>
     <message>
         <source>Frame R&amp;ate:</source>
-        <translation type="unfinished"></translation>
+        <translation>프레임 레이트(&amp;A):</translation>
     </message>
     <message>
         <source>Holds the maximum number of frames per second. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>최대 초당 프레임 수를 지정합니다. 추가적인 프레임은 기록되지 않습니다. 이 값을 줄이면 건너뛰는 프레임 수를 늘이는 대신 파일 크기를 줄일 수 있습니다.</translation>
     </message>
     <message>
         <source>fps</source>
-        <translation type="unfinished">fps</translation>
+        <translation>fps</translation>
     </message>
     <message>
         <source>%1 fps</source>
-        <translation type="unfinished">%1 fps</translation>
+        <translation>%1 fps</translation>
     </message>
     <message>
         <source>Minimum possible frame rate.</source>
-        <translation type="unfinished"></translation>
+        <translation>최소 가능한 프레임 레이트입니다.</translation>
     </message>
     <message>
         <source>Maximum possible frame rate.</source>
-        <translation type="unfinished"></translation>
+        <translation>최대 가능한 프레임 레이트입니다.</translation>
     </message>
     <message>
         <source>&amp;Video Quality:</source>
-        <translation type="unfinished">동영상 품질(&amp;V):</translation>
+        <translation>동영상 품질(&amp;V):</translation>
     </message>
     <message>
         <source>Holds the quality. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>녹화 품질을 지정합니다. 이 값을 높이면 파일 크기가 증가하는 대신 동영상의 화질을 개선할 수 있습니다.</translation>
     </message>
     <message>
         <source>kbps</source>
-        <translation type="unfinished">kbps</translation>
+        <translation>kbps</translation>
     </message>
     <message>
         <source>Holds the bitrate in kilobits per second. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>비트레이트를 kb/s 단위로 지정합니다. 이 값을 높이면 파일 크기가 증가하는 대신 동영상의 화질을 개선할 수 있습니다.</translation>
     </message>
     <message>
         <source>low</source>
         <comment>quality</comment>
-        <translation type="unfinished">낮음</translation>
+        <translation>낮음</translation>
     </message>
     <message>
         <source>medium</source>
         <comment>quality</comment>
-        <translation type="unfinished">중간</translation>
+        <translation>중간</translation>
     </message>
     <message>
         <source>high</source>
         <comment>quality</comment>
-        <translation type="unfinished">높음</translation>
+        <translation>높음</translation>
     </message>
     <message>
         <source>&amp;Audio Quality:</source>
-        <translation type="unfinished">음성 품질(&amp;A):</translation>
+        <translation>오디오 품질(&amp;A):</translation>
     </message>
     <message>
         <source>Holds the quality. Increasing this value will make the audio sound better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>품질을 지정합니다. 이 값을 높이면 파일 크기가 증가하는 대신 오디오의 음질을 개선할 수 있습니다.</translation>
     </message>
     <message>
         <source>Scree&amp;ns:</source>
-        <translation type="unfinished"></translation>
+        <translation>화면(&amp;N):</translation>
     </message>
     <message>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;동영상 5분당 약 %1MB&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;동영상 5분당 약 %1MB&lt;/i&gt;</translation>
     </message>
 </context>
 <context>
@@ -15420,15 +15537,15 @@
     </message>
     <message>
         <source>Scale &amp;Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>크기 조정 비율(&amp;F):</translation>
     </message>
     <message>
         <source>Selects the index of monitor guest screen scale factor being defined for.</source>
-        <translation type="unfinished"></translation>
+        <translation>크기 조정 비율을 설정할 게스트 모니터를 선택합니다.</translation>
     </message>
     <message>
         <source>Holds the guest screen scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 크기 조정 비율을 정의합니다.</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -15436,11 +15553,11 @@
     </message>
     <message>
         <source>Minimum possible scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>최소 가능한 크기 조정 비율입니다.</translation>
     </message>
     <message>
         <source>Maximum possible scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>최대 가능한 크기 조정 비율입니다.</translation>
     </message>
 </context>
 <context>
@@ -15462,7 +15579,7 @@
     <name>UISerialSettingsEditor</name>
     <message>
         <source>&amp;Enable Serial Port</source>
-        <translation type="unfinished">직렬 포트 사용하기(&amp;E)</translation>
+        <translation type="unfinished">직렬 포트 활성화(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, enables the given serial port of the virtual machine.</source>
@@ -15474,7 +15591,7 @@
     </message>
     <message>
         <source>Selects the serial port number. You can choose one of the standard serial ports or select User-defined and specify port parameters manually.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">직렬 포트 번호를 선택합니다. 표준 직렬 포트를 사용하거나 사용자 정의를 선택하여 포트 설정을 정의할 수 있습니다.</translation>
     </message>
     <message>
         <source>&amp;IRQ:</source>
@@ -15498,7 +15615,7 @@
     </message>
     <message>
         <source>Selects the working mode of this serial port. If you select Disconnected, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">이 직렬 포트의 작동 상태를 조정합니다. 연결되지 않음을 선택하면 게스트 운영 체제에서는 직렬 포트를 감지할 것이지만 작동하지는 않을 것입니다.</translation>
     </message>
     <message>
         <source>&amp;Connect to existing pipe/socket</source>
@@ -15506,7 +15623,7 @@
     </message>
     <message>
         <source>When checked, the virtual machine will assume that the pipe or socket specified in the Path/Address field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">선택하면 가상 머신에 지정한 경로/주소에 있는 파이프나 소켓을 존재하는 것으로 간주하고 사용합니다. 선택하지 않으면 가상 머신을 시작할 때 파이프나 소켓을 만듭니다.</translation>
     </message>
     <message>
         <source>&amp;Path/Address:</source>
@@ -15514,7 +15631,7 @@
     </message>
     <message>
         <source>In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively. In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;. In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped. In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">호스트 파이프 모드: 호스트의 직렬 포트 파이프 이름을 지정합니다. 예: Windows의 경우 &quot;\\.\pipe\myvbox&quot;, Unix 계열 시스템의 경우 &quot;/tmp/myvbox&quot;. 호스트 장치 모드: 호스트의 직렬 포트 장치 이름을 지정합니다. 예: &quot;COM1&quot;, &quot;/dev/ttyS0&quot;. 원시 파일 모드: 직렬 포트 출력을 저장할 호스트의 파일 경로를 지정합니다. TCP 모드: 서버 모드의 경우 TCP &quot;포트&quot;, 클라이언트 모드의 경우 &quot;호스트이름:포트&quot;를 지정합니다.</translation>
     </message>
 </context>
 <context>
@@ -15605,6 +15722,10 @@
         <source>Allows to navigate through Global Property categories</source>
         <translation type="vanished">전역 속성 분류를 탐색합니다</translation>
     </message>
+    <message>
+        <source>Interface</source>
+        <translation type="vanished">인터페이스</translation>
+    </message>
 </context>
 <context>
     <name>UISettingsDialogMachine</name>
@@ -15662,7 +15783,7 @@
     </message>
     <message>
         <source>Allows to navigate through VM Settings categories</source>
-        <translation type="vanished">VM 속성 분류를 탐색합니다</translation>
+        <translation type="vanished">가상 머신 속성 분류를 탐색합니다</translation>
     </message>
 </context>
 <context>
@@ -15691,168 +15812,168 @@
     <name>UISharedClipboardEditor</name>
     <message>
         <source>&amp;Shared Clipboard:</source>
-        <translation type="unfinished">클립보드 공유(&amp;S):</translation>
+        <translation>클립보드 공유(&amp;S):</translation>
     </message>
     <message>
         <source>Holds which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트와 게스트 운영 체제 사이에서 복사할 클립보드 데이터를 설정합니다. 이 기능을 사용하려면 게스트 확장이 게스트 운영 체제에 설치되어야 합니다.</translation>
     </message>
 </context>
 <context>
     <name>UISharedFolderDetailsEditor</name>
     <message>
         <source>Add Share</source>
-        <translation type="unfinished">공유 추가</translation>
+        <translation>공유 추가</translation>
     </message>
     <message>
         <source>Edit Share</source>
-        <translation type="unfinished">공유 편집</translation>
+        <translation>공유 편집</translation>
     </message>
     <message>
         <source>Folder Path:</source>
-        <translation type="unfinished">폴더 경로:</translation>
+        <translation>폴더 경로:</translation>
     </message>
     <message>
         <source>Folder Name:</source>
-        <translation type="unfinished">폴더 이름:</translation>
+        <translation>폴더 이름:</translation>
     </message>
     <message>
         <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished">게스트 OS에 표시될 공유 폴더의 이름을 표시합니다.</translation>
+        <translation>게스트 OS에 표시될 공유 폴더의 이름을 정의합니다.</translation>
     </message>
     <message>
         <source>Holds the path of the shared folder</source>
-        <translation type="unfinished"></translation>
+        <translation>공유 폴더의 경로를 정의합니다</translation>
     </message>
     <message>
         <source>Apply the changes and close this dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>변경 사항을 적용하고 이 대화 상자를 닫습니다</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <source>&amp;Read-only</source>
-        <translation type="unfinished">읽기 전용(&amp;R)</translation>
+        <translation>읽기 전용(&amp;R)</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished">선택하면 게스트 운영 체제에서 이 공유 폴더에 파일을 쓸 수 없습니다.</translation>
+        <translation>선택하면 게스트 운영 체제에서 이 공유 폴더에 파일을 쓸 수 없습니다.</translation>
     </message>
     <message>
         <source>&amp;Auto-mount</source>
-        <translation type="unfinished">자동 마운트(&amp;A)</translation>
+        <translation>자동 마운트(&amp;A)</translation>
     </message>
     <message>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
-        <translation type="unfinished">선택하면 게스트 운영 체제를 시작할 때 공유 폴더를 자동으로 마운트합니다.</translation>
+        <translation>선택하면 게스트 운영 체제를 시작할 때 공유 폴더를 자동으로 마운트합니다.</translation>
     </message>
     <message>
         <source>Mount point:</source>
-        <translation type="unfinished">마운트 지점:</translation>
+        <translation>마운트 지점:</translation>
     </message>
     <message>
         <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
-        <translation type="unfinished">게스트에 폴더를 자동으로 마운트할 지점입니다. Windows 및 OS/2 게스트의 경우 드라이브 문자(예: &apos;G:&apos;)를 지정하십시오. 기타 운영 체제인 경우 경로를 지정하십시오. 비어 있으면 게스트에서 자동으로 결정합니다.</translation>
+        <translation>게스트에 폴더를 자동으로 마운트할 지점입니다. Windows 및 OS/2 게스트의 경우 드라이브 문자(예: &apos;G:&apos;)를 지정하십시오. 기타 운영 체제인 경우 경로를 지정하십시오. 비어 있으면 게스트에서 자동으로 결정합니다.</translation>
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished">항상 사용하기(&amp;M)</translation>
+        <translation>항상 사용(&amp;M)</translation>
     </message>
     <message>
         <source>When checked, this shared folder will be permanent.</source>
-        <translation type="unfinished">선택하면 이 공유 폴더를 항상 사용합니다.</translation>
+        <translation>선택하면 이 공유 폴더를 항상 사용합니다.</translation>
     </message>
 </context>
 <context>
     <name>UISharedFoldersEditor</name>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation type="obsolete">공유 폴더(&amp;F)</translation>
+        <translation type="vanished">공유 폴더(&amp;F)</translation>
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &apos;share&apos; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신에서 사용 가능한 공유 폴더의 목록입니다. 도스 계열 운영 체제에서 &apos;share&apos;라는 공유 폴더에 접근하려면 &apos;net use x: \\vboxsvr\share&apos;와 같은 식으로 입력하고, 리눅스에서는 &apos;mount -t vboxsf share mount_point&apos;와 같이 입력하십시오. 이 기능을 사용하려면 게스트 확장이 필요합니다.</translation>
     </message>
     <message>
         <source>At</source>
-        <translation type="unfinished">지점</translation>
+        <translation>지점</translation>
     </message>
     <message>
         <source>Auto Mount</source>
-        <translation type="unfinished">자동 마운트</translation>
+        <translation>자동 마운트</translation>
     </message>
     <message>
         <source>Access</source>
-        <translation type="unfinished">접근</translation>
+        <translation>접근</translation>
     </message>
     <message>
         <source>Path</source>
-        <translation type="unfinished">경로</translation>
+        <translation>경로</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
     <message>
         <source>Add Shared Folder</source>
-        <translation type="unfinished">공유 폴더 추가</translation>
+        <translation>공유 폴더 추가</translation>
     </message>
     <message>
         <source>Adds new shared folder.</source>
-        <translation type="unfinished">새 공유 폴더를 추가합니다.</translation>
+        <translation>새 공유 폴더를 추가합니다.</translation>
     </message>
     <message>
         <source>Edit Shared Folder</source>
-        <translation type="unfinished">공유 폴더 편집</translation>
+        <translation>공유 폴더 편집</translation>
     </message>
     <message>
         <source>Edits selected shared folder.</source>
-        <translation type="unfinished">선택한 공유 폴더를 편집합니다.</translation>
+        <translation>선택한 공유 폴더를 편집합니다.</translation>
     </message>
     <message>
         <source>Remove Shared Folder</source>
-        <translation type="unfinished">공유 폴더 삭제</translation>
+        <translation>공유 폴더 삭제</translation>
     </message>
     <message>
         <source>Removes selected shared folder.</source>
-        <translation type="unfinished">선택한 공유 폴더를 삭제합니다.</translation>
+        <translation>선택한 공유 폴더를 삭제합니다.</translation>
     </message>
     <message>
         <source> Machine Folders</source>
-        <translation type="unfinished"> 머신 폴더</translation>
+        <translation> 머신 폴더</translation>
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation type="unfinished"> 임시 폴더</translation>
+        <translation> 임시 폴더</translation>
     </message>
 </context>
 <context>
     <name>UIShortcutConfigurationEditor</name>
     <message>
         <source>&amp;VirtualBox Manager</source>
-        <translation type="unfinished">VirtualBox 관리자(&amp;V)</translation>
+        <translation>VirtualBox 관리자(&amp;V)</translation>
     </message>
     <message>
         <source>Virtual &amp;Machine</source>
-        <translation type="unfinished">가상 머신(&amp;M)</translation>
+        <translation>가상 머신(&amp;M)</translation>
     </message>
     <message>
         <source>Lists all available shortcuts which can be configured.</source>
-        <translation type="unfinished">설정할 수 있는 단축키 목록을 표시합니다.</translation>
+        <translation>설정할 수 있는 단축키 목록을 표시합니다.</translation>
     </message>
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
-        <translation type="unfinished">단축키 목록에서 검색할 텍스트를 입력합니다.</translation>
+        <translation>단축키 목록에서 검색할 텍스트를 입력합니다.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
     <message>
         <source>Shortcut</source>
-        <translation type="unfinished">단축키</translation>
+        <translation>단축키</translation>
     </message>
 </context>
 <context>
@@ -15954,11 +16075,11 @@
     <name>UISnapshotFolderEditor</name>
     <message>
         <source>S&amp;napshot Folder:</source>
-        <translation type="unfinished">스냅샷 폴더(&amp;N):</translation>
+        <translation>스냅샷 폴더(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
-        <translation type="unfinished">이 가상 머신의 스냅샷을 저장할 경로를 표시합니다. 스냅샷은 많은 디스크 공간을 차지할 수도 있습니다.</translation>
+        <translation>이 가상 머신의 스냅샷을 저장할 경로를 표시합니다. 스냅샷은 많은 디스크 공간을 차지할 수도 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -16322,19 +16443,19 @@
     </message>
     <message>
         <source>Power off</source>
-        <translation type="unfinished"></translation>
+        <translation>전원 끄기</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">도움말</translation>
+        <translation>도움말</translation>
     </message>
     <message>
         <source>The file %1 has been deleted</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 파일을 삭제했습니다</translation>
     </message>
     <message>
         <source>Deleting the file %1 has failed</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 파일을 삭제할 수 없습니다</translation>
     </message>
     <message>
         <source>Close</source>
@@ -16357,299 +16478,299 @@
     </message>
     <message>
         <source>Allows to modify VM status-bar contents.</source>
-        <translation type="unfinished">VM 상태 표시줄을 수정할 수 있도록 합니다.</translation>
+        <translation>가상 머신 상태 표시줄을 수정할 수 있도록 합니다.</translation>
     </message>
 </context>
 <context>
     <name>UIStorageSettingsEditor</name>
     <message>
         <source>Controller: %1</source>
-        <translation type="unfinished">컨트롤러: %1</translation>
+        <translation>컨트롤러: %1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;버스:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;종류:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;버스:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;종류:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Host Drive</source>
-        <translation type="unfinished">호스트 드라이브</translation>
+        <translation>호스트 드라이브</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>storage image</comment>
-        <translation type="unfinished">이미지</translation>
+        <translation>이미지</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;항목을&amp;nbsp;펴거나&amp;nbsp;접습니다./nobr&gt;</translation>
+        <translation>&lt;nobr&gt;항목을&amp;nbsp;펴거나&amp;nbsp;접습니다./nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;hard&amp;nbsp;disk.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;하드&amp;nbsp;디스크를&amp;nbsp;추가합니다.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;하드&amp;nbsp;디스크를&amp;nbsp;추가합니다.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;optical&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;광학&amp;nbsp;드라이브를&amp;nbsp;추가합니다.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;광학&amp;nbsp;드라이브를&amp;nbsp;추가합니다.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;floppy&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;플로피&amp;nbsp;드라이브를&amp;nbsp;추가합니다.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;플로피&amp;nbsp;드라이브를&amp;nbsp;추가합니다.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Storage Devices</source>
-        <translation type="obsolete">저장 장치(&amp;S)</translation>
+        <translation type="vanished">저장 장치(&amp;S)</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished">정보</translation>
+        <translation>정보</translation>
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation type="unfinished">저장소 트리에는 여러 다른 컨트롤러가 연결될 수 있습니다. 현재 머신에는 컨트롤러가 없습니다.</translation>
+        <translation>저장소 트리에는 여러 다른 컨트롤러가 연결될 수 있습니다. 현재 머신에는 컨트롤러가 없습니다.</translation>
     </message>
     <message>
         <source>Attributes</source>
-        <translation type="unfinished">속성</translation>
+        <translation>속성</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">이름(&amp;N):</translation>
+        <translation>이름(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished">저장소 트리에서 현재 선택된 컨트롤러의 이름을 나타냅니다.</translation>
+        <translation>저장소 트리에서 현재 선택된 컨트롤러의 이름을 나타냅니다.</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished">종류(&amp;T):</translation>
+        <translation>종류(&amp;T):</translation>
     </message>
     <message>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished">저장소 트리에서 현재 선택된 컨트롤러의 종류를 선택합니다.</translation>
+        <translation>저장소 트리에서 현재 선택된 컨트롤러의 종류를 선택합니다.</translation>
     </message>
     <message>
         <source>&amp;Port Count:</source>
-        <translation type="unfinished">포트 개수(&amp;P):</translation>
+        <translation>포트 개수(&amp;P):</translation>
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
-        <translation type="unfinished">저장소 트리에서 선택한 현재 SATA 저장소 컨트롤러의 포트 개수를 설정합니다. 사용할 최대 포트 번호보다 1 이상 커야 합니다.</translation>
+        <translation>저장소 트리에서 선택한 현재 SATA 저장소 컨트롤러의 포트 개수를 설정합니다. 사용할 최대 포트 번호보다 1 이상 커야 합니다.</translation>
     </message>
     <message>
         <source>When checked, allows to use host I/O caching capabilities.</source>
-        <translation type="unfinished">선택하면 호스트 I/O 캐시를 사용합니다.</translation>
+        <translation>선택하면 호스트 I/O 캐시를 사용합니다.</translation>
     </message>
     <message>
         <source>Use Host I/O Cache</source>
-        <translation type="unfinished">호스트 I/O 캐시 사용하기</translation>
+        <translation>호스트 I/O 캐시 사용</translation>
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation type="unfinished">이 컨트롤러에 저장소 장치가 연결된 슬롯을 선택합니다. 컨트롤러 종류에 따라서 사용 가능한 슬롯이 달라질 수 있습니다.</translation>
+        <translation>이 컨트롤러에 저장소 장치가 연결된 슬롯을 선택합니다. 컨트롤러 종류에 따라서 사용 가능한 슬롯이 달라질 수 있습니다.</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished">선택하면 게스트 운영 체제에서 호스트 드라이브에 바로 ATAPI 명령을 보낼 수 있도록 해서, 가상 머신에서 호스트에 연결된 CD/DVD 라이터를 사용할 수 있도록 합니다. 가상 머신에서 오디오 CD 작성은 지원하지 않습니다.</translation>
+        <translation>선택하면 게스트 운영 체제에서 호스트 드라이브에 바로 ATAPI 명령을 보낼 수 있도록 해서, 가상 머신에서 호스트에 연결된 CD/DVD 라이터를 사용할 수 있도록 합니다. 가상 머신에서 오디오 CD 작성은 지원하지 않습니다.</translation>
     </message>
     <message>
         <source>&amp;Passthrough</source>
-        <translation type="unfinished">ATAPI 명령 바로 보내기(&amp;P)</translation>
+        <translation>패스스루(&amp;P)</translation>
     </message>
     <message>
         <source>When checked, the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished">선택하면 게스트 운영 체제에서 미디어를 꺼낼 때 가상 디스크를 꺼내지 않습니다.</translation>
+        <translation>선택하면 게스트 운영 체제에서 미디어를 꺼낼 때 가상 디스크를 꺼내지 않습니다.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
-        <translation type="unfinished">라이브 CD/DVD(&amp;L)</translation>
+        <translation>라이브 CD/DVD(&amp;L)</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a solid-state device.</source>
-        <translation type="unfinished">선택하면 게스트 운영 체제에 이 미디어를 SSD로 표시합니다.</translation>
+        <translation>선택하면 게스트 운영 체제에 이 미디어를 SSD로 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Solid-state Drive</source>
-        <translation type="unfinished">SSD(&amp;S)</translation>
+        <translation>SSD(&amp;S)</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a hot-pluggable device.</source>
-        <translation type="unfinished">선택하면 게스트 운영 체제에 이 디스크를 핫플러그 가능한 장치로 표시합니다.</translation>
+        <translation>선택하면 게스트 운영 체제에 이 디스크를 핫플러그 가능한 장치로 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Hot-pluggable</source>
-        <translation type="unfinished">핫플러그 가능(&amp;H)</translation>
+        <translation>핫플러그 가능(&amp;H)</translation>
     </message>
     <message>
         <source>Type (Format):</source>
-        <translation type="unfinished">종류(형식):</translation>
+        <translation>종류(형식):</translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished">종류:</translation>
+        <translation>종류:</translation>
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation type="unfinished">가상 크기:</translation>
+        <translation>가상 크기:</translation>
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation type="unfinished">실제 크기:</translation>
+        <translation>실제 크기:</translation>
     </message>
     <message>
         <source>Size:</source>
-        <translation type="unfinished">크기:</translation>
+        <translation>크기:</translation>
     </message>
     <message>
         <source>Details:</source>
-        <translation type="unfinished">정보:</translation>
+        <translation>정보:</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished">위치:</translation>
+        <translation>위치:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished">다음에 연결됨:</translation>
+        <translation>다음에 연결됨:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="obsolete">다음 키로 암호화됨:</translation>
+        <translation type="vanished">다음 키로 암호화됨:</translation>
     </message>
     <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="unfinished">이 가상 머신에 연결된 모든 저장소 컨트롤러와 가상 이미지, 호스트 드라이브 목록입니다.</translation>
+        <translation>이 가상 머신에 연결된 모든 저장소 컨트롤러와 가상 이미지, 호스트 드라이브 목록입니다.</translation>
     </message>
     <message>
         <source>Add Controller</source>
-        <translation type="unfinished">컨트롤러 추가하기</translation>
+        <translation>컨트롤러 추가</translation>
     </message>
     <message>
         <source>PIIX3 (IDE)</source>
-        <translation type="unfinished">PIIX3(IDE)</translation>
+        <translation>PIIX3(IDE)</translation>
     </message>
     <message>
         <source>PIIX4 (Default IDE)</source>
-        <translation type="unfinished">PIIX4(기본 IDE)</translation>
+        <translation>PIIX4(기본 IDE)</translation>
     </message>
     <message>
         <source>ICH6 (IDE)</source>
-        <translation type="unfinished">ICH6(IDE)</translation>
+        <translation>ICH6(IDE)</translation>
     </message>
     <message>
         <source>AHCI (SATA)</source>
-        <translation type="unfinished">AHCI(SATA)</translation>
+        <translation>AHCI(SATA)</translation>
     </message>
     <message>
         <source>LsiLogic (Default SCSI)</source>
-        <translation type="unfinished">LsiLogic(기본 SCSI)</translation>
+        <translation>LsiLogic(기본 SCSI)</translation>
     </message>
     <message>
         <source>BusLogic (SCSI)</source>
-        <translation type="unfinished">BusLogic(SCSI)</translation>
+        <translation>BusLogic(SCSI)</translation>
     </message>
     <message>
         <source>LsiLogic SAS (SAS)</source>
-        <translation type="unfinished">LsiLogic SAS(SAS)</translation>
+        <translation>LsiLogic SAS(SAS)</translation>
     </message>
     <message>
         <source>I82078 (Floppy)</source>
-        <translation type="unfinished">I82078(플로피)</translation>
+        <translation>I82078(플로피)</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>NVMe (PCIe)</source>
-        <translation type="unfinished">NVMe(PCIe)</translation>
+        <translation>NVMe(PCIe)</translation>
     </message>
     <message>
         <source>virtio-scsi</source>
-        <translation type="unfinished">virtio-scsi</translation>
+        <translation>virtio-scsi</translation>
     </message>
     <message>
         <source>Remove Controller</source>
-        <translation type="unfinished">컨트롤러 삭제하기</translation>
+        <translation>컨트롤러 삭제</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished">연결 추가하기</translation>
+        <translation>연결 추가</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation type="unfinished">하드 디스크</translation>
+        <translation>하드 디스크</translation>
     </message>
     <message>
         <source>Optical Drive</source>
-        <translation type="unfinished">광학 드라이브</translation>
+        <translation>광학 드라이브</translation>
     </message>
     <message>
         <source>Floppy Drive</source>
-        <translation type="unfinished">플로피 드라이브</translation>
+        <translation>플로피 드라이브</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished">연결 삭제하기</translation>
+        <translation>연결 삭제</translation>
     </message>
     <message>
         <source>Adds new storage controller.</source>
-        <translation type="unfinished">새 저장소 컨트롤러를 추가합니다.</translation>
+        <translation>새 저장소 컨트롤러를 추가합니다.</translation>
     </message>
     <message>
         <source>Removes selected storage controller.</source>
-        <translation type="unfinished">선택한 저장소 컨트롤러를 삭제합니다.</translation>
+        <translation>선택한 저장소 컨트롤러를 삭제합니다.</translation>
     </message>
     <message>
         <source>Adds new storage attachment.</source>
-        <translation type="unfinished">새 저장소 연결을 추가합니다.</translation>
+        <translation>새 저장소 연결을 추가합니다.</translation>
     </message>
     <message>
         <source>Removes selected storage attachment.</source>
-        <translation type="unfinished">선택한 저장소 연결을 삭제합니다.</translation>
+        <translation>선택한 저장소 연결을 삭제합니다.</translation>
     </message>
     <message>
         <source>Hard &amp;Disk:</source>
-        <translation type="unfinished">하드 디스크(&amp;D):</translation>
+        <translation>하드 디스크(&amp;D):</translation>
     </message>
     <message>
         <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
-        <translation type="unfinished">가상 디스크 파일을 선택하거나 만드십시오. 가상 머신은 이 파일에 있는 데이터를 가상 디스크에 있는 데이터처럼 처리합니다.</translation>
+        <translation>가상 디스크 파일을 선택하거나 만드십시오. 가상 머신은 이 파일에 있는 데이터를 가상 디스크에 있는 데이터처럼 처리합니다.</translation>
     </message>
     <message>
         <source>Optical &amp;Drive:</source>
-        <translation type="unfinished">광학 드라이브(&amp;D):</translation>
+        <translation>광학 드라이브(&amp;D):</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="unfinished">가상 광 디스크나 가상 드라이브처럼 사용할 실제 드라이브를 선택하십시오. 가상 머신은 드라이브 안에 있는 디스크나 파일에 있는 데이터를 가상 디스크에 있는 데이터처럼 처리합니다.</translation>
+        <translation>가상 광 디스크나 가상 드라이브처럼 사용할 실제 드라이브를 선택하십시오. 가상 머신은 드라이브 안에 있는 디스크나 파일에 있는 데이터를 가상 디스크에 있는 데이터처럼 처리합니다.</translation>
     </message>
     <message>
         <source>Floppy &amp;Drive:</source>
-        <translation type="unfinished">플로피 드라이브(&amp;D):</translation>
+        <translation>플로피 드라이브(&amp;D):</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="unfinished">가상 플로피 디스크나 가상 드라이브처럼 사용할 실제 드라이브를 선택하십시오. 가상 머신은 드라이브 안에 있는 디스크나 파일에 있는 데이터를 가상 디스크에 있는 데이터처럼 처리합니다.</translation>
+        <translation>가상 플로피 디스크나 가상 드라이브처럼 사용할 실제 드라이브를 선택하십시오. 가상 머신은 드라이브 안에 있는 디스크나 파일에 있는 데이터를 가상 디스크에 있는 데이터처럼 처리합니다.</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Hard Disk...</source>
-        <translation type="unfinished">가상 하드 디스크 선택/만들기...</translation>
+        <translation>가상 하드 디스크 선택/만들기...</translation>
     </message>
     <message>
         <source>Choose a disk file...</source>
-        <translation type="unfinished">디스크 파일 선택...</translation>
+        <translation>디스크 파일 선택...</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Optical Disk...</source>
-        <translation type="unfinished">가상 광학 디스크 선택/만들기...</translation>
+        <translation>가상 광 디스크 선택/만들기...</translation>
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation type="unfinished">가상 드라이브에서 디스크 꺼내기</translation>
+        <translation>가상 드라이브에서 디스크 꺼내기</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
-        <translation type="unfinished">가상 플로피 디스크 선택/만들기...</translation>
+        <translation>가상 플로피 디스크 선택/만들기...</translation>
     </message>
     <message>
         <source>Remove disk from virtual drive</source>
@@ -16690,55 +16811,55 @@
     </message>
     <message>
         <source>Holds the snapshot name</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷 이름을 지정합니다</translation>
     </message>
     <message>
         <source>Holds the snapshot description</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷 설명을 지정합니다</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation type="unfinished">확인</translation>
+        <translation>확인</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">도움말</translation>
+        <translation>도움말</translation>
     </message>
     <message>
         <source>Take Snapshot and close the dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷을 찍고 대화 상자를 닫습니다</translation>
     </message>
     <message>
         <source>Close dialog without taking a snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷을 찍지 않고 대화 상자를 닫습니다</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>대화 상자 도움말을 표시합니다</translation>
     </message>
     <message>
         <source>Accept</source>
-        <translation type="unfinished"></translation>
+        <translation>수락</translation>
     </message>
     <message>
         <source>Accept (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>수락(%1)</translation>
     </message>
     <message>
         <source>Cancel (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>취소(%1)</translation>
     </message>
     <message>
         <source>Show Help</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 표시</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 표시(%1)</translation>
     </message>
 </context>
 <context>
@@ -16768,7 +16889,7 @@
     <name>UIToolBox</name>
     <message>
         <source>Expands the page &quot;%1&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%1&quot; 페이지를 확장합니다</translation>
     </message>
 </context>
 <context>
@@ -16803,19 +16924,19 @@
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">확장</translation>
+        <translation>확장</translation>
     </message>
     <message>
         <source>Activities</source>
-        <translation type="unfinished"></translation>
+        <translation>활동</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>활동</translation>
     </message>
     <message>
         <source>File Manager</source>
-        <translation type="unfinished">파일 관리자</translation>
+        <translation>파일 관리자</translation>
     </message>
 </context>
 <context>
@@ -16826,127 +16947,127 @@
     </message>
     <message>
         <source>Contains a list of VirtualBox tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 도구 목록을 포함합니다.</translation>
     </message>
 </context>
 <context>
     <name>UITpmEditor</name>
     <message>
         <source>&amp;TPM:</source>
-        <translation type="unfinished"></translation>
+        <translation>TPM(&amp;T):</translation>
     </message>
     <message>
         <source>Selects the TPM type to be emulated in this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신에서 에뮬레이트할 TPM 종류를 선택합니다.</translation>
     </message>
 </context>
 <context>
     <name>UITranslator</name>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n년</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n개월</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n일</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n시간</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n분</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n초</numerusform>
         </translation>
     </message>
     <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
-        <translation type="unfinished">B</translation>
+        <translation>B</translation>
     </message>
     <message>
         <source>KB</source>
         <comment>size suffix KBytes=1024 Bytes</comment>
-        <translation type="unfinished">KB</translation>
+        <translation>KB</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>GB</source>
         <comment>size suffix GBytes=1024 MBytes</comment>
-        <translation type="unfinished">GB</translation>
+        <translation>GB</translation>
     </message>
     <message>
         <source>TB</source>
         <comment>size suffix TBytes=1024 GBytes</comment>
-        <translation type="unfinished">TB</translation>
+        <translation>TB</translation>
     </message>
     <message>
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
-        <translation type="unfinished">PB</translation>
+        <translation>PB</translation>
     </message>
     <message>
         <source>User-defined</source>
         <comment>serial port</comment>
-        <translation type="unfinished">사용자 정의</translation>
+        <translation>사용자 정의</translation>
     </message>
     <message numerus="yes">
         <source>%n year(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n년 전</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n개월 전</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n일 전</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n시간 전</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n분 전</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n초 전</numerusform>
         </translation>
     </message>
 </context>
@@ -16954,106 +17075,106 @@
     <name>UIUSBControllerEditor</name>
     <message>
         <source>USB &amp;1.1 (OHCI) Controller</source>
-        <translation type="unfinished">USB 1.1(OHCI) 컨트롤러(&amp;1)</translation>
+        <translation>USB 1.1(OHCI) 컨트롤러(&amp;1)</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
-        <translation type="unfinished">선택하면 이 가상 머신의 USB OHCI 컨트롤러를 사용합니다. USB OHCI 컨트롤러는 USB 1.0을 지원합니다.</translation>
+        <translation>선택하면 이 가상 머신의 USB OHCI 컨트롤러를 활성화합니다. USB OHCI 컨트롤러는 USB 1.0을 지원합니다.</translation>
     </message>
     <message>
         <source>USB &amp;2.0 (OHCI + EHCI) Controller</source>
-        <translation type="unfinished">USB 2.0(OHCI+EHCI) 컨트롤러(&amp;2)</translation>
+        <translation>USB 2.0(OHCI+EHCI) 컨트롤러(&amp;2)</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI and EHCI controllers of this machine. Together they provide USB 2.0 support.</source>
-        <translation type="unfinished">선택하면 이 가상 머신의 USB OHCI와 EHCI 컨트롤러를 사용합니다. 두 컨트롤러를 함께 사용하여 USB 2.0을 지원합니다.</translation>
+        <translation>선택하면 이 가상 머신의 USB OHCI와 EHCI 컨트롤러를 활성화합니다. 두 컨트롤러를 함께 사용하여 USB 2.0을 지원합니다.</translation>
     </message>
     <message>
         <source>USB &amp;3.0 (xHCI) Controller</source>
-        <translation type="unfinished">USB 3.0(xHCI) 컨트롤러(&amp;3)</translation>
+        <translation>USB 3.0(xHCI) 컨트롤러(&amp;3)</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
-        <translation type="unfinished">선택하면 이 가상 머신의 USB xHCI 컨트롤러를 사용합니다. USB xHCI 컨트롤러는 USB 3.0을 지원합니다.</translation>
+        <translation>선택하면 이 가상 머신의 USB xHCI 컨트롤러를 활성화합니다. USB xHCI 컨트롤러는 USB 3.0을 지원합니다.</translation>
     </message>
 </context>
 <context>
     <name>UIUSBFilterDetailsEditor</name>
     <message>
         <source>USB Filter Details</source>
-        <translation type="unfinished">USB 필터 정보</translation>
+        <translation>USB 필터 정보</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">이름(&amp;N):</translation>
+        <translation>이름(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the filter name.</source>
-        <translation type="unfinished">필터 이름을 표시합니다.</translation>
+        <translation>필터 이름을 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Vendor ID:</source>
-        <translation type="unfinished">제조사 ID(&amp;V):</translation>
+        <translation>제조사 ID(&amp;V):</translation>
     </message>
     <message>
         <source>Holds the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="obsolete">제조사 ID 필터를 정의합니다. 특정한 제조사 ID 값과 일치하게 하려면 16진수 숫자 네 개를 입력하십시오. (예: &lt;tt&gt;XXXX&lt;/tt&gt;) 빈 문자열은 임의의 값과 일치합니다.</translation>
+        <translation type="vanished">제조사 ID 필터를 정의합니다. 특정한 제조사 ID 값과 &lt;i&gt;정확히 일치&lt;/i&gt;하게 하려면 16진수 숫자 네 개를 입력하십시오. (예: &lt;tt&gt;XXXX&lt;/tt&gt;, &lt;tt&gt;X&lt;/tt&gt;는 16진수 숫자) 빈 문자열은 임의의 값과 일치합니다.</translation>
     </message>
     <message>
         <source>&amp;Product ID:</source>
-        <translation type="unfinished">제품 ID(&amp;P):</translation>
+        <translation>제품 ID(&amp;P):</translation>
     </message>
     <message>
         <source>Holds the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="obsolete">제품 ID 필터를 정의합니다. 특정한 제품 ID 값과 일치하게 하려면 16진수 숫자 네 개를 입력하십시오. (예: &lt;tt&gt;XXXX&lt;/tt&gt;) 빈 문자열은 임의의 값과 일치합니다.</translation>
+        <translation type="vanished">제품 ID 필터를 정의합니다. 특정한 제품 ID 값과 &lt;i&gt;정확히 일치&lt;/i&gt;하게 하려면 16진수 숫자 네 개를 입력하십시오. (예: &lt;tt&gt;XXXX&lt;/tt&gt;, &lt;tt&gt;X&lt;/tt&gt;는 16진수 숫자) 빈 문자열은 임의의 값과 일치합니다.</translation>
     </message>
     <message>
         <source>&amp;Revision:</source>
-        <translation type="unfinished">리비전(&amp;R):</translation>
+        <translation>리비전(&amp;R):</translation>
     </message>
     <message>
         <source>Holds the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="obsolete">리비전 번호 필터를 정의합니다. 특정한 리비전 값과 일치하게 하려면 &lt;tt&gt;IIFF&lt;/tt&gt;와 같이 입력하십시오. &lt;tt&gt;I&lt;/tt&gt; 부분은 정수 부분의 10진수, &lt;tt&gt;F&lt;/tt&gt; 부분은 소수 부분의 10진수를 나타냅니다. 빈 문자열은 임의의 값과 일치합니다.</translation>
+        <translation type="vanished">리비전 번호 필터를 정의합니다. 특정한 리비전 값과 &lt;i&gt;정확히 일치&lt;/i&gt;하게 하려면 &lt;tt&gt;IIFF&lt;/tt&gt;와 같이 입력하십시오. &lt;tt&gt;I&lt;/tt&gt; 부분은 정수 부분의 10진수, &lt;tt&gt;F&lt;/tt&gt; 부분은 소수 부분의 10진수를 나타냅니다. 빈 문자열은 임의의 값과 일치합니다.</translation>
     </message>
     <message>
         <source>&amp;Manufacturer:</source>
-        <translation type="unfinished">제조사(&amp;M):</translation>
+        <translation>제조사(&amp;M):</translation>
     </message>
     <message>
         <source>Holds the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="obsolete">제조사 필터를 지정합니다. 여기에 입력되는 문자열과 &lt;i&gt;정확하게&lt;/i&gt; 일치해야 합니다. 빈 문자열은 어떠한 값과도 일치합니다.</translation>
+        <translation type="vanished">제조사 필터를 지정합니다. 여기에 입력되는 문자열과 &lt;i&gt;정확하게&lt;/i&gt; 일치해야 합니다. 빈 문자열은 어떠한 값과도 일치합니다.</translation>
     </message>
     <message>
         <source>Pro&amp;duct:</source>
-        <translation type="unfinished">제품(&amp;D):</translation>
+        <translation>제품(&amp;D):</translation>
     </message>
     <message>
         <source>Holds the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="obsolete">제품 이름 필터를 지정합니다. 여기에 입력되는 문자열과 &lt;i&gt;정확하게&lt;/i&gt; 일치해야 합니다. 빈 문자열은 어떠한 값과도 일치합니다.</translation>
+        <translation type="vanished">제품 이름 필터를 지정합니다. 여기에 입력되는 문자열과 &lt;i&gt;정확하게&lt;/i&gt; 일치해야 합니다. 빈 문자열은 어떠한 값과도 일치합니다.</translation>
     </message>
     <message>
         <source>&amp;Serial No.:</source>
-        <translation type="unfinished">시리얼 번호(&amp;S):</translation>
+        <translation>시리얼 번호(&amp;S):</translation>
     </message>
     <message>
         <source>Holds the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="obsolete">시리얼 번호 필터를 지정합니다. 여기에 입력되는 문자열과 &lt;i&gt;정확하게&lt;/i&gt; 일치해야 합니다. 빈 문자열은 어떠한 값과도 일치합니다.</translation>
+        <translation type="vanished">시리얼 번호 필터를 지정합니다. 여기에 입력되는 문자열과 &lt;i&gt;정확하게&lt;/i&gt; 일치해야 합니다. 빈 문자열은 어떠한 값과도 일치합니다.</translation>
     </message>
     <message>
         <source>Por&amp;t:</source>
-        <translation type="unfinished">포트(&amp;T):</translation>
+        <translation>포트(&amp;T):</translation>
     </message>
     <message>
         <source>Holds the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="obsolete">호스트 USB 포트 필터를 &lt;i&gt;정확하게 일치하는&lt;/i&gt; 문자열로 정의합니다. 빈 문자열은 임의의 값과 일치합니다.</translation>
+        <translation type="vanished">호스트 USB 포트 필터를 &lt;i&gt;정확하게 일치하는&lt;/i&gt; 문자열로 정의합니다. 빈 문자열은 임의의 값과 일치합니다.</translation>
     </message>
     <message>
         <source>R&amp;emote:</source>
-        <translation type="unfinished">원격지(&amp;E):</translation>
+        <translation>원격지(&amp;E):</translation>
     </message>
     <message>
         <source>Holds whether this filter applies to USB devices attached locally to the host computer (No), to a VRDP client&apos;s computer (Yes), or both (Any).</source>
-        <translation type="unfinished"></translation>
+        <translation>이 필터가 호스트 컴퓨터에 연결된 USB 장치만 적용되는지(아니요), VRDP 클라이언트의 컴퓨터에만 적용되는지 (예), 아니면 둘 모두(둘 다)에 적용되는지 선택합니다.</translation>
     </message>
     <message>
         <source>Holds the vendor ID filter. The exact match string format is &apos;XXXX&apos; where &apos;X&apos; is a hexadecimal digit. An empty string will match any value.</source>
@@ -17142,68 +17263,68 @@
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">새 필터 %1</translation>
+        <translation>새 필터 %1</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
-        <translation type="unfinished">USB 장치 필터(&amp;F)</translation>
+        <translation>USB 장치 필터(&amp;F)</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation type="unfinished">가상 머신의 모든 USB 필터를 보여 줍니다. 왼쪽의 체크 상자를 통해서 각각의 필터를 켜고 끌 수 있습니다. 컨텍스트 메뉴나 오른쪽에 있는 단추를 통해서 USB 필터를 추가하거나 삭제할 수 있습니다.</translation>
+        <translation>가상 머신의 모든 USB 필터를 보여 줍니다. 왼쪽의 체크 상자를 통해서 각각의 필터를 켜고 끌 수 있습니다. 컨텍스트 메뉴나 오른쪽에 있는 단추를 통해서 USB 필터를 추가하거나 삭제할 수 있습니다.</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished">빈 필터 추가</translation>
+        <translation>빈 필터 추가</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished">빈 값으로 초기화되어 있는 USB 필터를 만듭니다. 이 필터는 임의의 연결된 USB 장치에 대해서 일치할 것입니다.</translation>
+        <translation>빈 값으로 초기화되어 있는 USB 필터를 만듭니다. 이 필터는 임의의 연결된 USB 장치에 대해서 일치할 것입니다.</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished">장치에서 필터 추가</translation>
+        <translation>장치에서 필터 추가</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished">현재 호스트 PC에 연결되어 있는 장치의 값으로 초기화되어 있는 USB 필터를 만듭니다.</translation>
+        <translation>현재 호스트 PC에 연결되어 있는 장치의 값으로 초기화되어 있는 USB 필터를 만듭니다.</translation>
     </message>
     <message>
         <source>Edit Filter</source>
-        <translation type="unfinished">필터 편집</translation>
+        <translation>필터 편집</translation>
     </message>
     <message>
         <source>Edits selected USB filter.</source>
-        <translation type="unfinished">선택한 USB 필터를 편집합니다.</translation>
+        <translation>선택한 USB 필터를 편집합니다.</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished">필터 삭제</translation>
+        <translation>필터 삭제</translation>
     </message>
     <message>
         <source>Removes selected USB filter.</source>
-        <translation type="unfinished">선택한 USB 필터를 삭제합니다.</translation>
+        <translation>선택한 USB 필터를 삭제합니다.</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished">필터 위로 이동</translation>
+        <translation>필터 위로 이동</translation>
     </message>
     <message>
         <source>Moves selected USB filter up.</source>
-        <translation type="unfinished">선택한 USB 필터를 위로 이동합니다.</translation>
+        <translation>선택한 USB 필터를 위로 이동합니다.</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished">필터 아래로 이동</translation>
+        <translation>필터 아래로 이동</translation>
     </message>
     <message>
         <source>Moves selected USB filter down.</source>
-        <translation type="unfinished">선택한 USB 필터를 아래로 이동합니다.</translation>
+        <translation>선택한 USB 필터를 아래로 이동합니다.</translation>
     </message>
     <message>
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
-        <translation type="unfinished">%1, 활성화됨</translation>
+        <translation>%1, 활성화됨</translation>
     </message>
 </context>
 <context>
@@ -17211,23 +17332,23 @@
     <message>
         <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
-        <translation type="unfinished">&lt;사용 가능한 장치가 없음&gt;</translation>
+        <translation>&lt;사용 가능한 장치 없음&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>호스트 PC에 지원하는 장치가 연결되지 않았음</translation>
     </message>
 </context>
 <context>
     <name>UIUSBSettingsEditor</name>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation type="unfinished">USB 컨트롤러 사용하기(&amp;U)</translation>
+        <translation>USB 컨트롤러 활성화(&amp;U)</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished">선택하면 이 가상 머신의 USB 컨트롤러를 사용합니다.</translation>
+        <translation>선택하면 이 가상 머신의 USB 컨트롤러를 활성화합니다.</translation>
     </message>
 </context>
 <context>
@@ -17349,59 +17470,59 @@
     <name>UIUpdateSettingsEditor</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation type="unfinished">선택하면 주기적으로 VirtualBox 웹 사이트에 연결하여 새 버전이 있는가를 검사합니다.</translation>
+        <translation>선택하면 주기적으로 VirtualBox 웹 사이트에 연결하여 새 버전이 있는지를 검사합니다.</translation>
     </message>
     <message>
         <source>&amp;Check for Updates</source>
-        <translation type="unfinished">업데이트 찾기(&amp;C)</translation>
+        <translation>업데이트 확인(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Once per:</source>
-        <translation type="unfinished">주기(&amp;O):</translation>
+        <translation>주기(&amp;O):</translation>
     </message>
     <message>
         <source>Selects how often the new version check should be performed.</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트를 확인할 주기를 선택합니다.</translation>
     </message>
     <message>
         <source>Next Check:</source>
-        <translation type="unfinished">다음 검사 시간:</translation>
+        <translation>다음 검사 시간:</translation>
     </message>
     <message>
         <source>Check for:</source>
-        <translation type="unfinished">검사할 항목:</translation>
+        <translation>검사할 항목:</translation>
     </message>
     <message>
         <source>&amp;Stable Release Versions</source>
-        <translation type="unfinished">안정 릴리스 버전(&amp;S)</translation>
+        <translation>안정 릴리스 버전(&amp;S)</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about stable updates to VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 VirtualBox 안정 릴리스 업데이트 알림을 받습니다.</translation>
     </message>
     <message>
         <source>&amp;All New Releases</source>
-        <translation type="unfinished">모든 새 릴리스(&amp;A)</translation>
+        <translation>모든 새 릴리스(&amp;A)</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 모든 새 VirtualBox 릴리스 업데이트 알림을 받습니다.</translation>
     </message>
     <message>
         <source>All New Releases and &amp;Pre-Releases</source>
-        <translation type="unfinished">모든 새 릴리스 및 테스트 버전(&amp;P)</translation>
+        <translation>모든 새 릴리스와 사전 릴리스(&amp;P)</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases and pre-release versions of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 모든 새 VirtualBox 릴리스 및 사전 릴리스 업데이트 알림을 받습니다.</translation>
     </message>
     <message>
         <source>All New Releases, &amp;Pre-Releases and Testing Builds</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 새 릴리스, 사전 릴리스, 테스트 빌드(&amp;P)</translation>
     </message>
     <message>
         <source>When chosen, you will be notified about all new VirtualBox releases, pre-release versions and testing builds of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 모든 새 VirtualBox 릴리스,사전 릴리스, 테스트 빌드 업데이트 알림을 받습니다.</translation>
     </message>
 </context>
 <context>
@@ -17414,32 +17535,36 @@
 <context>
     <name>UIUserNamePasswordEditor</name>
     <message>
+        <source>Invalid username</source>
+        <translation type="vanished">잘못된 사용자 이름</translation>
+    </message>
+    <message>
         <source>Pass&amp;word</source>
-        <translation type="unfinished"></translation>
+        <translation>암호(&amp;W)</translation>
     </message>
     <message>
         <source>&amp;Repeat Password</source>
-        <translation type="unfinished"></translation>
+        <translation>암호 확인(&amp;R)</translation>
     </message>
     <message>
         <source>U&amp;sername</source>
-        <translation type="unfinished"></translation>
+        <translation>사용자 이름(&amp;S)</translation>
     </message>
     <message>
         <source>Holds username.</source>
-        <translation type="unfinished"></translation>
+        <translation>사용자 이름을 지정합니다.</translation>
     </message>
     <message>
         <source>Holds password.</source>
-        <translation type="unfinished"></translation>
+        <translation>암호를 지정합니다.</translation>
     </message>
     <message>
         <source>Holds the repeated password.</source>
-        <translation type="unfinished"></translation>
+        <translation>암호를 확인합니다.</translation>
     </message>
     <message>
         <source>Invalid password pair</source>
-        <translation type="unfinished"></translation>
+        <translation>암호가 일치하지 않음</translation>
     </message>
     <message>
         <source>Username cannot be an empty string.</source>
@@ -17473,99 +17598,99 @@
     <name>UIVMActivityOverviewWidget</name>
     <message>
         <source>Used</source>
-        <translation type="unfinished">사용함</translation>
+        <translation>사용함</translation>
     </message>
     <message>
         <source>Host CPU Load</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 CPU 부하</translation>
     </message>
     <message>
         <source>User</source>
-        <translation type="unfinished"></translation>
+        <translation>사용자</translation>
     </message>
     <message>
         <source>Kernel</source>
-        <translation type="unfinished"></translation>
+        <translation>커널</translation>
     </message>
     <message>
         <source>Total</source>
-        <translation type="unfinished">합계</translation>
+        <translation>합계</translation>
     </message>
     <message>
         <source>Host RAM Usage</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 RAM 사용량</translation>
     </message>
     <message>
         <source>Free</source>
-        <translation type="unfinished">사용 가능</translation>
+        <translation>사용 가능</translation>
     </message>
     <message>
         <source>Host File System</source>
-        <translation type="unfinished">호스트 파일 시스템</translation>
+        <translation>호스트 파일 시스템</translation>
     </message>
     <message>
         <source>N/A</source>
-        <translation type="unfinished"></translation>
+        <translation>N/A</translation>
     </message>
     <message>
         <source>VM Name</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 이름</translation>
     </message>
     <message>
         <source>CPU Guest</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU 게스트</translation>
     </message>
     <message>
         <source>CPU VMM</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU VMM</translation>
     </message>
     <message>
         <source>RAM Used/Total</source>
-        <translation type="unfinished"></translation>
+        <translation>RAM 사용량/합계</translation>
     </message>
     <message>
         <source>RAM %</source>
-        <translation type="unfinished"></translation>
+        <translation>RAM %</translation>
     </message>
     <message>
         <source>Network Up Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 업링크 전송률</translation>
     </message>
     <message>
         <source>Network Down Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 다운링크 전송률</translation>
     </message>
     <message>
         <source>Network Up Total</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 업링크 합계</translation>
     </message>
     <message>
         <source>Network Down Total</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 다운링크 합계</translation>
     </message>
     <message>
         <source>Disk Read Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 읽기 전송률</translation>
     </message>
     <message>
         <source>Disk Write Rate</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 쓰기 전송률</translation>
     </message>
     <message>
         <source>Disk Read Total</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 읽기 합계</translation>
     </message>
     <message>
         <source>Disk Write Total</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 쓰기 합계</translation>
     </message>
     <message>
         <source>VM Exits</source>
-        <translation type="unfinished">VM 종료</translation>
+        <translation>가상 머신 종료</translation>
     </message>
     <message>
         <source>List all virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 가상 머신 목록</translation>
     </message>
     <message>
         <source>Lists all currently active virtual machines.</source>
@@ -17775,7 +17900,7 @@
     </message>
     <message>
         <source>VM Exits</source>
-        <translation>VM 종료</translation>
+        <translation>가상 머신 종료</translation>
     </message>
     <message>
         <source>Current</source>
@@ -17791,7 +17916,7 @@
     </message>
     <message>
         <source>VM Uptime</source>
-        <translation>VM 실행 시간</translation>
+        <translation>가상 머신 실행 시간</translation>
     </message>
     <message>
         <source>Clipboard Mode</source>
@@ -17803,7 +17928,7 @@
     </message>
     <message>
         <source>VM Execution Engine</source>
-        <translation>VM 실행 엔진</translation>
+        <translation>가상 머신 실행 엔진</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -17880,51 +18005,51 @@
     </message>
     <message>
         <source>Copy All</source>
-        <translation type="unfinished"></translation>
+        <translation>모두 복사</translation>
     </message>
     <message>
         <source>VM &amp;Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 활동(&amp;A)</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">닫기</translation>
+        <translation>닫기</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">도움말</translation>
+        <translation>도움말</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">저장하지 않고 대화 상자 닫기</translation>
+        <translation>저장하지 않고 대화 상자 닫기</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>대화 상자 도움말 표시</translation>
     </message>
     <message>
         <source>Close this dialog (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>이 대화 상자 닫기(%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 표시(%1)</translation>
     </message>
     <message>
         <source>This metric requires guest additions to work.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 수치를 표시하려면 게스트 확장이 필요합니다.</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished">내보내기</translation>
+        <translation>내보내기</translation>
     </message>
     <message>
         <source>Sec.</source>
-        <translation type="unfinished"></translation>
+        <translation>초</translation>
     </message>
     <message>
         <source>Export activity data of the machine &quot;%1&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%1&quot; 머신의 활동 데이터 내보내기</translation>
     </message>
     <message>
         <source>Displays the configuration details of the guest system</source>
@@ -18105,35 +18230,39 @@
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">도움말</translation>
+        <translation>도움말</translation>
     </message>
     <message>
         <source>Close dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>대화 상자 닫기</translation>
     </message>
     <message>
         <source>Show dialog help</source>
-        <translation type="unfinished"></translation>
+        <translation>대화 상자 도움말 표시</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">창 닫기(%1)</translation>
+        <translation>창 닫기(%1)</translation>
     </message>
     <message>
         <source>Show Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 표시(%1)</translation>
+    </message>
+    <message>
+        <source>Close this machine&apos;s logs</source>
+        <translation type="vanished">이 머신의 로그 닫기</translation>
     </message>
     <message>
         <source>Select machines to show their log</source>
-        <translation type="unfinished"></translation>
+        <translation>로그를 표시할 가상 머신 선택</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files for the machine %1 found. Press the &lt;b&gt;Reload&lt;/b&gt; button to reload the log folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;%1 가상 머신의 로그 파일을 찾을 수 없습니다. &lt;b&gt;새로 고침&lt;/b&gt; 단추를 눌러서 로그 폴더 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 다시 검사하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>%1 - Log Viewer</source>
-        <translation type="unfinished">%1 - 로그 뷰어</translation>
+        <translation>%1 - 로그 뷰어</translation>
     </message>
     <message>
         <source>Embed</source>
@@ -18157,7 +18286,7 @@
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">책갈피</translation>
     </message>
     <message>
         <source>Preferences</source>
@@ -18168,58 +18297,58 @@
     <name>UIVRDEAuthLibraryEditor</name>
     <message>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation type="unfinished">VRDP 인증 라이브러리(&amp;R):</translation>
+        <translation>VRDP 인증 라이브러리(&amp;R):</translation>
     </message>
     <message>
         <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="unfinished">VRDP 클라이언트의 인증을 담당하는 라이브러리 경로를 표시합니다.</translation>
+        <translation>VRDP 클라이언트의 인증을 담당하는 라이브러리 경로를 표시합니다.</translation>
     </message>
 </context>
 <context>
     <name>UIVRDESettingsEditor</name>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation>서버 활성화(&amp;E)</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">선택하면 가상 머신은 원격 데스크톱(RDP) 서버로 작동합니다. 가상 머신이 실행 중일 때 RDP 클라이언트를 통해서 가상 머신을 제어할 수 있습니다.</translation>
+        <translation>선택하면 가상 머신이 원격 데스크톱(RDP) 서버로 작동합니다. 가상 머신이 실행 중일 때 RDP 클라이언트를 통해서 가상 머신을 제어할 수 있습니다.</translation>
     </message>
     <message>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished">서버 포트(&amp;P):</translation>
+        <translation>서버 포트(&amp;P):</translation>
     </message>
     <message>
         <source>Holds the VRDP Server port number. You may specify 0 (zero), to select port 3389, the standard port for RDP.</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDP 서버 포트 번호입니다. 0을 입력하면 RDP 표준 포트 번호 3389를 사용합니다.</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished">인증 방법(&amp;M):</translation>
+        <translation>인증 방법(&amp;M):</translation>
     </message>
     <message>
         <source>Selects the VRDP authentication method.</source>
-        <translation type="unfinished">VRDP 인증 방법을 선택합니다.</translation>
+        <translation>VRDP 인증 방법을 선택합니다.</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished">인증 제한 시간(&amp;T):</translation>
+        <translation>인증 제한 시간(&amp;T):</translation>
     </message>
     <message>
         <source>Holds the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished">밀리초 단위의 게스트 인증 제한 시간을 표시합니다.</translation>
+        <translation>밀리초 단위의 게스트 인증 제한 시간을 표시합니다.</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>확장된 기능:</translation>
     </message>
     <message>
         <source>&amp;Allow Multiple Connections</source>
-        <translation type="unfinished">다중 접속 허용하기(&amp;A)</translation>
+        <translation>다중 접속 허용(&amp;A)</translation>
     </message>
     <message>
         <source>When checked, multiple simultaneous connections to the VM are permitted.</source>
-        <translation type="unfinished">선택하면 가상 머신에 동시에 하나 이상의 연결을 허용합니다.</translation>
+        <translation>선택하면 가상 머신에 동시에 하나 이상의 연결을 허용합니다.</translation>
     </message>
 </context>
 <context>
@@ -18238,15 +18367,15 @@
     </message>
     <message>
         <source>Holds the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신에 할당할 비디오 메모리 크기를 설정합니다.</translation>
     </message>
     <message>
         <source>Minimum possible video memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>최소 사용 가능 비디오 메모리 크기입니다.</translation>
     </message>
     <message>
         <source>Maximum possible video memory size.</source>
-        <translation type="unfinished"></translation>
+        <translation>최대 사용 가능 비디오 메모리 크기입니다.</translation>
     </message>
 </context>
 <context>
@@ -18277,29 +18406,29 @@
     <name>UIVirtualCPUEditor</name>
     <message>
         <source>&amp;Processors:</source>
-        <translation type="unfinished"></translation>
+        <translation>프로세서(&amp;P):</translation>
     </message>
     <message>
         <source>Holds the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신의 가상 CPU 개수를 지정합니다. 두 개 이상의 가상 CPU를 사용하려면 하드웨어 가상화가 필요합니다.</translation>
     </message>
     <message>
         <source>%1 CPU</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished">CPU %1개</translation>
+        <translation>CPU %1개</translation>
     </message>
     <message>
         <source>Minimum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
+        <translation>최소 가능한 가상 CPU 개수입니다.</translation>
     </message>
     <message>
         <source>%1 CPUs</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished">CPU %1개</translation>
+        <translation>CPU %1개</translation>
     </message>
     <message>
         <source>Maximum possible virtual CPU count.</source>
-        <translation type="unfinished"></translation>
+        <translation>최대 가능한 가상 CPU 개수입니다.</translation>
     </message>
 </context>
 <context>
@@ -18323,12 +18452,12 @@
     </message>
     <message>
         <source>Empty</source>
-        <translation type="unfinished">비어 있음</translation>
+        <translation>비어 있음</translation>
     </message>
     <message>
         <source>Inaccessible</source>
         <comment>VM</comment>
-        <translation type="unfinished">접근할 수 없음</translation>
+        <translation>접근할 수 없음</translation>
     </message>
 </context>
 <context>
@@ -18481,76 +18610,92 @@
 <context>
     <name>UIVisoCreatorWidget</name>
     <message>
+        <source>Click to show/hide the tree view.</source>
+        <translation type="vanished">트리 보기를 표시하거나 숨기려면 클릭하십시오.</translation>
+    </message>
+    <message>
+        <source>Shows the current location.</source>
+        <translation type="vanished">현재 위치를 표시합니다.</translation>
+    </message>
+    <message>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">크기</translation>
+        <translation>크기</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation type="unfinished">변경 시간</translation>
+        <translation>변경 시간</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation type="unfinished">소유자</translation>
+        <translation>소유자</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation type="unfinished">권한</translation>
+        <translation>권한</translation>
     </message>
     <message>
         <source>Local Path</source>
-        <translation type="unfinished">로컬 경로</translation>
+        <translation>로컬 경로</translation>
     </message>
     <message>
         <source>ISO Path</source>
-        <translation type="obsolete">ISO 경로</translation>
+        <translation type="vanished">ISO 경로</translation>
     </message>
     <message>
         <source>Host File System</source>
-        <translation type="obsolete">호스트 파일 시스템</translation>
+        <translation type="vanished">호스트 파일 시스템</translation>
     </message>
     <message>
         <source>VISO Content</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO 내용</translation>
+    </message>
+    <message>
+        <source>C&amp;reate</source>
+        <translation type="vanished">만들기(&amp;R)</translation>
     </message>
     <message>
         <source>Creates VISO file with the selected content</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 내용을 포함하는 VISO 파일 만들기</translation>
     </message>
     <message>
         <source>Opens the help browser and navigates to the related section</source>
-        <translation type="unfinished"></translation>
+        <translation>도움말 탐색기를 열고 연관된 내용 표시</translation>
     </message>
     <message>
         <source>VISO Name:</source>
-        <translation type="unfinished">VISO 이름:</translation>
+        <translation>VISO 이름:</translation>
     </message>
     <message>
         <source>Custom VISO options:</source>
-        <translation type="unfinished">사용자 정의 VISO 옵션:</translation>
+        <translation>사용자 정의 VISO 옵션:</translation>
     </message>
     <message>
         <source>Remove current option.</source>
-        <translation type="obsolete">현재 옵션을 삭제합니다.</translation>
+        <translation type="vanished">현재 옵션을 삭제합니다.</translation>
     </message>
     <message>
         <source>Holds the name of the VISO medium.</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO 미디어 이름을 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Holds options for VISO creation.</source>
+        <translation type="vanished">VISO 생성 옵션을 표시합니다.</translation>
     </message>
     <message>
         <source>Show Hidden Objects</source>
-        <translation type="unfinished">숨겨진 객체 표시</translation>
+        <translation>숨겨진 객체 표시</translation>
     </message>
     <message>
         <source>When checked, multiple hidden objects are shown in the file browser</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 파일 탐색기에 숨겨진 객체를 표시합니다.</translation>
     </message>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished">VISO 생성기</translation>
+        <translation>VISO 생성기</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -18605,11 +18750,11 @@
     <name>UIVisualStateEditor</name>
     <message>
         <source>Visual &amp;State:</source>
-        <translation type="unfinished"></translation>
+        <translation>표시 상태(&amp;S):</translation>
     </message>
     <message>
         <source>Selects the visual state. If machine is running it will be applied as soon as possible, otherwise desired one will be defined.</source>
-        <translation type="unfinished"></translation>
+        <translation>표시 상태를 선택합니다. 머신이 실행 중이면 최대한 빠르게 적용되며 그렇지 않으면 선택한 것이 정의됩니다.</translation>
     </message>
 </context>
 <context>
@@ -18639,7 +18784,7 @@
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Expert Mode&lt;/b&gt;&lt;/nobr&gt;, a one-page dialog for experienced users.</source>
-        <translation type="vanished">고급 사용자를 위한 하나의 대화상자인 &lt;nobr&gt;&lt;b&gt;전문가 모드&lt;/b&gt;&lt;/nobr&gt;로 전환합니다.</translation>
+        <translation type="vanished">고급 사용자를 위한 하나의 대화 상자인 &lt;nobr&gt;&lt;b&gt;전문가 모드&lt;/b&gt;&lt;/nobr&gt;로 전환합니다.</translation>
     </message>
     <message>
         <source>&amp;Guided Mode</source>
@@ -18654,39 +18799,51 @@
     <name>UIWizardAddCloudVM</name>
     <message>
         <source>Add Cloud Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신 추가</translation>
     </message>
     <message>
         <source>Location</source>
-        <translation type="obsolete">위치</translation>
+        <translation type="vanished">위치</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation type="obsolete">원본</translation>
+        <translation type="vanished">원본</translation>
+    </message>
+    <message>
+        <source>Open Cloud Profile Manager...</source>
+        <translation type="vanished">클라우드 프로필 관리자 열기...</translation>
+    </message>
+    <message>
+        <source>Add VM from cloud service provider.</source>
+        <translation type="vanished">클라우드 서비스 공급자에서 가상 머신을 추가합니다.</translation>
     </message>
     <message>
         <source>Source to add from</source>
-        <translation type="unfinished"></translation>
+        <translation>추가할 원본</translation>
     </message>
     <message>
         <source>Please choose the source to add cloud virtual machine from.  This can be one of known cloud service providers below.</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신을 추가할 원본을 선택하십시오.  아래 클라우드 서비스 사업자 중에서 선택할 수 있습니다.</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
-        <translation type="obsolete">원본(&amp;S):</translation>
+        <translation type="vanished">원본(&amp;S):</translation>
+    </message>
+    <message>
+        <source>&amp;Profile:</source>
+        <translation type="vanished">프로필(&amp;P):</translation>
     </message>
     <message>
         <source>&amp;Instances:</source>
-        <translation type="unfinished"></translation>
+        <translation>인스턴스(&amp;I):</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to add virtual machine from.  Existing instance list will be updated.  To continue, select at least one instance to add virtual machine on the basis of it.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신을 추가할 등록한 클라우드 서비스 계정을 선택하십시오.  기존 인스턴스 목록을 업데이트할 것입니다.  계속 진행하려면 추가할 가상 머신의 기반이 될 인스턴스를 선택하십시오.</translation>
     </message>
     <message>
         <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">공급자(&amp;P):</translation>
     </message>
     <message>
         <source>Selects cloud service provider.</source>
@@ -18694,7 +18851,7 @@
     </message>
     <message>
         <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">프로필(&amp;R):</translation>
     </message>
     <message>
         <source>Selects cloud profile.</source>
@@ -18792,6 +18949,30 @@
         <source>Disk image file &amp;type</source>
         <translation type="vanished">디스크 이미지 파일 형식(&amp;T)</translation>
     </message>
+    <message>
+        <source>Copy Virtual Disk</source>
+        <translation type="vanished">가상 디스크 복사</translation>
+    </message>
+    <message>
+        <source>Virtual Hard disk file type</source>
+        <translation type="vanished">가상 하드 디스크 파일 형식</translation>
+    </message>
+    <message>
+        <source>Please choose the type of file that you would like to use for the destination virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
+        <translation type="vanished">대상 가상 디스크 이미지에 사용할 파일 형식을 선택하십시오. 다른 가상화 소프트웨어에서 디스크를 사용하지 않으려면 선택을 변경하지 않아도 됩니다.</translation>
+    </message>
+    <message>
+        <source>Location and size of the disk image</source>
+        <translation type="vanished">디스크 이미지 위치와 크기</translation>
+    </message>
+    <message>
+        <source>Hard Disk File &amp;Type and Variant</source>
+        <translation type="vanished">하드 디스크 파일 형식과 파생형(&amp;T)</translation>
+    </message>
+    <message>
+        <source>copy</source>
+        <translation type="vanished">복사</translation>
+    </message>
 </context>
 <context>
     <name>UIWizardCloneVM</name>
@@ -18873,7 +19054,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name and optionally a folder for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;새 가상 머신의 이름 및 폴더(선택 사항)를 입력하십시오. 새 머신은 머신 &lt;b&gt;%1&lt;/b&gt;의 복제본이 될 것입니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;새 가상 머신의 이름 및 폴더(선택 사항)를 입력하십시오. 새 가상 머신은 &lt;b&gt;%1&lt;/b&gt; 가상 머신의 복제본이 될 것입니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Name:</source>
@@ -18945,67 +19126,67 @@
     </message>
     <message>
         <source>Clone name cannot be empty</source>
-        <translation type="unfinished"></translation>
+        <translation>복사본 이름이 비어 있을 수 없음</translation>
     </message>
     <message>
         <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>경로가 잘못됨</translation>
     </message>
     <message>
         <source>The clone name is not unique</source>
-        <translation type="unfinished"></translation>
+        <translation>복사본 이름이 중복됨</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">이름(&amp;N):</translation>
+        <translation>이름(&amp;N):</translation>
     </message>
     <message>
         <source>&amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>경로(&amp;P):</translation>
     </message>
     <message>
         <source>Holds a name for the new virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>새 가상 머신의 이름을 지정합니다.</translation>
     </message>
     <message>
         <source>Specifies The location of the new virtual machine in host&apos;s storage.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 저장소 상의 새 가상 머신의 위치를 지정합니다.</translation>
     </message>
     <message>
         <source>MAC Address P&amp;olicy:</source>
-        <translation type="unfinished"></translation>
+        <translation>MAC 주소 정책(&amp;O):</translation>
     </message>
     <message>
         <source>Determines MAC address policy for clonning:</source>
-        <translation type="unfinished"></translation>
+        <translation>복제 시 MAC 주소 정책을 지정합니다:</translation>
     </message>
     <message>
         <source>Keep Hard&amp;ware UUIDs</source>
-        <translation type="unfinished"></translation>
+        <translation>하드웨어 UUID 유지(&amp;W)</translation>
     </message>
     <message>
         <source>When chosen, all the virtual disks of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 원본 가상 머신의 모든 하드 디스크를 복제합니다.</translation>
     </message>
     <message>
         <source>When chosen, the cloned vm will save space by sharing the source VM&apos;s disk images.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 복제된 가상 머신과 원본 가상 머신 디스크 이미지 원본을 공유하여 공간을 절약합니다.</translation>
     </message>
     <message>
         <source>When chosen, only the current state of the source vm is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 원본 가상 머신의 현재 상태만 복제합니다.</translation>
     </message>
     <message>
         <source>When chosen, all the saved states of the source vm are also cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 원본 가상 머신의 모든 저장된 상태를 복제합니다.</translation>
     </message>
     <message>
         <source>When checked, disk names will be preserved during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 복제 과정에서 디스크 이름을 유지합니다.</translation>
     </message>
     <message>
         <source>When checked, hardware UUIDs will be preserved during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 복제 과정에서 하드웨어 UUID를 유지합니다.</translation>
     </message>
     <message>
         <source>Clone name is valid</source>
@@ -19224,43 +19405,47 @@
     </message>
     <message>
         <source>Virtual &amp;machines</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신(&amp;M)</translation>
     </message>
     <message>
         <source>Format &amp;settings</source>
-        <translation type="unfinished"></translation>
+        <translation>포맷 설정(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Appliance settings</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템 설정(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>프로필(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Open Cloud Profile Manager...</source>
+        <translation type="vanished">클라우드 프로필 관리자 열기...</translation>
     </message>
     <message>
         <source>Do not ask me about it, leave custom &amp;image for future usage</source>
-        <translation type="unfinished"></translation>
+        <translation>나중에 사용하기 위해 사용자 정의 이미지를 그대로 두고 묻지 않기(&amp;N)</translation>
     </message>
     <message>
         <source>Holds the path of the file selected for export.</source>
-        <translation type="unfinished"></translation>
+        <translation>내보낼 파일의 경로를 지정합니다.</translation>
     </message>
     <message>
         <source>Format settings</source>
-        <translation type="unfinished"></translation>
+        <translation>포맷 설정</translation>
     </message>
     <message>
         <source>Virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to export virtual machines to. It will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신을 내보낼 클라우드 서비스 프로필을 선택하십시오. 원격 클라우드에 가상 머신 파일을 업로드할 때 지정한 서비스와 네트워크 연결을 수립합니다.</translation>
     </message>
     <message>
         <source>Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템을 내보낼 파일 이름을 입력하십시오. 압축 파일의 크기와 내용을 변경하는 옵션을 지정할 수도 있습니다.</translation>
     </message>
     <message>
         <source>Contains a list of Virtual Machines</source>
@@ -19437,64 +19622,68 @@
         <translation>원본(&amp;S):</translation>
     </message>
     <message>
+        <source>Open Cloud Profile Manager...</source>
+        <translation type="vanished">클라우드 프로필 관리자 열기...</translation>
+    </message>
+    <message>
         <source>Holds the path of the file selected for import.</source>
-        <translation type="unfinished"></translation>
+        <translation>가져올 파일의 경로를 지정합니다.</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished">모든 네트워크 어댑터 MAC 주소 포함</translation>
+        <translation>모든 네트워크 어댑터 MAC 주소 포함</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during importing.</source>
-        <translation type="unfinished">가져오기 과정에서 모든 네트워크 어댑터의 MAC 주소를 포함합니다.</translation>
+        <translation>가져오기 과정에서 모든 네트워크 어댑터의 MAC 주소를 포함합니다.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished">NAT 네트워크 어댑터 MAC 주소만 포함</translation>
+        <translation>NAT 네트워크 어댑터 MAC 주소만 포함</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during importing.</source>
-        <translation type="unfinished">가져오기 과정에서 NAT 네트워크 어댑터의 MAC 주소만 포함합니다.</translation>
+        <translation>가져오기 과정에서 NAT 네트워크 어댑터의 MAC 주소만 포함합니다.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished">모든 네트워크 어댑터의 새 MAC 주소 생성</translation>
+        <translation>모든 네트워크 어댑터의 새 MAC 주소 생성</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during importing.</source>
-        <translation type="unfinished">가져오기 과정에서 모든 네트워크 어댑터의 새 MAC 주소를 생성합니다.</translation>
+        <translation>가져오기 과정에서 모든 네트워크 어댑터의 새 MAC 주소를 생성합니다.</translation>
     </message>
     <message>
         <source>&amp;Profile:</source>
-        <translation type="unfinished"></translation>
+        <translation>프로필(&amp;P):</translation>
     </message>
     <message>
         <source>&amp;Machine Base Folder:</source>
-        <translation type="unfinished">머신 기본 폴더(&amp;M):</translation>
+        <translation>머신 기본 폴더(&amp;M):</translation>
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished">MAC 주소 정책(&amp;P):</translation>
+        <translation>MAC 주소 정책(&amp;P):</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished">추가 옵션:</translation>
+        <translation>추가 옵션:</translation>
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished">VDI로 하드 드라이브 가져오기(&amp;I)</translation>
+        <translation>VDI로 하드 드라이브 가져오기(&amp;I)</translation>
     </message>
     <message>
         <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
-        <translation type="unfinished">선택하면 이 가상 시스템에 속한 모든 하드 드라이브를 VDI 형식으로 가져옵니다.</translation>
+        <translation>선택하면 이 가상 시스템에 속한 모든 하드 드라이브를 VDI 형식으로 가져옵니다.</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신을 가져올 등록한 클라우드 서비스 계정을 선택하십시오.  해당 머신 목록을 업데이트할 것입니다.  계속 진행하려면 아래에서 가져올 머신을 선택하십시오.</translation>
     </message>
     <message>
         <source>Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 시스템을 가져올 파일을 선택하십시오.  VirtualBox는 열린 가상화 형식(OVF)으로 저장된 가상 시스템을 가져올 수 있습니다.  계속 진행하려면 가져올 파일을 선택하십시오.</translation>
     </message>
     <message>
         <source>Selects cloud profile.</source>
@@ -19619,43 +19808,51 @@
     </message>
     <message>
         <source>Location</source>
-        <translation type="obsolete">위치</translation>
+        <translation type="vanished">위치</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation type="obsolete">원본</translation>
+        <translation type="vanished">원본</translation>
     </message>
     <message>
         <source>&amp;Images</source>
-        <translation type="unfinished"></translation>
+        <translation>이미지(&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Boot Volumes</source>
-        <translation type="unfinished"></translation>
+        <translation>부트 볼륨(&amp;B)</translation>
+    </message>
+    <message>
+        <source>Open Cloud Profile Manager...</source>
+        <translation type="vanished">클라우드 프로필 관리자 열기...</translation>
     </message>
     <message>
         <source>Location to create</source>
-        <translation type="unfinished"></translation>
+        <translation>생성할 위치</translation>
     </message>
     <message>
         <source>Please choose the location to create cloud virtual machine in.  This can be one of known cloud service providers below.</source>
-        <translation type="unfinished"></translation>
+        <translation>클라우드 가상 머신을 생성할 위치를 선택하십시오. 아래 클라우드 서비스 공급자 중에서 선택할 수 있습니다.</translation>
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation type="obsolete">위치(&amp;L):</translation>
+        <translation type="vanished">위치(&amp;L):</translation>
+    </message>
+    <message>
+        <source>&amp;Profile:</source>
+        <translation type="vanished">프로필(&amp;P):</translation>
     </message>
     <message>
         <source>&amp;Source:</source>
-        <translation type="unfinished">원본(&amp;S):</translation>
+        <translation>원본(&amp;S):</translation>
     </message>
     <message>
         <source>Please choose one of cloud service profiles you have registered to create virtual machine for.  Existing images list will be updated.  To continue, select one of images to create virtual machine on the basis of it.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신을 추가할 등록한 클라우드 서비스 계정을 선택하십시오.  기존 이미지 목록을 업데이트할 것입니다.  계속 진행하려면 추가할 가상 머신의 기반이 될 인스턴스를 선택하십시오.</translation>
     </message>
     <message>
         <source>&amp;Provider:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">공급자(&amp;P):</translation>
     </message>
     <message>
         <source>Selects cloud service provider.</source>
@@ -19663,7 +19860,7 @@
     </message>
     <message>
         <source>P&amp;rofile:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">프로필(&amp;R):</translation>
     </message>
     <message>
         <source>Selects cloud profile.</source>
@@ -19769,16 +19966,20 @@
         <translation type="vanished">하드 디스크 파일 종류(&amp;T)</translation>
     </message>
     <message>
+        <source>Virtual Hard disk file type</source>
+        <translation type="vanished">가상 하드 디스크 파일 형식</translation>
+    </message>
+    <message>
         <source>Hard Disk File &amp;Type and Variant</source>
-        <translation type="unfinished"></translation>
+        <translation>하드 디스크 파일 형식과 파생형(&amp;T)</translation>
     </message>
     <message>
         <source>copy</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">복사</translation>
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">가상 디스크 복사</translation>
     </message>
     <message>
         <source>Virtual hard disk file type</source>
@@ -19786,7 +19987,7 @@
     </message>
     <message>
         <source>Location and size of the disk image</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">디스크 이미지 위치와 크기</translation>
     </message>
 </context>
 <context>
@@ -19845,299 +20046,303 @@
     </message>
     <message>
         <source>Username and Password</source>
-        <translation type="unfinished"></translation>
+        <translation>사용자 이름과 암호</translation>
     </message>
     <message>
         <source>Selects an installation medium (ISO file) for the Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장 설치 미디어(ISO 파일)을 선택합니다.</translation>
     </message>
     <message>
         <source>Gu&amp;est Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장(&amp;E)</translation>
     </message>
     <message>
         <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>추가 옵션</translation>
     </message>
     <message>
         <source>&amp;Product Key:</source>
-        <translation type="unfinished"></translation>
+        <translation>제품 키(&amp;P):</translation>
     </message>
     <message>
         <source>&amp;Install in Background</source>
-        <translation type="unfinished"></translation>
+        <translation>백그라운드에서 설치(&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Enable EFI (special OSes only)</source>
-        <translation type="unfinished"></translation>
+        <translation>EFI 활성화(지원하는 운영 체제만)(&amp;E)</translation>
     </message>
     <message>
         <source>Virtual machine Name and Operating System</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 이름과 운영 체제</translation>
     </message>
     <message>
         <source>Please choose a descriptive name and destination folder for the new virtual machine. The name you choose will be used throughout VirtualBox to identify this machine. Additionally, you can select an ISO image which may be used to install the guest operating system.</source>
-        <translation type="unfinished"></translation>
+        <translation>새 가상 머신을 나타내는 이름과 저장할 대상 폴더를 선택하십시오. 입력한 이름은 VirtualBox에서 가상 머신을 식별하는 데 사용됩니다. 게스트 운영 체제를 설치할 때 사용할 ISO 이미지를 추가로 선택할 수 있습니다.</translation>
     </message>
     <message>
         <source>&amp;Skip Unattended Installation</source>
-        <translation type="unfinished"></translation>
+        <translation>무인 설치 건너뛰기(&amp;S)</translation>
     </message>
     <message>
         <source>When checked, the unattended install is disabled and the selected ISO is mounted on the vm.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 선택한 ISO를 가상 머신에 마운트했을 때 무인 설치를 비활성화합니다.</translation>
     </message>
     <message>
         <source>No ISO image is selected, the guest OS will need to be installed manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>ISO 이미지를 선택하지 않았습니다. 게스트 운영 체제를 직접 설치해야 합니다.</translation>
     </message>
     <message>
         <source>OS type cannot be determined from the selected ISO, the guest OS will need to be installed manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 ISO에서 운영 체제 형식을 판단할 수 없습니다. 게스트 운영 체제를 직접 설치해야 합니다.</translation>
     </message>
     <message>
         <source>This OS type cannot be installed unattendedly. The install needs to be started manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 운영 체제는 무인 설치할 수 없습니다. 직접 설치를 시작해야 합니다.</translation>
     </message>
     <message>
         <source>You have selected to skip unattended guest OS install, the guest OS will need to be installed manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>무인 게스트 운영 체제 설치를 건너뛰기로 선택했습니다. 게스트 운영 체제를 직접 설치해야 합니다.</translation>
     </message>
     <message>
         <source>This OS type can be installed unattendedly. The install will start after this wizard is closed.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 운영 체제는 무인 설치할 수 있습니다. 마법사가 종료된 후 설치가 시작됩니다.</translation>
     </message>
     <message>
         <source>Invalid file path or unreadable file</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 파일 경로 또는 읽을 수 없는 파일</translation>
     </message>
     <message>
         <source>Unattended Guest OS Install Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>무인 게스트 OS 설치</translation>
     </message>
     <message>
         <source>Hardware</source>
-        <translation type="unfinished"></translation>
+        <translation>하드웨어</translation>
     </message>
     <message>
         <source>Virtual Hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 하드 디스크</translation>
     </message>
     <message>
         <source>&amp;Do Not Add a Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 하드 디스크를 추가하지 않음(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Create a Virtual Hard Disk Now</source>
-        <translation type="unfinished"></translation>
+        <translation>지금 새 가상 하드 디스크 만들기(&amp;C)</translation>
     </message>
     <message>
         <source>U&amp;se an Existing Virtual Hard Disk File</source>
-        <translation type="unfinished"></translation>
+        <translation>기존 가상 하드 디스크 파일 사용(&amp;U)</translation>
     </message>
     <message>
         <source>Chooses a Virtual Hard Fisk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 하드 디스크 파일 선택...</translation>
     </message>
     <message>
         <source>D&amp;isk Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 크기(&amp;I):</translation>
     </message>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>미리 전체 크기 할당(&amp;F)</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 가상 머신을 생성할 때 가상 디스크 이미지에 전체 크기를 할당합니다</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished">새 가상 하드 디스크 파일을 사용하는 대로 커지게 할 것인지(동적 할당) 최대 크기로 만들 것인지(정적 할당) 선택하십시오.</translation>
+        <translation>새 가상 하드 디스크 파일을 사용하는 대로 커지게 할 것인지(동적 할당) 최대 크기로 만들 것인지(정적 할당) 선택하십시오.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;&lt;b&gt;동적 할당&lt;/b&gt; 하드 디스크 파일은 가상 디스크를 사용할 때 &lt;b&gt;고정된 최대 크기까지&lt;/b&gt; 파일 크기가 커지지만, 사용량이 줄어들어도 자동적으로 작아지지는 않습니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;동적 할당&lt;/b&gt; 하드 디스크 파일은 가상 디스크를 사용할 때 &lt;b&gt;고정된 최대 크기까지&lt;/b&gt; 파일 크기가 커지지만, 사용량이 줄어들어도 자동적으로 작아지지는 않습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;&lt;b&gt;고정 크기&lt;/b&gt; 하드 디스크 파일은 만드는 데 더 오래 걸리지만 사용할 때 더 빠릅니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;고정 크기&lt;/b&gt; 하드 디스크 파일은 만드는 데 더 오래 걸리지만 사용할 때 더 빠릅니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Name and &amp;Operating System</source>
-        <translation type="unfinished"></translation>
+        <translation>이름 및 운영 체제(&amp;O)</translation>
     </message>
     <message>
         <source>&amp;Unattended Install</source>
-        <translation type="unfinished"></translation>
+        <translation>무인 설치(&amp;U)</translation>
     </message>
     <message>
         <source>Hard Dis&amp;k</source>
-        <translation type="unfinished"></translation>
+        <translation>하드 디스크(&amp;K)</translation>
     </message>
     <message>
         <source>H&amp;ardware</source>
-        <translation type="unfinished"></translation>
+        <translation>하드웨어(&amp;A)</translation>
     </message>
     <message>
         <source>Hard Disk File &amp;Type and Variant</source>
-        <translation type="unfinished"></translation>
+        <translation>하드 디스크 파일 형식과 파생형(&amp;T)</translation>
     </message>
     <message>
         <source>Invalid path or unreadable ISO file</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 파일 경로 또는 읽을 수 없는 ISO 파일</translation>
     </message>
     <message>
         <source>Invalid username and/or password</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 사용자 이름이나 암호</translation>
     </message>
     <message>
         <source>Invalid hostname or domain name</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 호스트 이름이나 도메인 이름</translation>
     </message>
     <message>
         <source>Virtual machine name is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 이름이 잘못됨</translation>
     </message>
     <message>
         <source>Invalid ISO file</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 ISO 파일</translation>
     </message>
     <message>
         <source>No valid disk is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>올바른 디스크를 선택하지 않았음</translation>
     </message>
     <message>
         <source>Invalid disk size</source>
-        <translation type="unfinished"></translation>
+        <translation>잘못된 디스크 크기</translation>
     </message>
     <message>
         <source>Machine Name and OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 이름과 운영 체제 종류</translation>
     </message>
     <message>
         <source>Machine Name</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 이름</translation>
     </message>
     <message>
         <source>Machine Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 폴더</translation>
     </message>
     <message>
         <source>ISO Image</source>
-        <translation type="unfinished"></translation>
+        <translation>ISO 이미지</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished">게스트 운영 체제 종류</translation>
+        <translation>게스트 운영 체제 종류</translation>
     </message>
     <message>
         <source>Skip Unattended Install</source>
-        <translation type="unfinished"></translation>
+        <translation>무인 설치 건너뛰기</translation>
     </message>
     <message>
         <source>Unattended Install</source>
-        <translation type="unfinished"></translation>
+        <translation>무인 설치</translation>
     </message>
     <message>
         <source>Username</source>
-        <translation type="unfinished"></translation>
+        <translation>사용자 이름</translation>
     </message>
     <message>
         <source>Product Key</source>
-        <translation type="unfinished"></translation>
+        <translation>제품 키</translation>
     </message>
     <message>
         <source>Hostname/Domain Name</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 이름/도메인 이름</translation>
     </message>
     <message>
         <source>Install in Background</source>
-        <translation type="unfinished"></translation>
+        <translation>백그라운드에서 설치</translation>
     </message>
     <message>
         <source>Install Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장 설치</translation>
     </message>
     <message>
         <source>Guest Additions ISO</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장 ISO</translation>
     </message>
     <message>
         <source>Base Memory</source>
-        <translation type="unfinished">기본 메모리</translation>
+        <translation>기본 메모리</translation>
     </message>
     <message>
         <source>Processor(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>프로세서</translation>
     </message>
     <message>
         <source>EFI Enable</source>
-        <translation type="unfinished"></translation>
+        <translation>EFI 활성화</translation>
     </message>
     <message>
         <source>Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크</translation>
     </message>
     <message>
         <source>Disk Size</source>
-        <translation type="unfinished"></translation>
+        <translation>디스크 크기</translation>
     </message>
     <message>
         <source>Pre-allocate Full Size</source>
-        <translation type="unfinished"></translation>
+        <translation>미리 전체 크기 할당</translation>
     </message>
     <message>
         <source>Attached Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>연결된 디스크</translation>
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished">없음</translation>
+        <translation>없음</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation>요약</translation>
     </message>
     <message>
         <source>The following table summarizes the configuration you have chosen for the new virtual machine. When you are happy with the configuration press Finish to create the virtual machine. Alternatively you can go back and modify the configuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>아래 표는 새 가상 머신에 사용할 설정 요약입니다. 설정이 적합하면 완료를 눌러서 가상 머신을 생성하십시오. 설정이 적합하지 않으면 뒤로 이동하여 설정을 변경할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Invalid Guest Additions installation media</source>
+        <translation type="vanished">잘못된 게스트 확장 설치 미디어</translation>
     </message>
     <message>
         <source>Holds the product key.</source>
-        <translation type="unfinished"></translation>
+        <translation>제품 키를 지정합니다.</translation>
     </message>
     <message>
         <source>When checked, the guest additions will be installed after the guest OS install.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 게스트 운영 체제 설치 후 게스트 확장을 설치합니다.</translation>
     </message>
     <message>
         <source>When checked, headless boot (with no GUI) will be enabled for unattended guest OS installation of newly created virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 새 가상 머신에 게스트 운영 체제를 무인 설치할 때 헤드리스 부팅(GUI 없음)을 활성화합니다.</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished">선택하면 가상 머신에서 EFI(확장 펌웨어 인터페이스)를 사용하며, 일부 게스트 OS를 시작할 때 필요합니다. EFI를 지원하지 않는 운영 체제는 이 옵션이 활성화되어 있으면 부팅할 수 없습니다.</translation>
+        <translation>선택하면 가상 머신에서 EFI(확장 펌웨어 인터페이스)를 사용하며, 일부 게스트 OS를 시작할 때 필요합니다. EFI를 지원하지 않는 운영 체제는 이 옵션이 활성화되어 있으면 부팅할 수 없습니다.</translation>
     </message>
     <message>
         <source>Detected OS type: %1. %2</source>
-        <translation type="unfinished"></translation>
+        <translation>감지된 운영 체제 종류: %1. %2</translation>
     </message>
     <message>
         <source>You can configure the unattended guest OS install by modifying username, password, and hostname. Additionally you can enable guest additions install. For Microsoft Windows guests it is possible to provide a product key.</source>
-        <translation type="unfinished"></translation>
+        <translation>사용자 이름, 암호, 호스트 이름을 수정하여 게스트 운영 체제 무인 설치를 설정할 수 있습니다. 추가로 게스트 확장 설치를 활성화할 수 있습니다. Microsoft Windows 게스트를 설치하는 경우에는 제품 키를 입력할 수 있습니다.</translation>
     </message>
     <message>
         <source>You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.</source>
-        <translation type="unfinished"></translation>
+        <translation>RAM 용량이나 가상 CPU 개수를 변경하여 가상 머신의 하드웨어를 변경할 수 있습니다. EFI를 활성화할 수도 있습니다.</translation>
     </message>
     <message>
         <source>If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select an existing one. Alternatively you can create a virtual machine without a virtual hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>필요한 경우 새 가상 머신에 가상 하드 디스크를 추가할 수 있습니다. 새 하드 디스크 파일을 만들거나 기존 파일을 선택할 수 있습니다. 가상 하드 디스크가 없는 가상 머신을 만들 수도 있습니다.</translation>
     </message>
     <message>
         <source>Guest &amp;Additions ISO:</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장 ISO(&amp;A):</translation>
     </message>
     <message>
         <source>Invalid guest additions installation media</source>

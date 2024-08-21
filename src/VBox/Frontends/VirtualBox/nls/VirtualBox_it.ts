@@ -320,7 +320,7 @@
     <name>QIRichTextLabel</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">&amp;Copia</translation>
+        <translation>&amp;Copia</translation>
     </message>
 </context>
 <context>
@@ -3433,19 +3433,19 @@
     </message>
     <message>
         <source>&amp;Upgrade Guest Additions...</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiornamento G&amp;uest Additions...</translation>
     </message>
     <message>
         <source>Upgrade Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiornamento Guest Additions</translation>
     </message>
     <message>
         <source>Virtual Screen %1</source>
-        <translation type="unfinished">Schermo virtuale %1</translation>
+        <translation>Schermo virtuale %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation type="unfinished">Usa schermo %1 dell&apos;host</translation>
+        <translation>Usa schermo %1 dell&apos;host</translation>
     </message>
     <message>
         <source>Enable Clipboard File Transfers</source>
@@ -7330,6 +7330,11 @@
         <translation>Abilitato</translation>
     </message>
     <message>
+        <source>Nested VT-x/AMD-V</source>
+        <comment>details (system)</comment>
+        <translation>VT-x/AMD-V nidificate</translation>
+    </message>
+    <message>
         <source>Enabled</source>
         <comment>details (display/3D Acceleration)</comment>
         <translation type="unfinished"></translation>
@@ -7433,11 +7438,6 @@
         <source>TCP</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">TCP</translation>
-    </message>
-    <message>
-        <source>Nested VT-x/AMD-V</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9269,11 +9269,11 @@ una sessione del guest</translation>
     </message>
     <message>
         <source>File manager cannot work since no guest additions were detected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il gestore dei file non può funzionare poiché non sono state rilevate le Guest Additions.</translation>
     </message>
     <message>
         <source>File manager cannot work. The guest additions need to be updated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il gestore dei file non può funzionare. Le Guest Additions devono essere aggiornate.</translation>
     </message>
     <message>
         <source>Preferences</source>
@@ -15842,14 +15842,6 @@ p, li { white-space: pre-wrap; }
         <source>No host-only network name is currently specified.</source>
         <translation>Al momento non è specificato alcun nome di rete solo host.</translation>
     </message>
-    <message>
-        <source>No host network interface is selected</source>
-        <translation type="obsolete">Non è stata selezionata alcuna interfaccia di rete dell&apos;host</translation>
-    </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">Il nome della rete interna non è impostato</translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
@@ -15940,6 +15932,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Additional Options</source>
         <translation type="obsolete">Opzioni aggiuntive</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>No host network interface is selected</source>
+        <translation type="obsolete">Non è stata selezionata alcuna interfaccia di rete dell&apos;host</translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">Il nome della rete interna non è impostato</translation>
     </message>
 </context>
 <context>
@@ -16411,7 +16414,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively. In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;. In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped. In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="vanished">In modalità Pipe host: mantiene il percorso della pipe della porta seriale sull&apos;host. Esempi: &quot;\\.\pipe\myvbox&quot; o &quot;/tmp/myvbox&quot;, rispettivamente per sistemi simili a Windows e UNIX. In modalità Fispositivo host: contiene il nome del dispositivo seriale dell&apos;host. Esempi: &quot;COM1&quot; o &quot;/dev/ttyS0&quot;. In modalità File non elaborato: contiene il percorso del file sul sistema host, in cui verrà eseguito il dump dell&apos;output seriale. In modalità TCP: contiene la &quot;porta&quot; TCP in modalità server o &quot;nome host:porta&quot; in modalità client.</translation>
+        <translation type="vanished">In modalità Pipe host: mantiene il percorso della pipe della porta seriale sull&apos;host. Esempi: &quot;\\.\pipe\myvbox&quot; o &quot;/tmp/myvbox&quot;, rispettivamente per sistemi simili a Windows e UNIX. In modalità Dispositivo host: contiene il nome del dispositivo seriale dell&apos;host. Esempi: &quot;COM1&quot; o &quot;/dev/ttyS0&quot;. In modalità File non elaborato: contiene il percorso del file sul sistema host, in cui verrà eseguito il dump dell&apos;output seriale. In modalità TCP: contiene la &quot;porta&quot; TCP in modalità server o &quot;nome host:porta&quot; in modalità client.</translation>
     </message>
 </context>
 <context>
@@ -25131,7 +25134,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively. In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;. In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped. In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="unfinished">In modalità Pipe host: mantiene il percorso della pipe della porta seriale sull&apos;host. Esempi: &quot;\\.\pipe\myvbox&quot; o &quot;/tmp/myvbox&quot;, rispettivamente per sistemi simili a Windows e UNIX. In modalità Fispositivo host: contiene il nome del dispositivo seriale dell&apos;host. Esempi: &quot;COM1&quot; o &quot;/dev/ttyS0&quot;. In modalità File non elaborato: contiene il percorso del file sul sistema host, in cui verrà eseguito il dump dell&apos;output seriale. In modalità TCP: contiene la &quot;porta&quot; TCP in modalità server o &quot;nome host:porta&quot; in modalità client.</translation>
+        <translation type="unfinished">In modalità Pipe host: mantiene il percorso della pipe della porta seriale sull&apos;host. Esempi: &quot;\\.\pipe\myvbox&quot; o &quot;/tmp/myvbox&quot;, rispettivamente per sistemi simili a Windows e UNIX. In modalità Dispositivo host: contiene il nome del dispositivo seriale dell&apos;host. Esempi: &quot;COM1&quot; o &quot;/dev/ttyS0&quot;. In modalità File non elaborato: contiene il percorso del file sul sistema host, in cui verrà eseguito il dump dell&apos;output seriale. In modalità TCP: contiene la &quot;porta&quot; TCP in modalità server o &quot;nome host:porta&quot; in modalità client.</translation>
     </message>
 </context>
 <context>
@@ -30796,7 +30799,7 @@ La cartelle Home possono essere modificate singolarmente (per macchina virtuale)
     </message>
     <message>
         <source>You can modify virtual machine&apos;s hardware by changing amount of RAM and virtual CPU count. Enabling EFI is also possible.</source>
-        <translation>È possibile modificare l&apos;hardware della macchina virtuale modificando la quantità di RAM e il numro di CPU virtuali. È anche possibile abilitare EFI.</translation>
+        <translation>È possibile modificare l&apos;hardware della macchina virtuale modificando la quantità di RAM e il numero di CPU virtuali. È anche possibile abilitare EFI.</translation>
     </message>
     <message>
         <source>Virtual Hard disk</source>
@@ -30872,7 +30875,7 @@ La cartelle Home possono essere modificate singolarmente (per macchina virtuale)
     </message>
     <message>
         <source>Invalid username and/or password</source>
-        <translation>Username e/o password non validi</translation>
+        <translation>Nome utente e/o password non validi</translation>
     </message>
     <message>
         <source>Invalid hostname or domain name</source>

@@ -10769,14 +10769,6 @@ p, li { white-space: pre-wrap; }
         <source>No host-only network name is currently specified.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>No host network interface is selected</source>
-        <translation type="obsolete">Isäntäkoneen verkkosovitinta ei ole valittu</translation>
-    </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">Sisäistä verkkonimeä ei ole asetettu</translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
@@ -10863,6 +10855,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="obsolete">Ilmaisee, onko virtuaalinen verkkokaapeli liitetty virtuaalikoneeseen käynnistettäessä.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>No host network interface is selected</source>
+        <translation type="obsolete">Isäntäkoneen verkkosovitinta ei ole valittu</translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">Sisäistä verkkonimeä ei ole asetettu</translation>
     </message>
 </context>
 <context>

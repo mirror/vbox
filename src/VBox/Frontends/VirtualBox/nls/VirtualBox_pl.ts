@@ -13461,10 +13461,6 @@ p, li { white-space: pre-wrap; }
         <source>No host-only network name is currently specified.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">Nazwa sieci wewnętrznej nie została ustawiona</translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
@@ -13551,6 +13547,13 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="obsolete">Decyduje o tym, czy kabel będzie podłączany do karty sieciowej przy starcie maszyny wirtualnej czy nie.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">Nazwa sieci wewnętrznej nie została ustawiona</translation>
     </message>
 </context>
 <context>

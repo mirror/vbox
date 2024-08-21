@@ -10704,14 +10704,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <source>No host-only network name is currently specified.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>No host network interface is selected</source>
-        <translation type="obsolete">Nici o interfață gazdă nu este selectată</translation>
-    </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">Numele rețelei interne nu este stabilit</translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
@@ -10742,6 +10734,17 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <source>Additional Options</source>
         <translation type="obsolete">Opțiuni suplimentare</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>No host network interface is selected</source>
+        <translation type="obsolete">Nici o interfață gazdă nu este selectată</translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">Numele rețelei interne nu este stabilit</translation>
     </message>
 </context>
 <context>

@@ -15084,14 +15084,6 @@ p, li { white-space: pre-wrap; }
         <source>No host-only network name is currently specified.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>No host network interface is selected</source>
-        <translation type="obsolete">Nincs hálózati kártya kiválasztva</translation>
-    </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">Nincs kiválasztva belső hálózat</translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
@@ -15122,6 +15114,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Additional Options</source>
         <translation type="obsolete">További opciók</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>No host network interface is selected</source>
+        <translation type="obsolete">Nincs hálózati kártya kiválasztva</translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">Nincs kiválasztva belső hálózat</translation>
     </message>
 </context>
 <context>

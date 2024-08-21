@@ -3322,23 +3322,23 @@
     </message>
     <message>
         <source>&amp;Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Parar (&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Upgrade Guest Additions...</source>
-        <translation type="unfinished"></translation>
+        <translation>At&amp;ualizar Adicionais para Convidado...</translation>
     </message>
     <message>
         <source>Upgrade Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Atualizar Adicionais para Convidado</translation>
     </message>
     <message>
         <source>Virtual Screen %1</source>
-        <translation type="unfinished">Tela Virtual %1</translation>
+        <translation>Tela Virtual %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation type="unfinished">Utilizar Tela %1 do Hospedeiro</translation>
+        <translation>Utilizar Tela %1 do Hospedeiro</translation>
     </message>
     <message>
         <source>Enable Clipboard File Transfers</source>
@@ -7173,6 +7173,11 @@
         <translation>Habilitado</translation>
     </message>
     <message>
+        <source>Nested VT-x/AMD-V</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Enabled</source>
         <comment>details (display/3D Acceleration)</comment>
         <translation type="unfinished"></translation>
@@ -7276,11 +7281,6 @@
         <source>TCP</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">TCP</translation>
-    </message>
-    <message>
-        <source>Nested VT-x/AMD-V</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9458,19 +9458,19 @@ p, li { white-space: pre-wrap; }
     <name>UIFontScaleEditor</name>
     <message>
         <source>F&amp;ont Scaling:</source>
-        <translation type="unfinished"></translation>
+        <translation>Escalonamento de F&amp;ontes:</translation>
     </message>
     <message>
         <source>Holds the scaling factor for the font size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Contém o fator de escala para o tamanho da fonte.</translation>
     </message>
     <message>
         <source>Minimum possible scale factor.</source>
-        <translation type="unfinished">Menor fator de escalonamento possível.</translation>
+        <translation>Menor fator de escalonamento possível.</translation>
     </message>
     <message>
         <source>Maximum possible scale factor.</source>
-        <translation type="unfinished">Maior fator de escalonamento possível.</translation>
+        <translation>Maior fator de escalonamento possível.</translation>
     </message>
 </context>
 <context>
@@ -15410,14 +15410,6 @@ p, li { white-space: pre-wrap; }
         <source>No host-only network name is currently specified.</source>
         <translation>Nenhum nome de rede host-only foi especificado.</translation>
     </message>
-    <message>
-        <source>No host network interface is selected</source>
-        <translation type="obsolete">Nenhuma interface de rede do hospedeiro foi selecionada</translation>
-    </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">O nome da rede interna não foi definido</translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
@@ -15508,6 +15500,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Additional Options</source>
         <translation type="obsolete">Opções Adicionais</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>No host network interface is selected</source>
+        <translation type="obsolete">Nenhuma interface de rede do hospedeiro foi selecionada</translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">O nome da rede interna não foi definido</translation>
     </message>
 </context>
 <context>

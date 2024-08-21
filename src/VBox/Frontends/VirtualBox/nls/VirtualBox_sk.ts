@@ -11612,10 +11612,6 @@
         <source>No host-only network name is currently specified.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">Názov internej siete nie je definovaný</translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
@@ -11630,6 +11626,13 @@
     <message>
         <source>Generates a new random MAC address.</source>
         <translation type="obsolete">Vygeneruje novú náhodnú MAC adresu.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineSettingsNetworkPage</name>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="obsolete">Názov internej siete nie je definovaný</translation>
     </message>
 </context>
 <context>
