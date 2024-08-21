@@ -125,9 +125,20 @@
     return iemRegEip32RelativeJumpS8AndFinishNoFlags(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize, a_rcNormal)
 
 /** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
+ * size as extra parameters, for use in flat 32-bit code on 386 and later
+ * CPUs. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32_FLAT(a_i8, a_cbInstr, a_enmEffOpSize, a_rcNormal) \
+    return iemRegEip32RelativeJumpS8FlatAndFinishNoFlags(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize, a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
  * size as extra parameters, for use in 64-bit code. */
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64(a_i8, a_cbInstr, a_enmEffOpSize, a_rcNormal) \
     return iemRegRip64RelativeJumpS8AndFinishNoFlags(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize, a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
+ * size as extra parameters, for use in 64-bit code jumping within a page. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64_INTRAPG(a_i8, a_cbInstr, a_enmEffOpSize, a_rcNormal) \
+    return iemRegRip64RelativeJumpS8IntraPgAndFinishNoFlags(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize, a_rcNormal)
 
 
 /** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length as extra
@@ -143,10 +154,22 @@
     return iemRegEip32RelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize, a_rcNormal)
 
 /** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
+ * size as extra parameters, for use in flat 32-bit code on 386 and later
+ * CPUs and we need to check and clear flags. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32_FLAT_WITH_FLAGS(a_i8, a_cbInstr, a_enmEffOpSize, a_rcNormal) \
+    return iemRegEip32RelativeJumpS8FlatAndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize, a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
  * size as extra parameters, for use in 64-bit code and we need to check and
  * clear flags. */
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i8, a_cbInstr, a_enmEffOpSize, a_rcNormal) \
     return iemRegRip64RelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize, a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
+ * size as extra parameters, for use in 64-bit code jumping within a page and we
+ * need to check and clear flags. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64_INTRAPG_WITH_FLAGS(a_i8, a_cbInstr, a_enmEffOpSize, a_rcNormal) \
+    return iemRegRip64RelativeJumpS8IntraPgAndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize, a_rcNormal)
 
 #undef  IEM_MC_REL_JMP_S8_AND_FINISH
 
@@ -162,8 +185,19 @@
     return iemRegEip32RelativeJumpS16AndFinishNoFlags(pVCpu, a_cbInstr, (a_i16), a_rcNormal)
 
 /** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
+ *  param, for use in flat 32-bit code on 386 and later CPUs. */
+#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC32_FLAT(a_i16, a_cbInstr, a_rcNormal) \
+    return iemRegEip32RelativeJumpS16FlatAndFinishNoFlags(pVCpu, a_cbInstr, (a_i16), a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
  *  param, for use in 64-bit code. */
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64(a_i16, a_cbInstr, a_rcNormal) \
+    return iemRegRip64RelativeJumpS16AndFinishNoFlags(pVCpu, a_cbInstr, (a_i16), a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
+ *  param, for use in 64-bit code jumping with a page.
+ * @note No special function for this, there is nothing to save here.  */
+#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64_INTRAPG(a_i16, a_cbInstr, a_rcNormal) \
     return iemRegRip64RelativeJumpS16AndFinishNoFlags(pVCpu, a_cbInstr, (a_i16), a_rcNormal)
 
 
@@ -180,8 +214,21 @@
     return iemRegEip32RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16), a_rcNormal)
 
 /** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
+ *  param, for use in flat 32-bit code on 386 and later CPUs and we need
+ *  to check and clear flags. */
+#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC32_FLAT_WITH_FLAGS(a_i16, a_cbInstr, a_rcNormal) \
+    return iemRegEip32RelativeJumpS16FlatAndFinishClearingRF(pVCpu, a_cbInstr, (a_i16), a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
  *  param, for use in 64-bit code and we need to check and clear flags. */
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i16, a_cbInstr, a_rcNormal) \
+    return iemRegRip64RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16), a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
+ *  param, for use in 64-bit code jumping within a page and we need to check and
+ *  clear flags.
+ * @note No special function for this, there is nothing to save here.  */
+#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64_INTRAPG_WITH_FLAGS(a_i16, a_cbInstr, a_rcNormal) \
     return iemRegRip64RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16), a_rcNormal)
 
 #undef  IEM_MC_REL_JMP_S16_AND_FINISH
@@ -199,9 +246,19 @@
     return iemRegEip32RelativeJumpS32AndFinishNoFlags(pVCpu, a_cbInstr, (a_i32), a_rcNormal)
 
 /** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in flat 32-bit code on 386+. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32_FLAT(a_i32, a_cbInstr, a_rcNormal) \
+    return iemRegEip32RelativeJumpS32FlatAndFinishNoFlags(pVCpu, a_cbInstr, (a_i32), a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
  *  an extra parameter, for use in 64-bit code. */
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64(a_i32, a_cbInstr, a_rcNormal) \
     return iemRegRip64RelativeJumpS32AndFinishNoFlags(pVCpu, a_cbInstr, (a_i32), a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code jumping within a page. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64_INTRAPG(a_i32, a_cbInstr, a_rcNormal) \
+    return iemRegRip64RelativeJumpS32IntraPgAndFinishNoFlags(pVCpu, a_cbInstr, (a_i32), a_rcNormal)
 
 
 /** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
@@ -217,10 +274,22 @@
     return iemRegEip32RelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32), a_rcNormal)
 
 /** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in flat 32-bit code on 386+ and we need
+ *  to check and clear flags. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32_FLAT_WITH_FLAGS(a_i32, a_cbInstr, a_rcNormal) \
+    return iemRegEip32RelativeJumpS32FlatAndFinishClearingRF(pVCpu, a_cbInstr, (a_i32), a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
  *  an extra parameter, for use in 64-bit code and we need to check and clear
  *  flags. */
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i32, a_cbInstr, a_rcNormal) \
     return iemRegRip64RelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32), a_rcNormal)
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code jumping within a page and we need
+ *  to check and clear flags. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64_INTRAPG_WITH_FLAGS(a_i32, a_cbInstr, a_rcNormal) \
+    return iemRegRip64RelativeJumpS32IntraPgAndFinishClearingRF(pVCpu, a_cbInstr, (a_i32), a_rcNormal)
 
 #undef  IEM_MC_REL_JMP_S32_AND_FINISH
 
