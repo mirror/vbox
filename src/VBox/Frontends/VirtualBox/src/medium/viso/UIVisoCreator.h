@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -154,7 +154,7 @@ private:
 
     /** @name Main toolbar (and main menu) actions
       * @{ */
-        QAction         *m_pActionSettings;
+        QAction         *m_pActionPreferences;
     /** @} */
 
     /** @name These actions are addded to vertical toolbar, context menus, and the main menu.

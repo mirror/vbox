@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2010-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -148,7 +148,7 @@ enum UIActionIndex
 
     /* VISO Creator actions: */
     UIActionIndex_M_VISOCreator,
-    UIActionIndex_M_VISOCreator_ToggleSettingsDialog,
+    UIActionIndex_M_VISOCreator_TogglePreferences,
     UIActionIndex_M_VISOCreator_Add,
     UIActionIndex_M_VISOCreator_Remove,
     UIActionIndex_M_VISOCreator_Restore,

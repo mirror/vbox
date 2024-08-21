@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -310,7 +310,7 @@ UIVisoCreatorWidget::Settings UIVisoSettingWidget::settings() const
 UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
                                          bool fShowToolBar, const QString& strVisoFilePath, const QString& strMachineName)
     : QWidget(pParent)
-    , m_pActionSettings(0)
+    , m_pActionPreferences(0)
     , m_pAddAction(0)
     , m_pOpenAction(0)
     , m_pSaveAsAction(0)
@@ -333,8 +333,8 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     prepareWidgets();
     populateMenuMainToolbar();
     prepareConnections();
-    if (m_pActionSettings)
-        sltSettingsActionToggled(m_pActionSettings->isChecked());
+    if (m_pActionPreferences)
+        sltSettingsActionToggled(m_pActionPreferences->isChecked());
 }
 
 QStringList UIVisoCreatorWidget::entryList() const
@@ -502,9 +502,9 @@ void UIVisoCreatorWidget::sltSettingsChanged()
 
 void UIVisoCreatorWidget::sltPanelContainerHidden()
 {
-    m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleSettingsDialog)->blockSignals(true);
-    m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleSettingsDialog)->setChecked(false);
-    m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleSettingsDialog)->blockSignals(false);
+    m_pActionPool->action(UIActionIndex_M_VISOCreator_TogglePreferences)->blockSignals(true);
+    m_pActionPool->action(UIActionIndex_M_VISOCreator_TogglePreferences)->setChecked(false);
+    m_pActionPool->action(UIActionIndex_M_VISOCreator_TogglePreferences)->blockSignals(false);
 }
 
 void UIVisoCreatorWidget::prepareWidgets()
@@ -593,8 +593,8 @@ void UIVisoCreatorWidget::prepareConnections()
                 this, &UIVisoCreatorWidget::sltISOContentImportedOrRemoved);
     }
 
-    if (m_pActionSettings)
-        connect(m_pActionSettings, &QAction::triggered, this, &UIVisoCreatorWidget::sltSettingsActionToggled);
+    if (m_pActionPreferences)
+        connect(m_pActionPreferences, &QAction::triggered, this, &UIVisoCreatorWidget::sltSettingsActionToggled);
 
     if (m_pSettingsWidget)
     {
@@ -626,7 +626,7 @@ void UIVisoCreatorWidget::prepareActions()
     if (!m_pActionPool)
         return;
 
-    m_pActionSettings = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleSettingsDialog);
+    m_pActionPreferences = m_pActionPool->action(UIActionIndex_M_VISOCreator_TogglePreferences);
 
     m_pAddAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Add);
     if (m_pAddAction && m_pHostFileBrowser)
@@ -647,12 +647,12 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
     prepareActions();
     if (m_pToolBar)
     {
-        if (m_pActionSettings)
-            m_pToolBar->addAction(m_pActionSettings);
+        if (m_pActionPreferences)
+            m_pToolBar->addAction(m_pActionPreferences);
     }
     if (m_pMainMenu)
     {
-        m_pMainMenu->addAction(m_pActionSettings);
+        m_pMainMenu->addAction(m_pActionPreferences);
         m_pMainMenu->addSeparator();
         if (m_pOpenAction)
             m_pMainMenu->addAction(m_pOpenAction);
