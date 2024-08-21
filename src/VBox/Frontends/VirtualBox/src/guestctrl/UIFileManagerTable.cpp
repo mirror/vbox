@@ -856,7 +856,7 @@ void UIFileManagerTable::sltCreateNewDirectory()
     UIFileSystemItem *parentFolderItem = static_cast<UIFileSystemItem*>(currentIndex.internalPointer());
     if (!parentFolderItem)
         return;
-    QString strBase(UIFileSystemModel::tr("NewDirectory"));
+    QString strBase(UIFileManager::tr("NewDirectory"));
     QString newDirectoryName(strBase);
     QStringList nameList = currentDirectoryListing();
     int iSuffix = 1;
