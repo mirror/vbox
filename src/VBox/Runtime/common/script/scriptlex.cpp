@@ -920,7 +920,7 @@ RTDECL(int) RTScriptLexScanNumber(RTSCRIPTLEX hScriptLex, uint8_t uBase, bool fA
             && (ch < 'a' || ch > 'f' || uBase == 10))
         {
             if (pTok->Type.Number.enmType == RTSCRIPTLEXTOKNUMTYPE_INTEGER)
-                pTok->Type.Number.Type.i64 = -u64;
+                pTok->Type.Number.Type.i64 = -(int64_t)u64;
             else
                 pTok->Type.Number.Type.u64 = u64;
             pTok->enmType = RTSCRIPTLEXTOKTYPE_NUMBER;
@@ -938,13 +938,11 @@ RTDECL(int) RTScriptLexScanNumber(RTSCRIPTLEX hScriptLex, uint8_t uBase, bool fA
 
         ch = RTScriptLexConsumeCh(hScriptLex);
     }
-
-    return VINF_SUCCESS;
 }
 
 
-RTDECL(DECLCALLBACK(int)) RTScriptLexScanIdentifier(RTSCRIPTLEX hScriptLex, char ch,
-                                                    PRTSCRIPTLEXTOKEN pTok, void *pvUser) RT_NO_THROW_DEF
+RTDECL(int) RTScriptLexScanIdentifier(RTSCRIPTLEX hScriptLex, char ch,
+                                      PRTSCRIPTLEXTOKEN pTok, void *pvUser) RT_NO_THROW_DEF
 {
     PRTSCRIPTLEXINT pThis = hScriptLex;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -1014,8 +1012,8 @@ static int rtScriptLexScanStringLiteralChAdd(PRTSCRIPTLEXINT pThis, char ch, uin
 }
 
 
-RTDECL(DECLCALLBACK(int)) RTScriptLexScanStringLiteralC(RTSCRIPTLEX hScriptLex, char ch,
-                                                        PRTSCRIPTLEXTOKEN pTok, void *pvUser) RT_NO_THROW_DEF
+RTDECL(int) RTScriptLexScanStringLiteralC(RTSCRIPTLEX hScriptLex, char ch,
+                                          PRTSCRIPTLEXTOKEN pTok, void *pvUser) RT_NO_THROW_DEF
 {
     RT_NOREF(ch, pvUser);
     PRTSCRIPTLEXINT pThis = hScriptLex;
@@ -1112,8 +1110,8 @@ RTDECL(DECLCALLBACK(int)) RTScriptLexScanStringLiteralC(RTSCRIPTLEX hScriptLex, 
 }
 
 
-RTDECL(DECLCALLBACK(int)) RTScriptLexScanStringLiteralPascal(RTSCRIPTLEX hScriptLex, char ch,
-                                                             PRTSCRIPTLEXTOKEN pTok, void *pvUser) RT_NO_THROW_DEF
+RTDECL(int) RTScriptLexScanStringLiteralPascal(RTSCRIPTLEX hScriptLex, char ch,
+                                               PRTSCRIPTLEXTOKEN pTok, void *pvUser) RT_NO_THROW_DEF
 {
     RT_NOREF(ch, pvUser);
     PRTSCRIPTLEXINT pThis = hScriptLex;

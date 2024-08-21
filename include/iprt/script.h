@@ -27,6 +27,7 @@
 #ifndef ___iprt_script_h
 #define ___iprt_script_h
 
+#include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/strcache.h>
 #include <iprt/scriptbase.h>
@@ -226,7 +227,7 @@ typedef RTSCRIPTLEX *PRTSCRIPTLEX;
  * @param   pToken        The token to fill in.
  * @param   pvUser        Opaque user data.
  */
-typedef DECLCALLBACK(int) FNRTSCRIPTLEXPROD(RTSCRIPTLEX hScriptLex, char ch, PRTSCRIPTLEXTOKEN pToken, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTSCRIPTLEXPROD,(RTSCRIPTLEX hScriptLex, char ch, PRTSCRIPTLEXTOKEN pToken, void *pvUser));
 /** Pointer to a production rule callback. */
 typedef FNRTSCRIPTLEXPROD *PFNRTSCRIPTLEXPROD;
 
@@ -317,8 +318,8 @@ typedef const RTSCRIPTLEXCFG *PCRTSCRIPTLEXCFG;
  * @param   pcchRead        Where to store the amount of bytes read.
  * @param   pvUser          Opaque user data passed when creating the lexer.
  */
-typedef DECLCALLBACK(int) FNRTSCRIPTLEXRDR(RTSCRIPTLEX hScriptLex, size_t offBuf, char *pchBuf, size_t cchBuf,
-                                           size_t *pcchRead, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTSCRIPTLEXRDR, (RTSCRIPTLEX hScriptLex, size_t offBuf, char *pchBuf, size_t cchBuf,
+                                                 size_t *pcchRead, void *pvUser));
 /** Pointer to a lexer reader callback. */
 typedef FNRTSCRIPTLEXRDR *PFNRTSCRIPTLEXRDR;
 
@@ -330,7 +331,7 @@ typedef FNRTSCRIPTLEXRDR *PFNRTSCRIPTLEXRDR;
  * @param   hScriptLex      The lexer handle.
  * @param   pvUser          Opaque user data passed when creating the lexer.
  */
-typedef DECLCALLBACK(void) FNRTSCRIPTLEXDTOR(RTSCRIPTLEX hScriptLex, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNRTSCRIPTLEXDTOR,(RTSCRIPTLEX hScriptLex, void *pvUser));
 /** Pointer to a lexer destructor callback. */
 typedef FNRTSCRIPTLEXDTOR *PFNRTSCRIPTLEXDTOR;
 
@@ -555,8 +556,7 @@ RTDECL(int) RTScriptLexScanNumber(RTSCRIPTLEX hScriptLex, uint8_t uBase, bool fA
  *       More characters will produce an error token. Must be used with the RTSCRIPT_LEX_RULE_CONSUME
  *       flag for the first character.
  */
-RTDECL(DECLCALLBACK(int)) RTScriptLexScanIdentifier(RTSCRIPTLEX hScriptLex, char ch,
-                                                    PRTSCRIPTLEXTOKEN pTok, void *pvUser);
+RTDECL(int) RTScriptLexScanIdentifier(RTSCRIPTLEX hScriptLex, char ch, PRTSCRIPTLEXTOKEN pTok, void *pvUser);
 
 
 /**
@@ -572,8 +572,7 @@ RTDECL(DECLCALLBACK(int)) RTScriptLexScanIdentifier(RTSCRIPTLEX hScriptLex, char
  *       in the input denotes the start of the string literal. The resulting literal is added to the respective
  *       cache on success.
  */
-RTDECL(DECLCALLBACK(int)) RTScriptLexScanStringLiteralC(RTSCRIPTLEX hScriptLex, char ch,
-                                                        PRTSCRIPTLEXTOKEN pTok, void *pvUser);
+RTDECL(int) RTScriptLexScanStringLiteralC(RTSCRIPTLEX hScriptLex, char ch, PRTSCRIPTLEXTOKEN pTok, void *pvUser);
 
 
 /**
@@ -590,8 +589,7 @@ RTDECL(DECLCALLBACK(int)) RTScriptLexScanStringLiteralC(RTSCRIPTLEX hScriptLex, 
  *       in the input denotes the start of the string literal. The resulting literal is added to the respective
  *       cache on success.
  */
-RTDECL(DECLCALLBACK(int)) RTScriptLexScanStringLiteralPascal(RTSCRIPTLEX hScriptLex, char ch,
-                                                             PRTSCRIPTLEXTOKEN pTok, void *pvUser);
+RTDECL(int) RTScriptLexScanStringLiteralPascal(RTSCRIPTLEX hScriptLex, char ch, PRTSCRIPTLEXTOKEN pTok, void *pvUser);
 
 /** @} */
 
