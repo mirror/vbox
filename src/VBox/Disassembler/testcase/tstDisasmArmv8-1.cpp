@@ -64,6 +64,20 @@ static const char *s_aszSingleStart[] =
 };
 
 
+static const char *s_aszMultiStart[] =
+{
+    "/*",
+    NULL
+};
+
+
+static const char *s_aszMultiEnd[] =
+{
+    "*/",
+    NULL
+};
+
+
 static const RTSCRIPTLEXTOKMATCH s_aMatches[] =
 {
     /* Begin of stuff which will get ignored in the semantic matching. */
@@ -105,9 +119,9 @@ static const RTSCRIPTLEXCFG s_LexCfg =
     /** pszNewline */
     NULL,
     /** papszCommentMultiStart */
-    NULL,
+    s_aszMultiStart,
     /** papszCommentMultiEnd */
-    NULL,
+    s_aszMultiEnd,
     /** papszCommentSingleStart */
     s_aszSingleStart,
     /** paTokMatches */
