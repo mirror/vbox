@@ -60,7 +60,7 @@ ifdef VBOX_WITH_TESTCASES
  	$(LIB_RUNTIME)
 
 
- ifeq ($(KBUILD_TARGET_ARCH), arm64)
+ ifeq ($(KBUILD_TARGET_ARCH),arm64)
   #
   # tstDisasmArmv8-1 assembly files -> .cpp
   #
