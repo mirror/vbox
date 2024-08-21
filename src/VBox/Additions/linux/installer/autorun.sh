@@ -77,6 +77,9 @@ case `uname -m` in
   x86_64|amd64|AMD64)
     arch='amd64'
     ;;
+  aarch64)
+    arch='arm64'
+    ;;
   *)
     echo "Unknown architecture `uname -m`."
     exit 1
