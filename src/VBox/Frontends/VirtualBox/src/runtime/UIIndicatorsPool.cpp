@@ -1450,13 +1450,13 @@ protected slots:
         /* Call to base-class: */
         UISessionTextStatusBarIndicator::sltRetranslateUI();
 
-        setToolTip(tr("Shows the currently assigned Host key.<br>"
-                      "This key, when pressed alone, toggles the keyboard and mouse "
+        setToolTip(tr("Shows the currently assigned Host Key Combo.<br>"
+                      "This key combo, when pressed alone, toggles the keyboard and mouse "
                       "capture state. It can also be used in combination with other keys "
                       "to quickly perform actions from the main menu."));
 
         /* Host-combo info: */
-        const QString strHostCombo = tr("Host-combo: %1").arg(text());
+        const QString strHostCombo = tr("Host Key Combo: %1").arg(text());
         m_strDescription = QString("%1, %2").arg(m_strDescription, strHostCombo);
     }
 };

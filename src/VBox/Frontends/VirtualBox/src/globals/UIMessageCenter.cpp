@@ -1868,16 +1868,16 @@ void UIMessageCenter::showRuntimeError(MessageType emnMessageType, const QString
 bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
 {
     int rc = question(0, MessageType_Info,
-                      tr("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display or pressed the <b>host key</b>. "
+                      tr("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display or pressed the <b>host key combo</b>. "
                          "This will cause the Virtual Machine to <b>capture</b> the host mouse pointer (only if the mouse pointer "
                          "integration is not currently supported by the guest OS) and the keyboard, which will make them "
                          "unavailable to other applications running on your host machine.</p>"
-                         "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the keyboard and mouse "
+                         "<p>You can press the <b>host key combo</b> at any time to <b>uncapture</b> the keyboard and mouse "
                          "(if it is captured) and return them to normal operation. "
-                         "The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, "
+                         "The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window, "
                          "next to the&nbsp;<img src=:/hostkey_16px.png/>&nbsp;icon. "
                          "This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.</p>") +
-                      tr("<p>The host key is currently defined as <b>%1</b>.</p>", "additional message box paragraph")
+                      tr("<p>The host key combo is currently defined as <b>%1</b>.</p>", "additional message box paragraph")
                          .arg(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
                       "confirmInputCapture",
                       AlertButton_Ok | AlertButtonOption_Default,

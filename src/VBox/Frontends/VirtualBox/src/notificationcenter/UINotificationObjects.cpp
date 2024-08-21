@@ -514,13 +514,13 @@ void UINotificationMessage::remindAboutAutoCapture()
                                                    "unavailable to other applications running on your host machine: "
                                                    "when the keyboard is captured, all keystrokes (including system ones "
                                                    "like Alt-Tab) will be directed to the VM.</p>"
-                                                   "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the "
+                                                   "<p>You can press the <b>host key combo</b> at any time to <b>uncapture</b> the "
                                                    "keyboard and mouse (if it is captured) and return them to normal "
-                                                   "operation. The currently assigned host key is shown on the status bar "
+                                                   "operation. The currently assigned host key combo is shown on the status bar "
                                                    "at the bottom of the Virtual Machine window. This icon, together "
                                                    "with the mouse icon placed nearby, indicate the current keyboard "
                                                    "and mouse capture state.</p>") +
-        QApplication::translate("UIMessageCenter", "<p>The host key is currently defined as <b>%1</b>.</p>",
+        QApplication::translate("UIMessageCenter", "<p>The host key combo is currently defined as <b>%1</b>.</p>",
                                                    "additional message box paragraph")
                                                    .arg(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
         "remindAboutAutoCapture");

@@ -105,7 +105,7 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
     UIShortcutConfigurationList list;
     list << UIShortcutConfigurationItem(UIHostCombo::hostComboCacheKey(),
                                         QString(),
-                                        tr("Host Key Combination"),
+                                        tr("Host Key Combo"),
                                         gEDataManager->hostKeyCombination(),
                                         QString());
     const QMap<QString, UIShortcut> &shortcuts = gShortcutPool->shortcuts();
