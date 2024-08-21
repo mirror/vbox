@@ -685,7 +685,7 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                             PUT_NUM_S32(offDisplacement * sizeof(uint32_t));
                     }
                     if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
-                        PUT_SZ(" (");
+                        PUT_SZ(" ; (");
 
                     RTUINTPTR uTrgAddr = pDis->uInstrAddr + (offDisplacement * sizeof(uint32_t));
                     if (   pDis->uCpuMode == DISCPUMODE_ARMV8_A32
