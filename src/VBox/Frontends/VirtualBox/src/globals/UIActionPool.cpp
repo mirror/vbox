@@ -2387,13 +2387,14 @@ protected:
     }
 };
 
-class UIActionMenuVISOCreatorAdd : public UIActionSimple
+class UIActionSimpleVISOCreatorAdd : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorAdd(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorAdd(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/file_manager_copy_to_guest_24px.png",
                          ":/file_manager_copy_to_guest_16px.png",
@@ -2422,13 +2423,14 @@ protected:
     }
 };
 
-class UIActionMenuVISOCreatorRemove : public UIActionSimple
+class UIActionSimpleVISOCreatorRemove : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorRemove(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/file_manager_delete_24px.png",
                          ":/file_manager_delete_16px.png",
@@ -2457,13 +2459,14 @@ protected:
     }
 };
 
-class UIActionMenuVISOCreatorRestore : public UIActionSimple
+class UIActionSimpleVISOCreatorRestore : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorRestore(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorRestore(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/file_manager_restore_24px.png",
                          ":/file_manager_restore_16px.png",
@@ -2492,13 +2495,14 @@ protected:
     }
 };
 
-class UIActionMenuVISOCreatorCreateNewDirectory : public UIActionSimple
+class UIActionSimpleVISOCreatorCreateNewDirectory : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorCreateNewDirectory(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorCreateNewDirectory(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/file_manager_new_directory_24px.png",
                          ":/file_manager_new_directory_16px.png",
@@ -2527,13 +2531,14 @@ protected:
     }
 };
 
-class UIActionMenuVISOCreatorRename : public UIActionSimple
+class UIActionSimpleVISOCreatorRename : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorRename(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorRename(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/file_manager_rename_24px.png",
                          ":/file_manager_rename_16px.png",
@@ -2562,13 +2567,14 @@ protected:
     }
 };
 
-class UIActionMenuVISOCreatorReset : public UIActionSimple
+class UIActionSimpleVISOCreatorReset : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorReset(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorReset(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cd_remove_16px.png", ":/cd_remove_disabled_16px.png")
     {
@@ -2588,19 +2594,20 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "R&eset"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
-        setStatusTip(QApplication::translate("UIActionPool", "Reset the VISO content."));
-        setToolTip(QApplication::translate("UIActionPool", "Reset the VISO content.")
+        setStatusTip(QApplication::translate("UIActionPool", "Reset the VISO content"));
+        setToolTip(QApplication::translate("UIActionPool", "Reset the VISO Content")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
-class UIActionMenuVISOCreatorOpen : public UIActionSimple
+class UIActionSimpleVISOCreatorOpen : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorOpen(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorOpen(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cd_remove_16px.png", ":/cd_remove_32px.png")
     {
@@ -2620,19 +2627,20 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Open"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the VISO content."));
-        setToolTip(QApplication::translate("UIActionPool", "Open the VISO content.")
+        setStatusTip(QApplication::translate("UIActionPool", "Open the VISO content"));
+        setToolTip(QApplication::translate("UIActionPool", "Open the VISO Content")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
-class UIActionMenuVISOCreatorSaveAs : public UIActionSimple
+class UIActionSimpleVISOCreatorSaveAs : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorSaveAs(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorSaveAs(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cd_write_16px.png", ":/cd_write_32px.png")
     {
@@ -2653,18 +2661,19 @@ protected:
         setName(QApplication::translate("UIActionPool", "Save As"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Save the VISO content."));
-        setToolTip(QApplication::translate("UIActionPool", "Save the VISO content.")
+        setToolTip(QApplication::translate("UIActionPool", "Save the VISO Content.")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
-class UIActionMenuVISOCreatorImportISO : public UIActionSimple
+class UIActionSimpleVISOCreatorImportISO : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorImportISO(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorImportISO(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cd_add_16px.png", ":/cd_add_32px.png", ":/cd_add_disabled_16px.png", ":/cd_add_disabled_32px.png")
     {
@@ -2685,19 +2694,19 @@ protected:
         setName(QApplication::translate("UIActionPool", "ISOImport"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Import ISO into the VISO content."));
-        setToolTip(QApplication::translate("UIActionPool", "Import Selected ISO into the VISO content.")
+        setToolTip(QApplication::translate("UIActionPool", "Import Selected ISO Into the VISO Content.")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
-
-class UIActionMenuVISOCreatorRemoveISO : public UIActionSimple
+class UIActionSimpleVISOCreatorRemoveISO : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
+
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorRemoveISO(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorRemoveISO(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cd_remove_16px.png", ":/cd_remove_32px.png", ":/cd_remove_disabled_16px.png", ":/cd_remove_disabled_32px.png")
     {
@@ -2718,20 +2727,20 @@ protected:
         setName(QApplication::translate("UIActionPool", "ISORemove"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Remove the imported ISO from the VISO content."));
-        setToolTip(QApplication::translate("UIActionPool", "Remove the imported ISO from the VISO content.")
+        setToolTip(QApplication::translate("UIActionPool", "Remove the Imported ISO From the VISO Content.")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
 /** Simple action extension, used as 'Perform GoUp' in VISO creator action class. */
-class UIActionMenuVISOCreatorGoUp : public UIActionSimple
+class UIActionSimpleVISOCreatorGoUp : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorGoUp(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorGoUp(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/file_manager_go_up_24px.png", ":/file_manager_go_up_16px.png",
                          ":/file_manager_go_up_disabled_24px.png", ":/file_manager_go_up_disabled_16px.png")
@@ -2763,14 +2772,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform GoHome' in VISO creator action class. */
-class UIActionMenuVISOCreatorGoHome : public UIActionSimple
+class UIActionSimpleVISOCreatorGoHome : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorGoHome(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorGoHome(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/file_manager_go_home_24px.png", ":/file_manager_go_home_16px.png",
                          ":/file_manager_go_home_disabled_24px.png", ":/file_manager_go_home_disabled_16px.png")
@@ -2802,14 +2811,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform GoForward' in VISO creator action class. */
-class UIActionMenuVISOCreatorGoForward : public UIActionSimple
+class UIActionSimpleVISOCreatorGoForward : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorGoForward(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorGoForward(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/file_manager_go_forward_24px.png", ":/file_manager_go_forward_16px.png",
                          ":/file_manager_go_forward_disabled_24px.png", ":/file_manager_go_forward_disabled_16px.png")
@@ -2841,14 +2850,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform GoBackward' in VISO creator action class. */
-class UIActionMenuVISOCreatorGoBackward : public UIActionSimple
+class UIActionSimpleVISOCreatorGoBackward : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorGoBackward(UIActionPool *pParent)
+    UIActionSimpleVISOCreatorGoBackward(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/file_manager_go_backward_24px.png", ":/file_manager_go_backward_16px.png",
                          ":/file_manager_go_backward_disabled_24px.png", ":/file_manager_go_backward_disabled_16px.png")
@@ -2873,7 +2882,7 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Go Backward"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
-        setStatusTip(QApplication::translate("UIActionPool", "Go forward"));
+        setStatusTip(QApplication::translate("UIActionPool", "Go backward"));
         setToolTip(  QApplication::translate("UIActionPool", "Go Backward")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
@@ -3561,26 +3570,24 @@ void UIActionPool::preparePool()
     /* Create VISO Creator actions: */
     m_pool[UIActionIndex_M_VISOCreator] = new UIActionMenuVISOCreator(this);
     m_pool[UIActionIndex_M_VISOCreator_TogglePreferences] = new UIActionToggleVISOCreatorPreferences(this);
-    m_pool[UIActionIndex_M_VISOCreator_Add] = new UIActionMenuVISOCreatorAdd(this);
-    m_pool[UIActionIndex_M_VISOCreator_Remove] = new UIActionMenuVISOCreatorRemove(this);
-    m_pool[UIActionIndex_M_VISOCreator_Restore] = new UIActionMenuVISOCreatorRestore(this);
-    m_pool[UIActionIndex_M_VISOCreator_CreateNewDirectory] = new UIActionMenuVISOCreatorCreateNewDirectory(this);
-    m_pool[UIActionIndex_M_VISOCreator_Rename] = new UIActionMenuVISOCreatorRename(this);
-    m_pool[UIActionIndex_M_VISOCreator_Reset] = new UIActionMenuVISOCreatorReset(this);
-    m_pool[UIActionIndex_M_VISOCreator_Open] = new UIActionMenuVISOCreatorOpen(this);
-    m_pool[UIActionIndex_M_VISOCreator_SaveAs] = new UIActionMenuVISOCreatorSaveAs(this);
-    m_pool[UIActionIndex_M_VISOCreator_ImportISO] = new UIActionMenuVISOCreatorImportISO(this);
-    m_pool[UIActionIndex_M_VISOCreator_RemoveISO] = new UIActionMenuVISOCreatorRemoveISO(this);
-
-    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoHome] = new UIActionMenuVISOCreatorGoHome(this);
-    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoUp] = new UIActionMenuVISOCreatorGoUp(this);
-    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoForward] = new UIActionMenuVISOCreatorGoForward(this);
-    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoBackward] = new UIActionMenuVISOCreatorGoBackward(this);
-    m_pool[UIActionIndex_M_VISOCreator_Host_GoHome] = new UIActionMenuVISOCreatorGoHome(this);
-    m_pool[UIActionIndex_M_VISOCreator_Host_GoUp] = new UIActionMenuVISOCreatorGoUp(this);
-    m_pool[UIActionIndex_M_VISOCreator_Host_GoForward] = new UIActionMenuVISOCreatorGoForward(this);
-    m_pool[UIActionIndex_M_VISOCreator_Host_GoBackward] = new UIActionMenuVISOCreatorGoBackward(this);
-
+    m_pool[UIActionIndex_M_VISOCreator_Add] = new UIActionSimpleVISOCreatorAdd(this);
+    m_pool[UIActionIndex_M_VISOCreator_Remove] = new UIActionSimpleVISOCreatorRemove(this);
+    m_pool[UIActionIndex_M_VISOCreator_Restore] = new UIActionSimpleVISOCreatorRestore(this);
+    m_pool[UIActionIndex_M_VISOCreator_CreateNewDirectory] = new UIActionSimpleVISOCreatorCreateNewDirectory(this);
+    m_pool[UIActionIndex_M_VISOCreator_Rename] = new UIActionSimpleVISOCreatorRename(this);
+    m_pool[UIActionIndex_M_VISOCreator_Reset] = new UIActionSimpleVISOCreatorReset(this);
+    m_pool[UIActionIndex_M_VISOCreator_Open] = new UIActionSimpleVISOCreatorOpen(this);
+    m_pool[UIActionIndex_M_VISOCreator_SaveAs] = new UIActionSimpleVISOCreatorSaveAs(this);
+    m_pool[UIActionIndex_M_VISOCreator_ImportISO] = new UIActionSimpleVISOCreatorImportISO(this);
+    m_pool[UIActionIndex_M_VISOCreator_RemoveISO] = new UIActionSimpleVISOCreatorRemoveISO(this);
+    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoHome] = new UIActionSimpleVISOCreatorGoHome(this);
+    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoUp] = new UIActionSimpleVISOCreatorGoUp(this);
+    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoForward] = new UIActionSimpleVISOCreatorGoForward(this);
+    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoBackward] = new UIActionSimpleVISOCreatorGoBackward(this);
+    m_pool[UIActionIndex_M_VISOCreator_Host_GoHome] = new UIActionSimpleVISOCreatorGoHome(this);
+    m_pool[UIActionIndex_M_VISOCreator_Host_GoUp] = new UIActionSimpleVISOCreatorGoUp(this);
+    m_pool[UIActionIndex_M_VISOCreator_Host_GoForward] = new UIActionSimpleVISOCreatorGoForward(this);
+    m_pool[UIActionIndex_M_VISOCreator_Host_GoBackward] = new UIActionSimpleVISOCreatorGoBackward(this);
 
     /* Medium Selector actions: */
     m_pool[UIActionIndex_M_MediumSelector] = new UIActionMenuMediumSelector(this);
