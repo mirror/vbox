@@ -88,23 +88,29 @@ esac
 
 # execute the installer
 if test "$ostype" = "Linux"; then
-    for i in "$path/VBoxLinuxAdditions.run" \
-        "$path/VBoxLinuxAdditions-$arch.run"; do
-        if test -f "$i"; then
-            getxterm
-            case "$gxtpath" in ?*)
-                TITLE="VirtualBox Guest Additions installation"
-                BINARY="`quotify "$i"`"
-                exec "$gxtpath" "$gxttitle" "$TITLE" "$gxtexec" /bin/sh "$path/runasroot.sh" --has-terminal "$TITLE" "/bin/sh $BINARY --xwin" "Please try running "\""$i"\"" manually."
-                exit
-                ;;
-            *)
-                echo "Unable to start installation process with elevated privileges automatically. Please try running "\""$i"\"" manually."
-                exit
+
+    # Specify path to the architecture specific installer.
+    if test "$arch" = "arm64"; then
+        installer="$path/VBoxLinuxAdditions-arm64.run"
+    else
+        installer="$path/VBoxLinuxAdditions.run"
+    fi
+
+    # Proceed to installation.
+    if test -f "$installer"; then
+        getxterm
+        case "$gxtpath" in ?*)
+            TITLE="VirtualBox Guest Additions installation"
+            BINARY="`quotify "$installer"`"
+            exec "$gxtpath" "$gxttitle" "$TITLE" "$gxtexec" /bin/sh "$path/runasroot.sh" --has-terminal "$TITLE" "/bin/sh $BINARY --xwin" "Please try running "\""$installer"\"" manually."
+            exit
             ;;
-            esac
-        fi
-    done
+        *)
+            echo "Unable to start installation process with elevated privileges automatically. Please try running "\""$installer"\"" manually."
+            exit
+        ;;
+        esac
+    fi
 
     # else: unknown failure
     echo "Linux guest additions installer not found -- try to start it manually."
