@@ -279,6 +279,24 @@ _TestProcA64:
         bics x0, x1, x28, ROR #1
         bics x0, x1, x28, ROR #63
 
+        ; Memory loads
+        ldr x0, [x28]
+        ldr x0, [x28, #8]
+        ldr x0, [x28, #32760]
+
+        ldr w0, [x28]
+        ldr w0, [x28, #4]
+        ldr w0, [x28, #16380]
+
+        ; Memory stores
+        str x0, [x28]
+        str x0, [x28, #8]
+        str x0, [x28, #32760]
+
+        str w0, [x28]
+        str w0, [x28, #4]
+        str w0, [x28, #16380]
+
         ;
         ; Keep last so the testcase can catch errors in
         ; the disassembly of the last instruction.

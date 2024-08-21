@@ -87,6 +87,7 @@ static FNDISPARSEARMV8 disArmV8ParseSh12;
 static FNDISPARSEARMV8 disArmV8ParseImmTbz;
 static FNDISPARSEARMV8 disArmV8ParseShift;
 static FNDISPARSEARMV8 disArmV8ParseShiftAmount;
+static FNDISPARSEARMV8 disArmV8ParseImmMemOff;
 /** @}  */
 
 
@@ -118,7 +119,8 @@ static PFNDISPARSEARMV8 const g_apfnDisasm[kDisParmParseMax] =
     disArmV8ParseSh12,
     disArmV8ParseImmTbz,
     disArmV8ParseShift,
-    disArmV8ParseShiftAmount
+    disArmV8ParseShiftAmount,
+    disArmV8ParseImmMemOff
 };
 
 
@@ -241,7 +243,7 @@ static int disArmV8ParseReg(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLAS
     RT_NOREF(pDis, pInsnClass);
     pParam->armv8.Reg.idxGenReg = disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
     pParam->armv8.cb            = *pf64Bit ? sizeof(uint64_t) : sizeof(uint32_t);
-    pParam->fUse |=   (*pf64Bit || (pInsnParm->fFlags & (DIS_ARMV8_INSN_PARAM_F_ADDR_BEGIN | DIS_ARMV8_INSN_PARAM_F_ADDR_END) ))
+    pParam->fUse |=   (*pf64Bit || (pParam->armv8.enmType == kDisArmv8OpParmAddrInGpr))
                     ? DISUSE_REG_GEN64
                     : DISUSE_REG_GEN32;
     return VINF_SUCCESS;
@@ -415,6 +417,19 @@ static int disArmV8ParseShiftAmount(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8
     /* Any shift operation with a 0 is essentially no shift being applied. */
     if (pParam->armv8.cShift == 0)
         pParam->armv8.enmShift = kDisArmv8OpParmShiftNone;
+    return VINF_SUCCESS;
+}
+
+
+static int disArmV8ParseImmMemOff(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
+{
+    RT_NOREF(pDis, pInsnClass, pf64Bit);
+
+    AssertReturn(pInsnParm->cBits <= 12, VERR_INTERNAL_ERROR_2);
+
+    uint8_t const uScale = *pf64Bit ? 8 : 4;
+    pParam->armv8.offBase = disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits) * uScale;
+    pParam->armv8.cb = sizeof(uint16_t);
     return VINF_SUCCESS;
 }
 

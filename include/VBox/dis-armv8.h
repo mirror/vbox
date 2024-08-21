@@ -71,8 +71,8 @@ typedef struct
     uint8_t             cb;
     union
     {
-        /** Scale factor. */
-        uint8_t         uScale;
+        /** Offset from the base register. */
+        uint16_t        offBase;
         /** Amount of bits to shift. */
         uint8_t         cShift;
     };

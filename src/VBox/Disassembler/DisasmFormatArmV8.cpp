@@ -712,6 +712,23 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     PUT_STR(pszReg, cchReg);
                     break;
                 }
+                case kDisArmv8OpParmAddrInGpr:
+                {
+                    PUT_C('[');
+
+                    size_t cchReg;
+                    const char *pszReg = disasmFormatArmV8Reg(pDis, pParam, &cchReg);
+                    PUT_STR(pszReg, cchReg);
+
+                    if (pParam->armv8.offBase)
+                    {
+                        PUT_SZ(", #");
+                        PUT_NUM_16(pParam->armv8.offBase);
+                    }
+
+                    PUT_C(']');
+                    break;
+                }
                 default:
                     AssertFailed();
             }
