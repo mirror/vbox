@@ -68,6 +68,8 @@ _TestProcA64:
         ret x1
         ret x2
         ret x15
+        br  x15
+        blr x15
 
         ; System register access instructions
         msr ttbr0_el1, x0
