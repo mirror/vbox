@@ -3492,21 +3492,30 @@ DxgkDdiEscape(
                     break;
                 }
 
-                if (pEscape->PrivateDriverDataSize != sizeof (*pEscapeHdr))
+                if (pEscape->PrivateDriverDataSize < sizeof (VBOXDISPIFESCAPE_RECONNECT_TARGETS))
                 {
                     WARN(("VBOXESC_RECONNECT_TARGETS invalid private driver size %d\n", pEscape->PrivateDriverDataSize));
                     Status = STATUS_INVALID_PARAMETER;
                     break;
                 }
 
-                if (pEscapeHdr->u32CmdSpecific == 0)
+                if (pEscapeHdr->u32CmdSpecific != 0)
                 {
-                    WARN(("VBOXESC_RECONNECT_TARGETS u32CmdSpecific is zero\n"));
+                    WARN(("VBOXESC_RECONNECT_TARGETS u32CmdSpecific is not zero\n"));
                     Status = STATUS_INVALID_PARAMETER;
                     break;
                 }
 
-                uint32_t u32ConnectMask = pEscapeHdr->u32CmdSpecific;
+                VBOXDISPIFESCAPE_RECONNECT_TARGETS *pVBoxEscapeReconnectTargets = (VBOXDISPIFESCAPE_RECONNECT_TARGETS *)pEscape->pPrivateDriverData;
+                uint32_t u32ConnectMask = pVBoxEscapeReconnectTargets->u32ConnectMask;
+                uint32_t u32DisconnectMask = pVBoxEscapeReconnectTargets->u32DisconnectMask;
+
+                if (u32ConnectMask & u32DisconnectMask)
+                {
+                    WARN(("VBOXESC_RECONNECT_TARGETS (u32ConnectMask & u32DisconnectMask) is not zero\n"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
 
                 HANDLE hKey = NULL;
                 Status = IoOpenDeviceRegistryKey(pDevExt->pPDO, PLUGPLAY_REGKEY_DRIVER, GENERIC_WRITE, &hKey);
@@ -3519,7 +3528,14 @@ DxgkDdiEscape(
                 for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
                 {
                     VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[i];
-                    bool fConnectReq = u32ConnectMask & RT_BIT(i);
+                    bool fConnectReq;
+
+                    if (u32ConnectMask & RT_BIT(i))
+                        fConnectReq = true;
+                    else if (u32DisconnectMask & RT_BIT(i))
+                        fConnectReq = false;
+                    else
+                        continue;
 
                     pTarget->fConfigured = true;
 

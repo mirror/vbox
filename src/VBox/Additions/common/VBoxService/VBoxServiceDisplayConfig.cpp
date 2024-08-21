@@ -120,14 +120,19 @@ void ReconnectDisplays(uint32_t cDisplays, VMMDevDisplayDef *paDisplays)
     D3DKMT_HANDLE hAdapter;
     D3DKMT_ENUMADAPTERS EnumAdapters = {0};
     NTSTATUS rcNt;
-    uint32_t u32Mask = 0;
+    uint32_t u32ConnectMask = 0, u32DisconnectMask = 0;
 
     for(uint32_t i = 0; i < cDisplays; i++)
     {
-        u32Mask |= (paDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED) ? 0 : RT_BIT(i);
+        uint32_t u32Mask = RT_BIT(paDisplays[i].idDisplay);
+
+        if (paDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED)
+            u32DisconnectMask |= u32Mask;
+        else
+            u32ConnectMask |= u32Mask;
     }
 
-    VGSvcVerbose(3, "ReconnectDisplays u32Mask 0x%x\n", u32Mask);
+    VGSvcVerbose(3, "ReconnectDisplays u32ConnectMask 0x%RX32, u32DisconnectMask 0x%RX32\n", u32ConnectMask, u32DisconnectMask);
 
     EnumAdapters.NumAdapters = RT_ELEMENTS(EnumAdapters.Adapters);
     rcNt = g_pfnD3DKMTEnumAdapters(&EnumAdapters);
@@ -151,16 +156,19 @@ void ReconnectDisplays(uint32_t cDisplays, VMMDevDisplayDef *paDisplays)
 
     if (hAdapter)
     {
-        VBOXDISPIFESCAPE EscapeHdr = {0};
-        EscapeHdr.escapeCode = VBOXESC_RECONNECT_TARGETS;
-        EscapeHdr.u32CmdSpecific = u32Mask;
+        VBOXDISPIFESCAPE_RECONNECT_TARGETS VBoxEscapeReconnectTargets = {{0}};
+
+        VBoxEscapeReconnectTargets.EscapeHdr.escapeCode = VBOXESC_RECONNECT_TARGETS;
+        VBoxEscapeReconnectTargets.EscapeHdr.u32CmdSpecific = 0;
+        VBoxEscapeReconnectTargets.u32ConnectMask = u32ConnectMask;
+        VBoxEscapeReconnectTargets.u32DisconnectMask = u32DisconnectMask;
 
         D3DKMT_ESCAPE EscapeData = {0};
         EscapeData.hAdapter = hAdapter;
         EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
         EscapeData.Flags.HardwareAccess = 1;
-        EscapeData.pPrivateDriverData = &EscapeHdr;
-        EscapeData.PrivateDriverDataSize = sizeof (EscapeHdr);
+        EscapeData.pPrivateDriverData = &VBoxEscapeReconnectTargets;
+        EscapeData.PrivateDriverDataSize = sizeof (VBoxEscapeReconnectTargets);
 
         rcNt = g_pfnD3DKMTEscape(&EscapeData);
         VGSvcVerbose(3, "D3DKMTEscape rcNt=%#x\n", rcNt);
@@ -271,7 +279,7 @@ DECLCALLBACK(int) vgsvcDisplayConfigWorker(bool volatile *pfShutdown)
                 {
                     for(uint32_t i = 0; i < cDisplays; i++)
                     {
-                        VGSvcVerbose(2, "Display[%i] flags=%#x (%dx%d)\n", i,
+                        VGSvcVerbose(2, "%u) Display[%u] flags=%#x (%dx%d)\n", i, aDisplays[i].idDisplay,
                             aDisplays[i].fDisplayFlags,
                             aDisplays[i].cx, aDisplays[i].cy);
                     }
