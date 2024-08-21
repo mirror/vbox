@@ -128,6 +128,81 @@ static int rtSystemFirmwareGetPrivileges(LPCTSTR pcszPrivilege)
 }
 
 
+/**
+ * Queries a DWORD value from a Windows registry key, Unicode (wide char) version.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_FILE_NOT_FOUND if the value has not been found.
+ * @param   hKey                    Registry handle to use.
+ * @param   pwszKey                 Registry key to query \a pwszName in.
+ * @param   pwszName                Name of the value to query.
+ * @param   pdwValue                Where to return the actual value on success.
+ */
+static int rtSystemWinRegistryGetDWORDW(HKEY hKey, LPCWSTR pwszKey, LPCWSTR pwszName, DWORD *pdwValue)
+{
+    LONG lErr = RegOpenKeyExW(hKey, pwszKey, 0, KEY_QUERY_VALUE, &hKey);
+    if (lErr != ERROR_SUCCESS)
+        return RTErrConvertFromWin32(lErr);
+
+    int rc = VINF_SUCCESS;
+
+    DWORD cbType = sizeof(DWORD);
+    DWORD dwType = 0;
+    DWORD dwValue;
+    lErr = RegQueryValueExW(hKey, pwszName, NULL, &dwType, (BYTE *)&dwValue, &cbType);
+    if (lErr == ERROR_SUCCESS)
+    {
+        if (cbType == sizeof(DWORD))
+        {
+            if (dwType == REG_DWORD)
+            {
+                *pdwValue = dwValue;
+            }
+            else
+                rc = VERR_WRONG_TYPE;
+        }
+        else
+            rc = VERR_MISMATCH;
+    }
+    else
+        rc = RTErrConvertFromWin32(lErr);
+
+    RegCloseKey(hKey);
+
+    return rc;
+}
+
+
+/**
+ * Queries a DWORD value from a Windows registry key.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_FILE_NOT_FOUND if the value has not been found.
+ * @param   hKey                    Registry handle to use.
+ * @param   pszKey                  Registry key to query \a pszName in.
+ * @param   pszName                 Name of the value to query.
+ * @param   pdwValue                Where to return the actual value on success.
+ */
+static int rtSystemRegistryGetDWORDA(HKEY hKey, const char *pszKey, const char *pszName, DWORD *pdwValue)
+{
+    PRTUTF16 pwszKey;
+    int rc = RTStrToUtf16Ex(pszKey, RTSTR_MAX, &pwszKey, 0, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        PRTUTF16 pwszName;
+        rc = RTStrToUtf16Ex(pszName, RTSTR_MAX, &pwszName, 0, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            rc = rtSystemWinRegistryGetDWORDW(hKey, pwszKey, pwszName, pdwValue);
+            RTUtf16Free(pwszName);
+        }
+        RTUtf16Free(pwszKey);
+    }
+
+    return rc;
+}
+
+
 RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
 {
     AssertPtrReturn(penmFirmwareType, VERR_INVALID_POINTER);
@@ -138,7 +213,8 @@ RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
     *penmFirmwareType = RTSYSFWTYPE_INVALID;
     int rc = VERR_NOT_SUPPORTED;
 
-    /* GetFirmwareType is Windows 8 and later. */
+    /* GetFirmwareType is Windows 8 and later.
+     * Note: Requires elevated privileges and will return VERR_PRIVILEGE_NOT_HELD otherwise. */
     if (g_pfnGetFirmwareType)
     {
         FIRMWARE_TYPE enmWinFwType;
@@ -162,8 +238,11 @@ RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
         else
             rc = RTErrConvertFromWin32(GetLastError());
     }
-    /* GetFirmwareEnvironmentVariableW is XP and later. */
-    else if (g_pfnGetFirmwareEnvironmentVariableW)
+
+    /* Try using GetFirmwareEnvironmentVariableW() next if the above call wasn't able to resolve the firmware type.
+     * GetFirmwareEnvironmentVariableW is XP and later. */
+    if (   *penmFirmwareType == RTSYSFWTYPE_INVALID
+        && g_pfnGetFirmwareEnvironmentVariableW)
     {
         rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
 
@@ -173,11 +252,14 @@ RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
            is a non-exising dummy namespace.  See the API docs. */
         SetLastError(0);
         uint8_t abWhatever[64];
-        DWORD cbRet = g_pfnGetFirmwareEnvironmentVariableW(L"", VBOX_UEFI_UUID_DUMMY, abWhatever, sizeof(abWhatever));
-        DWORD dwErr = GetLastError();
+        DWORD const cbRet = g_pfnGetFirmwareEnvironmentVariableW(L"", VBOX_UEFI_UUID_DUMMY, abWhatever, sizeof(abWhatever));
+        DWORD const dwErr = GetLastError();
         *penmFirmwareType = cbRet != 0 || dwErr != ERROR_INVALID_FUNCTION ? RTSYSFWTYPE_UEFI : RTSYSFWTYPE_BIOS;
         rc = VINF_SUCCESS;
     }
+    else if (*penmFirmwareType == RTSYSFWTYPE_INVALID) /* For very old systems (such as DOS / Win2K we safely can assume BIOS. */
+        *penmFirmwareType = RTSYSFWTYPE_BIOS;
+
     return rc;
 }
 
@@ -201,23 +283,48 @@ RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWBOOL enmBoolean, bool *pfValue)
             return VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY;
     }
 
+    int rc;
+
     /*
      * Do the query.
-     * Note! This will typically fail with access denied unless we're in an elevated process.
      */
-    if (!g_pfnGetFirmwareEnvironmentVariableW)
-        return VERR_NOT_SUPPORTED;
-    rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
+    if (g_pfnGetFirmwareEnvironmentVariableW)
+    {
+        rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
 
-    uint8_t bValue = 0;
-    DWORD cbRet = g_pfnGetFirmwareEnvironmentVariableW(pwszName, VBOX_UEFI_UUID_GLOBALS, &bValue, sizeof(bValue));
-    *pfValue = cbRet != 0 && bValue != 0;
-    if (cbRet != 0)
-        return VINF_SUCCESS;
-    DWORD dwErr = GetLastError();
-    if (   dwErr == ERROR_INVALID_FUNCTION
-        || dwErr == ERROR_ENVVAR_NOT_FOUND)
-        return VINF_SUCCESS;
-    return RTErrConvertFromWin32(dwErr);
+        /* Note! This will typically fail with access denied unless we're in an elevated process. */
+        uint8_t bValue = 0;
+        DWORD cbRet = g_pfnGetFirmwareEnvironmentVariableW(pwszName, VBOX_UEFI_UUID_GLOBALS, &bValue, sizeof(bValue));
+        *pfValue = cbRet != 0 && bValue != 0;
+        if (cbRet != 0)
+            return VINF_SUCCESS;
+        rc = RTErrConvertFromWin32(GetLastError());
+        if (rc == VERR_ENV_VAR_NOT_FOUND)
+            return VINF_SUCCESS;
+    }
+
+    /* If the above call failed because of missing privileges, try the registry as a fallback (if available for the type). */
+    switch (enmBoolean)
+    {
+        case RTSYSFWBOOL_SECURE_BOOT:
+        {
+            DWORD dwEnabled;
+            rc = rtSystemRegistryGetDWORDA(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\SecureBoot\\State",
+                                           "UEFISecureBootEnabled", &dwEnabled);
+            if (RT_SUCCESS(rc))
+            {
+                *pfValue = RT_BOOL(dwEnabled);
+            }
+            else if (rc == VERR_FILE_NOT_FOUND)
+                rc = VERR_NOT_SUPPORTED;
+            break;
+        }
+
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    return rc;
 }
 
