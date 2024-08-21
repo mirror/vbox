@@ -404,6 +404,8 @@ class ThreadedFunctionVariation(object):
         ksVariation_32f_Jmp,
         ksVariation_32_NoJmp,
         ksVariation_32f_NoJmp,
+        ksVariation_32_Addr16,
+        ksVariation_32f_Addr16,
         ksVariation_16,
         ksVariation_16f,
         ksVariation_16_Jmp,
@@ -418,8 +420,6 @@ class ThreadedFunctionVariation(object):
         ksVariation_16f_Pre386_Jmp,
         ksVariation_16_Pre386_NoJmp,
         ksVariation_16f_Pre386_NoJmp,
-        ksVariation_32_Addr16,
-        ksVariation_32f_Addr16,
         ksVariation_64_Addr32,
         ksVariation_64f_Addr32,
     );
@@ -2392,7 +2392,7 @@ class ThreadedFunction(object):
         # Case statement sub-class.
         #
         dByVari = self.dVariations;
-        fDbg = self.oMcBlock.sFunction == 'iemOp_jnl_Jv';
+        #fDbg   = self.oMcBlock.sFunction == 'iemOp_jnl_Jv';
         class Case:
             def __init__(self, sCond, sVarNm = None, sIntraPgVarNm = None, sIntraPgDispVariable = None):
                 self.sCond  = sCond;
@@ -2439,7 +2439,7 @@ class ThreadedFunction(object):
             @staticmethod
             def isSameBody(aoThisBody, sThisIndexName, aoThatBody, sThatIndexName, sBody = ''):
                 if len(aoThisBody) != len(aoThatBody):
-                    if fDbg: print('dbg: %sbody len diff: %s vs %s' % (sBody, len(aoThisBody), len(aoThatBody),));
+                    #if fDbg: print('dbg: %sbody len diff: %s vs %s' % (sBody, len(aoThisBody), len(aoThatBody),));
                     return False;
                 for iStmt, oStmt in enumerate(aoThisBody):
                     oThatStmt = aoThatBody[iStmt] # type: iai.McStmt
@@ -2448,11 +2448,11 @@ class ThreadedFunction(object):
                     if isinstance(oStmt, iai.McStmtCond):
                         return False;
                     if oStmt.sName != oThatStmt.sName:
-                        if fDbg: print('dbg: %sstmt #%s name: %s vs %s' % (sBody, iStmt, oStmt.sName, oThatStmt.sName,));
+                        #if fDbg: print('dbg: %sstmt #%s name: %s vs %s' % (sBody, iStmt, oStmt.sName, oThatStmt.sName,));
                         return False;
                     if len(oStmt.asParams) != len(oThatStmt.asParams):
-                        if fDbg: print('dbg: %sstmt #%s param count: %s vs %s'
-                                       % (sBody, iStmt, len(oStmt.asParams), len(oThatStmt.asParams),));
+                        #if fDbg: print('dbg: %sstmt #%s param count: %s vs %s'
+                        #               % (sBody, iStmt, len(oStmt.asParams), len(oThatStmt.asParams),));
                         return False;
                     for iParam, sParam in enumerate(oStmt.asParams):
                         if (    sParam != oThatStmt.asParams[iParam]
@@ -2461,8 +2461,8 @@ class ThreadedFunction(object):
                                  or not oStmt.asParams[0].startswith('IEM_MC2_EMIT_CALL_')
                                  or sParam != sThisIndexName
                                  or oThatStmt.asParams[iParam] != sThatIndexName )):
-                            if fDbg: print('dbg: %sstmt #%s, param #%s: %s vs %s'
-                                           % (sBody, iStmt, iParam, sParam, oThatStmt.asParams[iParam],));
+                            #if fDbg: print('dbg: %sstmt #%s, param #%s: %s vs %s'
+                            #               % (sBody, iStmt, iParam, sParam, oThatStmt.asParams[iParam],));
                             return False;
                 return True;
 
@@ -2661,7 +2661,7 @@ class ThreadedFunction(object):
         fAllSameCases = True
         for iCase in range(iFirstCaseWithBody + 1, len(aoCases)):
             fAllSameCases = fAllSameCases and aoCases[iCase].isSame(aoCases[iFirstCaseWithBody]);
-        if fDbg: print('fAllSameCases=%s %s' % (fAllSameCases, self.oMcBlock.sFunction,));
+        #if fDbg: print('fAllSameCases=%s %s' % (fAllSameCases, self.oMcBlock.sFunction,));
         if fAllSameCases:
             aoStmts = [
                 iai.McCppGeneric('IEMTHREADEDFUNCS enmFunction;'),
@@ -3358,13 +3358,15 @@ class IEMThreadedGenerator(object):
         oOut.write('\n'.join(asLines));
         return True;
 
+    # This applies to both generateNativeFunctionsSource and generateNativeLivenessSource.
+    kcNativeSourceParts = 6;
+
     def generateNativeFunctionsSource(self, oOut, idxPart):
         """
         Generates the native recompiler functions source file.
         Returns success indicator.
         """
-        cParts = 4;
-        assert(idxPart in range(cParts));
+        assert(idxPart in range(self.kcNativeSourceParts));
         if not self.oOptions.fNativeRecompilerEnabled:
             return True;
 
@@ -3381,10 +3383,10 @@ class IEMThreadedGenerator(object):
         # only has the defer to cimpl bits and the pre-386 variants will naturally
         # have fewer instructions).
         #
-        cVariationsPerFile = len(ThreadedFunctionVariation.kasVariationsEmitOrder) // cParts;
+        cVariationsPerFile = len(ThreadedFunctionVariation.kasVariationsEmitOrder) // self.kcNativeSourceParts;
         idxFirstVar        = idxPart * cVariationsPerFile;
         idxEndVar          = idxFirstVar + cVariationsPerFile;
-        if idxPart + 1 >= cParts:
+        if idxPart + 1 >= self.kcNativeSourceParts:
             idxEndVar      = len(ThreadedFunctionVariation.kasVariationsEmitOrder);
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder[idxFirstVar:idxEndVar]:
             sVarName = ThreadedFunctionVariation.kdVariationNames[sVariation];
@@ -3426,9 +3428,9 @@ class IEMThreadedGenerator(object):
                     oOut.write('}\n');
 
         #
-        # Output the function table if this is the first file.
+        # Output the function table in the smallest file (currently the last).
         #
-        if idxPart == 0:
+        if idxPart + 1 == self.kcNativeSourceParts:
             oOut.write(   '\n'
                         + '\n'
                         + '/*\n'
@@ -3469,11 +3471,39 @@ class IEMThreadedGenerator(object):
         oOut.write('\n');
         return True;
 
-    def generateNativeLivenessSource(self, oOut, _):
+    def generateNativeLivenessHeader(self, oOut, _):
+        """
+        Generates the internal native recompiler liveness header file.
+        Returns success indicator.
+        """
+        if not self.oOptions.fNativeRecompilerEnabled:
+            return True;
+
+        oOut.write('\n'.join(self.generateLicenseHeader()));
+        oOut.write(   '\n'
+                   + '/*\n'
+                   + ' * Liveness analysis function prototypes.\n'
+                   + ' */\n');
+
+        # Emit prototypes for the liveness table functions.
+        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+            sVarName = ThreadedFunctionVariation.kdVariationNames[sVariation];
+            oOut.write('/*   Variation: ' + sVarName + ' */\n');
+            for oThreadedFunction in self.aoThreadedFuncs:
+                oVariation = oThreadedFunction.dVariations.get(sVariation, None) # type: ThreadedFunctionVariation
+                if oVariation and oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
+                    oOut.write('IEM_DECL_IEMNATIVELIVENESSFUNC_PROTO(' + oVariation.getLivenessFunctionName() + ');\n');
+
+        oOut.write('\n');
+        return True;
+
+
+    def generateNativeLivenessSource(self, oOut, idxPart):
         """
         Generates the native recompiler liveness analysis functions source file.
         Returns success indicator.
         """
+        assert(idxPart in range(self.kcNativeSourceParts));
         if not self.oOptions.fNativeRecompilerEnabled:
             return True;
 
@@ -3485,7 +3515,17 @@ class IEMThreadedGenerator(object):
         #
         # Emit the functions.
         #
-        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+        # The files are split up by threaded variation as that's the simplest way to
+        # do it, even if the distribution isn't entirely even (ksVariation_Default
+        # only has the defer to cimpl bits and the pre-386 variants will naturally
+        # have fewer instructions).
+        #
+        cVariationsPerFile = len(ThreadedFunctionVariation.kasVariationsEmitOrder) // self.kcNativeSourceParts;
+        idxFirstVar        = idxPart * cVariationsPerFile;
+        idxEndVar          = idxFirstVar + cVariationsPerFile;
+        if idxPart + 1 >= self.kcNativeSourceParts:
+            idxEndVar      = len(ThreadedFunctionVariation.kasVariationsEmitOrder);
+        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder[idxFirstVar:idxEndVar]:
             sVarName = ThreadedFunctionVariation.kdVariationNames[sVariation];
             oOut.write(  '\n'
                        + '\n'
@@ -3509,7 +3549,7 @@ class IEMThreadedGenerator(object):
                                      os.path.split(oMcBlock.sSrcFile)[1],
                                      ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
                                + ' */\n'
-                               + 'static IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(' + oVariation.getLivenessFunctionName() + ')\n'
+                               + 'IEM_DECL_IEMNATIVELIVENESSFUNC_DEF(' + oVariation.getLivenessFunctionName() + ')\n'
                                + '{\n');
 
                     # Unpack parameters.
@@ -3525,45 +3565,47 @@ class IEMThreadedGenerator(object):
                     oOut.write('}\n');
 
         #
-        # Output the function table.
+        # Output the function table in the smallest file (currently the last).
         #
-        oOut.write(   '\n'
-                    + '\n'
-                    + '/*\n'
-                    + ' * Liveness analysis function table running parallel to g_apfnIemThreadedFunctions and friends.\n'
-                    + ' */\n'
-                    + 'const PFNIEMNATIVELIVENESSFUNC g_apfnIemNativeLivenessFunctions[kIemThreadedFunc_End] =\n'
-                    + '{\n'
-                    + '    /*Invalid*/ NULL,'
-                    + '\n'
-                    + '    /*\n'
-                    + '     * Predefined.\n'
-                    + '     */\n'
-                    );
-        for sFuncNm, _, fHaveRecompFunc in self.katBltIns:
-            if fHaveRecompFunc:
-                oOut.write('    iemNativeLivenessFunc_BltIn_%s,\n' % (sFuncNm,))
-            else:
-                oOut.write('    NULL, /*BltIn_%s*/\n' % (sFuncNm,))
+        if idxPart + 1 == self.kcNativeSourceParts:
+            oOut.write(   '\n'
+                        + '\n'
+                        + '\n'
+                        + '/*\n'
+                        + ' * Liveness analysis function table running parallel to g_apfnIemThreadedFunctions and friends.\n'
+                        + ' */\n'
+                        + 'const PFNIEMNATIVELIVENESSFUNC g_apfnIemNativeLivenessFunctions[kIemThreadedFunc_End] =\n'
+                        + '{\n'
+                        + '    /*Invalid*/ NULL,'
+                        + '\n'
+                        + '    /*\n'
+                        + '     * Predefined.\n'
+                        + '     */\n'
+                        );
+            for sFuncNm, _, fHaveRecompFunc in self.katBltIns:
+                if fHaveRecompFunc:
+                    oOut.write('    iemNativeLivenessFunc_BltIn_%s,\n' % (sFuncNm,))
+                else:
+                    oOut.write('    NULL, /*BltIn_%s*/\n' % (sFuncNm,))
 
-        iThreadedFunction = 1 + len(self.katBltIns);
-        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
-            oOut.write(  '    /*\n'
-                       + '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation] + '\n'
-                       + '     */\n');
-            for oThreadedFunction in self.aoThreadedFuncs:
-                oVariation = oThreadedFunction.dVariations.get(sVariation, None);
-                if oVariation:
-                    iThreadedFunction += 1;
-                    assert oVariation.iEnumValue == iThreadedFunction;
-                    sName = oVariation.getLivenessFunctionName();
-                    if oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
-                        oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction, sName,));
-                    else:
-                        oOut.write('    /*%4u*/ NULL /*%s*/,\n' % (iThreadedFunction, sName,));
+            iThreadedFunction = 1 + len(self.katBltIns);
+            for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+                oOut.write(  '    /*\n'
+                           + '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation] + '\n'
+                           + '     */\n');
+                for oThreadedFunction in self.aoThreadedFuncs:
+                    oVariation = oThreadedFunction.dVariations.get(sVariation, None);
+                    if oVariation:
+                        iThreadedFunction += 1;
+                        assert oVariation.iEnumValue == iThreadedFunction;
+                        sName = oVariation.getLivenessFunctionName();
+                        if oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
+                            oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction, sName,));
+                        else:
+                            oOut.write('    /*%4u*/ NULL /*%s*/,\n' % (iThreadedFunction, sName,));
 
-        oOut.write(  '};\n'
-                   + '\n');
+            oOut.write(  '};\n'
+                       + '\n');
         return True;
 
 
@@ -3714,36 +3756,27 @@ class IEMThreadedGenerator(object):
                              action  = 'store',
                              default = '-',
                              help    = 'The output header file for the native recompiler functions.');
-        oParser.add_argument('--out-n8ve-funcs-cpp1',
-                             metavar = 'file-n8tv-funcs1.cpp',
-                             dest    = 'sOutFileN8veFuncsCpp1',
+        for iFile in range(1, self.kcNativeSourceParts + 1):
+            oParser.add_argument('--out-n8ve-funcs-cpp%u' % (iFile,),
+                                 metavar = 'file-n8tv-funcs%u.cpp' % (iFile,),
+                                 dest    = 'sOutFileN8veFuncsCpp%u' % (iFile,),
+                                 action  = 'store',
+                                 default = '-',
+                                 help    = 'The output C++ file for the native recompiler functions part %u.' % (iFile,));
+        oParser.add_argument('--out-n8ve-liveness-hdr',
+                             metavar = 'file-n8ve-liveness.h',
+                             dest    = 'sOutFileN8veLivenessHdr',
                              action  = 'store',
                              default = '-',
-                             help    = 'The output C++ file for the native recompiler functions part 1.');
-        oParser.add_argument('--out-n8ve-funcs-cpp2',
-                             metavar = 'file-n8ve-funcs2.cpp',
-                             dest    = 'sOutFileN8veFuncsCpp2',
-                             action  = 'store',
-                             default = '-',
-                             help    = 'The output C++ file for the native recompiler functions part 2.');
-        oParser.add_argument('--out-n8ve-funcs-cpp3',
-                             metavar = 'file-n8ve-funcs3.cpp',
-                             dest    = 'sOutFileN8veFuncsCpp3',
-                             action  = 'store',
-                             default = '-',
-                             help    = 'The output C++ file for the native recompiler functions part 3.');
-        oParser.add_argument('--out-n8ve-funcs-cpp4',
-                             metavar = 'file-n8ve-funcs4.cpp',
-                             dest    = 'sOutFileN8veFuncsCpp4',
-                             action  = 'store',
-                             default = '-',
-                             help    = 'The output C++ file for the native recompiler functions part 4.');
-        oParser.add_argument('--out-n8ve-liveness-cpp',
-                             metavar = 'file-n8ve-liveness.cpp',
-                             dest    = 'sOutFileN8veLivenessCpp',
-                             action  = 'store',
-                             default = '-',
-                             help    = 'The output C++ file for the native recompiler liveness analysis functions.');
+                             help    = 'The output header file for the native recompiler liveness analysis functions.');
+        for iFile in range(1, self.kcNativeSourceParts + 1):
+            oParser.add_argument('--out-n8ve-liveness-cpp%u' % (iFile,),
+                                 metavar = 'file-n8ve-liveness%u.cpp' % (iFile,),
+                                 dest    = 'sOutFileN8veLivenessCpp%u' % (iFile,),
+                                 action  = 'store',
+                                 default = '-',
+                                 help    = 'The output C++ file for the native recompiler liveness analysis functions part %u.'
+                                            % (iFile,));
         oParser.add_argument('--native',
                              dest    = 'fNativeRecompilerEnabled',
                              action  = 'store_true',
@@ -3795,20 +3828,23 @@ class IEMThreadedGenerator(object):
             #
             # Generate the output files.
             #
-            aaoOutputFiles = (
+            aaoOutputFiles = [
                  ( self.oOptions.sOutFileThrdFuncsHdr,      self.generateThreadedFunctionsHeader, 0, ),
                  ( self.oOptions.sOutFileThrdFuncsCpp,      self.generateThreadedFunctionsSource, 0, ),
                  ( self.oOptions.sOutFileN8veFuncsHdr,      self.generateNativeFunctionsHeader,   0, ),
-                 ( self.oOptions.sOutFileN8veFuncsCpp1,     self.generateNativeFunctionsSource,   0, ),
-                 ( self.oOptions.sOutFileN8veFuncsCpp2,     self.generateNativeFunctionsSource,   1, ),
-                 ( self.oOptions.sOutFileN8veFuncsCpp3,     self.generateNativeFunctionsSource,   2, ),
-                 ( self.oOptions.sOutFileN8veFuncsCpp4,     self.generateNativeFunctionsSource,   3, ),
-                 ( self.oOptions.sOutFileN8veLivenessCpp,   self.generateNativeLivenessSource,    0, ),
+                 ( self.oOptions.sOutFileN8veLivenessHdr,   self.generateNativeLivenessHeader,    0, ),
                  ( self.oOptions.sOutFileModInput1,         self.generateModifiedInput,           1, ),
                  ( self.oOptions.sOutFileModInput2,         self.generateModifiedInput,           2, ),
                  ( self.oOptions.sOutFileModInput3,         self.generateModifiedInput,           3, ),
                  ( self.oOptions.sOutFileModInput4,         self.generateModifiedInput,           4, ),
-            );
+            ];
+            for iFile in range(self.kcNativeSourceParts):
+                aaoOutputFiles.extend([
+                    ( getattr(self.oOptions, 'sOutFileN8veFuncsCpp%u' % (iFile + 1)),
+                      self.generateNativeFunctionsSource, iFile, ),
+                    ( getattr(self.oOptions, 'sOutFileN8veLivenessCpp%u' % (iFile + 1)),
+                      self.generateNativeLivenessSource, iFile, ),
+                ]);
             fRc = True;
             for sOutFile, fnGenMethod, iPartNo in aaoOutputFiles:
                 if sOutFile == '-':

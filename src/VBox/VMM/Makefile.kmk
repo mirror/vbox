@@ -267,8 +267,15 @@ ifdef VBOX_WITH_IEM_RECOMPILER
   	VMMAll/IEMAllN8veRecompFuncs2.cpp \
   	VMMAll/IEMAllN8veRecompFuncs3.cpp \
   	VMMAll/IEMAllN8veRecompFuncs4.cpp \
+  	VMMAll/IEMAllN8veRecompFuncs5.cpp \
+  	VMMAll/IEMAllN8veRecompFuncs6.cpp \
   	VMMAll/IEMAllN8veRecompBltIn.cpp \
-  	VMMAll/IEMAllN8veLiveness.cpp
+  	VMMAll/IEMAllN8veLiveness1.cpp \
+  	VMMAll/IEMAllN8veLiveness2.cpp \
+  	VMMAll/IEMAllN8veLiveness3.cpp \
+  	VMMAll/IEMAllN8veLiveness4.cpp \
+  	VMMAll/IEMAllN8veLiveness5.cpp \
+  	VMMAll/IEMAllN8veLiveness6.cpp
   VBoxVMM_SOURCES.amd64 += \
   	VMMAll/IEMAllN8veHlpA.asm
   VBoxVMM_SOURCES.arm64 += \
@@ -279,7 +286,6 @@ ifdef VBOX_WITH_IEM_RECOMPILER
    VBoxVMM_LIBS.linux  += capstone
   endif
   VMMAll/IEMAllN8veRecompiler.cpp_CXXFLAGS.win := -bigobj
-  VMMAll/IEMAllN8veLiveness.cpp_CXXFLAGS.win   := -bigobj
  endif
  VMMAll/IEMAllThrdFuncs.cpp_CXXFLAGS.win       := -bigobj
 endif
@@ -536,45 +542,44 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  # Generate functions for the threaded recompiler and a modified instruction decoded.
  # Note! Dependency order matters!
  #
+ VBOX_IEM_NATIVE_GEN_SRC_PARTS := 1 2 3 4 5 6
  VBoxVMM_INTERMEDIATES += \
  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h
+ 	$(foreach x, 1 2 3 4, $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions${x}.cpp.h)
  ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
   VBoxVMM_INTERMEDIATES += \
   	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h \
-  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions1.cpp.h \
-  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions2.cpp.h \
-  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions3.cpp.h \
-  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions4.cpp.h \
-  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.cpp.h
+  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.h \
+  	$(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions${x}.cpp.h) \
+  	$(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness${x}.cpp.h)
  endif
  VBoxVMM_CLEAN         += \
  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts \
  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h \
  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h \
+ 	$(foreach x, 1 2 3 4, $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions${x}.cpp.h) \
  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions1.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions2.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions3.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions4.cpp.h \
- 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.cpp.h
+ 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.h \
+ 	$(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions${x}.cpp.h) \
+ 	$(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness${x}.cpp.h)
  $(call KB_FN_AUTO_CMD_DEPS,$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts)
  $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.h,) \
  +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h,) \
  +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions1.cpp.h,) \
  +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions2.cpp.h,) \
  +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions3.cpp.h,) \
  +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions4.cpp.h,) \
- +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions5.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions6.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness1.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness2.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness3.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness4.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness5.cpp.h,) \
+ +| $(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness6.cpp.h,) \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h \
@@ -595,17 +600,12 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstOneByte.cpp.h
 	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,VMMAll/IEMAllInst*.cpp.h)
 	$(QUIET)$(RM) -f -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h.ts" \
+		$(foreach x, 1 2 3 4,"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions${x}.cpp.h.ts") \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h.ts" \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions1.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions2.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions3.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions4.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.cpp.h.ts"
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.h.ts" \
+		$(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS),"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions${x}.cpp.h.ts") \
+		$(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS),"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness${x}.cpp.h.ts")
 	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $< $(filter %.cpp.h,$^) \
@@ -618,25 +618,16 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 		--out-mod-input4 "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h.ts" \
 		$(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), \
 			--native \
-			--out-n8ve-funcs-hdr    "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h.ts" \
-			--out-n8ve-funcs-cpp1   "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions1.cpp.h.ts" \
-			--out-n8ve-funcs-cpp2   "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions2.cpp.h.ts" \
-			--out-n8ve-funcs-cpp3   "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions3.cpp.h.ts" \
-			--out-n8ve-funcs-cpp4   "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions4.cpp.h.ts" \
-			--out-n8ve-liveness-cpp "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.cpp.h.ts" \
+			--out-n8ve-funcs-hdr         "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h.ts" \
+			--out-n8ve-liveness-hdr      "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.h.ts" \
+                       $(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS) \
+                       ,--out-n8ve-funcs-cpp${x}    "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions${x}.cpp.h.ts") \
+                       $(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS) \
+                       ,--out-n8ve-liveness-cpp${x} "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness${x}.cpp.h.ts") \
 		,)
-	$(QUIET)$(CP) -v -f --changed -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h"
-	$(QUIET)$(CP) -v -f --changed -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h"
-	$(QUIET)$(CP) -v -f --changed -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h"
-	$(QUIET)$(CP) -v -f --changed -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h"
+	$(foreach x, 1 2 3 4, $(NLTAB)$(QUIET)$(CP) -v -f --changed -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions${x}.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions${x}.cpp.h")
 	$(QUIET)$(CP) -v -f --changed -- \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h.ts" \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h"
@@ -648,20 +639,14 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h.ts" \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h"
 	$(QUIET)$(CP) -v -f --changed -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions1.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions1.cpp.h"
-	$(QUIET)$(CP) -v -f --changed -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions2.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions2.cpp.h"
-	$(QUIET)$(CP) -v -f --changed -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions3.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions3.cpp.h"
-	$(QUIET)$(CP) -v -f --changed -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions4.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions4.cpp.h"
-	$(QUIET)$(CP) -v -f --changed -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.cpp.h"
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.h"
+	$(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS), $(NLTAB)$(QUIET)$(CP) -v -f --changed -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions${x}.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions${x}.cpp.h")
+	$(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS), $(NLTAB)$(QUIET)$(CP) -v -f --changed -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness${x}.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness${x}.cpp.h")
  endif
 	$(QUIET)$(RM) -f -- \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h.ts" \
@@ -670,11 +655,9 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h.ts" \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h.ts" \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions1.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions2.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions3.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions4.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.cpp.h.ts"
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness.h.ts" \
+		$(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS),"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions${x}.cpp.h.ts") \
+               $(foreach x, $(VBOX_IEM_NATIVE_GEN_SRC_PARTS),"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeLiveness${x}.cpp.h.ts") \
 
  foobared: $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts
 

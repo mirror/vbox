@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IEM - Native Recompiler, Liveness Analysis.
+ * IEM - Native Recompiler, Liveness Analysis, Part 4.
  */
 
 /*
@@ -26,6 +26,10 @@
  */
 
 
+/* Common header with all the IEM_MC_XXX defines and whatnot. */
 #include "IEMAllN8veLiveness.h"
-#include "IEMNativeLiveness.cpp.h"
+
+/* Include the generated headers: */
+#include "IEMNativeLiveness.h"
+#include "IEMNativeLiveness4.cpp.h"
 
