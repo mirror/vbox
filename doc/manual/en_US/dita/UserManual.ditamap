@@ -49,6 +49,7 @@
       <topicref href="topics/frontends.dita"/>
     </topicref>
          <topicref href="topics/hostossupport.dita">
+         <topicref href="topics/host-guest-matrix.dita"/>
             <topicref href="topics/arm-host-limitations.dita"/>
             <topicref href="topics/hostcpurequirements.dita"/>
          </topicref>
@@ -174,7 +175,11 @@
          </topicref>
       </chapter>
       <chapter href="topics/BasicConcepts.dita" chunk="to-content">
-         <topicref href="topics/guestossupport.dita">
+             <!--  <topicref href="topics/guestossupport.dita">    -->
+             <topicref href="topics/guest-os.dita">
+             <topicref href="topics/guest-os-x86-64.dita"/>
+             <topicref href="topics/guest-os-Arm.dita"/>
+            <topicref href="topics/guest-os-legacy.dita"/>
             <topicref href="topics/intro-macosxguests.dita"/>
             <topicref href="topics/intro-64bitguests.dita"/>
          </topicref>
