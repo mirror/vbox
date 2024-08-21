@@ -457,6 +457,57 @@ static uint32_t disArmV8DecodeLookup(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV
 }
 
 
+/**
+ * Looks for possible alias conversions for the given disassembler state.
+ *
+ * @param   pDis        The disassembler state to process.
+ */
+static void disArmV8A64InsnAliasesProcess(PDISSTATE pDis)
+{
+#define DIS_ARMV8_ALIAS(a_Name) s_DisArmv8Alias ## a_Name
+#define DIS_ARMV8_ALIAS_CREATE(a_Name, a_szOpcode, a_uOpcode, a_fOpType) static const DISOPCODE DIS_ARMV8_ALIAS(a_Name) = OP(a_szOpcode, 0, 0, 0, a_uOpcode, 0, 0, 0, a_fOpType)
+#define DIS_ARMV8_ALIAS_REF(a_Name) &DIS_ARMV8_ALIAS(a_Name)
+    switch (pDis->pCurInstr->uOpcode)
+    {
+        case OP_ARMV8_A64_ORR:
+        {
+            /* Check for possible MOV conversion for the register variant when: shift is None and the first source is the zero register. */
+            Assert(pDis->aParams[1].armv8.enmType == kDisArmv8OpParmGpr);
+
+            if (   pDis->aParams[2].armv8.enmType == kDisArmv8OpParmGpr
+                && pDis->aParams[2].armv8.enmShift == kDisArmv8OpParmShiftNone
+                && pDis->aParams[1].armv8.Reg.idxGenReg == ARMV8_A64_REG_XZR)
+            {
+                DIS_ARMV8_ALIAS_CREATE(Mov, "mov", OP_ARMV8_A64_MOV, DISOPTYPE_HARMLESS);
+                pDis->pCurInstr  = DIS_ARMV8_ALIAS_REF(Mov);
+                pDis->aParams[1] = pDis->aParams[2];
+                pDis->aParams[2].armv8.enmType = kDisArmv8OpParmNone;
+            }
+            /** @todo Immediate variant. */
+            break;
+        }
+        case OP_ARMV8_A64_SUBS:
+        {
+            Assert(pDis->aParams[0].armv8.enmType == kDisArmv8OpParmGpr);
+            if (pDis->aParams[0].armv8.Reg.idxGenReg == ARMV8_A64_REG_XZR)
+            {
+                DIS_ARMV8_ALIAS_CREATE(Cmp, "cmp", OP_ARMV8_A64_CMP, DISOPTYPE_HARMLESS);
+                pDis->pCurInstr  = DIS_ARMV8_ALIAS_REF(Cmp);
+                pDis->aParams[0] = pDis->aParams[1];
+                pDis->aParams[1] = pDis->aParams[2];
+                pDis->aParams[2].armv8.enmType = kDisArmv8OpParmNone;
+            }
+            break;
+        }
+        default:
+            break; /* No conversion */
+    }
+#undef DIS_ARMV8_ALIAS_REF
+#undef DIS_ARMV8_ALIAS_CREATE
+#undef DIS_ARMV8_ALIAS
+}
+
+
 static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8OPCODE pOp, PCDISARMV8INSNCLASS pInsnClass)
 {
     AssertPtr(pOp);
@@ -499,7 +550,9 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
     }
 
     /* If parameter parsing returned an invalid opcode error the encoding is invalid. */
-    if (rc == VERR_DIS_INVALID_OPCODE)
+    if (RT_SUCCESS(rc)) /** @todo Introduce flag to switch alias conversion on/off. */
+        disArmV8A64InsnAliasesProcess(pDis);
+    else if (rc == VERR_DIS_INVALID_OPCODE)
     {
         pDis->pCurInstr = &g_ArmV8A64InvalidOpcode[0];
 

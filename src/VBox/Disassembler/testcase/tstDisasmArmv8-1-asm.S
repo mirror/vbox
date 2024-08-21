@@ -176,8 +176,11 @@ _TestProcA64:
         subs w0, w1, w28, ASR #31
         ; ROR is reserved
 
-;       mov x0, x1 @todo Aliases are not supported right now.
-;       mov w0, w1
+        ; Aliases of subs -> cmp
+        cmp x0, x1
+        cmp w0, w1
+        cmp x0, x1, LSL #1
+        cmp w0, w1, LSL #1
 
         ; Logical instructions
         and  x0,  x0,  #0xffff
@@ -188,6 +191,9 @@ _TestProcA64:
 
         orr  x0,  x0,  #0xffff
         orr  w0,  wzr, #0xffff
+
+        mov x0, x1 ; Alias of orr
+        mov w0, w1 ; Alias of orr
 
         eor  x0,  x0,  #0x00ffff00
         eor w10, w23,  #0x55555555
