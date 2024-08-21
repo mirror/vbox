@@ -74,21 +74,105 @@ _TestProcA64:
         mrs x0, ttbr0_el1
 
         ; Arithmetic instructions
-        add x0, x0, #0x0
-        add w0, w1, #0x10000
-        add w0, w1, #65536
+        add  x0, x0, #0x0
+        add  x0, x1, #0x10000
+        add  x0, x1, #65536
+        add  x0, x0, x0
+        add  x0, x1, x29
+        add  x0, x1, x28, LSL #1
+        add  x0, x1, x28, LSL #63
+        add  x0, x1, x28, LSR #1
+        add  x0, x1, x28, LSR #63
+        add  x0, x1, x28, ASR #1
+        add  x0, x1, x28, ASR #63
+        ; ROR is reserved
+
+        add  w0, w1, #0x0
+        add  w0, w1, #0x10000
+        add  w0, w1, #65536
+        add  w0, w1, w29
+        add  w0, w1, w28, LSL #1
+        add  w0, w1, w28, LSL #31
+        add  w0, w1, w28, LSR #1
+        add  w0, w1, w28, LSR #31
+        add  w0, w1, w28, ASR #1
+        add  w0, w1, w28, ASR #31
+        ; ROR is reserved
 
         adds x0, x0, #0x0
+        adds x0, x1, #0x10000
+        adds x0, x1, #65536
+        adds x0, x0, x0
+        adds x0, x1, x29
+        adds x0, x1, x28, LSL #1
+        adds x0, x1, x28, LSL #63
+        adds x0, x1, x28, LSR #1
+        adds x0, x1, x28, LSR #63
+        adds x0, x1, x28, ASR #1
+        adds x0, x1, x28, ASR #63
+        ; ROR is reserved
+
+        adds w0, w1, #0x0
         adds w0, w1, #0x10000
         adds w0, w1, #65536
+        adds w0, w1, w29
+        adds w0, w1, w28, LSL #1
+        adds w0, w1, w28, LSL #31
+        adds w0, w1, w28, LSR #1
+        adds w0, w1, w28, LSR #31
+        adds w0, w1, w28, ASR #1
+        adds w0, w1, w28, ASR #31
+        ; ROR is reserved
 
-        sub x0, x0, #0x0
-        sub w0, w1, #0x10000
-        sub w0, w1, #65536
+        sub  x0, x0, #0x0
+        sub  x0, x1, #0x10000
+        sub  x0, x1, #65536
+        sub  x0, x0, x0
+        sub  x0, x1, x29
+        sub  x0, x1, x28, LSL #1
+        sub  x0, x1, x28, LSL #63
+        sub  x0, x1, x28, LSR #1
+        sub  x0, x1, x28, LSR #63
+        sub  x0, x1, x28, ASR #1
+        sub  x0, x1, x28, ASR #63
+        ; ROR is reserved
+
+        sub  w0, w1, #0x0
+        sub  w0, w1, #0x10000
+        sub  w0, w1, #65536
+        sub  w0, w1, w29
+        sub  w0, w1, w28, LSL #1
+        sub  w0, w1, w28, LSL #31
+        sub  w0, w1, w28, LSR #1
+        sub  w0, w1, w28, LSR #31
+        sub  w0, w1, w28, ASR #1
+        sub  w0, w1, w28, ASR #31
+        ; ROR is reserved
 
         subs x0, x0, #0x0
+        subs x0, x1, #0x10000
+        subs x0, x1, #65536
+        subs x0, x0, x0
+        subs x0, x1, x29
+        subs x0, x1, x28, LSL #1
+        subs x0, x1, x28, LSL #63
+        subs x0, x1, x28, LSR #1
+        subs x0, x1, x28, LSR #63
+        subs x0, x1, x28, ASR #1
+        subs x0, x1, x28, ASR #63
+        ; ROR is reserved
+
+        subs w0, w1, #0x0
         subs w0, w1, #0x10000
         subs w0, w1, #65536
+        subs w0, w1, w29
+        subs w0, w1, w28, LSL #1
+        subs w0, w1, w28, LSL #31
+        subs w0, w1, w28, LSR #1
+        subs w0, w1, w28, LSR #31
+        subs w0, w1, w28, ASR #1
+        subs w0, w1, w28, ASR #31
+        ; ROR is reserved
 
 ;       mov x0, x1 @todo Aliases are not supported right now.
 ;       mov w0, w1

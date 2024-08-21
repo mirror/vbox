@@ -85,7 +85,7 @@ DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_2(g_ArmV8A64Adr, 0x9f000000 /*fFixedIn
 DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
 
 
-/* ADD/ADDS/SUB/SUBS */
+/* ADD/ADDS/SUB/SUBS - shifted immediate variant */
 DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(g_ArmV8A64AddSubImm)
     DIS_ARMV8_OP(0x11000000, "add" ,            OP_ARMV8_A64_ADD,       DISOPTYPE_HARMLESS),
     DIS_ARMV8_OP(0x31000000, "adds" ,           OP_ARMV8_A64_ADDS,      DISOPTYPE_HARMLESS),
@@ -99,6 +99,23 @@ DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_3(g_ArmV8A64AddSubImm, 0x7f800000 /*fF
     DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImm,  10, 12, 2 /*idxParam*/),
     DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseSh12, 22,  1, 2 /*idxParam*/),
     DIS_ARMV8_INSN_PARAM_NONE
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
+
+
+/* ADD/ADDS/SUB/SUBS - shifted register variant */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(g_aArmV8A64InsnAddSubShiftReg)
+    DIS_ARMV8_OP(0x0b000000, "add" ,            OP_ARMV8_A64_ADD,       DISOPTYPE_HARMLESS),
+    DIS_ARMV8_OP(0x2b000000, "adds" ,           OP_ARMV8_A64_ADDS,      DISOPTYPE_HARMLESS),
+    DIS_ARMV8_OP(0x4b000000, "sub" ,            OP_ARMV8_A64_SUB,       DISOPTYPE_HARMLESS),
+    DIS_ARMV8_OP(0x6b000000, "subs" ,           OP_ARMV8_A64_SUBS,      DISOPTYPE_HARMLESS),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_3(g_aArmV8A64InsnAddSubShiftReg, 0x7f200000 /*fFixedInsn*/, DISARMV8INSNCLASS_F_SF,
+                                            kDisArmV8OpcDecodeNop, RT_BIT_32(29) | RT_BIT_32(30), 29,
+                                            kDisArmv8OpParmGpr, kDisArmv8OpParmGpr, kDisArmv8OpParmGpr)
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseReg,            0,  5, 0 /*idxParam*/),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseReg,            5,  5, 1 /*idxParam*/),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseReg,           16,  5, 2 /*idxParam*/),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseShift,         22,  2, 2 /*idxParam*/),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseShiftAmount,   10,  6, 2 /*idxParam*/)
 DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
 
 
@@ -504,9 +521,21 @@ DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(g_aArmV8A64InsnLogShiftRegN)
 DIS_ARMV8_DECODE_MAP_DEFINE_END(g_aArmV8A64InsnLogShiftRegN, RT_BIT_32(21), 21);
 
 
+
+DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(g_aArmV8A64InsnAddSubExtReg)
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+DIS_ARMV8_DECODE_MAP_DEFINE_END(g_aArmV8A64InsnAddSubExtReg, RT_BIT_32(24), 24);
+
+
+DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(g_aArmV8A64InsnAddSubShiftExtReg)
+    DIS_ARMV8_DECODE_MAP_ENTRY(g_aArmV8A64InsnAddSubShiftReg),      /* Add/Subtract (shifted register) */
+    DIS_ARMV8_DECODE_MAP_ENTRY(g_aArmV8A64InsnAddSubExtReg),        /* Add/Subtract (extended register) */
+DIS_ARMV8_DECODE_MAP_DEFINE_END(g_aArmV8A64InsnAddSubShiftExtReg, RT_BIT_32(21), 21);
+
+
 DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(g_ArmV8A64LogicalAddSubReg)
     DIS_ARMV8_DECODE_MAP_ENTRY(g_aArmV8A64InsnLogShiftRegN),        /* Logical (shifted register) */
-    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Add/subtract (shifted/extended register) */
+    DIS_ARMV8_DECODE_MAP_ENTRY(g_aArmV8A64InsnAddSubShiftExtReg),   /* Add/subtract (shifted/extended register) */
 DIS_ARMV8_DECODE_MAP_DEFINE_END(g_ArmV8A64LogicalAddSubReg, RT_BIT_32(24), 24);
 
 
