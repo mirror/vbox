@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="host-guest-matrix">
+    <title>Host and Guest Combinations</title>
+    <body>
+        <p>
+            <table frame="all" rowsep="1" colsep="1">
+                <title>Host and Guest (VM) Platform Combinations Available in VirtualBox</title>
+                <desc>Matrix of available host platforms and the Virtual machines they run.</desc>
+                <tgroup cols="4">
+                    <colspec colname="c1" colnum="1" colwidth="1*" align="left"/>
+                    <colspec colname="c2" colnum="2" colwidth="1*" align="left"/>
+                    <colspec colname="c3" colnum="3" colwidth="1*" align="left"/>
+                    <colspec colname="c4" colnum="4" colwidth="1*" align="left"/>
+                    <thead>
+                        <row>
+                            <entry>Host Hardware Architecture</entry>
+                            <entry>Host OS (all 64 bit)</entry>
+                            <entry>Guest Virtual Hardware Architecture</entry>
+                            <entry>Guest OS</entry>
+                        </row>
+                    </thead>
+                    <tbody>
+                        <row>
+                            <entry>x86 (for example Intel or AMD)</entry>
+                            <entry>
+                                <p>Windows </p>
+                                <p>Windows Server</p>
+                                <p>macOS (requires Intel hardware)</p>
+                                <p>Linux (various distributions)</p>
+                                <p>Oracle Solaris</p>
+                            </entry>
+                            <entry>x86</entry>
+                            <entry>
+                                <p>Windows</p>
+                                <p>Windows Server</p>
+                                <p>Oracle Solaris</p>
+                                <p>Linux (various distributions)</p>
+                            </entry>
+                        </row>
+                        <row>
+                            <entry>Arm</entry>
+                            <entry>macOS (requires Apple Silicon hardware)</entry>
+                            <entry>Arm</entry>
+                            <entry>Linux (various distributions)</entry>
+                        </row>
+                    </tbody>
+                </tgroup>
+            </table>
+        </p>
+    </body>
+</topic>

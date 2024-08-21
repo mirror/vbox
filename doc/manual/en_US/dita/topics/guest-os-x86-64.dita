@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestossupport">
+  <title>x86 Guest Operating Systems</title>
+  
+  <body>
+    <p>Oracle Premier Support covers the running of the following guest OSs in a VM with an x86 or x86-64 platform architecture, as appropriate.</p>
+    <p>
+      <ul id="ul_bcg_bpf_3cc">
+        <li>Windows 11 (64-bit). Released versions only.</li>
+        <li>Windows 10 (32-bit and 64-bit). Released versions only.</li>
+        <li>Windows Server 2025 (64-bit)</li>
+        <li>Windows Server 2022 (64-bit)</li>
+        <li>Oracle Solaris 11 (32-bit and 64-bit) </li>
+        <li>Oracle Linux 9 (64-bit)<ul>
+            <li>Red Hat Enterprise Linux 9 (64-bit)</li>
+            <li>CentOS Stream 9 (64-bit)</li>
+          </ul></li>
+        <li>Oracle Linux 8 (64-bit)<ul>
+            <li>Red Hat Enterprise Linux 8 (64-bit)</li>
+          </ul></li>
+        <li>Oracle Linux 7 (64-bit)<ul>
+            <li>Red Hat Enterprise Linux 7 (64-bit)</li>
+          </ul></li>
+      </ul>
+    </p>
+  </body>
+</topic>

@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestossupport">
+  <title>Guest Operating Systems</title>
+  
+  <body>
+    <p>You can run most operating systems (OSs) successfully on a virtual machine (VM) in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
+    <p>The virtual hardware determines the choice of guest OSs available, as does the host machine. Ensure you take all aspects of VM configuration into consideration when creating a VM. </p>
+    <p>Oracle Premier Support provides help, including guest additions where required, to run a subset of OSs in a appropriately configured VMs.</p>
+  </body>
+</topic>
