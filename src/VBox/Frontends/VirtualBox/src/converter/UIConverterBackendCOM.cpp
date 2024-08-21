@@ -312,11 +312,11 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KGraphicsCon
 {
     switch (type)
     {
-        case KGraphicsControllerType_Null:      return QApplication::translate("UICommon", "None",      "GraphicsControllerType");
-        case KGraphicsControllerType_VBoxVGA:   return QApplication::translate("UICommon", "VBoxVGA",   "GraphicsControllerType");
-        case KGraphicsControllerType_VMSVGA:    return QApplication::translate("UICommon", "VMSVGA",    "GraphicsControllerType");
-        case KGraphicsControllerType_VBoxSVGA:  return QApplication::translate("UICommon", "VBoxSVGA",  "GraphicsControllerType");
-        case KGraphicsControllerType_QemuRamFB: return QApplication::translate("UICommon", "QemuRamFB", "GraphicsControllerType");
+        case KGraphicsControllerType_Null:      return QApplication::translate("UICommon", "None", "GraphicsControllerType");
+        case KGraphicsControllerType_VBoxVGA:   return QString("VBoxVGA");
+        case KGraphicsControllerType_VMSVGA:    return QString("VMSVGA");
+        case KGraphicsControllerType_VBoxSVGA:  return QString("VBoxSVGA");
+        case KGraphicsControllerType_QemuRamFB: return QString("QemuRamFB");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -326,11 +326,11 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KGraphicsCon
 template<> SHARED_LIBRARY_STUFF KGraphicsControllerType UIConverter::fromString<KGraphicsControllerType>(const QString &strType) const
 {
     QHash<QString, KGraphicsControllerType> list;
-    list.insert(QApplication::translate("UICommon", "None",      "GraphicsControllerType"), KGraphicsControllerType_Null);
-    list.insert(QApplication::translate("UICommon", "VBoxVGA",   "GraphicsControllerType"), KGraphicsControllerType_VBoxVGA);
-    list.insert(QApplication::translate("UICommon", "VMSVGA",    "GraphicsControllerType"), KGraphicsControllerType_VMSVGA);
-    list.insert(QApplication::translate("UICommon", "VBoxSVGA",  "GraphicsControllerType"), KGraphicsControllerType_VBoxSVGA);
-    list.insert(QApplication::translate("UICommon", "QemuRamFB", "GraphicsControllerType"), KGraphicsControllerType_QemuRamFB);
+    list.insert(QApplication::translate("UICommon", "None", "GraphicsControllerType"), KGraphicsControllerType_Null);
+    list.insert(QString("VBoxVGA"),                                                    KGraphicsControllerType_VBoxVGA);
+    list.insert(QString("VMSVGA"),                                                     KGraphicsControllerType_VMSVGA);
+    list.insert(QString("VBoxSVGA"),                                                   KGraphicsControllerType_VBoxSVGA);
+    list.insert(QString("QemuRamFB"),                                                  KGraphicsControllerType_QemuRamFB);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -418,19 +418,19 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KNetworkAdap
 {
     switch (type)
     {
-        case KNetworkAdapterType_Am79C970A:  return QApplication::translate("UICommon", "PCnet-PCI II (Am79C970A)", "NetworkAdapterType");
-        case KNetworkAdapterType_Am79C973:   return QApplication::translate("UICommon", "PCnet-FAST III (Am79C973)", "NetworkAdapterType");
-        case KNetworkAdapterType_I82540EM:   return QApplication::translate("UICommon", "Intel PRO/1000 MT Desktop (82540EM)", "NetworkAdapterType");
-        case KNetworkAdapterType_I82543GC:   return QApplication::translate("UICommon", "Intel PRO/1000 T Server (82543GC)", "NetworkAdapterType");
-        case KNetworkAdapterType_I82545EM:   return QApplication::translate("UICommon", "Intel PRO/1000 MT Server (82545EM)", "NetworkAdapterType");
-        case KNetworkAdapterType_Virtio:     return QApplication::translate("UICommon", "Paravirtualized Network (virtio-net)", "NetworkAdapterType");
-        case KNetworkAdapterType_Am79C960:   return QApplication::translate("UICommon", "PCnet-ISA (Am79C960)", "NetworkAdapterType");
-        case KNetworkAdapterType_NE2000:     return QApplication::translate("UICommon", "Novell NE2000 (NE2000)", "NetworkAdapterType");
-        case KNetworkAdapterType_NE1000:     return QApplication::translate("UICommon", "Novell NE1000 (NE1000)", "NetworkAdapterType");
-        case KNetworkAdapterType_WD8013:     return QApplication::translate("UICommon", "WD EtherCard Plus 16 (WD8013EBT)", "NetworkAdapterType");
-        case KNetworkAdapterType_WD8003:     return QApplication::translate("UICommon", "WD EtherCard Plus (WD8013E)", "NetworkAdapterType");
-        case KNetworkAdapterType_ELNK2:      return QApplication::translate("UICommon", "3Com EtherLink II (3C503)", "NetworkAdapterType");
-        case KNetworkAdapterType_ELNK1:      return QApplication::translate("UICommon", "3Com EtherLink (3C501)", "NetworkAdapterType");
+        case KNetworkAdapterType_Am79C970A:  return QString("PCnet-PCI II (Am79C970A)");
+        case KNetworkAdapterType_Am79C973:   return QString("PCnet-FAST III (Am79C973)");
+        case KNetworkAdapterType_I82540EM:   return QString("Intel PRO/1000 MT Desktop (82540EM)");
+        case KNetworkAdapterType_I82543GC:   return QString("Intel PRO/1000 T Server (82543GC)");
+        case KNetworkAdapterType_I82545EM:   return QString("Intel PRO/1000 MT Server (82545EM)");
+        case KNetworkAdapterType_Virtio:     return QString("Paravirtualized Network (virtio-net)");
+        case KNetworkAdapterType_Am79C960:   return QString("PCnet-ISA (Am79C960)");
+        case KNetworkAdapterType_NE2000:     return QString("Novell NE2000 (NE2000)");
+        case KNetworkAdapterType_NE1000:     return QString("Novell NE1000 (NE1000)");
+        case KNetworkAdapterType_WD8013:     return QString("WD EtherCard Plus 16 (WD8013EBT)");
+        case KNetworkAdapterType_WD8003:     return QString("WD EtherCard Plus (WD8013E)");
+        case KNetworkAdapterType_ELNK2:      return QString("3Com EtherLink II (3C503)");
+        case KNetworkAdapterType_ELNK1:      return QString("3Com EtherLink (3C501)");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -489,9 +489,9 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KUSBControll
 {
     switch (type)
     {
-        case KUSBControllerType_OHCI: return QApplication::translate("UICommon", "OHCI", "USBControllerType");
-        case KUSBControllerType_EHCI: return QApplication::translate("UICommon", "EHCI", "USBControllerType");
-        case KUSBControllerType_XHCI: return QApplication::translate("UICommon", "xHCI", "USBControllerType");
+        case KUSBControllerType_OHCI: return QString("OHCI");
+        case KUSBControllerType_EHCI: return QString("EHCI");
+        case KUSBControllerType_XHCI: return QString("xHCI");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -544,16 +544,16 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KAudioDriver
     switch (type)
     {
         case KAudioDriverType_Default:     return QApplication::translate("UICommon", "Default", "AudioDriverType");
-        case KAudioDriverType_Null:        return QApplication::translate("UICommon", "Null Audio", "AudioDriverType");
-        case KAudioDriverType_OSS:         return QApplication::translate("UICommon", "OSS Audio", "AudioDriverType");
-        case KAudioDriverType_ALSA:        return QApplication::translate("UICommon", "ALSA Audio", "AudioDriverType");
-        case KAudioDriverType_Pulse:       return QApplication::translate("UICommon", "PulseAudio", "AudioDriverType");
-        case KAudioDriverType_WinMM:       return QApplication::translate("UICommon", "Windows Multimedia", "AudioDriverType");
-        case KAudioDriverType_DirectSound: return QApplication::translate("UICommon", "Windows DirectSound", "AudioDriverType");
-        case KAudioDriverType_WAS:         return QApplication::translate("UICommon", "Windows Audio Session", "AudioDriverType");
-        case KAudioDriverType_CoreAudio:   return QApplication::translate("UICommon", "Core Audio", "AudioDriverType");
+        case KAudioDriverType_Null:        return QString("Null Audio");
+        case KAudioDriverType_OSS:         return QString("OSS Audio");
+        case KAudioDriverType_ALSA:        return QString("ALSA Audio");
+        case KAudioDriverType_Pulse:       return QString("PulseAudio");
+        case KAudioDriverType_WinMM:       return QString("Windows Multimedia");
+        case KAudioDriverType_DirectSound: return QString("Windows DirectSound");
+        case KAudioDriverType_WAS:         return QString("Windows Audio Session");
+        case KAudioDriverType_CoreAudio:   return QString("Core Audio");
         // case KAudioDriverType_MMPM:
-        case KAudioDriverType_SolAudio:    return QApplication::translate("UICommon", "Solaris Audio", "AudioDriverType");
+        case KAudioDriverType_SolAudio:    return QString("Solaris Audio");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -563,17 +563,17 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KAudioDriver
 template<> SHARED_LIBRARY_STUFF KAudioDriverType UIConverter::fromString<KAudioDriverType>(const QString &strType) const
 {
     QHash<QString, KAudioDriverType> list;
-    list.insert(QApplication::translate("UICommon", "Default", "AudioDriverType"),              KAudioDriverType_Default);
-    list.insert(QApplication::translate("UICommon", "Null Audio", "AudioDriverType"),            KAudioDriverType_Null);
-    list.insert(QApplication::translate("UICommon", "OSS Audio", "AudioDriverType"),             KAudioDriverType_OSS);
-    list.insert(QApplication::translate("UICommon", "ALSA Audio", "AudioDriverType"),            KAudioDriverType_ALSA);
-    list.insert(QApplication::translate("UICommon", "PulseAudio", "AudioDriverType"),            KAudioDriverType_Pulse);
-    list.insert(QApplication::translate("UICommon", "Windows Multimedia", "AudioDriverType"),    KAudioDriverType_WinMM);
-    list.insert(QApplication::translate("UICommon", "Windows DirectSound", "AudioDriverType"),   KAudioDriverType_DirectSound);
-    list.insert(QApplication::translate("UICommon", "Windows Audio Session", "AudioDriverType"), KAudioDriverType_WAS);
-    list.insert(QApplication::translate("UICommon", "Core Audio", "AudioDriverType"),            KAudioDriverType_CoreAudio);
+    list.insert(QApplication::translate("UICommon", "Default", "AudioDriverType"), KAudioDriverType_Default);
+    list.insert(QString("Null Audio"),                                             KAudioDriverType_Null);
+    list.insert(QString("OSS Audio"),                                              KAudioDriverType_OSS);
+    list.insert(QString("ALSA Audio"),                                             KAudioDriverType_ALSA);
+    list.insert(QString("PulseAudio"),                                             KAudioDriverType_Pulse);
+    list.insert(QString("Windows Multimedia"),                                     KAudioDriverType_WinMM);
+    list.insert(QString("Windows DirectSound"),                                    KAudioDriverType_DirectSound);
+    list.insert(QString("Windows Audio Session"),                                  KAudioDriverType_WAS);
+    list.insert(QString("Core Audio"),                                             KAudioDriverType_CoreAudio);
     // list.insert(..., KAudioDriverType_MMPM);
-    list.insert(QApplication::translate("UICommon", "Solaris Audio", "AudioDriverType"),         KAudioDriverType_SolAudio);
+    list.insert(QString("Solaris Audio"),                                          KAudioDriverType_SolAudio);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -586,10 +586,10 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KAudioContro
 {
     switch (type)
     {
-        case KAudioControllerType_AC97:        return QApplication::translate("UICommon", "ICH AC97", "AudioControllerType");
-        case KAudioControllerType_SB16:        return QApplication::translate("UICommon", "SoundBlaster 16", "AudioControllerType");
-        case KAudioControllerType_HDA:         return QApplication::translate("UICommon", "Intel HD Audio", "AudioControllerType");
-        case KAudioControllerType_VirtioSound: return QApplication::translate("UICommon", "Virtio-Sound", "AudioControllerType");
+        case KAudioControllerType_AC97:        return QString("ICH AC97");
+        case KAudioControllerType_SB16:        return QString("SoundBlaster 16");
+        case KAudioControllerType_HDA:         return QString("Intel HD Audio");
+        case KAudioControllerType_VirtioSound: return QString("Virtio-Sound");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -599,10 +599,10 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KAudioContro
 template<> SHARED_LIBRARY_STUFF KAudioControllerType UIConverter::fromString<KAudioControllerType>(const QString &strType) const
 {
     QHash<QString, KAudioControllerType> list;
-    list.insert(QApplication::translate("UICommon", "ICH AC97", "AudioControllerType"),        KAudioControllerType_AC97);
-    list.insert(QApplication::translate("UICommon", "SoundBlaster 16", "AudioControllerType"), KAudioControllerType_SB16);
-    list.insert(QApplication::translate("UICommon", "Intel HD Audio", "AudioControllerType"),  KAudioControllerType_HDA);
-    list.insert(QApplication::translate("UICommon", "Virtio-Sound", "AudioControllerType"),    KAudioControllerType_VirtioSound);
+    list.insert(QString("ICH AC97"),        KAudioControllerType_AC97);
+    list.insert(QString("SoundBlaster 16"), KAudioControllerType_SB16);
+    list.insert(QString("Intel HD Audio"),  KAudioControllerType_HDA);
+    list.insert(QString("Virtio-Sound"),    KAudioControllerType_VirtioSound);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -642,14 +642,14 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KStorageBus 
 {
     switch (bus)
     {
-        case KStorageBus_IDE:        return QApplication::translate("UICommon", "IDE", "StorageBus");
-        case KStorageBus_SATA:       return QApplication::translate("UICommon", "SATA", "StorageBus");
-        case KStorageBus_SCSI:       return QApplication::translate("UICommon", "SCSI", "StorageBus");
-        case KStorageBus_Floppy:     return QApplication::translate("UICommon", "Floppy", "StorageBus");
-        case KStorageBus_SAS:        return QApplication::translate("UICommon", "SAS", "StorageBus");
-        case KStorageBus_USB:        return QApplication::translate("UICommon", "USB", "StorageBus");
-        case KStorageBus_PCIe:       return QApplication::translate("UICommon", "PCIe", "StorageBus");
-        case KStorageBus_VirtioSCSI: return QApplication::translate("UICommon", "virtio-scsi", "StorageBus");
+        case KStorageBus_IDE:        return QString("IDE");
+        case KStorageBus_SATA:       return QString("SATA");
+        case KStorageBus_SCSI:       return QString("SCSI");
+        case KStorageBus_Floppy:     return QString("Floppy");
+        case KStorageBus_SAS:        return QString("SAS");
+        case KStorageBus_USB:        return QString("USB");
+        case KStorageBus_PCIe:       return QString("PCIe");
+        case KStorageBus_VirtioSCSI: return QString("virtio-scsi");
         default:                     AssertMsgFailed(("No text for %d", bus)); break;
     }
     return QString();
@@ -659,14 +659,14 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KStorageBus 
 template<> SHARED_LIBRARY_STUFF KStorageBus UIConverter::fromString<KStorageBus>(const QString &strType) const
 {
     QHash<QString, KStorageBus> list;
-    list.insert(QApplication::translate("UICommon", "IDE", "StorageBus"),         KStorageBus_IDE);
-    list.insert(QApplication::translate("UICommon", "SATA", "StorageBus"),        KStorageBus_SATA);
-    list.insert(QApplication::translate("UICommon", "SCSI", "StorageBus"),        KStorageBus_SCSI);
-    list.insert(QApplication::translate("UICommon", "Floppy", "StorageBus"),      KStorageBus_Floppy);
-    list.insert(QApplication::translate("UICommon", "SAS", "StorageBus"),         KStorageBus_SAS);
-    list.insert(QApplication::translate("UICommon", "USB", "StorageBus"),         KStorageBus_USB);
-    list.insert(QApplication::translate("UICommon", "PCIe", "StorageBus"),        KStorageBus_PCIe);
-    list.insert(QApplication::translate("UICommon", "virtio-scsi", "StorageBus"), KStorageBus_VirtioSCSI);
+    list.insert(QString("IDE"),         KStorageBus_IDE);
+    list.insert(QString("SATA"),        KStorageBus_SATA);
+    list.insert(QString("SCSI"),        KStorageBus_SCSI);
+    list.insert(QString("Floppy"),      KStorageBus_Floppy);
+    list.insert(QString("SAS"),         KStorageBus_SAS);
+    list.insert(QString("USB"),         KStorageBus_USB);
+    list.insert(QString("PCIe"),        KStorageBus_PCIe);
+    list.insert(QString("virtio-scsi"), KStorageBus_VirtioSCSI);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -679,17 +679,17 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KStorageCont
 {
     switch (type)
     {
-        case KStorageControllerType_LsiLogic:    return QApplication::translate("UICommon", "LsiLogic", "StorageControllerType");
-        case KStorageControllerType_BusLogic:    return QApplication::translate("UICommon", "BusLogic", "StorageControllerType");
-        case KStorageControllerType_IntelAhci:   return QApplication::translate("UICommon", "AHCI", "StorageControllerType");
-        case KStorageControllerType_PIIX3:       return QApplication::translate("UICommon", "PIIX3", "StorageControllerType");
-        case KStorageControllerType_PIIX4:       return QApplication::translate("UICommon", "PIIX4", "StorageControllerType");
-        case KStorageControllerType_ICH6:        return QApplication::translate("UICommon", "ICH6", "StorageControllerType");
-        case KStorageControllerType_I82078:      return QApplication::translate("UICommon", "I82078", "StorageControllerType");
-        case KStorageControllerType_LsiLogicSas: return QApplication::translate("UICommon", "LsiLogic SAS", "StorageControllerType");
-        case KStorageControllerType_USB:         return QApplication::translate("UICommon", "USB", "StorageControllerType");
-        case KStorageControllerType_NVMe:        return QApplication::translate("UICommon", "NVMe", "StorageControllerType");
-        case KStorageControllerType_VirtioSCSI:  return QApplication::translate("UICommon", "virtio-scsi", "StorageControllerType");
+        case KStorageControllerType_LsiLogic:    return QString("LsiLogic");
+        case KStorageControllerType_BusLogic:    return QString("BusLogic");
+        case KStorageControllerType_IntelAhci:   return QString("AHCI");
+        case KStorageControllerType_PIIX3:       return QString("PIIX3");
+        case KStorageControllerType_PIIX4:       return QString("PIIX4");
+        case KStorageControllerType_ICH6:        return QString("ICH6");
+        case KStorageControllerType_I82078:      return QString("I82078");
+        case KStorageControllerType_LsiLogicSas: return QString("LsiLogic SAS");
+        case KStorageControllerType_USB:         return QString("USB");
+        case KStorageControllerType_NVMe:        return QString("NVMe");
+        case KStorageControllerType_VirtioSCSI:  return QString("virtio-scsi");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -699,17 +699,17 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KStorageCont
 template<> SHARED_LIBRARY_STUFF KStorageControllerType UIConverter::fromString<KStorageControllerType>(const QString &strType) const
 {
     QHash<QString, KStorageControllerType> list;
-    list.insert(QApplication::translate("UICommon", "LsiLogic", "StorageControllerType"),     KStorageControllerType_LsiLogic);
-    list.insert(QApplication::translate("UICommon", "BusLogic", "StorageControllerType"),     KStorageControllerType_BusLogic);
-    list.insert(QApplication::translate("UICommon", "AHCI", "StorageControllerType"),         KStorageControllerType_IntelAhci);
-    list.insert(QApplication::translate("UICommon", "PIIX3", "StorageControllerType"),        KStorageControllerType_PIIX3);
-    list.insert(QApplication::translate("UICommon", "PIIX4", "StorageControllerType"),        KStorageControllerType_PIIX4);
-    list.insert(QApplication::translate("UICommon", "ICH6", "StorageControllerType"),         KStorageControllerType_ICH6);
-    list.insert(QApplication::translate("UICommon", "I82078", "StorageControllerType"),       KStorageControllerType_I82078);
-    list.insert(QApplication::translate("UICommon", "LsiLogic SAS", "StorageControllerType"), KStorageControllerType_LsiLogicSas);
-    list.insert(QApplication::translate("UICommon", "USB", "StorageControllerType"),          KStorageControllerType_USB);
-    list.insert(QApplication::translate("UICommon", "NVMe", "StorageControllerType"),         KStorageControllerType_NVMe);
-    list.insert(QApplication::translate("UICommon", "virtio-scsi", "StorageControllerType"),  KStorageControllerType_VirtioSCSI);
+    list.insert(QString("LsiLogic"),     KStorageControllerType_LsiLogic);
+    list.insert(QString("BusLogic"),     KStorageControllerType_BusLogic);
+    list.insert(QString("AHCI"),         KStorageControllerType_IntelAhci);
+    list.insert(QString("PIIX3"),        KStorageControllerType_PIIX3);
+    list.insert(QString("PIIX4"),        KStorageControllerType_PIIX4);
+    list.insert(QString("ICH6"),         KStorageControllerType_ICH6);
+    list.insert(QString("I82078"),       KStorageControllerType_I82078);
+    list.insert(QString("LsiLogic SAS"), KStorageControllerType_LsiLogicSas);
+    list.insert(QString("USB"),          KStorageControllerType_USB);
+    list.insert(QString("NVMe"),         KStorageControllerType_NVMe);
+    list.insert(QString("virtio-scsi"),  KStorageControllerType_VirtioSCSI);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -722,9 +722,9 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KChipsetType
 {
     switch (type)
     {
-        case KChipsetType_PIIX3:        return QApplication::translate("UICommon", "PIIX3", "ChipsetType");
-        case KChipsetType_ICH9:         return QApplication::translate("UICommon", "ICH9", "ChipsetType");
-        case KChipsetType_ARMv8Virtual: return QApplication::translate("UICommon", "ARMv8Virtual", "ChipsetType");
+        case KChipsetType_PIIX3:        return QString("PIIX3");
+        case KChipsetType_ICH9:         return QString("ICH9");
+        case KChipsetType_ARMv8Virtual: return QString("ARMv8Virtual");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -750,8 +750,8 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const KNATProtocol
 {
     switch (protocol)
     {
-        case KNATProtocol_UDP: return QApplication::translate("UICommon", "UDP", "NATProtocol");
-        case KNATProtocol_TCP: return QApplication::translate("UICommon", "TCP", "NATProtocol");
+        case KNATProtocol_UDP: return QString("UDP");
+        case KNATProtocol_TCP: return QString("TCP");
         default: AssertMsgFailed(("No text for %d", protocol)); break;
     }
     return QString();
@@ -848,7 +848,7 @@ template<> SHARED_LIBRARY_STUFF KProcessStatus UIConverter::fromString<KProcessS
     list.insert(QApplication::translate("UICommon", "Undefined", "ProcessStatus"),               KProcessStatus_Undefined);
     list.insert(QApplication::translate("UICommon", "Starting", "ProcessStatus"),                KProcessStatus_Starting);
     list.insert(QApplication::translate("UICommon", "Started", "ProcessStatus"),                 KProcessStatus_Started);
-    list.insert(QApplication::translate("UICommon", "Paused", "ProcessStatus"),                 KProcessStatus_Paused);
+    list.insert(QApplication::translate("UICommon", "Paused", "ProcessStatus"),                  KProcessStatus_Paused);
     list.insert(QApplication::translate("UICommon", "Terminating", "ProcessStatus"),             KProcessStatus_Terminating);
     list.insert(QApplication::translate("UICommon", "Terminated (Normally)", "ProcessStatus"),   KProcessStatus_TerminatedNormally);
     list.insert(QApplication::translate("UICommon", "Terminated (Signal)", "ProcessStatus"),     KProcessStatus_TerminatedSignal);
