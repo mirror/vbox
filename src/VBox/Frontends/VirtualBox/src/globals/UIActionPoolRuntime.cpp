@@ -2833,7 +2833,7 @@ protected:
     virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Upgrade Guest Additions..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Upgrade Guest Additions"));
+        setStatusTip(QApplication::translate("UIActionPool", "Upgrade guest additions"));
     }
 };
 

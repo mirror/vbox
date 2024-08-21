@@ -1619,7 +1619,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
-        setName(QApplication::translate("UIActionPool", "&Stop"));
+        setName(QApplication::translate("UIActionPool", "Stop"));
     }
 };
 
