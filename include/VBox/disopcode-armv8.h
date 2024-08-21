@@ -561,7 +561,7 @@ typedef enum DISARMV8INSTRCOND
 /**
  * Basic parameter type.
  */
-enum DISARMV8OPPARM
+typedef enum DISARMV8OPPARM
 {
     /** Parameter is not used. */
     kDisArmv8OpParmNone = 0,
@@ -575,7 +575,7 @@ enum DISARMV8OPPARM
     kDisArmv8OpParmSysReg,
     /** Accessing memory from address in base register + potential offset. */
     kDisArmv8OpParmAddrInGpr
-};
+} DISARMV8OPPARM;
 
 
 /**
@@ -592,7 +592,7 @@ typedef enum DISARMV8OPPARMSHIFT
     /** Arithmetic right shift applied. */
     kDisArmv8OpParmShiftArithRight,
     /** Rotation applied. */
-    kDisArmv8OpParmShiftRotate,
+    kDisArmv8OpParmShiftRotate
 } DISARMV8OPPARMSHIFT;
 /** @} */
 
