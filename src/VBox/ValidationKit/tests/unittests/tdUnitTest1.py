@@ -308,6 +308,7 @@ class tdUnitTest1(vbox.TestDriver):
         'testcase/tstRTProcIsRunningByName': '',
         'testcase/tstRTProcQueryUsername': '',
         'testcase/tstRTProcWait': '',
+        'testcase/tstRTSystemQueryFirmware': '',
         'testcase/tstTime-2': '',
         'testcase/tstTime-3': '',
         'testcase/tstTime-4': '',
