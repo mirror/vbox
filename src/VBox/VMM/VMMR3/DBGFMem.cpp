@@ -79,8 +79,7 @@ static DECLCALLBACK(int) dbgfR3MemScan(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS p
     int     rc;
     PVMCPU  pVCpu   = VMMGetCpuById(pVM, idCpu);
     PGMMODE enmMode = PGMGetGuestMode(pVCpu);
-    if (    enmMode == PGMMODE_REAL
-        ||  enmMode == PGMMODE_PROTECTED
+    if (    !PGMMODE_WITH_PAGING(enmMode)
         ||  DBGFADDRESS_IS_PHYS(pAddress)
         )
     {
@@ -97,8 +96,7 @@ static DECLCALLBACK(int) dbgfR3MemScan(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS p
 #if GC_ARCH_BITS > 32
         if (    (   pAddress->FlatPtr >= _4G
                  || pAddress->FlatPtr + cbRange > _4G)
-            &&  enmMode != PGMMODE_AMD64
-            &&  enmMode != PGMMODE_AMD64_NX)
+            &&  !PGMMODE_IS_64BIT_MODE(enmMode))
             return VERR_DBGF_MEM_NOT_FOUND;
 #endif
         RTGCUINTPTR GCPtrHit;
@@ -173,17 +171,15 @@ static DECLCALLBACK(int) dbgfR3MemRead(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS p
     int rc;
     PVMCPU  pVCpu   = VMMGetCpuById(pVM, idCpu);
     PGMMODE enmMode = PGMGetGuestMode(pVCpu);
-    if (    enmMode == PGMMODE_REAL
-        ||  enmMode == PGMMODE_PROTECTED
-        ||  DBGFADDRESS_IS_PHYS(pAddress) )
+    if (    !PGMMODE_WITH_PAGING(enmMode)
+        ||  DBGFADDRESS_IS_PHYS(pAddress))
         rc = PGMPhysSimpleReadGCPhys(pVM, pvBuf, pAddress->FlatPtr, cbRead);
     else
     {
 #if GC_ARCH_BITS > 32
         if (    (   pAddress->FlatPtr >= _4G
                  || pAddress->FlatPtr + cbRead > _4G)
-            &&  enmMode != PGMMODE_AMD64
-            &&  enmMode != PGMMODE_AMD64_NX)
+            &&  !PGMMODE_IS_64BIT_MODE(enmMode))
             return VERR_PAGE_TABLE_NOT_PRESENT;
 #endif
         rc = PGMPhysSimpleReadGCPtr(pVCpu, pvBuf, pAddress->FlatPtr, cbRead);
@@ -326,17 +322,15 @@ static DECLCALLBACK(int) dbgfR3MemWrite(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS 
     int rc;
     PVMCPU  pVCpu   = VMMGetCpuById(pVM, idCpu);
     PGMMODE enmMode = PGMGetGuestMode(pVCpu);
-    if (    enmMode == PGMMODE_REAL
-        ||  enmMode == PGMMODE_PROTECTED
-        ||  DBGFADDRESS_IS_PHYS(pAddress) )
+    if (   !PGMMODE_WITH_PAGING(enmMode)
+        || DBGFADDRESS_IS_PHYS(pAddress))
         rc = PGMPhysSimpleWriteGCPhys(pVM, pAddress->FlatPtr, pvBuf, cbWrite);
     else
     {
 #if GC_ARCH_BITS > 32
         if (    (   pAddress->FlatPtr >= _4G
                  || pAddress->FlatPtr + cbWrite > _4G)
-            &&  enmMode != PGMMODE_AMD64
-            &&  enmMode != PGMMODE_AMD64_NX)
+            &&  !PGMMODE_IS_64BIT_MODE(enmMode))
             return VERR_PAGE_TABLE_NOT_PRESENT;
 #endif
         rc = PGMPhysSimpleWriteGCPtr(pVCpu, pAddress->FlatPtr, pvBuf, cbWrite);
@@ -511,6 +505,7 @@ static uint32_t dbgfR3PagingDumpModeToFlags(PGMMODE enmMode)
 {
     switch (enmMode)
     {
+#if !defined(VBOX_VMM_TARGET_ARMV8)
         case PGMMODE_32_BIT:
             return DBGFPGDMP_FLAGS_PSE;
         case PGMMODE_PAE:
@@ -533,6 +528,12 @@ static uint32_t dbgfR3PagingDumpModeToFlags(PGMMODE enmMode)
             return 0;
         default:
             AssertFailedReturn(UINT32_MAX);
+#else
+        case PGMMODE_NONE:
+            return 0;
+        default:
+            AssertFailedReturn(UINT32_MAX);
+#endif
     }
 }
 

@@ -67,12 +67,14 @@ typedef struct
     PVMCPU          pVCpu;
     /** The address space for resolving symbol. */
     RTDBGAS         hDbgAs;
+#if !defined(VBOX_VMM_TARGET_ARMV8)
     /** Pointer to the first byte in the segment. */
     RTGCUINTPTR     GCPtrSegBase;
     /** Pointer to the byte after the end of the segment. (might have wrapped!) */
     RTGCUINTPTR     GCPtrSegEnd;
     /** The size of the segment minus 1. */
     RTGCUINTPTR     cbSegLimit;
+#endif
     /** The guest paging mode. */
     PGMMODE         enmMode;
     /** Pointer to the current page - R3 Ptr. */
@@ -93,7 +95,6 @@ typedef struct
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#if !defined(VBOX_VMM_TARGET_ARMV8)
 static FNDISREADBYTES dbgfR3DisasInstrRead;
 
 
@@ -113,9 +114,16 @@ static FNDISREADBYTES dbgfR3DisasInstrRead;
 static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, PGMMODE enmMode,
                                  RTGCPTR GCPtr, uint32_t fFlags, PDBGFDISASSTATE pState)
 {
+#if !defined(VBOX_VMM_TARGET_ARMV8)
     pState->GCPtrSegBase    = pSelInfo->GCPtrBase;
     pState->GCPtrSegEnd     = pSelInfo->cbLimit + 1 + (RTGCUINTPTR)pSelInfo->GCPtrBase;
     pState->cbSegLimit      = pSelInfo->cbLimit;
+    pState->f64Bits         = enmMode >= PGMMODE_AMD64 && pSelInfo->u.Raw.Gen.u1Long;
+#else
+    RT_NOREF(pSelInfo);
+
+    pState->f64Bits         = CPUMGetGuestCodeBits(pVCpu) == 64;
+#endif
     pState->enmMode         = enmMode;
     pState->GCPtrPage       = 0;
     pState->pvPageR3        = NULL;
@@ -123,7 +131,6 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
     pState->pVM             = pVM;
     pState->pVCpu           = pVCpu;
     pState->fLocked         = false;
-    pState->f64Bits         = enmMode >= PGMMODE_AMD64 && pSelInfo->u.Raw.Gen.u1Long;
 
     DISCPUMODE enmCpuMode;
     switch (fFlags & DBGF_DISAS_FLAGS_MODE_MASK)
@@ -132,12 +139,9 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
             AssertFailed();
             RT_FALL_THRU();
         case DBGF_DISAS_FLAGS_DEFAULT_MODE:
-            enmCpuMode   = pState->f64Bits
-                         ? DISCPUMODE_64BIT
-                         : pSelInfo->u.Raw.Gen.u1DefBig
-                         ? DISCPUMODE_32BIT
-                         : DISCPUMODE_16BIT;
+            enmCpuMode = CPUMGetGuestDisMode(pVCpu);
             break;
+#if !defined(VBOX_VMM_TARGET_ARMV8)
         case DBGF_DISAS_FLAGS_16BIT_MODE:
         case DBGF_DISAS_FLAGS_16BIT_REAL_MODE:
             enmCpuMode = DISCPUMODE_16BIT;
@@ -148,6 +152,18 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
         case DBGF_DISAS_FLAGS_64BIT_MODE:
             enmCpuMode = DISCPUMODE_64BIT;
             break;
+#else
+        case DBGF_DISAS_FLAGS_16BIT_MODE: /** @todo r=aeichner This is a bit abusive... */
+        case DBGF_DISAS_FLAGS_16BIT_REAL_MODE:
+            enmCpuMode = DISCPUMODE_ARMV8_T32;
+            break;
+        case DBGF_DISAS_FLAGS_32BIT_MODE:
+            enmCpuMode = DISCPUMODE_ARMV8_A32;
+            break;
+        case DBGF_DISAS_FLAGS_64BIT_MODE:
+            enmCpuMode = DISCPUMODE_ARMV8_A64;
+            break;
+#endif
     }
 
     uint32_t cbInstr;
@@ -220,7 +236,11 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISSTATE pDis, uint8_t offInstr, 
     PDBGFDISASSTATE pState = (PDBGFDISASSTATE)pDis;
     for (;;)
     {
+#if !defined(VBOX_VMM_TARGET_ARMV8)
         RTGCUINTPTR GCPtr = pDis->uInstrAddr + offInstr + pState->GCPtrSegBase;
+#else
+        RTGCUINTPTR GCPtr = pDis->uInstrAddr + offInstr;
+#endif
 
         /*
          * Need to update the page translation?
@@ -234,10 +254,10 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISSTATE pDis, uint8_t offInstr, 
             pState->GCPtrPage = GCPtr & ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK;
             if (pState->fLocked)
                 PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
-            if (pState->enmMode <= PGMMODE_PROTECTED)
-                rc = PGMPhysGCPhys2CCPtrReadOnly(pState->pVM, pState->GCPtrPage, &pState->pvPageR3, &pState->PageMapLock);
-            else
+            if (PGMMODE_WITH_PAGING(pState->enmMode))
                 rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVCpu, pState->GCPtrPage, &pState->pvPageR3, &pState->PageMapLock);
+            else
+                rc = PGMPhysGCPhys2CCPtrReadOnly(pState->pVM, pState->GCPtrPage, &pState->pvPageR3, &pState->PageMapLock);
             if (RT_SUCCESS(rc))
                 pState->fLocked = true;
             else
@@ -248,6 +268,8 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISSTATE pDis, uint8_t offInstr, 
             }
         }
 
+        uint32_t cb = GUEST_PAGE_SIZE - (GCPtr & GUEST_PAGE_OFFSET_MASK);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
         /*
          * Check the segment limit.
          */
@@ -257,13 +279,13 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISSTATE pDis, uint8_t offInstr, 
         /*
          * Calc how much we can read, maxing out the read.
          */
-        uint32_t cb = GUEST_PAGE_SIZE - (GCPtr & GUEST_PAGE_OFFSET_MASK);
         if (!pState->f64Bits)
         {
             RTGCUINTPTR cbSeg = pState->GCPtrSegEnd - GCPtr;
             if (cb > cbSeg && cbSeg)
                 cb = cbSeg;
         }
+#endif
         if (cb > cbMaxRead)
             cb = cbMaxRead;
 
@@ -297,6 +319,7 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISSTATE pDis, uint32_t u32Sel, 
      */
     DBGFADDRESS     Addr;
     int             rc;
+#if !defined(VBOX_VMM_TARGET_ARMV8)
     /* Start with CS. */
     if (   DIS_FMT_SEL_IS_REG(u32Sel)
         ?  DIS_FMT_SEL_GET_REG(u32Sel) == DISSELREG_CS
@@ -325,6 +348,12 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISSTATE pDis, uint32_t u32Sel, 
         /** @todo implement a generic solution here. */
         rc = VERR_SYMBOL_NOT_FOUND;
     }
+#else
+    RT_NOREF(pSelInfo, u32Sel);
+
+    DBGFR3AddrFromFlat(pState->pVM->pUVM, &Addr, uAddress);
+    rc = VINF_SUCCESS;
+#endif
 
     /*
      * If we got an address, try resolve it into a symbol.
@@ -352,7 +381,6 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISSTATE pDis, uint32_t u32Sel, 
     }
     return rc;
 }
-#endif /* VBOX_VMM_TARGET_ARMV8 */
 
 
 /**
@@ -382,9 +410,11 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     int     rc;
 
 #if defined(VBOX_VMM_TARGET_ARMV8)
-    RT_NOREF(pVM, pVCpu, Sel, GCPtr, rc, fFlags, pszOutput, cbOutput, pcbInstr, pDisState);
-    //AssertFailed(); /** @todo */
-    return VERR_NOT_IMPLEMENTED;
+    DBGFSELINFO     SelInfo; RT_ZERO(SelInfo);
+    const PGMMODE   enmMode = PGMGetGuestMode(pVCpu);
+    const bool      fRealModeAddress = false;
+    if (fFlags & DBGF_DISAS_FLAGS_CURRENT_GUEST)
+        GCPtr = CPUMGetGuestFlatPC(pVCpu);
 #else
     /*
      * Get the Sel and GCPtr if fFlags requests that.
@@ -427,7 +457,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
         SelInfo.SelGate                 = 0;
         SelInfo.GCPtrBase               = pSRegCS->u64Base;
         SelInfo.cbLimit                 = pSRegCS->u32Limit;
-        SelInfo.fFlags                  = PGMMODE_IS_LONG_MODE(enmMode)
+        SelInfo.fFlags                  = PGMMODE_IS_64BIT_MODE(enmMode)
                                         ? DBGFSELINFO_FLAGS_LONG_MODE
                                         : enmMode != PGMMODE_REAL && !pCtx->eflags.Bits.u1VM
                                         ? DBGFSELINFO_FLAGS_PROT_MODE
@@ -451,7 +481,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
         SelInfo.SelGate                 = 0;
         SelInfo.GCPtrBase               = 0;
         SelInfo.cbLimit                 = ~(RTGCUINTPTR)0;
-        SelInfo.fFlags                  = PGMMODE_IS_LONG_MODE(enmMode)
+        SelInfo.fFlags                  = PGMMODE_IS_64BIT_MODE(enmMode)
                                         ? DBGFSELINFO_FLAGS_LONG_MODE
                                         : enmMode != PGMMODE_REAL
                                         ? DBGFSELINFO_FLAGS_PROT_MODE
@@ -511,6 +541,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
             return rc;
         }
     }
+#endif
 
     /*
      * Disassemble it.
@@ -530,10 +561,17 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
      * Format it.
      */
     char szBuf[512];
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    DISFormatArmV8Ex(&State.Dis, szBuf, sizeof(szBuf),
+                     DIS_FMT_FLAGS_RELATIVE_BRANCH,
+                     fFlags & DBGF_DISAS_FLAGS_NO_SYMBOLS ? NULL : dbgfR3DisasGetSymbol,
+                     NULL);
+#else
     DISFormatYasmEx(&State.Dis, szBuf, sizeof(szBuf),
                     DIS_FMT_FLAGS_RELATIVE_BRANCH,
                     fFlags & DBGF_DISAS_FLAGS_NO_SYMBOLS ? NULL : dbgfR3DisasGetSymbol,
                     &SelInfo);
+#endif
 
     /*
      * Print it to the user specified buffer.
@@ -547,14 +585,14 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
             cch = RTStrPrintf(pszOutput, cbOutput, "%04x:%04x  %s", Sel, (unsigned)GCPtr, szBuf);
         else if (Sel == DBGF_SEL_FLAT)
         {
-            if (enmMode >= PGMMODE_AMD64)
+            if (PGMMODE_IS_64BIT_MODE(enmMode))
                 cch = RTStrPrintf(pszOutput, cbOutput, "%RGv  %s", GCPtr, szBuf);
             else
                 cch = RTStrPrintf(pszOutput, cbOutput, "%08RX32  %s", (uint32_t)GCPtr, szBuf);
         }
         else
         {
-            if (enmMode >= PGMMODE_AMD64)
+            if (PGMMODE_IS_64BIT_MODE(enmMode))
                 cch = RTStrPrintf(pszOutput, cbOutput, "%04x:%RGv  %s", Sel, GCPtr, szBuf);
             else
                 cch = RTStrPrintf(pszOutput, cbOutput, "%04x:%08RX32  %s", Sel, (uint32_t)GCPtr, szBuf);
@@ -575,7 +613,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
                               szBuf);
         else if (Sel == DBGF_SEL_FLAT)
         {
-            if (enmMode >= PGMMODE_AMD64)
+            if (PGMMODE_IS_64BIT_MODE(enmMode))
                 cch = RTStrPrintf(pszOutput, cbOutput, "%RGv %.*Rhxs%*s %s",
                                   GCPtr,
                                   cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
@@ -588,7 +626,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
         }
         else
         {
-            if (enmMode >= PGMMODE_AMD64)
+            if (PGMMODE_IS_64BIT_MODE(enmMode))
                 cch = RTStrPrintf(pszOutput, cbOutput, "%04x:%RGv %.*Rhxs%*s %s",
                                   Sel, GCPtr,
                                   cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
@@ -616,7 +654,6 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
 
     dbgfR3DisasInstrDone(&State);
     return VINF_SUCCESS;
-#endif /* !VBOX_VMM_TARGET_ARMV8*/
 }
 
 

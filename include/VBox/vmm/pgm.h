@@ -249,6 +249,9 @@ typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPGMPHYSHANDLER,(PVMCC pVM, PVMCPUCC pVC
 typedef FNPGMPHYSHANDLER *PFNPGMPHYSHANDLER;
 
 
+/** @todo r=aeichner This doesn't seem to be used outside of the VMM module, so we might make
+ *                   all APIs (PGMGetGuestMode(), etc.) internal and split this up into an
+ *                   x86 and arm specific header. */
 /**
  * Paging mode.
  *
@@ -258,6 +261,7 @@ typedef enum PGMMODE
 {
     /** The usual invalid value. */
     PGMMODE_INVALID = 0,
+#ifndef VBOX_VMM_TARGET_ARMV8
     /** Real mode. */
     PGMMODE_REAL,
     /** Protected mode, no paging. */
@@ -282,11 +286,20 @@ typedef enum PGMMODE
     PGMMODE_EPT,
     /** Special mode used by NEM to indicate no shadow paging necessary. */
     PGMMODE_NONE,
+#else
+    /** Paging is not enabled by the guest. */
+    PGMMODE_NONE,
+    /** VMSAv8-32 Virtual Memory System Architecture v8 - 32-bit variant enabled. */
+    PGMMODE_VMSA_V8_32,
+    /** VMSAv8-64 Virtual Memory System Architecture v8 - 64-bit variant enabled. */
+    PGMMODE_VMSA_V8_64,
+#endif
     /** The max number of modes */
     PGMMODE_MAX,
     /** 32bit hackishness. */
     PGMMODE_32BIT_HACK = 0x7fffffff
 } PGMMODE;
+
 
 /**
  * Second level address translation (SLAT) mode.
@@ -658,29 +671,43 @@ typedef PGMPTWALKFAST const *PCPGMPTWALKFAST;
     } while (0)
 
 
+#ifndef VBOX_VMM_TARGET_ARMV8
 /** Macro for checking if the guest is using paging.
  * @param enmMode   PGMMODE_*.
  * @remark  ASSUMES certain order of the PGMMODE_* values.
  */
-#define PGMMODE_WITH_PAGING(enmMode) ((enmMode) >= PGMMODE_32_BIT)
+# define PGMMODE_WITH_PAGING(enmMode) ((enmMode) >= PGMMODE_32_BIT)
 
 /** Macro for checking if it's one of the long mode modes.
  * @param enmMode   PGMMODE_*.
  */
-#define PGMMODE_IS_LONG_MODE(enmMode) ((enmMode) == PGMMODE_AMD64_NX || (enmMode) == PGMMODE_AMD64)
+# define PGMMODE_IS_64BIT_MODE(enmMode) ((enmMode) == PGMMODE_AMD64_NX || (enmMode) == PGMMODE_AMD64)
 
 /** Macro for checking if it's one of the AMD64 nested modes.
  * @param enmMode   PGMMODE_*.
  */
-#define PGMMODE_IS_NESTED(enmMode)  (   (enmMode) == PGMMODE_NESTED_32BIT \
-                                     || (enmMode) == PGMMODE_NESTED_PAE \
-                                     || (enmMode) == PGMMODE_NESTED_AMD64)
+# define PGMMODE_IS_NESTED(enmMode)  (   (enmMode) == PGMMODE_NESTED_32BIT \
+                                      || (enmMode) == PGMMODE_NESTED_PAE \
+                                      || (enmMode) == PGMMODE_NESTED_AMD64)
 
 /** Macro for checking if it's one of the PAE modes.
  * @param enmMode   PGMMODE_*.
  */
-#define PGMMODE_IS_PAE(enmMode)     (   (enmMode) == PGMMODE_PAE \
-                                     || (enmMode) == PGMMODE_PAE_NX)
+# define PGMMODE_IS_PAE(enmMode)     (   (enmMode) == PGMMODE_PAE \
+                                      || (enmMode) == PGMMODE_PAE_NX)
+#else
+/** Macro for checking if the guest is using paging.
+ * @param enmMode   PGMMODE_*.
+ * @remark  ASSUMES certain order of the PGMMODE_* values.
+ */
+# define PGMMODE_WITH_PAGING(enmMode) ((enmMode) > PGMMODE_NONE)
+
+/** Macro for checking if it's the 64-bit translation mode.
+ * @param enmMode   PGMMODE_*.
+ */
+# define PGMMODE_IS_64BIT_MODE(enmMode) ((enmMode) == PGMMODE_VMSA_V8_64)
+#endif
+
 
 /**
  * Is the ROM mapped (true) or is the shadow RAM mapped (false).

@@ -42,6 +42,7 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/cpum-armv8.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/sup.h>
 #include <VBox/vmm/mm.h>
@@ -721,13 +722,23 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_
 
 VMMDECL(PGMMODE) PGMGetGuestMode(PVMCPU pVCpu)
 {
-    return pVCpu->pgm.s.enmGuestMode;
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    bool fMmuEnabled = CPUMGetGuestMmuEnabled(pVCpu);
+    if (!fMmuEnabled)
+        return PGMMODE_NONE;
+
+    CPUMMODE enmCpuMode = CPUMGetGuestMode(pVCpu);
+    return   enmCpuMode == CPUMMODE_ARMV8_AARCH64
+           ? PGMMODE_VMSA_V8_64
+           : PGMMODE_VMSA_V8_32;
 }
 
 
 VMMDECL(PGMMODE) PGMGetShadowMode(PVMCPU pVCpu)
 {
-    return pVCpu->pgm.s.enmShadowMode;
+    RT_NOREF(pVCpu);
+    return PGMMODE_NONE; /* NEM doesn't need any shadow paging. */
 }
 
 
@@ -735,7 +746,7 @@ VMMDECL(int) PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pWalk);
-    AssertReleaseFailed();
+    //AssertReleaseFailed();
     RT_NOREF(pVCpu, GCPtr, pWalk);
     return VERR_NOT_IMPLEMENTED;
 }
