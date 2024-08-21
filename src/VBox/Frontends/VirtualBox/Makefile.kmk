@@ -2129,6 +2129,7 @@ makeallnls:: \
 	$(call MSG_L1,lupdate all languages (nls/*.ts))
 	$(QUIET)$(TOOL_QT6_LUPDATE) \
 		$^ \
+		-locations none \
 		-ts \
 		$(filter-out nls/VirtualBox_en.ts,$(filter-out nls/qt_%.ts,$(VirtualBox_QT_TRANSLATIONS))) \
 		nls/VirtualBox_xx_YY.ts
@@ -2141,6 +2142,7 @@ nls/VirtualBox_en.ts: \
 	$(call MSG_L1,lupdate $@)
 	$(QUIET)$(TOOL_QT6_LUPDATE) \
 		$^ \
+		-locations none \
 		-ts \
 		$@
 	$(QUIET)$(SED) -n -i -e \
