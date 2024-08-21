@@ -148,8 +148,6 @@ protected:
     /** Defines dialog optional @a flags. */
     void setOptionalFlags(const QMap<QString, QVariant> &flags);
 
-    /** Returns the dialog title extension. */
-    virtual QString titleExtension() const = 0;
     /** Returns the dialog title. */
     virtual QString title() const = 0;
 

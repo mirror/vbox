@@ -63,8 +63,6 @@ protected:
     /** Saves the dialog data. */
     virtual void save() RT_OVERRIDE;
 
-    /** Returns the dialog title extension. */
-    virtual QString titleExtension() const RT_OVERRIDE;
     /** Returns the dialog title. */
     virtual QString title() const RT_OVERRIDE;
 
@@ -116,8 +114,6 @@ protected:
     /** Saves the dialog data. */
     virtual void save() RT_OVERRIDE;
 
-    /** Returns the dialog title extension. */
-    virtual QString titleExtension() const RT_OVERRIDE;
     /** Returns the dialog title. */
     virtual QString title() const RT_OVERRIDE;
 

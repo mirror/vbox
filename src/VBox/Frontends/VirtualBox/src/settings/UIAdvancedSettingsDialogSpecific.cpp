@@ -173,14 +173,9 @@ void UIAdvancedSettingsDialogGlobal::save()
     sltHandleSerializationFinished();
 }
 
-QString UIAdvancedSettingsDialogGlobal::titleExtension() const
-{
-    return tr("Preferences");
-}
-
 QString UIAdvancedSettingsDialogGlobal::title() const
 {
-    return tr("VirtualBox - %1").arg(titleExtension());
+    return tr("VirtualBox - Preferences", "global preferences dialog name");
 }
 
 void UIAdvancedSettingsDialogGlobal::prepare()
@@ -484,18 +479,13 @@ void UIAdvancedSettingsDialogMachine::save()
     sltHandleSerializationFinished();
 }
 
-QString UIAdvancedSettingsDialogMachine::titleExtension() const
-{
-    return tr("Settings");
-}
-
 QString UIAdvancedSettingsDialogMachine::title() const
 {
     QString strDialogTitle;
     /* Get corresponding machine (required to compose dialog title): */
-    const CMachine &machine = gpGlobalSession->virtualBox().FindMachine(m_uMachineId.toString());
-    if (!machine.isNull())
-        strDialogTitle = tr("%1 - %2").arg(machine.GetName()).arg(titleExtension());
+    CMachine comMachine = gpGlobalSession->virtualBox().FindMachine(m_uMachineId.toString());
+    if (!comMachine.isNull())
+        strDialogTitle = tr("%1 - Settings", "machine settings dialog name, starts from machine name").arg(comMachine.GetName());
     return strDialogTitle;
 }
 
