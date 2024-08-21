@@ -70,9 +70,9 @@ RT_C_DECLS_BEGIN
  */
 typedef enum RTSCRIPTLEXTOKTYPE
 {
-    /** Invalid type.. */
+    /** Invalid type. */
     RTSCRIPTLEXTOKTYPE_INVALID = 0,
-    /** Identifier */
+    /** Identifier. */
     RTSCRIPTLEXTOKTYPE_IDENTIFIER,
     /** Numerical constant. */
     RTSCRIPTLEXTOKTYPE_NUMBER,
@@ -183,7 +183,7 @@ typedef struct RTSCRIPTLEXTOKEN
         /** Operator */
         struct
         {
-            /** Pointer to the operator descriptor.. */
+            /** Pointer to the operator descriptor. */
             PCRTSCRIPTLEXTOKMATCH pOp;
         } Operator;
         /** Keyword. */
@@ -327,7 +327,6 @@ typedef FNRTSCRIPTLEXRDR *PFNRTSCRIPTLEXRDR;
 /**
  * Lexer destructor callback.
  *
- * @returns nothing.
  * @param   hScriptLex      The lexer handle.
  * @param   pvUser          Opaque user data passed when creating the lexer.
  */
@@ -404,7 +403,6 @@ RTDECL(int) RTScriptLexCreateFromFile(PRTSCRIPTLEX phScriptLex, const char *pszF
 /**
  * Destroys the given lexer handle.
  *
- * @returns nothing.
  * @param   hScriptLex             The lexer handle to destroy.
  */
 RTDECL(void) RTScriptLexDestroy(RTSCRIPTLEX hScriptLex);
@@ -518,7 +516,6 @@ RTDECL(char) RTScriptLexPeekChEx(RTSCRIPTLEX hScriptLex, unsigned idx, uint32_t 
 /**
  * Skips everything declared as whitespace, including comments and newlines.
  *
- * @returns nothing.
  * @param   hScriptLex             The lexer handle.
  */
 RTDECL(void) RTScriptLexSkipWhitespace(RTSCRIPTLEX hScriptLex);
@@ -547,7 +544,7 @@ RTDECL(int) RTScriptLexScanNumber(RTSCRIPTLEX hScriptLex, uint8_t uBase, bool fA
  * @returns IPRT status code.
  * @param   hScriptLex    The lexer handle.
  * @param   ch            The first character of the identifier.
- * @param   pToken        The token to fill in.
+ * @param   pTok          The token to fill in.
  * @param   pvUser        Opaque user data, must point to the allowed set of characters for identifiers as a
  *                        zero terminated string. NULL will revert to a default set of characters including
  *                        [_a-zA-Z0-9]*
@@ -565,7 +562,7 @@ RTDECL(int) RTScriptLexScanIdentifier(RTSCRIPTLEX hScriptLex, char ch, PRTSCRIPT
  * @returns IPRT status code.
  * @param   hScriptLex    The lexer handle.
  * @param   ch            The character starting the rule, unused.
- * @param   pToken        The token to fill in.
+ * @param   pTok          The token to fill in.
  * @param   pvUser        Opaque user data, unused.
  *
  * @note The RTSCRIPT_LEX_RULE_CONSUME must be used (or omitted) such that the current character
@@ -582,7 +579,7 @@ RTDECL(int) RTScriptLexScanStringLiteralC(RTSCRIPTLEX hScriptLex, char ch, PRTSC
  * @returns IPRT status code.
  * @param   hScriptLex    The lexer handle.
  * @param   ch            The character starting the rule, unused.
- * @param   pToken        The token to fill in.
+ * @param   pTok          The token to fill in.
  * @param   pvUser        Opaque user data, unused.
  *
  * @note The RTSCRIPT_LEX_RULE_CONSUME must be used (or omitted) such that the current character

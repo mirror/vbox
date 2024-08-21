@@ -113,7 +113,6 @@ typedef RTSCRIPTVAL *PRTSCRIPTVAL;
 typedef const RTSCRIPTVAL *PCRTSCRIPTVAL;
 #endif
 
-/** @} */
 
 RT_C_DECLS_END
 
