@@ -2377,7 +2377,7 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toString(const IndicatorTyp
         case IndicatorType_Features:          strResult = QApplication::translate("UICommon", "Features", "IndicatorType"); break;
         case IndicatorType_Mouse:             strResult = QApplication::translate("UICommon", "Mouse", "IndicatorType"); break;
         case IndicatorType_Keyboard:          strResult = QApplication::translate("UICommon", "Keyboard", "IndicatorType"); break;
-        case IndicatorType_KeyboardExtension: strResult = QApplication::translate("UICommon", "Host-combo", "IndicatorType"); break;
+        case IndicatorType_KeyboardExtension: strResult = QApplication::translate("UICommon", "Keyboard Extension", "IndicatorType"); break;
         default:
         {
             AssertMsgFailed(("No text for indicator type=%d", indicatorType));
