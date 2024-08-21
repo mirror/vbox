@@ -75,7 +75,7 @@ typedef struct
         uint16_t        offBase;
         /** Amount of bits to shift. */
         uint8_t         cShift;
-    };
+    } u;
 } DIS_OP_PARAM_ARMV8_T;
 AssertCompile(sizeof(DIS_OP_PARAM_ARMV8_T) <= 16);
 /** Pointer to opcode parameter. */
