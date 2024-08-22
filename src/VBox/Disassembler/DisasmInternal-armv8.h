@@ -99,8 +99,8 @@ typedef struct DISARMV8INSNPARAM
 typedef DISARMV8INSNPARAM *PDISARMV8INSNPARAM;
 typedef const DISARMV8INSNPARAM *PCDISARMV8INSNPARAM;
 
-#define DIS_ARMV8_INSN_PARAM_NONE { kDisParmParseNop, 0, 0, DIS_ARMV8_INSN_PARAM_UNSET }
-#define DIS_ARMV8_INSN_PARAM_CREATE(a_idxParse, a_idxBitStart, a_cBits, a_idxParam) \
+#define DIS_ARMV8_INSN_DECODE_TERM { kDisParmParseNop, 0, 0, DIS_ARMV8_INSN_PARAM_UNSET }
+#define DIS_ARMV8_INSN_DECODE(a_idxParse, a_idxBitStart, a_cBits, a_idxParam) \
     { a_idxParse, a_idxBitStart, a_cBits, a_idxParam }
 
 #define DIS_ARMV8_INSN_PARAM_UNSET        UINT8_MAX
@@ -189,7 +189,7 @@ typedef const DISARMV8INSNCLASS *PCDISARMV8INSNCLASS;
     static const DISARMV8INSNPARAM g_aArmV8A64Insn ## a_Name ## Decode[] = {
 #define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_4(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
                                                         a_enmParamType1, a_enmParamType2, a_enmParamType3, a_enmParamType4) \
-    DIS_ARMV8_INSN_PARAM_NONE \
+    DIS_ARMV8_INSN_DECODE_TERM \
     }; \
     static const DISARMV8INSNCLASS g_aArmV8A64Insn ## a_Name = { { kDisArmV8DecodeType_InsnClass, \
                                                                    RT_ELEMENTS(g_aArmV8A64Insn ## a_Name ## Opcodes) }, \
