@@ -86,8 +86,7 @@ style:
         font-size:          '0.9 * from-parent(font-size)'
 
     cover:
-        # TODO: Could we get an SVG logo? Or at least a higher resolution one (this is 512x512, I think).
-        background-image:   en_US/images/vboxlogo.png
+        background-image:   en_US/images/vboxlogo.svg
         background-repeat:  no-repeat
         background-position-horizontal: center
 

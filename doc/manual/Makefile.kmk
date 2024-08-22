@@ -889,7 +889,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(lang)) \
   		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(lang)) \
   		$$(VBOX_PATH_MANUAL_SRC)/pdf-theme-UserManual.yaml \
-  		$$(VBOX_PATH_MANUAL_SRC)/en_US/images/vboxlogo.png
+  		$$(VBOX_PATH_MANUAL_SRC)/en_US/images/vboxlogo.svg
 	$$(call MSG_L1,Building $$@ ($$(@D)/UserManual_pdf.log))
 	$$(QUIET)$$(RM) -f -- "$$@"
 	$$(QUIET)$$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf"
