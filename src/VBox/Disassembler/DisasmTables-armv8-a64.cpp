@@ -610,6 +610,51 @@ DIS_ARMV8_DECODE_MAP_DEFINE_END(LdStReg, RT_BIT_32(24), 24);
 
 
 /*
+ * STP/LDP/STGP/LDPSW
+ *
+ * Note: The opc,L bitfields are concatenated to form an index.
+ */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(LdStRegPairOff)
+ DIS_ARMV8_OP_EX(0x29000000, "stp",             OP_ARMV8_A64_STP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_32BIT),
+ DIS_ARMV8_OP_EX(0x29400000, "ldp",             OP_ARMV8_A64_LDP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_32BIT),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+ DIS_ARMV8_OP_EX(0xa9000000, "stp",             OP_ARMV8_A64_STP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_64BIT),
+ DIS_ARMV8_OP_EX(0xa9400000, "ldp",             OP_ARMV8_A64_LDP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_64BIT),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_DECODER(LdStRegPairOff)
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,            0,  5, 0 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,           10,  5, 1 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,            5,  5, 2 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseSImmMemOff,    15,  7, 2 /*idxParam*/),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_3(LdStRegPairOff, 0xffc00000 /*fFixedInsn*/, 0 /*fClass*/,
+                                                kDisArmV8OpcDecodeCollate,
+                                                RT_BIT_32(22) | RT_BIT_32(30) | RT_BIT_32(31), 22,
+                                                kDisArmv8OpParmGpr, kDisArmv8OpParmGpr, kDisArmv8OpParmAddrInGpr);
+
+
+/*
+ * C4.1.94 - Loads and Stores - Load/Store register pair variants
+ *
+ * Differentiate further based on the op2<14:13> field.
+ *
+ *     Bit  24 23
+ *     +-------------------------------------------
+ *           0  0 Load/store no-allocate pair (offset)
+ *           0  1 Load/store register pair (post-indexed)
+ *           1  0 Load/store register pair (offset).
+ *           1  1 Load/store register pair (pre-indexed).
+ */
+DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(LdStRegPair)
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo */
+    DIS_ARMV8_DECODE_MAP_ENTRY(LdStRegPairOff),
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo */
+DIS_ARMV8_DECODE_MAP_DEFINE_END(LdStRegPair, RT_BIT_32(23) | RT_BIT_32(24), 23);
+
+
+/*
  * C4.1.94 - Loads and Stores
  *
  * Differentiate further based on the op0<1:0> field.
@@ -627,7 +672,7 @@ DIS_ARMV8_DECODE_MAP_DEFINE_END(LdStReg, RT_BIT_32(24), 24);
 DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(LdStOp0Lo)
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo */
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo */
-    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo */
+    DIS_ARMV8_DECODE_MAP_ENTRY(LdStRegPair),
     DIS_ARMV8_DECODE_MAP_ENTRY(LdStReg),
 DIS_ARMV8_DECODE_MAP_DEFINE_END(LdStOp0Lo, RT_BIT_32(28) | RT_BIT_32(29), 28);
 

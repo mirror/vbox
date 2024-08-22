@@ -27,6 +27,7 @@
 
 .private_extern _TestProcA64
 _TestProcA64:
+
         ; Miscellaneous instructions without a parameter
         nop
         yield
@@ -408,6 +409,16 @@ _TestProcA64:
         ldrsw x0, [x28, #4]
         ldrsw x0, [x28, #16380]
 
+        ldp w0, w1, [x28]
+        ldp w0, w1, [x28, #4]
+        ldp w0, w1, [x28, #-256]
+        ldp w0, w1, [x28, #252]
+
+        ldp x0, x1, [x28]
+        ldp x0, x1, [x28, #8]
+        ldp x0, x1, [x28, #-512]
+        ldp x0, x1, [x28, #504]
+
         ; Memory stores
         strb w0, [x28]
         strb w0, [x28, #1]
@@ -424,6 +435,16 @@ _TestProcA64:
         str w0, [x28]
         str w0, [x28, #4]
         str w0, [x28, #16380]
+
+        stp w0, w1, [x28]
+        stp w0, w1, [x28, #4]
+        stp w0, w1, [x28, #-256]
+        stp w0, w1, [x28, #252]
+
+        stp x0, x1, [x28]
+        stp x0, x1, [x28, #8]
+        stp x0, x1, [x28, #-512]
+        stp x0, x1, [x28, #504]
 
         ; Conditional compare
         ccmp x0, x1, #0x3, eq

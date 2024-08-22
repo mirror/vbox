@@ -66,6 +66,7 @@ typedef enum DISPARMPARSEIDX
     kDisParmParseShift,
     kDisParmParseShiftAmount,
     kDisParmParseImmMemOff,
+    kDisParmParseSImmMemOff,
     kDisParmParseMax
 } DISPARMPARSEIDX;
 /** @}  */
@@ -183,6 +184,8 @@ typedef const DISARMV8INSNCLASS *PCDISARMV8INSNCLASS;
 #define DISARMV8INSNCLASS_F_N_FORCED_1_ON_64BIT         RT_BIT_32(1)
 /** The instruction class is using the 64-bit register encoding only. */
 #define DISARMV8INSNCLASS_F_FORCED_64BIT                RT_BIT_32(2)
+/** The instruction class is using the 32-bit register encoding only. */
+#define DISARMV8INSNCLASS_F_FORCED_32BIT                RT_BIT_32(3)
 
 
 #define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(a_Name) \

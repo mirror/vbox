@@ -723,7 +723,7 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     if (pParam->armv8.u.offBase)
                     {
                         PUT_SZ(", #");
-                        PUT_NUM_16(pParam->armv8.u.offBase);
+                        PUT_NUM_S16(pParam->armv8.u.offBase);
                     }
 
                     PUT_C(']');

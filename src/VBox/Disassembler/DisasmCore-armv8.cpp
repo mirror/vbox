@@ -88,6 +88,7 @@ static FNDISPARSEARMV8 disArmV8ParseImmTbz;
 static FNDISPARSEARMV8 disArmV8ParseShift;
 static FNDISPARSEARMV8 disArmV8ParseShiftAmount;
 static FNDISPARSEARMV8 disArmV8ParseImmMemOff;
+static FNDISPARSEARMV8 disArmV8ParseSImmMemOff;
 /** @}  */
 
 
@@ -121,7 +122,8 @@ static PFNDISPARSEARMV8 const g_apfnDisasm[kDisParmParseMax] =
     disArmV8ParseImmTbz,
     disArmV8ParseShift,
     disArmV8ParseShiftAmount,
-    disArmV8ParseImmMemOff
+    disArmV8ParseImmMemOff,
+    disArmV8ParseSImmMemOff
 };
 
 
@@ -459,7 +461,24 @@ static int disArmV8ParseImmMemOff(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8OP
         default:
             AssertReleaseFailed();
     }
-    pParam->armv8.cb = sizeof(uint16_t);
+    pParam->armv8.cb = sizeof(int16_t);
+    return VINF_SUCCESS;
+}
+
+
+static int disArmV8ParseSImmMemOff(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8OPCODE pOp, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
+{
+    RT_NOREF(pInsnClass, pf64Bit);
+
+    AssertReturn(pInsnParm->cBits <= 7, VERR_INTERNAL_ERROR_2);
+    AssertReturn(   (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_32BIT)
+                 || (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_64BIT),
+                 VERR_INTERNAL_ERROR_2);
+
+    pParam->armv8.cb = sizeof(int16_t);
+    pParam->armv8.u.offBase = disArmV8ExtractBitVecFromInsnSignExtend(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
+    pParam->armv8.u.offBase <<= (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_32BIT) ? 2 : 3; 
+    pDis->armv8.cbOperand   =   (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_32BIT) ? sizeof(uint32_t) : sizeof(uint64_t);
     return VINF_SUCCESS;
 }
 
@@ -590,9 +609,16 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
 
     bool f64Bit = false;
 
+    /** @todo Get rid of these and move them to the per opcode
+     * (SF can become a decoder step). */
     if (pInsnClass->fClass & DISARMV8INSNCLASS_F_SF)
         f64Bit = RT_BOOL(u32Insn & RT_BIT_32(31));
     else if (pInsnClass->fClass & DISARMV8INSNCLASS_F_FORCED_64BIT)
+        f64Bit = true;
+
+    if (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_32BIT)
+        f64Bit = false;
+    else if (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_64BIT)
         f64Bit = true;
 
     int rc = VINF_SUCCESS;
