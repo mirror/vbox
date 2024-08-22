@@ -3267,10 +3267,10 @@ void UIStorageSettingsEditor::sltRetranslateUI()
     m_pLabelSeparatorInformation->setText(tr("Information"));
     m_pLabelHDFormat->setText(tr("Type (Format):"));
     m_pLabelCDFDType->setText(tr("Type:"));
-    m_pLabelHDVirtualSize->setText(tr("Virtual Size:"));
-    m_pLabelHDActualSize->setText(tr("Actual Size:"));
+    m_pLabelHDVirtualSize->setText(tr("Virtual size:"));
+    m_pLabelHDActualSize->setText(tr("Actual size:"));
     m_pLabelCDFDSize->setText(tr("Size:"));
-    m_pLabelHDDetails->setText(tr("Details:"));
+    m_pLabelHDDetails->setText(tr("Storage details:"));
     m_pLabelLocation->setText(tr("Location:"));
     m_pLabelUsage->setText(tr("Attached to:"));
     m_pLabelEncryption->setText(tr("Encryption key:"));
