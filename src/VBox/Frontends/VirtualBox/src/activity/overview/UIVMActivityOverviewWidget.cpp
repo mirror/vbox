@@ -1291,14 +1291,14 @@ void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &
     menu.addSeparator();
 
     QAction *pHideNotRunningAction =
-        menu.addAction(UIVMActivityOverviewWidget::tr("List all virtual machines"));
+        menu.addAction(UIVMActivityOverviewWidget::tr("List All Virtual Machines"));
     pHideNotRunningAction->setCheckable(true);
     pHideNotRunningAction->setChecked(m_fShowNotRunningVMs);
     connect(pHideNotRunningAction, &QAction::triggered,
             this, &UIVMActivityOverviewWidget::sltNotRunningVMVisibility);
 
     QAction *pShowCloudVMsAction =
-        menu.addAction(UIVMActivityOverviewWidget::tr("Show cloud virtual machines"));
+        menu.addAction(UIVMActivityOverviewWidget::tr("Show Cloud Virtual Machines"));
     pShowCloudVMsAction->setCheckable(true);
     pShowCloudVMsAction->setChecked(m_fShowCloudVMs);
     connect(pShowCloudVMsAction, &QAction::triggered,

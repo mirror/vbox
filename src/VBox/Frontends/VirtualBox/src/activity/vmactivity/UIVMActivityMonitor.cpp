@@ -1303,7 +1303,7 @@ void UIVMActivityMonitorLocal::sltRetranslateUI()
     UIVMActivityMonitor::sltRetranslateUI();
 
     foreach (UIChart *pChart, m_charts)
-        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Sec."));
+        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Sec.", "short from seconds"));
 
     m_strVMExitInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "VM Exits");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strVMExitInfoLabelTitle.length());
@@ -2033,7 +2033,7 @@ void UIVMActivityMonitorCloud::sltRetranslateUI()
 {
     UIVMActivityMonitor::sltRetranslateUI();
     foreach (UIChart *pChart, m_charts)
-        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Min."));
+        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Min.", "short from minutes"));
 
     m_strNetworkInInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInInfoLabelTitle.length());
