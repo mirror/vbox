@@ -287,12 +287,11 @@ QString UIApplianceModelItem::text() const
     switch (type())
     {
         case ApplianceModelItemType_VirtualSystem:
-            return tr("%1", "col.1 text")
-                     .arg(data(ApplianceViewSection_Description, Qt::DisplayRole).toString());
+            return data(ApplianceViewSection_Description, Qt::DisplayRole).toString();
         case ApplianceModelItemType_VirtualHardware:
-            return tr("%1: %2", "col.1 text: col.2 text")
-                     .arg(data(ApplianceViewSection_Description, Qt::DisplayRole).toString())
-                     .arg(data(ApplianceViewSection_ConfigValue, Qt::DisplayRole).toString());
+            return QString("%1: %2")
+                           .arg(data(ApplianceViewSection_Description, Qt::DisplayRole).toString())
+                           .arg(data(ApplianceViewSection_ConfigValue, Qt::DisplayRole).toString());
         default:
             break;
     }

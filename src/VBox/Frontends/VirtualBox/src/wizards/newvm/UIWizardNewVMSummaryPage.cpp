@@ -180,8 +180,8 @@ int UIWizardNewVMSummaryItem::childCount() const
 QString UIWizardNewVMSummaryItem::text() const
 {
     return   m_data.isValid()
-           ? UIWizardNewVMSummaryPage::tr("%1: %2", "col.1 text: col.2 text").arg(m_strText, m_data.toString())
-           : UIWizardNewVMSummaryPage::tr("%1", "col.1 text").arg(m_strText);
+           ? QString("%1: %2").arg(m_strText, m_data.toString())
+           : m_strText;
 }
 
 const QString &UIWizardNewVMSummaryItem::name() const

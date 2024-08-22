@@ -241,9 +241,6 @@ private slots:
 
 private:
 
-    /** Holds full error template in "Context description: Error description" form. */
-    QString m_strErrorTemplate;
-
     /** Holds the last cached error of the reply. */
     UINetworkReply::NetworkError m_error;
 
@@ -759,9 +756,6 @@ UINetworkReplyPrivate::UINetworkReplyPrivate(UINetworkRequestType type, const QU
     : m_error(UINetworkReply::NoError)
     , m_pThread(0)
 {
-    /* Prepare full error template: */
-    m_strErrorTemplate = tr("%1: %2", "Context description: Error description");
-
     /* Create and run reply thread: */
     m_pThread = new UINetworkReplyPrivateThread(type, url, strTarget, requestHeaders);
     connect(m_pThread, &UINetworkReplyPrivateThread::sigDownloadProgress,
@@ -786,17 +780,17 @@ QString UINetworkReplyPrivate::errorString() const
     switch (m_error)
     {
         case UINetworkReply::NoError:                     break;
-        case UINetworkReply::RemoteHostClosedError:       return m_strErrorTemplate.arg(m_pThread->context(), tr("Unable to initialize HTTP library"));
-        case UINetworkReply::UrlNotFoundError:            return m_strErrorTemplate.arg(m_pThread->context(), tr("Url not found on the server"));
-        case UINetworkReply::HostNotFoundError:           return m_strErrorTemplate.arg(m_pThread->context(), tr("Host not found"));
-        case UINetworkReply::ContentAccessDenied:         return m_strErrorTemplate.arg(m_pThread->context(), tr("Content access denied"));
-        case UINetworkReply::ProtocolFailure:             return m_strErrorTemplate.arg(m_pThread->context(), tr("Protocol failure"));
-        case UINetworkReply::ConnectionRefusedError:      return m_strErrorTemplate.arg(m_pThread->context(), tr("Connection refused"));
-        case UINetworkReply::SslHandshakeFailedError:     return m_strErrorTemplate.arg(m_pThread->context(), tr("SSL authentication failed"));
-        case UINetworkReply::AuthenticationRequiredError: return m_strErrorTemplate.arg(m_pThread->context(), tr("Wrong SSL certificate format"));
-        case UINetworkReply::ContentReSendError:          return m_strErrorTemplate.arg(m_pThread->context(), tr("Content moved"));
-        case UINetworkReply::ProxyNotFoundError:          return m_strErrorTemplate.arg(m_pThread->context(), tr("Proxy not found"));
-        default:                                          return m_strErrorTemplate.arg(m_pThread->context(), tr("Unknown reason"));
+        case UINetworkReply::RemoteHostClosedError:       return QString("%1: %2").arg(m_pThread->context(), tr("Unable to initialize HTTP library"));
+        case UINetworkReply::UrlNotFoundError:            return QString("%1: %2").arg(m_pThread->context(), tr("Url not found on the server"));
+        case UINetworkReply::HostNotFoundError:           return QString("%1: %2").arg(m_pThread->context(), tr("Host not found"));
+        case UINetworkReply::ContentAccessDenied:         return QString("%1: %2").arg(m_pThread->context(), tr("Content access denied"));
+        case UINetworkReply::ProtocolFailure:             return QString("%1: %2").arg(m_pThread->context(), tr("Protocol failure"));
+        case UINetworkReply::ConnectionRefusedError:      return QString("%1: %2").arg(m_pThread->context(), tr("Connection refused"));
+        case UINetworkReply::SslHandshakeFailedError:     return QString("%1: %2").arg(m_pThread->context(), tr("SSL authentication failed"));
+        case UINetworkReply::AuthenticationRequiredError: return QString("%1: %2").arg(m_pThread->context(), tr("Wrong SSL certificate format"));
+        case UINetworkReply::ContentReSendError:          return QString("%1: %2").arg(m_pThread->context(), tr("Content moved"));
+        case UINetworkReply::ProxyNotFoundError:          return QString("%1: %2").arg(m_pThread->context(), tr("Proxy not found"));
+        default:                                          return QString("%1: %2").arg(m_pThread->context(), tr("Unknown reason"));
     }
     /* Return null-string by default: */
     return QString();

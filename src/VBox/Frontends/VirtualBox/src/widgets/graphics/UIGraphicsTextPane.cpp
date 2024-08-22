@@ -98,7 +98,7 @@ public:
 
         /* Return the description: */
         if (enmTextRole == QAccessible::Description)
-            return UIGraphicsTextPane::tr("%1: %2", "'key: value', like 'Name: MyVM'").arg(line()->string1(), line()->string2());
+            return QString("%1: %2").arg(line()->string1(), line()->string2());
 
         /* Null-string by default: */
         return QString();
