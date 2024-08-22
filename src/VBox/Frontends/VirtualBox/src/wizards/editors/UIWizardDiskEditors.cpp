@@ -142,8 +142,9 @@ QString UIWizardDiskEditors::openFileDialogForDiskFile(const QString &strInitial
     QString strBackendsList = QString("%1 (%2)").arg(comMediumFormat.GetName()).arg(validExtensionList.join(" "));
 
     strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
-                                                              strBackendsList, pParent,
-                                                              QApplication::translate("UICommon", "Please choose a location for new virtual hard disk file"));
+                                                      strBackendsList, pParent,
+                                                      UIMediumSizeAndPathGroupBox::tr("Specify a location for new "
+                                                                                      "virtual hard disk file..."));
     return strChosenFilePath;
 }
 
@@ -221,7 +222,7 @@ void UIDiskVariantWidget::sltRetranslateUI()
     }
     if (m_pSplitBox)
     {
-        m_pSplitBox->setText(tr("&Split into 2GB parts"));
+        m_pSplitBox->setText(tr("&Split Into 2GB Parts"));
         m_pSplitBox->setToolTip(tr("When checked, the virtual hard disk file is split into 2GB parts."));
     }
 }

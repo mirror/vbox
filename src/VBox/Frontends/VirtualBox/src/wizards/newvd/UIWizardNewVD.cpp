@@ -267,7 +267,7 @@ void UIWizardNewVD::sltRetranslateUI()
     if (!isClonning())
         setWindowTitle(tr("Create Virtual Hard Disk"));
     else
-        setWindowTitle(tr("Copy Virtual Disk"));
+        setWindowTitle(tr("Copy Virtual Hard Disk"));
 }
 
 void UIWizardNewVD::setMediumVariantPageVisibility()

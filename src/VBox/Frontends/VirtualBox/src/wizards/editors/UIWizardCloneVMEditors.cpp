@@ -84,7 +84,7 @@ bool UICloneVMNamePathEditor::isComplete(const QString &strMachineGroup)
         QString strCloneFilePath =
             vbox.ComposeMachineFilename(m_pNameLineEdit->text(), strMachineGroup, QString(), m_pPathSelector->path());
         fExists = QDir(QDir::toNativeSeparators(QFileInfo(strCloneFilePath).absolutePath())).exists();
-        m_pNameLineEdit->mark(fExists, UIWizardCloneVM::tr("The clone name is not unique"), UIWizardCloneVM::tr("The clone name is valid"));
+        m_pNameLineEdit->mark(fExists, UIWizardCloneVM::tr("Clone name is not unique"), UIWizardCloneVM::tr("Clone name is valid"));
     }
 
     return !fInvalidName && !fInvalidPath && !fExists;
