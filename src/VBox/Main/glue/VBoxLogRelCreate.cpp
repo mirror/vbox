@@ -143,6 +143,30 @@ static DECLCALLBACK(void) vboxHeaderFooter(PRTLOGGER pReleaseLogger, RTLOGPHASE 
                    pszExecName ? pszExecName : "unknown",
                    RTProcSelf(),
                    VBOX_PACKAGE_STRING);
+
+#ifdef RT_OS_WINDOWS
+            static struct
+            {
+                const char    *pszDesc;
+                RTSYSNTFEATURE enmFeature;
+            } s_aNtFeatures[] =
+            {
+                { "Core Isolation (Memory Integrity)", RTSYSNTFEATURE_CORE_ISOLATION_MEMORY_INTEGRITY }
+            };
+            pfnLog(pReleaseLogger, "Windows Features:\n");
+            for (size_t i = 0; i < RT_ELEMENTS(s_aNtFeatures); i++)
+            {
+                pfnLog(pReleaseLogger, "  %s: ", s_aNtFeatures[i].pszDesc);
+                bool fEnabled;
+                vrc = RTSystemQueryNtFeatureEnabled(s_aNtFeatures[i].enmFeature, &fEnabled);
+                if (RT_SUCCESS(vrc))
+                    pfnLog(pReleaseLogger, "%s", fEnabled ? "ENABLED\n" : "DISABLED\n");
+                else if (vrc == VERR_NOT_SUPPORTED)
+                    pfnLog(pReleaseLogger, "Not supported\n");
+                else
+                    pfnLog(pReleaseLogger, "Failed to query (%Rrc)\n", vrc);
+            }
+#endif
             RTLogSetBuffering(pReleaseLogger, fOldBuffered);
             break;
         }
