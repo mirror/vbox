@@ -72,10 +72,10 @@ void UIWizardCloneVMModePage::sltRetranslateUI()
     /* Translate widgets: */
     const QString strGeneral = UIWizardCloneVM::tr("<p>Please choose which parts of the snapshot tree "
                                                    "should be cloned with the machine.</p>");
-    const QString strOpt1    = UIWizardCloneVM::tr("<p>If you choose <b>Current machine state</b>, "
+    const QString strOpt1    = UIWizardCloneVM::tr("<p>If you choose <b>Current Machine State</b>, "
                                                    "the new machine will reflect the current state "
                                                    "of the original machine and will have no snapshots.</p>");
-    const QString strOpt2    = UIWizardCloneVM::tr("<p>If you choose <b>Current snapshot tree branch</b>, "
+    const QString strOpt2    = UIWizardCloneVM::tr("<p>If you choose <b>Current Snapshot Tree Branch</b>, "
                                                    "the new machine will reflect the current state "
                                                    "of the original machine and will have matching snapshots "
                                                    "for all snapshots in the tree branch "

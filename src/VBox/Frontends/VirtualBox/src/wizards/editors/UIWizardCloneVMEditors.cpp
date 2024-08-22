@@ -497,12 +497,12 @@ void UICloneVMCloneTypeGroupBox::sltRetranslateUI()
 {
     if (m_pFullCloneRadio)
     {
-        m_pFullCloneRadio->setText(UIWizardCloneVM::tr("&Full clone"));
+        m_pFullCloneRadio->setText(UIWizardCloneVM::tr("&Full Clone"));
         m_pFullCloneRadio->setToolTip(UIWizardCloneVM::tr("When chosen, all the virtual disks of the source vm are also cloned."));
     }
     if (m_pLinkedCloneRadio)
     {
-        m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("&Linked clone"));
+        m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("&Linked Clone"));
         m_pLinkedCloneRadio->setToolTip(UIWizardCloneVM::tr("When chosen, the cloned vm will save space by sharing the source VM's disk images."));
     }
 }
@@ -568,11 +568,11 @@ void UICloneVMCloneModeGroupBox::sltRetranslateUI()
 {
     if (m_pMachineRadio)
     {
-        m_pMachineRadio->setText(UIWizardCloneVM::tr("Current &machine state"));
+        m_pMachineRadio->setText(UIWizardCloneVM::tr("Current &Machine State"));
         m_pMachineRadio->setToolTip(UIWizardCloneVM::tr("When chosen, only the current state of the source vm is cloned."));
     }
     if (m_pMachineAndChildsRadio)
-        m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current &snapshot tree branch"));
+        m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current &Snapshot Tree Branch"));
     if (m_pAllRadio)
     {
         m_pAllRadio->setText(UIWizardCloneVM::tr("&Everything"));
