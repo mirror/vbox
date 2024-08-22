@@ -61,9 +61,12 @@ typedef struct
     {
         /** General register index (DISGREG_XXX), applicable if DISUSE_REG_GEN32
          * or DISUSE_REG_GEN64 is set in fUse. */
-        uint8_t         idxGenReg;
+        uint8_t             idxGenReg;
         /** IPRT System register encoding. */
-        uint32_t        idSysReg;
+        uint32_t            idSysReg;
+        /** Conditional parameter (not a register I know but this saves us struct size and
+         *  and these never occur at the same time, might get renamed if everything is done). */
+        DISARMV8INSTRCOND   enmCond;
     } Reg;
     /** Any shift applied. */
     DISARMV8OPPARMSHIFT enmShift;

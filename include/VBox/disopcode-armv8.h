@@ -574,7 +574,9 @@ typedef enum DISARMV8OPPARM
     /** System register. */
     kDisArmv8OpParmSysReg,
     /** Accessing memory from address in base register + potential offset. */
-    kDisArmv8OpParmAddrInGpr
+    kDisArmv8OpParmAddrInGpr,
+    /** Conditional as parameter (CCMN/CCMP). */
+    kDisArmv8OpParmCond
 } DISARMV8OPPARM;
 
 

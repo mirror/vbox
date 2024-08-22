@@ -300,7 +300,15 @@ static int disArmV8ParseHw(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS
 static int disArmV8ParseCond(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
 {
     RT_NOREF(pInsnClass, pParam, pf64Bit);
-    pDis->armv8.enmCond = (DISARMV8INSTRCOND)disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
+    Assert(pInsnParm->cBits <= 4);
+    if (pParam)
+    {
+        /* Conditional as a parameter (CCMP/CCMN). */
+        Assert(pParam->armv8.enmType == kDisArmv8OpParmCond);
+        pParam->armv8.Reg.enmCond = (DISARMV8INSTRCOND)disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
+    }
+    else /* Conditional for the base instruction. */
+        pDis->armv8.enmCond = (DISARMV8INSTRCOND)disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
     return VINF_SUCCESS;
 }
 

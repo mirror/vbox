@@ -462,7 +462,6 @@ DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(LogShiftRegN)
 DIS_ARMV8_DECODE_MAP_DEFINE_END(LogShiftRegN, RT_BIT_32(21), 21);
 
 
-
 DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(AddSubExtReg)
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY, /** @todo */
 DIS_ARMV8_DECODE_MAP_DEFINE_END(AddSubExtReg, RT_BIT_32(24), 24);
@@ -480,9 +479,68 @@ DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(LogicalAddSubReg)
 DIS_ARMV8_DECODE_MAP_DEFINE_END(LogicalAddSubReg, RT_BIT_32(24), 24);
 
 
+/* CCMN/CCMP */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(CondCmpReg)
+    DIS_ARMV8_OP(0x3a400000, "ccmn",            OP_ARMV8_A64_CCMN,      DISOPTYPE_HARMLESS),
+    DIS_ARMV8_OP(0x7a400000, "ccmp",            OP_ARMV8_A64_CCMP,      DISOPTYPE_HARMLESS)
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_DECODER(CondCmpReg)
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,            5,  5, 0 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,           16,  5, 1 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseImm,            0,  4, 2 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseCond,          12,  4, 3 /*idxParam*/),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_4(CondCmpReg, 0x7fe00c10 /*fFixedInsn*/, DISARMV8INSNCLASS_F_SF,
+                                                kDisArmV8OpcDecodeNop, RT_BIT_32(30), 30,
+                                                kDisArmv8OpParmGpr, kDisArmv8OpParmGpr, kDisArmv8OpParmImm, kDisArmv8OpParmCond);
+
+
+/**
+ * C4.1.95 - Data Processing - Register
+ *
+ * The conditional compare instructions differentiate between register and immediate
+ * variant based on the 11th bit (part of op3).
+ */
+DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(CondCmp)
+    DIS_ARMV8_DECODE_MAP_ENTRY(CondCmpReg),          /* Conditional compare register */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,              /** @todo Conditional compare immediate */
+DIS_ARMV8_DECODE_MAP_DEFINE_END(CondCmp, RT_BIT_32(11), 11);
+
+
+/*
+ * C4.1.95 - Data Processing - Register
+ *
+ * The op1 field is already decoded in the previous step and is 1 when being here,
+ * leaving us with the following possible values:
+ *
+ *     Bit  24 23 22 21
+ *     +-------------------------------------------
+ *           0  0  0  0 Add/subtract with carry / Rotate right into flags / Evaluate into flags (depending on op3)
+ *           0  0  0  1 UNALLOC
+ *           0  0  1  0 Conditional compare (register / immediate)
+ *           0  0  1  1 UNALLOC
+ *           0  1  0  0 Conditional select
+ *           0  1  0  1 UNALLOC
+ *           0  1  1  0 Data processing (2-source or 1-source depending on op0).
+ *           0  1  1  1 UNALLOC
+ *           1  x  x  x Data processing 3-source
+ */
 DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(DataProcReg)
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Add/subtract with carry. */
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
-DIS_ARMV8_DECODE_MAP_DEFINE_END(DataProcReg, RT_BIT_32(24), 24);
+    DIS_ARMV8_DECODE_MAP_ENTRY(CondCmp),            /** @todo Conditional compare. */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Conditional select. */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Data Processing 2-source/1-source. */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Data Processing 3-source. */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Data Processing 3-source. */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Data Processing 3-source. */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Data Processing 3-source. */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Data Processing 3-source. */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Data Processing 3-source. */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Data Processing 3-source. */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo Data Processing 3-source. */
+DIS_ARMV8_DECODE_MAP_DEFINE_END(DataProcReg, RT_BIT_32(21) | RT_BIT_32(22) | RT_BIT_32(23) | RT_BIT_32(24), 21);
 
 
 DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(LdSt)

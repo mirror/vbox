@@ -389,6 +389,61 @@ _TestProcA64:
         str w0, [x28, #4]
         str w0, [x28, #16380]
 
+        ; Conditional compare
+        ccmp x0, x1, #0x3, eq
+        ccmp w0, w1, #0xf, eq
+        ccmp x0, x1, #0x3, ne
+        ccmp w0, w1, #0xf, ne
+        ccmp x0, x1, #0x3, cs
+        ccmp w0, w1, #0xf, cc
+        ccmp x0, x1, #0x3, mi
+        ccmp w0, w1, #0xf, mi
+        ccmp x0, x1, #0x3, pl
+        ccmp w0, w1, #0xf, vs
+        ccmp x0, x1, #0x3, vc
+        ccmp w0, w1, #0xf, vc
+        ccmp x0, x1, #0x3, hi
+        ccmp w0, w1, #0xf, hi
+        ccmp x0, x1, #0x3, ls
+        ccmp w0, w1, #0xf, ls
+        ccmp x0, x1, #0x3, ge
+        ccmp w0, w1, #0xf, ge
+        ccmp x0, x1, #0x3, lt
+        ccmp w0, w1, #0xf, lt
+        ccmp x0, x1, #0x3, gt
+        ccmp w0, w1, #0xf, gt
+        ccmp x0, x1, #0x3, le
+        ccmp w0, w1, #0xf, le
+        ccmp x0, x1, #0x3, al
+        ccmp w0, w1, #0xf, al
+
+        ccmn x0, x1, #0x3, eq
+        ccmn w0, w1, #0xf, eq
+        ccmn x0, x1, #0x3, ne
+        ccmn w0, w1, #0xf, ne
+        ccmn x0, x1, #0x3, cs
+        ccmn w0, w1, #0xf, cc
+        ccmn x0, x1, #0x3, mi
+        ccmn w0, w1, #0xf, mi
+        ccmn x0, x1, #0x3, pl
+        ccmn w0, w1, #0xf, vs
+        ccmn x0, x1, #0x3, vc
+        ccmn w0, w1, #0xf, vc
+        ccmn x0, x1, #0x3, hi
+        ccmn w0, w1, #0xf, hi
+        ccmn x0, x1, #0x3, ls
+        ccmn w0, w1, #0xf, ls
+        ccmn x0, x1, #0x3, ge
+        ccmn w0, w1, #0xf, ge
+        ccmn x0, x1, #0x3, lt
+        ccmn w0, w1, #0xf, lt
+        ccmn x0, x1, #0x3, gt
+        ccmn w0, w1, #0xf, gt
+        ccmn x0, x1, #0x3, le
+        ccmn w0, w1, #0xf, le
+        ccmn x0, x1, #0x3, al
+        ccmn w0, w1, #0xf, al
+
         ;
         ; Keep last so the testcase can catch errors in
         ; the disassembly of the last instruction.

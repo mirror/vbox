@@ -729,6 +729,12 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     PUT_C(']');
                     break;
                 }
+                case kDisArmv8OpParmCond:
+                {
+                    Assert((uint16_t)pParam->armv8.Reg.enmCond < RT_ELEMENTS(g_aszArmV8Cond));
+                    PUT_STR(g_aszArmV8Cond[pParam->armv8.Reg.enmCond], sizeof(g_aszArmV8Cond[0]) - 1);
+                    break;
+                }
                 default:
                     AssertFailed();
             }
