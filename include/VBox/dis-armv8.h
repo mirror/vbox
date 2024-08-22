@@ -75,7 +75,7 @@ typedef struct
     union
     {
         /** Offset from the base register. */
-        uint16_t        offBase;
+        int16_t         offBase;
         /** Amount of bits to shift. */
         uint8_t         cShift;
     } u;
