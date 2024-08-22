@@ -537,9 +537,9 @@ QVariant UIFileSystemModel::data(const QModelIndex &index, int role) const
         if (index.column() == UIFileSystemModelData_DescendantRemovedFromVISO)
         {
             if (item->data(UIFileSystemModelData_DescendantRemovedFromVISO).toBool())
-                return QString(QApplication::translate("UIVisoCreatorWidget", "Yes"));
+                return QString(QApplication::translate("QIMessageBox", "Yes"));
             else
-                return QString(QApplication::translate("UIVisoCreatorWidget", "No"));
+                return QString(QApplication::translate("QIMessageBox", "No"));
         }
         return item->data(index.column());
     }
