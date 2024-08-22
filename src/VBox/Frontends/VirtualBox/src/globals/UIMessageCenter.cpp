@@ -819,7 +819,7 @@ int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) c
                              "<p>You will not be able to insert any optical disks or ISO images "
                              "or install the Guest Additions without it!</p>"),
                           0 /* auto-confirm id */,
-                          tr("&Remove", "medium") /* ok button text */,
+                          tr("Remove", "medium") /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
 }
@@ -1252,7 +1252,7 @@ bool UIMessageCenter::confirmRemoveExtensionPack(const QString &strPackName, QWi
                              "<p>Are you sure you want to proceed?</p>")
                              .arg(strPackName),
                           0 /* auto-confirm id */,
-                          tr("&Remove") /* ok button text */,
+                          tr("Remove") /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
 }
@@ -1427,7 +1427,7 @@ bool UIMessageCenter::confirmVisoDiscard(QWidget *pParent /* = 0*/) const
                           tr("<p>To open a Viso file you will have to discard the current content.</p>"
                              "<p>Are you sure you want to proceed?</p>"),
                           0 /* auto-confirm id */,
-                          tr("&Discard") /* ok button text */,
+                          tr("Discard") /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
 }
@@ -1596,7 +1596,7 @@ bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QS
                              "<p>Do you wish to continue with Guest Additions installation?</p>")
                              .arg(strUrl, strSrc),
                           0 /* auto-confirm id */,
-                          tr("Continue", "additions"));
+                          tr("Continue", "agree with additions installation"));
 }
 
 bool UIMessageCenter::confirmLookingForUserManual(const QString &strMissedLocation) const
@@ -2009,8 +2009,8 @@ bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) cons
                              "until you add one. In the mean time you will only be able to start the "
                              "machine using a virtual optical disk or from the network."),
                           0 /* auto-confirm id */,
-                          tr("Continue", "no hard disk attached"),
-                          tr("Go Back", "no hard disk attached"));
+                          tr("Continue", "agree to create VM with no hard disk attached"),
+                          tr("Go Back", "reject to create VM with no hard disk attached"));
 }
 
 bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent /* = 0*/) const
@@ -2024,7 +2024,7 @@ bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machin
                              "how many machines are in the list and doesn't need to be told).", machineNames.size())
                              .arg(machineNames.join(", ")),
                           0 /* auto-confirm id */,
-                          tr("Continue"));
+                          tr("Continue", "agree to export VMs without saved-state"));
 }
 
 bool UIMessageCenter::confirmOverridingFile(const QString &strPath, QWidget *pParent /* = 0*/) const

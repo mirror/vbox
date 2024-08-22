@@ -1011,7 +1011,7 @@ void UINotificationMessage::cannotChangeMachineDebuggerParameter(const CMachineD
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Debugger failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to change the parameter of machine debugger.") +
+        QApplication::translate("UIMessageCenter", "Failed to change machine debugger parameter.") +
         UIErrorString::formatErrorInfo(comMachineDebugger));
 }
 
@@ -1101,7 +1101,7 @@ void UINotificationMessage::cannotChangeCloudProfileParameter(const CCloudProfil
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Cloud failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to assign cloud profile parameter.") +
+        QApplication::translate("UIMessageCenter", "Failed to change cloud profile parameter.") +
         UIErrorString::formatErrorInfo(comProfile));
 }
 
@@ -1110,7 +1110,7 @@ void UINotificationMessage::cannotChangeUpdateAgentParameter(const CUpdateAgent 
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Update failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to assign update agent parameter.") +
+        QApplication::translate("UIMessageCenter", "Failed to change update agent parameter.") +
         UIErrorString::formatErrorInfo(comAgent));
 }
 
@@ -1119,7 +1119,7 @@ void UINotificationMessage::cannotChangeKeyboardParameter(const CKeyboard &comKe
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Keyboard failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to assign keyboard parameter.") +
+        QApplication::translate("UIMessageCenter", "Failed to change keyboard parameter.") +
         UIErrorString::formatErrorInfo(comKeyboard));
 }
 
@@ -1128,7 +1128,7 @@ void UINotificationMessage::cannotChangeMouseParameter(const CMouse &comMouse)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Mouse failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to assign mouse parameter.") +
+        QApplication::translate("UIMessageCenter", "Failed to change mouse parameter.") +
         UIErrorString::formatErrorInfo(comMouse));
 }
 
@@ -1138,7 +1138,7 @@ void UINotificationMessage::cannotChangeVirtualSystemDescriptionParameter(const 
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "VSD failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to assign VSD parameter.") +
+        QApplication::translate("UIMessageCenter", "Failed to change VSD parameter.") +
         UIErrorString::formatErrorInfo(comVsd),
         QString(), QString(), pParent);
 }
@@ -4236,7 +4236,7 @@ UINotificationProgressHostOnlyNetworkInterfaceCreate::UINotificationProgressHost
 
 QString UINotificationProgressHostOnlyNetworkInterfaceCreate::name() const
 {
-    return UINotificationProgress::tr("Creating Host-only Network Interface ...");
+    return UINotificationProgress::tr("Creating host-only network interface ...");
 }
 
 QString UINotificationProgressHostOnlyNetworkInterfaceCreate::details() const
@@ -4276,7 +4276,7 @@ UINotificationProgressHostOnlyNetworkInterfaceRemove::UINotificationProgressHost
 
 QString UINotificationProgressHostOnlyNetworkInterfaceRemove::name() const
 {
-    return UINotificationProgress::tr("Removing Host-only Network Interface ...");
+    return UINotificationProgress::tr("Removing host-only network interface ...");
 }
 
 QString UINotificationProgressHostOnlyNetworkInterfaceRemove::details() const
