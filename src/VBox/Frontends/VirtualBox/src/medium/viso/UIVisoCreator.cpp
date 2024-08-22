@@ -261,7 +261,7 @@ void UIVisoSettingWidget::sltRetranslateUI()
         m_pShowHiddenObjectsCheckBox->setText(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects"));
     }
     setTabText(1, QApplication::translate("UIVisoCreatorWidget", "Dialog Settings"));
-    setTabText(0, QApplication::translate("UIVisoCreatorWidget", "VISO options"));
+    setTabText(0, QApplication::translate("UIVisoCreatorWidget", "VISO Options"));
 }
 
 void UIVisoSettingWidget::prepareConnections()
