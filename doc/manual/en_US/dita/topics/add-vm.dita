@@ -5,12 +5,14 @@
     <body>
         <p>
             <ul id="ul_bwt_wjn_ccc">
+                
+                
                 <li>If you want to create a completely new VM, click <uicontrol>New</uicontrol> and follow the steps in
                         <xref href="create-vm-wizard.dita"/>.</li>
                 <li>If you already have a VM saved on your machine, you can add it to the machine list by clicking
                         <uicontrol>Add</uicontrol>.</li>
                 <li>If you have a VM on a different machine, you can import it by clicking <uicontrol>Import
-                        Applicance</uicontrol>. See <xref href="ovf-import-appliance.dita"/>.</li>
+                        Appliance</uicontrol>. See <xref href="ovf-import-appliance.dita"/>.</li>
                 <li>If you want to view an OCI instance from within <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>,
                     see <xref href="cloud-vm-add.dita"/>.</li>
             </ul>
