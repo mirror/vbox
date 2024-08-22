@@ -2476,6 +2476,11 @@ void UISession::sltAdditionsChange()
     emit sigAdditionsStateChange();
 }
 
+void UISession::sltClipboardError(const QString &strMsg)
+{
+    UINotificationMessage::warnAboutClipboardError(strMsg);
+}
+
 void UISession::sltHandleMachineStateSaved(bool fSuccess)
 {
     /* Let user try again if saving failed: */
@@ -2589,7 +2594,7 @@ void UISession::prepareConsoleEventHandlers()
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigClipboardModeChange,
             this, &UISession::sigClipboardModeChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigClipboardError,
-            this, &UISession::sigClipboardError);
+            this, &UISession::sltClipboardError);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigCPUExecutionCapChange,
             this, &UISession::sigCPUExecutionCapChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigDnDModeChange,

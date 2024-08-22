@@ -209,7 +209,7 @@ signals:
         /** Notifies about the clipboard mode change. */
         void sigClipboardModeChange(KClipboardMode enmClipboardMode);
         /** Notifies about a clipboard error. */
-        void sigClipboardError(QString strId, QString strMsg, long rcError);
+        void sigClipboardError(const QString &strMsg);
         /** Notifies about the drag and drop mode change. */
         void sigDnDModeChange(KDnDMode enmDnDMode);
     /** @} */

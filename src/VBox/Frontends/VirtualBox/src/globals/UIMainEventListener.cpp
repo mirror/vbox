@@ -618,7 +618,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         case KVBoxEventType_OnClipboardError:
         {
             CClipboardErrorEvent comEventSpecific(pEvent);
-            emit sigClipboardError(comEventSpecific.GetId(), comEventSpecific.GetMsg(), comEventSpecific.GetRcError());
+            emit sigClipboardError(comEventSpecific.GetMsg());
             break;
         }
         case KVBoxEventType_OnDnDModeChanged:

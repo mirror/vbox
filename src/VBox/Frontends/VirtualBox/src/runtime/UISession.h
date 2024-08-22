@@ -94,8 +94,6 @@ signals:
         void sigAudioAdapterChange();
         /** Notifies about clipboard mode change. */
         void sigClipboardModeChange(KClipboardMode enmMode);
-        /** Notifies about a clipboard error. */
-        void sigClipboardError(QString strId, QString strMsg, long rcError);
         /** Notifies about CPU execution cap change. */
         void sigCPUExecutionCapChange();
         /** Notifies about DnD mode change. */
@@ -644,6 +642,12 @@ private slots:
      ** @{ */
         /** Handles event about guest additions change. */
         void sltAdditionsChange();
+    /** @} */
+
+    /** @name Clipboard stuff.
+     ** @{ */
+        /** Handles clipboard errors. */
+        void sltClipboardError(const QString &strMsg);
     /** @} */
 
     /** @name Close stuff.

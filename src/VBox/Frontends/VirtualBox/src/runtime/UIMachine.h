@@ -97,8 +97,6 @@ signals:
         void sigAudioAdapterChange();
         /** Notifies about clipboard mode change. */
         void sigClipboardModeChange(KClipboardMode enmMode);
-        /** Notifies about a clipboard error. */
-        void sigClipboardError(QString strId, QString strMsg, long rcError);
         /** Notifies about CPU execution cap change. */
         void sigCPUExecutionCapChange();
         /** Notifies about DnD mode change. */
@@ -749,12 +747,6 @@ public slots:
         void sltMountDVDAdHoc(const QString &strSource);
     /** @} */
 
-    /** @name Clipboard stuff.
-     ** @{ */
-        /** Handles clipboard errors. */
-        void sltClipboardError(QString strId, QString strMsg, long rcError);
-    /** @} */
-
     /** @name Keyboard stuff.
      ** @{ */
         /** Defines @a iKeyboardState. */
@@ -808,6 +800,7 @@ private slots:
         void sltHandleHostScreenGeometryChange();
         /** Handles host-screen available-area change. */
         void sltHandleHostScreenAvailableAreaChange();
+
 #ifdef VBOX_WS_MAC
         /** macOS X: Restarts display-reconfiguration watchdog timer from the beginning.
           * @note Watchdog is trying to determine display reconfiguration in

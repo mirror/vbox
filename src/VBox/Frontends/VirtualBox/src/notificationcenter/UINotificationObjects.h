@@ -109,7 +109,7 @@ public:
           * @param  strPasswordId  Brings password ID. */
         static void warnAboutInvalidEncryptionPassword(const QString &strPasswordId);
         /** Notifies about a clipboard error. */
-        static void showClipboardError(QString strId, QString strMsg, long rcError);
+        static void warnAboutClipboardError(const QString &strMsg);
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         /** Notifies about update not found. */
