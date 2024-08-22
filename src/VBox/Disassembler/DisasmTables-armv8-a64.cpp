@@ -62,8 +62,8 @@ DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(Rsvd)
 DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_DECODER(Rsvd)
     DIS_ARMV8_INSN_DECODE(kDisParmParseImm,    0, 16, 0 /*idxParam*/),
 DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_1(Rsvd, 0xffff0000 /*fFixedInsn*/, 0 /*fClass*/,
-                                            kDisArmV8OpcDecodeNop, 0xffff0000, 16,
-                                            kDisArmv8OpParmImm);
+                                                kDisArmV8OpcDecodeNop, 0xffff0000, 16,
+                                                kDisArmv8OpParmImm);
 
 /* ADR/ADRP */
 DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(Adr)
