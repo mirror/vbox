@@ -23,7 +23,7 @@
       </li>
       <li>
         <p>From the <b outputclass="bold">Format</b> drop-down list, select <b outputclass="bold"><ph
-              conkeyref="vbox-conkeyref-phrases/oci"/></b>. </p>
+              conkeyref="vbox-conkeyref-phrases/oci"/></b>.</p>
       </li>
       <li>
         <p>In the <b outputclass="bold">Profile</b> drop-down list, select the cloud profile used for your <ph
@@ -38,7 +38,7 @@
             <p>Configure settings for the cloud instance <i>after</i> you have finished exporting the VM. </p>
           </li>
           <li>
-            <p>Configure settings for the cloud instance <i>before</i> you start to export the VM. </p>
+            <p>Configure settings for the cloud instance <i>before</i> you start to export the VM.</p>
           </li>
           <li>
             <p>Do not create a cloud instance when you export the VM. </p>

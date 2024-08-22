@@ -38,7 +38,7 @@
             empty virtual hard disk image, located in the VM's machine folder. </p>
         </li>
         <li>
-          <p> Enter the following settings: </p>
+          <p>Enter the following settings: </p>
           <ul id="ul_i3n_y1r_pbc">
             <li>
               <p><b outputclass="bold">Disk Size</b>. Use the slider to select a maximum size for
@@ -48,7 +48,7 @@
                 for the disk image. Select this setting to use a <i>fixed-size file</i> for the disk image. Otherwise,
                   <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will use a <i>dynamically allocated file</i> for
                 the disk image. </p><p>The different types of image file behave as follows: </p><ul id="ul_j3n_y1r_pbc">
-            <li>
+                <li>
                   <p><b outputclass="bold">Dynamically allocated file.</b> This type of image file only grows in size
                     when the guest actually stores data on its virtual hard disk. Therefore, this file is small
                     initially. As the drive is filled with data, the file grows to the specified size. </p>
@@ -60,8 +60,8 @@
                     than a dynamically allocated file. </p>
                 </li>
               </ul>For more details about the differences, see <xref href="vdidetails.dita#vdidetails"/>. </li>
-              </ul>
-            </li>
+          </ul>
+        </li>
       </ol></p>
     <section id="section_bdq_h1r_pbc">
       <title>Use an Existing Virtual Hard Disk</title>
