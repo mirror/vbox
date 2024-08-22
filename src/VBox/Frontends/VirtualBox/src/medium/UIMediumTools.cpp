@@ -359,7 +359,7 @@ void UIMediumTools::prepareStorageMenu(QMenu *pMenu,
                                                           QString(), pListener, pszSlotName);
     pActionOpenExistingMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                           comCurrentAttachment.GetDevice(), enmMediumType)));
-    pActionOpenExistingMedium->setText(QApplication::translate("UIMediumTools", "Choose/Create a disk image..."));
+    pActionOpenExistingMedium->setText(QApplication::translate("UIMediumTools", "Choose/Create a Disk Image..."));
 
     /* Prepare open medium file action: */
     QAction *pActionFileSelector = pMenu->addAction(UIIconPool::iconSet(":/select_file_16px.png"),
@@ -367,7 +367,7 @@ void UIMediumTools::prepareStorageMenu(QMenu *pMenu,
     pActionFileSelector->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                     comCurrentAttachment.GetDevice(), enmMediumType,
                                                                     UIMediumTarget::UIMediumTargetType_WithFileDialog)));
-    pActionFileSelector->setText(QApplication::translate("UIStorageSettingsEditor", "Choose a disk file..."));
+    pActionFileSelector->setText(QApplication::translate("UIMediumTools", "Choose a Disk File..."));
 
     /* Insert separator: */
     pMenu->addSeparator();
@@ -480,7 +480,7 @@ void UIMediumTools::prepareStorageMenu(QMenu *pMenu,
         pActionUnmountMedium->setEnabled(!comCurrentMedium.isNull());
         pActionUnmountMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                          comCurrentAttachment.GetDevice())));
-        pActionUnmountMedium->setText(QApplication::translate("UIStorageSettingsEditor", "Remove disk from virtual drive"));
+        pActionUnmountMedium->setText(QApplication::translate("UIMediumTools", "Remove Disk From Virtual Drive"));
         if (enmMediumType == UIMediumDeviceType_DVD)
             pActionUnmountMedium->setIcon(UIIconPool::iconSet(":/cd_unmount_16px.png", ":/cd_unmount_disabled_16px.png"));
         else if (enmMediumType == UIMediumDeviceType_Floppy)

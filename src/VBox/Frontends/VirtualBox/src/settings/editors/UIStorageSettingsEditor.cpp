@@ -3847,7 +3847,7 @@ void UIStorageSettingsEditor::sltPrepareOpenMediumMenu()
             {
                 /* Add "Choose a virtual hard disk" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose/Create a Virtual Hard Disk..."));
-                addChooseDiskFileAction(pOpenMediumMenu, tr("Choose a disk file..."));
+                addChooseDiskFileAction(pOpenMediumMenu, tr("Choose a Disk File..."));
                 pOpenMediumMenu->addSeparator();
                 /* Add recent media list: */
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
@@ -3857,7 +3857,7 @@ void UIStorageSettingsEditor::sltPrepareOpenMediumMenu()
             {
                 /* Add "Choose a virtual optical disk" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose/Create a Virtual Optical Disk..."));
-                addChooseDiskFileAction(pOpenMediumMenu, tr("Choose a disk file..."));
+                addChooseDiskFileAction(pOpenMediumMenu, tr("Choose a Disk File..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
                 pOpenMediumMenu->addSeparator();
@@ -3865,7 +3865,7 @@ void UIStorageSettingsEditor::sltPrepareOpenMediumMenu()
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 /* Add "Eject current medium" action: */
                 pOpenMediumMenu->addSeparator();
-                QAction *pEjectCurrentMedium = pOpenMediumMenu->addAction(tr("Remove Disk from Virtual Drive"));
+                QAction *pEjectCurrentMedium = pOpenMediumMenu->addAction(tr("Remove Disk From Virtual Drive"));
                 pEjectCurrentMedium->setEnabled(!m_pMediumIdHolder->isNull());
                 pEjectCurrentMedium->setIcon(iconPool()->icon(PixmapType_CDUnmountEnabled, PixmapType_CDUnmountDisabled));
                 connect(pEjectCurrentMedium, &QAction::triggered, this, &UIStorageSettingsEditor::sltUnmountDevice);
@@ -3875,7 +3875,7 @@ void UIStorageSettingsEditor::sltPrepareOpenMediumMenu()
             {
                 /* Add "Choose a virtual floppy disk" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose/Create a Virtual Floppy Disk..."));
-                addChooseDiskFileAction(pOpenMediumMenu, tr("Choose a disk file..."));
+                addChooseDiskFileAction(pOpenMediumMenu, tr("Choose a Disk File..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
                 pOpenMediumMenu->addSeparator();
@@ -3883,7 +3883,7 @@ void UIStorageSettingsEditor::sltPrepareOpenMediumMenu()
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 /* Add "Eject current medium" action: */
                 pOpenMediumMenu->addSeparator();
-                QAction *pEjectCurrentMedium = pOpenMediumMenu->addAction(tr("Remove Disk from Virtual Drive"));
+                QAction *pEjectCurrentMedium = pOpenMediumMenu->addAction(tr("Remove Disk From Virtual Drive"));
                 pEjectCurrentMedium->setEnabled(!m_pMediumIdHolder->isNull());
                 pEjectCurrentMedium->setIcon(iconPool()->icon(PixmapType_FDUnmountEnabled, PixmapType_FDUnmountDisabled));
                 connect(pEjectCurrentMedium, &QAction::triggered, this, &UIStorageSettingsEditor::sltUnmountDevice);
