@@ -536,17 +536,16 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
         f64Bit = true;
 
     int rc = VINF_SUCCESS;
-    for (uint32_t i = 0; i < RT_ELEMENTS(pInsnClass->aParms) && RT_SUCCESS(rc); i++)
+    PCDISARMV8INSNPARAM pDecode = &pInsnClass->paParms[0];
+    while (   (pDecode->idxParse != kDisParmParseNop)
+           && RT_SUCCESS(rc))
     {
-        PCDISARMV8INSNPARAM pInsnParm = &pInsnClass->aParms[i];
-        if (pInsnParm->idxParse != kDisParmParseNop)
-            rc = g_apfnDisasm[pInsnClass->aParms[i].idxParse](pDis, u32Insn, pInsnClass,
-                                                                pInsnParm->idxParam != DIS_ARMV8_INSN_PARAM_UNSET
-                                                              ? &pDis->aParams[pInsnParm->idxParam]
-                                                              : NULL,
-                                                              pInsnParm, &f64Bit);
-        else
-            break;
+        rc = g_apfnDisasm[pDecode->idxParse](pDis, u32Insn, pInsnClass,
+                                               pDecode->idxParam != DIS_ARMV8_INSN_PARAM_UNSET
+                                             ? &pDis->aParams[pDecode->idxParam]
+                                             : NULL,
+                                             pDecode, &f64Bit);
+        pDecode++;
     }
 
     /* If parameter parsing returned an invalid opcode error the encoding is invalid. */
@@ -661,7 +660,7 @@ DECLHIDDEN(int) disInstrWorkerArmV8(PDISSTATE pDis, PCDISOPCODE paOneByteMap, ui
         pDis->Instr.u32 = RT_LE2H_U32(u32Insn);
         pDis->cbInstr   = sizeof(u32Insn);
 
-        return disInstrArmV8DecodeWorker(pDis, u32Insn, &g_ArmV8A64DecodeL0.Hdr);
+        return disInstrArmV8DecodeWorker(pDis, u32Insn, &g_aArmV8A64InsnDecodeL0.Hdr);
     }
 
     AssertReleaseFailed();

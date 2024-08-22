@@ -87,7 +87,7 @@ typedef const DISARMV8OPCODE *PCDISARMV8OPCODE;
 
 typedef struct DISARMV8INSNPARAM
 {
-    /** The parser to use for the parameter. */
+    /** The parser to use for the decode step. */
     DISPARMPARSEIDX     idxParse;
     /** Bit index at which the field starts. */
     uint8_t             idxBitStart;
@@ -168,8 +168,8 @@ typedef struct DISARMV8INSNCLASS
     uint32_t                cShift;
     /** Parameter types. */
     DISARMV8OPPARM          aenmParamTypes[4];
-    /** The decoding steps. */
-    DISARMV8INSNPARAM       aParms[5];
+    /** The array of decoding steps. */
+    PCDISARMV8INSNPARAM     paParms;
 } DISARMV8INSNCLASS;
 /** Pointer to a constant instruction class descriptor. */
 typedef const DISARMV8INSNCLASS *PCDISARMV8INSNCLASS;
@@ -183,30 +183,38 @@ typedef const DISARMV8INSNCLASS *PCDISARMV8INSNCLASS;
 
 
 #define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(a_Name) \
-    static const DISARMV8OPCODE a_Name ## Opcodes[] = {
-#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_4(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
-                                                    a_enmParamType1, a_enmParamType2, a_enmParamType3, a_enmParamType4) \
+    static const DISARMV8OPCODE g_aArmV8A64Insn ## a_Name ## Opcodes[] = {
+#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_DECODER(a_Name) \
     }; \
-    static const DISARMV8INSNCLASS a_Name = { { kDisArmV8DecodeType_InsnClass, RT_ELEMENTS(a_Name ## Opcodes) }, &a_Name ## Opcodes[0],\
-                                              a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
-                                              { a_enmParamType1, a_enmParamType2, a_enmParamType3, a_enmParamType4 }, {
-#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_3(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
-                                                    a_enmParamType1, a_enmParamType2, a_enmParamType3) \
-    DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_4(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
-                                                a_enmParamType1, a_enmParamType2, a_enmParamType3, kDisArmv8OpParmNone)
-#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_2(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
-                                                    a_enmParamType1, a_enmParamType2) \
-    DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_3(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
-                                                a_enmParamType1, a_enmParamType2, kDisArmv8OpParmNone)
-#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_1(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
-                                                    a_enmParamType1) \
-    DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_2(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
-                                                a_enmParamType1, kDisArmv8OpParmNone)
-#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_0(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift) \
-    DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS_1(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
-                                                kDisArmv8OpParmNone)
+    static const DISARMV8INSNPARAM g_aArmV8A64Insn ## a_Name ## Decode[] = {
+#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_4(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
+                                                        a_enmParamType1, a_enmParamType2, a_enmParamType3, a_enmParamType4) \
+    DIS_ARMV8_INSN_PARAM_NONE \
+    }; \
+    static const DISARMV8INSNCLASS g_aArmV8A64Insn ## a_Name = { { kDisArmV8DecodeType_InsnClass, \
+                                                                   RT_ELEMENTS(g_aArmV8A64Insn ## a_Name ## Opcodes) }, \
+                                                                 & g_aArmV8A64Insn ## a_Name ## Opcodes[0], \
+                                                                 a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
+                                                                 { a_enmParamType1, a_enmParamType2, a_enmParamType3, a_enmParamType4 }, \
+                                                                 & g_aArmV8A64Insn ## a_Name ## Decode[0] };
+#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_3(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
+                                                        a_enmParamType1, a_enmParamType2, a_enmParamType3) \
+    DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_4(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
+                                                    a_enmParamType1, a_enmParamType2, a_enmParamType3, kDisArmv8OpParmNone)
+#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_2(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
+                                                        a_enmParamType1, a_enmParamType2) \
+    DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_3(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
+                                                    a_enmParamType1, a_enmParamType2, kDisArmv8OpParmNone)
+#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_1(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
+                                                        a_enmParamType1) \
+    DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_2(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
+                                                    a_enmParamType1, kDisArmv8OpParmNone)
+#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_0(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift) \
+    DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_1(a_Name, a_fFixedInsn, a_fClass, a_enmOpcDecode, a_fMask, a_cShift, \
+                                                    kDisArmv8OpParmNone)
 
-#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END } }
+#define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END \
+    DIS_ARMV8_INSN_PARAM_NONE }
 
 /**
  * Decoder lookup table entry.
@@ -225,7 +233,7 @@ typedef const DISARMV8DECODETBLENTRY *PCDISARMV8DECODETBLENTRY;
 
 
 #define DIS_ARMV8_DECODE_TBL_ENTRY_INIT(a_fMask, a_fValue, a_pNext) \
-    { a_fMask, a_fValue, &a_pNext.Hdr }
+    { a_fMask, a_fValue, & g_aArmV8A64Insn ## a_pNext.Hdr }
 
 
 /**
@@ -243,11 +251,12 @@ typedef const struct DISARMV8DECODETBL *PCDISARMV8DECODETBL;
 
 
 #define DIS_ARMV8_DECODE_TBL_DEFINE_BEGIN(a_Name) \
-    static const DISARMV8DECODETBLENTRY a_Name ## TblEnt[] = {
+    static const DISARMV8DECODETBLENTRY g_aArmV8A64Insn ## a_Name ## TblEnt[] = {
 
 #define DIS_ARMV8_DECODE_TBL_DEFINE_END(a_Name) \
     }; \
-    static const DISARMV8DECODETBL a_Name = { { kDisArmV8DecodeType_Table, RT_ELEMENTS(a_Name ## TblEnt) }, &a_Name ## TblEnt[0] }
+    static const DISARMV8DECODETBL g_aArmV8A64Insn ## a_Name = { { kDisArmV8DecodeType_Table, RT_ELEMENTS(g_aArmV8A64Insn ## a_Name ## TblEnt) }, \
+                                                                 & g_aArmV8A64Insn ## a_Name ## TblEnt[0] }
 
 
 /**
@@ -268,25 +277,27 @@ typedef struct DISARMV8DECODEMAP
 typedef const struct DISARMV8DECODEMAP *PCDISARMV8DECODEMAP;
 
 #define DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(a_Name) \
-    static const PCDISARMV8DECODEHDR a_Name ## MapHdrs[] = {
+    static const PCDISARMV8DECODEHDR g_aArmV8A64Insn ## a_Name ## MapHdrs[] = {
 
 #define DIS_ARMV8_DECODE_MAP_DEFINE_END(a_Name, a_fMask, a_cShift) \
     }; \
-    static const DISARMV8DECODEMAP a_Name = { { kDisArmV8DecodeType_Map, RT_ELEMENTS(a_Name ## MapHdrs) }, a_fMask, a_cShift, &a_Name ## MapHdrs[0] }
+    static const DISARMV8DECODEMAP g_aArmV8A64Insn ## a_Name = { { kDisArmV8DecodeType_Map, RT_ELEMENTS(g_aArmV8A64Insn ## a_Name ## MapHdrs) }, \
+                                                                 a_fMask, a_cShift, & g_aArmV8A64Insn ## a_Name ## MapHdrs[0] }
 
 #define DIS_ARMV8_DECODE_MAP_DEFINE_END_NON_STATIC(a_Name, a_fMask, a_cShift) \
     }; \
-    DECL_HIDDEN_CONST(DISARMV8DECODEMAP) a_Name = { { kDisArmV8DecodeType_Map, RT_ELEMENTS(a_Name ## MapHdrs) }, a_fMask, a_cShift, &a_Name ## MapHdrs[0] }
+    DECL_HIDDEN_CONST(DISARMV8DECODEMAP) g_aArmV8A64Insn ## a_Name = { { kDisArmV8DecodeType_Map, RT_ELEMENTS(g_aArmV8A64Insn ## a_Name ## MapHdrs) }, \
+                                                                       a_fMask, a_cShift, & g_aArmV8A64Insn ## a_Name ## MapHdrs[0] }
 
 #define DIS_ARMV8_DECODE_MAP_INVALID_ENTRY NULL
-#define DIS_ARMV8_DECODE_MAP_ENTRY(a_Next) &a_Next.Hdr
+#define DIS_ARMV8_DECODE_MAP_ENTRY(a_Next) & g_aArmV8A64Insn ## a_Next.Hdr
 
 
 /** @name Decoder maps.
  * @{ */
 extern DECL_HIDDEN_DATA(DISOPCODE) g_ArmV8A64InvalidOpcode[1];
 
-extern DECL_HIDDEN_DATA(DISARMV8DECODEMAP) g_ArmV8A64DecodeL0;
+extern DECL_HIDDEN_DATA(DISARMV8DECODEMAP) g_aArmV8A64InsnDecodeL0;
 /** @} */
 
 
