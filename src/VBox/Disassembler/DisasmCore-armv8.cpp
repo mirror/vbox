@@ -477,7 +477,7 @@ static int disArmV8ParseSImmMemOff(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8O
 
     pParam->armv8.cb = sizeof(int16_t);
     pParam->armv8.u.offBase = disArmV8ExtractBitVecFromInsnSignExtend(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
-    pParam->armv8.u.offBase <<= (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_32BIT) ? 2 : 3; 
+    pParam->armv8.u.offBase <<= (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_32BIT) ? 2 : 3;
     pDis->armv8.cbOperand   =   (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_32BIT) ? sizeof(uint32_t) : sizeof(uint64_t);
     return VINF_SUCCESS;
 }
