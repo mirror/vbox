@@ -158,6 +158,8 @@ public:
         bool emptyDiskRecommended() const;
         void setEmptyDiskRecommended(bool fEmptyDiskRecommended);
 
+        bool isGuestOSTypeSupported(const QString &strGuestOSTypeId) const;
+
         void setDetectedWindowsImageNamesAndIndices(const QVector<QString> &names, const QVector<ulong> &ids);
         const QVector<QString> &detectedWindowsImageNames() const;
         const QVector<ulong> &detectedWindowsImageIndices() const;

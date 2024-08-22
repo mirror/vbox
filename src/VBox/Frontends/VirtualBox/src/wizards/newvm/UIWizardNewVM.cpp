@@ -741,6 +741,13 @@ void UIWizardNewVM::setEmptyDiskRecommended(bool fEmptyDiskRecommended)
     m_fEmptyDiskRecommended = fEmptyDiskRecommended;
 }
 
+bool UIWizardNewVM::isGuestOSTypeSupported(const QString &strGuestOSTypeId) const
+{
+    if (strGuestOSTypeId.isEmpty())
+        return true;
+    return gpGlobalSession->guestOSTypeManager().isGuestOSTypeIDSupported(strGuestOSTypeId);
+}
+
 void UIWizardNewVM::setDetectedWindowsImageNamesAndIndices(const QVector<QString> &names, const QVector<ulong> &ids)
 {
     AssertMsg(names.size() == ids.size(),
@@ -799,6 +806,8 @@ bool UIWizardNewVM::isUnattendedEnabled() const
     if (m_fSkipUnattendedInstall)
         return false;
     if (!isUnattendedInstallSupported())
+        return false;
+    if (!isGuestOSTypeSupported(detectedOSTypeId()))
         return false;
     return true;
 }

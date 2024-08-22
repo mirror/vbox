@@ -352,6 +352,8 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
 
 bool UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(UINameAndSystemEditor *pNameAndSystemEditor, QString strDetectedOSType)
 {
+    if (!gpGlobalSession->guestOSTypeManager().isGuestOSTypeIDSupported(strDetectedOSType))
+        return false;
     AssertReturn(pNameAndSystemEditor, false);
     if (!strDetectedOSType.isEmpty())
     {
@@ -519,6 +521,12 @@ bool UIWizardNewVMNameOSTypePage::isComplete() const
     markWidgets();
     if (m_pNameAndSystemEditor->name().isEmpty())
         return false;
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    if (pWizard)
+    {
+        if (!pWizard->isGuestOSTypeSupported(pWizard->detectedOSTypeId()))
+            return false;
+    }
     return UIWizardNewVMNameOSTypeCommon::checkISOFile(m_pNameAndSystemEditor);
 }
 
@@ -589,6 +597,7 @@ void UIWizardNewVMNameOSTypePage::updateInfoLabel()
      * - No ISO selected,
      * - Unattended cannot determine OS type from the ISO,
      * - Unattended can determine the OS type from the ISO but cannot install it,
+     * - Unattended detects OS type from ISO but this OS type arch. is not supported, page validation will fail,
      * - User has disabled unattended explicitly,
      * - Unattended install will kick off.
      */
@@ -606,6 +615,11 @@ void UIWizardNewVMNameOSTypePage::updateInfoLabel()
                                            .arg(strType)
                                            .arg(UIWizardNewVM::tr("This OS type cannot be installed unattendedly. "
                                                                   "The install needs to be started manually."));
+        else if (!pWizard->isGuestOSTypeSupported(pWizard->detectedOSTypeId()))
+            strMessage =  UIWizardNewVM::tr("Detected OS type: %1. %2")
+                                           .arg(strType)
+                                           .arg(UIWizardNewVM::tr("This OS type is not supported by your host. "
+                                                                  "You need to either deselect ISO image or pick another one to continue."));
         else if (pWizard->skipUnattendedInstall())
             strMessage = UIWizardNewVM::tr("You have selected to skip unattended guest OS install, "
                                            "the guest OS will need to be installed manually.");
@@ -766,6 +780,12 @@ void UIWizardNewVMNameOSTypePage::markWidgets() const
         m_pNameAndSystemEditor->markImageEditor(!UIWizardNewVMNameOSTypeCommon::checkISOFile(m_pNameAndSystemEditor),
                                                 UIWizardNewVM::tr("Invalid file path or unreadable file"),
                                                 UIWizardNewVM::tr("File path is valid"));
+        UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+        if (pWizard)
+        {
+            if (!pWizard->isGuestOSTypeSupported(pWizard->detectedOSTypeId()))
+                m_pNameAndSystemEditor->markImageEditor(true, UIWizardNewVM::tr("ISO file is for an unsupported guest OS type"), "");
+        }
     }
 }
 
@@ -783,7 +803,15 @@ void UIWizardNewVMNameOSTypePage::setSkipCheckBoxEnable()
         m_pSkipUnattendedCheckBox->setEnabled(false);
         return;
     }
-
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    if (pWizard)
+    {
+        if (!pWizard->isGuestOSTypeSupported(pWizard->detectedOSTypeId()))
+        {
+            m_pSkipUnattendedCheckBox->setEnabled(false);
+            return;
+        }
+    }
     m_pSkipUnattendedCheckBox->setEnabled(UIWizardNewVMNameOSTypeCommon::checkISOFile(m_pNameAndSystemEditor));
 }
 
