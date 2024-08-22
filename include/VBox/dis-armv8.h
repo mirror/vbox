@@ -98,6 +98,8 @@ typedef struct
 {
     /** Condition flag for the instruction - kArmv8InstrCond_Al if not conditional instruction. */
     DISARMV8INSTRCOND   enmCond;
+    /** Operand size (for loads/stores primarily). */
+    uint8_t             cbOperand;
 } DIS_STATE_ARMV8_T;
 AssertCompile(sizeof(DIS_STATE_ARMV8_T) <= 32);
 

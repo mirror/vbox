@@ -372,6 +372,30 @@ _TestProcA64:
         bics x0, x1, x28, ROR #63
 
         ; Memory loads
+        ldrb w0, [x28]
+        ldrb w0, [x28, #1]
+        ldrb w0, [x28, #4095]
+
+        ldrsb w0, [x28]
+        ldrsb w0, [x28, #1]
+        ldrsb w0, [x28, #4095]
+
+        ldrsb x0, [x28]
+        ldrsb x0, [x28, #1]
+        ldrsb x0, [x28, #4095]
+
+        ldrh w0, [x28]
+        ldrh w0, [x28, #2]
+        ldrh w0, [x28, #1024]
+
+        ldrsh w0, [x28]
+        ldrsh w0, [x28, #2]
+        ldrsh w0, [x28, #1024]
+
+        ldrsh x0, [x28]
+        ldrsh x0, [x28, #2]
+        ldrsh x0, [x28, #1024]
+
         ldr x0, [x28]
         ldr x0, [x28, #8]
         ldr x0, [x28, #32760]
@@ -380,7 +404,19 @@ _TestProcA64:
         ldr w0, [x28, #4]
         ldr w0, [x28, #16380]
 
+        ldrsw x0, [x28]
+        ldrsw x0, [x28, #4]
+        ldrsw x0, [x28, #16380]
+
         ; Memory stores
+        strb w0, [x28]
+        strb w0, [x28, #1]
+        strb w0, [x28, #4095]
+
+        strh w0, [x28]
+        strh w0, [x28, #2]
+        strh w0, [x28, #1024]
+
         str x0, [x28]
         str x0, [x28, #8]
         str x0, [x28, #32760]

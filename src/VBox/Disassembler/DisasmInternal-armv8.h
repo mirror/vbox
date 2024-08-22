@@ -50,7 +50,7 @@
 typedef enum DISPARMPARSEIDX
 {
     kDisParmParseNop = 0,
-    kDisParmParseIs32Bit,
+    kDisParmParseSize,
     kDisParmParseImm,
     kDisParmParseImmRel,
     kDisParmParseImmAdr,
@@ -76,8 +76,10 @@ typedef enum DISPARMPARSEIDX
  */
 typedef struct DISARMV8OPCODE
 {
-    /** The value of masked bits of the isntruction. */
+    /** The value of the fixed bits of the instruction. */
     uint32_t            fValue;
+    /** Special flags for the opcode. */
+    uint32_t            fFlags;
     /** The generic opcode structure. */
     DISOPCODE           Opc;
 } DISARMV8OPCODE;
@@ -112,6 +114,7 @@ typedef enum DISARMV8OPCDECODE
 {
     kDisArmV8OpcDecodeNop = 0,
     kDisArmV8OpcDecodeLookup,
+    kDisArmV8OpcDecodeCollate,
     kDisArmV8OpcDecodeMax
 } DISARMV8OPCDECODE;
 
