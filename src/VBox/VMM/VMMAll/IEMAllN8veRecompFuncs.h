@@ -387,6 +387,20 @@ iemNativeEmitFinishInstructionWithStatus(PIEMRECOMPILERSTATE pReNative, uint32_t
         off = iemNativeRegFlushPendingWrites(pReNative, off);
 
         /*
+         * If we're in a conditional, mark the current branch as exiting so we
+         * can disregard its state when we hit the IEM_MC_ENDIF.
+         */
+        uint8_t idxCondDepth = pReNative->cCondDepth;
+        if (idxCondDepth)
+        {
+            idxCondDepth--;
+            if (pReNative->aCondStack[idxCondDepth].fInElse)
+                pReNative->aCondStack[idxCondDepth].fElseExitTb = true;
+            else
+                pReNative->aCondStack[idxCondDepth].fIfExitTb   = true;
+        }
+
+        /*
          * Use the lookup table for getting to the next TB quickly.
          * Note! In this code path there can only be one entry at present.
          */
@@ -2463,6 +2477,8 @@ DECL_INLINE_THROW(PIEMNATIVECOND) iemNativeCondPushIf(PIEMRECOMPILERSTATE pReNat
 
     uint16_t const uCondSeqNo = ++pReNative->uCondSeqNo;
     pEntry->fInElse       = false;
+    pEntry->fIfExitTb     = false;
+    pEntry->fElseExitTb   = false;
     pEntry->idxLabelElse  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_Else, UINT32_MAX /*offWhere*/, uCondSeqNo);
     pEntry->idxLabelEndIf = iemNativeLabelCreate(pReNative, kIemNativeLabelType_Endif, UINT32_MAX /*offWhere*/, uCondSeqNo);
 
@@ -2551,118 +2567,147 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
     Assert(off != UINT32_MAX);
     Assert(pReNative->cCondDepth > 0 && pReNative->cCondDepth <= RT_ELEMENTS(pReNative->aCondStack));
     PIEMNATIVECOND const pEntry = &pReNative->aCondStack[pReNative->cCondDepth - 1];
-
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     Assert(pReNative->Core.offPc == 0);
 #endif
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-    /* Writeback any dirty shadow registers (else branch). */
-    /** @todo r=aeichner Possible optimization is to only writeback guest registers which became dirty
-     *                   in one of the branches and leave guest registers already dirty before the start of the if
-     *                   block alone. */
-    off = iemNativeRegFlushDirtyGuest(pReNative, off);
-#endif
 
     /*
-     * Now we have find common group with the core state at the end of the
-     * if-final.  Use the smallest common denominator and just drop anything
-     * that isn't the same in both states.
+     * If either of the branches exited the TB, we can take the state from the
+     * other branch and skip all the merging headache.
      */
-    /** @todo We could, maybe, shuffle registers around if we thought it helpful,
-     *        which is why we're doing this at the end of the else-block.
-     *        But we'd need more info about future for that to be worth the effort. */
-    PCIEMNATIVECORESTATE const pOther = pEntry->fInElse ? &pEntry->IfFinalState : &pEntry->InitialState;
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-    Assert(   pOther->bmGstRegShadowDirty == 0
-           && pReNative->Core.bmGstRegShadowDirty == 0);
-#endif
-
-    if (memcmp(&pReNative->Core, pOther, sizeof(*pOther)) != 0)
+    if (pEntry->fElseExitTb || pEntry->fIfExitTb)
     {
-        /* shadow guest stuff first. */
-        uint64_t fGstRegs = pReNative->Core.bmGstRegShadows;
-        if (fGstRegs)
-        {
-            Assert(pReNative->Core.bmHstRegsWithGstShadow != 0);
-            do
-            {
-                unsigned idxGstReg = ASMBitFirstSetU64(fGstRegs) - 1;
-                fGstRegs &= ~RT_BIT_64(idxGstReg);
-
-                uint8_t const idxHstReg = pReNative->Core.aidxGstRegShadows[idxGstReg];
-                if (  !(pOther->bmGstRegShadows & RT_BIT_64(idxGstReg))
-                    || idxHstReg != pOther->aidxGstRegShadows[idxGstReg])
-                {
-                    Log12(("iemNativeEmitEndIf: dropping gst %s from hst %s\n",
-                           g_aGstShadowInfo[idxGstReg].pszName, g_apszIemNativeHstRegNames[idxHstReg]));
-
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-                    /* Writeback any dirty shadow registers we are about to unshadow. */
-                    off = iemNativeRegFlushDirtyGuestByHostRegShadow(pReNative, off, idxHstReg);
+#ifdef VBOX_STRICT
+        Assert(pReNative->cCondDepth == 1);                 /* Assuming this only happens in simple conditional structures.  */
+        Assert(pEntry->fElseExitTb != pEntry->fIfExitTb);   /* Assuming we don't have any code where both branches exits. */
+        PCIEMNATIVECORESTATE const pExitCoreState = pEntry->fIfExitTb && pEntry->fInElse
+                                                  ? &pEntry->IfFinalState : &pReNative->Core;
+# ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+        Assert(pExitCoreState->bmGstRegShadowDirty == 0);
+# endif
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+        Assert(pExitCoreState->offPc == 0);
+# endif
+        RT_NOREF(pExitCoreState);
 #endif
-                    iemNativeRegClearGstRegShadowing(pReNative, idxHstReg, off);
-                }
-            } while (fGstRegs);
-        }
-        else
+
+        if (!pEntry->fIfExitTb)
         {
-            Assert(pReNative->Core.bmHstRegsWithGstShadow == 0);
+            Assert(pEntry->fInElse);
+            pReNative->Core = pEntry->IfFinalState;
+        }
+    }
+    else
+    {
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-            Assert(pReNative->Core.bmGstRegShadowDirty == 0);
+        /* Writeback any dirty shadow registers (else branch). */
+        /** @todo r=aeichner Possible optimization is to only writeback guest registers which became dirty
+         *                   in one of the branches and leave guest registers already dirty before the start of the if
+         *                   block alone. */
+        off = iemNativeRegFlushDirtyGuest(pReNative, off);
 #endif
-        }
 
-        /* Check variables next. For now we must require them to be identical
-           or stuff we can recreate. */
-        Assert(pReNative->Core.u64ArgVars == pOther->u64ArgVars);
-        uint32_t fVars = pReNative->Core.bmVars | pOther->bmVars;
-        if (fVars)
+        /*
+         * Now we have find common group with the core state at the end of the
+         * if-final.  Use the smallest common denominator and just drop anything
+         * that isn't the same in both states.
+         */
+        /** @todo We could, maybe, shuffle registers around if we thought it helpful,
+         *        which is why we're doing this at the end of the else-block.
+         *        But we'd need more info about future for that to be worth the effort. */
+        PCIEMNATIVECORESTATE const pOther = pEntry->fInElse ? &pEntry->IfFinalState : &pEntry->InitialState;
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+        Assert(   pOther->bmGstRegShadowDirty == 0
+               && pReNative->Core.bmGstRegShadowDirty == 0);
+#endif
+
+        if (memcmp(&pReNative->Core, pOther, sizeof(*pOther)) != 0)
         {
-            uint32_t const fVarsMustRemove = pReNative->Core.bmVars ^ pOther->bmVars;
-            do
+            /* shadow guest stuff first. */
+            uint64_t fGstRegs = pReNative->Core.bmGstRegShadows;
+            if (fGstRegs)
             {
-                unsigned idxVar = ASMBitFirstSetU32(fVars) - 1;
-                fVars &= ~RT_BIT_32(idxVar);
-
-                if (!(fVarsMustRemove & RT_BIT_32(idxVar)))
+                Assert(pReNative->Core.bmHstRegsWithGstShadow != 0);
+                do
                 {
-                    if (pReNative->Core.aVars[idxVar].idxReg == pOther->aVars[idxVar].idxReg)
-                        continue;
-                    if (pReNative->Core.aVars[idxVar].enmKind != kIemNativeVarKind_Stack)
+                    unsigned idxGstReg = ASMBitFirstSetU64(fGstRegs) - 1;
+                    fGstRegs &= ~RT_BIT_64(idxGstReg);
+
+                    uint8_t const idxHstReg = pReNative->Core.aidxGstRegShadows[idxGstReg];
+                    if (  !(pOther->bmGstRegShadows & RT_BIT_64(idxGstReg))
+                        || idxHstReg != pOther->aidxGstRegShadows[idxGstReg])
                     {
-                        uint8_t const idxHstReg = pReNative->Core.aVars[idxVar].idxReg;
-                        if (idxHstReg != UINT8_MAX)
-                        {
-                            pReNative->Core.bmHstRegs &= ~RT_BIT_32(idxHstReg);
-                            pReNative->Core.aVars[idxVar].idxReg = UINT8_MAX;
-                            Log12(("iemNativeEmitEndIf: Dropping hst reg %s for var #%u/%#x\n",
-                                   g_apszIemNativeHstRegNames[idxHstReg], idxVar, IEMNATIVE_VAR_IDX_PACK(idxVar)));
-                        }
-                        continue;
+                        Log12(("iemNativeEmitEndIf: dropping gst %s from hst %s\n",
+                               g_aGstShadowInfo[idxGstReg].pszName, g_apszIemNativeHstRegNames[idxHstReg]));
+
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                        /* Writeback any dirty shadow registers we are about to unshadow. */
+                        off = iemNativeRegFlushDirtyGuestByHostRegShadow(pReNative, off, idxHstReg);
+#endif
+                        iemNativeRegClearGstRegShadowing(pReNative, idxHstReg, off);
                     }
-                }
-                else if (!(pReNative->Core.bmVars & RT_BIT_32(idxVar)))
-                    continue;
+                } while (fGstRegs);
+            }
+            else
+            {
+                Assert(pReNative->Core.bmHstRegsWithGstShadow == 0);
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                Assert(pReNative->Core.bmGstRegShadowDirty == 0);
+#endif
+            }
 
-                /* Irreconcilable, so drop it. */
-                uint8_t const idxHstReg = pReNative->Core.aVars[idxVar].idxReg;
-                if (idxHstReg != UINT8_MAX)
+            /* Check variables next. For now we must require them to be identical
+               or stuff we can recreate. */
+            Assert(pReNative->Core.u64ArgVars == pOther->u64ArgVars);
+            uint32_t fVars = pReNative->Core.bmVars | pOther->bmVars;
+            if (fVars)
+            {
+                uint32_t const fVarsMustRemove = pReNative->Core.bmVars ^ pOther->bmVars;
+                do
                 {
-                    pReNative->Core.bmHstRegs &= ~RT_BIT_32(idxHstReg);
-                    pReNative->Core.aVars[idxVar].idxReg = UINT8_MAX;
-                    Log12(("iemNativeEmitEndIf: Dropping hst reg %s for var #%u/%#x (also dropped)\n",
-                           g_apszIemNativeHstRegNames[idxHstReg], idxVar, IEMNATIVE_VAR_IDX_PACK(idxVar)));
-                }
-                Log11(("iemNativeEmitEndIf: Freeing variable #%u/%#x\n", idxVar, IEMNATIVE_VAR_IDX_PACK(idxVar)));
-                pReNative->Core.bmVars &= ~RT_BIT_32(idxVar);
-            } while (fVars);
-        }
+                    unsigned idxVar = ASMBitFirstSetU32(fVars) - 1;
+                    fVars &= ~RT_BIT_32(idxVar);
 
-        /* Finally, check that the host register allocations matches. */
-        AssertMsgStmt(pReNative->Core.bmHstRegs == pOther->bmHstRegs,
-                      ("Core.bmHstRegs=%#x pOther->bmHstRegs=%#x - %#x\n",
-                       pReNative->Core.bmHstRegs, pOther->bmHstRegs, pReNative->Core.bmHstRegs ^ pOther->bmHstRegs),
-                      IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_COND_ENDIF_RECONCILIATION_FAILED));
+                    if (!(fVarsMustRemove & RT_BIT_32(idxVar)))
+                    {
+                        if (pReNative->Core.aVars[idxVar].idxReg == pOther->aVars[idxVar].idxReg)
+                            continue;
+                        if (pReNative->Core.aVars[idxVar].enmKind != kIemNativeVarKind_Stack)
+                        {
+                            uint8_t const idxHstReg = pReNative->Core.aVars[idxVar].idxReg;
+                            if (idxHstReg != UINT8_MAX)
+                            {
+                                pReNative->Core.bmHstRegs &= ~RT_BIT_32(idxHstReg);
+                                pReNative->Core.aVars[idxVar].idxReg = UINT8_MAX;
+                                Log12(("iemNativeEmitEndIf: Dropping hst reg %s for var #%u/%#x\n",
+                                       g_apszIemNativeHstRegNames[idxHstReg], idxVar, IEMNATIVE_VAR_IDX_PACK(idxVar)));
+                            }
+                            continue;
+                        }
+                    }
+                    else if (!(pReNative->Core.bmVars & RT_BIT_32(idxVar)))
+                        continue;
+
+                    /* Irreconcilable, so drop it. */
+                    uint8_t const idxHstReg = pReNative->Core.aVars[idxVar].idxReg;
+                    if (idxHstReg != UINT8_MAX)
+                    {
+                        pReNative->Core.bmHstRegs &= ~RT_BIT_32(idxHstReg);
+                        pReNative->Core.aVars[idxVar].idxReg = UINT8_MAX;
+                        Log12(("iemNativeEmitEndIf: Dropping hst reg %s for var #%u/%#x (also dropped)\n",
+                               g_apszIemNativeHstRegNames[idxHstReg], idxVar, IEMNATIVE_VAR_IDX_PACK(idxVar)));
+                    }
+                    Log11(("iemNativeEmitEndIf: Freeing variable #%u/%#x\n", idxVar, IEMNATIVE_VAR_IDX_PACK(idxVar)));
+                    pReNative->Core.bmVars &= ~RT_BIT_32(idxVar);
+                } while (fVars);
+            }
+
+            /* Finally, check that the host register allocations matches. */
+            AssertMsgStmt(pReNative->Core.bmHstRegs == pOther->bmHstRegs,
+                          ("Core.bmHstRegs=%#x pOther->bmHstRegs=%#x - %#x\n",
+                           pReNative->Core.bmHstRegs, pOther->bmHstRegs, pReNative->Core.bmHstRegs ^ pOther->bmHstRegs),
+                          IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_COND_ENDIF_RECONCILIATION_FAILED));
+        }
     }
 
     /*

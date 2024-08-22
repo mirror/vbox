@@ -1385,6 +1385,11 @@ typedef struct IEMNATIVECOND
 {
     /** Set if we're in the "else" part, clear if we're in the "if" before it. */
     bool                        fInElse;
+    /** Set if the if-block unconditionally exited the TB. */
+    bool                        fIfExitTb;
+    /** Set if the else-block unconditionally exited the TB. */
+    bool                        fElseExitTb;
+    bool                        afPadding[5];
     /** The label for the IEM_MC_ELSE. */
     uint32_t                    idxLabelElse;
     /** The label for the IEM_MC_ENDIF. */
@@ -2428,27 +2433,29 @@ iemNativeRegTransferGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxRe
  * This optimization has not yet been implemented.  The first target would be
  * RIP updates, since these are the most common ones.
  *
- * @note This function does not flush any shadowing information for guest registers. This needs to be done by
- *       the caller if it wishes to do so.
+ * @note This function does not flush any shadowing information for guest
+ *       registers. This needs to be done by the caller if it wishes to do so.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept = 0, uint64_t fGstSimdShwExcept = 0)
+iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept = 0,
+                               uint64_t fGstSimdShwExcept = 0)
 {
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-    uint64_t const bmGstRegShadowDirty = pReNative->Core.bmGstRegShadowDirty & ~fGstShwExcept;
+    uint64_t const bmGstRegShadowDirty     = pReNative->Core.bmGstRegShadowDirty & ~fGstShwExcept;
 #else
-    uint64_t const bmGstRegShadowDirty = 0;
+    uint64_t const bmGstRegShadowDirty     = 0;
 #endif
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
-    uint64_t const bmGstSimdRegShadowDirty =   (pReNative->Core.bmGstSimdRegShadowDirtyLo128 | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
-                                             & ~fGstSimdShwExcept;
+    uint64_t const bmGstSimdRegShadowDirty = (  pReNative->Core.bmGstSimdRegShadowDirtyLo128
+                                              | pReNative->Core.bmGstSimdRegShadowDirtyHi128)
+                                           & ~fGstSimdShwExcept;
 #else
     uint64_t const bmGstSimdRegShadowDirty = 0;
 #endif
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    uint64_t const fWritebackPc = ~(fGstShwExcept & kIemNativeGstReg_Pc);
+    uint64_t const fWritebackPc            = ~(fGstShwExcept & kIemNativeGstReg_Pc);
 #else
-    uint64_t const fWritebackPc = 0;
+    uint64_t const fWritebackPc            = 0;
 #endif
     if (bmGstRegShadowDirty | bmGstSimdRegShadowDirty | fWritebackPc)
         return iemNativeRegFlushPendingWritesSlow(pReNative, off, fGstShwExcept, fGstSimdShwExcept);
