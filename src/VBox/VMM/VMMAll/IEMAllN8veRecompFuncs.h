@@ -88,7 +88,85 @@
 *********************************************************************************************************************************/
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-# if defined(IEMNATIVE_REG_FIXED_PC_DBG)
+
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+/**
+ * Updates IEMCPU::uPcUpdatingDebug.
+ */
+DECL_INLINE_THROW(uint32_t) iemNativeEmitPcDebugAdd(PIEMRECOMPILERSTATE pReNative, uint32_t off, int64_t offDisp, uint8_t cBits)
+{
+# ifdef RT_ARCH_AMD64
+    if (pReNative->Core.fDebugPcInitialized && cBits >= 32)
+    {
+        PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
+        if ((int32_t)offDisp == offDisp || cBits != 64)
+        {
+            /* add [q]word [pVCpu->iem.s.uPcUpdatingDebug], imm32/imm8 */
+            if (cBits == 64)
+                pCodeBuf[off++] = X86_OP_REX_W;
+            pCodeBuf[off++] = (int8_t)offDisp == offDisp ? 0x83 : 0x81;
+            off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, 0, RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug));
+            if ((int8_t)offDisp == offDisp)
+                pCodeBuf[off++] = (int8_t)offDisp;
+            else
+            {
+                *(int32_t *)&pCodeBuf[off] = (int32_t)offDisp;
+                off += sizeof(int32_t);
+            }
+        }
+        else
+        {
+            /* mov tmp0, imm64 */
+            off = iemNativeEmitLoadGprImmEx(pCodeBuf, off, IEMNATIVE_REG_FIXED_TMP0, offDisp);
+
+            /* add [pVCpu->iem.s.uPcUpdatingDebug], tmp0 */
+            if (cBits == 64)
+                pCodeBuf[off++] = X86_OP_REX_W | (IEMNATIVE_REG_FIXED_TMP0 >= 8 ? X86_OP_REX_R : 0);
+            else if (IEMNATIVE_REG_FIXED_TMP0 >= 8)
+                pCodeBuf[off++] = X86_OP_REX_R;
+            pCodeBuf[off++] = 0x01;
+            off = iemNativeEmitGprByVCpuDisp(pCodeBuf, off, IEMNATIVE_REG_FIXED_TMP0 & 7,
+                                             RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug));
+        }
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+        return off;
+    }
+# endif
+
+    uint8_t const         idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+    PIEMNATIVEINSTR const pCodeBuf  = iemNativeInstrBufEnsure(pReNative, off, RT_ARCH_VAL == RT_ARCH_VAL_AMD64 ? 32 : 12);
+
+    if (pReNative->Core.fDebugPcInitialized)
+    {
+        Log4(("uPcUpdatingDebug+=%ld cBits=%d off=%#x\n", offDisp, cBits, off));
+        off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, idxTmpReg, RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug));
+    }
+    else
+    {
+        Log4(("uPcUpdatingDebug=rip+%ld cBits=%d off=%#x\n", offDisp, cBits, off));
+        pReNative->Core.fDebugPcInitialized = true;
+        off = iemNativeEmitLoadGprFromVCpuU64Ex(pCodeBuf, off, idxTmpReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+    }
+
+    if (cBits == 64)
+        off = iemNativeEmitAddGprImmEx(pCodeBuf, off, idxTmpReg, offDisp, IEMNATIVE_REG_FIXED_TMP0);
+    else
+    {
+        off = iemNativeEmitAddGpr32ImmEx(pCodeBuf, off, idxTmpReg, (int32_t)offDisp, IEMNATIVE_REG_FIXED_TMP0);
+        if (cBits == 16)
+            off = iemNativeEmitAndGpr32ByImmEx(pCodeBuf, off, idxTmpReg, UINT16_MAX);
+    }
+
+    off = iemNativeEmitStoreGprToVCpuU64Ex(pCodeBuf, off, idxTmpReg, RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug),
+                                           IEMNATIVE_REG_FIXED_TMP0);
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    iemNativeRegFreeTmp(pReNative, idxTmpReg);
+    return off;
+}
+
+
+# elif defined(IEMNATIVE_REG_FIXED_PC_DBG)
 DECL_INLINE_THROW(uint32_t) iemNativePcAdjustCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
     /* Compare the shadow with the context value, they should match. */
@@ -98,6 +176,7 @@ DECL_INLINE_THROW(uint32_t) iemNativePcAdjustCheck(PIEMRECOMPILERSTATE pReNative
     return off;
 }
 # endif
+
 #endif /* IEMNATIVE_WITH_DELAYED_PC_UPDATING  */
 
 /**
@@ -390,15 +469,7 @@ iemNativeEmitFinishInstructionWithStatus(PIEMRECOMPILERSTATE pReNative, uint32_t
          * If we're in a conditional, mark the current branch as exiting so we
          * can disregard its state when we hit the IEM_MC_ENDIF.
          */
-        uint8_t idxCondDepth = pReNative->cCondDepth;
-        if (idxCondDepth)
-        {
-            idxCondDepth--;
-            if (pReNative->aCondStack[idxCondDepth].fInElse)
-                pReNative->aCondStack[idxCondDepth].fElseExitTb = true;
-            else
-                pReNative->aCondStack[idxCondDepth].fIfExitTb   = true;
-        }
+        iemNativeMarkCurCondBranchAsExiting(pReNative);
 
         /*
          * Use the lookup table for getting to the next TB quickly.
@@ -509,13 +580,19 @@ iemNativeEmitAddToRip64AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 
     pReNative->Core.offPc += cbInstr;
-# if defined(IEMNATIVE_REG_FIXED_PC_DBG)
+    Log4(("offPc=%x cbInstr=%#x off=%#x\n", pReNative->Core.offPc, cbInstr, off));
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitPcDebugAdd(pReNative, off, cbInstr, 64);
+    off = iemNativeEmitPcDebugCheck(pReNative, off);
+# elif defined(IEMNATIVE_REG_FIXED_PC_DBG)
     off = iemNativePcAdjustCheck(pReNative, off);
 # endif
+
     if (pReNative->cCondDepth)
         off = iemNativeEmitPcWriteback(pReNative, off);
     else
         pReNative->Core.cInstrPcUpdateSkipped++;
+
 #endif
 
     return off;
@@ -536,7 +613,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
 {
 #if !defined(IEMNATIVE_WITH_DELAYED_PC_UPDATING) || defined(IEMNATIVE_REG_FIXED_PC_DBG)
-# if defined(IEMNATIVE_REG_FIXED_PC_DBG)
+# ifdef IEMNATIVE_REG_FIXED_PC_DBG
     if (!pReNative->Core.offPc)
         off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, IEMNATIVE_REG_FIXED_PC_DBG, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
 # endif
@@ -556,9 +633,14 @@ iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 
     pReNative->Core.offPc += cbInstr;
-# if defined(IEMNATIVE_REG_FIXED_PC_DBG)
+    Log4(("offPc=%x cbInstr=%#x off=%#x\n", pReNative->Core.offPc, cbInstr, off));
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitPcDebugAdd(pReNative, off, cbInstr, 32);
+    off = iemNativeEmitPcDebugCheck(pReNative, off);
+# elif defined(IEMNATIVE_REG_FIXED_PC_DBG)
     off = iemNativePcAdjustCheck(pReNative, off);
 # endif
+
     if (pReNative->cCondDepth)
         off = iemNativeEmitPcWriteback(pReNative, off);
     else
@@ -604,9 +686,14 @@ iemNativeEmitAddToIp16AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 
     pReNative->Core.offPc += cbInstr;
-# if defined(IEMNATIVE_REG_FIXED_PC_DBG)
+    Log4(("offPc=%x cbInstr=%#x off=%#x\n", pReNative->Core.offPc, cbInstr, off));
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitPcDebugAdd(pReNative, off, cbInstr, 16);
+    off = iemNativeEmitPcDebugCheck(pReNative, off);
+# elif defined(IEMNATIVE_REG_FIXED_PC_DBG)
     off = iemNativePcAdjustCheck(pReNative, off);
 # endif
+
     if (pReNative->cCondDepth)
         off = iemNativeEmitPcWriteback(pReNative, off);
     else
@@ -700,11 +787,11 @@ iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
     Assert(enmEffOpSize == IEMMODE_64BIT || enmEffOpSize == IEMMODE_16BIT);
 
     /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
+/** @todo relax this one, we won't raise \#GP when a_fWithinPage is true. */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     Assert(pReNative->Core.offPc == 0);
-
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 #endif
 
@@ -727,6 +814,11 @@ iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
         Assert(enmEffOpSize == IEMMODE_16BIT);
         off = iemNativeEmitClear16UpGpr(pReNative, off, idxPcReg);
     }
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitPcDebugAdd(pReNative, off, (int64_t)offDisp + cbInstr, enmEffOpSize == IEMMODE_64BIT ? 64 : 16);
+    off = iemNativeEmitPcDebugCheckWithReg(pReNative, off, idxPcReg);
+#endif
+
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
 
     /* Free but don't flush the PC register. */
@@ -818,7 +910,6 @@ iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     Assert(pReNative->Core.offPc == 0);
-
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 #endif
 
@@ -835,6 +926,11 @@ iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
     /* Perform limit checking, potentially raising #GP(0) and exit the TB. */
     if (!a_fFlat)
         off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitPcDebugAdd(pReNative, off, offDisp + cbInstr, enmEffOpSize == IEMMODE_32BIT ? 32 : 16);
+    off = iemNativeEmitPcDebugCheckWithReg(pReNative, off, idxPcReg);
+#endif
 
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
 
@@ -882,7 +978,6 @@ iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, 
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     Assert(pReNative->Core.offPc == 0);
-
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 #endif
 
@@ -893,6 +988,10 @@ iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, 
     off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcReg, offDisp + cbInstr);
     off = iemNativeEmitClear16UpGpr(pReNative, off, idxPcReg);
     off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitPcDebugAdd(pReNative, off, offDisp + cbInstr, 16);
+    off = iemNativeEmitPcDebugCheckWithReg(pReNative, off, idxPcReg);
+#endif
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
 
     /* Free but don't flush the PC register. */
@@ -990,7 +1089,6 @@ iemNativeEmitRipJumpNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     Assert(pReNative->Core.offPc == 0);
-
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 #endif
 
@@ -1008,6 +1106,12 @@ iemNativeEmitRipJumpNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
 
     /* Store the result. */
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug));
+    pReNative->Core.fDebugPcInitialized = true;
+    Log4(("uPcUpdatingDebug=rip off=%#x\n", off));
+#endif
 
     iemNativeVarRegisterRelease(pReNative, idxVarPc);
     /** @todo implictly free the variable? */
@@ -1400,7 +1504,6 @@ iemNativeEmitRipIndirectCallNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     Assert(pReNative->Core.offPc == 0);
-
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 #endif
 
@@ -1457,6 +1560,11 @@ iemNativeEmitRipIndirectCallNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 
     /* Store the result. */
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxNewPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxNewPcReg, RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug));
+    pReNative->Core.fDebugPcInitialized = true;
+    Log4(("uPcUpdatingDebug=rip/indirect-call off=%#x\n", off));
+#endif
 
 #if 1
     /* Need to transfer the shadow information to the new RIP register. */
@@ -1522,7 +1630,6 @@ iemNativeEmitRipRelativeCallS16NoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t o
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     Assert(pReNative->Core.offPc == 0);
-
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 #endif
 
@@ -1553,6 +1660,11 @@ iemNativeEmitRipRelativeCallS16NoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t o
 
     /* Store the result. */
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcRegNew, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcRegNew, RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug));
+    pReNative->Core.fDebugPcInitialized = true;
+    Log4(("uPcUpdatingDebug=rip/rel-call-16 off=%#x offDisp=%d\n", off, offDisp));
+#endif
 
     /* Need to transfer the shadow information to the new RIP register. */
     iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxPcRegNew, kIemNativeGstReg_Pc, off);
@@ -1588,7 +1700,6 @@ iemNativeEmitEip32RelativeCallNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t of
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     Assert(pReNative->Core.offPc == 0);
-
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 #endif
 
@@ -1616,6 +1727,11 @@ iemNativeEmitEip32RelativeCallNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t of
 
     /* Store the result. */
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcRegNew, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcRegNew, RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug));
+    pReNative->Core.fDebugPcInitialized = true;
+    Log4(("uPcUpdatingDebug=eip/rel-call-32 off=%#x offDisp=%d\n", off, offDisp));
+#endif
 
     /* Need to transfer the shadow information to the new RIP register. */
     iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxPcRegNew, kIemNativeGstReg_Pc, off);
@@ -1651,7 +1767,6 @@ iemNativeEmitRip64RelativeCallNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t of
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     Assert(pReNative->Core.offPc == 0);
-
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 #endif
 
@@ -1677,6 +1792,11 @@ iemNativeEmitRip64RelativeCallNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t of
 
     /* Store the result. */
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcRegNew, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcRegNew, RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug));
+    pReNative->Core.fDebugPcInitialized = true;
+    Log4(("uPcUpdatingDebug=rip/rel-call-64 off=%#x offDisp=%ld\n", off, offDisp));
+#endif
 
     /* Need to transfer the shadow information to the new RIP register. */
     iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxPcRegNew, kIemNativeGstReg_Pc, off);
@@ -1701,6 +1821,7 @@ iemNativeEmitStackPopForRetnUse16Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint
     off = iemNativeEmitAddGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbMem); /* ASSUMES this does NOT modify bits [63:16]! */
     off = iemNativeEmitAddGpr16ImmEx(pCodeBuf, off, idxRegRsp, cbPopAdd); /* ASSUMES this does NOT modify bits [63:16]! */
     RT_NOREF(idxRegTmp);
+
 #elif defined(RT_ARCH_ARM64)
     /* ubfiz regeff, regrsp, #0, #16 - copies bits 15:0 from RSP to EffSp bits 15:0, zeroing bits 63:16. */
     pCodeBuf[off++] = Armv8A64MkInstrUbfiz(idxRegEffSp, idxRegRsp, 0, 16, false /*f64Bit*/);
@@ -1715,6 +1836,7 @@ iemNativeEmitStackPopForRetnUse16Sp(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint
     pCodeBuf[off++] = Armv8A64MkInstrAndImm(idxRegTmp, idxRegTmp, 15, 0, false /*f64Bit*/);
     /* bfi regrsp, regeff, #0, #16 - moves bits 15:0 from tmp to RSP bits 15:0, keeping the other RSP bits as is. */
     pCodeBuf[off++] = Armv8A64MkInstrBfi(idxRegRsp, idxRegTmp, 0, 16, false /*f64Bit*/);
+
 #else
 # error "Port me"
 #endif
@@ -1997,9 +2119,14 @@ iemNativeEmitRetn(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, 
     }
 
     /* Commit the result and clear any current guest shadows for RIP. */
-    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegRsp, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rsp));
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegRsp,       RT_UOFFSETOF(VMCPU, cpum.GstCtx.rsp));
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegMemResult, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
-    iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxRegMemResult,  kIemNativeGstReg_Pc, off);
+    iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxRegMemResult, kIemNativeGstReg_Pc, off);
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxRegMemResult, RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug));
+    pReNative->Core.fDebugPcInitialized = true;
+    Log4(("uPcUpdatingDebug=rip/ret off=%#x\n", off));
+#endif
 
     /* Need to transfer the shadowing information to the host register containing the updated value now. */
     if (!fFlat)
@@ -2463,12 +2590,8 @@ iemNativeEmitRaiseGp0IfEffAddrUnaligned(PIEMRECOMPILERSTATE pReNative, uint32_t 
  * @returns Pointer to the condition stack entry on success, NULL on failure
  *          (too many nestings)
  */
-DECL_INLINE_THROW(PIEMNATIVECOND) iemNativeCondPushIf(PIEMRECOMPILERSTATE pReNative, uint32_t *poff)
+DECL_INLINE_THROW(PIEMNATIVECOND) iemNativeCondPushIf(PIEMRECOMPILERSTATE pReNative)
 {
-#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    *poff = iemNativeRegFlushPendingWrites(pReNative, *poff);
-#endif
-
     uint32_t const idxStack = pReNative->cCondDepth;
     AssertStmt(idxStack < RT_ELEMENTS(pReNative->aCondStack), IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_COND_TOO_DEEPLY_NESTED));
 
@@ -2507,10 +2630,6 @@ iemNativeCondStartIfBlock(PIEMRECOMPILERSTATE pReNative, uint32_t offIfBlock, ui
     RT_NOREF(offIfBlock);
 #endif
 
-#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    Assert(pReNative->Core.offPc == 0);
-#endif
-
     /* Copy the initial state so we can restore it in the 'else' block. */
     pEntry->InitialState = pReNative->Core;
 }
@@ -2529,24 +2648,29 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitElse(PIEMRECOMPILERSTATE pReNative, uin
     PIEMNATIVECOND const pEntry = &pReNative->aCondStack[pReNative->cCondDepth - 1];
     Assert(!pEntry->fInElse);
 
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-    /* Writeback any dirty shadow registers. */
-    /** @todo r=aeichner Possible optimization is to only writeback guest registers which became dirty
-     *                   in one of the branches and leave guest registers already dirty before the start of the if
-     *                   block alone. */
-    off = iemNativeRegFlushDirtyGuest(pReNative, off);
+    /* We can skip dirty register flushing and the dirty register flushing if
+       the branch already jumped to a TB exit. */
+    if (!pEntry->fIfExitTb)
+    {
+#if defined(IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK) && 0
+        /* Writeback any dirty shadow registers. */
+        /** @todo r=aeichner Possible optimization is to only writeback guest registers which became dirty
+         *                   in one of the branches and leave guest registers already dirty before the start of the if
+         *                   block alone. */
+        off = iemNativeRegFlushDirtyGuest(pReNative, off);
 #endif
 
-    /* Jump to the endif */
-    off = iemNativeEmitJmpToLabel(pReNative, off, pEntry->idxLabelEndIf);
+        /* Jump to the endif. */
+        off = iemNativeEmitJmpToLabel(pReNative, off, pEntry->idxLabelEndIf);
+    }
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    else
+        Assert(pReNative->Core.offPc == 0);
+# endif
 
     /* Define the else label and enter the else part of the condition. */
     iemNativeLabelDefine(pReNative, pEntry->idxLabelElse, off);
     pEntry->fInElse = true;
-
-#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    Assert(pReNative->Core.offPc == 0);
-#endif
 
     /* Snapshot the core state so we can do a merge at the endif and restore
        the snapshot we took at the start of the if-block. */
@@ -2567,14 +2691,16 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
     Assert(off != UINT32_MAX);
     Assert(pReNative->cCondDepth > 0 && pReNative->cCondDepth <= RT_ELEMENTS(pReNative->aCondStack));
     PIEMNATIVECOND const pEntry = &pReNative->aCondStack[pReNative->cCondDepth - 1];
-#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    Assert(pReNative->Core.offPc == 0);
+
+#if defined(IEMNATIVE_WITH_DELAYED_PC_UPDATING) && 0
+    off = iemNativeRegFlushDirtyGuest(pReNative, off);
 #endif
 
     /*
      * If either of the branches exited the TB, we can take the state from the
      * other branch and skip all the merging headache.
      */
+    bool fDefinedLabels = false;
     if (pEntry->fElseExitTb || pEntry->fIfExitTb)
     {
 #ifdef VBOX_STRICT
@@ -2599,14 +2725,6 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
     }
     else
     {
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-        /* Writeback any dirty shadow registers (else branch). */
-        /** @todo r=aeichner Possible optimization is to only writeback guest registers which became dirty
-         *                   in one of the branches and leave guest registers already dirty before the start of the if
-         *                   block alone. */
-        off = iemNativeRegFlushDirtyGuest(pReNative, off);
-#endif
-
         /*
          * Now we have find common group with the core state at the end of the
          * if-final.  Use the smallest common denominator and just drop anything
@@ -2616,14 +2734,45 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
          *        which is why we're doing this at the end of the else-block.
          *        But we'd need more info about future for that to be worth the effort. */
         PCIEMNATIVECORESTATE const pOther = pEntry->fInElse ? &pEntry->IfFinalState : &pEntry->InitialState;
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-        Assert(   pOther->bmGstRegShadowDirty == 0
-               && pReNative->Core.bmGstRegShadowDirty == 0);
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+        AssertMsgStmt(pReNative->Core.offPc == pOther->offPc,
+                      ("Core.offPc=%#x pOther->offPc=%#x\n", pReNative->Core.offPc, pOther->offPc),
+                      IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_COND_ENDIF_RECONCILIATION_FAILED));
 #endif
 
         if (memcmp(&pReNative->Core, pOther, sizeof(*pOther)) != 0)
         {
-            /* shadow guest stuff first. */
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+            /*
+             * If the branch has differences in dirty shadow registers, we will flush
+             * the register only dirty in the current branch and dirty any that's only
+             * dirty in the other one.
+             */
+            uint64_t const fGstRegDirtyOther = pOther->bmGstRegShadowDirty;
+            uint64_t const fGstRegDirtyThis  = pReNative->Core.bmGstRegShadowDirty;
+            uint64_t const fGstRegDirtyDiff  = fGstRegDirtyOther ^ fGstRegDirtyThis;
+            uint64_t const fGstRegDirtyHead  = fGstRegDirtyThis  & fGstRegDirtyDiff;
+            uint64_t       fGstRegDirtyTail  = fGstRegDirtyOther & fGstRegDirtyDiff;
+            if (!fGstRegDirtyDiff)
+            { /* likely */ }
+            else
+            {
+                //uint64_t const fGstRegDirtyHead = pReNative->Core.bmGstRegShadowDirty & fGstRegDirtyDiff;
+                if (fGstRegDirtyHead)
+                {
+                    Log12(("iemNativeEmitEndIf: flushing dirty guest registers in current branch: %RX64\n", fGstRegDirtyHead));
+                    off = iemNativeRegFlushDirtyGuest(pReNative, off, fGstRegDirtyHead);
+                }
+            }
+#endif
+
+            /*
+             * Shadowed guest registers.
+             *
+             * We drop any shadows where the two states disagree about where
+             * things are kept.  We may end up flushing dirty more registers
+             * here, if the two branches keeps things in different registers.
+             */
             uint64_t fGstRegs = pReNative->Core.bmGstRegShadows;
             if (fGstRegs)
             {
@@ -2633,33 +2782,87 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
                     unsigned idxGstReg = ASMBitFirstSetU64(fGstRegs) - 1;
                     fGstRegs &= ~RT_BIT_64(idxGstReg);
 
-                    uint8_t const idxHstReg = pReNative->Core.aidxGstRegShadows[idxGstReg];
-                    if (  !(pOther->bmGstRegShadows & RT_BIT_64(idxGstReg))
-                        || idxHstReg != pOther->aidxGstRegShadows[idxGstReg])
+                    uint8_t const idxCurHstReg   = pReNative->Core.aidxGstRegShadows[idxGstReg];
+                    uint8_t const idxOtherHstReg = pOther->aidxGstRegShadows[idxGstReg];
+                    if (   idxCurHstReg != idxOtherHstReg
+                        || !(pOther->bmGstRegShadows & RT_BIT_64(idxGstReg)))
                     {
-                        Log12(("iemNativeEmitEndIf: dropping gst %s from hst %s\n",
-                               g_aGstShadowInfo[idxGstReg].pszName, g_apszIemNativeHstRegNames[idxHstReg]));
-
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-                        /* Writeback any dirty shadow registers we are about to unshadow. */
-                        off = iemNativeRegFlushDirtyGuestByHostRegShadow(pReNative, off, idxHstReg);
+#ifndef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+                        Log12(("iemNativeEmitEndIf: dropping gst %s (%d) from hst %s (other %d/%#RX64)\n",
+                               g_aGstShadowInfo[idxGstReg].pszName, idxGstReg, g_apszIemNativeHstRegNames[idxCurHstReg],
+                               idxOtherHstReg, pOther->bmGstRegShadows));
+#else
+                        Log12(("iemNativeEmitEndIf: dropping %s gst %s (%d) from hst %s (other %d/%#RX64/%s)\n",
+                               pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxGstReg) ? "_dirty_" : "clean",
+                               g_aGstShadowInfo[idxGstReg].pszName, idxGstReg, g_apszIemNativeHstRegNames[idxCurHstReg],
+                               idxOtherHstReg, pOther->bmGstRegShadows,
+                               pOther->bmGstRegShadowDirty & RT_BIT_64(idxGstReg) ? "dirty" : "clean"));
+                        if (pOther->bmGstRegShadowDirty & RT_BIT_64(idxGstReg))
+                            fGstRegDirtyTail |= RT_BIT_64(idxGstReg);
+                        if (pReNative->Core.bmGstRegShadowDirty & RT_BIT_64(idxGstReg))
+                            off = iemNativeRegFlushPendingWrite(pReNative, off, (IEMNATIVEGSTREG)idxGstReg);
 #endif
-                        iemNativeRegClearGstRegShadowing(pReNative, idxHstReg, off);
+                        iemNativeRegClearGstRegShadowingOne(pReNative, idxCurHstReg, (IEMNATIVEGSTREG)idxGstReg, off);
                     }
                 } while (fGstRegs);
             }
             else
-            {
                 Assert(pReNative->Core.bmHstRegsWithGstShadow == 0);
-#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-                Assert(pReNative->Core.bmGstRegShadowDirty == 0);
-#endif
-            }
 
-            /* Check variables next. For now we must require them to be identical
-               or stuff we can recreate. */
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+            /*
+             * Generate jumpy code for flushing dirty registers from the other
+             * branch that aren't dirty in the current one.
+             */
+            if (!fGstRegDirtyTail)
+            { /* likely */ }
+            else
+            {
+                STAM_REL_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativeEndIfOtherBranchDirty);
+                Log12(("iemNativeEmitEndIf: Dirty register only in the other branch: %#RX64 - BAD!\n", fGstRegDirtyTail));
+
+                /* First the current branch has to jump over the dirty flushing from the other branch. */
+                uint32_t const offFixup1 = off;
+                off = iemNativeEmitJmpToFixed(pReNative, off, off + 10);
+
+                /* Put the endif and maybe else label here so the other branch ends up here. */
+                if (!pEntry->fInElse)
+                    iemNativeLabelDefine(pReNative, pEntry->idxLabelElse, off);
+                else
+                    Assert(pReNative->paLabels[pEntry->idxLabelElse].off <= off);
+                iemNativeLabelDefine(pReNative, pEntry->idxLabelEndIf, off);
+                fDefinedLabels = true;
+
+                /* Flush the dirty guest registers from the other branch. */
+                while (fGstRegDirtyTail)
+                {
+                    unsigned idxGstReg = ASMBitFirstSetU64(fGstRegDirtyTail) - 1;
+                    fGstRegDirtyTail &= ~RT_BIT_64(idxGstReg);
+                    Log12(("iemNativeEmitEndIf: tail flushing %s (%d) from other branch %d (cur %d/%#RX64)\n",
+                           g_aGstShadowInfo[idxGstReg].pszName, idxGstReg, pOther->aidxGstRegShadows[idxGstReg],
+                           pReNative->Core.aidxGstRegShadows[idxGstReg], pReNative->Core.bmGstRegShadows));
+
+                    off = iemNativeRegFlushPendingWriteEx(pReNative, off, (PIEMNATIVECORESTATE)pOther, (IEMNATIVEGSTREG)idxGstReg);
+
+                    /* Mismatching shadowing should've been dropped in the previous step already. */
+                    Assert(   !(pReNative->Core.bmGstRegShadows & RT_BIT_64(idxGstReg))
+                           || pReNative->Core.aidxGstRegShadows[idxGstReg] == pOther->aidxGstRegShadows[idxGstReg]);
+                }
+
+                /* Here is the actual endif label, fixup the above jump to land here. */
+                iemNativeFixupFixedJump(pReNative, offFixup1, off);
+            }
+#endif
+
+            /*
+             * Check variables next. For now we must require them to be identical
+             * or stuff we can recreate. (No code is emitted here.)
+             */
             Assert(pReNative->Core.u64ArgVars == pOther->u64ArgVars);
-            uint32_t fVars = pReNative->Core.bmVars | pOther->bmVars;
+#ifdef VBOX_STRICT
+            uint32_t const offAssert = off;
+#endif
+            uint32_t       fVars     = pReNative->Core.bmVars | pOther->bmVars;
             if (fVars)
             {
                 uint32_t const fVarsMustRemove = pReNative->Core.bmVars ^ pOther->bmVars;
@@ -2701,9 +2904,12 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
                     pReNative->Core.bmVars &= ~RT_BIT_32(idxVar);
                 } while (fVars);
             }
+            Assert(off == offAssert);
 
-            /* Finally, check that the host register allocations matches. */
-            AssertMsgStmt(pReNative->Core.bmHstRegs == pOther->bmHstRegs,
+            /*
+             * Finally, check that the host register allocations matches.
+             */
+            AssertMsgStmt((pReNative->Core.bmHstRegs & (pReNative->Core.bmHstRegs ^ pOther->bmHstRegs)) == 0,
                           ("Core.bmHstRegs=%#x pOther->bmHstRegs=%#x - %#x\n",
                            pReNative->Core.bmHstRegs, pOther->bmHstRegs, pReNative->Core.bmHstRegs ^ pOther->bmHstRegs),
                           IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_COND_ENDIF_RECONCILIATION_FAILED));
@@ -2713,11 +2919,14 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
     /*
      * Define the endif label and maybe the else one if we're still in the 'if' part.
      */
-    if (!pEntry->fInElse)
-        iemNativeLabelDefine(pReNative, pEntry->idxLabelElse, off);
-    else
-        Assert(pReNative->paLabels[pEntry->idxLabelElse].off <= off);
-    iemNativeLabelDefine(pReNative, pEntry->idxLabelEndIf, off);
+    if (!fDefinedLabels)
+    {
+        if (!pEntry->fInElse)
+            iemNativeLabelDefine(pReNative, pEntry->idxLabelElse, off);
+        else
+            Assert(pReNative->paLabels[pEntry->idxLabelElse].off <= off);
+        iemNativeLabelDefine(pReNative, pEntry->idxLabelEndIf, off);
+    }
 
     /* Pop the conditional stack.*/
     pReNative->cCondDepth -= 1;
@@ -2734,7 +2943,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagAnysBitsSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitsInEfl)
 {
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitsInEfl);
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
@@ -2761,7 +2970,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagAnysBitsSet(PIEMRECOMPILERSTATE 
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagNoBitsSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitsInEfl)
 {
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitsInEfl);
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
@@ -2788,7 +2997,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagNoBitsSet(PIEMRECOMPILERSTATE pR
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagsBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl)
 {
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitInEfl);
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
@@ -2818,7 +3027,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagsBitSet(PIEMRECOMPILERSTATE pReN
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagsBitNotSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl)
 {
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitInEfl);
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
@@ -2854,7 +3063,7 @@ iemNativeEmitIfEflagsTwoBitsEqual(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                   uint32_t fBit1InEfl, uint32_t fBit2InEfl, bool fInverted)
 {
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBit1InEfl | fBit2InEfl);
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
@@ -2928,7 +3137,7 @@ iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(PIEMRECOMPILERSTATE pReNative, uin
                                               uint32_t fBit1InEfl, uint32_t fBit2InEfl, bool fInverted)
 {
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitInEfl | fBit1InEfl | fBit2InEfl);
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* We need an if-block label for the non-inverted variant. */
     uint32_t const idxLabelIf = fInverted ? iemNativeLabelCreate(pReNative, kIemNativeLabelType_If, UINT32_MAX,
@@ -3014,7 +3223,7 @@ iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(PIEMRECOMPILERSTATE pReNative, uin
 /** Emits code for IEM_MC_IF_CX_IS_NZ. */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfCxIsNotZero(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xCX),
                                                                  kIemNativeGstRegUse_ReadOnly);
@@ -3037,7 +3246,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitIfCxIsNotZero(PIEMRECOMPILERSTATE pReNa
 /** Emits code for IEM_MC_IF_ECX_IS_NZ and IEM_MC_IF_RCX_IS_NZ. */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfRcxEcxIsNotZero(PIEMRECOMPILERSTATE pReNative, uint32_t off, bool f64Bit)
 {
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xCX),
                                                                  kIemNativeGstRegUse_ReadOnly);
@@ -3056,7 +3265,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitIfRcxEcxIsNotZero(PIEMRECOMPILERSTATE p
 /** Emits code for IEM_MC_IF_CX_IS_NOT_ONE. */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfCxIsNotOne(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xCX),
                                                                  kIemNativeGstRegUse_ReadOnly);
@@ -3085,7 +3294,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitIfCxIsNotOne(PIEMRECOMPILERSTATE pReNat
 /** Emits code for IEM_MC_IF_ECX_IS_NOT_ONE and IEM_MC_IF_RCX_IS_NOT_ONE. */
 DECL_INLINE_THROW(uint32_t) iemNativeEmitIfRcxEcxIsNotOne(PIEMRECOMPILERSTATE pReNative, uint32_t off, bool f64Bit)
 {
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(X86_GREG_xCX),
                                                                  kIemNativeGstRegUse_ReadOnly);
@@ -3114,7 +3323,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitIfCxIsNotOneAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl, bool fCheckIfSet)
 {
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitInEfl);
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* We have to load both RCX and EFLAGS before we can start branching,
        otherwise we'll end up in the else-block with an inconsistent
@@ -3176,7 +3385,7 @@ iemNativeEmitIfRcxEcxIsNotOneAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uin
                                                uint32_t fBitInEfl, bool fCheckIfSet, bool f64Bit)
 {
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fBitInEfl);
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* We have to load both RCX and EFLAGS before we can start branching,
        otherwise we'll end up in the else-block with an inconsistent
@@ -3218,7 +3427,7 @@ iemNativeEmitIfRcxEcxIsNotOneAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uin
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitIfLocalIsZ(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarLocal)
 {
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarLocal);
     PIEMNATIVEVAR const pVarRc = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVarLocal)];
@@ -3244,7 +3453,7 @@ iemNativeEmitIfLocalIsZ(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitIfGregBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint8_t iBitNo)
 {
-    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative, &off);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
     Assert(iGReg < 16);
 
     uint8_t const idxGstFullReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
@@ -3526,6 +3735,11 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
     if (!(pReNative->fMc & IEM_MC_F_WITHOUT_FLAGS)) /** @todo We don't emit with-flags/without-flags variations for CIMPL calls. */
         fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_EFlags);
     iemNativeRegFlushGuestShadows(pReNative, fGstShwFlush);
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    pReNative->Core.fDebugPcInitialized = false;
+    Log4(("fDebugPcInitialized=false cimpl off=%#x (v1)\n", off));
+#endif
 
     return iemNativeEmitCheckCallRetAndPassUp(pReNative, off, idxInstr);
 }
@@ -6702,11 +6916,16 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
          * which are hopefully much more frequent, reducing the amount of memory accesses.
          */
         /* Allocate a temporary PC register. */
-        uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
+/** @todo r=bird: This would technically need to be done up front as it's a register allocation. */
+        uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+                                                                 kIemNativeGstRegUse_ForUpdate);
 
         /* Perform the addition and store the result. */
         off = iemNativeEmitAddGprImm(pReNative, off, idxPcReg, pReNative->Core.offPc);
         off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+        off = iemNativeEmitPcDebugCheckWithReg(pReNative, off, idxPcReg);
+# endif
 
         /* Free and flush the PC register. */
         iemNativeRegFreeTmp(pReNative, idxPcReg);

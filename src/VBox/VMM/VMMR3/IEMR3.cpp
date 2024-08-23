@@ -808,7 +808,13 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativePcUpdateTotal,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Total RIP updates",   "/IEM/CPU%u/re/NativePcUpdateTotal", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativePcUpdateDelayed, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Delayed RIP updates", "/IEM/CPU%u/re/NativePcUpdateDelayed", idCpu);
-
+#  endif /* VBOX_WITH_STATISTICS */
+#  ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeEndIfOtherBranchDirty, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "IEM_MC_ENDIF flushing dirty shadow registers for other branch (not good).",
+                        "/IEM/CPU%u/re/NativeEndIfOtherBranchDirty", idCpu);
+#  endif
+#  ifdef VBOX_WITH_STATISTICS
 #   ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
         STAMR3RegisterF(pVM, &pVCpu->iem.s.StatNativeSimdRegFindFree, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Number of calls to iemNativeSimdRegAllocFindFree.",

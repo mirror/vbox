@@ -401,11 +401,13 @@ class NativeRecompFunctionVariation(object):
                 oStmt.aoElseBranch = list(oStmt.aoElseBranch);
                 aoStmts[iStmt] = oStmt;
 
+                fHadEmptyElseBranch = len(oStmt.aoElseBranch) == 0;
+
                 # Check the two branches for final references. Both branches must
                 # start processing with the same dVars set, fortunately as shallow
                 # copy suffices.
                 dFreedInIfBranch   = self.__analyzeVariableLiveness(oStmt.aoIfBranch, dict(dVars), iDepth + 1);
-                dFreedInElseBranch = self.__analyzeVariableLiveness(oStmt.aoElseBranch, dVars, iDepth + 1);
+                dFreedInElseBranch = self.__analyzeVariableLiveness(oStmt.aoElseBranch, dVars,     iDepth + 1);
 
                 # Add free statements to the start of the IF-branch for variables use
                 # for the last time in the else branch.
@@ -433,6 +435,35 @@ class NativeRecompFunctionVariation(object):
                     for oFreeStmt in aoFreeStmts:
                         oStmt.aoIfBranch.insert(0, oFreeStmt);
                         oStmt.aoElseBranch.insert(0, oFreeStmt);
+
+                #
+                # HACK ALERT!
+                #
+                # This is a bit backwards, but if the else branch was empty, just zap
+                # it so we don't create a bunch of unnecessary jumps as well as a
+                # potential troublesome dirty guest shadowed register flushing for the
+                # if-branch.  The IEM_MC_ENDIF code is forgiving here and will
+                # automatically free the lost variables when merging the states.
+                #
+                # (In fact this behaviour caused trouble if we moved the IEM_MC_FREE_LOCAL
+                # statements ouf of the branches and put them after the IF/ELSE blocks
+                # to try avoid the unnecessary jump troubles, as the variable would be
+                # assigned a host register and thus differ in an incompatible, cause the
+                # endif code to just free the register and variable both, with the result
+                # that the IEM_MC_FREE_LOCAL following the IF/ELSE blocks would assert
+                # since the variable was already freed.)
+                #
+                # See iemNativeRecompFunc_cmovne_Gv_Ev__greg64_nn_64 and
+                # the other cmovcc functions for examples.
+                #
+                if fHadEmptyElseBranch:
+                    oStmt.aoElseBranch = [];
+                #while (    oStmt.aoIfBranch
+                #       and oStmt.aoElseBranch
+                #       and oStmt.aoIfBranch[-1] == oStmt.aoElseBranch[-1]):
+                #    aoStmts.insert(iStmt + 1, oStmt.aoIfBranch[-1]);
+                #    del oStmt.aoIfBranch[-1];
+                #    del oStmt.aoElseBranch[-1];
 
             elif not oStmt.isCppStmt():
                 if isinstance(oStmt, iai.McStmtCall):

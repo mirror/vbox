@@ -1873,6 +1873,16 @@ class McStmt(object):
         self.asParams = asParams;
         self.oUser    = None;
 
+    def __eq__(self, oOther):
+        if self.sName != oOther.sName:
+            return False;
+        if len(self.asParams) != len(oOther.asParams):
+            return False;
+        for iParam, sMyParam in enumerate(self.asParams):
+            if sMyParam != oOther.asParams[iParam]:
+                return False;
+        return True;
+
     def renderCode(self, cchIndent = 0):
         """
         Renders the code for the statement.

@@ -112,6 +112,12 @@ RT_C_DECLS_BEGIN
 #if defined(DOXYGEN_RUNNING) || 1
 # define IEMNATIVE_WITH_DELAYED_PC_UPDATING
 #endif
+/** @def IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+ * Enabled delayed PC updating debugging code.
+ * This is an alternative to the ARM64-only IEMNATIVE_REG_FIXED_PC_DBG. */
+#if defined(DOXYGEN_RUNNING) || 0
+# define IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+#endif
 
 /** Enables the SIMD register allocator @bugref{10614}.  */
 #if defined(DOXYGEN_RUNNING) || 1
@@ -2269,6 +2275,14 @@ typedef struct IEMCPU
     R3PTRTYPE(struct IEMRECOMPILERSTATE *)  pNativeRecompilerStateR3;
     /** Dummy entry for ppTbLookupEntryR3. */
     R3PTRTYPE(PIEMTB)       pTbLookupEntryDummyR3;
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    /** The debug code advances this register as if it was CPUMCTX::rip and we
+     * didn't do delayed PC updating.  When CPUMCTX::rip is finally updated,
+     * the result is compared with this value. */
+    uint64_t                uPcUpdatingDebug;
+#else
+    uint64_t                u64Placeholder;
+#endif
     /** @} */
 
     /** Dummy TLB entry used for accesses to pages with databreakpoints. */
@@ -2392,6 +2406,10 @@ typedef struct IEMCPU
     STAMCOUNTER             StatNativePcUpdateTotal;
     /** Native recompiler: Number of PC updates which could be delayed. */
     STAMCOUNTER             StatNativePcUpdateDelayed;
+
+    /** Native recompiler: Number of time we had complicated dirty shadow
+     *  register situations with the other branch in IEM_MC_ENDIF. */
+    STAMCOUNTER             StatNativeEndIfOtherBranchDirty;
 
 //#ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
     /** Native recompiler: Number of calls to iemNativeSimdRegAllocFindFree. */
@@ -2518,9 +2536,9 @@ typedef struct IEMCPU
     /** @} */
 
 #ifdef IEM_WITH_TLB_TRACE
-    uint64_t                au64Padding[6];
+    uint64_t                au64Padding[4];
 #else
-    //uint64_t                au64Padding[0];
+    uint64_t                au64Padding[6];
 #endif
 
 #ifdef IEM_WITH_TLB_TRACE

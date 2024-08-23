@@ -1245,7 +1245,14 @@ typedef struct IEMNATIVECORESTATE
      * as long as possible. */
     uint32_t                    offPc;
     /** Number of instructions where we could skip the updating. */
-    uint32_t                    cInstrPcUpdateSkipped;
+    uint8_t                     cInstrPcUpdateSkipped;
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    /** Set after we've loaded PC into uPcUpdatingDebug at the first update. */
+    bool                        fDebugPcInitialized;
+    uint8_t                     abPadding[2];
+# else
+    uint8_t                     abPadding[3];
+# endif
 #endif
     /** Allocation bitmap for aHstRegs. */
     uint32_t                    bmHstRegs;
@@ -1385,10 +1392,18 @@ typedef struct IEMNATIVECOND
 {
     /** Set if we're in the "else" part, clear if we're in the "if" before it. */
     bool                        fInElse;
-    /** Set if the if-block unconditionally exited the TB. */
-    bool                        fIfExitTb;
-    /** Set if the else-block unconditionally exited the TB. */
-    bool                        fElseExitTb;
+    union
+    {
+        struct
+        {
+            /** Set if the if-block unconditionally exited the TB. */
+            bool                fIfExitTb;
+            /** Set if the else-block unconditionally exited the TB. */
+            bool                fElseExitTb;
+        };
+        /** Indexed by fInElse. */
+        bool                    afExitTb[2];
+    };
     bool                        afPadding[5];
     /** The label for the IEM_MC_ELSE. */
     uint32_t                    idxLabelElse;
@@ -1711,12 +1726,20 @@ DECLHIDDEN(void)            iemNativeRegAssertSanity(PIEMRECOMPILERSTATE pReNati
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept,
                                                                uint64_t fGstSimdShwExcept);
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcDebugCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off);
+DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcDebugCheckWithReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxPcReg);
+# endif
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcWritebackSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off);
 #endif
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
 DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrite(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVEGSTREG enmGstReg);
-DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fFlushGstReg = UINT64_MAX);
-DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuestByHostRegShadow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxHstReg);
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWriteEx(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                            PIEMNATIVECORESTATE pCore, IEMNATIVEGSTREG enmGstReg);
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuest(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                        uint64_t fFlushGstReg = UINT64_MAX);
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushDirtyGuestByHostRegShadow(PIEMRECOMPILERSTATE pReNative,
+                                                                       uint32_t off, uint8_t idxHstReg);
 #endif
 
 
@@ -2325,7 +2348,7 @@ iemNativeRegClearGstRegShadowingOne(PIEMRECOMPILERSTATE pReNative, uint8_t idxHs
     Assert(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & RT_BIT_64(enmGstReg));
     Assert(pReNative->Core.bmHstRegsWithGstShadow             & RT_BIT_32(idxHstReg));
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
-    Assert(!(pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & pReNative->Core.bmGstRegShadowDirty));
+    Assert(!(pReNative->Core.bmGstRegShadowDirty              & RT_BIT_64(enmGstReg)));
 #endif
 
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO

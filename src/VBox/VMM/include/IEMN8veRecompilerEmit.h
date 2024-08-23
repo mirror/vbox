@@ -4359,7 +4359,7 @@ iemNativeEmitAddGprImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr
  *       subtraction.  If the constant does not conform, bad stuff will happen.
  */
 DECL_FORCE_INLINE_THROW(uint32_t)
-iemNativeEmitAddGpr32ImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, int32_t iAddend)
+iemNativeEmitAddGpr32ImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprDst, int32_t iAddend, uint8_t iGprTmp = UINT8_MAX)
 {
 #if defined(RT_ARCH_AMD64)
     if (iAddend <= INT8_MAX && iAddend >= INT8_MIN)
@@ -4374,6 +4374,7 @@ iemNativeEmitAddGpr32ImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprD
     pCodeBuf[off++] = RT_BYTE2((uint32_t)iAddend);
     pCodeBuf[off++] = RT_BYTE3((uint32_t)iAddend);
     pCodeBuf[off++] = RT_BYTE4((uint32_t)iAddend);
+    RT_NOREF(iGprTmp);
 
 #elif defined(RT_ARCH_ARM64)
     uint32_t const uAbsAddend = (uint32_t)RT_ABS(iAddend);
@@ -4385,6 +4386,11 @@ iemNativeEmitAddGpr32ImmEx(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint8_t iGprD
                                                           false /*fSetFlags*/, true /*fShift12*/);
         if (uAbsAddend & 0xfffU)
             pCodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(fSub, iGprDst, iGprDst, uAbsAddend & 0xfff, false /*f64Bit*/);
+    }
+    else if (iGprTmp != UINT8_MAX)
+    {
+        off = iemNativeEmitLoadGpr32ImmEx(pCodeBuf, off, iGprTmp, iAddend);
+        pCodeBuf[off++] = Armv8A64MkInstrAddReg(iGprDst, iGprDst, iGprTmp, false /*f64Bit*/);
     }
     else
 # ifdef IEM_WITH_THROW_CATCH
@@ -8265,6 +8271,22 @@ iemNativeEmitLoadArgGregWithVarAddr(PIEMRECOMPILERSTATE pReNative, uint32_t off,
 *********************************************************************************************************************************/
 
 /**
+ * Helper for marking the current conditional branch as exiting the TB.
+ *
+ * This simplifies the state consolidation later when we reach the IEM_MC_ENDIF.
+ */
+DECL_FORCE_INLINE(void) iemNativeMarkCurCondBranchAsExiting(PIEMRECOMPILERSTATE pReNative)
+{
+    uint8_t idxCondDepth = pReNative->cCondDepth;
+    if (idxCondDepth)
+    {
+        idxCondDepth--;
+        pReNative->aCondStack[idxCondDepth].afExitTb[pReNative->aCondStack[idxCondDepth].fInElse] = true;
+    }
+}
+
+
+/**
  * Emits a Jcc rel32 / B.cc imm19 to the given label (ASSUMED requiring fixup).
  */
 DECL_FORCE_INLINE_THROW(uint32_t)
@@ -8272,6 +8294,7 @@ iemNativeEmitJccTbExitEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBuf
                          IEMNATIVELABELTYPE enmExitReason, IEMNATIVEINSTRCOND enmCond)
 {
     Assert(IEMNATIVELABELTYPE_IS_EXIT_REASON(enmExitReason));
+
 #if defined(IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE) && defined(RT_ARCH_AMD64)
     /* jcc rel32 */
     pCodeBuf[off++] = 0x0f;
@@ -8379,6 +8402,9 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitTbExitEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBuf, uint32_t off, IEMNATIVELABELTYPE enmExitReason)
 {
     Assert(IEMNATIVELABELTYPE_IS_EXIT_REASON(enmExitReason));
+
+    iemNativeMarkCurCondBranchAsExiting(pReNative);
+
 #ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
 # ifdef RT_ARCH_AMD64
     /* jmp rel32 */
@@ -8408,6 +8434,9 @@ iemNativeEmitTbExitEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBuf, u
 DECL_INLINE_THROW(uint32_t) iemNativeEmitTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVELABELTYPE enmExitReason)
 {
     Assert(IEMNATIVELABELTYPE_IS_EXIT_REASON(enmExitReason));
+
+    iemNativeMarkCurCondBranchAsExiting(pReNative);
+
 #ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
 # ifdef RT_ARCH_AMD64
     PIEMNATIVEINSTR pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
