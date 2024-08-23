@@ -2070,7 +2070,9 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     pReNative->Core.offPc                  = 0;
+# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
     pReNative->Core.cInstrPcUpdateSkipped  = 0;
+# endif
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
     pReNative->Core.fDebugPcInitialized    = false;
 # endif
@@ -5787,9 +5789,11 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcWritebackSlow(PIEMRECOMPILERSTATE pRe
     off = iemNativeEmitGuestRegValueCheck(pReNative, off, IEMNATIVE_REG_FIXED_PC_DBG, kIemNativeGstReg_Pc);
 # endif
 
-    STAM_COUNTER_ADD(&pReNative->pVCpu->iem.s.StatNativePcUpdateDelayed, pReNative->Core.cInstrPcUpdateSkipped);
     pReNative->Core.offPc                 = 0;
+# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
+    STAM_COUNTER_ADD(&pReNative->pVCpu->iem.s.StatNativePcUpdateDelayed, pReNative->Core.cInstrPcUpdateSkipped);
     pReNative->Core.cInstrPcUpdateSkipped = 0;
+# endif
 
     return off;
 }

@@ -1244,8 +1244,10 @@ typedef struct IEMNATIVECORESTATE
      * was updated last. Used for delaying the write to the guest context program counter
      * as long as possible. */
     uint32_t                    offPc;
+# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
     /** Number of instructions where we could skip the updating. */
     uint8_t                     cInstrPcUpdateSkipped;
+# endif
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
     /** Set after we've loaded PC into uPcUpdatingDebug at the first update. */
     bool                        fDebugPcInitialized;
