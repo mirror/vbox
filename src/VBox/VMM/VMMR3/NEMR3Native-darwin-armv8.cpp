@@ -829,16 +829,9 @@ static void nemR3DarwinLogState(PVMCC pVM, PVMCPUCC pVCpu)
                         "ttbr0_el1=%016VR{ttbr0_el1} ttbr1_el1=%016VR{ttbr1_el1}\n"
                         "vbar_el1=%016VR{vbar_el1}\n"
                         );
-        char szInstr[256]; RT_ZERO(szInstr);
-#if 0
-        DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, 0, 0,
-                           DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
-                           szInstr, sizeof(szInstr), NULL);
-#endif
-        Log3(("%s%s\n", szRegs, szInstr));
-
         if (pVM->nem.s.fEl2Enabled)
         {
+            Log3(("%s\n", szRegs));
             DBGFR3RegPrintf(pVM->pUVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
                             "sp_el2=%016VR{sp_el2} elr_el2=%016VR{elr_el2}\n"
                             "spsr_el2=%016VR{spsr_el2} tpidr_el2=%016VR{tpidr_el2}\n"
@@ -849,7 +842,11 @@ static void nemR3DarwinLogState(PVMCC pVM, PVMCPUCC pVCpu)
                             "vbar_el2=%016VR{vbar_el2} cptr_el2=%016VR{cptr_el2}\n"
                             );
         }
-        Log3(("%s%s\n", szRegs));
+        char szInstr[256]; RT_ZERO(szInstr);
+        DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, 0, 0,
+                           DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                           szInstr, sizeof(szInstr), NULL);
+        Log3(("%s%s\n", szRegs, szInstr));
     }
 }
 #endif /* LOG_ENABLED */
@@ -1173,6 +1170,7 @@ static int nemR3DarwinGicCreate(PVM pVM)
 
     //PCFGMNODE pGicDev = CFGMR3GetChild(CFGMR3GetRoot(pVM), "Devices/gic/0");
     PCFGMNODE pGicCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "Devices/gic-nem/0/Config");
+    AssertPtrReturn(pGicCfg, VERR_NEM_IPE_5);
 
     hv_gic_config_t hGicCfg = hv_gic_config_create();
 
@@ -1415,8 +1413,12 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     AssertReturn(!pVM->nem.s.fCreatedEmts, VERR_WRONG_ORDER);
     AssertReturn(pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API, VERR_WRONG_ORDER);
 
-    /* Need to create the GIC here before any vCPU is created according to the Apple docs. */
-    if (hv_gic_create)
+    /*
+     * Need to create the GIC here if the NEM variant is configured
+     * before any vCPU is created according to the Apple docs.
+     */
+    if (   hv_gic_create
+        && CFGMR3GetChild(CFGMR3GetRoot(pVM), "Devices/gic-nem/0"))
     {
         int rc = nemR3DarwinGicCreate(pVM);
         if (RT_FAILURE(rc))
