@@ -208,6 +208,8 @@ cmds = [
     ('SVGA_3D_CMD_END_QUERY', 'SVGA3dCmdEndQuery', (), None),
     ('SVGA_3D_CMD_WAIT_FOR_QUERY', 'SVGA3dCmdWaitForQuery', (), None),
     #('SVGA_3D_CMD_PRESENT_READBACK', None, (), None),
+    ('SVGA_3D_CMD_SET_OTABLE_BASE64', 'SVGA3dCmdSetOTableBase64', (), None),
+    ('SVGA_3D_CMD_DEFINE_GB_MOB64', 'SVGA3dCmdDefineGBMob64', (), None),
     ('SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN', 'SVGA3dCmdBlitSurfaceToScreen', (), 'SVGASignedRect'),
     ('SVGA_3D_CMD_DEFINE_GB_SCREENTARGET', 'SVGA3dCmdDefineGBScreenTarget', (), None),
     ('SVGA_3D_CMD_BIND_GB_SCREENTARGET', 'SVGA3dCmdBindGBScreenTarget', (), None),
@@ -332,18 +334,15 @@ def main():
 
 #ifdef LOG_ENABLED''')
 
-    path2mesa = './../../../../../src/VBox/Additions/3D/mesa/mesa-24.0.2/'
-
     generator_path, generator_name = utils.find_xml_generator()
 
     # Configure the xml generator
     config = parser.xml_generator_configuration_t(
         xml_generator_path = generator_path,
         xml_generator = generator_name,
-        include_paths = [ path2mesa + 'src/gallium/drivers/svga/',
-                          path2mesa + 'src/gallium/drivers/svga/include',
-                          path2mesa + 'src'],
-        cflags   = '-D UTIL_ARCH_LITTLE_ENDIAN=1 -D UTIL_ARCH_BIG_ENDIAN=0',
+        include_paths = [ '../vmsvga_include/',
+                          '../../../../../include/'],
+        cflags   = '-D IN_RING3 -D UTIL_ARCH_LITTLE_ENDIAN=1 -D UTIL_ARCH_BIG_ENDIAN=0',
         compiler = 'gcc'
         )
 
