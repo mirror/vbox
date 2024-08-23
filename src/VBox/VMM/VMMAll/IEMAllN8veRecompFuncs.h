@@ -578,17 +578,14 @@ iemNativeEmitAddToRip64AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     pReNative->Core.offPc += cbInstr;
-    Log4(("offPc=%x cbInstr=%#x off=%#x\n", pReNative->Core.offPc, cbInstr, off));
+    Log4(("offPc=%#RX64 cbInstr=%#x off=%#x\n", pReNative->Core.offPc, cbInstr, off));
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
     off = iemNativeEmitPcDebugAdd(pReNative, off, cbInstr, 64);
     off = iemNativeEmitPcDebugCheck(pReNative, off);
 # elif defined(IEMNATIVE_REG_FIXED_PC_DBG)
     off = iemNativePcAdjustCheck(pReNative, off);
 # endif
-# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
-    pReNative->Core.cInstrPcUpdateSkipped++;
-# endif
 #endif
 
     return off;
@@ -627,17 +624,14 @@ iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     pReNative->Core.offPc += cbInstr;
-    Log4(("offPc=%x cbInstr=%#x off=%#x\n", pReNative->Core.offPc, cbInstr, off));
+    Log4(("offPc=%#RX64 cbInstr=%#x off=%#x\n", pReNative->Core.offPc, cbInstr, off));
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
     off = iemNativeEmitPcDebugAdd(pReNative, off, cbInstr, 32);
     off = iemNativeEmitPcDebugCheck(pReNative, off);
 # elif defined(IEMNATIVE_REG_FIXED_PC_DBG)
     off = iemNativePcAdjustCheck(pReNative, off);
 # endif
-# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
-    pReNative->Core.cInstrPcUpdateSkipped++;
-# endif
 #endif
 
     return off;
@@ -677,17 +671,14 @@ iemNativeEmitAddToIp16AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_
 
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     pReNative->Core.offPc += cbInstr;
-    Log4(("offPc=%x cbInstr=%#x off=%#x\n", pReNative->Core.offPc, cbInstr, off));
+    Log4(("offPc=%#RX64 cbInstr=%#x off=%#x\n", pReNative->Core.offPc, cbInstr, off));
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
     off = iemNativeEmitPcDebugAdd(pReNative, off, cbInstr, 16);
     off = iemNativeEmitPcDebugCheck(pReNative, off);
 # elif defined(IEMNATIVE_REG_FIXED_PC_DBG)
     off = iemNativePcAdjustCheck(pReNative, off);
 # endif
-# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
-    pReNative->Core.cInstrPcUpdateSkipped++;
-# endif
 #endif
 
     return off;
@@ -775,45 +766,52 @@ iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
                                                   int32_t offDisp, IEMMODE enmEffOpSize, uint8_t idxInstr)
 {
     Assert(enmEffOpSize == IEMMODE_64BIT || enmEffOpSize == IEMMODE_16BIT);
-
-    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
-/** @todo relax this one, we won't raise \#GP when a_fWithinPage is true. */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
-
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    Assert(pReNative->Core.offPc == 0);
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
-#endif
-
-    /* Allocate a temporary PC register. */
-    uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
-
-    /* Perform the addition. */
-    off = iemNativeEmitAddGprImm(pReNative, off, idxPcReg, (int64_t)offDisp + cbInstr);
-
-    if (RT_LIKELY(enmEffOpSize == IEMMODE_64BIT))
+    if (a_fWithinPage && enmEffOpSize == IEMMODE_64BIT)
     {
-        /* Check that the address is canonical, raising #GP(0) + exit TB if it isn't.
-           We can skip this if the target is within the same page. */
-        if (!a_fWithinPage)
-            off = iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
+        pReNative->Core.offPc += (int64_t)offDisp + cbInstr;
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+        off = iemNativeEmitPcDebugAdd(pReNative, off, (int64_t)offDisp + cbInstr, enmEffOpSize == IEMMODE_64BIT ? 64 : 16);
+# endif
     }
     else
+#endif
     {
-        /* Just truncate the result to 16-bit IP. */
-        Assert(enmEffOpSize == IEMMODE_16BIT);
-        off = iemNativeEmitClear16UpGpr(pReNative, off, idxPcReg);
-    }
+        /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
+        off = iemNativeRegFlushPendingWrites(pReNative, off);
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+        Assert(pReNative->Core.offPc == 0);
+#endif
+        /* Allocate a temporary PC register. */
+        uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
+
+        /* Perform the addition. */
+        off = iemNativeEmitAddGprImm(pReNative, off, idxPcReg, (int64_t)offDisp + cbInstr + pReNative->Core.offPc);
+
+        if (RT_LIKELY(enmEffOpSize == IEMMODE_64BIT))
+        {
+            /* Check that the address is canonical, raising #GP(0) + exit TB if it isn't.
+               We can skip this if the target is within the same page. */
+            if (!a_fWithinPage)
+                off = iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
+        }
+        else
+        {
+            /* Just truncate the result to 16-bit IP. */
+            Assert(enmEffOpSize == IEMMODE_16BIT);
+            off = iemNativeEmitClear16UpGpr(pReNative, off, idxPcReg);
+        }
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
-    off = iemNativeEmitPcDebugAdd(pReNative, off, (int64_t)offDisp + cbInstr, enmEffOpSize == IEMMODE_64BIT ? 64 : 16);
-    off = iemNativeEmitPcDebugCheckWithReg(pReNative, off, idxPcReg);
+        off = iemNativeEmitPcDebugAdd(pReNative, off, (int64_t)offDisp + cbInstr, enmEffOpSize == IEMMODE_64BIT ? 64 : 16);
+        off = iemNativeEmitPcDebugCheckWithReg(pReNative, off, idxPcReg);
 #endif
 
-    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+        off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
 
-    /* Free but don't flush the PC register. */
-    iemNativeRegFreeTmp(pReNative, idxPcReg);
-
+        /* Free but don't flush the PC register. */
+        iemNativeRegFreeTmp(pReNative, idxPcReg);
+    }
     return off;
 }
 
@@ -894,20 +892,28 @@ iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
                                                   int32_t offDisp, IEMMODE enmEffOpSize, uint8_t idxInstr)
 {
     Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
-
-    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
-
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    Assert(pReNative->Core.offPc == 0);
     STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
 #endif
+
+    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
+    if (!a_fFlat || enmEffOpSize == IEMMODE_16BIT)
+    {
+        off = iemNativeRegFlushPendingWrites(pReNative, off);
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+        Assert(pReNative->Core.offPc == 0);
+#endif
+    }
 
     /* Allocate a temporary PC register. */
     uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
 
     /* Perform the addition. */
-    off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcReg, offDisp + cbInstr);
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcReg, offDisp + cbInstr + (int32_t)pReNative->Core.offPc);
+#else
+    off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcReg, offDisp + cbInstr + (int32_t)pReNative->Core.offPc);
+#endif
 
     /* Truncate the result to 16-bit IP if the operand size is 16-bit. */
     if (enmEffOpSize == IEMMODE_16BIT)
@@ -917,12 +923,16 @@ iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
     if (!a_fFlat)
         off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
 
+    /* Commit it. */
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
     off = iemNativeEmitPcDebugAdd(pReNative, off, offDisp + cbInstr, enmEffOpSize == IEMMODE_32BIT ? 32 : 16);
     off = iemNativeEmitPcDebugCheckWithReg(pReNative, off, idxPcReg);
 #endif
 
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    pReNative->Core.offPc = 0;
+#endif
 
     /* Free but don't flush the PC register. */
     iemNativeRegFreeTmp(pReNative, idxPcReg);
@@ -2726,7 +2736,7 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, ui
         PCIEMNATIVECORESTATE const pOther = pEntry->fInElse ? &pEntry->IfFinalState : &pEntry->InitialState;
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
         AssertMsgStmt(pReNative->Core.offPc == pOther->offPc,
-                      ("Core.offPc=%#x pOther->offPc=%#x\n", pReNative->Core.offPc, pOther->offPc),
+                      ("Core.offPc=%#RX64 pOther->offPc=%#RX64\n", pReNative->Core.offPc, pOther->offPc),
                       IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_COND_ENDIF_RECONCILIATION_FAILED));
 #endif
 
@@ -6300,19 +6310,17 @@ iemNativeEmitCalcRmEffAddrThreadedAddr64(PIEMRECOMPILERSTATE pReNative, uint32_t
      */
     if ((bRmEx & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
     {
-#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-        /* Need to take the current PC offset into account for the displacement, no need to flush here
-         * as the PC is only accessed readonly and there is no branching or calling helpers involved. */
-        u32Disp += pReNative->Core.offPc;
-#endif
-
         uint8_t const idxRegRet = iemNativeVarRegisterAcquire(pReNative, idxVarRet, &off);
         uint8_t const idxRegPc  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
                                                                   kIemNativeGstRegUse_ReadOnly);
-#ifdef RT_ARCH_AMD64
         if (f64Bit)
         {
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+            int64_t const offFinalDisp = (int64_t)(int32_t)u32Disp + cbInstr + (int64_t)pReNative->Core.offPc;
+#else
             int64_t const offFinalDisp = (int64_t)(int32_t)u32Disp + cbInstr;
+#endif
+#ifdef RT_ARCH_AMD64
             if ((int32_t)offFinalDisp == offFinalDisp)
                 off = iemNativeEmitLoadGprFromGprWithAddendMaybeZero(pReNative, off, idxRegRet, idxRegPc, (int32_t)offFinalDisp);
             else
@@ -6320,21 +6328,19 @@ iemNativeEmitCalcRmEffAddrThreadedAddr64(PIEMRECOMPILERSTATE pReNative, uint32_t
                 off = iemNativeEmitLoadGprFromGprWithAddend(pReNative, off, idxRegRet, idxRegPc, (int32_t)u32Disp);
                 off = iemNativeEmitAddGprImm8(pReNative, off, idxRegRet, cbInstr);
             }
+#else
+            off = iemNativeEmitLoadGprFromGprWithAddendMaybeZero(pReNative, off, idxRegRet, idxRegPc, offFinalDisp);
+#endif
         }
         else
-            off = iemNativeEmitLoadGprFromGpr32WithAddendMaybeZero(pReNative, off, idxRegRet, idxRegPc, (int32_t)u32Disp + cbInstr);
-
-#elif defined(RT_ARCH_ARM64)
-        if (f64Bit)
-            off = iemNativeEmitLoadGprFromGprWithAddendMaybeZero(pReNative, off, idxRegRet, idxRegPc,
-                                                                 (int64_t)(int32_t)u32Disp + cbInstr);
-        else
-            off = iemNativeEmitLoadGprFromGpr32WithAddendMaybeZero(pReNative, off, idxRegRet, idxRegPc,
-                                                                   (int32_t)u32Disp + cbInstr);
-
-#else
-# error "Port me!"
-#endif
+        {
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+            int32_t const offFinalDisp = (int32_t)u32Disp + cbInstr + (int32_t)pReNative->Core.offPc;
+# else
+            int32_t const offFinalDisp = (int32_t)u32Disp + cbInstr;
+# endif
+            off = iemNativeEmitLoadGprFromGpr32WithAddendMaybeZero(pReNative, off, idxRegRet, idxRegPc, offFinalDisp);
+        }
         iemNativeRegFreeTmp(pReNative, idxRegPc);
         iemNativeVarRegisterRelease(pReNative, idxVarRet);
         return off;

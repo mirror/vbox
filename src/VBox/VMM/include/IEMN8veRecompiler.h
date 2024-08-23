@@ -1239,23 +1239,6 @@ typedef struct IEMNATIVEHSTSIMDREG
  */
 typedef struct IEMNATIVECORESTATE
 {
-#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    /** The current instruction offset in bytes from when the guest program counter
-     * was updated last. Used for delaying the write to the guest context program counter
-     * as long as possible. */
-    uint32_t                    offPc;
-# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
-    /** Number of instructions where we could skip the updating. */
-    uint8_t                     cInstrPcUpdateSkipped;
-# endif
-# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
-    /** Set after we've loaded PC into uPcUpdatingDebug at the first update. */
-    bool                        fDebugPcInitialized;
-    uint8_t                     abPadding[2];
-# else
-    uint8_t                     abPadding[3];
-# endif
-#endif
     /** Allocation bitmap for aHstRegs. */
     uint32_t                    bmHstRegs;
 
@@ -1267,6 +1250,21 @@ typedef struct IEMNATIVECORESTATE
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
     /** Bitmap marking the shadowed guest register as dirty and needing writeback when flushing. */
     uint64_t                    bmGstRegShadowDirty;
+#endif
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    /** The current instruction offset in bytes from when the guest program counter
+     * was updated last. Used for delaying the write to the guest context program counter
+     * as long as possible. */
+    int64_t                     offPc;
+# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
+    /** Statistics: The idxInstr+1 value at the last PC update. */
+    uint8_t                     idxInstrPlusOneOfLastPcUpdate;
+# endif
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+    /** Set after we've loaded PC into uPcUpdatingDebug at the first update. */
+    bool                        fDebugPcInitialized;
+# endif
 #endif
 
 #ifdef IEMNATIVE_WITH_SIMD_REG_ALLOCATOR
@@ -1668,7 +1666,7 @@ DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddGuestRegWriteback(PIEMRECOMPILERS
                                                                  uint64_t fGstReg);
 # endif
 DECL_HIDDEN_THROW(void)     iemNativeDbgInfoAddDelayedPcUpdate(PIEMRECOMPILERSTATE pReNative,
-                                                               uint32_t offPc, uint32_t cInstrSkipped);
+                                                               uint64_t offPc, uint32_t cInstrSkipped);
 #endif /* IEMNATIVE_WITH_TB_DEBUG_INFO */
 
 DECL_HIDDEN_THROW(uint32_t) iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,

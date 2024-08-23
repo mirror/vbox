@@ -2071,7 +2071,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     pReNative->Core.offPc                  = 0;
 # if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
-    pReNative->Core.cInstrPcUpdateSkipped  = 0;
+    pReNative->Core.idxInstrPlusOneOfLastPcUpdate = 0;
 # endif
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
     pReNative->Core.fDebugPcInitialized    = false;
@@ -2717,11 +2717,11 @@ iemNativeDbgInfoAddGuestSimdRegShadowing(PIEMRECOMPILERSTATE pReNative, IEMNATIV
 /**
  * Debug Info: Record info about delayed RIP updates.
  */
-DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddDelayedPcUpdate(PIEMRECOMPILERSTATE pReNative, uint32_t offPc, uint32_t cInstrSkipped)
+DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddDelayedPcUpdate(PIEMRECOMPILERSTATE pReNative, uint64_t offPc, uint32_t cInstrSkipped)
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
     pEntry->DelayedPcUpdate.uType         = kIemTbDbgEntryType_DelayedPcUpdate;
-    pEntry->DelayedPcUpdate.offPc         = offPc;
+    pEntry->DelayedPcUpdate.offPc         = offPc; /** @todo support larger values */
     pEntry->DelayedPcUpdate.cInstrSkipped = cInstrSkipped;
 }
 # endif
@@ -5764,10 +5764,26 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcDebugCheck(PIEMRECOMPILERSTATE pReNat
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcWritebackSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
     Assert(pReNative->Core.offPc);
-    Log4(("offPc=%#x -> 0; off=%#x\n", pReNative->Core.offPc, off));
-# ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+# if !defined(IEMNATIVE_WITH_TB_DEBUG_INFO) && !defined(VBOX_WITH_STATISTICS)
+    Log4(("iemNativeEmitPcWritebackSlow: offPc=%#RX64 -> 0; off=%#x\n", pReNative->Core.offPc, off));
+# else
+    uint8_t const idxOldInstrPlusOne = pReNative->Core.idxInstrPlusOneOfLastPcUpdate;
+    uint8_t       idxCurCall         = pReNative->idxCurCall;
+    uint8_t       idxInstr           = pReNative->pTbOrg->Thrd.paCalls[idxCurCall].idxInstr; /* unreliable*/
+    while (idxInstr == 0 && idxInstr + 1 < idxOldInstrPlusOne && idxCurCall > 0)
+        idxInstr = pReNative->pTbOrg->Thrd.paCalls[--idxCurCall].idxInstr;
+    uint8_t const cInstrsSkipped     = idxInstr <= pReNative->Core.idxInstrPlusOneOfLastPcUpdate ? 0
+                                     : idxInstr - pReNative->Core.idxInstrPlusOneOfLastPcUpdate;
+    Log4(("iemNativeEmitPcWritebackSlow: offPc=%#RX64 -> 0; off=%#x; idxInstr=%u cInstrsSkipped=%u\n",
+          pReNative->Core.offPc, off, idxInstr, cInstrsSkipped));
+
+    pReNative->Core.idxInstrPlusOneOfLastPcUpdate = RT_MAX(idxInstr + 1, pReNative->Core.idxInstrPlusOneOfLastPcUpdate);
+    STAM_COUNTER_ADD(&pReNative->pVCpu->iem.s.StatNativePcUpdateDelayed, cInstrsSkipped);
+
+#  ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
     iemNativeDbgInfoAddNativeOffset(pReNative, off);
-    iemNativeDbgInfoAddDelayedPcUpdate(pReNative, pReNative->Core.offPc, pReNative->Core.cInstrPcUpdateSkipped);
+    iemNativeDbgInfoAddDelayedPcUpdate(pReNative, pReNative->Core.offPc, cInstrsSkipped);
+#  endif
 # endif
 
 # ifndef IEMNATIVE_REG_FIXED_PC_DBG
@@ -5789,11 +5805,7 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcWritebackSlow(PIEMRECOMPILERSTATE pRe
     off = iemNativeEmitGuestRegValueCheck(pReNative, off, IEMNATIVE_REG_FIXED_PC_DBG, kIemNativeGstReg_Pc);
 # endif
 
-    pReNative->Core.offPc                 = 0;
-# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
-    STAM_COUNTER_ADD(&pReNative->pVCpu->iem.s.StatNativePcUpdateDelayed, pReNative->Core.cInstrPcUpdateSkipped);
-    pReNative->Core.cInstrPcUpdateSkipped = 0;
-# endif
+    pReNative->Core.offPc = 0;
 
     return off;
 }
@@ -10135,7 +10147,7 @@ l_profile_again:
         uint32_t             cThreadedCalls   = 0;
         uint32_t             cRecompiledCalls = 0;
 #endif
-#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(IEM_WITH_INTRA_TB_JUMPS) || defined(VBOX_STRICT) || defined(LOG_ENABLED)
+#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(IEM_WITH_INTRA_TB_JUMPS) || defined(VBOX_STRICT) || defined(LOG_ENABLED) || defined(VBOX_WITH_STATISTICS) || defined(IEMNATIVE_WITH_DELAYED_PC_UPDATING)
         uint32_t             idxCurCall       = 0;
 #endif
         PCIEMTHRDEDCALLENTRY pCallEntry       = pTb->Thrd.paCalls;
@@ -10143,7 +10155,7 @@ l_profile_again:
         while (cCallsLeft-- > 0)
         {
             PFNIEMNATIVERECOMPFUNC const pfnRecom = g_apfnIemNativeRecompileFunctions[pCallEntry->enmFunction];
-#ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
+#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(VBOX_WITH_STATISTICS) || defined(IEMNATIVE_WITH_DELAYED_PC_UPDATING)
             pReNative->idxCurCall                 = idxCurCall;
 #endif
 
@@ -10257,7 +10269,7 @@ l_profile_again:
              * Advance.
              */
             pCallEntry++;
-#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(IEM_WITH_INTRA_TB_JUMPS) || defined(VBOX_STRICT) || defined(LOG_ENABLED)
+#if defined(IEMNATIVE_WITH_LIVENESS_ANALYSIS) || defined(IEM_WITH_INTRA_TB_JUMPS) || defined(VBOX_STRICT) || defined(LOG_ENABLED) || defined(VBOX_WITH_STATISTICS) || defined(IEMNATIVE_WITH_DELAYED_PC_UPDATING)
             idxCurCall++;
 #endif
         }
