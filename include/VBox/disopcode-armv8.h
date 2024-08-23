@@ -603,7 +603,7 @@ typedef enum DISARMV8OPPARMEXTEND
     kDisArmv8OpParmExtendSxtB,
     kDisArmv8OpParmExtendSxtH,
     kDisArmv8OpParmExtendSxtW,
-    kDisArmv8OpParmExtendSxtX,
+    kDisArmv8OpParmExtendSxtX
 } DISARMV8OPPARMEXTEND;
 /** @} */
 
