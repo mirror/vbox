@@ -54,9 +54,9 @@ RT_C_DECLS_BEGIN
 typedef struct
 {
     /** Flag whether this is a 32-bit or 64-bit register. */
-    bool    f32Bit : 1;
+                     bool    f32Bit : 1;
     /** The register index. */
-    uint8_t idGpr  : 7;
+    RT_GCC_EXTENSION uint8_t idGpr  : 7;
 } DISOPPARAMARMV8REG;
 AssertCompileSize(DISOPPARAMARMV8REG, sizeof(uint8_t));
 /** Pointer to a disassembler GPR. */
