@@ -43,14 +43,14 @@
     <name>Print Device Input Slot</name>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished">Automatski</translation>
+        <translation>Automatski</translation>
     </message>
 </context>
 <context>
     <name>Print Device Output Bin</name>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished">Automatski</translation>
+        <translation>Automatski</translation>
     </message>
 </context>
 <context>
@@ -378,11 +378,11 @@ Pritisni ESC za odustajanje</translation>
     </message>
     <message>
         <source>Displays help on commandline options.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prikazuje pomoć na opcijama komandne linije.</translation>
     </message>
     <message>
         <source>Displays help including Qt specific options.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prikazuje pomoć uključujući opcije specifične za Qt.</translation>
     </message>
     <message>
         <source>Unknown option &apos;%1&apos;.</source>
@@ -543,23 +543,23 @@ Pritisni ESC za odustajanje</translation>
     <name>QCupsPrinterSupport</name>
     <message>
         <source>Authentication Needed</source>
-        <translation type="unfinished"></translation>
+        <translation>Potrebna autentikacija</translation>
     </message>
     <message>
         <source>Authentication needed to use %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Potrebna autentikacija za %1.</translation>
     </message>
     <message>
         <source>Authentication needed to use %1 on %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Potrebna autentikacija za %1 na %2.</translation>
     </message>
     <message>
         <source>Username:</source>
-        <translation type="unfinished"></translation>
+        <translation>Korisničko ime:</translation>
     </message>
     <message>
         <source>Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lozinka:</translation>
     </message>
 </context>
 <context>
@@ -804,190 +804,190 @@ Pritisni ESC za odustajanje</translation>
     <name>QDomParser</name>
     <message>
         <source>Error occurred while processing XML declaration</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja XML deklaracije</translation>
     </message>
     <message>
         <source>Multiple DTD sections are not allowed</source>
-        <translation type="unfinished"></translation>
+        <translation>Više DTD sekcija nisu dopuštene</translation>
     </message>
     <message>
         <source>Error occurred while processing document type declaration</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja deklaracije vrste dokumenta</translation>
     </message>
     <message>
         <source>Error occurred while processing comment</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja komentara</translation>
     </message>
     <message>
         <source>Error occurred while processing a processing instruction</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja instrukcije procesora</translation>
     </message>
     <message>
         <source>Error occurred while processing a start element</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja elementa početka</translation>
     </message>
     <message>
         <source>Unexpected end element &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Neočekivani element kraja &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Error occurred while processing an end element</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja elementa kraja</translation>
     </message>
     <message>
         <source>Error occurred while processing the element content</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja sadržaja elementa</translation>
     </message>
     <message>
         <source>Error occurred while processing comments</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja komentara</translation>
     </message>
     <message>
         <source>Error occurred while processing an entity reference</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja reference entiteta</translation>
     </message>
     <message>
         <source>Unexpected token</source>
-        <translation type="unfinished"></translation>
+        <translation>Neočekivani token</translation>
     </message>
     <message>
         <source>Tag mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>Oznake se ne slažu</translation>
     </message>
     <message>
         <source>Error occurred while processing entity declaration</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja deklaracije entiteta</translation>
     </message>
     <message>
         <source>Error occurred while processing notation declaration</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod procesiranja deklaracije notacije</translation>
     </message>
 </context>
 <context>
     <name>QDtls</name>
     <message>
         <source>Invalid (empty) secret</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevažeća (prazna) tajna</translation>
     </message>
     <message>
         <source>Multicast and broadcast addresses are not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Multicast i broadcast adrese nisu podržane</translation>
     </message>
     <message>
         <source>Cannot set peer after handshake started</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu postaviti čvor nakon početka rukovanja</translation>
     </message>
     <message>
         <source>Invalid address</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevažeća adresa</translation>
     </message>
     <message>
         <source>Cannot set verification name after handshake started</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu postaviti naziv verifikacije nakon početka rukovanja</translation>
     </message>
     <message>
         <source>Cannot set configuration after handshake started</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu postaviti konfiguraciju nakon početka rukovanja</translation>
     </message>
     <message>
         <source>Cannot start/continue handshake, invalid handshake state</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu započeti/nastaviti rukovanje, nevažeće stanje rukovanja</translation>
     </message>
     <message>
         <source>Invalid (nullptr) socket</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevažeća (nullptr) priključnica</translation>
     </message>
     <message>
         <source>To start a handshake you must set peer&apos;s address and port first</source>
-        <translation type="unfinished"></translation>
+        <translation>Za početak rukovanja morate prvo postaviti klijentovu adresu i vrata</translation>
     </message>
     <message>
         <source>To start a handshake, DTLS server requires non-empty datagram (client hello)</source>
-        <translation type="unfinished"></translation>
+        <translation>Za početak rukovanja DTLS server zahtijeva neprazni datagram (klijent hello)</translation>
     </message>
     <message>
         <source>Cannot start handshake, already done/in progress</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu započeti rukovanje, već je gotovo/u tijeku</translation>
     </message>
     <message>
         <source>A valid QUdpSocket and non-empty datagram are needed to continue the handshake</source>
-        <translation type="unfinished"></translation>
+        <translation>Važeći QUdpSocket i neprazni datagram su potrebni da bi se nastavilo rukovanje</translation>
     </message>
     <message>
         <source>Cannot continue handshake, not in InProgress state</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu nastaviti rukovanje, nisam u stanju InProgress</translation>
     </message>
     <message>
         <source>Cannot resume, not in VerificationError state</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu nastaviti, nisam u stanju VerificationError</translation>
     </message>
     <message>
         <source>No handshake in progress, nothing to abort</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne postoji rukovanje u tijeku, ništa za prekinuti</translation>
     </message>
     <message>
         <source>Cannot send shutdown alert, not encrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu poslati uzbunu isključivanja, nije šifrirano</translation>
     </message>
     <message>
         <source>Cannot write a datagram, not in encrypted state</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu napisati datagram, nisam u stanju enkripcije</translation>
     </message>
     <message>
         <source>Cannot read a datagram, not in encrypted state</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu pročitati datagram, nisam u stanju enkripcije</translation>
     </message>
     <message>
         <source>%1 failed</source>
         <extracomment>%1: Some function</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 nije uspjelo</translation>
     </message>
     <message>
         <source>Invalid SslMode, SslServerMode or SslClientMode expected</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevažeći SslMode, SslServerMode ili SslClientMode je očekivan</translation>
     </message>
     <message>
         <source>Invalid protocol version, DTLS protocol expected</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevažeća verzija protokola, DTLS protokol je očekivan</translation>
     </message>
     <message>
         <source>BIO_ADD_new failed, cannot start handshake</source>
-        <translation type="unfinished"></translation>
+        <translation>BIO_ADD_new nije uspio, ne mogu započeti rukovanje</translation>
     </message>
     <message>
         <source>Cannot start the handshake, verified client hello expected</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu započeti rukovanje, verificirani client hello je očekivan</translation>
     </message>
     <message>
         <source>Peer verification failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifikacija klijenta nije uspjela</translation>
     </message>
     <message>
         <source>The DTLS connection has been closed</source>
-        <translation type="unfinished"></translation>
+        <translation>DTLS veza je zatvorena</translation>
     </message>
     <message>
         <source>Error while writing: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod pisanja: %1</translation>
     </message>
     <message>
         <source>The DTLS connection has been shutdown</source>
-        <translation type="unfinished"></translation>
+        <translation>DTLS veza je isključena</translation>
     </message>
     <message>
         <source>Error while reading: %1</source>
-        <translation type="unfinished">Greška prilikom čitanja: %1</translation>
+        <translation>Greška prilikom čitanja: %1</translation>
     </message>
 </context>
 <context>
     <name>QDtlsClientVerifier</name>
     <message>
         <source>A valid UDP socket, non-empty datagram, valid address/port were expected</source>
-        <translation type="unfinished"></translation>
+        <translation>Važeća UDP priključnica, neprazan datagram, važeća adresa/vrata su očekivana</translation>
     </message>
     <message>
         <source>BIO_ADDR_new failed, ignoring client hello</source>
-        <translation type="unfinished"></translation>
+        <translation>BIO_ADDR_new nije uspio, ignoriram client hello</translation>
     </message>
 </context>
 <context>
@@ -1002,7 +1002,7 @@ Pritisni ESC za odustajanje</translation>
     </message>
     <message>
         <source>Critical Error:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kritična Greška:</translation>
     </message>
     <message>
         <source>Fatal Error:</source>
@@ -1010,7 +1010,7 @@ Pritisni ESC za odustajanje</translation>
     </message>
     <message>
         <source>Information:</source>
-        <translation type="unfinished"></translation>
+        <translation>Informacija:</translation>
     </message>
     <message>
         <source>&amp;Show this message again</source>
@@ -1037,7 +1037,7 @@ Pritisni ESC za odustajanje</translation>
     </message>
     <message>
         <source>Error while renaming: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod preimenovanja: %1</translation>
     </message>
     <message>
         <source>Unable to restore from %1: %2</source>
@@ -1053,7 +1053,7 @@ Pritisni ESC za odustajanje</translation>
     </message>
     <message>
         <source>Cannot open destination file: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu otvoriti odredišnu datoteku: %1</translation>
     </message>
     <message>
         <source>Cannot open %1 for input</source>
@@ -1061,7 +1061,7 @@ Pritisni ESC za odustajanje</translation>
     </message>
     <message>
         <source>Cannot open for output: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu otvoriti za izlaz: %1</translation>
     </message>
     <message>
         <source>Failure to write block</source>
@@ -1080,7 +1080,7 @@ Pritisni ESC za odustajanje</translation>
     </message>
     <message>
         <source>No file engine available</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne postoje engine datoteke</translation>
     </message>
 </context>
 <context>
@@ -1327,7 +1327,7 @@ Do you want to delete it anyway?</source>
     <name>QFileSystemModel</name>
     <message>
         <source>&lt;b&gt;The name &quot;%1&quot; cannot be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuation marks.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Naziv &quot;%1&quot; ne može biti korišten. &lt;/b&gt;&lt;p&gt; Pokušajte koristiti drugi naziv, s manjim brojem znakova ili bez interpunkcijskih znakova.</translation>
     </message>
     <message>
         <source>Invalid filename</source>
@@ -1719,71 +1719,71 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>QPA plugin. See QGuiApplication documentation for available options for each plugin.</source>
-        <translation type="unfinished"></translation>
+        <translation>QPA dodatak. Pogledajte QGuiApplication dokumentaciju za dostupne opcije za svaki dodatak.</translation>
     </message>
     <message>
         <source>Path to the platform plugins.</source>
-        <translation type="unfinished"></translation>
+        <translation>Putanja platformskih dodataka.</translation>
     </message>
     <message>
         <source>Platform theme.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tema platforme.</translation>
     </message>
     <message>
         <source>Additional plugins to load, can be specified multiple times.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodatni dodaci za učitavanje, mogu biti navedeni više puta.</translation>
     </message>
     <message>
         <source>Window geometry for the main window, using the X11-syntax, like 100x100+50+50.</source>
-        <translation type="unfinished"></translation>
+        <translation>Geometrija prozora za glavni prozor, koristeći X11 sintaksu, poput 100x100+50+50.</translation>
     </message>
     <message>
         <source>Default window icon.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zadana ikona prozora.</translation>
     </message>
     <message>
         <source>Title of the first window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Naslov prvog prozora.</translation>
     </message>
     <message>
         <source>Sets the application&apos;s layout direction to Qt::RightToLeft (debugging helper).</source>
-        <translation type="unfinished"></translation>
+        <translation>Postavlja smjer rasporeda aplikacije na Qt::RightToLeft (pomoć debuggera).</translation>
     </message>
     <message>
         <source>Restores the application from an earlier session.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vraća aplikaciju s ranije sjednice.</translation>
     </message>
     <message>
         <source>Display name, overrides $DISPLAY.</source>
-        <translation type="unfinished"></translation>
+        <translation>Naziv prikaza, prebrisuje $DISPLAY.</translation>
     </message>
     <message>
         <source>Instance name according to ICCCM 4.1.2.5.</source>
-        <translation type="unfinished"></translation>
+        <translation>Naziv instance prema ICCCM 4.1.2.5.</translation>
     </message>
     <message>
         <source>Disable mouse grabbing (useful in debuggers).</source>
-        <translation type="unfinished"></translation>
+        <translation>Onemoguće uzimanje miša (korisno u debuggerima).</translation>
     </message>
     <message>
         <source>Force mouse grabbing (even when running in a debugger).</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisili uzimanje miša (čak i kada je pokrenut u debuggeru).</translation>
     </message>
     <message>
         <source>ID of the X11 Visual to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>ID X11 Visuala za korištenje.</translation>
     </message>
     <message>
         <source>Alias for --windowgeometry.</source>
-        <translation type="unfinished"></translation>
+        <translation>Drugi naziv za --windowgeometry.</translation>
     </message>
     <message>
         <source>Alias for --windowicon.</source>
-        <translation type="unfinished"></translation>
+        <translation>Drugi naziv za --windowicon.</translation>
     </message>
     <message>
         <source>Alias for --windowtitle.</source>
-        <translation type="unfinished"></translation>
+        <translation>Drugi naziv za --windowtitle.</translation>
     </message>
 </context>
 <context>
@@ -2050,7 +2050,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Cannot open device for writing: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu otvoriti uređaj za pisanje: %1</translation>
     </message>
     <message>
         <source>Device not writable</source>
@@ -2062,7 +2062,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Image is empty</source>
-        <translation type="unfinished"></translation>
+        <translation>Slika je prazna</translation>
     </message>
 </context>
 <context>
@@ -2167,51 +2167,51 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>odd cpu architecture</source>
-        <translation type="unfinished"></translation>
+        <translation>neobična cpu arhitektura</translation>
     </message>
     <message>
         <source>wrong cpu architecture</source>
-        <translation type="unfinished"></translation>
+        <translation>kriva cpu arhitektura</translation>
     </message>
     <message>
         <source>odd endianness</source>
-        <translation type="unfinished"></translation>
+        <translation>neobičan endianness</translation>
     </message>
     <message>
         <source>unexpected e_shsize</source>
-        <translation type="unfinished"></translation>
+        <translation>neočekivana e_shsize</translation>
     </message>
     <message>
         <source>unexpected e_shentsize</source>
-        <translation type="unfinished"></translation>
+        <translation>neočekivana e_shentsize</translation>
     </message>
     <message numerus="yes">
         <source>announced %n section(s), each %1 byte(s), exceed file size</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>najavljena %n sekcija, svaka %1 bajta, premašuje veličinu datoteke</numerusform>
+            <numerusform>najavljene %n sekcije, svaka %1 bajta, premašuju veličinu datoteke</numerusform>
+            <numerusform>najavljenih %n sekcija, svaka %1 bajta, premašuje veličinu datoteke</numerusform>
         </translation>
     </message>
     <message>
         <source>shstrtab section header seems to be at %1</source>
-        <translation type="unfinished"></translation>
+        <translation>shstrtab sekcija zaglavlja izgleda da je na %1</translation>
     </message>
     <message>
         <source>string table seems to be at %1</source>
-        <translation type="unfinished"></translation>
+        <translation>string table izgleda da je na %1</translation>
     </message>
     <message>
         <source>section name %1 of %2 behind end of file</source>
-        <translation type="unfinished"></translation>
+        <translation>naziv sekcije %1 od %2 iza kraja datoteke</translation>
     </message>
     <message>
         <source>empty .rodata. not a library.</source>
-        <translation type="unfinished"></translation>
+        <translation>prazan .rodata. nije biblioteka.</translation>
     </message>
     <message>
         <source>missing section data. This is not a library.</source>
-        <translation type="unfinished"></translation>
+        <translation>nedostaju podaci sekcije. Ovo nije biblioteka.</translation>
     </message>
     <message>
         <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
@@ -2384,7 +2384,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Socket is not connected</source>
-        <translation type="unfinished">Utičnica nije spojena</translation>
+        <translation>Priključnica nije spojena</translation>
     </message>
 </context>
 <context>
@@ -2560,7 +2560,7 @@ Do you want to delete it anyway?</source>
     <message>
         <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under multiple licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of GNU (L)GPL.&lt;/p&gt;&lt;p&gt;Qt licensed under GNU (L)GPL is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the respective licenses.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
         <extracomment>Leave this text untranslated or include a verbatim copy of it below and note that it is the authoritative version in case of doubt.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>U slučaju sumnje, koristit će se engleska verzija ovog teksta.&lt;p&gt;Qt je C++ alat za više-platformski razvoj aplikacija.&lt;/p&gt;&lt;p&gt;Qt pruža single-source portabilnost kroz sve glavne stolne operacijske sustave. Također je dostupan za embedded Linux i ostale embedded i mobilne operacijske sustave.&lt;/p&gt;&lt;p&gt;Qt je dostupan pod više opcija licenci dizajniranih za pružanje potreba različitih korisnika.&lt;/p&gt;&lt;p&gt;Qt licenciran pod našom komercijalnom licencom prikladan je za razvoj komercijalne programske podrške gdje ne želite dijeliti bilo kakav izvorni kod s trećim stranama ili se na drugi način ne možete pridržavati odredaba GNU (L)GPL.&lt;/p&gt;&lt;p&gt;Qt licenciran pod GNU (L)GPL prikladan je za razvoj QT&amp;nbsp;aplikacija uzimajući u obzir da se možete pridržavati uvjetima korištenja navedenih licenci.&lt;/p&gt;&lt;p&gt;Molimo pogledajte &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; za pregled Qt licenciranja.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd i ostali suradnici.&lt;/p&gt;&lt;p&gt;Qt i Qt logo su zaštitni znakovi The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt je proizvod The Qt Company Ltd razvijen kao open source projekt. Pogledajte &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; za više informacija.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>About Qt</source>
@@ -2992,7 +2992,7 @@ Do you want to delete it anyway?</source>
     <name>QPSQLResult</name>
     <message>
         <source>Query results lost - probably discarded on executing another SQL query.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rezulati upita izgubljeni - vjerojatno odbačeni ili izvršavaju drugi SQL upit.</translation>
     </message>
     <message>
         <source>Unable to create query</source>
@@ -3000,11 +3000,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to get result</source>
-        <translation type="unfinished"></translation>
+        <translation>Nisam uspio dobiti rezultat</translation>
     </message>
     <message>
         <source>Unable to send query</source>
-        <translation type="unfinished"></translation>
+        <translation>Nisam uspio poslati upit</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -3800,19 +3800,19 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Invalid Pages Definition</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevažeća Definicija Stranica</translation>
     </message>
     <message>
         <source>%1 does not follow the correct syntax. Please use &apos;,&apos; to separate ranges and pages, &apos;-&apos; to define ranges and make sure ranges do not intersect with each other.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ne prati točnu sintaksu. Molimo koristite &apos;,&apos; za odvajanje raspona i stranica, &apos;-&apos; za definiranje raspona i budite sigurni da se rasponi ne presijecaju.</translation>
     </message>
     <message>
         <source>Duplex Settings Conflicts</source>
-        <translation type="unfinished"></translation>
+        <translation>Konflikti u Postavkama Duplexa</translation>
     </message>
     <message>
         <source>There are conflicts in duplex settings. Do you want to fix them?</source>
-        <translation type="unfinished"></translation>
+        <translation>Postoje konflikti u postavkama duplexa. Želite li ih popraviti?</translation>
     </message>
     <message>
         <source>Print to File (PDF)</source>
@@ -3954,19 +3954,19 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>Page Setup Conflicts</source>
-        <translation type="unfinished"></translation>
+        <translation>Konflikti u Postavkama Papira</translation>
     </message>
     <message>
         <source>There are conflicts in page setup options. Do you want to fix them?</source>
-        <translation type="unfinished"></translation>
+        <translation>Postoje konflikti u postavkama papira. Želite li ih popraviti?</translation>
     </message>
     <message>
         <source>Advanced Option Conflicts</source>
-        <translation type="unfinished"></translation>
+        <translation>Napredne Postavke Konflikata</translation>
     </message>
     <message>
         <source>There are conflicts in some advanced options. Do you want to fix them?</source>
-        <translation type="unfinished"></translation>
+        <translation>Postoje konflikti u nekim naprednim postavkama. Želite li ih popraviti?</translation>
     </message>
 </context>
 <context>
@@ -3981,11 +3981,11 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="unfinished"></translation>
+        <translation>Napredno</translation>
     </message>
     <message>
         <source>There are conflicts in some options. Please fix them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Postoje konflikti u nekim postavkama. Popravite ih.</translation>
     </message>
 </context>
 <context>
@@ -4016,11 +4016,11 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>Pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Stranice</translation>
     </message>
     <message>
         <source>Specify pages or ranges separated by commas. Ranges are specified by two numbers separated by a hyphen. E.g: 3,5-7,9 prints pages 3, 5, 6, 7 and 9.</source>
-        <translation type="unfinished"></translation>
+        <translation>Navedite stranice ili raspone odvojene zarezima. Rasponi su određeni dvama brojevima odvojenim spojnicom. Npr.: 3,5-7,9 ispisuje stranice 3, 5, 6, 7 i 9.</translation>
     </message>
     <message>
         <source>Current Page</source>
@@ -4068,19 +4068,19 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>Double Sided Printing</source>
-        <translation type="unfinished"></translation>
+        <translation>Dvostrano Ispisivanje</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Isključeno</translation>
     </message>
     <message>
         <source>Long side binding</source>
-        <translation type="unfinished"></translation>
+        <translation>Uvezivanje dulje strane</translation>
     </message>
     <message>
         <source>Short side binding</source>
-        <translation type="unfinished"></translation>
+        <translation>Uvezivanje kraće strane</translation>
     </message>
 </context>
 <context>
@@ -4255,7 +4255,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>escape sequence is invalid in character class</source>
-        <translation type="unfinished"></translation>
+        <translation>escape slijed nije važeći u klasi znakova</translation>
     </message>
     <message>
         <source>range out of order in character class</source>
@@ -4263,7 +4263,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>quantifier does not follow a repeatable item</source>
-        <translation type="unfinished"></translation>
+        <translation>kvantifikator ne prati ponavljajuću stavku</translation>
     </message>
     <message>
         <source>internal error: unexpected repeat</source>
@@ -4283,7 +4283,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>missing closing parenthesis</source>
-        <translation type="unfinished"></translation>
+        <translation>nedostaju zagrade zatvaranja</translation>
     </message>
     <message>
         <source>reference to non-existent subpattern</source>
@@ -4291,15 +4291,15 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>pattern passed as NULL</source>
-        <translation type="unfinished"></translation>
+        <translation>uzorak proslijeđen kao NULL</translation>
     </message>
     <message>
         <source>unrecognised compile-time option bit(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>bit(ovi) opcije compile-timea neprepoznatljiv</translation>
     </message>
     <message>
         <source>missing ) after (?# comment</source>
-        <translation type="unfinished"></translation>
+        <translation>nedostaje ) nakon (?# komentara</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested</source>
@@ -4311,11 +4311,11 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>failed to allocate heap memory</source>
-        <translation type="unfinished"></translation>
+        <translation>nisam uspio dodijeliti memoriju hrpe</translation>
     </message>
     <message>
         <source>unmatched closing parenthesis</source>
-        <translation type="unfinished"></translation>
+        <translation>zagrada zatvaranja se ne slaže</translation>
     </message>
     <message>
         <source>internal error: code overflow</source>
@@ -4323,7 +4323,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>missing closing parenthesis for condition</source>
-        <translation type="unfinished"></translation>
+        <translation>nedostaje zagrada zatvaranja za uvjet</translation>
     </message>
     <message>
         <source>lookbehind assertion is not fixed length</source>
@@ -4331,19 +4331,19 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>a relative value of zero is not allowed</source>
-        <translation type="unfinished"></translation>
+        <translation>relativna vrijednost nule nije dozvoljena</translation>
     </message>
     <message>
         <source>conditional subpattern contains more than two branches</source>
-        <translation type="unfinished"></translation>
+        <translation>uvjetni poduzorak sadržava više od dvije grane</translation>
     </message>
     <message>
         <source>assertion expected after (?( or (?(?C)</source>
-        <translation type="unfinished"></translation>
+        <translation>unos očekivan nakon (?( ili (?(?C)</translation>
     </message>
     <message>
         <source>digit expected after (?+ or (?-</source>
-        <translation type="unfinished"></translation>
+        <translation>znamenka očekivana nakon (?+ ili (?-</translation>
     </message>
     <message>
         <source>unknown POSIX class name</source>
@@ -4351,11 +4351,11 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>internal error in pcre2_study(): should not occur</source>
-        <translation type="unfinished"></translation>
+        <translation>unutarnja greška u pcre2_study(): nije se trebala pojaviti</translation>
     </message>
     <message>
         <source>this version of PCRE2 does not have Unicode support</source>
-        <translation type="unfinished"></translation>
+        <translation>ova verzija PCRE2 nema podršku za Unicode</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested (stack check)</source>
@@ -4363,31 +4363,31 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>character code point value in \x{} or \o{} is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>vrijednost točke šifre znaka u \x{} ili \o{} je prevelika</translation>
     </message>
     <message>
         <source>lookbehind is too complicated</source>
-        <translation type="unfinished"></translation>
+        <translation>lookbehind je previše kompliciran</translation>
     </message>
     <message>
         <source>\C is not allowed in a lookbehind assertion in UTF-16 mode</source>
-        <translation type="unfinished"></translation>
+        <translation>\C nije dozvoljen u lookbehind dodavanju u UTF-16 načinu</translation>
     </message>
     <message>
         <source>PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u</source>
-        <translation type="unfinished"></translation>
+        <translation>PCRE2 ne podržava \F, \L, \I, \N{name}, \U ili \u</translation>
     </message>
     <message>
         <source>number after (?C is greater than 255</source>
-        <translation type="unfinished"></translation>
+        <translation>broj nakon (?C je veći od 255</translation>
     </message>
     <message>
         <source>closing parenthesis for (?C expected</source>
-        <translation type="unfinished"></translation>
+        <translation>zatvarajuća zagrada za (?C očekivana</translation>
     </message>
     <message>
         <source>invalid escape sequence in (*VERB) name</source>
-        <translation type="unfinished"></translation>
+        <translation>nevažeći escape slijed u (*VERB) nazivu</translation>
     </message>
     <message>
         <source>unrecognized character after (?P</source>
@@ -4395,19 +4395,19 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>syntax error in subpattern name (missing terminator?)</source>
-        <translation type="unfinished"></translation>
+        <translation>sintaksna pogreška u nazivu poduzorka (nedostaje terminator?)</translation>
     </message>
     <message>
         <source>two named subpatterns have the same name (PCRE2_DUPNAMES not set)</source>
-        <translation type="unfinished"></translation>
+        <translation>dva imenovana poduzorka imaju isti naziv (PCRE2_DUPNAMES nije postavljen)</translation>
     </message>
     <message>
         <source>subpattern name must start with a non-digit</source>
-        <translation type="unfinished"></translation>
+        <translation>naziv poduzorka mora započeti s ne-znamenkom</translation>
     </message>
     <message>
         <source>this version of PCRE2 does not have support for \P, \p, or \X</source>
-        <translation type="unfinished"></translation>
+        <translation>ova verzija PCRE2 nema podršku za \P, \p ili \X</translation>
     </message>
     <message>
         <source>malformed \P or \p sequence</source>
@@ -4419,7 +4419,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>subpattern name is too long (maximum 32 code units)</source>
-        <translation type="unfinished"></translation>
+        <translation>naziv poduzrka je predugačak (najviše 32 jediničnih šifri)</translation>
     </message>
     <message>
         <source>too many named subpatterns (maximum 10000)</source>
@@ -4431,7 +4431,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>octal value is greater than \377 in 8-bit non-UTF-8 mode</source>
-        <translation type="unfinished"></translation>
+        <translation>oktalna vrijednost veća je od \377 u 8-bitnom ne-UTF-8 načinu</translation>
     </message>
     <message>
         <source>internal error: overran compiling workspace</source>
@@ -4443,7 +4443,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>DEFINE subpattern contains more than one branch</source>
-        <translation type="unfinished"></translation>
+        <translation>poduzorak DEFINE sadržava više od jedne grane</translation>
     </message>
     <message>
         <source>missing opening brace after \o</source>
@@ -4451,7 +4451,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>internal error: unknown newline setting</source>
-        <translation type="unfinished"></translation>
+        <translation>unutarnja greška: nepoznata postavka novog reda</translation>
     </message>
     <message>
         <source>\g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number</source>
@@ -4459,19 +4459,19 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>(?R (recursive pattern call) must be followed by a closing parenthesis</source>
-        <translation type="unfinished"></translation>
+        <translation>(?R (pozivu rekurzivnog uzorka) mora slijediti zatvarajuća zagrada</translation>
     </message>
     <message>
         <source>obsolete error (should not occur)</source>
-        <translation type="unfinished"></translation>
+        <translation>zastarjela greška (ne bi se smjela pojaviti)</translation>
     </message>
     <message>
         <source>(*VERB) not recognized or malformed</source>
-        <translation type="unfinished"></translation>
+        <translation>(*VERB) nije prepoznat ili je krivo napisan</translation>
     </message>
     <message>
         <source>subpattern number is too big</source>
-        <translation type="unfinished"></translation>
+        <translation>broj poduzorka je prevelik</translation>
     </message>
     <message>
         <source>subpattern name expected</source>
@@ -4479,7 +4479,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>internal error: parsed pattern overflow</source>
-        <translation type="unfinished"></translation>
+        <translation>unutarnja greška: preljev parsiranog uzorka</translation>
     </message>
     <message>
         <source>non-octal character in \o{} (closing brace missing?)</source>
@@ -4499,11 +4499,11 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>\c must be followed by a printable ASCII character</source>
-        <translation type="unfinished"></translation>
+        <translation>\c mora biti praćen printajućeg ASCII znaka</translation>
     </message>
     <message>
         <source>\c must be followed by a letter or one of [\]^_?</source>
-        <translation type="unfinished"></translation>
+        <translation>\c mora biti praćen slova ili jednog od [\]^_?</translation>
     </message>
     <message>
         <source>\k is not followed by a braced, angle-bracketed, or quoted name</source>
@@ -4511,7 +4511,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>internal error: unknown meta code in check_lookbehinds()</source>
-        <translation type="unfinished"></translation>
+        <translation>unutarnja greška: nepoznat metakod u check_lookbehinds()</translation>
     </message>
     <message>
         <source>\N is not supported in a class</source>
@@ -4519,7 +4519,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>callout string is too long</source>
-        <translation type="unfinished"></translation>
+        <translation>pozivajući string je prevelik</translation>
     </message>
     <message>
         <source>disallowed Unicode code point (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</source>
@@ -4527,11 +4527,11 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>using UTF is disabled by the application</source>
-        <translation type="unfinished"></translation>
+        <translation>korištenje UTF-a je onemogućeno od aplikacije</translation>
     </message>
     <message>
         <source>using UCP is disabled by the application</source>
-        <translation type="unfinished"></translation>
+        <translation>korištenje UCP-a je onemogućeno od aplikacije</translation>
     </message>
     <message>
         <source>name is too long in (*MARK), (*PRUNE), (*SKIP), or (*THEN)</source>
@@ -4539,355 +4539,355 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>character code point value in \u.... sequence is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>vrijednost točke šifre znaka u \u.... slijedu je prevelika</translation>
     </message>
     <message>
         <source>digits missing in \x{} or \o{} or \N{U+}</source>
-        <translation type="unfinished"></translation>
+        <translation>nedostaju znamenke u \x{} ili \o{} ili \N{U+}</translation>
     </message>
     <message>
         <source>syntax error or number too big in (?(VERSION condition</source>
-        <translation type="unfinished"></translation>
+        <translation>sintaksna greška ili broj je prevelik u (?(VERSION uvjetu</translation>
     </message>
     <message>
         <source>internal error: unknown opcode in auto_possessify()</source>
-        <translation type="unfinished"></translation>
+        <translation>unutarnja greška: nepoznati opkod u auto_possessify()</translation>
     </message>
     <message>
         <source>missing terminating delimiter for callout with string argument</source>
-        <translation type="unfinished"></translation>
+        <translation>nedostaje terminirajući delimiter za pozivanje s argumentom stringa</translation>
     </message>
     <message>
         <source>unrecognized string delimiter follows (?C</source>
-        <translation type="unfinished"></translation>
+        <translation>neprepoznat delimiter stringa sliejdi (?C</translation>
     </message>
     <message>
         <source>using \C is disabled by the application</source>
-        <translation type="unfinished"></translation>
+        <translation>korištenje \C je onemogućeno od aplikacije</translation>
     </message>
     <message>
         <source>(?| and/or (?J: or (?x: parentheses are too deeply nested</source>
-        <translation type="unfinished"></translation>
+        <translation>(?| i/ili (?J: ili (?x: zagrade su preduboko ugniježđene</translation>
     </message>
     <message>
         <source>using \C is disabled in this PCRE2 library</source>
-        <translation type="unfinished"></translation>
+        <translation>korištenje \C je onemogućeno u ovoj PCRE2 biblioteci</translation>
     </message>
     <message>
         <source>regular expression is too complicated</source>
-        <translation type="unfinished"></translation>
+        <translation>regularni izraz je prekompliciran</translation>
     </message>
     <message>
         <source>lookbehind assertion is too long</source>
-        <translation type="unfinished"></translation>
+        <translation>lookbehind assertion je prevelik</translation>
     </message>
     <message>
         <source>pattern string is longer than the limit set by the application</source>
-        <translation type="unfinished"></translation>
+        <translation>uzorak strina veći je od ograničenja postavljene od aplikacije</translation>
     </message>
     <message>
         <source>internal error: unknown code in parsed pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>unutarnja greška: nepoznat kod u parsiranom uzorku</translation>
     </message>
     <message>
         <source>internal error: bad code value in parsed_skip()</source>
-        <translation type="unfinished"></translation>
+        <translation>unutarnja greška: kriva vrijednost koda u parsed_skip()</translation>
     </message>
     <message>
         <source>PCRE2_EXTRA_ALLOW_SURROGATE_ESCAPES is not allowed in UTF-16 mode</source>
-        <translation type="unfinished"></translation>
+        <translation>PCRE2_EXTRA_ALLOW_SURROGATE_ESCAPES nije dozvoljen u UTF-16 načinu</translation>
     </message>
     <message>
         <source>invalid option bits with PCRE2_LITERAL</source>
-        <translation type="unfinished"></translation>
+        <translation>bitovi opcije nevažeći s PCRE2_LITERAL</translation>
     </message>
     <message>
         <source>\N{U+dddd} is supported only in Unicode (UTF) mode</source>
-        <translation type="unfinished"></translation>
+        <translation>\N{U+dddd} je podržan samo u Unicode (UTF) načinu</translation>
     </message>
     <message>
         <source>invalid hyphen in option setting</source>
-        <translation type="unfinished"></translation>
+        <translation>nevažeća spojnica u postavkama opcije</translation>
     </message>
     <message>
         <source>(*alpha_assertion) not recognized</source>
-        <translation type="unfinished"></translation>
+        <translation>(*alpha_assertion) nije prepoznat</translation>
     </message>
     <message>
         <source>script runs require Unicode support, which this version of PCRE2 does not have</source>
-        <translation type="unfinished"></translation>
+        <translation>pokretanje skripti zahtijeva podršku za Unicode, koju ova verzije PCRE2 nema</translation>
     </message>
     <message>
         <source>too many capturing groups (maximum 65535)</source>
-        <translation type="unfinished"></translation>
+        <translation>previše grupa za snimanje (najviše 65535)</translation>
     </message>
     <message>
         <source>atomic assertion expected after (?( or (?(?C)</source>
-        <translation type="unfinished"></translation>
+        <translation>atomično dodavanje očekivano nakon (?( ili (?(?C)</translation>
     </message>
     <message>
         <source>no match</source>
-        <translation type="unfinished"></translation>
+        <translation>nema para</translation>
     </message>
     <message>
         <source>partial match</source>
-        <translation type="unfinished"></translation>
+        <translation>djelomični par</translation>
     </message>
     <message>
         <source>UTF-8 error: 1 byte missing at end</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: 1 bajt nedostaje na kraju</translation>
     </message>
     <message>
         <source>UTF-8 error: 2 bytes missing at end</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: 2 bajta nedostaju na kraju</translation>
     </message>
     <message>
         <source>UTF-8 error: 3 bytes missing at end</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: 3 bajta nedostaju na kraju</translation>
     </message>
     <message>
         <source>UTF-8 error: 4 bytes missing at end</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: 4 bajta nedostaju na kraju</translation>
     </message>
     <message>
         <source>UTF-8 error: 5 bytes missing at end</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: 5 bajtova nedostaju na kraju</translation>
     </message>
     <message>
         <source>UTF-8 error: byte 2 top bits not 0x80</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška:gornji bitovi bajta 2 nisu 0x80</translation>
     </message>
     <message>
         <source>UTF-8 error: byte 3 top bits not 0x80</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška:gornji bitovi bajta 3 nisu 0x80</translation>
     </message>
     <message>
         <source>UTF-8 error: byte 4 top bits not 0x80</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška:gornji bitovi bajta 4 nisu 0x80</translation>
     </message>
     <message>
         <source>UTF-8 error: byte 5 top bits not 0x80</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška:gornji bitovi bajta 5 nisu 0x80</translation>
     </message>
     <message>
         <source>UTF-8 error: byte 6 top bits not 0x80</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška:gornji bitovi bajta 6 nisu 0x80</translation>
     </message>
     <message>
         <source>UTF-8 error: 5-byte character is not allowed (RFC 3629)</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-u greška: 5-bajtni znak nije podržan (RFC 3629)</translation>
     </message>
     <message>
         <source>UTF-8 error: 6-byte character is not allowed (RFC 3629)</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-u greška: 6-bajtni znak nije podržan (RFC 3629)</translation>
     </message>
     <message>
         <source>UTF-8 error: code points greater than 0x10ffff are not defined</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: točke koda veće od 0x10ffff nisu definirane</translation>
     </message>
     <message>
         <source>UTF-8 error: code points 0xd800-0xdfff are not defined</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: točke koda 0xd800-0xdfff nisu definirane</translation>
     </message>
     <message>
         <source>UTF-8 error: overlong 2-byte sequence</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: predugački 2-bajtni slijed</translation>
     </message>
     <message>
         <source>UTF-8 error: overlong 3-byte sequence</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: predugački 3-bajtni slijed</translation>
     </message>
     <message>
         <source>UTF-8 error: overlong 4-byte sequence</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: predugački 4-bajtni slijed</translation>
     </message>
     <message>
         <source>UTF-8 error: overlong 5-byte sequence</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: predugački 5-bajtni slijed</translation>
     </message>
     <message>
         <source>UTF-8 error: overlong 6-byte sequence</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: predugački 6-bajtni slijed</translation>
     </message>
     <message>
         <source>UTF-8 error: isolated byte with 0x80 bit set</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: izolirani bajt s bitom 0x80 postavljen</translation>
     </message>
     <message>
         <source>UTF-8 error: illegal byte (0xfe or 0xff)</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-8 greška: ilegalan bajt (0xfe ili 0xff)</translation>
     </message>
     <message>
         <source>UTF-16 error: missing low surrogate at end</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-16 greška: nedostaje niski surogat na kraju</translation>
     </message>
     <message>
         <source>UTF-16 error: invalid low surrogate</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-16 greška: nevažeći niski surogat</translation>
     </message>
     <message>
         <source>UTF-16 error: isolated low surrogate</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-16 greška: izolirani niski surogat</translation>
     </message>
     <message>
         <source>UTF-32 error: code points 0xd800-0xdfff are not defined</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-32 greška: točke koda 0xd800-0xdfff nisu definirane</translation>
     </message>
     <message>
         <source>UTF-32 error: code points greater than 0x10ffff are not defined</source>
-        <translation type="unfinished"></translation>
+        <translation>UTF-32 greška: točke koda veće od 0x10ffff nisu definirane</translation>
     </message>
     <message>
         <source>bad data value</source>
-        <translation type="unfinished"></translation>
+        <translation>loša vrijednost podatka</translation>
     </message>
     <message>
         <source>patterns do not all use the same character tables</source>
-        <translation type="unfinished"></translation>
+        <translation>uzorci ne koriste svi iste znakovne tablice</translation>
     </message>
     <message>
         <source>magic number missing</source>
-        <translation type="unfinished"></translation>
+        <translation>čarobni broj nedostaje</translation>
     </message>
     <message>
         <source>pattern compiled in wrong mode: 8/16/32-bit error</source>
-        <translation type="unfinished"></translation>
+        <translation>uzorak kompajliran u krivom načinu: 8/16/32-bitna greška</translation>
     </message>
     <message>
         <source>bad offset value</source>
-        <translation type="unfinished"></translation>
+        <translation>loša vrijednost pomaka</translation>
     </message>
     <message>
         <source>bad option value</source>
-        <translation type="unfinished"></translation>
+        <translation>loša vrijednost opcije</translation>
     </message>
     <message>
         <source>invalid replacement string</source>
-        <translation type="unfinished"></translation>
+        <translation>nevažeći zamjenski string</translation>
     </message>
     <message>
         <source>bad offset into UTF string</source>
-        <translation type="unfinished"></translation>
+        <translation>loši pomak u UTF stringu</translation>
     </message>
     <message>
         <source>callout error code</source>
-        <translation type="unfinished"></translation>
+        <translation>kod greške poziva</translation>
     </message>
     <message>
         <source>invalid data in workspace for DFA restart</source>
-        <translation type="unfinished"></translation>
+        <translation>nevažeći podaci u radnom okviru za DFA restart</translation>
     </message>
     <message>
         <source>too much recursion for DFA matching</source>
-        <translation type="unfinished"></translation>
+        <translation>previše rekurzije za slaganje s DFA</translation>
     </message>
     <message>
         <source>backreference condition or recursion test is not supported for DFA matching</source>
-        <translation type="unfinished"></translation>
+        <translation>uvjet backreference ili provjera rekurzije nije podržana za slaganje s DFA</translation>
     </message>
     <message>
         <source>function is not supported for DFA matching</source>
-        <translation type="unfinished"></translation>
+        <translation>funkcija nije podržana za slaganje s DFA</translation>
     </message>
     <message>
         <source>pattern contains an item that is not supported for DFA matching</source>
-        <translation type="unfinished"></translation>
+        <translation>uzorak sadržava stavku koju slaganje s DFA ne podržava</translation>
     </message>
     <message>
         <source>workspace size exceeded in DFA matching</source>
-        <translation type="unfinished"></translation>
+        <translation>veličina radnog okvira premašena u slaganju s DFA</translation>
     </message>
     <message>
         <source>internal error - pattern overwritten?</source>
-        <translation type="unfinished"></translation>
+        <translation>unutarnja greška - uzorak prebrisan?</translation>
     </message>
     <message>
         <source>bad JIT option</source>
-        <translation type="unfinished"></translation>
+        <translation>kriva JIT opcija</translation>
     </message>
     <message>
         <source>JIT stack limit reached</source>
-        <translation type="unfinished"></translation>
+        <translation>ograničenje JIT stoga dosegnuto</translation>
     </message>
     <message>
         <source>match limit exceeded</source>
-        <translation type="unfinished"></translation>
+        <translation>prekoračeno ograničenje slaganja</translation>
     </message>
     <message>
         <source>no more memory</source>
-        <translation type="unfinished"></translation>
+        <translation>nema više memorije</translation>
     </message>
     <message>
         <source>unknown substring</source>
-        <translation type="unfinished"></translation>
+        <translation>nepoznat podstring</translation>
     </message>
     <message>
         <source>non-unique substring name</source>
-        <translation type="unfinished"></translation>
+        <translation>ne-jedinstveni naziv podstringa</translation>
     </message>
     <message>
         <source>NULL argument passed</source>
-        <translation type="unfinished"></translation>
+        <translation>NULL argument predan</translation>
     </message>
     <message>
         <source>nested recursion at the same subject position</source>
-        <translation type="unfinished"></translation>
+        <translation>ugniježđena rekurzija u istoj poziciji subjekta</translation>
     </message>
     <message>
         <source>matching depth limit exceeded</source>
-        <translation type="unfinished"></translation>
+        <translation>prekoračeno ograničenje dubine</translation>
     </message>
     <message>
         <source>requested value is not available</source>
-        <translation type="unfinished"></translation>
+        <translation>tražena vrijednost nije dostupna</translation>
     </message>
     <message>
         <source>requested value is not set</source>
-        <translation type="unfinished"></translation>
+        <translation>tražena vrijednost nije postavljena</translation>
     </message>
     <message>
         <source>offset limit set without PCRE2_USE_OFFSET_LIMIT</source>
-        <translation type="unfinished"></translation>
+        <translation>ograničenje pomaka postavljena bez PCRE2_USE_OFFSET_LIMIT</translation>
     </message>
     <message>
         <source>bad escape sequence in replacement string</source>
-        <translation type="unfinished"></translation>
+        <translation>krivi escape slijed u zamjenskom stringu</translation>
     </message>
     <message>
         <source>expected closing curly bracket in replacement string</source>
-        <translation type="unfinished"></translation>
+        <translation>očekivana zatvarajuća vitičasta zagrada u zamjenskom stringu</translation>
     </message>
     <message>
         <source>bad substitution in replacement string</source>
-        <translation type="unfinished"></translation>
+        <translation>kriva zamjena u zamjenskom stringu</translation>
     </message>
     <message>
         <source>match with end before start or start moved backwards is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>par s krajem prije početka ili početak pomaknut iza nije podržan</translation>
     </message>
     <message>
         <source>too many replacements (more than INT_MAX)</source>
-        <translation type="unfinished"></translation>
+        <translation>previše zamjena (više od INT_MAX)</translation>
     </message>
     <message>
         <source>bad serialized data</source>
-        <translation type="unfinished"></translation>
+        <translation>krivo serijalizirani podaci</translation>
     </message>
     <message>
         <source>heap limit exceeded</source>
-        <translation type="unfinished"></translation>
+        <translation>dosegnuto ograničenje hrpe</translation>
     </message>
     <message>
         <source>invalid syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>nevažeća sintaksa</translation>
     </message>
     <message>
         <source>internal error - duplicate substitution match</source>
-        <translation type="unfinished"></translation>
+        <translation>unutarnja greška - duplicirano slaganje zamjene</translation>
     </message>
     <message>
         <source>PCRE2_MATCH_INVALID_UTF is not supported for DFA matching</source>
-        <translation type="unfinished"></translation>
+        <translation>PCRE2_MATCH_INVALID_UTF nije podržano za slaganje s DFA</translation>
     </message>
 </context>
 <context>
@@ -4986,7 +4986,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>QSaveFile cannot open &apos;%1&apos; without direct write fallback enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>QSaveFile ne može otvoriti &apos;%1&apos; bez izravnog write fallback omogućenog.</translation>
     </message>
     <message>
         <source>Writing canceled by application</source>
@@ -5052,7 +5052,7 @@ Isključite jednu od opcija.</translation>
     <name>QSctpSocket</name>
     <message>
         <source>The remote host closed the connection</source>
-        <translation type="unfinished">Udaljeni domaćin je zatvorio vezu</translation>
+        <translation>Udaljeni domaćin zatvorio je vezu</translation>
     </message>
 </context>
 <context>
@@ -5411,11 +5411,11 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>Launch (G)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokreni (G)</translation>
     </message>
     <message>
         <source>Launch (H)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokreni (H)</translation>
     </message>
     <message>
         <source>Monitor Brightness Up</source>
@@ -5523,7 +5523,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>Calendar</source>
-        <translation type="unfinished"></translation>
+        <translation>Kalendar</translation>
     </message>
     <message>
         <source>Clear</source>
@@ -5539,7 +5539,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>Adjust contrast</source>
-        <translation type="unfinished"></translation>
+        <translation>Prilagodi kontrast</translation>
     </message>
     <message>
         <source>Copy</source>
@@ -5595,7 +5595,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>Memo</source>
-        <translation type="unfinished"></translation>
+        <translation>Memo</translation>
     </message>
     <message>
         <source>Keyboard Menu</source>
@@ -5679,7 +5679,7 @@ Isključite jednu od opcija.</translation>
     </message>
     <message>
         <source>To-do list</source>
-        <translation type="unfinished"></translation>
+        <translation>To-do lista</translation>
     </message>
     <message>
         <source>Tools</source>
@@ -6574,17 +6574,17 @@ Role of an accessible object</extracomment>
     <message>
         <source>terminal</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>terminal</translation>
     </message>
     <message>
         <source>desktop</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>radna površina</translation>
     </message>
     <message>
         <source>notification</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>obavijest</translation>
     </message>
     <message>
         <source>unknown</source>
@@ -6596,22 +6596,22 @@ Role of an accessible object</extracomment>
     <name>QSslDiffieHellmanParameter</name>
     <message>
         <source>No error</source>
-        <translation type="unfinished">Nema greške</translation>
+        <translation>Nema greške</translation>
     </message>
     <message>
         <source>Invalid input data</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevažeći ulazni podaci</translation>
     </message>
     <message>
         <source>The given Diffie-Hellman parameters are deemed unsafe</source>
-        <translation type="unfinished"></translation>
+        <translation>Dani Diffie-Hellman parametri mogu se smatrati nesigurnima</translation>
     </message>
 </context>
 <context>
     <name>QSslSocket</name>
     <message>
         <source>Error when setting the OpenSSL configuration (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod postavljanja OpenSSL konfiguracije (%1)</translation>
     </message>
     <message>
         <source>Error when setting the elliptic curves (%1)</source>
@@ -6627,11 +6627,11 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Error while setting the minimal protocol version</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod postavljanja minimalne verzije protokola</translation>
     </message>
     <message>
         <source>Error while setting the maximum protocol version</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod postavljanja najveće verzije protokola</translation>
     </message>
     <message>
         <source>Invalid or empty cipher list (%1)</source>
@@ -6655,35 +6655,35 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Diffie-Hellman parameters are not valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Diffie-Hellman parametri nisu važeći</translation>
     </message>
     <message>
         <source>OpenSSL version with disabled elliptic curves</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenSSL verzija s onemogućenim eliptičnim krivuljama</translation>
     </message>
     <message>
         <source>Expecting QByteArray for %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Očekivan QByteArray za %1</translation>
     </message>
     <message>
         <source>An error occurred attempting to set %1 to %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Greška kod pokušaja postavljanja %1 na %2</translation>
     </message>
     <message>
         <source>Wrong value for %1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kriva vrijednost za %1 (%2)</translation>
     </message>
     <message>
         <source>Unrecognized command %1 = %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Neprepoznata naredba %1 = %2</translation>
     </message>
     <message>
         <source>SSL_CONF_finish() failed</source>
-        <translation type="unfinished"></translation>
+        <translation>SSL_CONF_finish() nije uspio</translation>
     </message>
     <message>
         <source>SSL_CONF_CTX_new() failed</source>
-        <translation type="unfinished"></translation>
+        <translation>SSL_CONF_CTX_new() nije uspio</translation>
     </message>
     <message>
         <source>No error</source>
@@ -6779,47 +6779,47 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>No OCSP status response found</source>
-        <translation type="unfinished"></translation>
+        <translation>Nije pronađen odgovor OCSP statusa</translation>
     </message>
     <message>
         <source>The OCSP status request had invalid syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>Upit OCSP statusa ima nevažeću sintaksu</translation>
     </message>
     <message>
         <source>OCSP response contains an unexpected number of SingleResponse structures</source>
-        <translation type="unfinished"></translation>
+        <translation>Odgovor OCSP sadržava neočekivani broj struktura SingleResponse</translation>
     </message>
     <message>
         <source>OCSP responder reached an inconsistent internal state</source>
-        <translation type="unfinished"></translation>
+        <translation>Odgovaratelj OCSP je došao do nekonzistentnog unutarnjeg stanja</translation>
     </message>
     <message>
         <source>OCSP responder was unable to return a status for the requested certificate</source>
-        <translation type="unfinished"></translation>
+        <translation>Odgovaratelj OCSP nije uspio vratiti status za traženi certifikat</translation>
     </message>
     <message>
         <source>The server requires the client to sign the OCSP request in order to construct a response</source>
-        <translation type="unfinished"></translation>
+        <translation>Server zahtijeva da klijent potpiše OCSP zahtjev da bi se konstruirao odgovor</translation>
     </message>
     <message>
         <source>The client is not authorized to request OCSP status from this server</source>
-        <translation type="unfinished"></translation>
+        <translation>Klijent nije ovlašten zatražiti OCSP status ovog servera</translation>
     </message>
     <message>
         <source>OCSP responder&apos;s identity cannot be verified</source>
-        <translation type="unfinished"></translation>
+        <translation>Identitet OCSP odgovaratelja ne može biti provjeren</translation>
     </message>
     <message>
         <source>The identity of a certificate in an OCSP response cannot be established</source>
-        <translation type="unfinished"></translation>
+        <translation>Identitet certifikata u OCSP odgovoru ne može biti uspostavljen</translation>
     </message>
     <message>
         <source>The certificate status response has expired</source>
-        <translation type="unfinished"></translation>
+        <translation>Odgovor statusa certifikata je istekao</translation>
     </message>
     <message>
         <source>The certificate&apos;s status is unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Status certifikata je nepoznat</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -6827,11 +6827,11 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>TLS initialization failed</source>
-        <translation type="unfinished"></translation>
+        <translation>TLS inicijalizacija nije uspjela</translation>
     </message>
     <message>
         <source>Attempted to use an unsupported protocol.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokušao koristiti nepodržan protokol.</translation>
     </message>
     <message>
         <source>The TLS/SSL connection has been closed</source>
@@ -6847,15 +6847,15 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Server-side QSslSocket does not support OCSP stapling</source>
-        <translation type="unfinished"></translation>
+        <translation>QSslSocket sa poslužiteljske strane ne podržava OCSP stapling</translation>
     </message>
     <message>
         <source>Failed to enable OCSP stapling</source>
-        <translation type="unfinished"></translation>
+        <translation>Nisam uspio omogućiti OCSP stapling</translation>
     </message>
     <message>
         <source>Client-side sockets do not send OCSP responses</source>
-        <translation type="unfinished"></translation>
+        <translation>Priključnice s klijentove strane ne šalju OCSP odgovore</translation>
     </message>
     <message>
         <source>Unable to init SSL Context: %1</source>
@@ -6879,143 +6879,143 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Failed to decode OCSP response</source>
-        <translation type="unfinished"></translation>
+        <translation>Nisam uspio dekodirati OCSp odgovor</translation>
     </message>
     <message>
         <source>Failed to extract basic OCSP response</source>
-        <translation type="unfinished"></translation>
+        <translation>Nisam uspio izvesti osnovni OCSP odgovor</translation>
     </message>
     <message>
         <source>No certificate verification store, cannot verify OCSP response</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne postoji pohrana certifikata, ne mogu provjeriti OCSP odgovor</translation>
     </message>
     <message>
         <source>Failed to decode a SingleResponse from OCSP status response</source>
-        <translation type="unfinished"></translation>
+        <translation>Nisam uspio dekodirati SingleResponse s odgovora OCSP statusa</translation>
     </message>
     <message>
         <source>Failed to extract &apos;this update time&apos; from the SingleResponse</source>
-        <translation type="unfinished"></translation>
+        <translation>Nisam uspio izvesti &apos;this update time&apos; s SingleResponse</translation>
     </message>
     <message>
         <source>Insufficient memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Nedostatna memorija</translation>
     </message>
     <message>
         <source>Internal error</source>
-        <translation type="unfinished"></translation>
+        <translation>Unutarnja greška</translation>
     </message>
     <message>
         <source>An internal handle was invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Unutarnje rukovanje nije uspjelo</translation>
     </message>
     <message>
         <source>An internal token was invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Unutarnji token je nevažeći</translation>
     </message>
     <message>
         <source>Access denied</source>
-        <translation type="unfinished"></translation>
+        <translation>Pristup odbijen</translation>
     </message>
     <message>
         <source>No authority could be contacted for authorization</source>
-        <translation type="unfinished"></translation>
+        <translation>Nijedan autoritet ne može biti kontaktiran za autorizaciju</translation>
     </message>
     <message>
         <source>No credentials</source>
-        <translation type="unfinished"></translation>
+        <translation>Nema vjerodajnica</translation>
     </message>
     <message>
         <source>The target is unknown or unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Cilj je nepoznat ili nedohvatljiv</translation>
     </message>
     <message>
         <source>An unsupported function was requested</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepodržana funkcija je zatražena</translation>
     </message>
     <message>
         <source>The hostname provided does not match the one received from the peer</source>
-        <translation type="unfinished"></translation>
+        <translation>Hostname se ne slaže s onim dobivenim od peera</translation>
     </message>
     <message>
         <source>No common protocol exists between the client and the server</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne postoji zajednički protokol između klijenta i poslužitelja</translation>
     </message>
     <message>
         <source>Unexpected or badly-formatted message received</source>
-        <translation type="unfinished"></translation>
+        <translation>Neočekivan ili krivo-formatirana poruka dobivena</translation>
     </message>
     <message>
         <source>The data could not be encrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>Podaci nisu mogli biti šifrirani</translation>
     </message>
     <message>
         <source>No cipher suites in common</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne postoje zajedničke šifre</translation>
     </message>
     <message>
         <source>The credentials were not recognized / Invalid argument</source>
-        <translation type="unfinished"></translation>
+        <translation>Vjerodajnice nisu prepoznate / Nevažeći argument</translation>
     </message>
     <message>
         <source>The message was tampered with, damaged or out of sequence.</source>
-        <translation type="unfinished"></translation>
+        <translation>S porukom se miješalo, oštećena ili izvan slijeda.</translation>
     </message>
     <message>
         <source>A message was received out of sequence.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dobivena je poruka izvan slijeda.</translation>
     </message>
     <message>
         <source>Unknown error occurred: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepoznata greška: %1</translation>
     </message>
     <message>
         <source>Invalid protocol chosen</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevažeći protokol odabran</translation>
     </message>
     <message>
         <source>The certificate provided cannot be used for a client.</source>
-        <translation type="unfinished"></translation>
+        <translation>Certifikat ne može biti korišten za klijenta.</translation>
     </message>
     <message>
         <source>The certificate provided cannot be used for a server.</source>
-        <translation type="unfinished"></translation>
+        <translation>Certifikat ne može biti korišten za poslužitelja.</translation>
     </message>
     <message>
         <source>Server did not accept any certificate we could present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Poslužitelj nije prihvatio nijedan certifikat koji smo predstavili.</translation>
     </message>
     <message>
         <source>Algorithm mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>Neusklađenost algoritma</translation>
     </message>
     <message>
         <source>Handshake failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Rukovanje nije uspjelo: %1</translation>
     </message>
     <message>
         <source>Failed to query the TLS context: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nisam uspio dohvatiti TLS kontekst: %1</translation>
     </message>
     <message>
         <source>Did not get the required attributes for the connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nisam uspio dobiti tražene atribute za vezu.</translation>
     </message>
     <message>
         <source>Unwanted protocol was negotiated</source>
-        <translation type="unfinished"></translation>
+        <translation>Neželjeni protokol je pregovoren</translation>
     </message>
     <message>
         <source>Renegotiation was unsuccessful: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ponovno pregovaranje nije uspjelo: %1</translation>
     </message>
     <message>
         <source>Schannel failed to encrypt data: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Schannel nije uspio šifrirati podatke: %1</translation>
     </message>
     <message>
         <source>Cannot provide a certificate with no key</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne mogu pružiti certifikat bez ključa</translation>
     </message>
 </context>
 <context>
@@ -7109,7 +7109,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Child mode of state machine &apos;%1&apos; is not &apos;ExclusiveStates&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mod dijeteta stanja stroja &apos;%1&apos; nije &apos;ExclusiveStates&apos;.</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -7172,11 +7172,11 @@ Role of an accessible object</extracomment>
     <name>QUdpSocket</name>
     <message>
         <source>Unable to send a datagram</source>
-        <translation type="unfinished"></translation>
+        <translation>Nisam uspio poslati datagram</translation>
     </message>
     <message>
         <source>No datagram available for reading</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne postoje datagrami za čitanje</translation>
     </message>
 </context>
 <context>
@@ -7346,9 +7346,9 @@ Role of an accessible object</extracomment>
         <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
 
 The minimum Direct2D version required is %1. The Direct2D version on this system is %2.</source>
-        <translation type="unfinished">Qt ne može učitati direct2d platform dodatak jer Direct2D verzija na ovom sustavu je prestara. Minimalni preduvjet za ovaj platform dodatak je Windows 7 SP1 s Platform Update-om.
+        <translation>Qt ne može učitati direct2d platform dodatak jer je Direct2D verzija na ovom sustavu prestara. Minimalni preduvjet za ovaj platform dodatak je Windows 7 SP1 s Platform Update-om.
 
-Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustavu je %5.%6.%7.%8. {2d?} {2D?} {7 ?} {1 ?} {2D?} {1.?} {2D?} {2.?}</translation>
+Minimalna potrebna Direct2D verzija je %1. Direct2D verzija na ovom sustavu je %2.</translation>
     </message>
     <message>
         <source>Cannot load direct2d platform plugin</source>
@@ -7575,33 +7575,33 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
         <source>&apos;%1&apos;</source>
         <comment>expected</comment>
         <extracomment>&apos;&lt;first option&gt;&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos;</translation>
     </message>
     <message>
         <source>%1 or &apos;%2&apos;</source>
         <comment>expected</comment>
         <extracomment>&lt;first option&gt;, &apos;&lt;second option&gt;&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ili &apos;%2&apos;</translation>
     </message>
     <message>
         <source>%1, &apos;%2&apos;</source>
         <comment>expected</comment>
         <extracomment>&lt;options so far&gt;, &apos;&lt;next option&gt;&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1, &apos;%2&apos;</translation>
     </message>
     <message>
         <source>%1, or &apos;%2&apos;</source>
         <comment>expected</comment>
         <extracomment>&lt;options so far&gt;, or &apos;&lt;final option&gt;&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ili &apos;%2&apos;</translation>
     </message>
     <message>
         <source>Expected %1, but got &apos;%2&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Očekivan %1, ali dobio &apos;%2&apos;.</translation>
     </message>
     <message>
         <source>Unexpected &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Neočekivan &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Expected character data.</source>
@@ -7609,11 +7609,11 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
     </message>
     <message>
         <source>Self-referencing entity detected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Samo-referencirajući entitet detektiran.</translation>
     </message>
     <message>
         <source>Entity expands to more characters than the entity expansion limit.</source>
-        <translation type="unfinished"></translation>
+        <translation>Entitet se proširuje na više znakova nego što je ograničenje.</translation>
     </message>
     <message>
         <source>Start tag expected.</source>
