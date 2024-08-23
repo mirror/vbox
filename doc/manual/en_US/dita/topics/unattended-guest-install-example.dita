@@ -107,8 +107,6 @@
                         <p>The VM starts in headless mode, which means that the <ph
             conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window does not open. </p>
                      </li>
-                     <li>(Optional) Update the guest OS to use the latest Oracle Linux packages. <p>On the guest VM, run
-          the following command: </p><pre xml:space="preserve"># yum update</pre></li>
                   </ol>
                </body>              
             </topic>

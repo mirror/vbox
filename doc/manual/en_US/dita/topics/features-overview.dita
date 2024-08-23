@@ -175,14 +175,8 @@
           features: </p>
         <ul>
           <li>
-            <p><b outputclass="bold">Extensible RDP
-              authentication.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> already supports
-              Winlogon on Windows and PAM on Linux for RDP
-              authentication. In addition, it includes an easy-to-use
-              SDK which enables you to create arbitrary interfaces for
-              other methods of authentication. See
-              <xref href="vbox-auth.dita">RDP Authentication</xref>.
-            </p>
+            <p><b outputclass="bold">Extensible RDP authentication.</b>
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> already supports Winlogon on Windows and PAM on Linux and Oracle Solaris for RDP authentication. In addition, it includes an easy-to-use SDK which enables you to create arbitrary interfaces for other methods of authentication. See <xref href="vbox-auth.dita">RDP Authentication</xref>. </p>
           </li>
           <li>
             <p><b outputclass="bold">USB over RDP.</b> Using RDP

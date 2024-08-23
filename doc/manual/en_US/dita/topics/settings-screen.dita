@@ -10,12 +10,7 @@
           virtual graphics card available to the guest, in megabytes. As with the main memory, the
           specified amount will be allocated from the host's resident memory. Based on the amount of
           video memory, higher resolutions and color depths may be available. </p>
-        <p><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> will show a warning if the amount of video memory is too
-          small to be able to switch the VM into full screen mode. The minimum value depends on the number of virtual
-          monitors, the screen resolution and the color depth of the host display as well as on the use of <i>3D
-            acceleration</i> and <i>2D video acceleration</i>. A rough estimate is (<i>color depth</i> / 8) x
-            <i>vertical pixels</i> x <i>horizontal pixels</i> x <i>number of screens</i> = <i>number of bytes</i>. Extra
-          memory may be required if display acceleration is used. </p>
+        <p><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> will show a warning if the amount of video memory is too small to be able to switch the VM into full screen mode. The minimum value depends on the number of virtual monitors, the screen resolution and the color depth of the host display as well as on the use of <i>3D acceleration</i>. A rough estimate is (<i>color depth</i> / 8) x <i>vertical pixels</i> x <i>horizontal pixels</i> x <i>number of screens</i> = <i>number of bytes</i>. Extra memory may be required if display acceleration is used. </p>
       </li>
       <li>
         <p><b outputclass="bold">Monitor Count:</b> With this

@@ -4,8 +4,7 @@
   <title>Recording Tab</title>
   
   <body>
-    <p>On the <b outputclass="bold">Recording</b> tab you can enable video and audio recording for a virtual machine and
-      change related settings. Note that these features can be enabled and disabled while a VM is running. </p>
+    <p>On the <b outputclass="bold">Recording</b> tab you can enable video and audio recording for a virtual machine and change related settings. Note that these features can be enabled and disabled while a VM is running. Settings apply to all selected screens.</p>
     <ul>
       <li>
         <p><b outputclass="bold">Enable Recording:</b> Select

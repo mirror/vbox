@@ -26,8 +26,8 @@
             <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will only ever copy clipboard data in one
             direction.
           </p>
-        <p>Clipboard sharing requires that the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions be
-          installed. In such a case, this setting has no effect. See <xref href="guestadditions.dita#guestadditions"/>. </p>
+        <p>Clipboard sharing requires the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
+          <xref href="guestadditions.dita#guestadditions"/>.</p>
         <p>For security reasons, the shared clipboard is disabled by default. This setting can be changed at any time
           using the <b outputclass="bold">Shared Clipboard</b> menu item in the <b outputclass="bold">Devices</b> menu
           of the virtual machine. </p>

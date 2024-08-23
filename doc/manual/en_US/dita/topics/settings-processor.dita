@@ -36,10 +36,7 @@
           </p>
       </li>
       <li>
-        <p><b outputclass="bold">Enable PAE/NX:</b> Determines
-            whether the PAE and NX capabilities of the host CPU will be
-            exposed to the virtual machine.
-          </p>
+        <p><b outputclass="bold">Enable PAE/NX (Can't be changed on VMs with an Arm architecture):</b> Determines whether the PAE and NX capabilities of the host CPU will be exposed to the virtual machine. </p>
         <p>
             PAE stands for Physical Address Extension. Normally, if
             enabled and supported by the OS, then even a 32-bit x86 CPU
@@ -51,10 +48,7 @@
           </p>
       </li>
       <li>
-        <p><b outputclass="bold">Enable Nested VT-x/AMD-V</b>:
-            Enables nested virtualization, with passthrough of hardware
-            virtualization functions to the guest VM.
-          </p>
+        <p><b outputclass="bold">Enable Nested VT-x/AMD-V (Can't be changed on VMs with an Arm architecture)</b>: Enables nested virtualization, with passthrough of hardware virtualization functions to the guest VM. </p>
       </li>
     </ul>
     <p>With virtual machines running modern server OSes, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also

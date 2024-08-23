@@ -35,6 +35,7 @@
         </p>
       </li>
     </ul>
+    <p>VMs with an Arm architecture have VirtIO SCSI only.</p>
     <p>If you created your VM with an older version of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, the
       default storage layout may differ. You might then only have an IDE controller to which both the CD/DVD drive and
       the hard disks have been attached. This might also apply if you selected an older OS type when you created the VM.

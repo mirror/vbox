@@ -4,37 +4,21 @@
   <title>Creating a Virtual Machine</title>
   
   <body>
-    <p>In the VirtualBox Manager window, click <b outputclass="bold">New</b>. The <b
-        outputclass="bold">Create Virtual Machine</b> wizard is shown, to guide you through the
-      required steps for setting up a new virtual machine (VM). </p>
+    <p>In the VirtualBox Manager window, click <b outputclass="bold">New</b>. The <b outputclass="bold">Create Virtual Machine</b> workflow is shown, to guide you through the required steps for setting up a new virtual machine (VM). </p>
     <p>The steps are:<ul id="ul_yt4_cjt_pbc">
         <li><xref href="create-vm-wizard-name-os.dita"/></li>
         <li><xref href="create-vm-wizard-unattended-install.dita"/></li>
         <li><xref href="create-vm-wizard-hardware.dita"/></li>
         <li><xref href="create-vm-wizard-virtual-hard-disk.dita"/></li>
       </ul></p>
-    <p>If you don't see the wizard, change the experience level to <b>Basic</b>. See <xref
-        href="ui-experience-level.dita"/>.</p>
-    <p>Once created, the virtual machine is displayed in the machine list on the left side of the
-        <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window, with the name that you entered on
-      the first page of the wizard.</p>
+    <p>The exact settings on the workflow pages depend on the architecture of the host platform.</p>
+    <p>If you don't see the workflow, change the experience level to <b>Basic</b>. See <xref href="ui-experience-level.dita"/>.</p>
+    <p>Once created, the virtual machine is displayed in the machine list on the left side of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window, with the name that you entered on the first page of the workflow.</p>
     <p>You can change the settings later, after you have created the VM, using the Machine
       Settings.</p>
     <p>You must supply an operating system image, in ISO format, for the operating system you intend to install on the
       VM. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> does not supply the OS or any license required to use
       it. </p>
     <p><!--7.1: Note added re platforms and paragraph re ISO requirement. Reworded when removing screenshots. Subpages also updated.--></p>
-      <note>
-      <p>The settings on the wizard pages may vary depending on the architecture of the host
-        platform, as follows:</p>
-      <ul>
-        <li>
-          <p><b>x86 host platforms.</b> This includes Windows, macOS, and Linux platforms.</p>
-        </li>
-        <li>
-          <p><b>Arm host platforms.</b> This includes macOS.</p>
-        </li>
-      </ul>
-    </note>
   </body>
 </topic>

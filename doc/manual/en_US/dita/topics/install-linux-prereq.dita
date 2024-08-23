@@ -10,10 +10,10 @@
       systems will do this for you automatically when you install <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
     <ul>
       <li>
-        <p>Qt 5.3.2 or later. Qt 5.6.2 or later is recommended. </p>
+        <p>Qt 6.5.3 or later.</p>
       </li>
       <li>
-        <p>SDL 1.2.7 or later. This graphics library is typically called <filepath>libsdl</filepath> or similar. </p>
+        <p>SDL 2.0 or later. This graphics library is typically called <filepath>libsdl2</filepath> or similar. </p>
       </li>
     </ul>
     <note>

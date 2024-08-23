@@ -35,27 +35,10 @@
             href="vboxmanage-modifyvm.dita"/>. </p>
       </li>
       <li>
-        <p><b outputclass="bold">Chipset:</b> You can select
-            which chipset will be presented to the virtual machine.
-            PIIX3 is the default chipset for most guests. For some guest
-            OSes such as Mac OS X, the PIIX3 chipset is not well
-            supported. As a result, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports an emulation
-            of the ICH9 chipset, which supports PCI express, three PCI
-            buses, PCI-to-PCI bridges and Message Signaled Interrupts
-            (MSI). This enables modern OSes to address more PCI devices
-            and no longer requires IRQ sharing. Using the ICH9 chipset
-            it is also possible to configure up to 36 network cards,
-            compared to a maximum of eight network adapters with PIIX3.
-            Note that ICH9 support is experimental and not recommended
-            for guest OSes which do not require it.
-          </p>
-        <!-- 7.1: Any chipset options for Arm?-->
+        <p><b outputclass="bold">Chipset (Can't be changed on VMs with an Arm architecture):</b> You can select which chipset will be presented to the virtual machine. PIIX3 is the default chipset for most guests. For some guest OSes such as Mac OS X, the PIIX3 chipset is not well supported. As a result, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports an emulation of the ICH9 chipset, which supports PCI express, three PCI buses, PCI-to-PCI bridges and Message Signaled Interrupts (MSI). This enables modern OSes to address more PCI devices and no longer requires IRQ sharing. Using the ICH9 chipset it is also possible to configure up to 36 network cards, compared to a maximum of eight network adapters with PIIX3. Note that ICH9 support is experimental and not recommended for guest OSes which do not require it. </p>
       </li>
       <li>
-        <p><b outputclass="bold">TPM:</b> Enables support for a
-            Trusted Platform Module (TPM) security processor. Choose
-            from the supported TPM versions.
-          </p>
+        <p><b outputclass="bold">TPM (Can't be changed on VMs with an Arm architecture):</b> Enables support for a Trusted Platform Module (TPM) security processor. Choose from the supported TPM versions. </p>
       </li>
       <li>
         <p><b outputclass="bold">Pointing Device:</b> The
@@ -75,13 +58,7 @@
           tedious even if Guest Additions are not installed. </p>
       </li>
       <li>
-        <p><b outputclass="bold">Enable I/O APIC:</b> Advanced
-            Programmable Interrupt Controllers (APICs) are an x86
-            hardware feature that have replaced Programmable Interrupt
-            Controllers (PICs). With an I/O APIC, OSes can use more than
-            16 interrupt requests (IRQs) and therefore avoid IRQ sharing
-            for improved reliability.
-          </p>
+        <p><b outputclass="bold">Enable I/O APIC (Can't be changed on VMs with an Arm architecture):</b> Advanced Programmable Interrupt Controllers (APICs) are an x86 hardware feature that have replaced Programmable Interrupt Controllers (PICs). With an I/O APIC, OSes can use more than 16 interrupt requests (IRQs) and therefore avoid IRQ sharing for improved reliability. </p>
         <note>
           <p>Enabling the I/O APIC is <i>required</i>, especially for 64-bit Windows guest OSes. It is also required if
             you want to use more than one virtual CPU in a virtual machine. </p>
@@ -105,11 +82,7 @@
           </p>
       </li>
       <li>
-        <p><b outputclass="bold">Enable EFI:</b> Enables
-            Extensible Firmware Interface (EFI), which replaces the
-            legacy BIOS and may be useful for certain advanced use
-            cases. See <xref href="efi.dita#efi"/>.
-          </p>
+        <p><b outputclass="bold">Enable EFI (Can't be changed on VMs with an Arm architecture):</b> Enables Extensible Firmware Interface (EFI), which replaces the legacy BIOS and may be useful for certain advanced use cases. See <xref href="efi.dita#efi"/>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Enable Secure Boot:</b> Enables

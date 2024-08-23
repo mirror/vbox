@@ -4,8 +4,7 @@
   <title>Serial Ports</title>
   
   <body>
-    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports the use of virtual serial ports in a virtual
-      machine. </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports the use of virtual serial ports in a virtual machine with an x86 architecture.  Serial ports are not available on Arm VMs.</p>
     <p>Ever since the original IBM PC, personal computers have been equipped with one or two serial ports, also called
       COM ports by DOS and Windows. Serial ports were commonly used with modems, and some computer mice used to be
       connected to serial ports before USB became commonplace. </p>
