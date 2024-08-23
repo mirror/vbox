@@ -48,36 +48,58 @@ RT_C_DECLS_BEGIN
 
 /** @addtogroup grp_dis   VBox Disassembler
  * @{ */
+/**
+ * GPR definition
+ */
+typedef struct
+{
+    /** Flag whether this is a 32-bit or 64-bit register. */
+    bool    f32Bit : 1;
+    /** The register index. */
+    uint8_t idGpr  : 7;
+} DISOPPARAMARMV8REG;
+AssertCompileSize(DISOPPARAMARMV8REG, sizeof(uint8_t));
+/** Pointer to a disassembler GPR. */
+typedef DISOPPARAMARMV8REG *PDISOPPARAMARMV8REG;
+/** Pointer to a const disasssembler GPR. */
+typedef const DISOPPARAMARMV8REG *PCDISOPPARAMARMV8REG;
+
 
 /**
  * Opcode parameter (operand) details.
  */
 typedef struct
 {
-    /** Parameter type. */
-    DISARMV8OPPARM      enmType;
+    /** Parameter type (Actually DISARMV8OPPARM). */
+    uint8_t                         enmType;
+    /** Any extension applied (DISARMV8OPPARMEXTEND). */
+    uint8_t                         enmExtend;
     /** The register operand. */
     union
     {
         /** General register index (DISGREG_XXX), applicable if DISUSE_REG_GEN32
          * or DISUSE_REG_GEN64 is set in fUse. */
-        uint8_t             idxGenReg;
+        DISOPPARAMARMV8REG          Gpr;
         /** IPRT System register encoding. */
-        uint32_t            idSysReg;
-        /** Conditional parameter (not a register I know but this saves us struct size and
-         *  and these never occur at the same time, might get renamed if everything is done). */
-        DISARMV8INSTRCOND   enmCond;
+        uint16_t                    idSysReg;
+        /**
+         *  Conditional parameter (not a register I know but this saves us struct size and
+         *  and these never occur at the same time, might get renamed if everything is done).
+         *
+         *  DISARMV8INSTRCOND
+         */
+        uint8_t                     enmCond;
     } Reg;
-    /** Any shift applied. */
-    DISARMV8OPPARMSHIFT enmShift;
+    /** Register holding the offset. Applicable if DISUSE_INDEX is set in fUse. */
+    DISOPPARAMARMV8REG              GprIndex;
     /** Parameter size. */
-    uint8_t             cb;
+    uint8_t                         cb;
     union
     {
         /** Offset from the base register. */
-        int16_t         offBase;
-        /** Amount of bits to shift. */
-        uint8_t         cShift;
+        int16_t                     offBase;
+        /** Amount of bits to extend. */
+        uint8_t                     cExtend;
     } u;
 } DIS_OP_PARAM_ARMV8_T;
 AssertCompile(sizeof(DIS_OP_PARAM_ARMV8_T) <= 16);
@@ -85,10 +107,6 @@ AssertCompile(sizeof(DIS_OP_PARAM_ARMV8_T) <= 16);
 typedef DIS_OP_PARAM_ARMV8_T *PDIS_OP_PARAM_ARMV8_T;
 /** Pointer to opcode parameter. */
 typedef const DIS_OP_PARAM_ARMV8_T *PCDIS_OP_PARAM_ARMV8_T;
-
-
-/** Pointer to a constant instruction class descriptor. */
-typedef const struct DISARMV8INSNCLASS *PCDISARMV8INSNCLASS;
 
 
 /**

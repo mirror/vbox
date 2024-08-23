@@ -305,36 +305,22 @@ static const struct
  * @param   pParam      The parameter.
  * @param   pcchReg     Where to store the length of the name.
  */
-static const char *disasmFormatArmV8Reg(PCDISSTATE pDis, PCDISOPPARAM pParam, size_t *pcchReg)
+DECLINLINE(const char *) disasmFormatArmV8Reg(PCDISSTATE pDis, PCDISOPPARAMARMV8REG pReg, size_t *pcchReg)
 {
     RT_NOREF_PV(pDis);
 
-    switch (pParam->fUse & (  DISUSE_REG_GEN8 | DISUSE_REG_GEN16 | DISUSE_REG_GEN32 | DISUSE_REG_GEN64
-                            | DISUSE_REG_FP   | DISUSE_REG_MMX   | DISUSE_REG_XMM   | DISUSE_REG_YMM
-                            | DISUSE_REG_CR   | DISUSE_REG_DBG   | DISUSE_REG_SEG   | DISUSE_REG_TEST))
-
+    if (pReg->f32Bit)
     {
-        case DISUSE_REG_GEN32:
-        {
-            Assert(pParam->armv8.Reg.idxGenReg < RT_ELEMENTS(g_aszArmV8RegGen32));
-            const char *psz = g_aszArmV8RegGen32[pParam->armv8.Reg.idxGenReg];
-            *pcchReg = 2 + !!psz[2];
-            return psz;
-        }
-
-        case DISUSE_REG_GEN64:
-        {
-            Assert(pParam->armv8.Reg.idxGenReg < RT_ELEMENTS(g_aszArmV8RegGen64));
-            const char *psz = g_aszArmV8RegGen64[pParam->armv8.Reg.idxGenReg];
-            *pcchReg = 2 + !!psz[2];
-            return psz;
-        }
-
-        default:
-            AssertMsgFailed(("%#x\n", pParam->fUse));
-            *pcchReg = 3;
-            return "r??";
+        Assert(pReg->idGpr < RT_ELEMENTS(g_aszArmV8RegGen32));
+        const char *psz = g_aszArmV8RegGen32[pReg->idGpr];
+        *pcchReg = 2 + !!psz[2];
+        return psz;
     }
+
+    Assert(pReg->idGpr < RT_ELEMENTS(g_aszArmV8RegGen64));
+    const char *psz = g_aszArmV8RegGen64[pReg->idGpr];
+    *pcchReg = 2 + !!psz[2];
+    return psz;
 }
 
 
@@ -698,7 +684,7 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     Assert(!(pParam->fUse & (DISUSE_DISPLACEMENT8 | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT64 | DISUSE_RIPDISPLACEMENT32)));
 
                     size_t cchReg;
-                    const char *pszReg = disasmFormatArmV8Reg(pDis, pParam, &cchReg);
+                    const char *pszReg = disasmFormatArmV8Reg(pDis, &pParam->armv8.Reg.Gpr, &cchReg);
                     PUT_STR(pszReg, cchReg);
                     break;
                 }
@@ -717,13 +703,42 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     PUT_C('[');
 
                     size_t cchReg;
-                    const char *pszReg = disasmFormatArmV8Reg(pDis, pParam, &cchReg);
+                    const char *pszReg = disasmFormatArmV8Reg(pDis, &pParam->armv8.Reg.Gpr, &cchReg);
                     PUT_STR(pszReg, cchReg);
 
-                    if (pParam->armv8.u.offBase)
+                    if (pParam->fUse & DISUSE_INDEX)
+                    {
+                        PUT_SZ(", ");
+
+                        pszReg = disasmFormatArmV8Reg(pDis, &pParam->armv8.GprIndex, &cchReg);
+                        PUT_STR(pszReg, cchReg);
+                    }
+                    else if (pParam->armv8.u.offBase)
                     {
                         PUT_SZ(", #");
                         PUT_NUM_S16(pParam->armv8.u.offBase);
+                    }
+
+                    if (pParam->armv8.enmExtend != kDisArmv8OpParmExtendNone)
+                    {
+                        PUT_SZ(", ");
+                        switch (pParam->armv8.enmExtend)
+                        {
+                            case kDisArmv8OpParmExtendUxtX: /* UXTX is same as LSL which is preferred by most disassemblers/assemblers. */
+                            case kDisArmv8OpParmExtendLsl:
+                                PUT_SZ("LSL #");
+                                break;
+                            case kDisArmv8OpParmExtendUxtB: PUT_SZ("UXTB #"); break;
+                            case kDisArmv8OpParmExtendUxtH: PUT_SZ("UXTH #"); break;
+                            case kDisArmv8OpParmExtendUxtW: PUT_SZ("UXTW #"); break;
+                            case kDisArmv8OpParmExtendSxtB: PUT_SZ("SXTB #"); break;
+                            case kDisArmv8OpParmExtendSxtH: PUT_SZ("SXTH #"); break;
+                            case kDisArmv8OpParmExtendSxtW: PUT_SZ("SXTW #"); break;
+                            case kDisArmv8OpParmExtendSxtX: PUT_SZ("SXTX #"); break;
+                            default:
+                                AssertFailed();
+                        }
+                        PUT_NUM_8(pParam->armv8.u.cExtend);
                     }
 
                     PUT_C(']');
@@ -739,29 +754,30 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     AssertFailed();
             }
 
-            if (pParam->armv8.enmShift != kDisArmv8OpParmShiftNone)
+            if (   pParam->armv8.enmType != kDisArmv8OpParmAddrInGpr
+                && pParam->armv8.enmExtend != kDisArmv8OpParmExtendNone)
             {
                 Assert(   pParam->armv8.enmType == kDisArmv8OpParmImm
                        || pParam->armv8.enmType == kDisArmv8OpParmGpr);
                 PUT_SZ(", ");
-                switch (pParam->armv8.enmShift)
+                switch (pParam->armv8.enmExtend)
                 {
-                    case kDisArmv8OpParmShiftLeft:
+                    case kDisArmv8OpParmExtendLsl:
                         PUT_SZ("LSL #");
                         break;
-                    case kDisArmv8OpParmShiftRight:
+                    case kDisArmv8OpParmExtendLsr:
                         PUT_SZ("LSR #");
                         break;
-                    case kDisArmv8OpParmShiftArithRight:
+                    case kDisArmv8OpParmExtendAsr:
                         PUT_SZ("ASR #");
                         break;
-                    case kDisArmv8OpParmShiftRotate:
+                    case kDisArmv8OpParmExtendRor:
                         PUT_SZ("ROR #");
                         break;
                     default:
                         AssertFailed();
                 }
-                PUT_NUM_8(pParam->armv8.u.cShift);
+                PUT_NUM_8(pParam->armv8.u.cExtend);
             }
         }
     }

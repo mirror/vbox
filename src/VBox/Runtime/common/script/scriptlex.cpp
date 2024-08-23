@@ -912,12 +912,13 @@ RTDECL(int) RTScriptLexScanNumber(RTSCRIPTLEX hScriptLex, uint8_t uBase, bool fA
     if (ch == '0')
     {
         /* Some hex prefix? */
-        if (RTScriptLexPeekCh(hScriptLex, 1) == 'x')
+        char chNext = RTScriptLexPeekCh(hScriptLex, 1);
+        if (chNext == 'x')
         {
             uBase = 16;
             RTScriptLexConsumeCh(hScriptLex);
         }
-        else /* Octal stuff. */
+        else if (chNext >= '0' && chNext <= '9') /* Octal stuff. */
             AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 
         ch = RTScriptLexConsumeCh(hScriptLex);

@@ -581,21 +581,30 @@ typedef enum DISARMV8OPPARM
 
 
 /**
- * Shift types.
+ * Extend types.
  */
-typedef enum DISARMV8OPPARMSHIFT
+typedef enum DISARMV8OPPARMEXTEND
 {
     /** No shift applied. */
-    kDisArmv8OpParmShiftNone = 0,
+    kDisArmv8OpParmExtendNone = 0,
     /** Left shift applied. */
-    kDisArmv8OpParmShiftLeft,
+    kDisArmv8OpParmExtendLsl,
     /** Right shift applied. */
-    kDisArmv8OpParmShiftRight,
+    kDisArmv8OpParmExtendLsr,
     /** Arithmetic right shift applied. */
-    kDisArmv8OpParmShiftArithRight,
+    kDisArmv8OpParmExtendAsr,
     /** Rotation applied. */
-    kDisArmv8OpParmShiftRotate
-} DISARMV8OPPARMSHIFT;
+    kDisArmv8OpParmExtendRor,
+    /** @todo Document. */
+    kDisArmv8OpParmExtendUxtB,
+    kDisArmv8OpParmExtendUxtH,
+    kDisArmv8OpParmExtendUxtW,
+    kDisArmv8OpParmExtendUxtX,
+    kDisArmv8OpParmExtendSxtB,
+    kDisArmv8OpParmExtendSxtH,
+    kDisArmv8OpParmExtendSxtW,
+    kDisArmv8OpParmExtendSxtX,
+} DISARMV8OPPARMEXTEND;
 /** @} */
 
 /** @} */

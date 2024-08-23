@@ -419,6 +419,58 @@ _TestProcA64:
         ldp x0, x1, [x28, #-512]
         ldp x0, x1, [x28, #504]
 
+        ldr  x0, [x1, x2]
+        ldr  w0, [x1, x2]
+        ldr  x0, [x1, x2, SXTX #0]
+        ldr  x0, [x1, x2, LSL  #3]  ; UXTX
+        ldr  x0, [x1, x2, SXTX #3]
+        ldr  w0, [x1, w2, UXTW #0]
+        ldr  w0, [x1, w2, SXTW #0]
+        ldr  w0, [x1, w2, UXTW #2]
+        ldr  w0, [x1, w2, SXTW #2]
+
+        ldrb w0, [x1, x2]
+        ldrb w0, [x1, x2, LSL  #0]  ; UXTX
+        ldrb w0, [x1, x2, SXTX #0]
+        ldrb w0, [x1, w2, UXTW #0]
+        ldrb w0, [x1, w2, SXTW #0]
+
+        ldrsb w0, [x1, x2]
+        ldrsb w0, [x1, x2, LSL  #0] ; UXTX
+        ldrsb w0, [x1, x2, SXTX #0]
+        ldrsb w0, [x1, w2, UXTW #0]
+        ldrsb w0, [x1, w2, SXTW #0]
+
+        ldrh w0, [x1, x2]
+        ;ldrh w0, [x1, x2, LSL  #0]  ; UXTX
+        ldrh w0, [x1, x2, SXTX #0]
+        ldrh w0, [x1, x2, LSL  #1]   ; UXTX
+        ldrh w0, [x1, x2, SXTX #1]
+        ldrh w0, [x1, w2, UXTW #0]
+        ldrh w0, [x1, w2, SXTW #0]
+        ldrh w0, [x1, w2, UXTW #1]
+        ldrh w0, [x1, w2, SXTW #1]
+
+        ldrsh w0, [x1, x2]
+        ;ldrsh w0, [x1, x2, LSL  #0] ; UXTX
+        ldrsh w0, [x1, x2, SXTX #0]
+        ldrsh w0, [x1, x2, LSL  #1]   ; UXTX
+        ldrsh w0, [x1, x2, SXTX #1]
+        ldrsh w0, [x1, w2, UXTW #0]
+        ldrsh w0, [x1, w2, SXTW #0]
+        ldrsh w0, [x1, w2, UXTW #1]
+        ldrsh w0, [x1, w2, SXTW #1]
+
+        ldrsw x0, [x1, x2]
+        ;ldrsw x0, [x1, x2, LSL  #0] ; UXTX
+        ldrsw x0, [x1, x2, SXTX #0]
+        ldrsw x0, [x1, x2, LSL  #2]  ; UXTX
+        ldrsw x0, [x1, x2, SXTX #2]
+        ldrsw x0, [x1, w2, UXTW #0]
+        ldrsw x0, [x1, w2, SXTW #0]
+        ldrsw x0, [x1, w2, UXTW #2]
+        ldrsw x0, [x1, w2, SXTW #2]
+
         ; Memory stores
         strb w0, [x28]
         strb w0, [x28, #1]
@@ -445,6 +497,32 @@ _TestProcA64:
         stp x0, x1, [x28, #8]
         stp x0, x1, [x28, #-512]
         stp x0, x1, [x28, #504]
+
+        str  x0, [x1, x2]
+        str  w0, [x1, x2]
+        str  x0, [x1, x2, SXTX #0]
+        str  x0, [x1, x2, LSL  #3]  ; UXTX
+        str  x0, [x1, x2, SXTX #3]
+        str  w0, [x1, w2, UXTW #0]
+        str  w0, [x1, w2, SXTW #0]
+        str  w0, [x1, w2, UXTW #2]
+        str  w0, [x1, w2, SXTW #2]
+
+        strb w0, [x1, x2]
+        strb w0, [x1, x2, LSL  #0x0]
+        strb w0, [x1, x2, SXTX #0x0]
+        strb w0, [x1, w2, UXTW #0x0]
+        strb w0, [x1, w2, SXTW #0x0]
+
+        strh w0, [x1, x2]
+        ;strh w0, [x1, x2, LSL  #0x0] ; UXTX
+        strh w0, [x1, x2, SXTX #0x0]
+        strh w0, [x1, x2, LSL  #1]   ; UXTX
+        strh w0, [x1, x2, SXTX #1]
+        strh w0, [x1, w2, UXTW #0x0]
+        strh w0, [x1, w2, SXTW #0x0]
+        strh w0, [x1, w2, UXTW #1]
+        strh w0, [x1, w2, SXTW #1]
 
         ; Conditional compare
         ccmp x0, x1, #0x3, eq
