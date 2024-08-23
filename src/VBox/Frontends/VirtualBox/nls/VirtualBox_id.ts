@@ -407,11 +407,11 @@
 <context>
     <name>UIAcquireCloudMachineCloneNameDialog</name>
     <message>
-        <source>Clone name</source>
-        <translation type="unfinished"></translation>
+        <source>Clone Virtual Machine</source>
+        <translation type="unfinished">Buat Klon Mesin Virtual</translation>
     </message>
     <message>
-        <source>Enter clone name</source>
+        <source>Enter machine name...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2309,7 +2309,7 @@
     </message>
     <message>
         <source>Open panel with file manager log</source>
-        <translation>Buka panel dengan log manajer berkas</translation>
+        <translation type="vanished">Buka panel dengan log manajer berkas</translation>
     </message>
     <message>
         <source>Open File Manager Log</source>
@@ -2321,7 +2321,7 @@
     </message>
     <message>
         <source>Open panel with file manager operations</source>
-        <translation>Buka panel dengan operasi manajer berkas</translation>
+        <translation type="vanished">Buka panel dengan operasi manajer berkas</translation>
     </message>
     <message>
         <source>Open File Manager Operations</source>
@@ -2762,7 +2762,7 @@
     </message>
     <message>
         <source>Reset the VISO content.</source>
-        <translation>Reset isi VISO.</translation>
+        <translation type="vanished">Reset isi VISO.</translation>
     </message>
     <message>
         <source>&amp;Medium Selector</source>
@@ -3095,7 +3095,7 @@
     </message>
     <message>
         <source>&amp;Stop</source>
-        <translation>&amp;Hentikan</translation>
+        <translation type="vanished">&amp;Hentikan</translation>
     </message>
     <message>
         <source>&amp;Upgrade Guest Additions...</source>
@@ -3103,7 +3103,7 @@
     </message>
     <message>
         <source>Upgrade Guest Additions</source>
-        <translation>Tingkatkan Guest Additions</translation>
+        <translation type="vanished">Tingkatkan Guest Additions</translation>
     </message>
     <message>
         <source>Virtual Screen %1</source>
@@ -3135,11 +3135,7 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Preferensi</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager preferences</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Preferensi</translation>
     </message>
     <message>
         <source>Go Forward</source>
@@ -3152,22 +3148,6 @@
     <message>
         <source>Go Backward</source>
         <translation type="unfinished">Mundur</translation>
-    </message>
-    <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open VISO Creator settings dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Settings Dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Restore</source>
@@ -3190,39 +3170,91 @@
         <translation type="unfinished">Buka</translation>
     </message>
     <message>
-        <source>Open the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISOImport</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import ISO into the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import Selected ISO into the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISORemove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove the imported ISO from the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open pane with activity monitor preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with VISO Creator preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected Item(s) From VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import ISO into the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import Selected ISO Into the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the imported ISO from the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the Imported ISO From the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade guest additions</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3312,11 +3344,16 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Preferensi</translation>
+        <translation type="obsolete">Preferensi</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished">VirtualBox - %1</translation>
+        <translation type="obsolete">VirtualBox - %1</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Preferences</source>
+        <comment>global preferences dialog name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3370,12 +3407,13 @@
         <translation type="unfinished">Antarmuka Pengguna</translation>
     </message>
     <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <source>%1 - %2</source>
+        <translation type="obsolete">%1 - %2</translation>
     </message>
     <message>
-        <source>%1 - %2</source>
-        <translation type="unfinished">%1 - %2</translation>
+        <source>%1 - Settings</source>
+        <comment>machine settings dialog name, starts from machine name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3619,12 +3657,12 @@
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation>%1</translation>
+        <translation type="vanished">%1</translation>
     </message>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -3838,10 +3876,14 @@
     </message>
     <message>
         <source>The selected path is invalid.</source>
-        <translation>Path yang dipilih tidak valid.</translation>
+        <translation type="vanished">Path yang dipilih tidak valid.</translation>
     </message>
     <message>
-        <source>The path is valid.</source>
+        <source>The path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The path is valid</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5922,7 +5964,7 @@
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation>Harap pilih lokasi untuk berkas hard disk virtual baru</translation>
+        <translation type="vanished">Harap pilih lokasi untuk berkas hard disk virtual baru</translation>
     </message>
     <message>
         <source>Paravirtualized Network (virtio-net 1.0)</source>
@@ -6318,7 +6360,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Host-combo</source>
+        <source>Keyboard Extension</source>
         <comment>IndicatorType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -7523,11 +7565,15 @@
     </message>
     <message>
         <source>&amp;Split into 2GB parts</source>
-        <translation>&amp;Pecah ke dalam bagian-bagian 2GB</translation>
+        <translation type="vanished">&amp;Pecah ke dalam bagian-bagian 2GB</translation>
     </message>
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation>Saat dicentang, berkas hard disk virtual dipecah ke dalam bagian-bagian 2GB.</translation>
+    </message>
+    <message>
+        <source>&amp;Split Into 2GB Parts</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8520,6 +8566,10 @@
         <source>Operations</source>
         <translation type="unfinished">Operasi</translation>
     </message>
+    <message>
+        <source>NewDirectory</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIFilePathSelector</name>
@@ -8574,13 +8624,6 @@
     <message>
         <source>Holds the file path.</source>
         <translation type="vanished">Menyimpan path berkas.</translation>
-    </message>
-</context>
-<context>
-    <name>UIFileSystemModel</name>
-    <message>
-        <source>NewDirectory</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9812,7 +9855,7 @@
     </message>
     <message>
         <source>Host Key Combination</source>
-        <translation>Kombinasi Tombol Host</translation>
+        <translation type="vanished">Kombinasi Tombol Host</translation>
     </message>
     <message>
         <source>Some items have the same shortcuts assigned.</source>
@@ -9841,6 +9884,10 @@
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="vanished">Masukkan suatu urutan untuk menyaring daftar pintasan.</translation>
+    </message>
+    <message>
+        <source>Host Key Combo</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10700,7 +10747,7 @@
     <message>
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -11919,7 +11966,7 @@
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation type="unfinished">Prosesor</translation>
+        <translation type="obsolete">Prosesor</translation>
     </message>
 </context>
 <context>
@@ -11992,10 +12039,14 @@
     <name>UIIndicatorKeyboardExtension</name>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished">Menampilkan tombol Host yang sedang ditugaskan.&lt;br&gt;Tombol ini, saat ditekan sendirian, menjungkit keadaan penangkapan papan tik dan tetikus. Itu juga dapat digunakan dalam kombinasi dengan tombol lain untuk melakukan tindakan dari dalam menu utama secara cepat.</translation>
+        <translation type="obsolete">Menampilkan tombol Host yang sedang ditugaskan.&lt;br&gt;Tombol ini, saat ditekan sendirian, menjungkit keadaan penangkapan papan tik dan tetikus. Itu juga dapat digunakan dalam kombinasi dengan tombol lain untuk melakukan tindakan dari dalam menu utama secara cepat.</translation>
     </message>
     <message>
-        <source>Host-combo: %1</source>
+        <source>Shows the currently assigned Host Key Combo.&lt;br&gt;This key combo, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Key Combo: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -16939,7 +16990,19 @@
     </message>
     <message>
         <source>Choose/Create a disk image...</source>
-        <translation type="unfinished">Pilih/ciptakan sebuah image disk...</translation>
+        <translation type="obsolete">Pilih/ciptakan sebuah image disk...</translation>
+    </message>
+    <message>
+        <source>Choose/Create a Disk Image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a Disk File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk From Virtual Drive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -17508,7 +17571,7 @@
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;Kunci host saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Kunci host saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
@@ -17565,12 +17628,12 @@
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation>Lanjutkan</translation>
+        <translation type="vanished">Lanjutkan</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation>Kembali</translation>
+        <translation type="vanished">Kembali</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
@@ -17604,7 +17667,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Anda telah &lt;b&gt;mengklik mouse&lt;/b&gt; di dalam tampilan Mesin Virtual atau menekan &lt;b&gt;tombol host&lt;/b&gt;. Hal ini akan menyebabkan Mesin Virtual &lt;b&gt;menangkap&lt;/b&gt; pointer mouse host (hanya bila integrasi pointer mouse tidak sedang didukung oleh Sistem Operasi guest saat ini) dan keyboard, yang akan membuat mereka tidak tersedia pada aplikasi lain yang berjalan pada mesin host.&lt;/p&gt;&lt;p&gt;Anda dapat menekan &lt;b&gt;tombol host&lt;/b&gt; kapanpun untuk &lt;b&gt;membebaskan&lt;/b&gt; keyboard dan mouse (bila tertangkap) dan mengembalikan mereka pada operasi normal. Tombol host yang ditugaskan saat ini ditunjukkan pada status bar di bawah window Mesin Virtual, di sebelah ikon&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;. Ikon ini, bersama dengan ikon mouse yang ditempatkan di dekatnya, menunjukkan keadaan tangkapan keyboard dan mouse saat ini.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Anda telah &lt;b&gt;mengklik mouse&lt;/b&gt; di dalam tampilan Mesin Virtual atau menekan &lt;b&gt;tombol host&lt;/b&gt;. Hal ini akan menyebabkan Mesin Virtual &lt;b&gt;menangkap&lt;/b&gt; pointer mouse host (hanya bila integrasi pointer mouse tidak sedang didukung oleh Sistem Operasi guest saat ini) dan keyboard, yang akan membuat mereka tidak tersedia pada aplikasi lain yang berjalan pada mesin host.&lt;/p&gt;&lt;p&gt;Anda dapat menekan &lt;b&gt;tombol host&lt;/b&gt; kapanpun untuk &lt;b&gt;membebaskan&lt;/b&gt; keyboard dan mouse (bila tertangkap) dan mengembalikan mereka pada operasi normal. Tombol host yang ditugaskan saat ini ditunjukkan pada status bar di bawah window Mesin Virtual, di sebelah ikon&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;. Ikon ini, bersama dengan ikon mouse yang ditempatkan di dekatnya, menunjukkan keadaan tangkapan keyboard dan mouse saat ini.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
@@ -17796,11 +17859,11 @@
     </message>
     <message>
         <source>Continue</source>
-        <translation>Lanjutkan</translation>
+        <translation type="vanished">Lanjutkan</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="obsolete">Abaikan</translation>
+        <translation type="unfinished">Abaikan</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -17978,7 +18041,7 @@
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
-        <translation>Singkir&amp;kan</translation>
+        <translation type="vanished">Singkir&amp;kan</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
@@ -18118,7 +18181,7 @@
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation>Singki&amp;rkan</translation>
+        <translation type="vanished">Singki&amp;rkan</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
@@ -19014,7 +19077,7 @@
     </message>
     <message>
         <source>Failed to assign cloud profile parameter.</source>
-        <translation>Gagal menugaskan parameter profil cloud.</translation>
+        <translation type="vanished">Gagal menugaskan parameter profil cloud.</translation>
     </message>
     <message>
         <source>Failed to create cloud client.</source>
@@ -19459,7 +19522,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Anda telah mengaktifkan pilihan &lt;b&gt;Tangkap otomatis papan ketik&lt;/b&gt;. Hal ini akan menyebabkan Mesin Virtual secara otomatis &lt;b&gt;menangkap&lt;/b&gt; papan ketik setiap kali jendela VM diaktifkan dan membuatnya tidak tersedia bagi aplikasi lain yang berjalan pada mesin host Anda: Saat papan ketik ditangkap, semua tombol yang ditekan (termasuk sistem seperti Alt+Tab) akan diarahkan ke VM.&lt;/p&gt;&lt;p&gt;Anda dapat menekan &lt;b&gt;tombol host&lt;/b&gt; kapan saja untuk &lt;b&gt;membebaskan&lt;/b&gt; papan ketik dan tetikus (bila mereka tertangkap) dan mengembalikan mereka pada operasi normal. Tombol host yang sedang ditugaskan saat ini ditunjukkan pada bilah status di bawah jendela Mesin Virtual. Ikon ini, bersama dengan ikon tetikus yang terletak di dekatnya, menunjukkan keadaan penangkapan papan ketik dan tetikus saat ini.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Anda telah mengaktifkan pilihan &lt;b&gt;Tangkap otomatis papan ketik&lt;/b&gt;. Hal ini akan menyebabkan Mesin Virtual secara otomatis &lt;b&gt;menangkap&lt;/b&gt; papan ketik setiap kali jendela VM diaktifkan dan membuatnya tidak tersedia bagi aplikasi lain yang berjalan pada mesin host Anda: Saat papan ketik ditangkap, semua tombol yang ditekan (termasuk sistem seperti Alt+Tab) akan diarahkan ke VM.&lt;/p&gt;&lt;p&gt;Anda dapat menekan &lt;b&gt;tombol host&lt;/b&gt; kapan saja untuk &lt;b&gt;membebaskan&lt;/b&gt; papan ketik dan tetikus (bila mereka tertangkap) dan mengembalikan mereka pada operasi normal. Tombol host yang sedang ditugaskan saat ini ditunjukkan pada bilah status di bawah jendela Mesin Virtual. Ikon ini, bersama dengan ikon tetikus yang terletak di dekatnya, menunjukkan keadaan penangkapan papan ketik dan tetikus saat ini.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Guest additions inactive ...</source>
@@ -19659,11 +19722,11 @@
     </message>
     <message>
         <source>Failed to assign update agent parameter.</source>
-        <translation>Gagal menugaskan parameter agen pembaruan.</translation>
+        <translation type="vanished">Gagal menugaskan parameter agen pembaruan.</translation>
     </message>
     <message>
         <source>Failed to assign VSD parameter.</source>
-        <translation>Gagal menugaskan parameter VSD.</translation>
+        <translation type="vanished">Gagal menugaskan parameter VSD.</translation>
     </message>
     <message>
         <source>Can&apos;t enumerate USB devices ...</source>
@@ -19998,17 +20061,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Discard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to continue with Guest Additions installation?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>additions</comment>
-        <translation type="unfinished">Lanjutkan</translation>
+        <translation type="obsolete">Lanjutkan</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox User Guide&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
@@ -20028,10 +20087,6 @@
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Clipboard Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -20175,10 +20230,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to change the parameter of machine debugger.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to change display parameter.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -20187,19 +20238,72 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to assign keyboard parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to assign mouse parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Can&apos;t reset machine ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to reset the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree with additions installation</comment>
+        <translation type="unfinished">Lanjutkan</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key combo&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key combo is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree to create VM with no hard disk attached</comment>
+        <translation type="unfinished">Lanjutkan</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>reject to create VM with no hard disk attached</comment>
+        <translation type="unfinished">Kembali</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree to export VMs without saved-state</comment>
+        <translation type="unfinished">Lanjutkan</translation>
+    </message>
+    <message>
+        <source>Shared clipboard error ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change machine debugger parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change cloud profile parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change update agent parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change keyboard parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change mouse parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change VSD parameter.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -21212,7 +21316,7 @@
     <message>
         <source>%1: %2</source>
         <comment>Context description: Error description</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
     <message>
         <source>Unable to initialize HTTP library</source>
@@ -22238,11 +22342,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Creating Host-only Network Interface ...</source>
-        <translation>Membuat Antar Muka Jaringan Hanya-Host ...</translation>
+        <translation type="vanished">Membuat Antar Muka Jaringan Hanya-Host ...</translation>
     </message>
     <message>
         <source>Removing Host-only Network Interface ...</source>
-        <translation>Menyingkirkan Antar Muka Jaringan Hanya-Host ...</translation>
+        <translation type="vanished">Menyingkirkan Antar Muka Jaringan Hanya-Host ...</translation>
     </message>
     <message>
         <source>Set VSD form value ...</source>
@@ -22266,6 +22370,14 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Resetting cloud VM ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creating host-only network interface ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing host-only network interface ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -23861,11 +23973,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation>Ukuran Virtual:</translation>
+        <translation type="vanished">Ukuran Virtual:</translation>
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation>Ukuran Aktual:</translation>
+        <translation type="vanished">Ukuran Aktual:</translation>
     </message>
     <message>
         <source>Size:</source>
@@ -23873,7 +23985,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Details:</source>
-        <translation>Rincian:</translation>
+        <translation type="vanished">Rincian:</translation>
     </message>
     <message>
         <source>Location:</source>
@@ -24009,7 +24121,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Choose a disk file...</source>
-        <translation>Pilih sebuah berkas disk...</translation>
+        <translation type="vanished">Pilih sebuah berkas disk...</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Optical Disk...</source>
@@ -24017,7 +24129,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation>Singkirkan Disk dari Drive Virtual</translation>
+        <translation type="vanished">Singkirkan Disk dari Drive Virtual</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
@@ -24025,7 +24137,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Remove disk from virtual drive</source>
-        <translation type="unfinished">Singkirkan disk dari drive virtual</translation>
+        <translation type="obsolete">Singkirkan disk dari drive virtual</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
@@ -24033,6 +24145,26 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Encryption key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Actual size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished">Rincian penyimpanan:</translation>
+    </message>
+    <message>
+        <source>Choose a Disk File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk From Virtual Drive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -24868,11 +25000,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
         <translation>Pasangan kata sandi yang tidak valid</translation>
     </message>
     <message>
-        <source>Username cannot be an empty string.</source>
+        <source>Username is valid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Username is valid</source>
+        <source>Username cannot be an empty string</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -24991,14 +25123,18 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>List all virtual machines</source>
-        <translation>Cantumkan semua mesin virtual</translation>
+        <translation type="vanished">Cantumkan semua mesin virtual</translation>
     </message>
     <message>
         <source>Lists all currently active virtual machines.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show cloud virtual machines</source>
+        <source>List All Virtual Machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Cloud Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -25475,7 +25611,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Sec.</source>
-        <translation>Sec.</translation>
+        <translation type="vanished">Sec.</translation>
     </message>
     <message>
         <source>Export activity data of the machine &quot;%1&quot;</source>
@@ -25502,7 +25638,13 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Sec.</source>
+        <comment>short from seconds</comment>
+        <translation type="unfinished">Sec.</translation>
+    </message>
+    <message>
         <source>Min.</source>
+        <comment>short from minutes</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -26329,11 +26471,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Ya</translation>
+        <translation type="obsolete">Ya</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">Tidak</translation>
+        <translation type="obsolete">Tidak</translation>
     </message>
     <message>
         <source>Has Removed Child</source>
@@ -26360,10 +26502,6 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VISO options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select a VISO file to load</source>
         <translation type="unfinished"></translation>
     </message>
@@ -26373,6 +26511,10 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&amp;Save and Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -26817,15 +26959,15 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation>Bila Anda memilih &lt;b&gt;Klon tertaut&lt;/b&gt; maka suatu snapshot baru akan dibuat dalam mesin virtual asli sebagai bagian dari proses kloning.&lt;/p&gt;</translation>
+        <translation type="vanished">Bila Anda memilih &lt;b&gt;Klon tertaut&lt;/b&gt; maka suatu snapshot baru akan dibuat dalam mesin virtual asli sebagai bagian dari proses kloning.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation>Klon &amp;penuh</translation>
+        <translation type="vanished">Klon &amp;penuh</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation>Klon &amp;tertaut</translation>
+        <translation type="vanished">Klon &amp;tertaut</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -26837,11 +26979,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Bila Anda memilih &lt;b&gt;Keadaan mesin kini&lt;/b&gt;, mesin baru akan mencerminkan keadaan sekarang dari mesin asli dan tidak akan memiliki snapshot.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Bila Anda memilih &lt;b&gt;Keadaan mesin kini&lt;/b&gt;, mesin baru akan mencerminkan keadaan sekarang dari mesin asli dan tidak akan memiliki snapshot.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Bila Anda memilih &lt;b&gt;Cabang pohon snapshot saat ini&lt;/b&gt;, mesin baru akan mencerminkan keadaan sekarang dari mesin asli dan akan memiliki snapshot yang cocok bagi semua snapshot dalam cabang pohon yang dimulai dari keadaan sekarang dalam mesin asli.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Bila Anda memilih &lt;b&gt;Cabang pohon snapshot saat ini&lt;/b&gt;, mesin baru akan mencerminkan keadaan sekarang dari mesin asli dan akan memiliki snapshot yang cocok bagi semua snapshot dalam cabang pohon yang dimulai dari keadaan sekarang dalam mesin asli.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
@@ -26849,11 +26991,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation>Keadaan &amp;mesin kini</translation>
+        <translation type="vanished">Keadaan &amp;mesin kini</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation>Cabang pohon &amp;snapshot saat ini</translation>
+        <translation type="vanished">Cabang pohon &amp;snapshot saat ini</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
@@ -26865,15 +27007,15 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&amp;Full Clone</source>
-        <translation type="vanished">Klon &amp;Penuh</translation>
+        <translation>Klon &amp;Penuh</translation>
     </message>
     <message>
         <source>&amp;Linked Clone</source>
-        <translation type="vanished">K&amp;lon Tertaut</translation>
+        <translation>K&amp;lon Tertaut</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Harap pilih tipe klon yang hendak Anda buat.&lt;/p&gt;&lt;p&gt;Bila Anda memilih &lt;b&gt;Klon penuh&lt;/b&gt;, suatu salinan eksak (termasuk semua berkas hard disk virtual) dari mesin virtual asli akan dibuat.&lt;/p&gt;&lt;p&gt;Bila Anda memilih &lt;b&gt;Klon tertaut&lt;/b&gt;, suatu mesin baru akan dibuat, tapi berkas hard disk virtual akan terikat ke berkas hard disk virtual mesin yang asli, dan Anda tidak akan bisa memindah mesin virtual baru ke komputer lain tanpa memindahkan yang aslinya juga.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Harap pilih tipe klon yang hendak Anda buat.&lt;/p&gt;&lt;p&gt;Bila Anda memilih &lt;b&gt;Klon penuh&lt;/b&gt;, suatu salinan eksak (termasuk semua berkas hard disk virtual) dari mesin virtual asli akan dibuat.&lt;/p&gt;&lt;p&gt;Bila Anda memilih &lt;b&gt;Klon tertaut&lt;/b&gt;, suatu mesin baru akan dibuat, tapi berkas hard disk virtual akan terikat ke berkas hard disk virtual mesin yang asli, dan Anda tidak akan bisa memindah mesin virtual baru ke komputer lain tanpa memindahkan yang aslinya juga.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name and optionally a folder for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -26933,7 +27075,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>New machine &amp;name and path</source>
-        <translation>&amp;Nama dan path mesin baru</translation>
+        <translation type="vanished">&amp;Nama dan path mesin baru</translation>
     </message>
     <message>
         <source>New machine name and path</source>
@@ -26945,7 +27087,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Additional options</source>
-        <translation>Opsi tambahan</translation>
+        <translation type="vanished">Opsi tambahan</translation>
     </message>
     <message>
         <source>Clone name cannot be empty</source>
@@ -26957,7 +27099,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>The clone name is not unique</source>
-        <translation>Nama klon tidak unik</translation>
+        <translation type="vanished">Nama klon tidak unik</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -27020,8 +27162,44 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The clone name is valid</source>
+        <source>Clone name is not unique</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;Machine State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;Snapshot Tree Branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked Clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you create a &lt;b&gt;Linked Clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current Machine State&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current Snapshot Tree Branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Machine Name and Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation type="unfinished">Opsi Tambahan</translation>
     </message>
 </context>
 <context>
@@ -27950,7 +28128,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished">Salin Disk Virtual</translation>
+        <translation type="obsolete">Salin Disk Virtual</translation>
     </message>
     <message>
         <source>Virtual hard disk file type</source>
@@ -27959,6 +28137,10 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     <message>
         <source>Location and size of the disk image</source>
         <translation type="unfinished">Lokasi dan ukuran image disk</translation>
+    </message>
+    <message>
+        <source>Copy Virtual Hard Disk</source>
+        <translation type="unfinished">Salin Hard Disk Virtual</translation>
     </message>
 </context>
 <context>
@@ -28391,18 +28573,26 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
         <source>Lists chosen configuration of the guest system.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>This OS type is not supported by your host. You need to either deselect ISO image or pick another one to continue.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ISO file is for an unsupported guest OS type</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardNewVMSummaryItem</name>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

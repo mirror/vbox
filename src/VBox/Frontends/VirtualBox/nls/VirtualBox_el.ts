@@ -218,11 +218,11 @@
 <context>
     <name>UIAcquireCloudMachineCloneNameDialog</name>
     <message>
-        <source>Clone name</source>
-        <translation type="unfinished"></translation>
+        <source>Clone Virtual Machine</source>
+        <translation type="unfinished">Κλωνοποιήση Εικονικής Μηχανής</translation>
     </message>
     <message>
-        <source>Enter clone name</source>
+        <source>Enter machine name...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -441,7 +441,7 @@
     </message>
     <message>
         <source>Open panel with file manager log</source>
-        <translation>Άνοιγμα του πίνακα με το καταγραφικό του διαχειριστή αρχείων</translation>
+        <translation type="vanished">Άνοιγμα του πίνακα με το καταγραφικό του διαχειριστή αρχείων</translation>
     </message>
     <message>
         <source>Open pane with filtering options</source>
@@ -933,7 +933,7 @@
     </message>
     <message>
         <source>Open panel with file manager operations</source>
-        <translation>Άνοιγμα του πίνακα με τις διαδικασίες του διαχειριστή αρχείων</translation>
+        <translation type="vanished">Άνοιγμα του πίνακα με τις διαδικασίες του διαχειριστή αρχείων</translation>
     </message>
     <message>
         <source>Rename selected virtual machine group</source>
@@ -1651,10 +1651,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Reset the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Medium Selector</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1845,10 +1841,6 @@
     </message>
     <message>
         <source>Show cloud console log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Stop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2153,10 +2145,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Upgrade Guest Additions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
         <translation type="unfinished">Στατιστικά...</translation>
@@ -2223,11 +2211,7 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Προτιμήσεις</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager preferences</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Προτιμήσεις</translation>
     </message>
     <message>
         <source>Go Forward</source>
@@ -2243,19 +2227,7 @@
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">Ρυθμίσεις</translation>
-    </message>
-    <message>
-        <source>Open VISO Creator settings dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Settings Dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ρυθμίσεις</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
@@ -2278,39 +2250,91 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISOImport</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import ISO into the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import Selected ISO into the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISORemove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove the imported ISO from the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open pane with activity monitor preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with VISO Creator preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected Item(s) From VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import ISO into the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import Selected ISO Into the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the imported ISO from the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the Imported ISO From the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade guest additions</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2424,11 +2448,16 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Προτιμήσεις</translation>
+        <translation type="obsolete">Προτιμήσεις</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished">VirtualBox - %1</translation>
+        <translation type="obsolete">VirtualBox - %1</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Preferences</source>
+        <comment>global preferences dialog name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2483,11 +2512,16 @@
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">Ρυθμίσεις</translation>
+        <translation type="obsolete">Ρυθμίσεις</translation>
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation type="unfinished">%1 - %2</translation>
+        <translation type="obsolete">%1 - %2</translation>
+    </message>
+    <message>
+        <source>%1 - Settings</source>
+        <comment>machine settings dialog name, starts from machine name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2634,12 +2668,12 @@
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -2860,11 +2894,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The selected path is invalid.</source>
+        <source>The path is invalid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The path is valid.</source>
+        <source>The path is valid</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4469,7 +4503,7 @@
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation>Παρακαλώ επιλέξτε μία θέση για το αρχείο του νέου εικονικού σκληρού δίσκου</translation>
+        <translation type="vanished">Παρακαλώ επιλέξτε μία θέση για το αρχείο του νέου εικονικού σκληρού δίσκου</translation>
     </message>
     <message>
         <source>MB</source>
@@ -5792,7 +5826,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Host-combo</source>
+        <source>Keyboard Extension</source>
         <comment>IndicatorType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -6707,11 +6741,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Split into 2GB parts</source>
+        <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
+        <source>&amp;Split Into 2GB Parts</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7391,6 +7425,10 @@
         <source>Operations</source>
         <translation type="unfinished">Διαδικασίες</translation>
     </message>
+    <message>
+        <source>NewDirectory</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIFilePathSelector</name>
@@ -7440,13 +7478,6 @@
     </message>
 </context>
 <context>
-    <name>UIFileSystemModel</name>
-    <message>
-        <source>NewDirectory</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIFontScaleEditor</name>
     <message>
         <source>F&amp;ont Scaling:</source>
@@ -7491,11 +7522,15 @@
     <name>UIGlobalSettingsInput</name>
     <message>
         <source>Host Key Combination</source>
-        <translation>Συνδυασμός Πλήκτρων Οικοδεσπότη</translation>
+        <translation type="vanished">Συνδυασμός Πλήκτρων Οικοδεσπότη</translation>
     </message>
     <message>
         <source>Some items have the same shortcuts assigned.</source>
         <translation>Μερικά στοιχεία έχουν την ίδια συντόμευση.</translation>
+    </message>
+    <message>
+        <source>Host Key Combo</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7533,7 +7568,7 @@
     <message>
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -8074,7 +8109,7 @@
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation type="unfinished">Επεξεργαστές</translation>
+        <translation type="obsolete">Επεξεργαστές</translation>
     </message>
 </context>
 <context>
@@ -8147,10 +8182,14 @@
     <name>UIIndicatorKeyboardExtension</name>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished">Δείχνει το τρέχον Πλήκτρο Οικοδεσπότη.&lt;br&gt; Το πλήκτρο αυτό, όταν πατηθεί μόνο του, εναλλάσει τη δέσμευση του πληκτρολογίου και του ποντικιού. Μπορεί επίσης να χρησιμοποιηθεί σε συνδυασμό με άλλα πλήκτρα για γρήγορη πρόσβαση σε ενέργειες από τον κεντρικό κατάλογο επιλογών.</translation>
+        <translation type="obsolete">Δείχνει το τρέχον Πλήκτρο Οικοδεσπότη.&lt;br&gt; Το πλήκτρο αυτό, όταν πατηθεί μόνο του, εναλλάσει τη δέσμευση του πληκτρολογίου και του ποντικιού. Μπορεί επίσης να χρησιμοποιηθεί σε συνδυασμό με άλλα πλήκτρα για γρήγορη πρόσβαση σε ενέργειες από τον κεντρικό κατάλογο επιλογών.</translation>
     </message>
     <message>
-        <source>Host-combo: %1</source>
+        <source>Shows the currently assigned Host Key Combo.&lt;br&gt;This key combo, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Key Combo: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9546,7 +9585,15 @@
         <translation type="unfinished">Όλα τα αρχεία (*)</translation>
     </message>
     <message>
-        <source>Choose/Create a disk image...</source>
+        <source>Choose/Create a Disk Image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a Disk File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk From Virtual Drive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9715,7 +9762,7 @@
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
-        <translation>Αφαίρεση</translation>
+        <translation type="vanished">Αφαίρεση</translation>
     </message>
     <message>
         <source>Failed to create the virtual disk image storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
@@ -9956,11 +10003,11 @@
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation>Συνέχεια</translation>
+        <translation type="vanished">Συνέχεια</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation>Συνέχεια</translation>
+        <translation type="vanished">Συνέχεια</translation>
     </message>
     <message>
         <source>VirtualBox - Critical Error</source>
@@ -10086,7 +10133,7 @@
     </message>
     <message>
         <source>Failed to assign cloud profile parameter.</source>
-        <translation>Αποτυχία ανάθεσης παραμέτρου του προφίλ σύννεφου.</translation>
+        <translation type="vanished">Αποτυχία ανάθεσης παραμέτρου του προφίλ σύννεφου.</translation>
     </message>
     <message>
         <source>Failed to acquire cloud provider parameter.</source>
@@ -10237,7 +10284,7 @@
     </message>
     <message>
         <source>Discard</source>
-        <translation type="vanished">Αναίρεση</translation>
+        <translation>Αναίρεση</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
@@ -10265,7 +10312,7 @@
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation>Αφαίρεση</translation>
+        <translation type="vanished">Αφαίρεση</translation>
     </message>
     <message>
         <source>Failed to attach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -10381,7 +10428,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Έχετε &lt;b&gt;κάνει κλικ στο ποντίκι&lt;/b&gt; μέσα στην οθόνη της εικονικής μηχανής ή έχετε πατήσει το &lt;b&gt;κλειδί οικοδεσπότη&lt;/b&gt;. Αυτό θα έχει ως αποτέλεσμα η εικονική μηχανή να &lt;b&gt;δεσμεύσει&lt;/b&gt; τον δείκτη ποντικιού του οικοδεσπότη (μόνο αν η ενσωμάτωση του δείκτη ποντικιού δεν υποστηρίζεται προς το παρών από το λειτουργικό σύστημα του επισκέπτη) και το πληκτρολόγιο, το οποίο θα τα κάνει μη διαθέσιμα στις άλλες εφαρμογές που τρέχουν στον οικοδεσπότη.&lt;/p&gt;&lt;p&gt;Μπορείτε να πατήσετε το &lt;b&gt;κλειδί οικοδεσπότη&lt;/b&gt; οποτεδήποτε για &lt;b&gt;αποδέσμευση&lt;/b&gt; του πληκτρολόγιου και ποντικιού (αν έχουν δεσμευθεί) και να επιστρέψουν στη φυσιολογική τους λειτουργία. Το τρέχον καθορισμένο κλειδί οικοδεσπότη φαίνεται στη γραμμή κατάστασης στο κάτω μέρος του παραθύρου της εικονικής μηχανής, δίπλα στο εικονίδιο&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Αυτό το εικονίδιο, μαζί με το εικονίδιο ποντικιού πιο δίπλα, δείχνουν την τρέχουσα κατάσταση δέσμευσης του πληκτρολογίου και ποντικιού.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Έχετε &lt;b&gt;κάνει κλικ στο ποντίκι&lt;/b&gt; μέσα στην οθόνη της εικονικής μηχανής ή έχετε πατήσει το &lt;b&gt;κλειδί οικοδεσπότη&lt;/b&gt;. Αυτό θα έχει ως αποτέλεσμα η εικονική μηχανή να &lt;b&gt;δεσμεύσει&lt;/b&gt; τον δείκτη ποντικιού του οικοδεσπότη (μόνο αν η ενσωμάτωση του δείκτη ποντικιού δεν υποστηρίζεται προς το παρών από το λειτουργικό σύστημα του επισκέπτη) και το πληκτρολόγιο, το οποίο θα τα κάνει μη διαθέσιμα στις άλλες εφαρμογές που τρέχουν στον οικοδεσπότη.&lt;/p&gt;&lt;p&gt;Μπορείτε να πατήσετε το &lt;b&gt;κλειδί οικοδεσπότη&lt;/b&gt; οποτεδήποτε για &lt;b&gt;αποδέσμευση&lt;/b&gt; του πληκτρολόγιου και ποντικιού (αν έχουν δεσμευθεί) και να επιστρέψουν στη φυσιολογική τους λειτουργία. Το τρέχον καθορισμένο κλειδί οικοδεσπότη φαίνεται στη γραμμή κατάστασης στο κάτω μέρος του παραθύρου της εικονικής μηχανής, δίπλα στο εικονίδιο&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Αυτό το εικονίδιο, μαζί με το εικονίδιο ποντικιού πιο δίπλα, δείχνουν την τρέχουσα κατάσταση δέσμευσης του πληκτρολογίου και ποντικιού.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Power Off</source>
@@ -10702,7 +10749,7 @@
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation type="unfinished">&lt;p&gt;Το τρέχων πλήκτρο οικοδεσπότη είναι ορισμένο ως &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Το τρέχων πλήκτρο οικοδεσπότη είναι ορισμένο ως &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
@@ -10712,7 +10759,7 @@
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished">Πίσω</translation>
+        <translation type="obsolete">Πίσω</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
@@ -10975,10 +11022,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Guest additions inactive ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11176,14 +11219,6 @@
     </message>
     <message>
         <source>Failed to change NAT network parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to assign update agent parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to assign VSD parameter.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11507,17 +11542,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Discard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to continue with Guest Additions installation?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>additions</comment>
-        <translation type="unfinished">Συνέχεια</translation>
+        <translation type="obsolete">Συνέχεια</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox User Guide&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
@@ -11537,10 +11568,6 @@
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Clipboard Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11684,10 +11711,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to change the parameter of machine debugger.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to change display parameter.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11696,19 +11719,72 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to assign keyboard parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to assign mouse parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Can&apos;t reset machine ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to reset the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree with additions installation</comment>
+        <translation type="unfinished">Συνέχεια</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key combo&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key combo is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree to create VM with no hard disk attached</comment>
+        <translation type="unfinished">Συνέχεια</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>reject to create VM with no hard disk attached</comment>
+        <translation type="unfinished">Πίσω</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree to export VMs without saved-state</comment>
+        <translation type="unfinished">Συνέχεια</translation>
+    </message>
+    <message>
+        <source>Shared clipboard error ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change machine debugger parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change cloud profile parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change update agent parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change keyboard parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change mouse parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change VSD parameter.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -12579,7 +12655,7 @@
     <message>
         <source>%1: %2</source>
         <comment>Context description: Error description</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -12885,14 +12961,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Creating Host-only Network Interface ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Removing Host-only Network Interface ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Set VSD form value ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12914,6 +12982,14 @@
     </message>
     <message>
         <source>Resetting cloud VM ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creating host-only network interface ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing host-only network interface ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14272,7 +14348,7 @@
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation>Εικονικό Μέγεθος:</translation>
+        <translation type="vanished">Εικονικό Μέγεθος:</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
@@ -14324,7 +14400,7 @@
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation>Αφαίρεση Δίσκου από τον Εικονικό Οδηγό</translation>
+        <translation type="vanished">Αφαίρεση Δίσκου από τον Εικονικό Οδηγό</translation>
     </message>
     <message>
         <source>Remove Controller</source>
@@ -14368,7 +14444,7 @@
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation>Πραγματικό μέγεθος:</translation>
+        <translation type="vanished">Πραγματικό μέγεθος:</translation>
     </message>
     <message>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
@@ -14396,7 +14472,7 @@
     </message>
     <message>
         <source>Details:</source>
-        <translation>Λεπτομέρειες:</translation>
+        <translation type="vanished">Λεπτομέρειες:</translation>
     </message>
     <message>
         <source>Add Attachment</source>
@@ -14476,10 +14552,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose a disk file...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Choose/Create a Virtual Optical Disk...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -14489,7 +14561,7 @@
     </message>
     <message>
         <source>Remove disk from virtual drive</source>
-        <translation type="unfinished">Αφαίρεση δίσκου από τον εικονικό οδηγό</translation>
+        <translation type="obsolete">Αφαίρεση δίσκου από τον εικονικό οδηγό</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
@@ -14497,6 +14569,26 @@
     </message>
     <message>
         <source>Encryption key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Actual size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished">Λεπτομέρειες αποθήκευσης:</translation>
+    </message>
+    <message>
+        <source>Choose a Disk File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk From Virtual Drive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -15267,11 +15359,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Username cannot be an empty string.</source>
+        <source>Username is valid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Username is valid</source>
+        <source>Username cannot be an empty string</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -15389,15 +15481,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>List all virtual machines</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Lists all currently active virtual machines.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show cloud virtual machines</source>
+        <source>List All Virtual Machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Cloud Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -15652,10 +15744,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sec.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>CPU Load</source>
         <translation type="unfinished"></translation>
     </message>
@@ -15752,7 +15840,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Sec.</source>
+        <comment>short from seconds</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Min.</source>
+        <comment>short from minutes</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -16207,11 +16301,11 @@
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Ναι</translation>
+        <translation type="obsolete">Ναι</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">Όχι</translation>
+        <translation type="obsolete">Όχι</translation>
     </message>
     <message>
         <source>Has Removed Child</source>
@@ -16238,10 +16332,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VISO options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select a VISO file to load</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16251,6 +16341,10 @@
     </message>
     <message>
         <source>&amp;Save and Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -16366,7 +16460,7 @@
     <name>UIWizardCloneVM</name>
     <message>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Αν δημιουργήσετε ένα &lt;b&gt;Συνδεδεμένο κλώνο&lt;/b&gt; τότε θα δημιουργηθεί ένα καινούριο στιγμιότυπο στην αρχική εικονική μηχανή ως μέρος της διαδικασίας κλωνοποίησης.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Αν δημιουργήσετε ένα &lt;b&gt;Συνδεδεμένο κλώνο&lt;/b&gt; τότε θα δημιουργηθεί ένα καινούριο στιγμιότυπο στην αρχική εικονική μηχανή ως μέρος της διαδικασίας κλωνοποίησης.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
@@ -16374,7 +16468,7 @@
     </message>
     <message>
         <source>New machine &amp;name and path</source>
-        <translation>Όνομα και διαδρομή της νέας μηχανής</translation>
+        <translation type="vanished">Όνομα και διαδρομή της νέας μηχανής</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -16398,7 +16492,7 @@
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Αν επιλέξετε &lt;b&gt;Τρέχουσα κατάσταση δέντρου στιγμιοτύπων&lt;/b&gt;, η καινούρια μηχανή θα αντικατοπτρίζει την τρέχουσα κατάσταση της αρχικής μηχανής και θα έχει ταιριαστά στιγμιότυπα για όλα τα στιγμιότυπα του δέντρου, ξεκινώντας από την τρέχουσα κατάσταση της αρχικής μηχανής.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Αν επιλέξετε &lt;b&gt;Τρέχουσα κατάσταση δέντρου στιγμιοτύπων&lt;/b&gt;, η καινούρια μηχανή θα αντικατοπτρίζει την τρέχουσα κατάσταση της αρχικής μηχανής και θα έχει ταιριαστά στιγμιότυπα για όλα τα στιγμιότυπα του δέντρου, ξεκινώντας από την τρέχουσα κατάσταση της αρχικής μηχανής.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Additional Options:</source>
@@ -16418,11 +16512,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Παρακαλώ επιλέξτε τον τύπο του κλώνου που θέλετε να δημιουργήσετε.&lt;/p&gt;&lt;p&gt;Αν επιλέξετε &lt;b&gt;Πλήρης κλώνος&lt;/b&gt;, θα δημιουργηθεί ένα ακριβές αντίγραφο της αρχικής εικονικής μηχανής (συμπεριλαμβανομένων όλων των αρχείων των εικονικών σκληρών δίσκων).&lt;/p&gt;&lt;p&gt;Αν επιλέξετε &lt;b&gt;Συνδεδεμένος κλώνος&lt;/b&gt;, θα δημιουργηθεί μία καινούρια μηχανή, αλλά οι εικονικοί σκληροί δίσκοι είναι συνδεδεμένοι με τα αρχεία των εικονικών σκληρών δίσκων της αρχικής μηχανής και δεν θα μπορείτε να μετακινήσετε τη νέα εικονική μηχανή σε άλλο υπολογιστή χωρίς να μετακινήσετε και τα αρχικά αρχεία.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Παρακαλώ επιλέξτε τον τύπο του κλώνου που θέλετε να δημιουργήσετε.&lt;/p&gt;&lt;p&gt;Αν επιλέξετε &lt;b&gt;Πλήρης κλώνος&lt;/b&gt;, θα δημιουργηθεί ένα ακριβές αντίγραφο της αρχικής εικονικής μηχανής (συμπεριλαμβανομένων όλων των αρχείων των εικονικών σκληρών δίσκων).&lt;/p&gt;&lt;p&gt;Αν επιλέξετε &lt;b&gt;Συνδεδεμένος κλώνος&lt;/b&gt;, θα δημιουργηθεί μία καινούρια μηχανή, αλλά οι εικονικοί σκληροί δίσκοι είναι συνδεδεμένοι με τα αρχεία των εικονικών σκληρών δίσκων της αρχικής μηχανής και δεν θα μπορείτε να μετακινήσετε τη νέα εικονική μηχανή σε άλλο υπολογιστή χωρίς να μετακινήσετε και τα αρχικά αρχεία.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation>Τρέχον παρακλάδι του δέντρου στιγμιοτύπων</translation>
+        <translation type="vanished">Τρέχον παρακλάδι του δέντρου στιγμιοτύπων</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -16438,7 +16532,7 @@
     </message>
     <message>
         <source>Additional options</source>
-        <translation>Πρόσθετες Επιλογές</translation>
+        <translation type="vanished">Πρόσθετες Επιλογές</translation>
     </message>
     <message>
         <source>Linked Base for %1 and %2</source>
@@ -16458,7 +16552,7 @@
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation>Τρέχουσα κατάσταση</translation>
+        <translation type="vanished">Τρέχουσα κατάσταση</translation>
     </message>
     <message>
         <source>New machine name and path</source>
@@ -16466,15 +16560,15 @@
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation>Συνδεδεμένος κλώνος</translation>
+        <translation type="vanished">Συνδεδεμένος κλώνος</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Αν επιλέξετε &lt;b&gt;Τρέχουσα κατάσταση&lt;/b&gt;, η καινούρια μηχανή θα αντικατοπτρίζει την τρέχουσα κατάσταση της αρχικής μηχανής και δεν θα έχει στιγμιότυπα.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Αν επιλέξετε &lt;b&gt;Τρέχουσα κατάσταση&lt;/b&gt;, η καινούρια μηχανή θα αντικατοπτρίζει την τρέχουσα κατάσταση της αρχικής μηχανής και δεν θα έχει στιγμιότυπα.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation>Πλήρης κλώνος</translation>
+        <translation type="vanished">Πλήρης κλώνος</translation>
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
@@ -16486,10 +16580,6 @@
     </message>
     <message>
         <source>Path is invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The clone name is not unique</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -16549,7 +16639,51 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The clone name is valid</source>
+        <source>Clone name is not unique</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;Machine State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;Snapshot Tree Branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked Clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you create a &lt;b&gt;Linked Clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current Machine State&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current Snapshot Tree Branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Machine Name and Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17057,15 +17191,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Copy Virtual Disk</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Virtual hard disk file type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Location and size of the disk image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Virtual Hard Disk</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17391,18 +17525,26 @@
         <source>Lists chosen configuration of the guest system.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>This OS type is not supported by your host. You need to either deselect ISO image or pick another one to continue.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ISO file is for an unsupported guest OS type</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardNewVMSummaryItem</name>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

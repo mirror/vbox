@@ -445,11 +445,11 @@
 <context>
     <name>UIAcquireCloudMachineCloneNameDialog</name>
     <message>
-        <source>Clone name</source>
-        <translation type="unfinished"></translation>
+        <source>Clone Virtual Machine</source>
+        <translation type="unfinished">Clonar máquina virtual</translation>
     </message>
     <message>
-        <source>Enter clone name</source>
+        <source>Enter machine name...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1923,7 +1923,7 @@
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">Configuración</translation>
+        <translation type="obsolete">Configuración</translation>
     </message>
     <message>
         <source>Log</source>
@@ -2438,7 +2438,7 @@
     </message>
     <message>
         <source>Open panel with file manager log</source>
-        <translation>Abrir panel con traza de administrador de archivos</translation>
+        <translation type="vanished">Abrir panel con traza de administrador de archivos</translation>
     </message>
     <message>
         <source>Open File Manager Log</source>
@@ -2450,7 +2450,7 @@
     </message>
     <message>
         <source>Open panel with file manager operations</source>
-        <translation>Abrir panel con operaciones de admnistrador de archivos</translation>
+        <translation type="vanished">Abrir panel con operaciones de admnistrador de archivos</translation>
     </message>
     <message>
         <source>Open File Manager Operations</source>
@@ -2863,7 +2863,7 @@
     </message>
     <message>
         <source>Reset the VISO content.</source>
-        <translation>Restaurar el contenido VISO.</translation>
+        <translation type="vanished">Restaurar el contenido VISO.</translation>
     </message>
     <message>
         <source>&amp;Medium Selector</source>
@@ -3224,14 +3224,10 @@
     </message>
     <message>
         <source>&amp;Stop</source>
-        <translation>&amp;Parar</translation>
+        <translation type="vanished">&amp;Parar</translation>
     </message>
     <message>
         <source>&amp;Upgrade Guest Additions...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Upgrade Guest Additions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3264,11 +3260,7 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Preferencias</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager preferences</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Preferencias</translation>
     </message>
     <message>
         <source>Go Forward</source>
@@ -3281,18 +3273,6 @@
     <message>
         <source>Go Backward</source>
         <translation type="unfinished">Ir atrás</translation>
-    </message>
-    <message>
-        <source>Open VISO Creator settings dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Settings Dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Restore</source>
@@ -3315,39 +3295,91 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISOImport</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import ISO into the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import Selected ISO into the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISORemove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove the imported ISO from the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open pane with activity monitor preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with VISO Creator preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected Item(s) From VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import ISO into the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import Selected ISO Into the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the imported ISO from the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the Imported ISO From the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade guest additions</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3464,11 +3496,16 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Preferencias</translation>
+        <translation type="obsolete">Preferencias</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished">VirtualBox - %1</translation>
+        <translation type="obsolete">VirtualBox - %1</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Preferences</source>
+        <comment>global preferences dialog name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3523,11 +3560,16 @@
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">Configuración</translation>
+        <translation type="obsolete">Configuración</translation>
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation type="unfinished">%1 - %2</translation>
+        <translation type="obsolete">%1 - %2</translation>
+    </message>
+    <message>
+        <source>%1 - Settings</source>
+        <comment>machine settings dialog name, starts from machine name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3759,12 +3801,12 @@
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation>%1</translation>
+        <translation type="vanished">%1</translation>
     </message>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -4018,10 +4060,14 @@
     </message>
     <message>
         <source>The selected path is invalid.</source>
-        <translation>La ruta seleccionada es inválida.</translation>
+        <translation type="vanished">La ruta seleccionada es inválida.</translation>
     </message>
     <message>
-        <source>The path is valid.</source>
+        <source>The path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The path is valid</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6319,7 +6365,7 @@
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation>Seleccione una ubicación para el nuevo archivo de disco duro virtual</translation>
+        <translation type="vanished">Seleccione una ubicación para el nuevo archivo de disco duro virtual</translation>
     </message>
     <message>
         <source>PCnet-ISA (Am79C960)</source>
@@ -6631,7 +6677,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Host-combo</source>
+        <source>Keyboard Extension</source>
         <comment>IndicatorType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -8069,11 +8115,15 @@
     </message>
     <message>
         <source>&amp;Split into 2GB parts</source>
-        <translation>&amp;Dividir en partes de 2 GB</translation>
+        <translation type="vanished">&amp;Dividir en partes de 2 GB</translation>
     </message>
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation>Seleccionado, el disco virtual es divido en partes de 2GB.</translation>
+    </message>
+    <message>
+        <source>&amp;Split Into 2GB Parts</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9319,6 +9369,10 @@ una sesión invitado</translation>
         <source>Operations</source>
         <translation type="unfinished">Operaciones</translation>
     </message>
+    <message>
+        <source>NewDirectory</source>
+        <translation type="unfinished">NewDirectory</translation>
+    </message>
 </context>
 <context>
     <name>UIFilePathSelector</name>
@@ -9379,7 +9433,7 @@ una sesión invitado</translation>
     <name>UIFileSystemModel</name>
     <message>
         <source>NewDirectory</source>
-        <translation type="unfinished">NewDirectory</translation>
+        <translation type="obsolete">NewDirectory</translation>
     </message>
 </context>
 <context>
@@ -10717,7 +10771,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Key Combination</source>
-        <translation>Combinación de tecla anfitrión</translation>
+        <translation type="vanished">Combinación de tecla anfitrión</translation>
     </message>
     <message>
         <source>Some items have the same shortcuts assigned.</source>
@@ -10746,6 +10800,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="vanished">Contiene una secuencia para filtrar la lista de accesos rápidos.</translation>
+    </message>
+    <message>
+        <source>Host Key Combo</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11631,7 +11689,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -12893,7 +12951,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation type="unfinished">Procesadores</translation>
+        <translation type="obsolete">Procesadores</translation>
     </message>
 </context>
 <context>
@@ -12966,10 +13024,14 @@ p, li { white-space: pre-wrap; }
     <name>UIIndicatorKeyboardExtension</name>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished">Muestra la tecla anfitrión asignada.&lt;br&gt; Cuando se presiona solamente esta tecla, alterna el estado de captura del teclado y el ratón. También puede ser combinada con otras teclas para efectuar acciones del menú principal rápidamente.</translation>
+        <translation type="obsolete">Muestra la tecla anfitrión asignada.&lt;br&gt; Cuando se presiona solamente esta tecla, alterna el estado de captura del teclado y el ratón. También puede ser combinada con otras teclas para efectuar acciones del menú principal rápidamente.</translation>
     </message>
     <message>
-        <source>Host-combo: %1</source>
+        <source>Shows the currently assigned Host Key Combo.&lt;br&gt;This key combo, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Key Combo: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -18308,7 +18370,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose/Create a disk image...</source>
-        <translation type="unfinished">Seleccionar/crear una imagen de disco...</translation>
+        <translation type="obsolete">Seleccionar/crear una imagen de disco...</translation>
+    </message>
+    <message>
+        <source>Choose/Create a Disk Image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a Disk File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk From Virtual Drive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -18957,12 +19031,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation>Continuar</translation>
+        <translation type="vanished">Continuar</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation>Volver</translation>
+        <translation type="vanished">Volver</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
@@ -18996,7 +19070,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ha hecho &lt;b&gt;clic con el ratón&lt;/b&gt; dentro de la pantalla de la máquina virtual o ha presionado la &lt;b&gt;tecla anfitrión&lt;/b&gt;. Esto causará que la máquina virtual &lt;b&gt;capture&lt;/b&gt; el puntero del ratón (sólo si la integración del puntero del ratón no está soportada por el SO invitado) y el teclado del anfitrión, lo que hará que no estén disponibles para otras aplicaciones ejecutándose en la máquina anfitrión.&lt;/p&gt;&lt;p&gt;Puede presionar la &lt;b&gt;tecla anfitrión&lt;/b&gt; en cualquier momento para &lt;b&gt;liberar&lt;/b&gt; el teclado y el ratón (si están capturados) y devolverlos al modo de funcionamiento normal. La tecla anfitrión actualmente asignada se muestra en la barra de estado en la parte inferior de la ventana de la máquina virtual, al lado del icono&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Este icono, junto con el icono del ratón situado al lado, indica el estado de captura actual del teclado y ratón.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Ha hecho &lt;b&gt;clic con el ratón&lt;/b&gt; dentro de la pantalla de la máquina virtual o ha presionado la &lt;b&gt;tecla anfitrión&lt;/b&gt;. Esto causará que la máquina virtual &lt;b&gt;capture&lt;/b&gt; el puntero del ratón (sólo si la integración del puntero del ratón no está soportada por el SO invitado) y el teclado del anfitrión, lo que hará que no estén disponibles para otras aplicaciones ejecutándose en la máquina anfitrión.&lt;/p&gt;&lt;p&gt;Puede presionar la &lt;b&gt;tecla anfitrión&lt;/b&gt; en cualquier momento para &lt;b&gt;liberar&lt;/b&gt; el teclado y el ratón (si están capturados) y devolverlos al modo de funcionamiento normal. La tecla anfitrión actualmente asignada se muestra en la barra de estado en la parte inferior de la ventana de la máquina virtual, al lado del icono&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Este icono, junto con el icono del ratón situado al lado, indica el estado de captura actual del teclado y ratón.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
@@ -19104,7 +19178,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Continue</source>
-        <translation>Continuar</translation>
+        <translation type="vanished">Continuar</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
@@ -19112,7 +19186,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Discard</source>
-        <translation type="obsolete">Descartar</translation>
+        <translation type="unfinished">Descartar</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -19447,7 +19521,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
-        <translation>&amp;Eliminar</translation>
+        <translation type="vanished">&amp;Eliminar</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
@@ -19602,7 +19676,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation>&amp;Eliminar</translation>
+        <translation type="vanished">&amp;Eliminar</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
@@ -20226,7 +20300,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;La tecla anfitrión actualmente está definida como &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;La tecla anfitrión actualmente está definida como &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -20617,7 +20691,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to assign cloud profile parameter.</source>
-        <translation>Fallo al asignar parámetro de perfil cloud.</translation>
+        <translation type="vanished">Fallo al asignar parámetro de perfil cloud.</translation>
     </message>
     <message>
         <source>Failed to create cloud client.</source>
@@ -21048,7 +21122,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tiene la opción &lt;b&gt;autocaptura de teclado&lt;/b&gt; habilitada. Esto causará que la máquina virtual &lt;b&gt;capture&lt;/b&gt; automáticamente el teclado cada vez que la ventana de la MV sea activada y hará que no esté disponible para otras aplicaciones ejecutándose en la máquina anfitrión, todas las combinaciones de teclas (incluyendo las del sistema como Alt-Tab) serán enviadas a la MV.&lt;/p&gt;&lt;p&gt;Puede presionar la &lt;b&gt;tecla anfitrión&lt;/b&gt; en cualquier momento para &lt;b&gt;liberar&lt;/b&gt; el teclado y el ratón (si están capturados) y devolverlos al modo de funcionamiento normal. La tecla anfitrión actualmente asignada se muestra en la barra de estado en la parte inferior de la ventana de la máquina virtual. Este icono, junto con el icono del ratón situado al lado, indica el estado de captura actual del teclado y ratón.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Tiene la opción &lt;b&gt;autocaptura de teclado&lt;/b&gt; habilitada. Esto causará que la máquina virtual &lt;b&gt;capture&lt;/b&gt; automáticamente el teclado cada vez que la ventana de la MV sea activada y hará que no esté disponible para otras aplicaciones ejecutándose en la máquina anfitrión, todas las combinaciones de teclas (incluyendo las del sistema como Alt-Tab) serán enviadas a la MV.&lt;/p&gt;&lt;p&gt;Puede presionar la &lt;b&gt;tecla anfitrión&lt;/b&gt; en cualquier momento para &lt;b&gt;liberar&lt;/b&gt; el teclado y el ratón (si están capturados) y devolverlos al modo de funcionamiento normal. La tecla anfitrión actualmente asignada se muestra en la barra de estado en la parte inferior de la ventana de la máquina virtual. Este icono, junto con el icono del ratón situado al lado, indica el estado de captura actual del teclado y ratón.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Mouse integration ...</source>
@@ -21228,7 +21302,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to assign update agent parameter.</source>
-        <translation>Fallo al asignar parámetro de actualización.</translation>
+        <translation type="vanished">Fallo al asignar parámetro de actualización.</translation>
     </message>
     <message>
         <source>Can&apos;t enumerate USB devices ...</source>
@@ -21558,7 +21632,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to assign VSD parameter.</source>
-        <translation>Fallo al asignar parámetro VSD.</translation>
+        <translation type="vanished">Fallo al asignar parámetro VSD.</translation>
     </message>
     <message>
         <source>Can&apos;t get Extension Pack Manager ...</source>
@@ -21609,17 +21683,13 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Discard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to continue with Guest Additions installation?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>additions</comment>
-        <translation type="unfinished">Continuar</translation>
+        <translation type="obsolete">Continuar</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox User Guide&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
@@ -21639,10 +21709,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Clipboard Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -21786,10 +21852,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to change the parameter of machine debugger.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to change display parameter.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -21798,19 +21860,72 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to assign keyboard parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to assign mouse parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Can&apos;t reset machine ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to reset the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree with additions installation</comment>
+        <translation type="unfinished">Continuar</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key combo&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key combo is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree to create VM with no hard disk attached</comment>
+        <translation type="unfinished">Continuar</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>reject to create VM with no hard disk attached</comment>
+        <translation type="unfinished">Volver</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree to export VMs without saved-state</comment>
+        <translation type="unfinished">Continuar</translation>
+    </message>
+    <message>
+        <source>Shared clipboard error ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change machine debugger parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change cloud profile parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change update agent parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change keyboard parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change mouse parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change VSD parameter.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -22839,7 +22954,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1: %2</source>
         <comment>Context description: Error description</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
     <message>
         <source>Unable to initialize HTTP library</source>
@@ -24073,11 +24188,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Creating Host-only Network Interface ...</source>
-        <translation>Creando interfaz de red sólo anfitrión...</translation>
+        <translation type="vanished">Creando interfaz de red sólo anfitrión...</translation>
     </message>
     <message>
         <source>Removing Host-only Network Interface ...</source>
-        <translation>Eliminando interfaz de red sólo anfitrión...</translation>
+        <translation type="vanished">Eliminando interfaz de red sólo anfitrión...</translation>
     </message>
     <message>
         <source>Set VSD form value ...</source>
@@ -24101,6 +24216,14 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Resetting cloud VM ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creating host-only network interface ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing host-only network interface ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -25806,11 +25929,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation>Tamaño virtual:</translation>
+        <translation type="vanished">Tamaño virtual:</translation>
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation>Tamaño actual:</translation>
+        <translation type="vanished">Tamaño actual:</translation>
     </message>
     <message>
         <source>Size:</source>
@@ -25818,7 +25941,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Details:</source>
-        <translation>Detalles:</translation>
+        <translation type="vanished">Detalles:</translation>
     </message>
     <message>
         <source>Location:</source>
@@ -25954,7 +26077,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Choose a disk file...</source>
-        <translation>Selecionar un archivo de disco...</translation>
+        <translation type="vanished">Selecionar un archivo de disco...</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Optical Disk...</source>
@@ -25962,7 +26085,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation>Eliminar disco de la unidad virtual</translation>
+        <translation type="vanished">Eliminar disco de la unidad virtual</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
@@ -25970,7 +26093,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Remove disk from virtual drive</source>
-        <translation type="unfinished">Eliminar disco de la unidad virtual</translation>
+        <translation type="obsolete">Eliminar disco de la unidad virtual</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
@@ -25978,6 +26101,26 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Encryption key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Actual size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished">Detalles de almacenamiento:</translation>
+    </message>
+    <message>
+        <source>Choose a Disk File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk From Virtual Drive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -26850,11 +26993,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation>Par de contraseña inválida</translation>
     </message>
     <message>
-        <source>Username cannot be an empty string.</source>
+        <source>Username is valid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Username is valid</source>
+        <source>Username cannot be an empty string</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -26973,14 +27116,18 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>List all virtual machines</source>
-        <translation>Listar todas las máquinas virtuales</translation>
+        <translation type="vanished">Listar todas las máquinas virtuales</translation>
     </message>
     <message>
         <source>Lists all currently active virtual machines.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show cloud virtual machines</source>
+        <source>List All Virtual Machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Cloud Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -27546,7 +27693,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Sec.</source>
-        <translation>Seg.</translation>
+        <translation type="vanished">Seg.</translation>
     </message>
     <message>
         <source>Export activity data of the machine &quot;%1&quot;</source>
@@ -27573,7 +27720,13 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Sec.</source>
+        <comment>short from seconds</comment>
+        <translation type="unfinished">Seg.</translation>
+    </message>
+    <message>
         <source>Min.</source>
+        <comment>short from minutes</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -28386,11 +28539,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Sí</translation>
+        <translation type="obsolete">Sí</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">No</translation>
+        <translation type="obsolete">No</translation>
     </message>
     <message>
         <source>Has Removed Child</source>
@@ -28417,10 +28570,6 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VISO options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select a VISO file to load</source>
         <translation type="unfinished"></translation>
     </message>
@@ -28430,6 +28579,10 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&amp;Save and Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -28876,15 +29029,15 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si crea una &lt;b&gt;Clonación enlazada&lt;/b&gt; entonces una nueva instantánea será creada en la máquina virtual original como parte del proceso de clonación.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Si crea una &lt;b&gt;Clonación enlazada&lt;/b&gt; entonces una nueva instantánea será creada en la máquina virtual original como parte del proceso de clonación.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation>Clonación &amp;completa</translation>
+        <translation type="vanished">Clonación &amp;completa</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation>Clonación &amp;enlazada</translation>
+        <translation type="vanished">Clonación &amp;enlazada</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -28896,11 +29049,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si selecciona &lt;b&gt;Estado actual de la máquina&lt;/b&gt;, la nueva máquina reflejará el estado actual de la máquina original y no tendrá instantáneas.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Si selecciona &lt;b&gt;Estado actual de la máquina&lt;/b&gt;, la nueva máquina reflejará el estado actual de la máquina original y no tendrá instantáneas.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si selecciona &lt;b&gt;Rama de árbol de instantánea actual&lt;/b&gt;, la nueva máquina reflejará el estado actual de la máquina original y tendrá instantáneas coincidentes para todas las instantáneas en la rama del árbol en el estado actual en la máquina original.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Si selecciona &lt;b&gt;Rama de árbol de instantánea actual&lt;/b&gt;, la nueva máquina reflejará el estado actual de la máquina original y tendrá instantáneas coincidentes para todas las instantáneas en la rama del árbol en el estado actual en la máquina original.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
@@ -28908,11 +29061,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation>Estado actual de la &amp;máquina</translation>
+        <translation type="vanished">Estado actual de la &amp;máquina</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation>Rama de árbol de &amp;instantánea actual</translation>
+        <translation type="vanished">Rama de árbol de &amp;instantánea actual</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
@@ -28924,15 +29077,15 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&amp;Full Clone</source>
-        <translation type="vanished">Clonación &amp;completa</translation>
+        <translation>Clonación &amp;completa</translation>
     </message>
     <message>
         <source>&amp;Linked Clone</source>
-        <translation type="vanished">Clonación &amp;enlazada</translation>
+        <translation>Clonación &amp;enlazada</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione el tipo de clonación que desea crear.&lt;/p&gt;&lt;p&gt;Si selecciona &lt;b&gt;Clonación completa&lt;/b&gt;, una copia exacta (incluyendo todos los archivos de disco duro virtual) de la máquina original serán creados.&lt;/p&gt;&lt;p&gt;Si selecciona &lt;b&gt;Clonación enlazada&lt;/b&gt;, una nueva máquina será creada, pero los archivos de las unidades de disco duro virtuales serán vinculados a los archivos de disco duro virtual de la máquina original y no podrá mover la nueva máquina virtual a una computadora diferente sin mover los originales también.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Seleccione el tipo de clonación que desea crear.&lt;/p&gt;&lt;p&gt;Si selecciona &lt;b&gt;Clonación completa&lt;/b&gt;, una copia exacta (incluyendo todos los archivos de disco duro virtual) de la máquina original serán creados.&lt;/p&gt;&lt;p&gt;Si selecciona &lt;b&gt;Clonación enlazada&lt;/b&gt;, una nueva máquina será creada, pero los archivos de las unidades de disco duro virtuales serán vinculados a los archivos de disco duro virtual de la máquina original y no podrá mover la nueva máquina virtual a una computadora diferente sin mover los originales también.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name and optionally a folder for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -28992,7 +29145,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>New machine &amp;name and path</source>
-        <translation>Nuevo &amp;nombre de máquina y ruta</translation>
+        <translation type="vanished">Nuevo &amp;nombre de máquina y ruta</translation>
     </message>
     <message>
         <source>New machine name and path</source>
@@ -29004,7 +29157,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Additional options</source>
-        <translation>Opciones adicionales</translation>
+        <translation type="vanished">Opciones adicionales</translation>
     </message>
     <message>
         <source>Clone name cannot be empty</source>
@@ -29016,7 +29169,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>The clone name is not unique</source>
-        <translation>El nombre de clón no es único</translation>
+        <translation type="vanished">El nombre de clón no es único</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -29079,8 +29232,44 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The clone name is valid</source>
+        <source>Clone name is not unique</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;Machine State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;Snapshot Tree Branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked Clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you create a &lt;b&gt;Linked Clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current Machine State&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current Snapshot Tree Branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Machine Name and Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation type="unfinished">Opciones adicionales</translation>
     </message>
 </context>
 <context>
@@ -30081,7 +30270,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished">Copiar disco virtual</translation>
+        <translation type="obsolete">Copiar disco virtual</translation>
     </message>
     <message>
         <source>Virtual hard disk file type</source>
@@ -30090,6 +30279,10 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <source>Location and size of the disk image</source>
         <translation type="unfinished">Ubicación y tamaño de la imagen de disco</translation>
+    </message>
+    <message>
+        <source>Copy Virtual Hard Disk</source>
+        <translation type="unfinished">Copiar disco duro virtual</translation>
     </message>
 </context>
 <context>
@@ -30534,18 +30727,26 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <source>Lists chosen configuration of the guest system.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>This OS type is not supported by your host. You need to either deselect ISO image or pick another one to continue.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ISO file is for an unsupported guest OS type</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardNewVMSummaryItem</name>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

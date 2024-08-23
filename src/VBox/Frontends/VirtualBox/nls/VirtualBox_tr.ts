@@ -415,11 +415,11 @@
 <context>
     <name>UIAcquireCloudMachineCloneNameDialog</name>
     <message>
-        <source>Clone name</source>
-        <translation type="unfinished"></translation>
+        <source>Clone Virtual Machine</source>
+        <translation type="unfinished">Sanal Makineyi Çoğalt</translation>
     </message>
     <message>
-        <source>Enter clone name</source>
+        <source>Enter machine name...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1892,7 +1892,7 @@
     </message>
     <message>
         <source>Settings</source>
-        <translation>Ayarlar</translation>
+        <translation type="vanished">Ayarlar</translation>
     </message>
     <message>
         <source>Open panel with file manager settings</source>
@@ -2451,7 +2451,7 @@
     </message>
     <message>
         <source>Open panel with file manager log</source>
-        <translation>Dosya yöneticisi günlüğü ile paneli aç</translation>
+        <translation type="vanished">Dosya yöneticisi günlüğü ile paneli aç</translation>
     </message>
     <message>
         <source>Open File Manager Log</source>
@@ -2463,7 +2463,7 @@
     </message>
     <message>
         <source>Open panel with file manager operations</source>
-        <translation>Dosya yöneticisi işlemleri ile paneli aç</translation>
+        <translation type="vanished">Dosya yöneticisi işlemleri ile paneli aç</translation>
     </message>
     <message>
         <source>Open File Manager Operations</source>
@@ -2876,7 +2876,7 @@
     </message>
     <message>
         <source>Reset the VISO content.</source>
-        <translation>VISO içeriğini sıfırla.</translation>
+        <translation type="vanished">VISO içeriğini sıfırla.</translation>
     </message>
     <message>
         <source>&amp;Medium Selector</source>
@@ -3237,7 +3237,7 @@
     </message>
     <message>
         <source>&amp;Stop</source>
-        <translation>&amp;Durdur</translation>
+        <translation type="vanished">&amp;Durdur</translation>
     </message>
     <message>
         <source>&amp;Upgrade Guest Additions...</source>
@@ -3245,7 +3245,7 @@
     </message>
     <message>
         <source>Upgrade Guest Additions</source>
-        <translation>Misafir Eklentilerini yükselt</translation>
+        <translation type="vanished">Misafir Eklentilerini yükselt</translation>
     </message>
     <message>
         <source>Virtual Screen %1</source>
@@ -3277,11 +3277,7 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Tercihler</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager preferences</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Tercihler</translation>
     </message>
     <message>
         <source>Go Forward</source>
@@ -3294,18 +3290,6 @@
     <message>
         <source>Go Backward</source>
         <translation type="unfinished">Geriye Git</translation>
-    </message>
-    <message>
-        <source>Open VISO Creator settings dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Settings Dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Restore</source>
@@ -3328,39 +3312,91 @@
         <translation type="unfinished">Aç</translation>
     </message>
     <message>
-        <source>Open the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISOImport</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import ISO into the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import Selected ISO into the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISORemove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove the imported ISO from the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open pane with activity monitor preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with VISO Creator preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected Item(s) From VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import ISO into the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import Selected ISO Into the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the imported ISO from the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the Imported ISO From the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade guest additions</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3480,11 +3516,16 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Tercihler</translation>
+        <translation type="obsolete">Tercihler</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished">VirtualBox - %1</translation>
+        <translation type="obsolete">VirtualBox - %1</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Preferences</source>
+        <comment>global preferences dialog name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3539,10 +3580,11 @@
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">Ayarlar</translation>
+        <translation type="obsolete">Ayarlar</translation>
     </message>
     <message>
-        <source>%1 - %2</source>
+        <source>%1 - Settings</source>
+        <comment>machine settings dialog name, starts from machine name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3795,12 +3837,12 @@
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation>%1</translation>
+        <translation type="vanished">%1</translation>
     </message>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -4054,10 +4096,14 @@
     </message>
     <message>
         <source>The selected path is invalid.</source>
-        <translation>Seçilen yol geçersiz.</translation>
+        <translation type="vanished">Seçilen yol geçersiz.</translation>
     </message>
     <message>
-        <source>The path is valid.</source>
+        <source>The path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The path is valid</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6234,7 +6280,7 @@
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation>Lütfen yeni sanal sabit disk dosyası için bir yer seçin</translation>
+        <translation type="vanished">Lütfen yeni sanal sabit disk dosyası için bir yer seçin</translation>
     </message>
     <message>
         <source>Paravirtualized Network (virtio-net 1.0)</source>
@@ -6567,7 +6613,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Host-combo</source>
+        <source>Keyboard Extension</source>
         <comment>IndicatorType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -7924,11 +7970,15 @@
     </message>
     <message>
         <source>&amp;Split into 2GB parts</source>
-        <translation>2GB&apos;lık parçalara &amp;böl</translation>
+        <translation type="vanished">2GB&apos;lık parçalara &amp;böl</translation>
     </message>
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation>İşaretlendiğinde, sanal sabit disk dosyası 2GB&apos;lık parçalara bölünür.</translation>
+    </message>
+    <message>
+        <source>&amp;Split Into 2GB Parts</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8870,6 +8920,10 @@ Oturum Panelini kullanın</translation>
         <source>Operations</source>
         <translation type="unfinished">İşlemler</translation>
     </message>
+    <message>
+        <source>NewDirectory</source>
+        <translation type="unfinished">Yeni Dizin</translation>
+    </message>
 </context>
 <context>
     <name>UIFileManagerLogViewer</name>
@@ -8937,7 +8991,7 @@ Oturum Panelini kullanın</translation>
     <name>UIFileSystemModel</name>
     <message>
         <source>NewDirectory</source>
-        <translation type="unfinished">Yeni Dizin</translation>
+        <translation type="obsolete">Yeni Dizin</translation>
     </message>
 </context>
 <context>
@@ -10222,7 +10276,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Host Key Combination</source>
-        <translation>Anamakine Tuş Birleşimi</translation>
+        <translation type="vanished">Anamakine Tuş Birleşimi</translation>
     </message>
     <message>
         <source>Some items have the same shortcuts assigned.</source>
@@ -10251,6 +10305,10 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="vanished">Kısayol listesini süzmek için bir sıralama tutar.</translation>
+    </message>
+    <message>
+        <source>Host Key Combo</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11110,7 +11168,7 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -12613,11 +12671,6 @@ Oturum Panelini kullanın</translation>
         <source>Paravirtualization Interface</source>
         <translation type="unfinished">Yarı Sanallaştırma Arayüzü</translation>
     </message>
-    <message>
-        <source>Processors</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIIndicatorFloppyDisks</name>
@@ -12688,11 +12741,11 @@ Oturum Panelini kullanın</translation>
 <context>
     <name>UIIndicatorKeyboardExtension</name>
     <message>
-        <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
+        <source>Shows the currently assigned Host Key Combo.&lt;br&gt;This key combo, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Host-combo: %1</source>
+        <source>Host Key Combo: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17956,7 +18009,19 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Choose/Create a disk image...</source>
-        <translation type="unfinished">Disk kalıbı seç/oluştur...</translation>
+        <translation type="obsolete">Disk kalıbı seç/oluştur...</translation>
+    </message>
+    <message>
+        <source>Choose/Create a Disk Image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a Disk File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk From Virtual Drive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -18488,7 +18553,7 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;Anamakine tuşu şu anda &lt;b&gt;%1&lt;/b&gt; olarak tanımlandı.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Anamakine tuşu şu anda &lt;b&gt;%1&lt;/b&gt; olarak tanımlandı.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
@@ -18537,12 +18602,12 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation>Devam</translation>
+        <translation type="vanished">Devam</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation>Geri Git</translation>
+        <translation type="vanished">Geri Git</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
@@ -18572,7 +18637,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sanal Makine ekranında &lt;b&gt;fareye tıkladınız&lt;/b&gt; ya da &lt;b&gt;anamakine tuşuna&lt;/b&gt; bastınız. Bu, Sanal Makinenin anamakinenizde çalışan diğer uygulamalar için kullanılamaz yapacak olan anamakine fare işaretçisini (eğer yalnızca fare işaretçisi bütünleştirme misafir İS tarafından şu anda desteklenmiyorsa) ve klavyesini &lt;b&gt;yakalamasına&lt;/b&gt; neden olacak.&lt;/p&gt;&lt;p&gt;İstediğiniz zaman klavyeyi ve fareyi (eğer yakalandıysa) &lt;i&gt;serbest bırakmak&lt;/i&gt; için &lt;b&gt;anamakine tuşuna&lt;/b&gt; basabilir ve normal işlevine döndürebilirsiniz. Şu anda atanmış anamakine tuşu Sanal Makine penceresinin en altında durum çubuğunda,&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;simgesinin yanında gösterilir. Bu simge, yanında yer alan fare simgesiyle birlikte, şu anki klavye ve fare yakalama durumunu gösterir.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Sanal Makine ekranında &lt;b&gt;fareye tıkladınız&lt;/b&gt; ya da &lt;b&gt;anamakine tuşuna&lt;/b&gt; bastınız. Bu, Sanal Makinenin anamakinenizde çalışan diğer uygulamalar için kullanılamaz yapacak olan anamakine fare işaretçisini (eğer yalnızca fare işaretçisi bütünleştirme misafir İS tarafından şu anda desteklenmiyorsa) ve klavyesini &lt;b&gt;yakalamasına&lt;/b&gt; neden olacak.&lt;/p&gt;&lt;p&gt;İstediğiniz zaman klavyeyi ve fareyi (eğer yakalandıysa) &lt;i&gt;serbest bırakmak&lt;/i&gt; için &lt;b&gt;anamakine tuşuna&lt;/b&gt; basabilir ve normal işlevine döndürebilirsiniz. Şu anda atanmış anamakine tuşu Sanal Makine penceresinin en altında durum çubuğunda,&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;simgesinin yanında gösterilir. Bu simge, yanında yer alan fare simgesiyle birlikte, şu anki klavye ve fare yakalama durumunu gösterir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
@@ -18770,11 +18835,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation>Devam</translation>
+        <translation type="vanished">Devam</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="obsolete">Vazgeç</translation>
+        <translation type="unfinished">Vazgeç</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -18956,7 +19021,7 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
-        <translation>&amp;Kaldır</translation>
+        <translation type="vanished">&amp;Kaldır</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
@@ -19080,7 +19145,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation>&amp;Kaldır</translation>
+        <translation type="vanished">&amp;Kaldır</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
@@ -20003,7 +20068,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Failed to assign cloud profile parameter.</source>
-        <translation>Bulut profili parametresini atama başarısız.</translation>
+        <translation type="vanished">Bulut profili parametresini atama başarısız.</translation>
     </message>
     <message>
         <source>Failed to create cloud client.</source>
@@ -20426,7 +20491,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;Klavyeyi otomatik yakala&lt;/b&gt; seçeneğiniz açılmış. Bu, VM penceresi her etkinleştirildiğinde Sanal Makinenin klavyeyi otomatik olarak &lt;b&gt;yakalamasına&lt;/b&gt; neden olacak ve anamakinenizde çalışan diğer uygulamalar tarafından kullanılamaz hale gelecek: klavye yakalandığında tüm tuşa basmalar (Alt-Tab gibi sistem için olanlar da dahil) VM&apos;e yönlendirilecektir.&lt;/p&gt;&lt;p&gt;İstediğiniz zaman klavyeyi ve fareyi (eğer yakalandıysa) &lt;i&gt;serbest bırakmak&lt;/i&gt; için &lt;b&gt;anamakine tuşuna&lt;/b&gt; basabilir ve normal işlevine döndürebilirsiniz. Şu anda atanmış anamakine tuşu Sanal Makine penceresinin en altında durum çubuğunda gösterilir. Bu simge, yanında yer alan fare simgesiyle birlikte, şu anki klavye ve fare yakalama durumunu gösterir.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;&lt;b&gt;Klavyeyi otomatik yakala&lt;/b&gt; seçeneğiniz açılmış. Bu, VM penceresi her etkinleştirildiğinde Sanal Makinenin klavyeyi otomatik olarak &lt;b&gt;yakalamasına&lt;/b&gt; neden olacak ve anamakinenizde çalışan diğer uygulamalar tarafından kullanılamaz hale gelecek: klavye yakalandığında tüm tuşa basmalar (Alt-Tab gibi sistem için olanlar da dahil) VM&apos;e yönlendirilecektir.&lt;/p&gt;&lt;p&gt;İstediğiniz zaman klavyeyi ve fareyi (eğer yakalandıysa) &lt;i&gt;serbest bırakmak&lt;/i&gt; için &lt;b&gt;anamakine tuşuna&lt;/b&gt; basabilir ve normal işlevine döndürebilirsiniz. Şu anda atanmış anamakine tuşu Sanal Makine penceresinin en altında durum çubuğunda gösterilir. Bu simge, yanında yer alan fare simgesiyle birlikte, şu anki klavye ve fare yakalama durumunu gösterir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Mouse integration ...</source>
@@ -20606,7 +20671,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Failed to assign update agent parameter.</source>
-        <translation>Güncelleme aracı parametresini atama başarısız.</translation>
+        <translation type="vanished">Güncelleme aracı parametresini atama başarısız.</translation>
     </message>
     <message>
         <source>Can&apos;t enumerate USB devices ...</source>
@@ -20937,7 +21002,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Failed to assign VSD parameter.</source>
-        <translation>VSD parametresini atama başarısız.</translation>
+        <translation type="vanished">VSD parametresini atama başarısız.</translation>
     </message>
     <message>
         <source>Can&apos;t get Extension Pack Manager ...</source>
@@ -20989,16 +21054,7 @@ Oturum Panelini kullanın</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Discard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to continue with Guest Additions installation?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>additions</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -21019,10 +21075,6 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Clipboard Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -21166,10 +21218,6 @@ Oturum Panelini kullanın</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to change the parameter of machine debugger.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to change display parameter.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -21178,19 +21226,72 @@ Oturum Panelini kullanın</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to assign keyboard parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to assign mouse parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Can&apos;t reset machine ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to reset the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree with additions installation</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key combo&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key combo is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree to create VM with no hard disk attached</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>reject to create VM with no hard disk attached</comment>
+        <translation type="unfinished">Geri Git</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree to export VMs without saved-state</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared clipboard error ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change machine debugger parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change cloud profile parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change update agent parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change keyboard parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change mouse parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change VSD parameter.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -22173,7 +22274,7 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>%1: %2</source>
         <comment>Context description: Error description</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
     <message>
         <source>Unable to initialize HTTP library</source>
@@ -23109,11 +23210,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Creating Host-only Network Interface ...</source>
-        <translation>Yalnızca-Anamakine Ağ Arayüzü oluşturuluyor ...</translation>
+        <translation type="vanished">Yalnızca-Anamakine Ağ Arayüzü oluşturuluyor ...</translation>
     </message>
     <message>
         <source>Removing Host-only Network Interface ...</source>
-        <translation>Yalnızca-Anamakine Ağ Arayüzü kaldırılıyor ...</translation>
+        <translation type="vanished">Yalnızca-Anamakine Ağ Arayüzü kaldırılıyor ...</translation>
     </message>
     <message>
         <source>Set VSD form value ...</source>
@@ -23137,6 +23238,14 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Resetting cloud VM ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creating host-only network interface ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing host-only network interface ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -24769,11 +24878,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation>Sanal Boyut:</translation>
+        <translation type="vanished">Sanal Boyut:</translation>
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation>Gerçek Boyut:</translation>
+        <translation type="vanished">Gerçek Boyut:</translation>
     </message>
     <message>
         <source>Size:</source>
@@ -24781,7 +24890,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Details:</source>
-        <translation>Ayrıntılar:</translation>
+        <translation type="vanished">Ayrıntılar:</translation>
     </message>
     <message>
         <source>Location:</source>
@@ -24917,7 +25026,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Choose a disk file...</source>
-        <translation>Disk dosyası seç...</translation>
+        <translation type="vanished">Disk dosyası seç...</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Optical Disk...</source>
@@ -24925,7 +25034,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation>Diski Sanal Sürücüden Kaldır</translation>
+        <translation type="vanished">Diski Sanal Sürücüden Kaldır</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
@@ -24933,7 +25042,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Remove disk from virtual drive</source>
-        <translation type="unfinished">Diski sanal sürücüden kaldır</translation>
+        <translation type="obsolete">Diski sanal sürücüden kaldır</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
@@ -24941,6 +25050,26 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Encryption key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Actual size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished">Depolama ayrıntıları:</translation>
+    </message>
+    <message>
+        <source>Choose a Disk File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk From Virtual Drive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -25792,11 +25921,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation>Geçersiz parola çifti</translation>
     </message>
     <message>
-        <source>Username cannot be an empty string.</source>
+        <source>Username is valid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Username is valid</source>
+        <source>Username cannot be an empty string</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -25915,14 +26044,18 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>List all virtual machines</source>
-        <translation>Tüm sanal makineleri listele</translation>
+        <translation type="vanished">Tüm sanal makineleri listele</translation>
     </message>
     <message>
         <source>Lists all currently active virtual machines.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show cloud virtual machines</source>
+        <source>List All Virtual Machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Cloud Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -26499,7 +26632,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Sec.</source>
-        <translation>San.</translation>
+        <translation type="vanished">San.</translation>
     </message>
     <message>
         <source>Export activity data of the machine &quot;%1&quot;</source>
@@ -26526,7 +26659,13 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Sec.</source>
+        <comment>short from seconds</comment>
+        <translation type="unfinished">San.</translation>
+    </message>
+    <message>
         <source>Min.</source>
+        <comment>short from minutes</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -27399,11 +27538,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Evet</translation>
+        <translation type="obsolete">Evet</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">Hayır</translation>
+        <translation type="obsolete">Hayır</translation>
     </message>
     <message>
         <source>Has Removed Child</source>
@@ -27430,10 +27569,6 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VISO options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select a VISO file to load</source>
         <translation type="unfinished"></translation>
     </message>
@@ -27444,6 +27579,10 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <source>&amp;Save and Close</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Options</source>
+        <translation type="unfinished">VISO Seçenekleri</translation>
     </message>
 </context>
 <context>
@@ -27887,15 +28026,15 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Eğer &lt;b&gt;Birbirine bağlantılı çoğaltma&lt;/b&gt; oluşturursanız kapatılan işlemin bir parçası olarak orijinal sanal makinede o zaman yeni bir anlık görüntü oluşturulacaktır.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Eğer &lt;b&gt;Birbirine bağlantılı çoğaltma&lt;/b&gt; oluşturursanız kapatılan işlemin bir parçası olarak orijinal sanal makinede o zaman yeni bir anlık görüntü oluşturulacaktır.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation>&amp;Tam çoğaltma</translation>
+        <translation type="vanished">&amp;Tam çoğaltma</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation>&amp;Birbirine bağlantılı çoğaltma</translation>
+        <translation type="vanished">&amp;Birbirine bağlantılı çoğaltma</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -27907,11 +28046,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Eğer &lt;b&gt;Şu anki makine durumu&lt;/b&gt;&apos;nu seçerseniz, yeni makine orijinal makinenin şu anki durumunu yansıtacak ve hiç anlık görüntüye sahip olmayacak.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Eğer &lt;b&gt;Şu anki makine durumu&lt;/b&gt;&apos;nu seçerseniz, yeni makine orijinal makinenin şu anki durumunu yansıtacak ve hiç anlık görüntüye sahip olmayacak.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Eğer &lt;b&gt;Şu anki anlık görüntü ağacı dalı&lt;/b&gt;&apos;nı seçerseniz, yeni makine orijinal makinenin şu anki durumunu yansıtacak ve orijinal makine içinde şu anki durumda başlayan ağaç dalı içinde tüm anlık görüntüler için eşleşen anlık görüntülere sahip olacak.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Eğer &lt;b&gt;Şu anki anlık görüntü ağacı dalı&lt;/b&gt;&apos;nı seçerseniz, yeni makine orijinal makinenin şu anki durumunu yansıtacak ve orijinal makine içinde şu anki durumda başlayan ağaç dalı içinde tüm anlık görüntüler için eşleşen anlık görüntülere sahip olacak.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
@@ -27919,11 +28058,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation>Şu anki &amp;makine durumu</translation>
+        <translation type="vanished">Şu anki &amp;makine durumu</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation>Şu anki &amp;anlık görüntü ağacı dalı</translation>
+        <translation type="vanished">Şu anki &amp;anlık görüntü ağacı dalı</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
@@ -27935,15 +28074,15 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&amp;Full Clone</source>
-        <translation type="vanished">&amp;Tam Çoğaltma</translation>
+        <translation>&amp;Tam Çoğaltma</translation>
     </message>
     <message>
         <source>&amp;Linked Clone</source>
-        <translation type="vanished">&amp;Birbirine Bağlantılı Çoğaltma</translation>
+        <translation>&amp;Birbirine Bağlantılı Çoğaltma</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Lütfen oluşturmak istediğiniz çoğaltma türünü seçin.&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Tam çoğaltma&lt;/b&gt; seçerseniz, orijinal sanal makinenin tam bir kopyası (tüm sanal sabit disk dosyaları dahil) oluşturulacaktır.&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Birbirine bağlantılı çoğaltma&lt;/b&gt; seçerseniz, yeni bir sanal makine oluşturulacaktır ama sanal sabit disk dosyaları orijinal makinenin sanal sabit disk dosyalarına bağlanacaktır ve yeni sanal makineyi farklı bir bilgisayara orijinalini de taşımadan taşıyamacaksınız.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Lütfen oluşturmak istediğiniz çoğaltma türünü seçin.&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Tam çoğaltma&lt;/b&gt; seçerseniz, orijinal sanal makinenin tam bir kopyası (tüm sanal sabit disk dosyaları dahil) oluşturulacaktır.&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Birbirine bağlantılı çoğaltma&lt;/b&gt; seçerseniz, yeni bir sanal makine oluşturulacaktır ama sanal sabit disk dosyaları orijinal makinenin sanal sabit disk dosyalarına bağlanacaktır ve yeni sanal makineyi farklı bir bilgisayara orijinalini de taşımadan taşıyamacaksınız.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name and optionally a folder for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -28007,7 +28146,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>New machine &amp;name and path</source>
-        <translation>Yeni makine &amp;adı ve yolu</translation>
+        <translation type="vanished">Yeni makine &amp;adı ve yolu</translation>
     </message>
     <message>
         <source>Clone options</source>
@@ -28023,7 +28162,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Additional options</source>
-        <translation>İlave seçenekler</translation>
+        <translation type="vanished">İlave seçenekler</translation>
     </message>
     <message>
         <source>Clone name cannot be empty</source>
@@ -28035,7 +28174,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>The clone name is not unique</source>
-        <translation>Çoğaltma adı benzersiz değil</translation>
+        <translation type="vanished">Çoğaltma adı benzersiz değil</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -28098,8 +28237,44 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The clone name is valid</source>
+        <source>Clone name is not unique</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;Machine State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;Snapshot Tree Branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked Clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you create a &lt;b&gt;Linked Clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current Machine State&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current Snapshot Tree Branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Machine Name and Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation type="unfinished">İlave Seçenekler</translation>
     </message>
 </context>
 <context>
@@ -29146,7 +29321,7 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished">Sanal Diski Kopyala</translation>
+        <translation type="obsolete">Sanal Diski Kopyala</translation>
     </message>
     <message>
         <source>Virtual hard disk file type</source>
@@ -29155,6 +29330,10 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     <message>
         <source>Location and size of the disk image</source>
         <translation type="unfinished">Disk kalıbının konumu ve boyutu</translation>
+    </message>
+    <message>
+        <source>Copy Virtual Hard Disk</source>
+        <translation type="unfinished">Sanal Sabit Diski Kopyala</translation>
     </message>
 </context>
 <context>
@@ -29587,18 +29766,26 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
         <source>Lists chosen configuration of the guest system.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>This OS type is not supported by your host. You need to either deselect ISO image or pick another one to continue.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ISO file is for an unsupported guest OS type</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardNewVMSummaryItem</name>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>

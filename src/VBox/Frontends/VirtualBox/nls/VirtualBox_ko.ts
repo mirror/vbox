@@ -222,11 +222,11 @@
 <context>
     <name>UIAcquireCloudMachineCloneNameDialog</name>
     <message>
-        <source>Clone name</source>
+        <source>Clone Virtual Machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter clone name</source>
+        <source>Enter machine name...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1487,7 +1487,7 @@
     </message>
     <message>
         <source>Open panel with file manager log</source>
-        <translation>파일 관리자 로그 패널 열기</translation>
+        <translation type="vanished">파일 관리자 로그 패널 열기</translation>
     </message>
     <message>
         <source>Operations</source>
@@ -1495,7 +1495,7 @@
     </message>
     <message>
         <source>Open panel with file manager operations</source>
-        <translation>파일 관리자 작업 패널 열기</translation>
+        <translation type="vanished">파일 관리자 작업 패널 열기</translation>
     </message>
     <message>
         <source>Open panel with file manager session</source>
@@ -1904,7 +1904,7 @@
     </message>
     <message>
         <source>Reset the VISO content.</source>
-        <translation>VISO 내용을 초기화합니다.</translation>
+        <translation type="vanished">VISO 내용을 초기화합니다.</translation>
     </message>
     <message>
         <source>&amp;Medium Selector</source>
@@ -2265,7 +2265,7 @@
     </message>
     <message>
         <source>&amp;Stop</source>
-        <translation>정지(&amp;S)</translation>
+        <translation type="vanished">정지(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Upgrade Guest Additions...</source>
@@ -2273,7 +2273,7 @@
     </message>
     <message>
         <source>Upgrade Guest Additions</source>
-        <translation>게스트 확장 업그레이드</translation>
+        <translation type="vanished">게스트 확장 업그레이드</translation>
     </message>
     <message>
         <source>Virtual Screen %1</source>
@@ -2305,11 +2305,7 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">환경 설정</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager preferences</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">환경 설정</translation>
     </message>
     <message>
         <source>Go Forward</source>
@@ -2325,19 +2321,7 @@
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">설정</translation>
-    </message>
-    <message>
-        <source>Open VISO Creator settings dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Settings Dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected Item(s) from VISO</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">설정</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
@@ -2360,39 +2344,91 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISOImport</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import ISO into the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import Selected ISO into the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISORemove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove the imported ISO from the VISO content.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open pane with activity monitor preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with file manager operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with VISO Creator preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected Item(s) From VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import ISO into the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import Selected ISO Into the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the imported ISO from the VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the Imported ISO From the VISO Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upgrade guest additions</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2482,11 +2518,16 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">환경 설정</translation>
+        <translation type="obsolete">환경 설정</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished">VirtualBox - %1</translation>
+        <translation type="obsolete">VirtualBox - %1</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Preferences</source>
+        <comment>global preferences dialog name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2541,11 +2582,16 @@
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">설정</translation>
+        <translation type="obsolete">설정</translation>
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation type="unfinished">%1 - %2</translation>
+        <translation type="obsolete">%1 - %2</translation>
+    </message>
+    <message>
+        <source>%1 - Settings</source>
+        <comment>machine settings dialog name, starts from machine name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2739,12 +2785,12 @@
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation>%1</translation>
+        <translation type="vanished">%1</translation>
     </message>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -2958,10 +3004,14 @@
     </message>
     <message>
         <source>The selected path is invalid.</source>
-        <translation>선택한 경로가 잘못되었습니다.</translation>
+        <translation type="vanished">선택한 경로가 잘못되었습니다.</translation>
     </message>
     <message>
-        <source>The path is valid.</source>
+        <source>The path is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The path is valid</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5000,7 +5050,7 @@
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation>새 가상 하드 디스크 파일의 위치를 지정하십시오</translation>
+        <translation type="vanished">새 가상 하드 디스크 파일의 위치를 지정하십시오</translation>
     </message>
     <message>
         <source>Paravirtualized Network (virtio-net 1.0)</source>
@@ -5403,7 +5453,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Host-combo</source>
+        <source>Keyboard Extension</source>
         <comment>IndicatorType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -6302,11 +6352,15 @@
     </message>
     <message>
         <source>&amp;Split into 2GB parts</source>
-        <translation>2GB 단위로 분할(&amp;S)</translation>
+        <translation type="vanished">2GB 단위로 분할(&amp;S)</translation>
     </message>
     <message>
         <source>When checked, the virtual hard disk file is split into 2GB parts.</source>
         <translation>선택하면 가상 하드 디스크 파일을 2GB 단위로 분할합니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Split Into 2GB Parts</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7115,6 +7169,10 @@
         <source>Operations</source>
         <translation type="unfinished">작업</translation>
     </message>
+    <message>
+        <source>NewDirectory</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIFilePathSelector</name>
@@ -7169,13 +7227,6 @@
     <message>
         <source>Holds the file path.</source>
         <translation type="vanished">파일 경로를 표시합니다.</translation>
-    </message>
-</context>
-<context>
-    <name>UIFileSystemModel</name>
-    <message>
-        <source>NewDirectory</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7426,7 +7477,7 @@
     </message>
     <message>
         <source>Host Key Combination</source>
-        <translation>호스트 키 조합</translation>
+        <translation type="vanished">호스트 키 조합</translation>
     </message>
     <message>
         <source>Some items have the same shortcuts assigned.</source>
@@ -7447,6 +7498,10 @@
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
         <translation type="vanished">단축키 목록에서 검색할 텍스트를 입력합니다.</translation>
+    </message>
+    <message>
+        <source>Host Key Combo</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7728,7 +7783,7 @@
     <message>
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -8523,7 +8578,7 @@
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation type="unfinished">프로세서</translation>
+        <translation type="obsolete">프로세서</translation>
     </message>
 </context>
 <context>
@@ -8596,10 +8651,14 @@
     <name>UIIndicatorKeyboardExtension</name>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished">현재 할당된 호스트 키를 표시합니다.&lt;br&gt;이 키를 누르면 키보드와 마우스가 잡힌 상태를 전환합니다. 이 키와 다른 키를 같이 누르면 주 메뉴에 있는 여러 동작들을 빠르게 수행할 수 있습니다.</translation>
+        <translation type="obsolete">현재 할당된 호스트 키를 표시합니다.&lt;br&gt;이 키를 누르면 키보드와 마우스가 잡힌 상태를 전환합니다. 이 키와 다른 키를 같이 누르면 주 메뉴에 있는 여러 동작들을 빠르게 수행할 수 있습니다.</translation>
     </message>
     <message>
-        <source>Host-combo: %1</source>
+        <source>Shows the currently assigned Host Key Combo.&lt;br&gt;This key combo, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Key Combo: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11548,7 +11607,19 @@
     </message>
     <message>
         <source>Choose/Create a disk image...</source>
-        <translation type="unfinished">디스크 이미지 선택/만들기...</translation>
+        <translation type="obsolete">디스크 이미지 선택/만들기...</translation>
+    </message>
+    <message>
+        <source>Choose/Create a Disk Image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a Disk File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk From Virtual Drive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11759,7 +11830,7 @@
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;현재 호스트 키는 &lt;b&gt;%1&lt;/b&gt;입니다.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;현재 호스트 키는 &lt;b&gt;%1&lt;/b&gt;입니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
@@ -11779,12 +11850,12 @@
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation>계속</translation>
+        <translation type="vanished">계속</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation>뒤로 가기</translation>
+        <translation type="vanished">뒤로 가기</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
@@ -11796,7 +11867,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신 안에서 &lt;b&gt;마우스를 클릭했거나 호스트 키를 눌렀습니다&lt;/b&gt;. 이 동작을 실행하면 게스트 확장에서 마우스 통합을 지원하지 않는 경우 가상 머신에서 호스트 마우스 포인터와 키보드를 &lt;b&gt;잡게&lt;/b&gt; 됩니다. 키보드가 잡혀 있으면 호스트에서 실행 중인 프로그램으로 키보드 입력이 전달되지 않을 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 키&lt;/b&gt;를 눌러서 키보드와 마우스를 &lt;b&gt;잡지 않도록&lt;/b&gt; 할 수 있습니다. 현재 할당되어 있는 호스트 키는 가상 머신 창의 상태 표시줄에서&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp; 아이콘 옆에 표시되어 있습니다.  마우스 아이콘 근처에 있는 이 아이콘은 현재 키보드와 마우스가 잡힌 상태를 표시합니다.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;가상 머신 안에서 &lt;b&gt;마우스를 클릭했거나 호스트 키를 눌렀습니다&lt;/b&gt;. 이 동작을 실행하면 게스트 확장에서 마우스 통합을 지원하지 않는 경우 가상 머신에서 호스트 마우스 포인터와 키보드를 &lt;b&gt;잡게&lt;/b&gt; 됩니다. 키보드가 잡혀 있으면 호스트에서 실행 중인 프로그램으로 키보드 입력이 전달되지 않을 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 키&lt;/b&gt;를 눌러서 키보드와 마우스를 &lt;b&gt;잡지 않도록&lt;/b&gt; 할 수 있습니다. 현재 할당되어 있는 호스트 키는 가상 머신 창의 상태 표시줄에서&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp; 아이콘 옆에 표시되어 있습니다.  마우스 아이콘 근처에 있는 이 아이콘은 현재 키보드와 마우스가 잡힌 상태를 표시합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
@@ -11864,7 +11935,7 @@
     </message>
     <message>
         <source>Continue</source>
-        <translation>계속</translation>
+        <translation type="vanished">계속</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -11937,7 +12008,7 @@
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
-        <translation>삭제(&amp;R)</translation>
+        <translation type="vanished">삭제(&amp;R)</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
@@ -11993,7 +12064,7 @@
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation>삭제(&amp;R)</translation>
+        <translation type="vanished">삭제(&amp;R)</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
@@ -12694,7 +12765,7 @@
     </message>
     <message>
         <source>Failed to assign cloud profile parameter.</source>
-        <translation>클라우드 프로필 인자를 할당할 수 없습니다.</translation>
+        <translation type="vanished">클라우드 프로필 인자를 할당할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to create cloud client.</source>
@@ -13125,7 +13196,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;현재 &lt;b&gt;자동으로 키보드 잡기&lt;/b&gt; 옵션이 켜져 있습니다. 가상 머신 창이 활성화되어 있을 때 자동으로 키보드를 &lt;b&gt;잡게 되며&lt;/b&gt; 호스트에서 실행 중인 다른 프로그램으로 전달되지 않을 것입니다. 키보드가 잡혀 있을 경우에는 Alt-Tab 같은 시스템 동작을 비롯한 모든 키보드 입력이 가상 머신으로 전달됩니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 키&lt;/b&gt;를 눌러서 키보드와 마우스가 &lt;b&gt;잡힌 상태를 해제&lt;/b&gt;할 수 있으며 정상적인 작동을 할 수 있도록 합니다. 현재 할당된 호스트 키는 가상 머신 창 아래쪽의 상태 표시줄에 나타나 있습니다. 마우스 아이콘 근처에 있는 이 아이콘은 현재 키보드와 마우스 잡기 상태를 나타냅니다.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;현재 &lt;b&gt;자동으로 키보드 잡기&lt;/b&gt; 옵션이 켜져 있습니다. 가상 머신 창이 활성화되어 있을 때 자동으로 키보드를 &lt;b&gt;잡게 되며&lt;/b&gt; 호스트에서 실행 중인 다른 프로그램으로 전달되지 않을 것입니다. 키보드가 잡혀 있을 경우에는 Alt-Tab 같은 시스템 동작을 비롯한 모든 키보드 입력이 가상 머신으로 전달됩니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 키&lt;/b&gt;를 눌러서 키보드와 마우스가 &lt;b&gt;잡힌 상태를 해제&lt;/b&gt;할 수 있으며 정상적인 작동을 할 수 있도록 합니다. 현재 할당된 호스트 키는 가상 머신 창 아래쪽의 상태 표시줄에 나타나 있습니다. 마우스 아이콘 근처에 있는 이 아이콘은 현재 키보드와 마우스 잡기 상태를 나타냅니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Mouse integration ...</source>
@@ -13305,7 +13376,7 @@
     </message>
     <message>
         <source>Failed to assign update agent parameter.</source>
-        <translation>업데이트 에이전트 인자를 할당할 수 없습니다.</translation>
+        <translation type="vanished">업데이트 에이전트 인자를 할당할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t enumerate USB devices ...</source>
@@ -13639,7 +13710,7 @@
     </message>
     <message>
         <source>Failed to assign VSD parameter.</source>
-        <translation>VSD 인자를 할당할 수 없습니다.</translation>
+        <translation type="vanished">VSD 인자를 할당할 수 없습니다.</translation>
     </message>
     <message>
         <source>Can&apos;t get Extension Pack Manager ...</source>
@@ -13690,17 +13761,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Discard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to continue with Guest Additions installation?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>additions</comment>
-        <translation type="unfinished">계속</translation>
+        <translation type="obsolete">계속</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox User Guide&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
@@ -13720,10 +13787,6 @@
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Clipboard Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -13867,10 +13930,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to change the parameter of machine debugger.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to change display parameter.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -13879,19 +13938,76 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to assign keyboard parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to assign mouse parameter.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Can&apos;t reset machine ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to reset the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">삭제</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree with additions installation</comment>
+        <translation type="unfinished">계속</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key combo&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key combo is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree to create VM with no hard disk attached</comment>
+        <translation type="unfinished">계속</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>reject to create VM with no hard disk attached</comment>
+        <translation type="unfinished">뒤로 가기</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>agree to export VMs without saved-state</comment>
+        <translation type="unfinished">계속</translation>
+    </message>
+    <message>
+        <source>Shared clipboard error ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change machine debugger parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change cloud profile parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change update agent parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change keyboard parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change mouse parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change VSD parameter.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14836,7 +14952,7 @@
     <message>
         <source>%1: %2</source>
         <comment>Context description: Error description</comment>
-        <translation>%1: %2</translation>
+        <translation type="vanished">%1: %2</translation>
     </message>
     <message>
         <source>Unable to initialize HTTP library</source>
@@ -15167,11 +15283,11 @@
     </message>
     <message>
         <source>Creating Host-only Network Interface ...</source>
-        <translation>호스트 전용 네트워크 인터페이스 생성 중...</translation>
+        <translation type="vanished">호스트 전용 네트워크 인터페이스 생성 중...</translation>
     </message>
     <message>
         <source>Removing Host-only Network Interface ...</source>
-        <translation>호스트 전용 네트워크 인터페이스 삭제 중...</translation>
+        <translation type="vanished">호스트 전용 네트워크 인터페이스 삭제 중...</translation>
     </message>
     <message>
         <source>Set VSD form value ...</source>
@@ -15195,6 +15311,14 @@
     </message>
     <message>
         <source>Resetting cloud VM ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creating host-only network interface ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing host-only network interface ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -16610,11 +16734,11 @@
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation>가상 크기:</translation>
+        <translation type="vanished">가상 크기:</translation>
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation>실제 크기:</translation>
+        <translation type="vanished">실제 크기:</translation>
     </message>
     <message>
         <source>Size:</source>
@@ -16622,7 +16746,7 @@
     </message>
     <message>
         <source>Details:</source>
-        <translation>정보:</translation>
+        <translation type="vanished">정보:</translation>
     </message>
     <message>
         <source>Location:</source>
@@ -16758,7 +16882,7 @@
     </message>
     <message>
         <source>Choose a disk file...</source>
-        <translation>디스크 파일 선택...</translation>
+        <translation type="vanished">디스크 파일 선택...</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Optical Disk...</source>
@@ -16766,7 +16890,7 @@
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation>가상 드라이브에서 디스크 꺼내기</translation>
+        <translation type="vanished">가상 드라이브에서 디스크 꺼내기</translation>
     </message>
     <message>
         <source>Choose/Create a Virtual Floppy Disk...</source>
@@ -16774,7 +16898,7 @@
     </message>
     <message>
         <source>Remove disk from virtual drive</source>
-        <translation type="unfinished">가상 드라이브에서 디스크 꺼내기</translation>
+        <translation type="obsolete">가상 드라이브에서 디스크 꺼내기</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
@@ -16782,6 +16906,26 @@
     </message>
     <message>
         <source>Encryption key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Actual size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished">저장소 정보:</translation>
+    </message>
+    <message>
+        <source>Choose a Disk File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk From Virtual Drive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17567,11 +17711,11 @@
         <translation>암호가 일치하지 않음</translation>
     </message>
     <message>
-        <source>Username cannot be an empty string.</source>
+        <source>Username is valid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Username is valid</source>
+        <source>Username cannot be an empty string</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17690,14 +17834,18 @@
     </message>
     <message>
         <source>List all virtual machines</source>
-        <translation>모든 가상 머신 목록</translation>
+        <translation type="vanished">모든 가상 머신 목록</translation>
     </message>
     <message>
         <source>Lists all currently active virtual machines.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show cloud virtual machines</source>
+        <source>List All Virtual Machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Cloud Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -18045,7 +18193,7 @@
     </message>
     <message>
         <source>Sec.</source>
-        <translation>초</translation>
+        <translation type="vanished">초</translation>
     </message>
     <message>
         <source>Export activity data of the machine &quot;%1&quot;</source>
@@ -18072,7 +18220,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Sec.</source>
+        <comment>short from seconds</comment>
+        <translation type="unfinished">초</translation>
+    </message>
+    <message>
         <source>Min.</source>
+        <comment>short from minutes</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -18699,11 +18853,11 @@
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">예</translation>
+        <translation type="obsolete">예</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">아니요</translation>
+        <translation type="obsolete">아니요</translation>
     </message>
     <message>
         <source>Has Removed Child</source>
@@ -18730,10 +18884,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VISO options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Select a VISO file to load</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18743,6 +18893,10 @@
     </message>
     <message>
         <source>&amp;Save and Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -18998,15 +19152,15 @@
     </message>
     <message>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;연결된 복제본&lt;/b&gt;을 만들면 복제 과정에서 원본 가상 머신의 스냅샷을 만듭니다.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;&lt;b&gt;연결된 복제본&lt;/b&gt;을 만들면 복제 과정에서 원본 가상 머신의 스냅샷을 만듭니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation>완전한 복제(&amp;F)</translation>
+        <translation type="vanished">완전한 복제(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation>연결된 복제(&amp;L)</translation>
+        <translation type="vanished">연결된 복제(&amp;L)</translation>
     </message>
     <message>
         <source>Snapshots</source>
@@ -19018,11 +19172,11 @@
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;현재 머신 상태&lt;/b&gt;를 선택하면 새 머신은 원본 머신의 현재 상태를 반영하며 스냅샷을 만들지 않습니다.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;&lt;b&gt;현재 머신 상태&lt;/b&gt;를 선택하면 새 머신은 원본 머신의 현재 상태를 반영하며 스냅샷을 만들지 않습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;현재 스냅샷 트리 브랜치&lt;/b&gt;를 선택하면 새 머신은 원본 머신의 현재 상태를 반영하며, 원본 머신의 스냅샷 중 현재 선택한 스냅샷이 속한 브랜치에 있는 모든 부모 스냅샷을 복사합니다.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;&lt;b&gt;현재 스냅샷 트리 브랜치&lt;/b&gt;를 선택하면 새 머신은 원본 머신의 현재 상태를 반영하며, 원본 머신의 스냅샷 중 현재 선택한 스냅샷이 속한 브랜치에 있는 모든 부모 스냅샷을 복사합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
@@ -19030,11 +19184,11 @@
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation>현재 머신 상태(&amp;M)</translation>
+        <translation type="vanished">현재 머신 상태(&amp;M)</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
-        <translation>현재 스냅샷 트리 브랜치(&amp;S)</translation>
+        <translation type="vanished">현재 스냅샷 트리 브랜치(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Everything</source>
@@ -19042,15 +19196,15 @@
     </message>
     <message>
         <source>&amp;Full Clone</source>
-        <translation type="vanished">완전한 복제(&amp;F)</translation>
+        <translation>완전한 복제(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Linked Clone</source>
-        <translation type="vanished">연결된 복제(&amp;L)</translation>
+        <translation>연결된 복제(&amp;L)</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;복제 방식을 선택하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;완전한 복제&lt;/b&gt;를 선택하면 모든 가상 하드 드라이브 파일을 포함한 원본 가상 머신의 모든 것을 복사합니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;연결된 복제&lt;/b&gt;를 선택하면 새 가상 머신을 만들지만, 가상 하드 드라이브 파일은 원본 머신과 연결되어 있으며, 다른 컴퓨터로 가상 머신을 이동할 때에도 원래 가상 머신을 같이 이동해야 합니다.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;복제 방식을 선택하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;완전한 복제&lt;/b&gt;를 선택하면 모든 가상 하드 드라이브 파일을 포함한 원본 가상 머신의 모든 것을 복사합니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;연결된 복제&lt;/b&gt;를 선택하면 새 가상 머신을 만들지만, 가상 하드 드라이브 파일은 원본 머신과 연결되어 있으며, 다른 컴퓨터로 가상 머신을 이동할 때에도 원래 가상 머신을 같이 이동해야 합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name and optionally a folder for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -19110,7 +19264,7 @@
     </message>
     <message>
         <source>New machine &amp;name and path</source>
-        <translation>새 머신 이름과 경로(&amp;N)</translation>
+        <translation type="vanished">새 머신 이름과 경로(&amp;N)</translation>
     </message>
     <message>
         <source>New machine name and path</source>
@@ -19122,7 +19276,7 @@
     </message>
     <message>
         <source>Additional options</source>
-        <translation>추가 옵션</translation>
+        <translation type="vanished">추가 옵션</translation>
     </message>
     <message>
         <source>Clone name cannot be empty</source>
@@ -19134,7 +19288,7 @@
     </message>
     <message>
         <source>The clone name is not unique</source>
-        <translation>복사본 이름이 중복됨</translation>
+        <translation type="vanished">복사본 이름이 중복됨</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -19197,8 +19351,44 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The clone name is valid</source>
+        <source>Clone name is not unique</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;Machine State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current &amp;Snapshot Tree Branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked Clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you create a &lt;b&gt;Linked Clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current Machine State&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you choose &lt;b&gt;Current Snapshot Tree Branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Machine Name and Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation type="unfinished">추가 옵션</translation>
     </message>
 </context>
 <context>
@@ -19979,7 +20169,7 @@
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished">가상 디스크 복사</translation>
+        <translation type="obsolete">가상 디스크 복사</translation>
     </message>
     <message>
         <source>Virtual hard disk file type</source>
@@ -19988,6 +20178,10 @@
     <message>
         <source>Location and size of the disk image</source>
         <translation type="unfinished">디스크 이미지 위치와 크기</translation>
+    </message>
+    <message>
+        <source>Copy Virtual Hard Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -20364,18 +20558,26 @@
         <source>Lists chosen configuration of the guest system.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>This OS type is not supported by your host. You need to either deselect ISO image or pick another one to continue.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ISO file is for an unsupported guest OS type</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardNewVMSummaryItem</name>
     <message>
         <source>%1: %2</source>
         <comment>col.1 text: col.2 text</comment>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="unfinished">%1</translation>
+        <translation type="obsolete">%1</translation>
     </message>
 </context>
 <context>
