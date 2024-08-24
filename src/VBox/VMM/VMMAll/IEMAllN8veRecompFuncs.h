@@ -685,6 +685,284 @@ iemNativeEmitAddToIp16AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_
 }
 
 
+/*********************************************************************************************************************************
+*   Common code for changing PC/RIP/EIP/IP.                                                                                      *
+*********************************************************************************************************************************/
+
+/**
+ * Emits code to check if the content of @a idxAddrReg is a canonical address,
+ * raising a \#GP(0) if it isn't.
+ *
+ * @returns New code buffer offset, UINT32_MAX on failure.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   idxAddrReg      The host register with the address to check.
+ * @param   idxInstr        The current instruction.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxAddrReg, uint8_t idxInstr)
+{
+    /*
+     * Make sure we don't have any outstanding guest register writes as we may
+     * raise an #GP(0) and all guest register must be up to date in CPUMCTX.
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+#ifdef RT_ARCH_AMD64
+    /*
+     * if ((((uint32_t)(a_u64Addr >> 32) + UINT32_C(0x8000)) >> 16) != 0)
+     *     return raisexcpt();
+     * ---- this variant avoid loading a 64-bit immediate, but is an instruction longer.
+     */
+    uint8_t const iTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, iTmpReg, idxAddrReg);
+    off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 32);
+    off = iemNativeEmitAddGpr32Imm(pReNative, off, iTmpReg, (int32_t)0x8000);
+    off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 16);
+    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
+
+    iemNativeRegFreeTmp(pReNative, iTmpReg);
+
+#elif defined(RT_ARCH_ARM64)
+    /*
+     * if ((((uint64_t)(a_u64Addr) + UINT64_C(0x800000000000)) >> 48) != 0)
+     *     return raisexcpt();
+     * ----
+     *     mov     x1, 0x800000000000
+     *     add     x1, x0, x1
+     *     cmp     xzr, x1, lsr 48
+     *     b.ne    .Lraisexcpt
+     */
+    uint8_t const iTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+
+    off = iemNativeEmitLoadGprImm64(pReNative, off, iTmpReg, UINT64_C(0x800000000000));
+    off = iemNativeEmitAddTwoGprs(pReNative, off, iTmpReg, idxAddrReg);
+    off = iemNativeEmitCmpArm64(pReNative, off, ARMV8_A64_REG_XZR, iTmpReg, true /*f64Bit*/, 48 /*cShift*/, kArmv8A64InstrShift_Lsr);
+    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
+
+    iemNativeRegFreeTmp(pReNative, iTmpReg);
+
+#else
+# error "Port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits code to check if the content of @a idxAddrReg is a canonical address,
+ * raising a \#GP(0) if it isn't.
+ *
+ * Caller makes sure everything is flushed, except maybe PC.
+ *
+ * @returns New code buffer offset, UINT32_MAX on failure.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   idxAddrReg      The host register with the address to check.
+ * @param   idxOldPcReg     Register holding the old PC that offPc is relative
+ *                          to if available, otherwise UINT8_MAX.
+ * @param   idxInstr        The current instruction.
+ * @tparam  a_fAbsolute     Not sure why we have this yet.
+ */
+template<bool const a_fAbsolute>
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitCheckGprCanonicalMaybeRaiseGp0WithOldPc(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                     uint8_t idxAddrReg, uint8_t idxOldPcReg, uint8_t idxInstr)
+{
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    Assert(pReNative->Core.bmGstRegShadowDirty == 0);
+#endif
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    if (!pReNative->Core.offPc)
+# endif
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+#ifdef RT_ARCH_AMD64
+    /*
+     * if ((((uint32_t)(a_u64Addr >> 32) + UINT32_C(0x8000)) >> 16) != 0)
+     *     return raisexcpt();
+     * ---- this variant avoid loading a 64-bit immediate, but is an instruction longer.
+     */
+    uint8_t const iTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, iTmpReg, idxAddrReg);
+    off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 32);
+    off = iemNativeEmitAddGpr32Imm(pReNative, off, iTmpReg, (int32_t)0x8000);
+    off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 16);
+
+#elif defined(RT_ARCH_ARM64)
+    /*
+     * if ((((uint64_t)(a_u64Addr) + UINT64_C(0x800000000000)) >> 48) != 0)
+     *     return raisexcpt();
+     * ----
+     *     mov     x1, 0x800000000000
+     *     add     x1, x0, x1
+     *     cmp     xzr, x1, lsr 48
+     *     b.ne    .Lraisexcpt
+     */
+    uint8_t const iTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+
+    off = iemNativeEmitLoadGprImm64(pReNative, off, iTmpReg, UINT64_C(0x800000000000));
+    off = iemNativeEmitAddTwoGprs(pReNative, off, iTmpReg, idxAddrReg);
+    off = iemNativeEmitCmpArm64(pReNative, off, ARMV8_A64_REG_XZR, iTmpReg, true /*f64Bit*/, 48 /*cShift*/, kArmv8A64InstrShift_Lsr);
+#else
+# error "Port me"
+#endif
+
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    if (pReNative->Core.offPc)
+    {
+        /** @todo On x86, it is said that conditional jumps forward are statically
+         *        predicited as not taken, so this isn't a very good construct.
+         *        Investigate whether it makes sense to invert it and add another
+         *        jump.  Also, find out wtf the static predictor does here on arm! */
+        uint32_t const offFixup = off;
+        off = iemNativeEmitJzToFixed(pReNative, off, off + 16 /*8-bit suffices*/);
+
+        /* Raising a GP(0), but first we need to update cpum.GstCtx.rip. */
+        if (idxOldPcReg == UINT8_MAX)
+        {
+            idxOldPcReg = iTmpReg;
+            off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxOldPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+        }
+        off = iemNativeEmitAddGprImm(pReNative, off, idxOldPcReg, pReNative->Core.offPc);
+        off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxOldPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+# ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+# endif
+        off = iemNativeEmitTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0, false /*fActuallyExitingTb*/);
+        iemNativeFixupFixedJump(pReNative, offFixup, off);
+    }
+    else
+#endif
+        off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
+
+    iemNativeRegFreeTmp(pReNative, iTmpReg);
+
+    return off;
+}
+
+
+/**
+ * Emits code to check if that the content of @a idxAddrReg is within the limit
+ * of CS, raising a \#GP(0) if it isn't.
+ *
+ * @returns New code buffer offset; throws VBox status code on error.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   idxAddrReg      The host register (32-bit) with the address to
+ *                          check.
+ * @param   idxInstr        The current instruction.
+ */
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                      uint8_t idxAddrReg, uint8_t idxInstr)
+{
+    /*
+     * Make sure we don't have any outstanding guest register writes as we may
+     * raise an #GP(0) and all guest register must be up to date in CPUMCTX.
+     */
+    off = iemNativeRegFlushPendingWrites(pReNative, off);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    uint8_t const idxRegCsLim = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
+                                                                (IEMNATIVEGSTREG)(kIemNativeGstReg_SegLimitFirst + X86_SREG_CS),
+                                                                kIemNativeGstRegUse_ReadOnly);
+
+    off = iemNativeEmitCmpGpr32WithGpr(pReNative, off, idxAddrReg, idxRegCsLim);
+    off = iemNativeEmitJaTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
+
+    iemNativeRegFreeTmp(pReNative, idxRegCsLim);
+    return off;
+}
+
+
+
+
+/**
+ * Emits code to check if that the content of @a idxAddrReg is within the limit
+ * of CS, raising a \#GP(0) if it isn't.
+ *
+ * Caller makes sure everything is flushed, except maybe PC.
+ *
+ * @returns New code buffer offset; throws VBox status code on error.
+ * @param   pReNative       The native recompile state.
+ * @param   off             The code buffer offset.
+ * @param   idxAddrReg      The host register (32-bit) with the address to
+ *                          check.
+ * @param   idxOldPcReg     Register holding the old PC that offPc is relative
+ *                          to if available, otherwise UINT8_MAX.
+ * @param   idxInstr        The current instruction.
+ * @tparam  a_fAbsolute     Not sure why we have this yet.
+ */
+template<bool const a_fAbsolute>
+DECL_FORCE_INLINE_THROW(uint32_t)
+iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0WithOldPc(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                               uint8_t idxAddrReg, uint8_t idxOldPcReg, uint8_t idxInstr)
+{
+#ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
+    Assert(pReNative->Core.bmGstRegShadowDirty == 0);
+#endif
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    if (!pReNative->Core.offPc)
+# endif
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    uint8_t const idxRegCsLim = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
+                                                                (IEMNATIVEGSTREG)(kIemNativeGstReg_SegLimitFirst + X86_SREG_CS),
+                                                                kIemNativeGstRegUse_ReadOnly);
+
+    off = iemNativeEmitCmpGpr32WithGpr(pReNative, off, idxAddrReg, idxRegCsLim);
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    if (pReNative->Core.offPc)
+    {
+        uint32_t const offFixup = off;
+        off = iemNativeEmitJbeToFixed(pReNative, off, off + 16 /*8-bit suffices*/);
+
+        /* Raising a GP(0), but first we need to update cpum.GstCtx.rip. */
+        if (idxOldPcReg == UINT8_MAX)
+        {
+            idxOldPcReg = idxAddrReg;
+            off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxOldPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+        }
+        off = iemNativeEmitAddGprImm(pReNative, off, idxOldPcReg, pReNative->Core.offPc);
+        off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxOldPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+# ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+        off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+# endif
+        off = iemNativeEmitTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0, false /*fActuallyExitingTb*/);
+        iemNativeFixupFixedJump(pReNative, offFixup, off);
+    }
+    else
+#endif
+        off = iemNativeEmitJaTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
+
+    iemNativeRegFreeTmp(pReNative, idxRegCsLim);
+    return off;
+}
+
 
 /*********************************************************************************************************************************
 *   Emitters for changing PC/RIP/EIP/IP with a relative jump (IEM_MC_REL_JMP_XXX_AND_FINISH_XXX).                                *
@@ -1084,35 +1362,44 @@ iemNativeEmitRipJumpNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarPc);
     IEMNATIVE_ASSERT_VAR_SIZE(pReNative, idxVarPc, cbVar);
 
-    /* We speculatively modify PC and may raise #GP(0), so make sure the right values are in CPUMCTX. */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
-
-#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    Assert(pReNative->Core.offPc == 0);
-    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
-#endif
+    /* If we can't rule out a #GP(0) below, flush all dirty register except for
+       PC which will be handled specially by the two workers below if they raise a GP. */
+    bool const    fMayRaiseGp0 = (f64Bit && cbVar > sizeof(uint32_t)) || (!f64Bit && !IEM_F_MODE_X86_IS_FLAT(pReNative->fExec));
+    uint8_t const idxOldPcReg  = fMayRaiseGp0
+                               ? iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(pReNative, &off, kIemNativeGstReg_Pc)
+                               : UINT8_MAX;
+    if (fMayRaiseGp0)
+        off = iemNativeRegFlushPendingWrites(pReNative, off, RT_BIT_64(kIemNativeGstReg_Pc) /*fGstShwExcept*/);
 
     /* Get a register with the new PC loaded from idxVarPc.
        Note! This ASSUMES that the high bits of the GPR is zeroed. */
     uint8_t const idxPcReg = iemNativeVarRegisterAcquireForGuestReg(pReNative, idxVarPc, kIemNativeGstReg_Pc, &off);
 
-    /* Check limit (may #GP(0) + exit TB). */
-    if (!f64Bit)
-/** @todo we can skip this test in FLAT 32-bit mode. */
-        off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
-    /* Check that the address is canonical, raising #GP(0) + exit TB if it isn't. */
-    else if (cbVar > sizeof(uint32_t))
-        off = iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(pReNative, off, idxPcReg, idxInstr);
+    /* Check that the target is within CS.LIM / is canonical (may #GP(0) + exit TB). */
+    if (fMayRaiseGp0)
+    {
+        if (f64Bit)
+            off = iemNativeEmitCheckGprCanonicalMaybeRaiseGp0WithOldPc<true>(pReNative, off, idxPcReg, idxOldPcReg, idxInstr);
+        else
+            off = iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0WithOldPc<true>(pReNative, off, idxPcReg,
+                                                                                       idxOldPcReg, idxInstr);
+    }
 
     /* Store the result. */
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
 
-#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    pReNative->Core.offPc = 0;
+    STAM_COUNTER_INC(&pReNative->pVCpu->iem.s.StatNativePcUpdateTotal);
+# ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
     off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, iem.s.uPcUpdatingDebug));
     pReNative->Core.fDebugPcInitialized = true;
     Log4(("uPcUpdatingDebug=rip off=%#x\n", off));
+# endif
 #endif
 
+    if (idxOldPcReg != UINT8_MAX)
+        iemNativeRegFreeTmp(pReNative, idxOldPcReg);
     iemNativeVarRegisterRelease(pReNative, idxVarPc);
     /** @todo implictly free the variable? */
 

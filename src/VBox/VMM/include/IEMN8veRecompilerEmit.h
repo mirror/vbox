@@ -8431,11 +8431,14 @@ iemNativeEmitTbExitEx(PIEMRECOMPILERSTATE pReNative, PIEMNATIVEINSTR pCodeBuf, u
 }
 
 
-DECL_INLINE_THROW(uint32_t) iemNativeEmitTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVELABELTYPE enmExitReason)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitTbExit(PIEMRECOMPILERSTATE pReNative, uint32_t off, IEMNATIVELABELTYPE enmExitReason,
+                    bool fActuallyExitingTb = true)
 {
     Assert(IEMNATIVELABELTYPE_IS_EXIT_REASON(enmExitReason));
 
-    iemNativeMarkCurCondBranchAsExiting(pReNative);
+    if (fActuallyExitingTb)
+        iemNativeMarkCurCondBranchAsExiting(pReNative);
 
 #ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
 # ifdef RT_ARCH_AMD64

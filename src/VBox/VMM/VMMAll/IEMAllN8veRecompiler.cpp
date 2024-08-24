@@ -5681,7 +5681,7 @@ DECL_HIDDEN_THROW(uint32_t)
 iemNativeRegFlushPendingWritesSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept, uint64_t fGstSimdShwExcept)
 {
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    if (!(fGstShwExcept & kIemNativeGstReg_Pc))
+    if (!(fGstShwExcept & RT_BIT_64(kIemNativeGstReg_Pc)))
         off = iemNativeEmitPcWriteback(pReNative, off);
 #else
     RT_NOREF(pReNative, fGstShwExcept);
@@ -6367,112 +6367,6 @@ iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 #endif
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     RT_NOREF_PV(idxInstr);
-    return off;
-}
-
-
-/**
- * Emits code to check if the content of @a idxAddrReg is a canonical address,
- * raising a \#GP(0) if it isn't.
- *
- * @returns New code buffer offset, UINT32_MAX on failure.
- * @param   pReNative       The native recompile state.
- * @param   off             The code buffer offset.
- * @param   idxAddrReg      The host register with the address to check.
- * @param   idxInstr        The current instruction.
- */
-DECL_HIDDEN_THROW(uint32_t)
-iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxAddrReg, uint8_t idxInstr)
-{
-    /*
-     * Make sure we don't have any outstanding guest register writes as we may
-     * raise an #GP(0) and all guest register must be up to date in CPUMCTX.
-     */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
-
-#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
-#else
-    RT_NOREF(idxInstr);
-#endif
-
-#ifdef RT_ARCH_AMD64
-    /*
-     * if ((((uint32_t)(a_u64Addr >> 32) + UINT32_C(0x8000)) >> 16) != 0)
-     *     return raisexcpt();
-     * ---- this wariant avoid loading a 64-bit immediate, but is an instruction longer.
-     */
-    uint8_t const iTmpReg = iemNativeRegAllocTmp(pReNative, &off);
-
-    off = iemNativeEmitLoadGprFromGpr(pReNative, off, iTmpReg, idxAddrReg);
-    off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 32);
-    off = iemNativeEmitAddGpr32Imm(pReNative, off, iTmpReg, (int32_t)0x8000);
-    off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 16);
-    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
-
-    iemNativeRegFreeTmp(pReNative, iTmpReg);
-
-#elif defined(RT_ARCH_ARM64)
-    /*
-     * if ((((uint64_t)(a_u64Addr) + UINT64_C(0x800000000000)) >> 48) != 0)
-     *     return raisexcpt();
-     * ----
-     *     mov     x1, 0x800000000000
-     *     add     x1, x0, x1
-     *     cmp     xzr, x1, lsr 48
-     *     b.ne    .Lraisexcpt
-     */
-    uint8_t const iTmpReg = iemNativeRegAllocTmp(pReNative, &off);
-
-    off = iemNativeEmitLoadGprImm64(pReNative, off, iTmpReg, UINT64_C(0x800000000000));
-    off = iemNativeEmitAddTwoGprs(pReNative, off, iTmpReg, idxAddrReg);
-    off = iemNativeEmitCmpArm64(pReNative, off, ARMV8_A64_REG_XZR, iTmpReg, true /*f64Bit*/, 48 /*cShift*/, kArmv8A64InstrShift_Lsr);
-    off = iemNativeEmitJnzTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
-
-    iemNativeRegFreeTmp(pReNative, iTmpReg);
-
-#else
-# error "Port me"
-#endif
-    return off;
-}
-
-
-/**
- * Emits code to check if that the content of @a idxAddrReg is within the limit
- * of CS, raising a \#GP(0) if it isn't.
- *
- * @returns New code buffer offset; throws VBox status code on error.
- * @param   pReNative       The native recompile state.
- * @param   off             The code buffer offset.
- * @param   idxAddrReg      The host register (32-bit) with the address to
- *                          check.
- * @param   idxInstr        The current instruction.
- */
-DECL_HIDDEN_THROW(uint32_t)
-iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                      uint8_t idxAddrReg, uint8_t idxInstr)
-{
-    /*
-     * Make sure we don't have any outstanding guest register writes as we may
-     * raise an #GP(0) and all guest register must be up to date in CPUMCTX.
-     */
-    off = iemNativeRegFlushPendingWrites(pReNative, off);
-
-#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
-    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
-#else
-    RT_NOREF(idxInstr);
-#endif
-
-    uint8_t const idxRegCsLim = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
-                                                                (IEMNATIVEGSTREG)(kIemNativeGstReg_SegLimitFirst + X86_SREG_CS),
-                                                                kIemNativeGstRegUse_ReadOnly);
-
-    off = iemNativeEmitCmpGpr32WithGpr(pReNative, off, idxAddrReg, idxRegCsLim);
-    off = iemNativeEmitJaTbExit(pReNative, off, kIemNativeLabelType_RaiseGp0);
-
-    iemNativeRegFreeTmp(pReNative, idxRegCsLim);
     return off;
 }
 

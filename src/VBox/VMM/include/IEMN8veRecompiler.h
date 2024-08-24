@@ -1812,8 +1812,6 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNat
                                                       PCIEMTHRDEDCALLENTRY pCallEntry);
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                         uint8_t idxAddrReg, uint8_t idxInstr);
-DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckGpr32AgainstCsSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                                                  uint8_t idxAddrReg, uint8_t idxInstr);
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitLeaGprByGstRegRef(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxGprDst,
                                                            IEMNATIVEGSTREGREF enmClass, uint8_t idxRegInClass);
 
@@ -2463,6 +2461,11 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint64_t fGstShwExcept = 0,
                                uint64_t fGstSimdShwExcept = 0)
 {
+#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
+    uint64_t const fWritebackPc            = ~fGstShwExcept & RT_BIT_64(kIemNativeGstReg_Pc);
+#else
+    uint64_t const fWritebackPc            = 0;
+#endif
 #ifdef IEMNATIVE_WITH_DELAYED_REGISTER_WRITEBACK
     uint64_t const bmGstRegShadowDirty     = pReNative->Core.bmGstRegShadowDirty & ~fGstShwExcept;
 #else
@@ -2474,11 +2477,6 @@ iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
                                            & ~fGstSimdShwExcept;
 #else
     uint64_t const bmGstSimdRegShadowDirty = 0;
-#endif
-#ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
-    uint64_t const fWritebackPc            = ~(fGstShwExcept & kIemNativeGstReg_Pc);
-#else
-    uint64_t const fWritebackPc            = 0;
 #endif
     if (bmGstRegShadowDirty | bmGstSimdRegShadowDirty | fWritebackPc)
         return iemNativeRegFlushPendingWritesSlow(pReNative, off, fGstShwExcept, fGstSimdShwExcept);
