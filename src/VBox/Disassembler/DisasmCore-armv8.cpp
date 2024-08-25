@@ -90,6 +90,7 @@ static FNDISPARSEARMV8 disArmV8ParseShift;
 static FNDISPARSEARMV8 disArmV8ParseShiftAmount;
 static FNDISPARSEARMV8 disArmV8ParseImmMemOff;
 static FNDISPARSEARMV8 disArmV8ParseSImmMemOff;
+static FNDISPARSEARMV8 disArmV8ParseSImmMemOffUnscaled;
 static FNDISPARSEARMV8 disArmV8ParseOption;
 static FNDISPARSEARMV8 disArmV8ParseS;
 /** @}  */
@@ -128,6 +129,7 @@ static PFNDISPARSEARMV8 const g_apfnDisasm[kDisParmParseMax] =
     disArmV8ParseShiftAmount,
     disArmV8ParseImmMemOff,
     disArmV8ParseSImmMemOff,
+    disArmV8ParseSImmMemOffUnscaled,
     disArmV8ParseOption,
     disArmV8ParseS
 };
@@ -484,7 +486,7 @@ static int disArmV8ParseImmMemOff(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8OP
 
 static int disArmV8ParseSImmMemOff(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8OPCODE pOp, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
 {
-    RT_NOREF(pInsnClass, pf64Bit);
+    RT_NOREF(pDis, pInsnClass, pf64Bit);
 
     AssertReturn(pInsnParm->cBits <= 7, VERR_INTERNAL_ERROR_2);
     AssertReturn(   (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_32BIT)
@@ -494,7 +496,16 @@ static int disArmV8ParseSImmMemOff(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8O
     pParam->armv8.cb = sizeof(int16_t);
     pParam->armv8.u.offBase = disArmV8ExtractBitVecFromInsnSignExtend(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
     pParam->armv8.u.offBase <<= (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_32BIT) ? 2 : 3;
-    pDis->armv8.cbOperand   =   (pOp->fFlags & DISARMV8INSNCLASS_F_FORCED_32BIT) ? sizeof(uint32_t) : sizeof(uint64_t);
+    return VINF_SUCCESS;
+}
+
+
+static int disArmV8ParseSImmMemOffUnscaled(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8OPCODE pOp, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
+{
+    RT_NOREF(pDis, pOp, pInsnClass, pf64Bit);
+
+    AssertReturn(pInsnParm->cBits <= 9, VERR_INTERNAL_ERROR_2);
+    pParam->armv8.u.offBase = disArmV8ExtractBitVecFromInsnSignExtend(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
     return VINF_SUCCESS;
 }
 

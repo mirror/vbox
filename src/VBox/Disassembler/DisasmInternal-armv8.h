@@ -68,6 +68,7 @@ typedef enum DISPARMPARSEIDX
     kDisParmParseShiftAmount,
     kDisParmParseImmMemOff,
     kDisParmParseSImmMemOff,
+    kDisParmParseSImmMemOffUnscaled,
     kDisParmParseOption,
     kDisParmParseS,
     kDisParmParseMax

@@ -409,6 +409,42 @@ _TestProcA64:
         ldrsw x0, [x28, #4]
         ldrsw x0, [x28, #16380]
 
+        ldurb w0, [x28]
+        ldurb w0, [x28, #-256]
+        ldurb w0, [x28, #255]
+
+        ldursb w0, [x28]
+        ldursb w0, [x28, #-256]
+        ldursb w0, [x28, #255]
+
+        ldursb x0, [x28]
+        ldursb x0, [x28, #-256]
+        ldursb x0, [x28, #255]
+
+        ldurh w0, [x28]
+        ldurh w0, [x28, #-256]
+        ldurh w0, [x28, #255]
+
+        ldursh w0, [x28]
+        ldursh w0, [x28, #-256]
+        ldursh w0, [x28, #255]
+
+        ldursh x0, [x28]
+        ldursh x0, [x28, #-256]
+        ldursh x0, [x28, #255]
+
+        ldur x0, [x28]
+        ldur x0, [x28, #-256]
+        ldur x0, [x28, #255]
+
+        ldur w0, [x28]
+        ldur w0, [x28, #-256]
+        ldur w0, [x28, #255]
+
+        ldursw x0, [x28]
+        ldursw x0, [x28, #-256]
+        ldursw x0, [x28, #255]
+
         ldp w0, w1, [x28]
         ldp w0, w1, [x28, #4]
         ldp w0, w1, [x28, #-256]
@@ -487,6 +523,23 @@ _TestProcA64:
         str w0, [x28]
         str w0, [x28, #4]
         str w0, [x28, #16380]
+
+
+        sturb w0, [x28]
+        sturb w0, [x28, #-256]
+        sturb w0, [x28, #255]
+
+        sturh w0, [x28]
+        sturh w0, [x28, #-256]
+        sturh w0, [x28, #255]
+
+        stur x0, [x28]
+        stur x0, [x28, #-256]
+        stur x0, [x28, #255]
+
+        stur w0, [x28]
+        stur w0, [x28, #-256]
+        stur w0, [x28, #255]
 
         stp w0, w1, [x28]
         stp w0, w1, [x28, #4]

@@ -382,6 +382,8 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
             RTTESTI_CHECK(szOutput[0]);
             RTTestIPrintf(RTTESTLVL_ALWAYS, "%s\n", szOutput);
         }
+        else
+            break;
 
         /* Check with size-only. */
         uint32_t        cbOnly = 1;
