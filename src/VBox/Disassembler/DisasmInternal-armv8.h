@@ -71,6 +71,8 @@ typedef enum DISPARMPARSEIDX
     kDisParmParseSImmMemOffUnscaled,
     kDisParmParseOption,
     kDisParmParseS,
+    kDisParmParseSetPreIndexed,
+    kDisParmParseSetPostIndexed,
     kDisParmParseMax
 } DISPARMPARSEIDX;
 /** @}  */

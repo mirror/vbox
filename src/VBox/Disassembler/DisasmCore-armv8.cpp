@@ -93,6 +93,8 @@ static FNDISPARSEARMV8 disArmV8ParseSImmMemOff;
 static FNDISPARSEARMV8 disArmV8ParseSImmMemOffUnscaled;
 static FNDISPARSEARMV8 disArmV8ParseOption;
 static FNDISPARSEARMV8 disArmV8ParseS;
+static FNDISPARSEARMV8 disArmV8ParseSetPreIndexed;
+static FNDISPARSEARMV8 disArmV8ParseSetPostIndexed;
 /** @}  */
 
 
@@ -131,7 +133,9 @@ static PFNDISPARSEARMV8 const g_apfnDisasm[kDisParmParseMax] =
     disArmV8ParseSImmMemOff,
     disArmV8ParseSImmMemOffUnscaled,
     disArmV8ParseOption,
-    disArmV8ParseS
+    disArmV8ParseS,
+    disArmV8ParseSetPreIndexed,
+    disArmV8ParseSetPostIndexed
 };
 
 
@@ -567,6 +571,24 @@ static int disArmV8ParseS(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8OPCODE pOp
         pParam->armv8.enmExtend = kDisArmv8OpParmExtendNone;
     }
 
+    return VINF_SUCCESS;
+}
+
+
+static int disArmV8ParseSetPreIndexed(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8OPCODE pOp, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
+{
+    RT_NOREF(pDis, u32Insn, pOp, pInsnClass, pInsnParm, pf64Bit);
+
+    pParam->fUse |= DISUSE_PRE_INDEXED;
+    return VINF_SUCCESS;
+}
+
+
+static int disArmV8ParseSetPostIndexed(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8OPCODE pOp, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool *pf64Bit)
+{
+    RT_NOREF(pDis, u32Insn, pOp, pInsnClass, pInsnParm, pf64Bit);
+
+    pParam->fUse |= DISUSE_POST_INDEXED;
     return VINF_SUCCESS;
 }
 

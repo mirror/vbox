@@ -791,6 +791,58 @@ DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_3(LdStRegPairOff, 0xffc00000 /*fFi
 
 
 /*
+ * STP/LDP/STGP/LDPSW - pre-indexed variant.
+ *
+ * Note: The opc,L bitfields are concatenated to form an index.
+ */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(LdStRegPairPreIndex)
+ DIS_ARMV8_OP_EX(0x29800000, "stp",             OP_ARMV8_A64_STP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_32BIT),
+ DIS_ARMV8_OP_EX(0x29c00000, "ldp",             OP_ARMV8_A64_LDP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_32BIT),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+ DIS_ARMV8_OP_EX(0xa9800000, "stp",             OP_ARMV8_A64_STP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_64BIT),
+ DIS_ARMV8_OP_EX(0xa9c00000, "ldp",             OP_ARMV8_A64_LDP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_64BIT),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_DECODER(LdStRegPairPreIndex)
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,            0,  5, 0 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,           10,  5, 1 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,            5,  5, 2 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseSImmMemOff,    15,  7, 2 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseSetPreIndexed,  0,  0, 2 /*idxParam*/),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_3(LdStRegPairPreIndex, 0xffc00000 /*fFixedInsn*/, 0 /*fClass*/,
+                                                kDisArmV8OpcDecodeCollate,
+                                                RT_BIT_32(22) | RT_BIT_32(30) | RT_BIT_32(31), 22,
+                                                kDisArmv8OpParmGpr, kDisArmv8OpParmGpr, kDisArmv8OpParmAddrInGpr);
+
+
+/*
+ * STP/LDP/STGP/LDPSW - post-indexed variant.
+ *
+ * Note: The opc,L bitfields are concatenated to form an index.
+ */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(LdStRegPairPostIndex)
+ DIS_ARMV8_OP_EX(0x28800000, "stp",             OP_ARMV8_A64_STP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_32BIT),
+ DIS_ARMV8_OP_EX(0x28c00000, "ldp",             OP_ARMV8_A64_LDP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_32BIT),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+ DIS_ARMV8_OP_EX(0xa8800000, "stp",             OP_ARMV8_A64_STP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_64BIT),
+ DIS_ARMV8_OP_EX(0xa8c00000, "ldp",             OP_ARMV8_A64_LDP,       DISOPTYPE_HARMLESS, DISARMV8INSNCLASS_F_FORCED_64BIT),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_DECODER(LdStRegPairPostIndex)
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,             0,  5, 0 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,            10,  5, 1 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseReg,             5,  5, 2 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseSImmMemOff,     15,  7, 2 /*idxParam*/),
+    DIS_ARMV8_INSN_DECODE(kDisParmParseSetPostIndexed,  0,  0, 2 /*idxParam*/),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_3(LdStRegPairPostIndex, 0xffc00000 /*fFixedInsn*/, 0 /*fClass*/,
+                                                kDisArmV8OpcDecodeCollate,
+                                                RT_BIT_32(22) | RT_BIT_32(30) | RT_BIT_32(31), 22,
+                                                kDisArmv8OpParmGpr, kDisArmv8OpParmGpr, kDisArmv8OpParmAddrInGpr);
+
+
+/*
  * C4.1.94 - Loads and Stores - Load/Store register pair variants
  *
  * Differentiate further based on the op2<14:13> field.
@@ -804,9 +856,9 @@ DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END_PARAMS_3(LdStRegPairOff, 0xffc00000 /*fFi
  */
 DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(LdStRegPair)
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo */
-    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo */
+    DIS_ARMV8_DECODE_MAP_ENTRY(LdStRegPairPostIndex),
     DIS_ARMV8_DECODE_MAP_ENTRY(LdStRegPairOff),
-    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,             /** @todo */
+    DIS_ARMV8_DECODE_MAP_ENTRY(LdStRegPairPreIndex),
 DIS_ARMV8_DECODE_MAP_DEFINE_END(LdStRegPair, RT_BIT_32(23) | RT_BIT_32(24), 23);
 
 

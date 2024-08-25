@@ -204,6 +204,10 @@ AssertCompile(DISOPCODE_FORMAT != 15); /* Needs fixing before use as disopcode.h
 #define DISUSE_IMMEDIATE64_SX8             RT_BIT_64(36)
 /** MSR on x86, system register on ARMv8. */
 #define DISUSE_REG_SYSTEM                  RT_BIT_64(37)
+/** Pre-indexed parameter. */
+#define DISUSE_PRE_INDEXED                 RT_BIT_64(38)
+/** Post-indexed parameter. */
+#define DISUSE_POST_INDEXED                RT_BIT_64(39)
 
 /** Mask of immediate use flags. */
 #define DISUSE_IMMEDIATE                   ( DISUSE_IMMEDIATE8 \

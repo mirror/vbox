@@ -700,48 +700,67 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                 }
                 case kDisArmv8OpParmAddrInGpr:
                 {
+                    Assert(   (pParam->fUse & (DISUSE_PRE_INDEXED | DISUSE_POST_INDEXED))
+                           != (DISUSE_PRE_INDEXED | DISUSE_POST_INDEXED));
+                    Assert(   (   RT_BOOL(pParam->fUse & (DISUSE_PRE_INDEXED | DISUSE_POST_INDEXED))
+                               != RT_BOOL(pParam->fUse & DISUSE_INDEX))
+                           || !(pParam->fUse & (DISUSE_PRE_INDEXED | DISUSE_POST_INDEXED | DISUSE_INDEX)));
+
                     PUT_C('[');
 
                     size_t cchReg;
                     const char *pszReg = disasmFormatArmV8Reg(pDis, &pParam->armv8.Reg.Gpr, &cchReg);
                     PUT_STR(pszReg, cchReg);
 
-                    if (pParam->fUse & DISUSE_INDEX)
+                    if (pParam->fUse & DISUSE_POST_INDEXED)
                     {
-                        PUT_SZ(", ");
-
-                        pszReg = disasmFormatArmV8Reg(pDis, &pParam->armv8.GprIndex, &cchReg);
-                        PUT_STR(pszReg, cchReg);
-                    }
-                    else if (pParam->armv8.u.offBase)
-                    {
-                        PUT_SZ(", #");
+                        Assert(pParam->armv8.enmExtend == kDisArmv8OpParmExtendNone);
+                        PUT_SZ("], #");
                         PUT_NUM_S16(pParam->armv8.u.offBase);
                     }
-
-                    if (pParam->armv8.enmExtend != kDisArmv8OpParmExtendNone)
+                    else
                     {
-                        PUT_SZ(", ");
-                        switch (pParam->armv8.enmExtend)
+                        if (pParam->fUse & DISUSE_INDEX)
                         {
-                            case kDisArmv8OpParmExtendUxtX: /* UXTX is same as LSL which is preferred by most disassemblers/assemblers. */
-                            case kDisArmv8OpParmExtendLsl:
-                                PUT_SZ("LSL #");
-                                break;
-                            case kDisArmv8OpParmExtendUxtB: PUT_SZ("UXTB #"); break;
-                            case kDisArmv8OpParmExtendUxtH: PUT_SZ("UXTH #"); break;
-                            case kDisArmv8OpParmExtendUxtW: PUT_SZ("UXTW #"); break;
-                            case kDisArmv8OpParmExtendSxtB: PUT_SZ("SXTB #"); break;
-                            case kDisArmv8OpParmExtendSxtH: PUT_SZ("SXTH #"); break;
-                            case kDisArmv8OpParmExtendSxtW: PUT_SZ("SXTW #"); break;
-                            case kDisArmv8OpParmExtendSxtX: PUT_SZ("SXTX #"); break;
-                            default:
-                                AssertFailed();
+                            PUT_SZ(", ");
+
+                            pszReg = disasmFormatArmV8Reg(pDis, &pParam->armv8.GprIndex, &cchReg);
+                            PUT_STR(pszReg, cchReg);
                         }
-                        PUT_NUM_8(pParam->armv8.u.cExtend);
+                        else if (pParam->armv8.u.offBase)
+                        {
+                            PUT_SZ(", #");
+                            PUT_NUM_S16(pParam->armv8.u.offBase);
+                        }
+
+                        if (pParam->armv8.enmExtend != kDisArmv8OpParmExtendNone)
+                        {
+                            PUT_SZ(", ");
+                            switch (pParam->armv8.enmExtend)
+                            {
+                                case kDisArmv8OpParmExtendUxtX: /* UXTX is same as LSL which is preferred by most disassemblers/assemblers. */
+                                case kDisArmv8OpParmExtendLsl:
+                                    PUT_SZ("LSL #");
+                                    break;
+                                case kDisArmv8OpParmExtendUxtB: PUT_SZ("UXTB #"); break;
+                                case kDisArmv8OpParmExtendUxtH: PUT_SZ("UXTH #"); break;
+                                case kDisArmv8OpParmExtendUxtW: PUT_SZ("UXTW #"); break;
+                                case kDisArmv8OpParmExtendSxtB: PUT_SZ("SXTB #"); break;
+                                case kDisArmv8OpParmExtendSxtH: PUT_SZ("SXTH #"); break;
+                                case kDisArmv8OpParmExtendSxtW: PUT_SZ("SXTW #"); break;
+                                case kDisArmv8OpParmExtendSxtX: PUT_SZ("SXTX #"); break;
+                                default:
+                                    AssertFailed();
+                            }
+                            PUT_NUM_8(pParam->armv8.u.cExtend);
+                        }
+
+                        PUT_C(']');
+
+                        if (pParam->fUse & DISUSE_PRE_INDEXED)
+                            PUT_C('!');
                     }
 
-                    PUT_C(']');
                     break;
                 }
                 case kDisArmv8OpParmCond:
