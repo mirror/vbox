@@ -3007,7 +3007,7 @@ es.unregisterListener(listener); </screen></para>
         <listitem>
           <para><link linkend="IGraphicsAdapter__setFeature">IGraphicsAdapter::setFeature</link></para>
           <para>The new IGraphicsAdapter::setFeature enables or disables a graphics feature
-          for a specific adapter.
+          for a specific adapter.</para>
         </listitem>
       </itemizedlist>
     </sect3>

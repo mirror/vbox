@@ -67,6 +67,8 @@ public:
     static ULONG s_getMaxNetworkAdapters(ChipsetType_T aChipset);
     static ULONG s_getMaxNetworkAdaptersOfType(ChipsetType_T aChipset, NetworkAttachmentType_T aType);
     static HRESULT s_getSupportedVRAMRange(GraphicsControllerType_T aGraphicsControllerType, BOOL fAccelerate3DEnabled, ULONG *aMinMB, ULONG *aMaxMB, ULONG *aStrideSizeMB);
+    static int  s_getSupportedGraphicsControllerFeatures(GraphicsControllerType_T enmController, std::vector<GraphicsFeature_T> &vecSupportedGraphicsFeatures);
+    static bool s_isGraphicsControllerFeatureSupported(GraphicsControllerType_T enmController, GraphicsFeature_T enmFeature);
 
 private:
 

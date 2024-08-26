@@ -65,12 +65,6 @@ public:
     void i_commit();
     void i_copyFrom(GraphicsAdapter *aThat);
 
-public:
-
-    // static helper functions
-    static int  s_getSupportedFeatures(GraphicsControllerType_T enmController, std::vector<GraphicsFeature_T> &vecSupportedGraphicsFeatures);
-    static bool s_isFeatureSupported(GraphicsControllerType_T enmController, GraphicsFeature_T enmFeature);
-
 private:
 
     // wrapped IGraphicsAdapter properties

@@ -278,72 +278,6 @@ HRESULT GraphicsAdapter::setVRAMSize(ULONG aVRAMSize)
     return S_OK;
 }
 
-/**
- * Static helper function to return all supported features for a given graphics controller.
- *
- * @returns VBox status code.
- * @param   enmController                          Graphics controller to return supported features for.
- * @param   vecSupportedGraphicsControllerFeatures Returned features on success.
- */
-/* static */
-int GraphicsAdapter::s_getSupportedFeatures(GraphicsControllerType_T enmController,
-                                            std::vector<GraphicsFeature_T> &vecSupportedGraphicsFeatures)
-{
-    switch (enmController)
-    {
-#ifdef VBOX_WITH_VMSVGA
-        case GraphicsControllerType_VBoxSVGA:
-        {
-            static const GraphicsFeature_T s_aGraphicsFeatures[] =
-            {
-# ifdef VBOX_WITH_VIDEOHWACCEL
-                GraphicsFeature_Acceleration2DVideo,
-# endif
-# ifdef VBOX_WITH_3D_ACCELERATION
-                GraphicsFeature_Acceleration3D
-# endif
-            };
-            MY_VECTOR_ASSIGN_ARRAY(vecSupportedGraphicsFeatures, s_aGraphicsFeatures);
-            break;
-        }
-#endif
-        case GraphicsControllerType_VBoxVGA:
-            RT_FALL_THROUGH();
-        case GraphicsControllerType_QemuRamFB:
-        {
-            static const GraphicsFeature_T s_aGraphicsFeatures[] =
-            {
-                GraphicsFeature_None
-            };
-            MY_VECTOR_ASSIGN_ARRAY(vecSupportedGraphicsFeatures, s_aGraphicsFeatures);
-            break;
-        }
-
-        default:
-            return VERR_INVALID_PARAMETER;
-    }
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Static helper function to return whether a given graphics feature for a graphics controller is enabled or not.
- *
- * @returns \c true if the given feature is supported, or \c false if not.
- * @param   enmController           Graphics controlller to query a feature for.
- * @param   enmFeature              Feature to query.
- */
-/* static */
-bool GraphicsAdapter::s_isFeatureSupported(GraphicsControllerType_T enmController, GraphicsFeature_T enmFeature)
-{
-    std::vector<GraphicsFeature_T> vecSupportedGraphicsFeatures;
-    int vrc = GraphicsAdapter::s_getSupportedFeatures(enmController, vecSupportedGraphicsFeatures);
-    if (RT_SUCCESS(vrc))
-        return std::find(vecSupportedGraphicsFeatures.begin(),
-                         vecSupportedGraphicsFeatures.end(), enmFeature) != vecSupportedGraphicsFeatures.end();
-    return false;
-}
-
 HRESULT GraphicsAdapter::setFeature(GraphicsFeature_T aFeature, BOOL aEnabled)
 {
     /* the machine needs to be mutable */
@@ -353,7 +287,7 @@ HRESULT GraphicsAdapter::setFeature(GraphicsFeature_T aFeature, BOOL aEnabled)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Validate if the given feature is supported by this graphics controller. */
-    if (!GraphicsAdapter::s_isFeatureSupported(mData->graphicsControllerType, aFeature))
+    if (!PlatformProperties::s_isGraphicsControllerFeatureSupported(mData->graphicsControllerType, aFeature))
         return setError(VBOX_E_NOT_SUPPORTED, tr("The graphics controller does not support the given feature"));
 
     bool *pfSetting = NULL;

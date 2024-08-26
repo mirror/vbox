@@ -32,6 +32,8 @@
 #include "LoggingNew.h"
 #include "Global.h"
 
+#include <algorithm>
+
 #include <iprt/asm.h>
 #include <iprt/cpp/utils.h>
 
@@ -850,6 +852,72 @@ HRESULT PlatformProperties::getSupportedUSBControllerTypes(std::vector<USBContro
 }
 
 /**
+ * Static helper function to return all supported features for a given graphics controller.
+ *
+ * @returns VBox status code.
+ * @param   enmController                          Graphics controller to return supported features for.
+ * @param   vecSupportedGraphicsControllerFeatures Returned features on success.
+ */
+/* static */
+int PlatformProperties::s_getSupportedGraphicsControllerFeatures(GraphicsControllerType_T enmController,
+                                                                 std::vector<GraphicsFeature_T> &vecSupportedGraphicsFeatures)
+{
+    switch (enmController)
+    {
+#ifdef VBOX_WITH_VMSVGA
+        case GraphicsControllerType_VBoxSVGA:
+        {
+            static const GraphicsFeature_T s_aGraphicsFeatures[] =
+            {
+# ifdef VBOX_WITH_VIDEOHWACCEL
+                GraphicsFeature_Acceleration2DVideo,
+# endif
+# ifdef VBOX_WITH_3D_ACCELERATION
+                GraphicsFeature_Acceleration3D
+# endif
+            };
+            MY_VECTOR_ASSIGN_ARRAY(vecSupportedGraphicsFeatures, s_aGraphicsFeatures);
+            break;
+        }
+#endif
+        case GraphicsControllerType_VBoxVGA:
+            RT_FALL_THROUGH();
+        case GraphicsControllerType_QemuRamFB:
+        {
+            static const GraphicsFeature_T s_aGraphicsFeatures[] =
+            {
+                GraphicsFeature_None
+            };
+            MY_VECTOR_ASSIGN_ARRAY(vecSupportedGraphicsFeatures, s_aGraphicsFeatures);
+            break;
+        }
+
+        default:
+            return VERR_INVALID_PARAMETER;
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Static helper function to return whether a given graphics feature for a graphics controller is enabled or not.
+ *
+ * @returns \c true if the given feature is supported, or \c false if not.
+ * @param   enmController           Graphics controlller to query a feature for.
+ * @param   enmFeature              Feature to query.
+ */
+/* static */
+bool PlatformProperties::s_isGraphicsControllerFeatureSupported(GraphicsControllerType_T enmController, GraphicsFeature_T enmFeature)
+{
+    std::vector<GraphicsFeature_T> vecSupportedGraphicsFeatures;
+    int vrc = PlatformProperties::s_getSupportedGraphicsControllerFeatures(enmController, vecSupportedGraphicsFeatures);
+    if (RT_SUCCESS(vrc))
+        return std::find(vecSupportedGraphicsFeatures.begin(),
+                         vecSupportedGraphicsFeatures.end(), enmFeature) != vecSupportedGraphicsFeatures.end();
+    return false;
+}
+
+/**
  * Returns the [minimum, maximum] VRAM range and stride size for a given graphics controller.
  *
  * @returns HRESULT
@@ -947,7 +1015,7 @@ HRESULT PlatformProperties::getSupportedVRAMRange(GraphicsControllerType_T aGrap
 HRESULT PlatformProperties::getSupportedGfxFeaturesForType(GraphicsControllerType_T aGraphicsControllerType,
                                                            std::vector<GraphicsFeature_T> &aSupportedGraphicsFeatures)
 {
-    int vrc = GraphicsAdapter::s_getSupportedFeatures(aGraphicsControllerType, aSupportedGraphicsFeatures);
+    int vrc = PlatformProperties::s_getSupportedGraphicsControllerFeatures(aGraphicsControllerType, aSupportedGraphicsFeatures);
     if (RT_FAILURE(vrc))
         return setError(E_INVALIDARG, tr("The graphics controller type (%d) is invalid"), aGraphicsControllerType);
 
