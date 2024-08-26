@@ -27561,7 +27561,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="unfinished">Anamakine Tarayıcısı</translation>
     </message>
     <message>
-        <source>The list of suctom options delimited with &apos;;&apos;.</source>
+        <source>The list of custom options delimited with &apos;;&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

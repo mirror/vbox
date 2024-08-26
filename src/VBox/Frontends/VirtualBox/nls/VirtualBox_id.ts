@@ -26494,7 +26494,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
         <translation type="unfinished">Peramban Host</translation>
     </message>
     <message>
-        <source>The list of suctom options delimited with &apos;;&apos;.</source>
+        <source>The list of custom options delimited with &apos;;&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -27440,7 +27440,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <translation type="unfinished">Gazdagép böngésző</translation>
     </message>
     <message>
-        <source>The list of suctom options delimited with &apos;;&apos;.</source>
+        <source>The list of custom options delimited with &apos;;&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

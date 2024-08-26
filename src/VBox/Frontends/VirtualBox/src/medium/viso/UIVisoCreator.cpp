@@ -253,7 +253,7 @@ void UIVisoSettingWidget::sltRetranslateUI()
     if (m_pVisoNameLineEdit)
         m_pVisoNameLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Holds the name of the VISO medium."));
     if (m_pCustomOptionsLineEdit)
-        m_pCustomOptionsLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "The list of suctom options delimited with ';'."));
+        m_pCustomOptionsLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "The list of custom options delimited with ';'."));
     if (m_pShowHiddenObjectsCheckBox)
     {
         m_pShowHiddenObjectsCheckBox->setToolTip(QApplication::translate("UIVisoCreatorWidget", "When checked, "
