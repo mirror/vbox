@@ -26172,14 +26172,6 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
         <source>Lists chosen configuration of the guest system.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>This OS type is not supported by your host. You need to either deselect ISO image or pick another one to continue.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ISO file is for an unsupported guest OS type</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIWizardNewVMSummaryItem</name>
