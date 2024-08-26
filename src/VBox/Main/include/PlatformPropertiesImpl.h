@@ -113,7 +113,7 @@ private:
     HRESULT getSupportedVRAMRange(GraphicsControllerType_T aGraphicsControllerType, BOOL fAccelerate3DEnabled,
                                   ULONG *aMinMB, ULONG *aMaxMB, ULONG *aStrideSizeMB) RT_OVERRIDE;
     HRESULT getSupportedGfxFeaturesForType(GraphicsControllerType_T aGraphicsControllerType,
-                                           std::vector<GraphicsFeature_T> &aSupportedGraphicsFeatures);
+                                           std::vector<GraphicsFeature_T> &aSupportedGraphicsFeatures) RT_OVERRIDE;
     HRESULT getDeviceTypesForStorageBus(StorageBus_T aBus,
                                         std::vector<DeviceType_T> &aDeviceTypes) RT_OVERRIDE;
     HRESULT getStorageBusForControllerType(StorageControllerType_T aStorageControllerType,

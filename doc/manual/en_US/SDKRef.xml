@@ -3002,7 +3002,7 @@ es.unregisterListener(listener); </screen></para>
         <listitem>
           <para><link linkend="IGraphicsAdapter__isFeatureEnabled">IGraphicsAdapter::isFeatureEnabled</link></para>
           <para>The new IGraphicsAdapter::isFeatureEnabled method returns
-          whether a graphics feature is enabled for a specific adapter or not.
+          whether a graphics feature is enabled for a specific adapter or not.</para>
         </listitem>
         <listitem>
           <para><link linkend="IGraphicsAdapter__setFeature">IGraphicsAdapter::setFeature</link></para>
