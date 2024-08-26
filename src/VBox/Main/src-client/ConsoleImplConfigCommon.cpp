@@ -5074,7 +5074,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         InsertConfigInteger(pCfg,  "MonitorCount",         cMonitorCount);
 
         BOOL f3DEnabled;
-        hrc = ptrGraphicsAdapter->COMGETTER(Accelerate3DEnabled)(&f3DEnabled);              H();
+        hrc = ptrGraphicsAdapter->IsFeatureEnabled(GraphicsFeature_Acceleration3D, &f3DEnabled);              H();
         InsertConfigInteger(pCfg,  "3DEnabled",            f3DEnabled);
 
         i_attachStatusDriver(pInst, DeviceType_Graphics3D);

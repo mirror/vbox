@@ -2999,6 +2999,16 @@ es.unregisterListener(listener); </screen></para>
           an IPlatformProperties object which contains the platform-specific
           properties of a VM as described above.</para>
         </listitem>
+        <listitem>
+          <para><link linkend="IGraphicsAdapter__isFeatureEnabled">IGraphicsAdapter::isFeatureEnabled</link></para>
+          <para>The new IGraphicsAdapter::isFeatureEnabled method returns
+          whether a graphics feature is enabled for a specific adapter or not.
+        </listitem>
+        <listitem>
+          <para><link linkend="IGraphicsAdapter__setFeature">IGraphicsAdapter::setFeature</link></para>
+          <para>The new IGraphicsAdapter::setFeature enables or disables a graphics feature
+          for a specific adapter.
+        </listitem>
       </itemizedlist>
     </sect3>
 
@@ -3060,6 +3070,16 @@ es.unregisterListener(listener); </screen></para>
               <entry>BIOSBootMenuMode IBIOSSettings::bootMenuMode</entry>
               <entry><link linkend="FirmwareBootMenuMode">FirmwareBootMenuMode</link><link linkend="IFirmwareSettings__bootMenuMode"> IFirmwareSettings::bootMenuMode</link></entry>
             </row>
+            <row>
+              <entry>IGraphicsAdapter::accelerate3DEnabled</entry>
+              <entry><link linkend="IGraphicsAdapter__setFeature"> IGraphicsAdapter::setFeature</link> and
+              <link linkend="IGraphicsAdapter__isFeatureEnabled"> IGraphicsAdapter::isFeatureEnabled</link></entry>
+            </row>
+            <row>
+              <entry>IGraphicsAdapter::accelerate2DVideoEnabled</entry>
+              <entry><link linkend="IGraphicsAdapter__setFeature"> IGraphicsAdapter::setFeature</link> and
+              <link linkend="IGraphicsAdapter__isFeatureEnabled"> IGraphicsAdapter::isFeatureEnabled</link></entry>
+            </row>
           </tbody>
         </tgroup>
       </table>
@@ -3100,6 +3120,11 @@ es.unregisterListener(listener); </screen></para>
           <para><link linkend="PlatformArchitecture">PlatformArchitecture</link></para>
           <para>The new PlatformArchitecture enumeration contains the CPU
           architecture type of the VM.</para>
+        </listitem>
+        <listitem>
+          <para><link linkend="GraphicsFeature">GraphicsFeature</link></para>
+          <para>The new GraphicsFeature enumeration contains graphics features to be
+          used with the host and / or virtual graphics controller.</para>
         </listitem>
       </itemizedlist>
     </sect3>

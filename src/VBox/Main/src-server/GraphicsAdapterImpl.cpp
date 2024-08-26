@@ -38,6 +38,29 @@
 #include <iprt/cpp/utils.h>
 
 
+/** @def MY_VECTOR_ASSIGN_ARRAY
+ * Safe way to copy an array (static + const) into a vector w/ minimal typing.
+ *
+ * @param a_rVector     The destination vector reference.
+ * @param a_aSrcArray   The source array to assign to the vector.
+ */
+#if RT_GNUC_PREREQ(13, 0) && !RT_GNUC_PREREQ(14, 0) && defined(VBOX_WITH_GCC_SANITIZER)
+/* Workaround for g++ 13.2 incorrectly failing on arrays with a single entry in ASAN builds.
+   This is restricted to [13.0, 14.0), assuming the issue was introduced in the 13 cycle
+   and will be fixed by the time 14 is done.  If 14 doesn't fix it, extend the range
+   version by version till it is fixed. */
+# define MY_VECTOR_ASSIGN_ARRAY(a_rVector, a_aSrcArray) do { \
+        _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wstringop-overread\""); \
+        (a_rVector).assign(&a_aSrcArray[0], &a_aSrcArray[RT_ELEMENTS(a_aSrcArray)]); \
+        _Pragma("GCC diagnostic pop"); \
+    } while (0)
+#else
+# define MY_VECTOR_ASSIGN_ARRAY(a_rVector, a_aSrcArray) do { \
+        (a_rVector).assign(&a_aSrcArray[0], &a_aSrcArray[RT_ELEMENTS(a_aSrcArray)]); \
+    } while (0)
+#endif
+
+
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
@@ -255,16 +278,73 @@ HRESULT GraphicsAdapter::setVRAMSize(ULONG aVRAMSize)
     return S_OK;
 }
 
-HRESULT GraphicsAdapter::getAccelerate3DEnabled(BOOL *aAccelerate3DEnabled)
+/**
+ * Static helper function to return all supported features for a given graphics controller.
+ *
+ * @returns VBox status code.
+ * @param   enmController                          Graphics controller to return supported features for.
+ * @param   vecSupportedGraphicsControllerFeatures Returned features on success.
+ */
+/* static */
+int GraphicsAdapter::s_getSupportedFeatures(GraphicsControllerType_T enmController,
+                                            std::vector<GraphicsFeature_T> &vecSupportedGraphicsFeatures)
 {
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    switch (enmController)
+    {
+#ifdef VBOX_WITH_VMSVGA
+        case GraphicsControllerType_VBoxSVGA:
+        {
+            static const GraphicsFeature_T s_aGraphicsFeatures[] =
+            {
+# ifdef VBOX_WITH_VIDEOHWACCEL
+                GraphicsFeature_Acceleration2DVideo,
+# endif
+# ifdef VBOX_WITH_3D_ACCELERATION
+                GraphicsFeature_Acceleration3D
+# endif
+            };
+            MY_VECTOR_ASSIGN_ARRAY(vecSupportedGraphicsFeatures, s_aGraphicsFeatures);
+            break;
+        }
+#endif
+        case GraphicsControllerType_VBoxVGA:
+            RT_FALL_THROUGH();
+        case GraphicsControllerType_QemuRamFB:
+        {
+            static const GraphicsFeature_T s_aGraphicsFeatures[] =
+            {
+                GraphicsFeature_None
+            };
+            MY_VECTOR_ASSIGN_ARRAY(vecSupportedGraphicsFeatures, s_aGraphicsFeatures);
+            break;
+        }
 
-    *aAccelerate3DEnabled = mData->fAccelerate3D;
+        default:
+            return VERR_INVALID_PARAMETER;
+    }
 
-    return S_OK;
+    return VINF_SUCCESS;
 }
 
-HRESULT GraphicsAdapter::setAccelerate3DEnabled(BOOL aAccelerate3DEnabled)
+/**
+ * Static helper function to return whether a given graphics feature for a graphics controller is enabled or not.
+ *
+ * @returns \c true if the given feature is supported, or \c false if not.
+ * @param   enmController           Graphics controlller to query a feature for.
+ * @param   enmFeature              Feature to query.
+ */
+/* static */
+bool GraphicsAdapter::s_isFeatureSupported(GraphicsControllerType_T enmController, GraphicsFeature_T enmFeature)
+{
+    std::vector<GraphicsFeature_T> vecSupportedGraphicsFeatures;
+    int vrc = GraphicsAdapter::s_getSupportedFeatures(enmController, vecSupportedGraphicsFeatures);
+    if (RT_SUCCESS(vrc))
+        return std::find(vecSupportedGraphicsFeatures.begin(),
+                         vecSupportedGraphicsFeatures.end(), enmFeature) != vecSupportedGraphicsFeatures.end();
+    return false;
+}
+
+HRESULT GraphicsAdapter::setFeature(GraphicsFeature_T aFeature, BOOL aEnabled)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(mParent);
@@ -272,39 +352,65 @@ HRESULT GraphicsAdapter::setAccelerate3DEnabled(BOOL aAccelerate3DEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /** @todo check validity! */
+    /* Validate if the given feature is supported by this graphics controller. */
+    if (!GraphicsAdapter::s_isFeatureSupported(mData->graphicsControllerType, aFeature))
+        return setError(VBOX_E_NOT_SUPPORTED, tr("The graphics controller does not support the given feature"));
 
-    mParent->i_setModified(Machine::IsModified_GraphicsAdapter);
-    mData.backup();
-    mData->fAccelerate3D = !!aAccelerate3DEnabled;
+    bool *pfSetting = NULL;
+    switch (aFeature)
+    {
+        case GraphicsFeature_Acceleration2DVideo:
+            pfSetting = &mData->fAccelerate2DVideo;
+            break;
+
+        case GraphicsFeature_Acceleration3D:
+            pfSetting = &mData->fAccelerate3D;
+            break;
+
+        default:
+            break;
+    }
+
+    if (!pfSetting)
+        return setError(E_NOTIMPL, tr("The given feature is not implemented"));
+
+    if (*pfSetting != RT_BOOL(aEnabled))
+    {
+        mParent->i_setModified(Machine::IsModified_GraphicsAdapter);
+        mData.backup();
+
+        *pfSetting = RT_BOOL(aEnabled);
+    }
 
     return S_OK;
 }
 
-
-HRESULT GraphicsAdapter::getAccelerate2DVideoEnabled(BOOL *aAccelerate2DVideoEnabled)
+HRESULT GraphicsAdapter::isFeatureEnabled(GraphicsFeature_T aFeature, BOOL *aEnabled)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* bugref:9691 The legacy VHWA acceleration has been disabled completely. */
-    *aAccelerate2DVideoEnabled = FALSE;
+    bool *pfSetting = NULL;
 
-    return S_OK;
-}
+    switch (aFeature)
+    {
+#ifndef VBOX_WITH_VIRT_ARMV8 /* On macOS (ARM) we don't support any 2D/3D acceleration for now. */
+        case GraphicsFeature_Acceleration2DVideo:
+            pfSetting = &mData->fAccelerate2DVideo;
+            *pfSetting = false; /* @bugref{9691} -- The legacy VHWA acceleration has been disabled completely. */
+            break;
 
-HRESULT GraphicsAdapter::setAccelerate2DVideoEnabled(BOOL aAccelerate2DVideoEnabled)
-{
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(mParent);
-    if (FAILED(adep.hrc())) return adep.hrc();
+        case GraphicsFeature_Acceleration3D:
+            pfSetting = &mData->fAccelerate3D;
+            break;
+#endif
+        default:
+            break;
+    }
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (!pfSetting)
+        return VBOX_E_NOT_SUPPORTED;
 
-    /** @todo check validity! */
-
-    mParent->i_setModified(Machine::IsModified_GraphicsAdapter);
-    mData.backup();
-    mData->fAccelerate2DVideo = !!aAccelerate2DVideoEnabled;
+    *aEnabled = *pfSetting;
 
     return S_OK;
 }

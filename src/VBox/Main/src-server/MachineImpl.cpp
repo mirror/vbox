@@ -15231,15 +15231,23 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     hrc = osType->COMGETTER(Recommended2DVideoAcceleration)(&fAccelerate2DVideoEnabled);
     if (FAILED(hrc)) return hrc;
 
-    hrc = mGraphicsAdapter->COMSETTER(Accelerate2DVideoEnabled)(fAccelerate2DVideoEnabled);
-    if (FAILED(hrc)) return hrc;
+    hrc = mGraphicsAdapter->SetFeature(GraphicsFeature_Acceleration2DVideo, fAccelerate2DVideoEnabled);
+    if (FAILED(hrc))
+    {
+        if (hrc != VBOX_E_NOT_SUPPORTED)
+            return hrc;
+    }
 
     BOOL fAccelerate3DEnabled;
     hrc = osType->COMGETTER(Recommended3DAcceleration)(&fAccelerate3DEnabled);
     if (FAILED(hrc)) return hrc;
 
-    hrc = mGraphicsAdapter->COMSETTER(Accelerate3DEnabled)(fAccelerate3DEnabled);
-    if (FAILED(hrc)) return hrc;
+    hrc = mGraphicsAdapter->SetFeature(GraphicsFeature_Acceleration2DVideo, fAccelerate3DEnabled);
+    if (FAILED(hrc))
+    {
+        if (hrc != VBOX_E_NOT_SUPPORTED)
+            return hrc;
+    }
 
     /* Apply network adapters defaults */
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)

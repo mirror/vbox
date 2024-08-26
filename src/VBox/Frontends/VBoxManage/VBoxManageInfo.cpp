@@ -1534,9 +1534,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     }
 
     SHOW_ULONG_PROP(pGraphicsAdapter, MonitorCount,             "monitorcount",             Info::tr("Monitor count:"), "");
-    SHOW_BOOLEAN_PROP(pGraphicsAdapter, Accelerate3DEnabled,    "accelerate3d",             Info::tr("3D Acceleration:"));
+    SHOW_BOOLEAN_METHOD(pGraphicsAdapter, IsFeatureEnabled(GraphicsFeature_Acceleration3D, &f), "accelerate3d", "3D Acceleration:");
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    SHOW_BOOLEAN_PROP(pGraphicsAdapter, Accelerate2DVideoEnabled, "accelerate2dvideo",      Info::tr("2D Video Acceleration:"));
+    SHOW_BOOLEAN_METHOD(pGraphicsAdapter, IsFeatureEnabled(GraphicsFeature_Acceleration2DVideo, &f), "accelerate2dvideo", "2D Video Acceleration:");
 #endif
     SHOW_BOOLEAN_PROP(    machine,  TeleporterEnabled,          "teleporterenabled",        Info::tr("Teleporter Enabled:"));
     SHOW_ULONG_PROP(      machine,  TeleporterPort,             "teleporterport",           Info::tr("Teleporter Port:"), "");

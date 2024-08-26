@@ -1914,7 +1914,10 @@ class SessionWrapper(TdTaskBase):
         fRc = True;
         try:
             if self.fpApiVer >= 6.1 and hasattr(self.o.machine, 'graphicsAdapter'):
-                self.o.machine.graphicsAdapter.accelerate3DEnabled = fEnabled;
+                if self.fpApiVer >= 7.1 and hasattr(self.o.machine.graphicsAdapter, 'isFeatureEnabled'):
+                    self.o.machine.graphicsAdapter.setFeatureEnabled(vboxcon.GraphicsFeature_Acceleration3D, fEnabled);
+                else:
+                    self.o.machine.graphicsAdapter.accelerate3DEnabled = fEnabled;
             else:
                 self.o.machine.accelerate3DEnabled = fEnabled;
         except:

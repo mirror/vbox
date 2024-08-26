@@ -1604,7 +1604,7 @@ bool UISession::acquireWhetherAccelerate3DEnabled(bool &fEnabled)
         UINotificationMessage::cannotAcquireMachineParameter(comMachine);
     else
     {
-        const BOOL fAccelerate3DEnabeld = comAdapter.GetAccelerate3DEnabled();
+        const BOOL fAccelerate3DEnabeld = comAdapter.IsFeatureEnabled(KGraphicsFeature_Acceleration3D);
         fSuccess = comAdapter.isOk();
         if (!fSuccess)
             UINotificationMessage::cannotAcquireGraphicsAdapterParameter(comAdapter);

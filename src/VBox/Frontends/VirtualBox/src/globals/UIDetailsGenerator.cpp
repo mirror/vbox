@@ -499,10 +499,10 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
                                      .arg(gpConverter->toString(enmType)));
     }
 
-    /* 3D acceleration: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration)
     {
-        if (comGraphics.GetAccelerate3DEnabled())
+        /* 3D acceleration: */
+        if (comGraphics.IsFeatureEnabled(KGraphicsFeature_Acceleration3D))
             table << UITextTableLine(QApplication::translate("UIDetails", "3D Acceleration", "details (display)"),
                                      QApplication::translate("UIDetails", "Enabled", "details (display/3D Acceleration)"));
     }
@@ -1451,7 +1451,7 @@ void UIDetailsGenerator::acquireDisplayStatusInfo(CMachine &comMachine, QString 
             .arg(QApplication::translate("UIDetails", "Screens", "details (display)"), QString::number(cMonitorCount));
 
     /* 3D acceleration: */
-    fAcceleration3D = comGraphics.GetAccelerate3DEnabled();
+    fAcceleration3D = comGraphics.IsFeatureEnabled(KGraphicsFeature_Acceleration3D);
     if (fAcceleration3D)
         strInfo += e_strTableRow2
             .arg(QApplication::translate("UIDetails", "3D Acceleration", "details (display)"),

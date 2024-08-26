@@ -1175,6 +1175,22 @@ HRESULT SystemProperties::getSupportedExportOptions(std::vector<ExportOptions_T>
     return S_OK;
 }
 
+HRESULT SystemProperties::getSupportedGraphicsFeatures(std::vector<GraphicsFeature_T> &aSupportedGraphicsFeatures)
+{
+    static const GraphicsFeature_T s_aGraphicsFeatures[] =
+    {
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        GraphicsFeature_Acceleration2DVideo,
+#endif
+#ifdef VBOX_WITH_3D_ACCELERATION
+        GraphicsFeature_Acceleration3D
+#endif
+    };
+    MY_VECTOR_ASSIGN_ARRAY(aSupportedGraphicsFeatures, s_aGraphicsFeatures);
+
+    return S_OK;
+}
+
 HRESULT SystemProperties::getSupportedRecordingFeatures(std::vector<RecordingFeature_T> &aSupportedRecordingFeatures)
 {
 #ifdef VBOX_WITH_RECORDING

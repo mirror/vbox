@@ -1487,12 +1487,12 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                                                      empReport(strGc, strGcOld));
 
             /* Acceleration? */
-            const QString str3DAccelerationStatus = comGraphics.GetAccelerate3DEnabled()
-                                                  ? QApplication::translate("UIDetails", "Enabled", "details (display/3D Acceleration)")
-                                                  : QString();
-            const QString str3DAccelerationStatusOld = comGraphicsOld.GetAccelerate3DEnabled()
-                                                     ? QApplication::translate("UIDetails", "Enabled", "details (display/3D Acceleration)")
-                                                     : QString();
+            const QString str3DAccelerationStatus =   comGraphics.IsFeatureEnabled(KGraphicsFeature_Acceleration3D)
+                                                    ? QApplication::translate("UIDetails", "Enabled", "details (display/3D Acceleration)")
+                                                    : QString();
+            const QString str3DAccelerationStatusOld =   comGraphicsOld.IsFeatureEnabled(KGraphicsFeature_Acceleration3D)
+                                                       ? QApplication::translate("UIDetails", "Enabled", "details (display/3D Acceleration)")
+                                                       : QString();
             if (!str3DAccelerationStatus.isNull())
             {
                 ++iRowCount;

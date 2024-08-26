@@ -5812,7 +5812,7 @@
 
   <interface
     name="IGraphicsAdapter" extends="$unknown"
-    uuid="f692806f-febe-4049-b476-1292a8e45b09"
+    uuid="13ee6eb4-06fe-406b-ad69-f6e08b0587a3"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="8"
@@ -5830,18 +5830,6 @@
       <desc>Video memory size in megabytes.</desc>
     </attribute>
 
-    <attribute name="accelerate3DEnabled" type="boolean" default="false">
-      <desc>
-        This setting determines whether VirtualBox allows this machine to make
-        use of the 3D graphics support available on the host.</desc>
-    </attribute>
-
-    <attribute name="accelerate2DVideoEnabled" type="boolean" default="false">
-      <desc>
-        This setting determines whether VirtualBox allows this machine to make
-        use of the 2D video acceleration support available on the host.</desc>
-    </attribute>
-
     <attribute name="monitorCount" type="unsigned long">
       <desc>
         Number of virtual monitors.
@@ -5851,6 +5839,30 @@
         </note>
       </desc>
     </attribute>
+
+    <method name="setFeature">
+      <desc>Sets a graphics controller feature.</desc>
+      <param name="feature" type="GraphicsFeature" dir="in">
+        <desc>
+          Graphics controller feature to set.
+        </desc>
+      </param>
+      <param name="enabled" type="boolean" dir="in">
+        <desc>
+          Whether to enable or disable the feature.
+        </desc>
+      </param>
+    </method>
+
+    <method name="isFeatureEnabled" const="yes">
+      <desc>Returns whether a particular feature is enabled for this adapter or not.</desc>
+      <param name="feature" type="GraphicsFeature" dir="in">
+        <desc>Feature to check for.</desc>
+      </param>
+      <param name="enabled" type="boolean" dir="return">
+        <desc>@c true if the feature is enabled, @c false if not.</desc>
+      </param>
+    </method>
 
   </interface>
 
@@ -6824,6 +6836,22 @@
     </const>
     <const name="QemuRamFB" value="4">
       <desc>QEMU RAM based framebuffer based device.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="GraphicsFeature"
+    uuid="5cd900a5-ec77-4a08-8f8d-c0a36f462a7c"
+    >
+    <desc>Graphics features.</desc>
+    <const name="None"          value="0">
+      <desc>No feature specified, invalid.</desc>
+    </const>
+    <const name="Acceleration2DVideo" value="1">
+      <desc>2D video acceleration.</desc>
+    </const>
+    <const name="Acceleration3D" value="2">
+      <desc>3D acceleration.</desc>
     </const>
   </enum>
 
@@ -12880,7 +12908,7 @@
   <interface
     name="IPlatformProperties"
     extends="$unknown"
-    uuid="a23502e4-cc54-490f-a344-c8ca8813f906"
+    uuid="5bae19d0-ca40-4ca2-a485-c8065190bbe5"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12959,7 +12987,7 @@
       </desc>
     </attribute>
 
-    <attribute name="supportedGraphicsControllerTypes" type="GraphicsControllerType" safearray="yes" readonly="yes">
+    <attribute name="supportedGfxControllerTypes" type="GraphicsControllerType" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="GraphicsControllerType"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
@@ -13168,6 +13196,20 @@
       </param>
     </method>
 
+    <method name="getSupportedGfxFeaturesForType">
+      <desc>
+        Returns the supported features of a given graphics controller.
+      </desc>
+
+      <param name="graphicsControllerType" type="GraphicsControllerType" dir="in">
+        <desc>Graphics controller type to return features for.</desc>
+      </param>
+
+      <param name="supportedControllerFeatures" type="GraphicsFeature" safearray="yes" dir="return">
+        <desc>The graphics controller features which are valid.</desc>
+      </param>
+    </method>
+
     <method name="getDeviceTypesForStorageBus">
       <desc>Returns list of all the supported device types
         (<link to="DeviceType"/>) for the given type of storage
@@ -13264,7 +13306,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="c61e666e-34ab-403a-8160-78bd4512ca86"
+    uuid="925084b0-625f-422f-a67d-0ede1880a56c"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -13629,6 +13671,13 @@
     <attribute name="supportedExportOptions" type="ExportOptions" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="ExportOptions"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedGraphicsFeatures" type="GraphicsFeature" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="GraphicsFeature"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>

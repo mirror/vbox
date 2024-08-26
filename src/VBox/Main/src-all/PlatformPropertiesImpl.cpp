@@ -27,6 +27,7 @@
 
 #define LOG_GROUP LOG_GROUP_MAIN_PLATFORMPROPERTIES
 #include "PlatformPropertiesImpl.h"
+#include "GraphicsAdapterImpl.h" /* For static helper functions. */
 #include "VirtualBoxImpl.h"
 #include "LoggingNew.h"
 #include "Global.h"
@@ -39,6 +40,32 @@
 
 // generated header
 #include "SchemaDefs.h"
+
+
+// defines
+/////////////////////////////////////////////////////////////////////////////
+
+/** @def MY_VECTOR_ASSIGN_ARRAY
+ * Safe way to copy an array (static + const) into a vector w/ minimal typing.
+ *
+ * @param a_rVector     The destination vector reference.
+ * @param a_aSrcArray   The source array to assign to the vector.
+ */
+#if RT_GNUC_PREREQ(13, 0) && !RT_GNUC_PREREQ(14, 0) && defined(VBOX_WITH_GCC_SANITIZER)
+/* Workaround for g++ 13.2 incorrectly failing on arrays with a single entry in ASAN builds.
+   This is restricted to [13.0, 14.0), assuming the issue was introduced in the 13 cycle
+   and will be fixed by the time 14 is done.  If 14 doesn't fix it, extend the range
+   version by version till it is fixed. */
+# define MY_VECTOR_ASSIGN_ARRAY(a_rVector, a_aSrcArray) do { \
+        _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wstringop-overread\""); \
+        (a_rVector).assign(&a_aSrcArray[0], &a_aSrcArray[RT_ELEMENTS(a_aSrcArray)]); \
+        _Pragma("GCC diagnostic pop"); \
+    } while (0)
+#else
+# define MY_VECTOR_ASSIGN_ARRAY(a_rVector, a_aSrcArray) do { \
+        (a_rVector).assign(&a_aSrcArray[0], &a_aSrcArray[RT_ELEMENTS(a_aSrcArray)]); \
+    } while (0)
+#endif
 
 
 /*
@@ -675,7 +702,7 @@ HRESULT PlatformProperties::getSupportedFirmwareTypes(std::vector<FirmwareType_T
     return S_OK;
 }
 
-HRESULT PlatformProperties::getSupportedGraphicsControllerTypes(std::vector<GraphicsControllerType_T> &aSupportedGraphicsControllerTypes)
+HRESULT PlatformProperties::getSupportedGfxControllerTypes(std::vector<GraphicsControllerType_T> &aSupportedGraphicsControllerTypes)
 {
     switch (mPlatformArchitecture)
     {
@@ -913,6 +940,16 @@ HRESULT PlatformProperties::getSupportedVRAMRange(GraphicsControllerType_T aGrap
         default:
             break;
     }
+
+    return S_OK;
+}
+
+HRESULT PlatformProperties::getSupportedGfxFeaturesForType(GraphicsControllerType_T aGraphicsControllerType,
+                                                           std::vector<GraphicsFeature_T> &aSupportedGraphicsFeatures)
+{
+    int vrc = GraphicsAdapter::s_getSupportedFeatures(aGraphicsControllerType, aSupportedGraphicsFeatures);
+    if (RT_FAILURE(vrc))
+        return setError(E_INVALIDARG, tr("The graphics controller type (%d) is invalid"), aGraphicsControllerType);
 
     return S_OK;
 }

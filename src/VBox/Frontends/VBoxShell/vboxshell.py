@@ -1014,8 +1014,8 @@ def infoCmd(ctx, args):
         print("  Nested paging [guest win machine.setHWVirtExProperty(ctx[\\'const\\'].HWVirtExPropertyType_NestedPaging, value)]: " + asState(hwVirtNestedPaging))
         print("  HPET [HPETEnabled]: %s" % (asState(mach.platform.x86.HPETEnabled)))
 
-    print("  Hardware 3d acceleration [accelerate3DEnabled]: " + asState(mach.graphicsAdapter.accelerate3DEnabled))
-    print("  Hardware 2d video acceleration [accelerate2DVideoEnabled]: " + asState(mach.graphicsAdapter.accelerate2DVideoEnabled))
+    print("  Hardware 3d acceleration [accelerate3DEnabled]: " + asState(mach.graphicsAdapter.isFeatureEnabled(ctx['const'].GraphicsFeature_Acceleration3D)))
+    print("  Hardware 2d video acceleration [accelerate2DVideoEnabled]: " + asState(mach.graphicsAdapter.isFeatureEnabled(ctx['const'].GraphicsFeature_Acceleration2DVideo)))
     print("  Use universal time [RTCUseUTC]: %s" % (asState(mach.platform.RTCUseUTC)))
     audioAdp = mach.audioSettings.adapter
     if audioAdp.enabled:

@@ -163,7 +163,7 @@ void UIGraphicsControllerEditor::populateCombo()
                                             ? optionalFlags().value("arch").value<KPlatformArchitecture>()
                                             : KPlatformArchitecture_x86;
         CPlatformProperties comProperties = gpGlobalSession->virtualBox().GetPlatformProperties(enmArch);
-        m_supportedValues = comProperties.GetSupportedGraphicsControllerTypes();
+        m_supportedValues = comProperties.GetSupportedGfxControllerTypes();
 
         /* Make sure requested value if sane is present as well: */
         if (   m_enmValue != KGraphicsControllerType_Max
