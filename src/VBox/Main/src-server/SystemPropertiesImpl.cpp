@@ -56,31 +56,6 @@
 #include <VBox/vd.h>
 #include <VBox/vmm/cpum.h>
 
-// defines
-/////////////////////////////////////////////////////////////////////////////
-
-/** @def MY_VECTOR_ASSIGN_ARRAY
- * Safe way to copy an array (static + const) into a vector w/ minimal typing.
- *
- * @param a_rVector     The destination vector reference.
- * @param a_aSrcArray   The source array to assign to the vector.
- */
-#if RT_GNUC_PREREQ(13, 0) && !RT_GNUC_PREREQ(14, 0) && defined(VBOX_WITH_GCC_SANITIZER)
-/* Workaround for g++ 13.2 incorrectly failing on arrays with a single entry in ASAN builds.
-   This is restricted to [13.0, 14.0), assuming the issue was introduced in the 13 cycle
-   and will be fixed by the time 14 is done.  If 14 doesn't fix it, extend the range
-   version by version till it is fixed. */
-# define MY_VECTOR_ASSIGN_ARRAY(a_rVector, a_aSrcArray) do { \
-        _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wstringop-overread\""); \
-        (a_rVector).assign(&a_aSrcArray[0], &a_aSrcArray[RT_ELEMENTS(a_aSrcArray)]); \
-        _Pragma("GCC diagnostic pop"); \
-    } while (0)
-#else
-# define MY_VECTOR_ASSIGN_ARRAY(a_rVector, a_aSrcArray) do { \
-        (a_rVector).assign(&a_aSrcArray[0], &a_aSrcArray[RT_ELEMENTS(a_aSrcArray)]); \
-    } while (0)
-#endif
-
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -1061,7 +1036,7 @@ HRESULT SystemProperties::getSupportedPlatformArchitectures(std::vector<Platform
         PlatformArchitecture_None
 #endif
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedPlatformArchitectures, s_aPlatformArchitectures);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedPlatformArchitectures, s_aPlatformArchitectures);
 
 #ifdef VBOX_WITH_VIRT_ARMV8
     Bstr bstrEnableX86OnArm;
@@ -1085,7 +1060,7 @@ HRESULT SystemProperties::getSupportedClipboardModes(std::vector<ClipboardMode_T
         ClipboardMode_GuestToHost,
         ClipboardMode_Bidirectional,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedClipboardModes, s_aClipboardModes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedClipboardModes, s_aClipboardModes);
     return S_OK;
 }
 
@@ -1098,7 +1073,7 @@ HRESULT SystemProperties::getSupportedDnDModes(std::vector<DnDMode_T> &aSupporte
         DnDMode_GuestToHost,
         DnDMode_Bidirectional,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedDnDModes, s_aDnDModes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedDnDModes, s_aDnDModes);
     return S_OK;
 }
 
@@ -1117,7 +1092,7 @@ HRESULT SystemProperties::getSupportedPointingHIDTypes(std::vector<PointingHIDTy
         PointingHIDType_USBMultiTouch,
         PointingHIDType_USBMultiTouchScreenPlusPad,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedPointingHIDTypes, s_aPointingHIDTypes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedPointingHIDTypes, s_aPointingHIDTypes);
     return S_OK;
 }
 
@@ -1131,7 +1106,7 @@ HRESULT SystemProperties::getSupportedKeyboardHIDTypes(std::vector<KeyboardHIDTy
         KeyboardHIDType_ComboKeyboard,
 #endif
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedKeyboardHIDTypes, s_aKeyboardHIDTypes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedKeyboardHIDTypes, s_aKeyboardHIDTypes);
     return S_OK;
 }
 
@@ -1146,7 +1121,7 @@ HRESULT SystemProperties::getSupportedVFSTypes(std::vector<VFSType_T> &aSupporte
         VFSType_WebDav,
 #endif
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedVFSTypes, s_aVFSTypes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedVFSTypes, s_aVFSTypes);
     return S_OK;
 }
 
@@ -1158,7 +1133,7 @@ HRESULT SystemProperties::getSupportedImportOptions(std::vector<ImportOptions_T>
         ImportOptions_KeepNATMACs,
         ImportOptions_ImportToVDI,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedImportOptions, s_aImportOptions);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedImportOptions, s_aImportOptions);
     return S_OK;
 }
 
@@ -1171,7 +1146,7 @@ HRESULT SystemProperties::getSupportedExportOptions(std::vector<ExportOptions_T>
         ExportOptions_StripAllMACs,
         ExportOptions_StripAllNonNATMACs,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedExportOptions, s_aExportOptions);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedExportOptions, s_aExportOptions);
     return S_OK;
 }
 
@@ -1186,7 +1161,7 @@ HRESULT SystemProperties::getSupportedGraphicsFeatures(std::vector<GraphicsFeatu
         GraphicsFeature_Acceleration3D
 #endif
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedGraphicsFeatures, s_aGraphicsFeatures);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedGraphicsFeatures, s_aGraphicsFeatures);
 
     return S_OK;
 }
@@ -1201,7 +1176,7 @@ HRESULT SystemProperties::getSupportedRecordingFeatures(std::vector<RecordingFea
 # endif
         RecordingFeature_Video,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingFeatures, s_aRecordingFeatures);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedRecordingFeatures, s_aRecordingFeatures);
 #else  /* !VBOX_WITH_RECORDING */
     aSupportedRecordingFeatures.clear();
 #endif /* VBOX_WITH_RECORDING */
@@ -1220,7 +1195,7 @@ HRESULT SystemProperties::getSupportedRecordingAudioCodecs(std::vector<Recording
         RecordingAudioCodec_OggVorbis,
 #endif
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingAudioCodecs, s_aRecordingAudioCodecs);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedRecordingAudioCodecs, s_aRecordingAudioCodecs);
     return S_OK;
 }
 
@@ -1237,7 +1212,7 @@ HRESULT SystemProperties::getSupportedRecordingVideoCodecs(std::vector<Recording
         RecordingVideoCodec_AV1,
 #endif
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingVideoCodecs, s_aRecordingVideoCodecs);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedRecordingVideoCodecs, s_aRecordingVideoCodecs);
     return S_OK;
 }
 
@@ -1252,7 +1227,7 @@ HRESULT SystemProperties::getSupportedRecordingVSModes(std::vector<RecordingVide
         RecordingVideoScalingMode_Bicubic,
 #endif
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingVideoScalingModes, s_aRecordingVideoScalingModes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedRecordingVideoScalingModes, s_aRecordingVideoScalingModes);
     return S_OK;
 }
 
@@ -1266,7 +1241,7 @@ HRESULT SystemProperties::getSupportedRecordingARCModes(std::vector<RecordingRat
 #endif
         RecordingRateControlMode_VBR
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingAudioRateControlModes, s_aRecordingAudioRateControlModes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedRecordingAudioRateControlModes, s_aRecordingAudioRateControlModes);
     return S_OK;
 }
 
@@ -1280,7 +1255,7 @@ HRESULT SystemProperties::getSupportedRecordingVRCModes(std::vector<RecordingRat
 #endif
         RecordingRateControlMode_VBR
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedRecordingVideoRateControlModes, s_aRecordingVideoRateControlModes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedRecordingVideoRateControlModes, s_aRecordingVideoRateControlModes);
     return S_OK;
 }
 
@@ -1294,7 +1269,7 @@ HRESULT SystemProperties::getSupportedCloneOptions(std::vector<CloneOptions_T> &
         CloneOptions_KeepDiskNames,
         CloneOptions_KeepHwUUIDs,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedCloneOptions, s_aCloneOptions);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedCloneOptions, s_aCloneOptions);
     return S_OK;
 }
 
@@ -1307,7 +1282,7 @@ HRESULT SystemProperties::getSupportedAutostopTypes(std::vector<AutostopType_T> 
         AutostopType_PowerOff,
         AutostopType_AcpiShutdown,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedAutostopTypes, s_aAutostopTypes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedAutostopTypes, s_aAutostopTypes);
     return S_OK;
 }
 
@@ -1321,7 +1296,7 @@ HRESULT SystemProperties::getSupportedVMProcPriorities(std::vector<VMProcPriorit
         VMProcPriority_Normal,
         VMProcPriority_High,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedVMProcPriorities, s_aVMProcPriorities);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedVMProcPriorities, s_aVMProcPriorities);
     return S_OK;
 }
 
@@ -1343,7 +1318,7 @@ HRESULT SystemProperties::getSupportedNetworkAttachmentTypes(std::vector<Network
 #endif
         NetworkAttachmentType_Null,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedNetworkAttachmentTypes, s_aNetworkAttachmentTypes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedNetworkAttachmentTypes, s_aNetworkAttachmentTypes);
     return S_OK;
 }
 
@@ -1357,7 +1332,7 @@ HRESULT SystemProperties::getSupportedPortModes(std::vector<PortMode_T> &aSuppor
         PortMode_RawFile,
         PortMode_TCP,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedPortModes, s_aPortModes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedPortModes, s_aPortModes);
     return S_OK;
 }
 
@@ -1395,7 +1370,7 @@ HRESULT SystemProperties::getSupportedAudioDriverTypes(std::vector<AudioDriverTy
 #endif
         AudioDriverType_Null,
     };
-    MY_VECTOR_ASSIGN_ARRAY(aSupportedAudioDriverTypes, s_aAudioDriverTypes);
+    RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedAudioDriverTypes, s_aAudioDriverTypes);
     return S_OK;
 }
 
@@ -1423,7 +1398,7 @@ HRESULT SystemProperties::getExecutionEnginesForVmCpuArchitecture(CPUArchitectur
                 VMExecutionEngine_Recompiler,
 #endif
             };
-            MY_VECTOR_ASSIGN_ARRAY(aExecutionEngines, s_aExecEngines);
+            RT_CPP_VECTOR_ASSIGN_ARRAY(aExecutionEngines, s_aExecEngines);
             break;
         }
 
@@ -1441,7 +1416,7 @@ HRESULT SystemProperties::getExecutionEnginesForVmCpuArchitecture(CPUArchitectur
                 VMExecutionEngine_NativeApi,
 # endif
             };
-            MY_VECTOR_ASSIGN_ARRAY(aExecutionEngines, s_aExecEngines);
+            RT_CPP_VECTOR_ASSIGN_ARRAY(aExecutionEngines, s_aExecEngines);
 #else
             aExecutionEngines.clear();
 #endif
