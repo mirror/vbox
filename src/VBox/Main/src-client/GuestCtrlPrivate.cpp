@@ -76,6 +76,10 @@ Utf8Str GuestFs::guestErrorToString(const GuestErrorInfo &guestErrorInfo)
             strErr.printf(tr("No such file or directory \"%s\""), guestErrorInfo.getWhat().c_str());
             break;
 
+        case VERR_CANT_CREATE:
+            strErr.printf(tr("File or directory \"%s\" can't be created"), guestErrorInfo.getWhat().c_str());
+            break;
+
         case VERR_INVALID_PARAMETER:
             strErr.printf(tr("Invalid parameter specified"));
             break;
