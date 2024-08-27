@@ -2720,8 +2720,8 @@ es.unregisterListener(listener); </screen></para>
             </row>
 
             <row>
-              <entry>ISystemProperties::supportedGraphicsControllerTypes[]</entry>
-              <entry><link linkend="IPlatformProperties__supportedGraphicsControllerTypes">IPlatformProperties::supportedGraphicsControllerTypes[]</link></entry>
+              <entry>ISystemProperties::getSupportedGfxControllerTypes[]</entry>
+              <entry><link linkend="IPlatformProperties__supportedGfxControllerTypes">IPlatformProperties::getSupportedGfxControllerTypes[]</link></entry>
             </row>
 
             <row>
