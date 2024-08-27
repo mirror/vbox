@@ -5073,8 +5073,9 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         hrc = ptrGraphicsAdapter->COMGETTER(MonitorCount)(&cMonitorCount);                  H();
         InsertConfigInteger(pCfg,  "MonitorCount",         cMonitorCount);
 
-        BOOL f3DEnabled;
-        hrc = ptrGraphicsAdapter->IsFeatureEnabled(GraphicsFeature_Acceleration3D, &f3DEnabled);              H();
+        BOOL f3DEnabled = FALSE;
+        ptrGraphicsAdapter->IsFeatureEnabled(GraphicsFeature_Acceleration3D, &f3DEnabled);
+        /* Note: Might return VBOX_E_NOT_SUPPORTED if feature is not supported. */
         InsertConfigInteger(pCfg,  "3DEnabled",            f3DEnabled);
 
         i_attachStatusDriver(pInst, DeviceType_Graphics3D);

@@ -5855,7 +5855,11 @@
     </method>
 
     <method name="isFeatureEnabled" const="yes">
-      <desc>Returns whether a particular feature is enabled for this adapter or not.</desc>
+      <desc>Returns whether a particular feature is enabled for this adapter or not.
+        <result name="VBOX_E_NOT_SUPPORTED">
+          The feature is not supported on the current platform.
+        </result>
+      </desc>
       <param name="feature" type="GraphicsFeature" dir="in">
         <desc>Feature to check for.</desc>
       </param>
