@@ -1174,6 +1174,7 @@ iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
         /* Since we've already got the new PC value in idxPcReg, we can just as
            well write it out and reset offPc to zero.  Otherwise, we'd need to use
            a copy the shadow PC, which will cost another move instruction here. */
+# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(LOG_ENABLED) || defined(VBOX_WITH_STATISTICS)
         uint8_t const idxOldInstrPlusOne = pReNative->idxInstrPlusOneOfLastPcUpdate;
         pReNative->idxInstrPlusOneOfLastPcUpdate = RT_MAX(idxInstr + 1, idxOldInstrPlusOne);
         uint8_t const cInstrsSkipped     = idxInstr <= idxOldInstrPlusOne ? 0 : idxInstr - idxOldInstrPlusOne;
@@ -1184,6 +1185,7 @@ iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative,
         iemNativeDbgInfoAddNativeOffset(pReNative, off);
         iemNativeDbgInfoAddDelayedPcUpdate(pReNative, pReNative->Core.offPc, cInstrsSkipped);
 #  endif
+# endif
         pReNative->Core.offPc = 0;
 #endif
 
