@@ -538,6 +538,8 @@ typedef const GSTCTLFSOBJATTR *PCGSTCTLFSOBJATTR;
 
 /**
  * Filter option for HOST_MSG_DIR_OPEN.
+ *
+ * @note Currently *must* match RTDIRFILTER, so be careful when changing this!
  */
 typedef enum GSTCTLDIRFILTER
 {
