@@ -2071,7 +2071,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
 #ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING
     pReNative->Core.offPc                  = 0;
 # if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
-    pReNative->Core.idxInstrPlusOneOfLastPcUpdate = 0;
+    pReNative->idxInstrPlusOneOfLastPcUpdate = 0;
 # endif
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
     pReNative->Core.fDebugPcInitialized    = false;
@@ -2721,8 +2721,8 @@ DECL_HIDDEN_THROW(void) iemNativeDbgInfoAddDelayedPcUpdate(PIEMRECOMPILERSTATE p
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
     pEntry->DelayedPcUpdate.uType         = kIemTbDbgEntryType_DelayedPcUpdate;
-    pEntry->DelayedPcUpdate.offPc         = offPc; /** @todo support larger values */
     pEntry->DelayedPcUpdate.cInstrSkipped = cInstrSkipped;
+    pEntry->DelayedPcUpdate.offPc         = offPc; /** @todo support larger values */
 }
 # endif
 
@@ -5767,17 +5767,16 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitPcWritebackSlow(PIEMRECOMPILERSTATE pRe
 # if !defined(IEMNATIVE_WITH_TB_DEBUG_INFO) && !defined(VBOX_WITH_STATISTICS)
     Log4(("iemNativeEmitPcWritebackSlow: offPc=%#RX64 -> 0; off=%#x\n", pReNative->Core.offPc, off));
 # else
-    uint8_t const idxOldInstrPlusOne = pReNative->Core.idxInstrPlusOneOfLastPcUpdate;
+    uint8_t const idxOldInstrPlusOne = pReNative->idxInstrPlusOneOfLastPcUpdate;
     uint8_t       idxCurCall         = pReNative->idxCurCall;
     uint8_t       idxInstr           = pReNative->pTbOrg->Thrd.paCalls[idxCurCall].idxInstr; /* unreliable*/
     while (idxInstr == 0 && idxInstr + 1 < idxOldInstrPlusOne && idxCurCall > 0)
         idxInstr = pReNative->pTbOrg->Thrd.paCalls[--idxCurCall].idxInstr;
-    uint8_t const cInstrsSkipped     = idxInstr <= pReNative->Core.idxInstrPlusOneOfLastPcUpdate ? 0
-                                     : idxInstr - pReNative->Core.idxInstrPlusOneOfLastPcUpdate;
+    pReNative->idxInstrPlusOneOfLastPcUpdate = RT_MAX(idxInstr + 1, idxOldInstrPlusOne);
+    uint8_t const cInstrsSkipped     = idxInstr <= idxOldInstrPlusOne ? 0 : idxInstr - idxOldInstrPlusOne;
     Log4(("iemNativeEmitPcWritebackSlow: offPc=%#RX64 -> 0; off=%#x; idxInstr=%u cInstrsSkipped=%u\n",
           pReNative->Core.offPc, off, idxInstr, cInstrsSkipped));
 
-    pReNative->Core.idxInstrPlusOneOfLastPcUpdate = RT_MAX(idxInstr + 1, pReNative->Core.idxInstrPlusOneOfLastPcUpdate);
     STAM_COUNTER_ADD(&pReNative->pVCpu->iem.s.StatNativePcUpdateDelayed, cInstrsSkipped);
 
 #  ifdef IEMNATIVE_WITH_TB_DEBUG_INFO

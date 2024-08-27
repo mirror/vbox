@@ -1257,10 +1257,6 @@ typedef struct IEMNATIVECORESTATE
      * was updated last. Used for delaying the write to the guest context program counter
      * as long as possible. */
     int64_t                     offPc;
-# if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
-    /** Statistics: The idxInstr+1 value at the last PC update. */
-    uint8_t                     idxInstrPlusOneOfLastPcUpdate;
-# endif
 # ifdef IEMNATIVE_WITH_DELAYED_PC_UPDATING_DEBUG
     /** Set after we've loaded PC into uPcUpdatingDebug at the first update. */
     bool                        fDebugPcInitialized;
@@ -1462,10 +1458,14 @@ typedef struct IEMRECOMPILERSTATE
     PIEMNATIVEEXITFIXUP         paTbExitFixups;
 #endif
 
+#if defined(IEMNATIVE_WITH_TB_DEBUG_INFO) || defined(VBOX_WITH_STATISTICS)
+    /** Statistics: The idxInstr+1 value at the last PC update. */
+    uint8_t                     idxInstrPlusOneOfLastPcUpdate;
+#endif
+
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
     /** Number of debug info entries allocated for pDbgInfo. */
     uint32_t                    cDbgInfoAlloc;
-    uint32_t                    uPadding;
     /** Debug info. */
     PIEMTBDBG                   pDbgInfo;
 #endif

@@ -1447,10 +1447,10 @@ typedef union IEMTBDBGENTRY
     {
         /* kIemTbDbgEntryType_DelayedPcUpdate. */
         uint32_t    uType         : 4;
-        /* The instruction offset added to the program counter. */
-        uint32_t    offPc         : 14;
         /** Number of instructions skipped. */
-        uint32_t    cInstrSkipped : 14;
+        uint32_t    cInstrSkipped : 8;
+        /* The instruction offset added to the program counter. */
+        int32_t     offPc         : 20;
     } DelayedPcUpdate;
 #endif
 

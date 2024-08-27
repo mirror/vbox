@@ -1058,7 +1058,8 @@ iemNativeEmitStoreImmToVCpuU16Ex(PIEMNATIVEINSTR pCodeBuf, uint32_t off, uint16_
  * Emits a store of an immediate value to a 8-bit VCpu field.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitStoreImmToVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t bImm, uint32_t offVCpu)
+iemNativeEmitStoreImmToVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t bImm, uint32_t offVCpu,
+                              uint8_t idxRegTmp = UINT8_MAX)
 {
 #ifdef RT_ARCH_AMD64
     /* mov mem8, imm8 */
@@ -1067,12 +1068,22 @@ iemNativeEmitStoreImmToVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
     off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, 0, offVCpu);
     pbCodeBuf[off++] = bImm;
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    RT_NOREF(idxRegTmp);
 
 #elif defined(RT_ARCH_ARM64)
     /* Cannot use IEMNATIVE_REG_FIXED_TMP0 for the immediate as that's used by iemNativeEmitGprByVCpuLdSt. */
-    uint8_t const idxRegImm = iemNativeRegAllocTmpImm(pReNative, &off, bImm);
-    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, idxRegImm, offVCpu, kArmv8A64InstrLdStType_St_Byte, sizeof(uint8_t));
-    iemNativeRegFreeTmpImm(pReNative, idxRegImm);
+    if (idxRegTmp != UINT8_MAX)
+    {
+        Assert(idxRegTmp != IEMNATIVE_REG_FIXED_TMP0);
+        off = iemNativeEmitLoadGprImm32(pReNative, off, idxRegTmp, bImm);
+        off = iemNativeEmitGprByVCpuLdSt(pReNative, off, idxRegTmp, offVCpu, kArmv8A64InstrLdStType_St_Byte, sizeof(uint8_t));
+    }
+    else
+    {
+        uint8_t const idxRegImm = iemNativeRegAllocTmpImm(pReNative, &off, bImm);
+        off = iemNativeEmitGprByVCpuLdSt(pReNative, off, idxRegImm, offVCpu, kArmv8A64InstrLdStType_St_Byte, sizeof(uint8_t));
+        iemNativeRegFreeTmpImm(pReNative, idxRegImm);
+    }
 
 #else
 # error "port me"
