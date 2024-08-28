@@ -416,11 +416,11 @@
     <name>UIAcquireCloudMachineCloneNameDialog</name>
     <message>
         <source>Clone Virtual Machine</source>
-        <translation type="unfinished">Sanal Makineyi Çoğalt</translation>
+        <translation>Sanal Makineyi Çoğalt</translation>
     </message>
     <message>
         <source>Enter machine name...</source>
-        <translation type="unfinished"></translation>
+        <translation>Makine adını girin...</translation>
     </message>
 </context>
 <context>
@@ -1254,7 +1254,7 @@
     </message>
     <message>
         <source>Enable host mouse pointer integration</source>
-        <translation>Anamakine fare işaretçisi bütünleştirmesini etkinleştir</translation>
+        <translation>Anamakine fare işaretçisi bütünleştirmeyi etkinleştir</translation>
     </message>
     <message>
         <source>&amp;Optical Drives</source>
@@ -1752,7 +1752,7 @@
     </message>
     <message>
         <source>Open pane with searching options</source>
-        <translation>Bölmeyi arama seçenekleri ile aç</translation>
+        <translation>Arama seçeneklerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open Find Pane (%1)</source>
@@ -1764,7 +1764,7 @@
     </message>
     <message>
         <source>Open pane with filtering options</source>
-        <translation>Bölmeyi süzme seçenekleri ile aç</translation>
+        <translation>Süzme seçeneklerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open Filter Pane (%1)</source>
@@ -1776,7 +1776,7 @@
     </message>
     <message>
         <source>Open pane with bookmarking options</source>
-        <translation>Bölmeyi işaretleme seçenekleri ile aç</translation>
+        <translation>Yer işaretleme seçeneklerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open Bookmark Pane (%1)</source>
@@ -2152,7 +2152,7 @@
     </message>
     <message>
         <source>Open pane with the selected snapshot properties</source>
-        <translation>Seçilen anlık görüntü özellikleri ile bölmeyi aç</translation>
+        <translation>Seçilen anlık görüntü özelliklerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open Snapshot Properties (%1)</source>
@@ -2272,7 +2272,7 @@
     </message>
     <message>
         <source>Open pane with selected host-only network properties</source>
-        <translation>Seçilen yalnızca-anamakine ağı özellikleri ile bölmeyi aç</translation>
+        <translation>Seçilen yalnızca-anamakine ağı özelliklerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open Host-only Network Properties (%1)</source>
@@ -2352,7 +2352,7 @@
     </message>
     <message>
         <source>Open pane with selected cloud profile properties</source>
-        <translation>Seçilen bulut profili özellikleri ile bölmeyi aç</translation>
+        <translation>Seçilen bulut profili özelliklerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open Cloud Profile Properties (%1)</source>
@@ -2695,7 +2695,7 @@
     </message>
     <message>
         <source>Open pane with selected disk image properties</source>
-        <translation>Seçilen disk kalıbı özellikleri ile bölmeyi aç</translation>
+        <translation>Seçilen disk kalıbı özelliklerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open Disk Image Properties</source>
@@ -3153,7 +3153,7 @@
     </message>
     <message>
         <source>Open pane with selected cloud console properties</source>
-        <translation>Seçilen bulut konsolu özellikleri ile bölmeyi aç</translation>
+        <translation>Seçilen bulut konsolu özelliklerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open Cloud Console Properties</source>
@@ -3257,23 +3257,23 @@
     </message>
     <message>
         <source>Enable Clipboard File Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>Pano Dosya Aktarımlarını etkinleştir</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox user guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarayıcıyı aç ve VirtualBox kullanım kılavuzuna git</translation>
     </message>
     <message>
         <source>&amp;Preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tercihler</translation>
     </message>
     <message>
         <source>Open pane with log viewer preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>Günlük görüntüleyicisi tercihlerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open Preferences Pane</source>
-        <translation type="unfinished"></translation>
+        <translation>Tercihler Bölmesini Aç</translation>
     </message>
     <message>
         <source>Preferences</source>
@@ -3281,123 +3281,123 @@
     </message>
     <message>
         <source>Go Forward</source>
-        <translation type="unfinished">İleriye Git</translation>
+        <translation>İleriye Git</translation>
     </message>
     <message>
         <source>Go forward</source>
-        <translation type="unfinished"></translation>
+        <translation>İleriye git</translation>
     </message>
     <message>
         <source>Go Backward</source>
-        <translation type="unfinished">Geriye Git</translation>
+        <translation>Geriye Git</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
-        <translation type="unfinished">&amp;Geri Yükle</translation>
+        <translation>&amp;Geri Yükle</translation>
     </message>
     <message>
         <source>Restore selected item(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen öğe(leri)yi geri yükle</translation>
     </message>
     <message>
         <source>Restore Selected Item(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen Öğe(leri)yi Geri Yükle</translation>
     </message>
     <message>
         <source>Rename Selected VISO File Object</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen VISO Dosya Nesnesini Yeniden Adlandır</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">Aç</translation>
+        <translation>Aç</translation>
     </message>
     <message>
         <source>Save As</source>
-        <translation type="unfinished"></translation>
+        <translation>Farklı Kaydet</translation>
     </message>
     <message>
         <source>Open pane with activity monitor preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>Etkinlik izleme tercihlerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open pane with file manager preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yöneticisi tercihlerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open pane with file manager log</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yöneticisi günlüğünü içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Open pane with file manager operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yöneticisi işlemlerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Go backward</source>
-        <translation type="unfinished"></translation>
+        <translation>Geriye git</translation>
     </message>
     <message>
         <source>Open pane with VISO Creator preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO Oluşturucu seçeneklerini içeren bölmeyi aç</translation>
     </message>
     <message>
         <source>Remove Selected Item(s) From VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen Öğe(leri)yi VISO&apos;dan Kaldır</translation>
     </message>
     <message>
         <source>Reset the VISO content</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO içeriğini sıfırla</translation>
     </message>
     <message>
         <source>Reset the VISO Content</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO İçeriğini Sıfırla</translation>
     </message>
     <message>
         <source>Open the VISO content</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO içeriğini aç</translation>
     </message>
     <message>
         <source>Open the VISO Content</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO İçeriğini Aç</translation>
     </message>
     <message>
         <source>Save the VISO content</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO içeriğini kaydet</translation>
     </message>
     <message>
         <source>Save the VISO Content</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO İçeriğini Kaydet</translation>
     </message>
     <message>
         <source>Import ISO</source>
-        <translation type="unfinished"></translation>
+        <translation>ISO&apos;yu İçe Aktar</translation>
     </message>
     <message>
         <source>Import ISO into the VISO content</source>
-        <translation type="unfinished"></translation>
+        <translation>ISO&apos;yu VISO içeriğine aktar</translation>
     </message>
     <message>
         <source>Import Selected ISO Into the VISO Content</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen ISO&apos;yu VISO İçeriğine Aktar</translation>
     </message>
     <message>
         <source>Remove ISO</source>
-        <translation type="unfinished"></translation>
+        <translation>ISO&apos;yu Kaldır</translation>
     </message>
     <message>
         <source>Remove the imported ISO from the VISO content</source>
-        <translation type="unfinished"></translation>
+        <translation>İçe aktarılan ISO&apos;yu VISO içeriğinden kaldır</translation>
     </message>
     <message>
         <source>Remove the Imported ISO From the VISO Content</source>
-        <translation type="unfinished"></translation>
+        <translation>İçe Aktarılan ISO&apos;yu VISO İçeriğinden Kaldır</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Durdur</translation>
     </message>
     <message>
         <source>Upgrade guest additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir eklentilerini yükselt</translation>
     </message>
 </context>
 <context>
@@ -3465,54 +3465,54 @@
     <name>UIAdvancedSettingsDialog</name>
     <message>
         <source>Basic</source>
-        <translation type="unfinished"></translation>
+        <translation>Temel</translation>
     </message>
     <message>
         <source>Expert</source>
-        <translation type="unfinished"></translation>
+        <translation>Uzman</translation>
     </message>
     <message>
         <source>Search settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ayarları ara</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Geçersiz ayarlar algılandı</translation>
     </message>
 </context>
 <context>
     <name>UIAdvancedSettingsDialogGlobal</name>
     <message>
         <source>Allows to navigate through Global Property categories</source>
-        <translation type="unfinished">Genel Özellik kategorileri aracılığıyla gezinmeye izin verir</translation>
+        <translation>Genel Özellik kategorileri aracılığıyla gezinmeye izin verir</translation>
     </message>
     <message>
         <source>General</source>
-        <translation type="unfinished">Genel</translation>
+        <translation>Genel</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation type="unfinished"></translation>
+        <translation>Giriş</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelleme</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished">Dil</translation>
+        <translation>Dil</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished">Ekran</translation>
+        <translation>Ekran</translation>
     </message>
     <message>
         <source>Proxy</source>
-        <translation type="unfinished">Vekil</translation>
+        <translation>Vekil</translation>
     </message>
     <message>
         <source>Interface</source>
-        <translation type="unfinished">Arayüz</translation>
+        <translation>Arayüz</translation>
     </message>
     <message>
         <source>Preferences</source>
@@ -3525,58 +3525,58 @@
     <message>
         <source>VirtualBox - Preferences</source>
         <comment>global preferences dialog name</comment>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Tercihleri</translation>
     </message>
 </context>
 <context>
     <name>UIAdvancedSettingsDialogMachine</name>
     <message>
         <source>Allows to navigate through VM Settings categories</source>
-        <translation type="unfinished">VM Ayarları kategorileri aracılığıyla gezinmeye izin verir</translation>
+        <translation>VM Ayarları kategorileri aracılığıyla gezinmeye izin verir</translation>
     </message>
     <message>
         <source>General</source>
-        <translation type="unfinished">Genel</translation>
+        <translation>Genel</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished">Sistem</translation>
+        <translation>Sistem</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished">Ekran</translation>
+        <translation>Ekran</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Depolama</translation>
+        <translation>Depolama</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Ses</translation>
+        <translation>Ses</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Ağ</translation>
+        <translation>Ağ</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation type="unfinished"></translation>
+        <translation>B.Noktaları</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished"></translation>
+        <translation>Seri B.Noktaları</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation type="unfinished"></translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Paylaşılan Klasörler</translation>
     </message>
     <message>
         <source>User Interface</source>
-        <translation type="unfinished">Kullanıcı Arayüzü</translation>
+        <translation>Kullanıcı Arayüzü</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -3585,7 +3585,7 @@
     <message>
         <source>%1 - Settings</source>
         <comment>machine settings dialog name, starts from machine name</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Ayarlar</translation>
     </message>
 </context>
 <context>
@@ -3754,7 +3754,7 @@
     </message>
     <message>
         <source>Storage Controller (NVMe)</source>
-        <translation type="unfinished"></translation>
+        <translation>Depolama Denetleyicisi (NVMe)</translation>
     </message>
 </context>
 <context>
@@ -4100,11 +4100,11 @@
     </message>
     <message>
         <source>The path is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Yol geçersiz</translation>
     </message>
     <message>
         <source>The path is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Yol geçerli</translation>
     </message>
 </context>
 <context>
@@ -4135,7 +4135,7 @@
     </message>
     <message>
         <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order. Note: only supported for BIOS firmware type, i.e. when below EFI option is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>Önyükleme aygıtı sırasını tanımlar. Tek tek önyükleme aygıtlarını etkinleştirmek veya etkisizleştirmek için soldaki onay kutularını kullanın. Aygıt sırasını değiştirmek için öğeleri yukarı ve aşağı taşıyın. Not: yalnızca BIOS donanım yazılımı türü için desteklenir, yani aşağıdaki EFI seçeneği kapalı olduğunda.</translation>
     </message>
 </context>
 <context>
@@ -4270,11 +4270,11 @@
     <name>UIChooserSearchWidget</name>
     <message>
         <source>Navigate to the next item among the search results</source>
-        <translation>Arama sonuçları arasında sonraki öğeye gidin</translation>
+        <translation>Arama sonuçları arasında sonraki öğeye git</translation>
     </message>
     <message>
         <source>Navigate to the previous item among the search results</source>
-        <translation>Arama sonuçları arasında önceki öğeye gidin</translation>
+        <translation>Arama sonuçları arasında önceki öğeye git</translation>
     </message>
     <message>
         <source>Enter a search term to be used during virtual machine search</source>
@@ -6600,22 +6600,22 @@
     <message>
         <source>QemuRamFB</source>
         <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>QemuRamFB</translation>
     </message>
     <message>
         <source>Virtio-Sound</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Virtio-Sound</translation>
     </message>
     <message>
         <source>ARMv8Virtual</source>
         <comment>ChipsetType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ARMv8Sanal</translation>
     </message>
     <message>
         <source>Keyboard Extension</source>
         <comment>IndicatorType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klavye Uzantısı</translation>
     </message>
 </context>
 <context>
@@ -7157,107 +7157,107 @@
     <message>
         <source>Enabled</source>
         <comment>details (display/3D Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Etkinleştirildi</translation>
     </message>
     <message>
         <source>3D Acceleration</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">3B Hızlandırma</translation>
+        <translation>3B Hızlandırma</translation>
     </message>
     <message>
         <source>Cloud Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bulut Ağı, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Hard Disks</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished">Sabit Diskler</translation>
+        <translation>Sabit Diskler</translation>
     </message>
     <message>
         <source>Optical Devices</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished">Optik Aygıtları</translation>
+        <translation>Optik Aygıtları</translation>
     </message>
     <message>
         <source>Floppy Devices</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished">Disket Aygıtları</translation>
+        <translation>Disket Aygıtları</translation>
     </message>
     <message>
         <source>Input/Output</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished">Giriş/Çıkış</translation>
+        <translation>Giriş/Çıkış</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details (network adapter)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Takılı Değil</translation>
     </message>
     <message>
         <source>NAT</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">NAT</translation>
+        <translation>NAT</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Köprü Bağdaştırıcısı</translation>
+        <translation>Köprü Bağdaştırıcısı</translation>
     </message>
     <message>
         <source>Internal Network</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Dahili Ağ</translation>
+        <translation>Dahili Ağ</translation>
     </message>
     <message>
         <source>Host-only Adapter</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Yalnızca-Anamakine Bağdaştırıcısı</translation>
+        <translation>Yalnızca-Anamakine Bağdaştırıcısı</translation>
     </message>
     <message>
         <source>Generic Driver</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Genel Sürücü</translation>
+        <translation>Genel Sürücü</translation>
     </message>
     <message>
         <source>NAT Network</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">NAT Ağı</translation>
+        <translation>NAT Ağı</translation>
     </message>
     <message>
         <source>Cloud Network</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Bulut Ağı</translation>
+        <translation>Bulut Ağı</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Yalnızca-Anamakine Ağı</translation>
+        <translation>Yalnızca-Anamakine Ağı</translation>
     </message>
     <message>
         <source>Disconnected</source>
         <comment>details (serial port)</comment>
-        <translation type="unfinished">Bağlantı kesildi</translation>
+        <translation>Bağlantı kesildi</translation>
     </message>
     <message>
         <source>Host Pipe</source>
         <comment>details (serial)</comment>
-        <translation type="unfinished">Anamakine Hattı</translation>
+        <translation>Anamakine Hattı</translation>
     </message>
     <message>
         <source>Host Device</source>
         <comment>details (serial)</comment>
-        <translation type="unfinished">Anamakine Aygıtı</translation>
+        <translation>Anamakine Aygıtı</translation>
     </message>
     <message>
         <source>Raw File</source>
         <comment>details (serial)</comment>
-        <translation type="unfinished">Ham Dosya</translation>
+        <translation>Ham Dosya</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>details (serial)</comment>
-        <translation type="unfinished">TCP</translation>
+        <translation>TCP</translation>
     </message>
 </context>
 <context>
@@ -7962,7 +7962,7 @@
     <name>UIDiskVariantWidget</name>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation>&amp;Tam Boyutu önceden ayır</translation>
+        <translation>&amp;Tam Boyutu Önceden Ayır</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
@@ -7978,7 +7978,7 @@
     </message>
     <message>
         <source>&amp;Split Into 2GB Parts</source>
-        <translation type="unfinished"></translation>
+        <translation>2GB&apos;lık Parçalara &amp;Böl</translation>
     </message>
 </context>
 <context>
@@ -8152,11 +8152,11 @@
     </message>
     <message>
         <source>VirtualBox User Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox Kullanım Kılavuzu</translation>
     </message>
     <message>
         <source>Select folder to save User Guide to</source>
-        <translation type="unfinished"></translation>
+        <translation>Kullanım Kılavuzunu kaydetmek için klasör seçin</translation>
     </message>
 </context>
 <context>
@@ -8178,7 +8178,7 @@
     </message>
     <message>
         <source>Contains selected file path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen dosya yolunu içerir.</translation>
     </message>
 </context>
 <context>
@@ -8268,7 +8268,7 @@
     <message>
         <source>Result&amp;nbsp;Detail:</source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sonuç&amp;nbsp;Ayrıntısı:</translation>
     </message>
 </context>
 <context>
@@ -8487,7 +8487,7 @@
     </message>
     <message>
         <source>File path is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yolu geçerli</translation>
     </message>
 </context>
 <context>
@@ -8910,19 +8910,19 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Tercihler</translation>
+        <translation>Tercihler</translation>
     </message>
     <message>
         <source>Log</source>
-        <translation type="unfinished"></translation>
+        <translation>Günlük</translation>
     </message>
     <message>
         <source>Operations</source>
-        <translation type="unfinished">İşlemler</translation>
+        <translation>İşlemler</translation>
     </message>
     <message>
         <source>NewDirectory</source>
-        <translation type="unfinished">Yeni Dizin</translation>
+        <translation>Yeni Dizin</translation>
     </message>
 </context>
 <context>
@@ -10245,7 +10245,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Default machine folder is missing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Varsayılan makine klasörü eksik.</translation>
     </message>
 </context>
 <context>
@@ -10308,7 +10308,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Host Key Combo</source>
-        <translation type="unfinished"></translation>
+        <translation>Anamakine Tuş Birleşimi</translation>
     </message>
 </context>
 <context>
@@ -11823,23 +11823,23 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>%1 User Guide</source>
         <comment>[Product Name] User Guide</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 Kullanım Kılavuzu</translation>
     </message>
     <message>
         <source>&lt;div&gt;&lt;p&gt;&lt;h3&gt;Not found.&lt;/h3&gt;The page &lt;b&gt;%1&lt;/b&gt; could not be found.&lt;/p&gt;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;div&gt;&lt;p&gt;&lt;h3&gt;Bulunamadı.&lt;/h3&gt;&lt;b&gt;%1&lt;/b&gt; sayfası bulunamadı.&lt;/p&gt;&lt;/div&gt;</translation>
     </message>
     <message>
         <source>Not Found</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulunamadı</translation>
     </message>
     <message>
         <source>Click to open the following URL with an external browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Aşağıdaki URL&apos;yi harici bir tarayıcıyla açmak için tıklayın</translation>
     </message>
     <message>
         <source>Click to navigate to internal URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Dahili URL&apos;ye gitmek için tıklayın</translation>
     </message>
 </context>
 <context>
@@ -12338,11 +12338,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Hostname is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Anamakine adı geçerli</translation>
     </message>
     <message>
         <source>Domain name is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Etki alanı adı geçerli</translation>
     </message>
 </context>
 <context>
@@ -12602,34 +12602,34 @@ Oturum Panelini kullanın</translation>
     <name>UIIndicatorAudio</name>
     <message>
         <source>Output enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Çıkış etkinleştirildi</translation>
     </message>
     <message>
         <source>Output disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Çıkış etkisizleştirildi</translation>
     </message>
     <message>
         <source>Input enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Giriş etkinleştirildi</translation>
     </message>
     <message>
         <source>Input disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Giriş etkisizleştirildi</translation>
     </message>
 </context>
 <context>
     <name>UIIndicatorDisplay</name>
     <message>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <source>%1 monitors connected</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 monitör bağlı</translation>
     </message>
     <message>
         <source>3D acceleration enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>3B hızlandırma etkinleştirildi</translation>
     </message>
 </context>
 <context>
@@ -12637,57 +12637,57 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>not set</source>
         <comment>Execution engine</comment>
-        <translation type="unfinished">ayarlı değil</translation>
+        <translation>ayarlı değil</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>Nested paging</comment>
-        <translation type="unfinished">Etkin</translation>
+        <translation>Etkin</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>Nested paging</comment>
-        <translation type="unfinished">Devre dışı</translation>
+        <translation>Devre dışı</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>Unrestricted execution</comment>
-        <translation type="unfinished">Etkin</translation>
+        <translation>Etkin</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>Unrestricted execution</comment>
-        <translation type="unfinished">Devre dışı</translation>
+        <translation>Devre dışı</translation>
     </message>
     <message>
         <source>Execution Engine</source>
-        <translation type="unfinished"></translation>
+        <translation>Çalıştırma Motoru</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
-        <translation type="unfinished"></translation>
+        <translation>Kısıtsız Çalıştırılma</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
-        <translation type="unfinished">Yarı Sanallaştırma Arayüzü</translation>
+        <translation>Yarı Sanallaştırma Arayüzü</translation>
     </message>
 </context>
 <context>
     <name>UIIndicatorFloppyDisks</name>
     <message>
         <source>%1 drives attached</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 sürücü takılı</translation>
     </message>
     <message>
         <source>%1 images mounted</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 kalıp bağlı</translation>
     </message>
 </context>
 <context>
     <name>UIIndicatorHardDrive</name>
     <message>
         <source>%1 disks attached</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 disk takılı</translation>
     </message>
 </context>
 <context>
@@ -12695,58 +12695,58 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>Indicates whether the host keyboard is captured by the guest OS:%1</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished">Anamakine klavyesinin misafir İS tarafından yakalanıp yakalanmadığını gösterir:%1</translation>
+        <translation>Anamakine klavyesinin misafir İS tarafından yakalanıp yakalanmadığını gösterir:%1</translation>
     </message>
     <message>
         <source>Keyboard is not captured</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klavye yakalanmadı</translation>
     </message>
     <message>
         <source>Keyboard is captured</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klavye yakalandı</translation>
     </message>
     <message>
         <source>Keyboard is not captured, host-combo being pressed</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klavye yakalanmadı, anamakine tuş birleşimine basıldı</translation>
     </message>
     <message>
         <source>Keyboard is captured, host-combo being pressed</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klavye yakalandı, anamakine tuş birleşimine basıldı</translation>
     </message>
     <message>
         <source>Keyboard is not captured, host-combo to be inserted</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klavye yakalanmadı, anamakine tuş birleşimi eklendi</translation>
     </message>
     <message>
         <source>Keyboard is captured, host-combo to be inserted</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klavye yakalandı, anamakine tuş birleşimi eklendi</translation>
     </message>
     <message>
         <source>Keyboard is not captured, host-combo being pressed and to be inserted</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klavye yakalanmadı, anamakine tuş birleşimine basıldı ve eklendi</translation>
     </message>
     <message>
         <source>Keyboard is captured, host-combo being pressed and to be inserted</source>
         <comment>Keyboard tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klavye yakalandı, anamakine tuş birleşimine basıldı ve eklendi</translation>
     </message>
 </context>
 <context>
     <name>UIIndicatorKeyboardExtension</name>
     <message>
         <source>Shows the currently assigned Host Key Combo.&lt;br&gt;This key combo, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Şu anki atanmış Anamakine Tuşu Birleşimini gösterir.&lt;br&gt; Bu tuş birleşimi, yalnız basıldığında, klavye ve fare yakalama durumunu değiştirir. Ayrıca eylemleri ana menüden daha hızlı gerçekleştirmek için diğer tuşlar ile birlikte kullanılabilir.</translation>
     </message>
     <message>
         <source>Host Key Combo: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Anamakine Tuş Birleşimi: %1</translation>
     </message>
 </context>
 <context>
@@ -12754,146 +12754,146 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:%1</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished">Anamakine fare işaretçisinin misafir İS tarafından yakalanıp yakalanmadığını gösterir:%1</translation>
+        <translation>Anamakine fare işaretçisinin misafir İS tarafından yakalanıp yakalanmadığını gösterir:%1</translation>
     </message>
     <message>
         <source>Pointer is not captured</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>İşaretçi yakalanmadı</translation>
     </message>
     <message>
         <source>Pointer is captured</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>İşaretçi yakalandı</translation>
     </message>
     <message>
         <source>Mouse integration is Off, pointer is not captured</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Fare bütünleştirme Kapalı, işaretçi yakalanmadı</translation>
     </message>
     <message>
         <source>Mouse integration is Off, pointer is captured</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Fare bütünleştirme Kapalı, işaretçi yakalandı</translation>
     </message>
     <message>
         <source>Mouse integration is On</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Fare bütünleştirme Açık</translation>
     </message>
     <message>
         <source>Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <comment>Mouse tooltip</comment>
-        <translation type="unfinished">Fare bütünleştirme özelliklerinin misafir İS içine Misafir Eklentilerinin yüklenmesi gerektiğini unutmayın.</translation>
+        <translation>Fare bütünleştirme özelliğinin, misafir İS içine Misafir Eklentilerinin yüklenmesi gerektiğini unutmayın.</translation>
     </message>
 </context>
 <context>
     <name>UIIndicatorNetwork</name>
     <message>
         <source>Adapters present</source>
-        <translation type="unfinished"></translation>
+        <translation>Mevcut bağdaştırıcılar</translation>
     </message>
     <message>
         <source>No network adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Ağ bağdaştırıcıları yok</translation>
     </message>
     <message>
         <source>All cables disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm kabloların bağlantısı kesildi</translation>
     </message>
     <message>
         <source>Adapter %1 (%2)</source>
-        <translation type="unfinished">Bağdaştırıcı %1 (%2)</translation>
+        <translation>Bağdaştırıcı %1 (%2)</translation>
     </message>
     <message>
         <source>IP</source>
-        <translation type="unfinished">IP</translation>
+        <translation>IP</translation>
     </message>
     <message>
         <source>Cable</source>
-        <translation type="unfinished">Kablo</translation>
+        <translation>Kablo</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>cable</comment>
-        <translation type="unfinished">Bağlandı</translation>
+        <translation>Bağlandı</translation>
     </message>
     <message>
         <source>Disconnected</source>
         <comment>cable</comment>
-        <translation type="unfinished">Bağlantı kesildi</translation>
+        <translation>Bağlantı kesildi</translation>
     </message>
 </context>
 <context>
     <name>UIIndicatorOpticalDisks</name>
     <message>
         <source>%1 drives attached</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 sürücü takılı</translation>
     </message>
     <message>
         <source>%1 images mounted</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 kalıp bağlı</translation>
     </message>
 </context>
 <context>
     <name>UIIndicatorRecording</name>
     <message>
         <source>Recording stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt durduruldu</translation>
     </message>
     <message>
         <source>Recording started</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt başlatıldı</translation>
     </message>
     <message>
         <source>Recording paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt duraklatıldı</translation>
     </message>
     <message>
         <source>Video/audio recording file</source>
-        <translation type="unfinished">Görüntü/ses kayıt dosyası</translation>
+        <translation>Görüntü/ses kayıt dosyası</translation>
     </message>
     <message>
         <source>Audio recording file</source>
-        <translation type="unfinished">Ses kayıt dosyası</translation>
+        <translation>Ses kayıt dosyası</translation>
     </message>
     <message>
         <source>Video recording file</source>
-        <translation type="unfinished">Görüntü kayıt dosyası</translation>
+        <translation>Görüntü kayıt dosyası</translation>
     </message>
     <message>
         <source>Recording disabled</source>
-        <translation type="unfinished">Kayıt etkisizleştirildi</translation>
+        <translation>Kayıt etkisizleştirildi</translation>
     </message>
 </context>
 <context>
     <name>UIIndicatorSharedFolders</name>
     <message>
         <source>%1 shared folders</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 paylaşılan klasör</translation>
     </message>
     <message>
         <source>No shared folders</source>
-        <translation type="unfinished">Paylaşılan klasörler yok</translation>
+        <translation>Paylaşılan klasörler yok</translation>
     </message>
 </context>
 <context>
     <name>UIIndicatorUSB</name>
     <message>
         <source>USB enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>USB etkinleştirildi</translation>
     </message>
     <message>
         <source>USB disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>USB etkisizleştirildi</translation>
     </message>
     <message>
         <source>%1 USB devices attached</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 USB aygıt takılı</translation>
     </message>
     <message>
         <source>No USB devices attached</source>
-        <translation type="unfinished">Takılı USB aygıtlar yok</translation>
+        <translation>Takılı USB aygıtlar yok</translation>
     </message>
 </context>
 <context>
@@ -16640,7 +16640,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>The USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB pointing device. It will be enabled automatically if you confirm your changes.</source>
-        <translation>USB denetleyicisi uyarlama şu anda USB sayfasında etkinleştirilmedi. Bu, bir uyarlanmış USB işaret etme aygıtını desteklemek için gereklidir. Değişikliklerinizi onaylarsanız, bu otomatik olarak etkinleştirilecektir.</translation>
+        <translation>USB denetleyicisi uyarlama şu anda USB sayfasında etkinleştirilmedi. Bu, bir benzetilen USB işaret etme aygıtını desteklemek için gereklidir. Değişikliklerinizi onaylarsanız, bu otomatik olarak etkinleştirilecektir.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
@@ -16652,11 +16652,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
-        <translation>Lütfen işlemci çalıştırma üst sınırını ayarlamak yerine sanal makineye atanmış İşlemci sayısını düşürmeyi düşünün.</translation>
+        <translation>Lütfen işlemci çalıştırılma üst sınırını ayarlamak yerine sanal makineye atanmış İşlemci sayısını düşürmeyi düşünün.</translation>
     </message>
     <message>
         <source>Lowering the processor execution cap may result in a decline in performance.</source>
-        <translation>İşlemci çalıştırma üst sınırını düşürmek, performansta bir düşüşle sonuçlanabilir.</translation>
+        <translation>İşlemci çalıştırılma üst sınırını düşürmek, performansta bir düşüşle sonuçlanabilir.</translation>
     </message>
     <message>
         <source>The hardware virtualization is enabled in the Acceleration section of the System page although it is not supported by the host system. It should be disabled in order to start the virtual system.</source>
@@ -17045,7 +17045,7 @@ Oturum Panelini kullanın</translation>
     <name>UIMachineView</name>
     <message>
         <source>Holds the graphical canvas containing guest screen contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir ekranı içeriklerini içeren grafiksel tuvali tutar.</translation>
     </message>
 </context>
 <context>
@@ -17094,87 +17094,87 @@ Oturum Panelini kullanın</translation>
     <message>
         <source>Inaccessible</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Erişilemez</translation>
     </message>
     <message>
         <source>Empty</source>
         <comment>medium</comment>
-        <translation type="unfinished">Boş</translation>
+        <translation>Boş</translation>
     </message>
     <message>
         <source>Host Drive &apos;%1&apos;</source>
-        <translation type="unfinished">Anamakine Sürücüsü &apos;%1&apos;</translation>
+        <translation>Anamakine Sürücüsü &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host Drive %1 (%2)</source>
-        <translation type="unfinished">Anamakine Sürücüsü %1 (%2)</translation>
+        <translation>Anamakine Sürücüsü %1 (%2)</translation>
     </message>
     <message>
         <source>&lt;p style=white-space:pre&gt;Type (Format):  %1 (%2)&lt;/p&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished">&lt;p style=white-space:pre&gt;Tür (Biçim):  %1 (%2)&lt;/p&gt;</translation>
+        <translation>&lt;p style=white-space:pre&gt;Tür (Biçim):  %1 (%2)&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
         <comment>to machines</comment>
-        <translation type="unfinished">&lt;p&gt;Şuna takılı:  %1&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Şuna takılı:  %1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
         <comment>to machines</comment>
-        <translation type="unfinished">&lt;i&gt;Takılı Değil&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Takılı Değil&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished">&lt;i&gt;Erişebilirlik denetleniyor...&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Erişebilirlik denetleniyor...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Failed to check accessibility of disk image files.</source>
-        <translation type="unfinished">Disk kalıbı dosyalarının erişebilirliği denetimi başarısız.</translation>
+        <translation>Disk kalıbı dosyalarının erişebilirliği denetimi başarısız.</translation>
     </message>
     <message>
         <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Seçilen disk kalıbı dosyası yok&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;Seçilen disk kalıbı dosyası yok&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can also change this while the machine is running.</source>
-        <translation type="unfinished">Aynı zamanda bunu makine çalışıyorken değiştirebilirsiniz.</translation>
+        <translation>Aynı zamanda bunu makine çalışıyorken değiştirebilirsiniz.</translation>
     </message>
     <message>
         <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Kullanılabilir disk kalıbı dosyaları yok&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;Kullanılabilir disk kalıbı dosyaları yok&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can create or add disk image files in the virtual machine settings.</source>
-        <translation type="unfinished">Sanal makine ayarlarında disk kalıbı dosyalarını oluşturabilir ya da ekleyebilirsiniz.</translation>
+        <translation>Sanal makine ayarlarında disk kalıbı dosyalarını oluşturabilir ya da ekleyebilirsiniz.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
-        <translation type="unfinished">Takılan bu sabit disk yeni olarak oluşturulmuş ayrımlama sabit diski kullanarak dolaylı olarak gerçekleştirecektir.</translation>
+        <translation>Takılan bu sabit disk yeni olarak oluşturulmuş ayrımlama sabit diski kullanarak dolaylı olarak gerçekleştirecektir.</translation>
     </message>
     <message>
         <source>Encrypted</source>
         <comment>medium</comment>
-        <translation type="unfinished">Şifrelenmiş</translation>
+        <translation>Şifrelenmiş</translation>
     </message>
     <message>
         <source>Checking...</source>
         <comment>medium</comment>
-        <translation type="unfinished">Denetleniyor...</translation>
+        <translation>Denetleniyor...</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
-        <translation type="unfinished">Bu sabit disk zincirindeki dosyaların bazıları erişilemez. Lütfen bu dosyaları incelemek için Sanal Ortam Yöneticisi&apos;ni kullanın.</translation>
+        <translation>Bu sabit disk zincirindeki dosyaların bazıları erişilemez. Lütfen bu dosyaları incelemek için Sanal Ortam Yöneticisi&apos;ni kullanın.</translation>
     </message>
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
-        <translation type="unfinished">Bu ana sabit disk aşağıdaki ayrımlama sabit diski kullanarak dolaylı olarak takılır:</translation>
+        <translation>Bu ana sabit disk aşağıdaki ayrımlama sabit diski kullanarak dolaylı olarak takılır:</translation>
     </message>
     <message>
         <source>Differencing</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ayrımlama</translation>
     </message>
 </context>
 <context>
@@ -17346,7 +17346,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Encryption key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Şifreleme anahtarı:</translation>
     </message>
 </context>
 <context>
@@ -17781,19 +17781,19 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Navigates to the previous item matching the search term</source>
-        <translation type="unfinished"></translation>
+        <translation>Arama terimiyle eşleşen önceki öğeye gider</translation>
     </message>
     <message>
         <source>Previous Match</source>
-        <translation type="unfinished"></translation>
+        <translation>Önceki Eşleşme</translation>
     </message>
     <message>
         <source>Navigates to the next item matching the search term</source>
-        <translation type="unfinished"></translation>
+        <translation>Arama terimiyle eşleşen sonraki öğeye gider</translation>
     </message>
     <message>
         <source>Next Match</source>
-        <translation type="unfinished"></translation>
+        <translation>Sonraki Eşleşme</translation>
     </message>
 </context>
 <context>
@@ -17908,7 +17908,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Shows a list of all registered media</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm kayıtlı ortamların listesini gösterir</translation>
     </message>
 </context>
 <context>
@@ -17943,15 +17943,15 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Disk file path does not exists</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk dosya yolu mevcut değil</translation>
     </message>
     <message>
         <source>Disk file path is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk dosya yolu geçerli</translation>
     </message>
     <message>
         <source>Disk file name is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk dosya adı geçerli</translation>
     </message>
 </context>
 <context>
@@ -17974,38 +17974,38 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>%1 (%2 B)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2 B)</translation>
     </message>
 </context>
 <context>
     <name>UIMediumTools</name>
     <message>
         <source>Please choose a virtual hard disk file</source>
-        <translation type="unfinished">Lütfen sanal bir sabit disk dosyası seçin</translation>
+        <translation>Lütfen sanal bir sabit disk dosyası seçin</translation>
     </message>
     <message>
         <source>All virtual hard disk files (%1)</source>
-        <translation type="unfinished">Tüm sanal sabit disk dosyaları (%1)</translation>
+        <translation>Tüm sanal sabit disk dosyaları (%1)</translation>
     </message>
     <message>
         <source>Please choose a virtual optical disk file</source>
-        <translation type="unfinished">Lütfen sanal bir optik disk dosyası seçin</translation>
+        <translation>Lütfen sanal bir optik disk dosyası seçin</translation>
     </message>
     <message>
         <source>All virtual optical disk files (%1)</source>
-        <translation type="unfinished">Tüm sanal optik disk dosyaları (%1)</translation>
+        <translation>Tüm sanal optik disk dosyaları (%1)</translation>
     </message>
     <message>
         <source>Please choose a virtual floppy disk file</source>
-        <translation type="unfinished">Lütfen sanal bir disket dosyası seçin</translation>
+        <translation>Lütfen sanal bir disket dosyası seçin</translation>
     </message>
     <message>
         <source>All virtual floppy disk files (%1)</source>
-        <translation type="unfinished">Tüm sanal disket dosyaları (%1)</translation>
+        <translation>Tüm sanal disket dosyaları (%1)</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished">Tüm dosyalar (*)</translation>
+        <translation>Tüm dosyalar (*)</translation>
     </message>
     <message>
         <source>Choose/Create a disk image...</source>
@@ -18013,15 +18013,15 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Choose/Create a Disk Image...</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk Kalıbı Seç/Oluştur...</translation>
     </message>
     <message>
         <source>Choose a Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk Dosyası Seç...</translation>
     </message>
     <message>
         <source>Remove Disk From Virtual Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Diski Sanal Sürücüden Kaldır</translation>
     </message>
 </context>
 <context>
@@ -18839,7 +18839,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Vazgeç</translation>
+        <translation>Vazgeç</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -18887,7 +18887,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Yalnızca-anamakine ağını silmek bu ağ tabanlı yalnızca-anamakine arayüzünü kaldıracak. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; (yalnızca-anamakine ağı) arayüzünü kaldırma istiyor musunuz?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Not:&lt;/b&gt; bu arayüz VM&apos;lerinizden birine ait olan bir ya da daha fazla sanal ağ bağdaştırıcıları tarafından kullanımda olabilir. Kaldırıldıktan sonra, bu bağdaştırıcılar ya farklı bir arayüz adı ya da farklı bir bağdaştırıcı eklenti türü seçip ayarları düzeltene kadar artık kullanılabilir olmayacaklar.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Yalnızca-anamakine ağını silmek bu ağ tabanlı yalnızca-anamakine arayüzünü kaldıracak. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; (yalnızca-anamakine ağı) arayüzünü kaldırma istiyor musunuz?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Not:&lt;/b&gt; bu arayüz VM&apos;lerinizden birine ait olan bir ya da daha fazla sanal ağ bağdaştırıcıları tarafından kullanımda olabilir. Kaldırıldıktan sonra, bu bağdaştırıcılar ya farklı bir arayüz adı ya da farklı bir bağdaştırıcı ekleme türü seçip ayarları düzeltene kadar artık kullanılabilir olmayacaklar.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
@@ -19621,7 +19621,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;VirtualBox Misafir Eklentileri&lt;/b&gt; disk kalıbı dosyası bulunamadı.&lt;/p&gt;&lt;p&gt;Bu disk kalıbı dosyasını Internet&apos;ten indirmek ister misiniz?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;VirtualBox Misafir Eklentileri&lt;/b&gt; disk kalıbı dosyası bulunamadı.&lt;/p&gt;&lt;p&gt;Bu disk kalıbı dosyasını İnternet&apos;ten indirmek ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Download</source>
@@ -19694,7 +19694,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sanal ekran şu an &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; renk kipine ayarlı. Daha iyi performans için lütfen bunu &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt; olarak değiştirin. Bu genellikle misafir işletim sisteminin Denetim Masası&apos;nın ya da Sistem Ayarları&apos;nın &lt;b&gt;Görüntü&lt;/b&gt; bölümünden yapılabilir.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sanal ekran şu an &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; renk kipine ayarlı. Daha iyi performans için lütfen bunu &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt; olarak değiştirin. Bu genellikle misafir işletim sisteminin Denetim Masası&apos;nın ya da Sistem Ayarları&apos;nın &lt;b&gt;Ekran&lt;/b&gt; bölümünden yapılabilir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
@@ -19790,11 +19790,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sanal makine çalışırken ciddi bir hata meydana geldi ve makinenin çalışması durduruldu.&lt;/p&gt;&lt;p&gt;Yardım için lütfen &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; adresindeki Community bölümüne veya destek sözleşmenize bakın. Lütfen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; dizininde bulabileceğiniz &lt;tt&gt;VBox.log&lt;/tt&gt; günlük dosyasının ve &lt;tt&gt;VBox.png&lt;/tt&gt; resim dosyasının içeriklerinin yanısıra bu hata olduğunda ne yapıyor olduğunuzun açıklamasını da verin. Ayrıca ana VirtualBox penceresinin &lt;b&gt;Makine&lt;/b&gt; menüsünden &lt;b&gt;Günlüğü Göster&lt;/b&gt;&apos;i seçerek aşağıdaki dosyalara erişebildiğinizi unutmayın.&lt;/p&gt;&lt;p&gt;Eğer makinenin gücünü kapatmak istiyorsanız &lt;b&gt;TAMAM&lt;/b&gt; düğmesine basın ya da hata ayıklama için olduğu gibi bırakmak istiyorsanız &lt;b&gt;Yoksay&lt;/b&gt; düğmesine basın. Lütfen hata ayıklamanın özel bilgi ve araçlar gerektirdiğini unutmayın, bu yüzden şimdi &lt;b&gt;TAMAM&lt;/b&gt; düğmesine basmanız önerilir.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sanal makine çalışırken ciddi bir hata meydana geldi ve makinenin çalıştırılması durduruldu.&lt;/p&gt;&lt;p&gt;Yardım için lütfen &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; adresindeki Community bölümüne veya destek sözleşmenize bakın. Lütfen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; dizininde bulabileceğiniz &lt;tt&gt;VBox.log&lt;/tt&gt; günlük dosyasının ve &lt;tt&gt;VBox.png&lt;/tt&gt; resim dosyasının içeriklerinin yanısıra bu hata olduğunda ne yapıyor olduğunuzun açıklamasını da verin. Ayrıca ana VirtualBox penceresinin &lt;b&gt;Makine&lt;/b&gt; menüsünden &lt;b&gt;Günlüğü Göster&lt;/b&gt;&apos;i seçerek aşağıdaki dosyalara erişebildiğinizi unutmayın.&lt;/p&gt;&lt;p&gt;Eğer makinenin gücünü kapatmak istiyorsanız &lt;b&gt;TAMAM&lt;/b&gt; düğmesine basın ya da hata ayıklama için olduğu gibi bırakmak istiyorsanız &lt;b&gt;Yoksay&lt;/b&gt; düğmesine basın. Lütfen hata ayıklamanın özel bilgi ve araçlar gerektirdiğini unutmayın, bu yüzden şimdi &lt;b&gt;TAMAM&lt;/b&gt; düğmesine basmanız önerilir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sanal makine çalışırken ciddi bir hata meydana geldi ve makinenin çalışması durdurulmalı.&lt;/p&gt;&lt;p&gt;Yardım için lütfen &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; adresindeki Community bölümüne veya destek sözleşmenize bakın. Lütfen sanal amkine günlük dizininde bulabileceğiniz &lt;tt&gt;VBox.log&lt;/tt&gt; günlük dosyasının içeriklerinin yanısıra bu hata olduğunda ne yapıyor olduğunuzun açıklamasını da verin. Ayrıca ana VirtualBox penceresinin &lt;b&gt;Makine&lt;/b&gt; menüsünden &lt;b&gt;Günlüğü Göster&lt;/b&gt;&apos;i seçerek aşağıdaki dosyalara erişebildiğinizi unutmayın.&lt;/p&gt;&lt;p&gt;Makinenin gücünü kapatmak için &lt;b&gt;TAMAM&lt;/b&gt; düğmesine basın.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sanal makine çalışırken ciddi bir hata meydana geldi ve makinenin çalıştırılması durdurulmalı.&lt;/p&gt;&lt;p&gt;Yardım için lütfen &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; adresindeki Community bölümüne veya destek sözleşmenize bakın. Lütfen sanal amkine günlük dizininde bulabileceğiniz &lt;tt&gt;VBox.log&lt;/tt&gt; günlük dosyasının içeriklerinin yanısıra bu hata olduğunda ne yapıyor olduğunuzun açıklamasını da verin. Ayrıca ana VirtualBox penceresinin &lt;b&gt;Makine&lt;/b&gt; menüsünden &lt;b&gt;Günlüğü Göster&lt;/b&gt;&apos;i seçerek aşağıdaki dosyalara erişebildiğinizi unutmayın.&lt;/p&gt;&lt;p&gt;Makinenin gücünü kapatmak için &lt;b&gt;TAMAM&lt;/b&gt; düğmesine basın.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
@@ -20587,11 +20587,11 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Display failure ...</source>
-        <translation>Görüntü arızası ...</translation>
+        <translation>Ekran arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire display parameter.</source>
-        <translation>Görüntü parametresini alma başarısız.</translation>
+        <translation>Ekran parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Update failure ...</source>
@@ -20599,7 +20599,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Failed to acquire update agent parameter.</source>
-        <translation>Güncelleme aracı parametresini alma başarısız.</translation>
+        <translation>Güncelleme aracısı parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>VSD failure ...</source>
@@ -21051,248 +21051,248 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>&lt;p&gt;To open a Viso file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Bir Viso dosyasını açmak için şu anki içerikten vazgeçmek zorunda kalacaksınız.&lt;/p&gt;&lt;p&gt;Devam etmek istediğinize emin misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to continue with Guest Additions installation?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;VirtualBox Misafir Eklentileri&lt;/b&gt; disk kalıbı dosyası &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; adresinden başarılı olarak indirildi ve &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ile yerel olarak kaydedildi.&lt;/p&gt;&lt;p&gt;Misafir Eklentileri kurulumuyla devam etmek ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox User Guide&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;VirtualBox Kullanım Kılavuzu&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; bulunamadı.&lt;/p&gt;&lt;p&gt;Bu dosyayı İnternet&apos;ten indirmek ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox User Guide&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;VirtualBox Kullanım Kılavuzu&lt;/b&gt;&apos;nu, &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; adresinden indirmek istediğinize emin misiniz (boyutu %2 bayt)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Guide has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox Kullanım Kılavuzu &lt;nobr&gt;, &lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; adresinden başarılı olarak indirildi ancak &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ile yerel olarak kaydedilemez.&lt;/p&gt;&lt;p&gt;Lütfen bu dosya için başka bir yer seçin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user guide for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox şu anda USB aygıtlara erişime izin vermiyor. Bunu kullanıcınızı &apos;vboxusers&apos; grubuna ekleyerek değiştirebilirsiniz. Lütfen daha fazla ayrıntılı açıklama için kullanım kılavuzuna bakın</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user guide for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox şu anda USB aygıtlara erişime izin vermiyor. Bunu kullanıcınıza &apos;usbfs&apos; klasör ve dosyalarına erişime izin vererek değiştirebilirsiniz. Lütfen daha fazla ayrıntılı açıklama için kullanım kılavuzuna bakın</translation>
     </message>
     <message>
         <source>User guide downloaded ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kullanım kılavuzu indirildi ...</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Guide has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox Kullanım Kılavuzu &lt;nobr&gt;, &lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; adresinden başarılı olarak indirildi ve &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ile yerel olarak kaydedildi.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Platform failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Platform arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire platform parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Platform parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Platform properties failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Platform özellikleri arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire platform properties parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Platform özellikleri parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>System properties failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem özellikleri arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire system properties parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem özellikleri parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Storage controller failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Depolama denetleyicisi arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire storage controller parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Depolama denetleyicisi parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Medium attachment failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ortam ekleme arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire medium attachment parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ortam ekleme parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Debugger failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Hata ayıklayıcı arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire machine debugger parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Makine hata ayıklayıcı parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Failed to acquire graphics adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafik bağdaştırıcısı parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Audio settings failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ses ayarları arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire audio settings parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ses ayarları parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Failed to acquire audio adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ses bağdaştırıcısı parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Failed to acquire network adapter parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ağ bağdaştırıcısı parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Console failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsol arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire console parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsol parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Guest failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire guest parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Guest OS type failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir İS türü arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire guest OS type parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir İS türü parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Mouse failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Fare arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire mouse parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fare parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Emulated USB failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Benzetilen USB arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire emulated USB parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Benzetilen USB parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Recording settings failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt ayarları arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire recording settings parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt ayarları parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>VRDE server failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDE sunucusu arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire VRDE server parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDE sunucusu parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>VRDE server info failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDE sunucusu bilgi arızası ...</translation>
     </message>
     <message>
         <source>Failed to acquire VRDE server info parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDE sunucusu bilgi parametresini alma başarısız.</translation>
     </message>
     <message>
         <source>Failed to change display parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekran parametresini değiştirme başarısız.</translation>
     </message>
     <message>
         <source>Keyboard failure ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Klavye arızası ...</translation>
     </message>
     <message>
         <source>Can&apos;t reset machine ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Makine sıfırlanamıyor ...</translation>
     </message>
     <message>
         <source>Failed to reset the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesini sıfırlama başarısız.</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>agree with additions installation</comment>
-        <translation type="unfinished"></translation>
+        <translation>Devam</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key combo&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sanal Makine ekranında &lt;b&gt;fareye tıkladınız&lt;/b&gt; ya da &lt;b&gt;anamakine tuşu birleşimine&lt;/b&gt; bastınız. Bu, Sanal Makinenin anamakinenizde çalışan diğer uygulamalar için kullanılamaz yapacak olan anamakine fare işaretçisini (eğer yalnızca fare işaretçisi bütünleştirme misafir İS tarafından şu anda desteklenmiyorsa) ve klavyesini &lt;b&gt;yakalamasına&lt;/b&gt; neden olacak.&lt;/p&gt;&lt;p&gt;İstediğiniz zaman klavyeyi ve fareyi (eğer yakalandıysa) &lt;b&gt;serbest bırakmak&lt;/b&gt; için &lt;b&gt;anamakine tuşu birleşimine&lt;/b&gt; basabilir ve normal işlevine döndürebilirsiniz. Şu anda atanmış anamakine tuşu birleşimi Sanal Makine penceresinin en altında durum çubuğunda,&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;simgesinin yanında gösterilir. Bu simge, yanında yer alan fare simgesiyle birlikte, şu anki klavye ve fare yakalama durumunu gösterir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key combo is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Anamakine tuşu birleşimi şu anda &lt;b&gt;%1&lt;/b&gt; olarak tanımlandı.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>agree to create VM with no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Devam</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>reject to create VM with no hard disk attached</comment>
-        <translation type="unfinished">Geri Git</translation>
+        <translation>Geri Git</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>agree to export VMs without saved-state</comment>
-        <translation type="unfinished"></translation>
+        <translation>Devam</translation>
     </message>
     <message>
         <source>Shared clipboard error ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Paylaşılan pano hatası ...</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key combo&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key combo is shown on the status bar at the bottom of the Virtual Machine window. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Klavyeyi otomatik yakala&lt;/b&gt; seçeneğiniz açılmış. Bu, VM penceresi her etkinleştirildiğinde Sanal Makinenin klavyeyi otomatik olarak &lt;b&gt;yakalamasına&lt;/b&gt; neden olacak ve anamakinenizde çalışan diğer uygulamalar tarafından kullanılamaz hale gelecek: klavye yakalandığında tüm tuşa basmalar (Alt-Tab gibi sistem için olanlar da dahil) VM&apos;e yönlendirilecektir.&lt;/p&gt;&lt;p&gt;İstediğiniz zaman klavyeyi ve fareyi (eğer yakalandıysa) &lt;b&gt;serbest bırakmak&lt;/b&gt; için &lt;b&gt;anamakine tuşu birleşimine&lt;/b&gt; basabilir ve normal işlevine döndürebilirsiniz. Şu anda atanmış anamakine tuşu birleşimi Sanal Makine penceresinin en altında durum çubuğunda gösterilir. Bu simge, yanında yer alan fare simgesiyle birlikte, şu anki klavye ve fare yakalama durumunu gösterir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change machine debugger parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Makine hata ayıklayıcı parametresini değiştirme başarısız.</translation>
     </message>
     <message>
         <source>Failed to change cloud profile parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut profili parametresini değiştirme başarısız.</translation>
     </message>
     <message>
         <source>Failed to change update agent parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelleme aracısı parametresini değiştirme başarısız.</translation>
     </message>
     <message>
         <source>Failed to change keyboard parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Klavye parametresini değiştirme başarısız.</translation>
     </message>
     <message>
         <source>Failed to change mouse parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fare parametresini değiştirme başarısız.</translation>
     </message>
     <message>
         <source>Failed to change VSD parameter.</source>
-        <translation type="unfinished"></translation>
+        <translation>VSD parametresini değiştirme başarısız.</translation>
     </message>
 </context>
 <context>
@@ -21512,31 +21512,31 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Invalid guest machine name</source>
-        <translation type="unfinished"></translation>
+        <translation>Geçersiz misafir makine adı</translation>
     </message>
     <message>
         <source>Guest machine name is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir makine adı geçerli</translation>
     </message>
     <message>
         <source>&amp;Subtype:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Alt tür:</translation>
     </message>
     <message>
         <source>Selects the operating system edition when possible.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mümkün olduğunda işletim sistemi sürümünü seçer.</translation>
     </message>
     <message>
         <source>Selects the operating system type that you plan to install into this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu sanal makineye yüklemeyi planladığınız işletim sistemi türünü seçer.</translation>
     </message>
     <message>
         <source>Selects the operating system subtype that you plan to install into this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu sanal makineye yüklemeyi planladığınız işletim sistemi alt türünü seçer.</translation>
     </message>
     <message>
         <source>Selects the operating system version that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu sanal makineye (misafir işletim sistemi olarak adlandırılır) yüklemeyi planladığınız işletim sistemi sürümünü seçer.</translation>
     </message>
 </context>
 <context>
@@ -21595,7 +21595,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Cancel wizard execution.</source>
-        <translation>Sihirbazı çalıştırmayı iptal et.</translation>
+        <translation>Sihirbazın çalıştırılmasını iptal et.</translation>
     </message>
 </context>
 <context>
@@ -21710,7 +21710,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Holds the configuration settings for the network attachment driver. The settings should be of the form name=value and will depend on the driver. Use shift-enter to add a new entry.</source>
-        <translation>Ağ ek sürücüsü için yapılandırma ayarlarını tutar. Ayarlar adı=değer biçiminde olmalıdır ve sürücüye bağlı olacaktır. Yeni bir giriş eklemek için shift-enter kullanın.</translation>
+        <translation>Ağ ekleme sürücüsü için yapılandırma ayarlarını tutar. Ayarlar adı=değer biçiminde olmalıdır ve sürücüye bağlı olacaktır. Yeni bir giriş eklemek için shift-enter kullanın.</translation>
     </message>
     <message>
         <source>&amp;Cable Connected</source>
@@ -22183,7 +22183,7 @@ Oturum Panelini kullanın</translation>
     </message>
     <message>
         <source>Select Network ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Ağ Kimliğini Seç</translation>
     </message>
 </context>
 <context>
@@ -22959,11 +22959,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <name>UINotificationDownloader</name>
     <message>
         <source>Downloading Extension Pack ...</source>
-        <translation>Genişletme Paketi indiriliyor...</translation>
+        <translation>Genişletme Paketi indiriliyor ...</translation>
     </message>
     <message>
         <source>Downloading Guest Additions ...</source>
-        <translation>Misafir Eklentileri indiriliyor...</translation>
+        <translation>Misafir Eklentileri indiriliyor ...</translation>
     </message>
     <message>
         <source>Downloading User Manual ...</source>
@@ -22971,7 +22971,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Downloading User Guide ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kullanım Kılavuzu indiriliyor ...</translation>
     </message>
 </context>
 <context>
@@ -23234,34 +23234,34 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Cloning cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut VM çoğaltılıyor ...</translation>
     </message>
     <message>
         <source>Resetting cloud VM ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut VM sıfırlanıyor ...</translation>
     </message>
     <message>
         <source>Creating host-only network interface ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Yalnızca-anamakine ağ arayüzü oluşturuluyor ...</translation>
     </message>
     <message>
         <source>Removing host-only network interface ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Yalnızca-anamakine ağ arayüzü kaldırılıyor ...</translation>
     </message>
 </context>
 <context>
     <name>UIPaneContainer</name>
     <message>
         <source>Detach</source>
-        <translation type="unfinished"></translation>
+        <translation>Ayır</translation>
     </message>
     <message>
         <source>Open the tool in separate window</source>
-        <translation type="unfinished"></translation>
+        <translation>Aracı ayrı bir pencerede aç</translation>
     </message>
     <message>
         <source>Open in Separate Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Ayrı Pencerede Aç</translation>
     </message>
 </context>
 <context>
@@ -23701,59 +23701,59 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <name>UISerialSettingsEditor</name>
     <message>
         <source>&amp;Enable Serial Port</source>
-        <translation type="unfinished"></translation>
+        <translation>Seri B.Noktasını &amp;etkinleştir</translation>
     </message>
     <message>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>İşaretlendiğinde, sanal makinenin verilen seri bağlantı noktasını etkinleştirir.</translation>
     </message>
     <message>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished">B.Noktası &amp;Numarası:</translation>
+        <translation>B.Noktası &amp;Numarası:</translation>
     </message>
     <message>
         <source>Selects the serial port number. You can choose one of the standard serial ports or select User-defined and specify port parameters manually.</source>
-        <translation type="unfinished">Seri bağlantı noktası numarasını seçer. Standart seri bağlantı noktalarından birini seçebilirsiniz ya da Kullanıcı-tanımlı seçin ve bağlantı noktası parametrelerini el ile belirleyin.</translation>
+        <translation>Seri bağlantı noktası numarasını seçer. Standart seri bağlantı noktalarından birini seçebilirsiniz ya da Kullanıcı-tanımlı seçin ve bağlantı noktası parametrelerini el ile belirleyin.</translation>
     </message>
     <message>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished">&amp;IRQ:</translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <source>Holds the IRQ number of this serial port. This should be a whole number between &apos;0&apos; and &apos;255&apos;. Values greater than &apos;15&apos; may only be used if the I/O APIC setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu seri bağlantı noktasının IRQ numarasını tutar. Bu &apos;0&apos; ve &apos;255&apos; arasında bütün bir numara olmalıdır. Bu sanal makine için I/O APIC ayarı etkinleştirilmişse yalnızca &apos;15&apos;ten büyük değerler kullanılabilir.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>G/Ç B.N&amp;oktası:</translation>
     </message>
     <message>
         <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &apos;0&apos; to &apos;0xFFFF&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu seri bağlantı noktasının temel G/Ç bağlantı noktası adresini tutar. Geçerli değerler &apos;0&apos;dan &apos;0xFFFF&apos; değerine kadar aralıktaki tam sayı numaralarıdır.</translation>
     </message>
     <message>
         <source>Port &amp;Mode:</source>
-        <translation type="unfinished">B.Noktası &amp;Kipi:</translation>
+        <translation>B.Noktası &amp;Kipi:</translation>
     </message>
     <message>
         <source>Selects the working mode of this serial port. If you select Disconnected, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished">Bu seri bağlantı noktasının çalışma kipini seçer. Eğer Bağlı değil seçerseniz, misafir İS seri bağlantı noktasını algılayacaktır ama çalıştırılamayacaktır.</translation>
+        <translation>Bu seri bağlantı noktasının çalışma kipini seçer. Eğer Bağlı değil seçerseniz, misafir İS seri bağlantı noktasını algılayacaktır ama çalıştırılamayacaktır.</translation>
     </message>
     <message>
         <source>&amp;Connect to existing pipe/socket</source>
-        <translation type="unfinished">Varolan hatta/yuvaya &amp;bağlan</translation>
+        <translation>Varolan hatta/yuvaya &amp;bağlan</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will assume that the pipe or socket specified in the Path/Address field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation type="unfinished">İşaretlendiğinde, sanal makine Yol/Adres alanında belirtilmiş hat ya da yuvanın mevcut olduğunu varsayacak ve kullanmaya çalışacak. Aksi halde hat ya da yuva sanal makine tarafından başlatıldığında oluşturulacaktır.</translation>
+        <translation>İşaretlendiğinde, sanal makine Yol/Adres alanında belirtilmiş hat ya da yuvanın mevcut olduğunu varsayacak ve kullanmaya çalışacak. Aksi halde hat ya da yuva sanal makine tarafından başlatıldığında oluşturulacaktır.</translation>
     </message>
     <message>
         <source>&amp;Path/Address:</source>
-        <translation type="unfinished">&amp;Yol/Adres:</translation>
+        <translation>&amp;Yol/Adres:</translation>
     </message>
     <message>
         <source>In Host Pipe mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively. In Host Device mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;. In Raw File mode: Holds the file-path on the host system, where the serial output will be dumped. In TCP mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="unfinished">Anamakine Hattı kipinde: Anamakinedeki seri bağlantı noktasının hattı için yolu tutar. Örnek: &quot;\\.\pipe\myvbox&quot; veya &quot;/tmp/myvbox&quot;, ayrı ayrı Windows ve UNIX-gibi sistemler için. Anamakine Aygıtı kipinde: Anamakine seri aygıt adını tutar. Örnek: &quot;COM1&quot; veya &quot;/dev/ttyS0&quot;. Ham Dosya kipinde: Anamakine sistemindeki, seri çıkışın dökümleneceği dosya yolunu tutar. TCP kipinde: sunucu kipindeyken TCP &quot;bağlantı noktası&quot;nı ya da istemci kipindeylen &quot;anamakine adı:bağlantı noktası&quot;nı tutar.</translation>
+        <translation>Anamakine Hattı kipinde: Anamakinedeki seri bağlantı noktasının hattı için yolu tutar. Örnek: &quot;\\.\pipe\myvbox&quot; veya &quot;/tmp/myvbox&quot;, ayrı ayrı Windows ve UNIX-gibi sistemler için. Anamakine Aygıtı kipinde: Anamakine seri aygıt adını tutar. Örnek: &quot;COM1&quot; veya &quot;/dev/ttyS0&quot;. Ham Dosya kipinde: Anamakine sistemindeki, seri çıkışın dökümleneceği dosya yolunu tutar. TCP kipinde: sunucu kipindeyken TCP &quot;bağlantı noktası&quot;nı ya da istemci kipindeylen &quot;anamakine adı:bağlantı noktası&quot;nı tutar.</translation>
     </message>
 </context>
 <context>
@@ -23776,7 +23776,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <source>%1 status-bar indicator</source>
         <comment>like &apos;hard-disk status-bar indicator&apos;</comment>
-        <translation type="unfinished">%1 durum çubuğu göstergesi</translation>
+        <translation>%1 durum çubuğu göstergesi</translation>
     </message>
 </context>
 <context>
@@ -23932,11 +23932,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <name>UISettingsPageValidator</name>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; page:</source>
-        <translation type="unfinished">&lt;b&gt;%1&lt;/b&gt; sayfası:</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sayfası:</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1: %2&lt;/b&gt; page:</source>
-        <translation type="unfinished">&lt;b&gt;%1: %2&lt;/b&gt; sayfası:</translation>
+        <translation>&lt;b&gt;%1: %2&lt;/b&gt; sayfası:</translation>
     </message>
 </context>
 <context>
@@ -24720,7 +24720,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Kapat</translation>
+        <translation>Kapat</translation>
     </message>
 </context>
 <context>
@@ -24834,7 +24834,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation>Bu eklenti tarafından kullanılan depolama denetleyicisindeki yuvayı seçer. Kullanılabilir yuvalar denetleyicinin türüne ve üzerindeki diğer eklentilere bağlıdır.</translation>
+        <translation>Bu eklenti tarafından kullanılan depolama denetleyicisindeki yuvayı seçer. Kullanılabilir yuvalar denetleyicinin türüne ve üzerindeki diğer eklemelere bağlıdır.</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
@@ -24962,7 +24962,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation>Eklenti Ekle</translation>
+        <translation>Ekleme Ekle</translation>
     </message>
     <message>
         <source>Hard Disk</source>
@@ -24978,7 +24978,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation>Eklentiyi Kaldır</translation>
+        <translation>Eklemeyi Kaldır</translation>
     </message>
     <message>
         <source>Adds new storage controller.</source>
@@ -24990,11 +24990,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Adds new storage attachment.</source>
-        <translation>Yeni depolama eklentisi ekler.</translation>
+        <translation>Yeni depolama eklemesi ekler.</translation>
     </message>
     <message>
         <source>Removes selected storage attachment.</source>
-        <translation>Seçilen depolama eklentisini kaldırır.</translation>
+        <translation>Seçilen depolama eklemesini kaldırır.</translation>
     </message>
     <message>
         <source>Hard &amp;Disk:</source>
@@ -25046,31 +25046,31 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation type="unfinished">&amp;Aygıtlar</translation>
+        <translation>&amp;Aygıtlar</translation>
     </message>
     <message>
         <source>Encryption key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Şifreleme anahtarı:</translation>
     </message>
     <message>
         <source>Virtual size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sanal boyut:</translation>
     </message>
     <message>
         <source>Actual size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerçek boyut:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished">Depolama ayrıntıları:</translation>
+        <translation>Depolama ayrıntıları:</translation>
     </message>
     <message>
         <source>Choose a Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk Dosyası Seç...</translation>
     </message>
     <message>
         <source>Remove Disk From Virtual Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Diski Sanal Sürücüden Kaldır</translation>
     </message>
 </context>
 <context>
@@ -25500,31 +25500,31 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Holds the vendor ID filter. The exact match string format is &apos;XXXX&apos; where &apos;X&apos; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Satıcı kimliği süzgecini tutar. &apos;X&apos; değerinin onaltılık bir rakam olduğu tam eşleşme dizgisi biçimi &apos;XXXX&apos;dir. Boş bir dizgi herhangi bir değerle eşleşecektir.</translation>
     </message>
     <message>
         <source>Holds the product ID filter. The exact match string format is &apos;XXXX&apos; where &apos;X&apos; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ürün kimliği süzgecini tutar. &apos;X&apos; değerinin onaltılık bir rakam olduğu tam eşleşme dizgisi biçimi &apos;XXXX&apos;dir. Boş bir dizgi herhangi bir değerle eşleşecektir.</translation>
     </message>
     <message>
         <source>Holds the revision number filter. The exact match string format is &apos;IIFF&apos; where &apos;I&apos; is a decimal digit of the integer part and &apos;F&apos; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gözden geçirme numarası süzgecini tutar. &apos;I&apos; değerinin tam sayı kısmının ondalık bir rakam olduğu ve &apos;F&apos; değerinin kesirli kısmının ondalık bir rakam olduğu tam eşleşme dizgisi biçimi &apos;IIFF&apos;dir. Boş bir dizgi herhangi bir değerle eşleşecektir.</translation>
     </message>
     <message>
         <source>Holds the manufacturer filter as an exact match string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tam eşleşme dizgisi olarak üretici süzgecini tutar. Boş bir dizgi herhangi bir değerle eşleşecektir.</translation>
     </message>
     <message>
         <source>Holds the product name filter as an exact match string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tam eşleşme dizgisi olarak ürün adı süzgecini tutar. Boş bir dizgi herhangi bir değerle eşleşecektir.</translation>
     </message>
     <message>
         <source>Holds the serial number filter as an exact match string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tam eşleşme dizgisi olarak seri numarası süzgecini tutar. Boş bir dizgi herhangi bir değerle eşleşecektir.</translation>
     </message>
     <message>
         <source>Holds the host USB port filter as an exact match string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tam eşleşme dizgisi olarak USB bağlantı noktası süzgecini tutar. Boş bir dizgi herhangi bir değerle eşleşecektir.</translation>
     </message>
 </context>
 <context>
@@ -25678,67 +25678,67 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation type="unfinished">Bilinmeyen aygıt</translation>
+        <translation>Bilinmeyen aygıt</translation>
     </message>
     <message>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation type="unfinished">Bilinmeyen aygıt %1:%2</translation>
+        <translation>Bilinmeyen aygıt %1:%2</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Satıcı Kimliği: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Ürün Kimliği: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Gözden Geçirme: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Satıcı Kimliği: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Ürün Kimliği: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Gözden Geçirme: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;Seri Numarası %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Seri Numarası %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;Durum: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Durum: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Satıcı Kimliği: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Satıcı Kimliği: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Ürün Kimliği: %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ürün Kimliği: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Gözden Geçirme: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Gözden Geçirme: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Ürün: %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ürün: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Üretici: %5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Üretici: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Seri Numarası: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Seri Numarası: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;B.Noktası: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;B.Noktası: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Durum: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Durum: %1&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -25922,30 +25922,30 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Username is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Kullanıcı adı geçerli</translation>
     </message>
     <message>
         <source>Username cannot be an empty string</source>
-        <translation type="unfinished"></translation>
+        <translation>Kullanıcı adı boş bir dizgi olamaz</translation>
     </message>
 </context>
 <context>
     <name>UIVMActivityMonitorPaneContainer</name>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Tercihler</translation>
+        <translation>Tercihler</translation>
     </message>
     <message>
         <source>Data Series 1 Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Veri Serisi 1 Renk</translation>
     </message>
     <message>
         <source>Data Series 2 Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Veri Serisi 2 Renk</translation>
     </message>
     <message>
         <source>Reset to Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Varsayılanlara Sıfırla</translation>
     </message>
 </context>
 <context>
@@ -26048,15 +26048,15 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Lists all currently active virtual machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Şu anda etkin olan tüm sanal makineleri listeler.</translation>
     </message>
     <message>
         <source>List All Virtual Machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm Sanal Makineleri Listele</translation>
     </message>
     <message>
         <source>Show Cloud Virtual Machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut Sanal Makineleri Göster</translation>
     </message>
 </context>
 <context>
@@ -26071,7 +26071,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sanal makinenin şu anki çalıştırılma durumunu anamakine PC&apos;nin fiziksel sabit diskine kaydeder.&lt;/p&gt;&lt;p&gt;Bu makine bir dahaki sefere başlatılır, kaydedildi durumundan geri yüklenecektir ve çalışmanıza anında devam etmnize izin verecek, kaydettiğiniz aynı yerden çalıştırılmaya devam edecektir.&lt;/p&gt;&lt;p&gt;Makine durumunu kaydetmenin, sanal makine için ayırdığınız bellek miktarına ve misafir işletim sistemi türüne bağlı olarak uzun sürebilieceğini unutmayın.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sanal makinenin şu anki çalıştırılma durumunu anamakine PC&apos;nin fiziksel sabit diskine kaydeder.&lt;/p&gt;&lt;p&gt;Bu makine bir dahaki sefere başlatılır, kaydedildi durumundan geri yüklenecektir ve çalışmanıza anında devam etmenize izin verecek, kaydettiğiniz aynı yerden çalıştırılmaya devam edecektir.&lt;/p&gt;&lt;p&gt;Makine durumunu kaydetmenin, sanal makine için ayırdığınız bellek miktarına ve misafir işletim sistemi türüne bağlı olarak uzun sürebilieceğini unutmayın.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -26640,33 +26640,33 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Displays the configuration details of the guest system</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir sisteminin yapılandırma ayrıntılarını görüntüler</translation>
     </message>
     <message>
         <source>Displays the runtime information of the guest system</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir sisteminin çalışma zamanı bilgilerini görüntüler</translation>
     </message>
     <message>
         <source>Change 1st Dataseries&apos; Color</source>
-        <translation type="unfinished"></translation>
+        <translation>1. Veri Serisinin Rengini Değiştir</translation>
     </message>
     <message>
         <source>Change 2nd Dataseries&apos; Color</source>
-        <translation type="unfinished"></translation>
+        <translation>2. Veri Serisinin Rengini Değiştir</translation>
     </message>
     <message>
         <source>Disk IO</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk GÇ</translation>
     </message>
     <message>
         <source>Sec.</source>
         <comment>short from seconds</comment>
-        <translation type="unfinished">San.</translation>
+        <translation>San.</translation>
     </message>
     <message>
         <source>Min.</source>
         <comment>short from minutes</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dak.</translation>
     </message>
 </context>
 <context>
@@ -26966,31 +26966,31 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Embed</source>
-        <translation type="unfinished"></translation>
+        <translation>Göm</translation>
     </message>
     <message>
         <source>Embed to manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Yönetici penceresine göm</translation>
     </message>
     <message>
         <source>Embed to Manager Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Yönetici Penceresine Göm</translation>
     </message>
     <message>
         <source>Find</source>
-        <translation type="unfinished"></translation>
+        <translation>Bul</translation>
     </message>
     <message>
         <source>Filter</source>
-        <translation type="unfinished">Süzgeç</translation>
+        <translation>Süz</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished">Yer İşaretleri</translation>
+        <translation>Yer İşaretleri</translation>
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished">Tercihler</translation>
+        <translation>Tercihler</translation>
     </message>
 </context>
 <context>
@@ -27546,43 +27546,43 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Has Removed Child</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaldırılmış Alt Öğeye Sahip</translation>
     </message>
     <message>
         <source>VISO Browser</source>
-        <translation type="unfinished">VISO Tarayıcısı</translation>
+        <translation>VISO Tarayıcısı</translation>
     </message>
     <message>
         <source>Child/children removed</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt öğe/öğeler kaldırıldı</translation>
     </message>
     <message>
         <source>Host Browser</source>
-        <translation type="unfinished">Anamakine Tarayıcısı</translation>
+        <translation>Anamakine Tarayıcısı</translation>
     </message>
     <message>
         <source>The list of custom options delimited with &apos;;&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;;&apos; ile sınırlandırılmış özet seçeneklerinin listesi.</translation>
     </message>
     <message>
         <source>Dialog Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>İleti Penceresi Ayarları</translation>
     </message>
     <message>
         <source>Select a VISO file to load</source>
-        <translation type="unfinished"></translation>
+        <translation>Yüklemek için bir VISO dosyası seçin</translation>
     </message>
     <message>
         <source>Select a file to save Viso content to</source>
-        <translation type="unfinished"></translation>
+        <translation>Viso içeriğini kaydetmek için bir dosya seçin</translation>
     </message>
     <message>
         <source>&amp;Save and Close</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kaydet ve Kapat</translation>
     </message>
     <message>
         <source>VISO Options</source>
-        <translation type="unfinished">VISO Seçenekleri</translation>
+        <translation>VISO Seçenekleri</translation>
     </message>
 </context>
 <context>
@@ -27604,15 +27604,15 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&lt;h3&gt;Please choose Experience Mode!&lt;/h3&gt;By default, the VirtualBox GUI is hiding some options, tools and wizards. &lt;p&gt;The &lt;b&gt;Basic Mode&lt;/b&gt; is intended for a users who are not interested in advanced functionality and prefer a simpler, cleaner interface.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Expert Mode&lt;/b&gt; is intended for experienced users who wish to utilize all VirtualBox functionality.&lt;/p&gt;&lt;p&gt;You can choose whether you are a beginner or experienced user by selecting required option at the right. This choice can always be changed in Global Preferences or Machine Settings windows.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Lütfen Deneyim Kipini seçin!&lt;/h3&gt;Varsayılan olarak, VirtualBox GKA bazı seçenekleri, araçları ve sihirbazları gizlemektedir. &lt;p&gt;&lt;b&gt;Temel Kip&lt;/b&gt;, gelişmiş işlevlerle ilgilenmeyen ve daha basit, daha temiz bir arayüzü tercih eden kullanıcılara yöneliktir.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Uzman Kipi&lt;/b&gt; VirtualBox&apos;ın tüm işlevselliklerini kullanmak isteyen deneyimli kullanıcılara yöneliktir.&lt;/p&gt;&lt;p&gt;Sağdaki gerekli seçeneği seçerek başlangıç ​​düzeyinde mi ya da deneyimli bir kullanıcı mı olduğunuzu seçebilirsiniz. Bu seçim her zaman Genel Tercihler veya Makine Ayarları pencerelerinden değiştirilebilir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Basic Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Temel Kip</translation>
     </message>
     <message>
         <source>Expert Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Uzman Kipi</translation>
     </message>
 </context>
 <context>
@@ -27690,31 +27690,31 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&amp;Provider:</source>
-        <translation type="unfinished">&amp;Sağlayıcı:</translation>
+        <translation>&amp;Sağlayıcı:</translation>
     </message>
     <message>
         <source>Selects cloud service provider.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut hizmeti sağlayıcısını seçer.</translation>
     </message>
     <message>
         <source>P&amp;rofile:</source>
-        <translation type="unfinished">P&amp;rofil:</translation>
+        <translation>P&amp;rofil:</translation>
     </message>
     <message>
         <source>Selects cloud profile.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut profilini seçer.</translation>
     </message>
     <message>
         <source>Cloud Profile Manager</source>
-        <translation type="unfinished">Bulut Profili Yöneticisi</translation>
+        <translation>Bulut Profili Yöneticisi</translation>
     </message>
     <message>
         <source>Opens cloud profile manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut profili yöneticisini açar...</translation>
     </message>
     <message>
         <source>Lists all the cloud VM instances.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm bulut VM örneklerini listeler.</translation>
     </message>
 </context>
 <context>
@@ -28230,51 +28230,51 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Clone name is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Çoğaltma adı geçerli</translation>
     </message>
     <message>
         <source>Path is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Yol geçerli</translation>
     </message>
     <message>
         <source>Clone name is not unique</source>
-        <translation type="unfinished"></translation>
+        <translation>Çoğaltma adı benzersiz değil</translation>
     </message>
     <message>
         <source>Current &amp;Machine State</source>
-        <translation type="unfinished"></translation>
+        <translation>Şu Anki &amp;Makine Durumu</translation>
     </message>
     <message>
         <source>Current &amp;Snapshot Tree Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>Şu Anki &amp;Anlık Görüntü Ağacı Dalı</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked Clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Lütfen oluşturmak istediğiniz çoğaltma türünü seçin.&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Tam Çoğaltma&lt;/b&gt; seçerseniz, orijinal sanal makinenin tam bir kopyası (tüm sanal sabit disk dosyaları dahil) oluşturulacaktır.&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Birbirine Bağlantılı Çoğaltma&lt;/b&gt; seçerseniz, yeni bir sanal makine oluşturulacaktır ama sanal sabit disk dosyaları orijinal makinenin sanal sabit disk dosyalarına bağlanacaktır ve yeni sanal makineyi farklı bir bilgisayara orijinalini de taşımadan taşıyamacaksınız.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked Clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eğer &lt;b&gt;Birbirine Bağlantılı Çoğaltma&lt;/b&gt; oluşturursanız çoğaltma işlemin bir parçası olarak orijinal sanal makinede o zaman yeni bir anlık görüntü oluşturulacaktır.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current Machine State&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eğer &lt;b&gt;Şu Anki Makine Durumu&lt;/b&gt;&apos;nu seçerseniz, yeni makine orijinal makinenin şu anki durumunu yansıtacak ve hiç anlık görüntüye sahip olmayacak.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current Snapshot Tree Branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eğer &lt;b&gt;Şu Anki Anlık Görüntü Ağacı Dalı&lt;/b&gt;&apos;nı seçerseniz, yeni makine orijinal makinenin şu anki durumunu yansıtacak ve orijinal makine içinde şu anki durumda başlayan ağaç dalı içinde tüm anlık görüntüler için eşleşen anlık görüntülere sahip olacak.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>New Machine Name and Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Yeni Makine Adı ve Yolu</translation>
     </message>
     <message>
         <source>Clone Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Çoğaltma Türü</translation>
     </message>
     <message>
         <source>Additional Options</source>
-        <translation type="unfinished">İlave Seçenekler</translation>
+        <translation>İlave Seçenekler</translation>
     </message>
 </context>
 <context>
@@ -28645,19 +28645,19 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Contains a list of Virtual Machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Sanal Makinelerin bir listesini içerir</translation>
     </message>
     <message>
         <source>Selects cloud profile.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut profilini seçer.</translation>
     </message>
     <message>
         <source>Cloud Profile Manager</source>
-        <translation type="unfinished">Bulut Profili Yöneticisi</translation>
+        <translation>Bulut Profili Yöneticisi</translation>
     </message>
     <message>
         <source>Opens cloud profile manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut profili yöneticisini açar...</translation>
     </message>
 </context>
 <context>
@@ -28955,19 +28955,19 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>Selects cloud profile.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut profilini seçer.</translation>
     </message>
     <message>
         <source>Cloud Profile Manager</source>
-        <translation type="unfinished">Bulut Profili Yöneticisi</translation>
+        <translation>Bulut Profili Yöneticisi</translation>
     </message>
     <message>
         <source>Opens cloud profile manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut profili yöneticisini açar...</translation>
     </message>
     <message>
         <source>Holds the path to the base virtual machine folder. This folder is used when creating new virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Temel sanal makine klasörünün yolunu tutar. Bu klasör yeni sanal makine oluşturulurken kullanılır.</translation>
     </message>
 </context>
 <context>
@@ -29135,39 +29135,39 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>&amp;Provider:</source>
-        <translation type="unfinished">&amp;Sağlayıcı:</translation>
+        <translation>&amp;Sağlayıcı:</translation>
     </message>
     <message>
         <source>Selects cloud service provider.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut hizmeti sağlayıcısını seçer.</translation>
     </message>
     <message>
         <source>P&amp;rofile:</source>
-        <translation type="unfinished">P&amp;rofil:</translation>
+        <translation>P&amp;rofil:</translation>
     </message>
     <message>
         <source>Selects cloud profile.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut profilini seçer.</translation>
     </message>
     <message>
         <source>Cloud Profile Manager</source>
-        <translation type="unfinished">Bulut Profili Yöneticisi</translation>
+        <translation>Bulut Profili Yöneticisi</translation>
     </message>
     <message>
         <source>Opens cloud profile manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulut profili yöneticisini açar...</translation>
     </message>
     <message>
         <source>Lists all the source images or boot volumes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm kaynak kalıpları veya önyükleme birimlerini listeler.</translation>
     </message>
     <message>
         <source>&amp;Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Seçenekler:</translation>
     </message>
     <message>
         <source>Lists all the cloud VM properties.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm bulut VM tercihlerini listeler.</translation>
     </message>
 </context>
 <context>
@@ -29317,7 +29317,7 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>copy</source>
-        <translation type="unfinished">kopya</translation>
+        <translation>kopya</translation>
     </message>
     <message>
         <source>Copy Virtual Disk</source>
@@ -29325,15 +29325,15 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>Virtual hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Sanal sabit disk dosya türü</translation>
     </message>
     <message>
         <source>Location and size of the disk image</source>
-        <translation type="unfinished">Disk kalıbının konumu ve boyutu</translation>
+        <translation>Disk kalıbının konumu ve boyutu</translation>
     </message>
     <message>
         <source>Copy Virtual Hard Disk</source>
-        <translation type="unfinished">Sanal Sabit Diski Kopyala</translation>
+        <translation>Sanal Sabit Diski Kopyala</translation>
     </message>
 </context>
 <context>
@@ -29548,7 +29548,7 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>Pre-allocate &amp;Full Size</source>
-        <translation>&amp;Tam Boyutu önceden ayır</translation>
+        <translation>&amp;Tam Boyutu Önceden Ayır</translation>
     </message>
     <message>
         <source>When checked, the virtual disk image is allocated with its full size during VM creation time</source>
@@ -29748,23 +29748,23 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>Invalid guest additions installation media</source>
-        <translation type="unfinished"></translation>
+        <translation>Geçersiz misafir eklentileri kurulum ortamı</translation>
     </message>
     <message>
         <source>Guest additions installation media is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir eklentileri kurulum ortamı geçerli</translation>
     </message>
     <message>
         <source>File path is valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yolu geçerli</translation>
     </message>
     <message>
         <source>Choose a Virtual Hard Fisk File</source>
-        <translation type="unfinished"></translation>
+        <translation>Sanal Sabit Disk Dosyası Seç</translation>
     </message>
     <message>
         <source>Lists chosen configuration of the guest system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir sisteminin seçilen yapılandırmasını listeler.</translation>
     </message>
 </context>
 <context>
