@@ -887,7 +887,6 @@ enum MachineSettingsPageType
     MachineSettingsPageType_Storage,
     MachineSettingsPageType_Audio,
     MachineSettingsPageType_Network,
-    MachineSettingsPageType_Ports,
     MachineSettingsPageType_Serial,
     MachineSettingsPageType_USB,
     MachineSettingsPageType_SF,

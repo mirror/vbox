@@ -364,9 +364,6 @@ void UIAdvancedSettingsDialogMachine::sltRetranslateUI()
     /* Network page: */
     m_pSelector->setItemText(MachineSettingsPageType_Network, tr("Network"));
 
-    /* Ports page: */
-    m_pSelector->setItemText(MachineSettingsPageType_Ports, tr("Ports"));
-
     /* Serial page: */
     m_pSelector->setItemText(MachineSettingsPageType_Serial, tr("Serial Ports"));
 
@@ -697,19 +694,12 @@ void UIAdvancedSettingsDialogMachine::prepare()
                     addPageHelpKeyword(iPageIndex, "settings-network");
                     break;
                 }
-                /* Ports page: */
-                case MachineSettingsPageType_Ports:
-                {
-                    addItem(":/serial_port_32px.png", ":/serial_port_24px.png", ":/serial_port_16px.png",
-                            iPageIndex, "#ports");
-                    break;
-                }
                 /* Serial page: */
                 case MachineSettingsPageType_Serial:
                 {
                     pSettingsPage = new UIMachineSettingsSerial;
                     addItem(":/serial_port_32px.png", ":/serial_port_24px.png", ":/serial_port_16px.png",
-                            iPageIndex, "#serialPorts", pSettingsPage, MachineSettingsPageType_Ports);
+                            iPageIndex, "#serialPorts", pSettingsPage);
                     addPageHelpKeyword(iPageIndex, "serialports");
                     break;
                 }
@@ -718,7 +708,7 @@ void UIAdvancedSettingsDialogMachine::prepare()
                 {
                     pSettingsPage = new UIMachineSettingsUSB;
                     addItem(":/usb_32px.png", ":/usb_24px.png", ":/usb_16px.png",
-                            iPageIndex, "#usb", pSettingsPage, MachineSettingsPageType_Ports);
+                            iPageIndex, "#usb", pSettingsPage);
                     addPageHelpKeyword(iPageIndex, "usb-support");
                     break;
                 }
@@ -787,18 +777,8 @@ bool UIAdvancedSettingsDialogMachine::isPageAvailable(int iPageId) const
 
     switch (iPageId)
     {
-        case MachineSettingsPageType_Serial:
-        {
-            /* Depends on ports availability: */
-            if (!isPageAvailable(MachineSettingsPageType_Ports))
-                return false;
-            break;
-        }
         case MachineSettingsPageType_USB:
         {
-            /* Depends on ports availability: */
-            if (!isPageAvailable(MachineSettingsPageType_Ports))
-                return false;
             /* Check if USB is implemented: */
             if (!m_machine.GetUSBProxyAvailable())
                 return false;

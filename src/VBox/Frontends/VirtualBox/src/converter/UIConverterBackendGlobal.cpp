@@ -2176,7 +2176,6 @@ template<> SHARED_LIBRARY_STUFF QString UIConverter::toInternalString(const Mach
         case MachineSettingsPageType_Storage:   strResult = "Storage"; break;
         case MachineSettingsPageType_Audio:     strResult = "Audio"; break;
         case MachineSettingsPageType_Network:   strResult = "Network"; break;
-        case MachineSettingsPageType_Ports:     strResult = "Ports"; break;
         case MachineSettingsPageType_Serial:    strResult = "Serial"; break;
         case MachineSettingsPageType_USB:       strResult = "USB"; break;
         case MachineSettingsPageType_SF:        strResult = "SharedFolders"; break;
@@ -2205,8 +2204,6 @@ template<> SHARED_LIBRARY_STUFF MachineSettingsPageType UIConverter::fromInterna
         return MachineSettingsPageType_Audio;
     if (strMachineSettingsPageType.compare("Network", Qt::CaseInsensitive) == 0)
         return MachineSettingsPageType_Network;
-    if (strMachineSettingsPageType.compare("Ports", Qt::CaseInsensitive) == 0)
-        return MachineSettingsPageType_Ports;
     if (strMachineSettingsPageType.compare("Serial", Qt::CaseInsensitive) == 0)
         return MachineSettingsPageType_Serial;
     if (strMachineSettingsPageType.compare("USB", Qt::CaseInsensitive) == 0)
@@ -2229,7 +2226,6 @@ template<> SHARED_LIBRARY_STUFF QPixmap UIConverter::toWarningPixmap(const Machi
         case MachineSettingsPageType_Storage:   return UIIconPool::pixmap(":/hd_warning_16px.png");
         case MachineSettingsPageType_Audio:     return UIIconPool::pixmap(":/sound_warning_16px.png");
         case MachineSettingsPageType_Network:   return UIIconPool::pixmap(":/nw_warning_16px.png");
-        case MachineSettingsPageType_Ports:     return UIIconPool::pixmap(":/serial_port_warning_16px.png");
         case MachineSettingsPageType_Serial:    return UIIconPool::pixmap(":/serial_port_warning_16px.png");
         case MachineSettingsPageType_USB:       return UIIconPool::pixmap(":/usb_warning_16px.png");
         case MachineSettingsPageType_SF:        return UIIconPool::pixmap(":/sf_warning_16px.png");
