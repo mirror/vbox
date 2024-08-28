@@ -5867,11 +5867,10 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_hsubps(uint8_t bMode)
               /*128:out  */ X86_MXCSR_FZ,
               /*256:out  */ X86_MXCSR_FZ,
               /*xcpt?    */ false, false },
-#if 0
     /*
      * Denormals.
      */
-    /*26*/{ { /*src2     */ { FP32_DENORM_MAX(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_DENORM_MAX(0), FP32_0(0), FP32_0(0), FP32_0(0)          } },
+    /*28*/{ { /*src2     */ { FP32_DENORM_MAX(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_DENORM_MAX(0), FP32_0(0), FP32_0(0), FP32_0(0)          } },
             { /*src1     */ { FP32_0(0),          FP32_DENORM_MAX(1), FP32_0(0), FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_DENORM_MAX(1) } },
             { /* =>      */ { FP32_0(0),          FP32_0(0),          FP32_0(0), FP32_0(0), FP32_0(0),          FP32_0(0), FP32_0(0), FP32_0(0)          } },
               /*mxcsr:in */ 0,
@@ -5914,6 +5913,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_hsubps(uint8_t bMode)
               /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_UP,
               /*xcpt?    */ false, false },
           /** @todo Denormals; Rounding, FZ etc. */
+#if 0
     /*
      * Invalids.
      */
