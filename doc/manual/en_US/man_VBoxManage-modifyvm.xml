@@ -1124,9 +1124,7 @@ it unless this changes. -->
           <term><option>--accelerate-2d-video=on | off</option></term>
           <listitem><para>
               Enables or disables 2D video acceleration for the graphics
-              adapter variants which support it. This option has an effect
-              only when the Guest Additions are installed. See
-              <xref linkend="guestadd-2d" />.
+              adapter variants which support it.
             </para></listitem>
         </varlistentry>
         <varlistentry>

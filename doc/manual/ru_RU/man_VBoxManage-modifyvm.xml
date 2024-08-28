@@ -1079,9 +1079,7 @@ it unless this changes. -->
           <term><option>--accelerate-2d-video=on | off</option></term>
           <listitem><para>
               Включает или отключает 2D видео ускорение для графических
-              адаптеров, поддерживающих это. Эта опция работает только
-              при установленных Дополнений Гостевой ОС. Смотрите
-              <xref linkend="guestadd-2d" />.
+              адаптеров, поддерживающих это.
             </para></listitem>
         </varlistentry>
         <varlistentry>
