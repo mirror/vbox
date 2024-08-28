@@ -1777,15 +1777,24 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                         'HKLM\\SYSTEM\\CurrentControlSet\\Services\\VBoxService',
                                         '/v', 'ImagePath', '/t', 'REG_SZ', '/d', sImagePath, '/f'));
             elif oTestVm.isLinux():
-                sPathSed = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'sed');
-                fRestartVBoxService = self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging', 30 * 1000,
-                                         sPathSed,
-                                        (sPathSed, '-i', '-e', 's/'
-                                         '\\$2 \\$3'
-                                         '/'
-                                         '\\$2 \\$3 -vvvv --logfile \\/var\\/tmp\\/VBoxService\\/VBoxService.log'
-                                         '/g',
-                                         '/sbin/rcvboxadd-service'));
+                # Need to use some stupid trickery here to locate the sed binary,
+                # as this might differ on various Linux hosts, sigh. We also could use 'which' or some sort on the guest.
+                # Note: Sorted by likeliness.
+                asSedPaths = [
+                    '/bin/sed',
+                    '/usr/bin/sed',
+                    '/usr/local/bin/sed'
+                ];
+                fRc, sPathSed = self.locateGstBinary(oTxsSession, asSedPaths);
+                if fRc:
+                    fRestartVBoxService = self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging', 30 * 1000,
+                                             sPathSed,
+                                            (sPathSed, '-i', '-e', 's/'
+                                             '\\$2 \\$3'
+                                             '/'
+                                             '\\$2 \\$3 -vvvv --logfile \\/var\\/tmp\\/VBoxService\\/VBoxService.log'
+                                             '/g',
+                                             '/sbin/rcvboxadd-service'));
             else:
                 reporter.log('Verbose logging for VBoxService not supported for this guest yet');
 
