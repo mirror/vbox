@@ -304,11 +304,7 @@ HRESULT GraphicsAdapter::isFeatureEnabled(GraphicsFeature_T aFeature, BOOL *aEna
 
     switch (aFeature)
     {
-/// @todo r=bird: This '#ifndef causes 2+ error messages popping up on arm when
-/// starting a VM. I don't think VBOX_E_NOT_SUPPORTED is an appropiate
-/// answer to a simple question whether a feature is supported or not. Returning
-/// FALSE would be a lot more helpful in my opinion.
-//#ifndef VBOX_WITH_VIRT_ARMV8 /* On macOS (ARM) we don't support any 2D/3D acceleration for now. */
+#ifndef VBOX_WITH_VIRT_ARMV8 /* On macOS (ARM) we don't support any 2D/3D acceleration for now. */
         case GraphicsFeature_Acceleration2DVideo:
             pfSetting = &mData->fAccelerate2DVideo;
             *pfSetting = false; /* @bugref{9691} -- The legacy VHWA acceleration has been disabled completely. */
@@ -317,15 +313,12 @@ HRESULT GraphicsAdapter::isFeatureEnabled(GraphicsFeature_T aFeature, BOOL *aEna
         case GraphicsFeature_Acceleration3D:
             pfSetting = &mData->fAccelerate3D;
             break;
-//#endif
+#endif
         default:
             break;
     }
 
-    if (!pfSetting)
-        return VBOX_E_NOT_SUPPORTED;
-
-    *aEnabled = *pfSetting;
+    *aEnabled = pfSetting ? *pfSetting : FALSE;
 
     return S_OK;
 }
