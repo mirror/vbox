@@ -727,7 +727,7 @@ struct GuestDirectoryOpenInfo
 {
     GuestDirectoryOpenInfo(void)
         : menmFilter(GSTCTLDIRFILTER_NONE)
-        , mFlags(0) { }
+        , mFlags(GSTCTLDIR_F_NONE) { }
 
     /** The directory path. */
     Utf8Str                 mPath;
@@ -735,7 +735,7 @@ struct GuestDirectoryOpenInfo
     Utf8Str                 mFilter;
     /** The filter option to use. */
     GSTCTLDIRFILTER         menmFilter;
-    /** Opening flags (of type GSTCTLDIRFILTER_XXX). */
+    /** Opening flags (of type GSTCTLDIR_F_XXX). */
     uint32_t                mFlags;
 };
 
