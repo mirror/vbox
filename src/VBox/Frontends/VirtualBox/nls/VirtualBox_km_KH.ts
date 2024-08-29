@@ -2681,10 +2681,6 @@
         <translation type="unfinished">បណ្ដាញ</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">ច្រក</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished"></translation>
     </message>

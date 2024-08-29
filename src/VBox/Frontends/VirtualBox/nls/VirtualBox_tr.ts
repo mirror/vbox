@@ -2375,10 +2375,6 @@
         <translation>Ağ</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation>B.Noktaları</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation>Seri B.Noktaları</translation>
     </message>

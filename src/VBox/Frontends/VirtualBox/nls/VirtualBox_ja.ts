@@ -3571,10 +3571,6 @@
         <translation type="unfinished">ネットワーク</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">ポート</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">シリアルポート</translation>
     </message>

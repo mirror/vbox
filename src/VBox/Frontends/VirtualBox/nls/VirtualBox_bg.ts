@@ -3125,10 +3125,6 @@
         <translation type="unfinished">Мрежа</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Портове</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Серийни портове</translation>
     </message>

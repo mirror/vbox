@@ -2878,10 +2878,6 @@
         <translation type="unfinished">Sarea</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Atakak</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Serieko Atakak</translation>
     </message>

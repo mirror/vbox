@@ -2375,10 +2375,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished"></translation>
     </message>

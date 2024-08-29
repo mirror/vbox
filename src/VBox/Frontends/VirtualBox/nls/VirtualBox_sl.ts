@@ -2671,10 +2671,6 @@
         <translation type="unfinished">Omrežje</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Vrata</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Zaporedna vrata</translation>
     </message>

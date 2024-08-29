@@ -3390,10 +3390,6 @@
         <translation type="unfinished">网络</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">端口</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">串口</translation>
     </message>

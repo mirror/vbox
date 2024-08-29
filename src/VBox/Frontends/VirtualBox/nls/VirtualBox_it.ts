@@ -2379,10 +2379,6 @@
         <translation>Rete</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation>Porte</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation>Porte seriali</translation>
     </message>

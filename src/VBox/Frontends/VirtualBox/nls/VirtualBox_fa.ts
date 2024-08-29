@@ -2979,10 +2979,6 @@
         <translation type="unfinished">شبکه</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">پورت ها</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">پورت سریال</translation>
     </message>

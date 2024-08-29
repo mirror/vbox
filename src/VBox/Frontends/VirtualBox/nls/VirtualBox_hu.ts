@@ -3417,10 +3417,6 @@
         <translation type="unfinished">Hálózat</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Portok</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Soros portok</translation>
     </message>

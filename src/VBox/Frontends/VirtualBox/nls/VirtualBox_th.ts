@@ -2516,10 +2516,6 @@
         <translation type="unfinished">เครือข่าย</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">พอร์ต</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">พอร์ตอนุกรม</translation>
     </message>

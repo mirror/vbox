@@ -2608,10 +2608,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Porte</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Serielle porte</translation>
     </message>

@@ -2710,10 +2710,6 @@
         <translation type="unfinished">Rede</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Portos</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Portos serie</translation>
     </message>

@@ -2467,10 +2467,6 @@
         <translation type="unfinished">網路</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">連接埠</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">串列埠</translation>
     </message>

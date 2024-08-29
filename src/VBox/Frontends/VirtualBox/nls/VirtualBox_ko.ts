@@ -2561,10 +2561,6 @@
         <translation type="unfinished">네트워크</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">포트</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">직렬 포트</translation>
     </message>

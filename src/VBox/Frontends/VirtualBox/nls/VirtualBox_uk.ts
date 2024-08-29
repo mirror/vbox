@@ -3022,10 +3022,6 @@
         <translation type="unfinished">Мережа</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Порти</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Послідовні порти</translation>
     </message>

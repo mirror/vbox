@@ -2503,10 +2503,6 @@
         <translation type="unfinished">Mreža</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Priključci</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Serijski Priključci</translation>
     </message>

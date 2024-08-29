@@ -2857,10 +2857,6 @@
         <translation type="unfinished">Sieť</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Porty</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Sériové porty</translation>
     </message>

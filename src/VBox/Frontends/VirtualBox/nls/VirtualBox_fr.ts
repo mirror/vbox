@@ -3351,10 +3351,6 @@
         <translation type="unfinished">Réseau</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Ports</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Ports séries</translation>
     </message>

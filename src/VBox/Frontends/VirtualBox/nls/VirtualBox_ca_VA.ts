@@ -3061,10 +3061,6 @@
         <translation type="unfinished">Xarxa</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Ports</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Ports en sèrie</translation>
     </message>

@@ -2886,10 +2886,6 @@
         <translation type="unfinished">Netzwerk</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Ports</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Serielle Schnittstellen</translation>
     </message>

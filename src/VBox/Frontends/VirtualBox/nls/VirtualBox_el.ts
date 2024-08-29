@@ -2491,10 +2491,6 @@
         <translation type="unfinished">Δίκτυο</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Θύρες</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Σειριακές Θύρες</translation>
     </message>

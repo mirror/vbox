@@ -3001,10 +3001,6 @@
         <translation type="unfinished">Tinklas</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Prievadai</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Nuoseklieji prievadai</translation>
     </message>

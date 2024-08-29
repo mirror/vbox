@@ -3488,10 +3488,6 @@
         <translation type="unfinished">Сеть</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Порты</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">COM-порты</translation>
     </message>

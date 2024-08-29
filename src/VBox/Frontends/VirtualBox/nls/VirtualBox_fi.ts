@@ -2736,10 +2736,6 @@
         <translation type="unfinished">Verkko</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Portit</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Sarjaportit</translation>
     </message>

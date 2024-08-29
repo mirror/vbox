@@ -3387,10 +3387,6 @@
         <translation type="unfinished">Jaringan</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Port</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Port Serial</translation>
     </message>

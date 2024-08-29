@@ -2812,10 +2812,6 @@
         <translation type="unfinished">Мрежа</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Портови</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Серијски портови</translation>
     </message>

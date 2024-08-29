@@ -3041,10 +3041,6 @@
         <translation type="unfinished">Nätverk</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Portar</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Serieportar</translation>
     </message>

@@ -2783,10 +2783,6 @@
         <translation type="unfinished">Rețea</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Porturi</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Porturi seriale</translation>
     </message>

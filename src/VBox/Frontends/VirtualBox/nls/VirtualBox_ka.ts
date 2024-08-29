@@ -2469,10 +2469,6 @@
         <translation type="unfinished">ქსელი</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">პორტები</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">სერიული პორტები</translation>
     </message>

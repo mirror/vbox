@@ -3539,10 +3539,6 @@
         <translation type="unfinished">Red</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation type="unfinished">Puertos</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation type="unfinished">Puertos serie</translation>
     </message>

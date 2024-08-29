@@ -2390,10 +2390,6 @@
         <translation>Netwerk</translation>
     </message>
     <message>
-        <source>Ports</source>
-        <translation>Poorten</translation>
-    </message>
-    <message>
         <source>Serial Ports</source>
         <translation>Seriële poorten</translation>
     </message>
