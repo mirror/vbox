@@ -21671,7 +21671,7 @@ p, li { white-space: pre-wrap; }
         <translation>Continuar editando</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Va a restaurar las claves por defecto de inicio seguro.&lt;/p&gt;&lt;p&gt;Si continúa sus claves actuales serán sobreescritas. Puede no ser capaz de arrancar las MV afectadas nunca más.&lt;/p&gt;</translation>
     </message>
     <message>

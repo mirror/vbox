@@ -9392,7 +9392,7 @@
         <translation>Doorgaan wijzigen</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Wilt u de default secure boot-sleutels herstellen.&lt;/p&gt;&lt;p&gt;Als u doorgaat zullen uw huidige sleutels worden herschreven. Het is mogelijk dat de betreffende VM dan niet meer opstart.&lt;/p&gt;</translation>
     </message>
     <message>

@@ -10362,7 +10362,7 @@
         <translation>保留編輯</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
         <translation>&lt;p&gt;您是否要恢復預設的安全開機金鑰。&lt;/p&gt;&lt;p&gt;如果您繼續，將重寫您目前的金鑰。 您可能無法再啟動受影響的虛擬機器。&lt;/p&gt;</translation>
     </message>
     <message>

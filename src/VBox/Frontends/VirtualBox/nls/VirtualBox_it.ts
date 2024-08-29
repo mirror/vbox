@@ -9375,7 +9375,7 @@
         <translation>Continua a modificare</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ripristinerai le chiavi di Secure Boot predefinite.&lt;/p&gt;&lt;p&gt;Se procedi, le chiavi attuali saranno riscritte. Potresti non essere più in grado di avviare la MV interessata.&lt;/p&gt;</translation>
     </message>
     <message>

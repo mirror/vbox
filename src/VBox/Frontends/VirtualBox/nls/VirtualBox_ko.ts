@@ -13749,7 +13749,7 @@
         <translation>계속 편집</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
         <translation>&lt;p&gt;기본 보안 부트 키를 복원하시겠습니까?&lt;/p&gt;&lt;p&gt;계속 진행하면 현재 키를 덮어씁니다. 해당하는 가상 머신을 더 이상 부트하지 못할 수도 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>

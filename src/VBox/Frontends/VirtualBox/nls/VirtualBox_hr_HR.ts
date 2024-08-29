@@ -10406,7 +10406,7 @@
         <translation>Nastavi uređivati</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Namjeravate vratiti zadane tipke za sigurno pokretanje.&lt;/p&gt;&lt;p&gt;Ako nastavite trenutačne tipke bit će prebrisane. Možda više nećete moći pokrenuti pogođeni VS.&lt;/p&gt;</translation>
     </message>
     <message>

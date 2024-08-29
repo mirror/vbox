@@ -19580,7 +19580,7 @@
         <translation>继续编辑</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
         <translation>&lt;p&gt;是否恢复默认的 secure boot 安全启动密钥.&lt;/p&gt;&lt;p&gt;若选择覆盖现有密钥，则受影响的虚拟电脑将有可能无法启动.&lt;/p&gt;</translation>
     </message>
     <message>

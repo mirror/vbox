@@ -20049,7 +20049,7 @@
         <translation>Tetap menyunting</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Anda hendak memulihkan kunci boot aman baku.&lt;/p&gt;&lt;/p&gt;Bila Anda melanjutkan kunci Anda saat ini akan ditimpa. Anda mungkin tidak bisa lagi mem-boot VM yang terpengaruh.&lt;/p&gt;</translation>
     </message>
     <message>

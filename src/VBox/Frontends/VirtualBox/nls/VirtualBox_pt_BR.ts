@@ -21682,7 +21682,7 @@ p, li { white-space: pre-wrap; }
         <translation>Continuar editando</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are going to restore default secure boot keys.&lt;/p&gt;&lt;p&gt;If you proceed your current keys will be rewritten. You may not be able to boot affected VM anymore.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você está restaurando as chaves padrão de secure boot.&lt;/p&gt;&lt;p&gt;Se você continuar, irá sobrescrever as chaves atuais. É possível que a VM afetada não consiga bootar mais.&lt;/p&gt;</translation>
     </message>
     <message>
