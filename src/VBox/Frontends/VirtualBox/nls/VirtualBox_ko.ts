@@ -13757,7 +13757,7 @@
         <translation>&lt;p&gt;기본 보안 부트 키를 복원하시겠습니까?&lt;/p&gt;&lt;p&gt;계속 진행하면 현재 키를 덮어씁니다. 해당하는 가상 머신을 더 이상 부트하지 못할 수도 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;To open a Viso file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <source>&lt;p&gt;To open a VISO file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -18888,7 +18888,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select a file to save Viso content to</source>
+        <source>Select a file to save VISO content to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

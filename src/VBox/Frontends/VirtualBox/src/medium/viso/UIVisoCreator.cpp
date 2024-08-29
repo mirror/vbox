@@ -448,7 +448,7 @@ void UIVisoCreatorWidget::sltSaveAsAction()
     AssertReturnVoid(pActive);
 
     QString strSaveFileName = QIFileDialog::getSaveFileName(visoFileFullPath(), "VISO files (*.viso)", pActive,
-                                                            UIVisoCreatorWidget::tr("Select a file to save Viso content to"));
+                                                            UIVisoCreatorWidget::tr("Select a file to save VISO content to"));
     if (visoFileFullPath() != strSaveFileName)
     {
         QFileInfo fileInfo(strSaveFileName);

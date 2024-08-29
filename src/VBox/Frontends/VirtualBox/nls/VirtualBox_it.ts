@@ -9383,7 +9383,7 @@
         <translation>&lt;p&gt;Ripristinerai le chiavi di Secure Boot predefinite.&lt;/p&gt;&lt;p&gt;Se procedi, le chiavi attuali saranno riscritte. Potresti non essere più in grado di avviare la MV interessata.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;To open a Viso file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <source>&lt;p&gt;To open a VISO file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Per aprire un file Viso dovrai scartare il contenuto corrente.&lt;/p&gt;&lt;p&gt;Sei sicuro di voler procedere?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -13818,7 +13818,7 @@
         <translation>Seleziona un file VISO da caricare</translation>
     </message>
     <message>
-        <source>Select a file to save Viso content to</source>
+        <source>Select a file to save VISO content to</source>
         <translation>Seleziona un file in cui salvare il contenuto di Viso</translation>
     </message>
     <message>

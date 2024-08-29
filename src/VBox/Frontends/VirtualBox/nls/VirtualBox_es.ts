@@ -21679,7 +21679,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Va a restaurar las claves por defecto de inicio seguro.&lt;/p&gt;&lt;p&gt;Si continúa sus claves actuales serán sobreescritas. Puede no ser capaz de arrancar las MV afectadas nunca más.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;To open a Viso file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <source>&lt;p&gt;To open a VISO file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -28574,7 +28574,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select a file to save Viso content to</source>
+        <source>Select a file to save VISO content to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -1424,7 +1424,7 @@ bool UIMessageCenter::confirmInaccesibleMediaClear(const QStringList &mediaNameL
 bool UIMessageCenter::confirmVisoDiscard(QWidget *pParent /* = 0*/) const
 {
     return questionBinary(pParent, MessageType_Question,
-                          tr("<p>To open a Viso file you will have to discard the current content.</p>"
+                          tr("<p>To open a VISO file you will have to discard the current content.</p>"
                              "<p>Are you sure you want to proceed?</p>"),
                           0 /* auto-confirm id */,
                           tr("Discard") /* ok button text */,

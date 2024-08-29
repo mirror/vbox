@@ -9404,7 +9404,7 @@
         <translation>Maak een snapshot van de huidige machinestaat</translation>
     </message>
     <message>
-        <source>&lt;p&gt;To open a Viso file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <source>&lt;p&gt;To open a VISO file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Om een Viso-bestand te openen moet je de huidige inhoud verwerpen.&lt;/p&gt;&lt;p&gt;Weet je zeker dat je door wilt gaan??&lt;/p&gt;</translation>
     </message>
     <message>
@@ -13849,7 +13849,7 @@
         <translation>Selecteer een VISO-bestand om te laden</translation>
     </message>
     <message>
-        <source>Select a file to save Viso content to</source>
+        <source>Select a file to save VISO content to</source>
         <translation>Selecteer een bestand om Viso-inhoud in op te slaan</translation>
     </message>
     <message>

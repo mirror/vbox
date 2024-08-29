@@ -10370,7 +10370,7 @@
         <translation>&lt;p&gt;您是否要恢復預設的安全開機金鑰。&lt;/p&gt;&lt;p&gt;如果您繼續，將重寫您目前的金鑰。 您可能無法再啟動受影響的虛擬機器。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;To open a Viso file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <source>&lt;p&gt;To open a VISO file you will have to discard the current content.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -15095,7 +15095,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select a file to save Viso content to</source>
+        <source>Select a file to save VISO content to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
