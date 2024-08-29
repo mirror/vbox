@@ -543,7 +543,11 @@ static int vboxTrayLogCreate(const char *pszLogFile)
         if (g_cVerbosity)
         {
             /* All groups we want to enable logging for VBoxTray. */
+#ifdef DEBUG
             const char *apszGroups[] = { "guest_dnd", "shared_clipboard" };
+#else /* For release builds we always want all groups being logged in verbose mode. Don't change this! */
+            const char *apszGroups[] = { "all" };
+#endif
             char        szGroupSettings[_1K];
 
             szGroupSettings[0] = '\0';
@@ -560,21 +564,21 @@ static int vboxTrayLogCreate(const char *pszLogFile)
                 switch (g_cVerbosity)
                 {
                     case 1:
-                        rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l");
-                        break;
-
-                    case 2:
                         rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2");
                         break;
 
-                    case 3:
+                    case 2:
                         rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2.l3");
+                        break;
+
+                    case 3:
+                        rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2.l3.l4");
                         break;
 
                     case 4:
                         RT_FALL_THROUGH();
                     default:
-                        rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2.l3.f");
+                        rc = RTStrCat(szGroupSettings, sizeof(szGroupSettings), ".e.l.l2.l3.l4.f");
                         break;
                 }
 
