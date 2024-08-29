@@ -1042,8 +1042,8 @@ static int vgsvcVMInfoWinUserSidLookup(const char *pszUser, PSID *ppSid)
  *                                  the property.
  * @param   va                      Variable arguments.
  */
-int vgsvcVMInfoWinUserUpdateFallbackV(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
-                                      WCHAR *pwszSid, const char *pszKey, const char *pszValueFormat, va_list va)
+static int vgsvcVMInfoWinUserUpdateFallbackV(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                                             WCHAR *pwszSid, const char *pszKey, const char *pszValueFormat, va_list va)
 {
     int rc = VGSvcUserUpdateF(pCache, pszUser, NULL /* pszDomain */, "Domain", pszDomain);
     if (pwszSid && RT_SUCCESS(rc))
@@ -1072,8 +1072,8 @@ int vgsvcVMInfoWinUserUpdateFallbackV(PVBOXSERVICEVEPROPCACHE pCache, const char
  *                                  the property.
  * @param   ...                     Variable arguments.
  */
-int vgsvcVMInfoWinUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
-                              const char *pszKey, const char *pszValueFormat, ...)
+static int vgsvcVMInfoWinUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                                     const char *pszKey, const char *pszValueFormat, ...)
 {
     va_list va;
     va_start(va, pszValueFormat);
