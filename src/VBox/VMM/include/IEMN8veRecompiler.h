@@ -1390,7 +1390,7 @@ typedef struct IEMNATIVECOND
     bool                        fInElse;
     union
     {
-        struct
+        RT_GCC_EXTENSION struct
         {
             /** Set if the if-block unconditionally exited the TB. */
             bool                fIfExitTb;
