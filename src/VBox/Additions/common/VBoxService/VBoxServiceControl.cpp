@@ -65,6 +65,7 @@
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
+#include <iprt/rand.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <VBox/err.h>
@@ -245,7 +246,16 @@ static int vgsvcGstCtrlInvalidate(void)
 
     g_fControlSupportsOptimizations = VbglR3GuestCtrlSupportsOptimizations(g_idControlSvcClient);
     if (g_fControlSupportsOptimizations)
-        rc = VbglR3GuestCtrlMakeMeMaster(g_idControlSvcClient);
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            rc = VbglR3GuestCtrlMakeMeMaster(g_idControlSvcClient);
+            if (RT_SUCCESS(rc))
+                break;
+            RTThreadSleep(RTRandU32Ex(RT_MS_1SEC, RT_MS_5SEC));
+            VGSvcError("Failed to become guest control master (#%d): %Rrc\n", i, rc);
+        }
+    }
     if (RT_SUCCESS(rc))
     {
         VGSvcVerbose(3, "Guest control service client ID=%RU32%s\n",
@@ -271,7 +281,7 @@ static int vgsvcGstCtrlInvalidate(void)
 
         return VINF_SUCCESS;
     }
-    VGSvcError("Failed to become guest control master: %Rrc\n", rc);
+    VGSvcError("Giving up to become guest control master, disconnecting\n");
     VbglR3GuestCtrlDisconnect(g_idControlSvcClient);
 
     return rc;
