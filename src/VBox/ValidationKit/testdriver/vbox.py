@@ -1784,7 +1784,10 @@ class TestDriver(base.TestDriver):                                              
         try:
             # Regular expression taken from semver.org (recommended regular expression for semantic version strings).
             # Creative Commons ― CC BY 3.0
-            oRegEx = re.compile(r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'); # pylint: disable=line-too-long
+            #
+            # Modified to also recognize our semantics:
+            # - We use "-BETA2" instead of "_BETA2".
+            oRegEx = re.compile(r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:[-|_]((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'); # pylint: disable=line-too-long
             oMatch = oRegEx.search(sVer);
             return oMatch.groups();
         except:
