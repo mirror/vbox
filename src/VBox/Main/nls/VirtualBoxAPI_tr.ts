@@ -370,7 +370,7 @@
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="711"/>
         <source>Virtual appliance &quot;%s&quot; was configured with more than one NVMe controller however VirtualBox supports a maximum of one NVMe controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%s&quot; sanal cihazı birden fazla NVMe denetleyicisiyle yapılandırılmış ancak VirtualBox en fazla bir NVMe denetleyicisini destekliyor.</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="785"/>
@@ -1008,12 +1008,12 @@
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="4894"/>
         <source>Too many NVMe controllers in OVF; import facility only supports one</source>
-        <translation type="unfinished"></translation>
+        <translation>OVF&apos;de çok fazla NVMe denetleyicisi; içe aktarma kolaylığı yalnızca bir tane destekler</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="4909"/>
         <source>Invalid NVMe controller type &quot;%s&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Geçersiz NVMe denetleyicisi türü &quot;%s&quot;</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="4927"/>
@@ -1360,7 +1360,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="578"/>
         <source>Cannot run the machine because its platform architecture %s is not supported on %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Makinenin platform mimarisi %s, %s üzerinde desteklenmediğinden makine çalıştırılamıyor</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="1775"/>
@@ -1628,7 +1628,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="5826"/>
         <source>Failed to change the CPU execution limit (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>İşlemci çalıştırılma sınırını değiştirme başarısız (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="6025"/>
@@ -1658,12 +1658,12 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="6242"/>
         <source>Attaching audio recording driver failed (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ses kayıt sürücüsünün eklenmesi başarısız oldu (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="6265"/>
         <source>Detaching audio recording driver failed (%Rrc) -- please consult log file for details</source>
-        <translation type="unfinished"></translation>
+        <translation>Ses kayıt sürücüsünün ayırılması başarısız oldu (%Rrc) -- ayrıntılar için lütfen günlük dosyasına bakın</translation>
     </message>
     <message>
         <source>Attaching to audio recording driver failed (%Rrc) -- please consult log file for details</source>
@@ -1765,12 +1765,12 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="7793"/>
         <source>Recording start failed (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt başlatma başarısız oldu (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="7815"/>
         <source>Recording stop failed (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt durdurma başarısız oldu (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8228"/>
@@ -1929,7 +1929,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="9796"/>
         <source>Failed to query default extension pack name for the cryptographic module</source>
-        <translation type="unfinished"></translation>
+        <translation>Şifreleme modülü için varsayılan genişletme paketi adını sorgulama başarısız</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="9804"/>
@@ -2508,12 +2508,12 @@
     <message>
         <location filename="../src-client/DisplayImpl.cpp" line="2042"/>
         <source>Screenshot is not possible at this time, invalid size</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekran görüntüsü şu anda mümkün değil, geçersiz boyut</translation>
     </message>
     <message>
         <location filename="../src-client/DisplayImpl.cpp" line="2044"/>
         <source>Screenshot is not possible at this time</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekran görüntüsü şu anda mümkün değil</translation>
     </message>
     <message>
         <source>Screenshot is not available at this time</source>
@@ -3473,52 +3473,52 @@
     <message>
         <location filename="../src-all/Global.cpp" line="808"/>
         <source>SharedFolder</source>
-        <translation type="unfinished"></translation>
+        <translation>PaylaşılanKlasör</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="819"/>
         <location filename="../src-all/Global.cpp" line="837"/>
         <source>starting</source>
-        <translation type="unfinished"></translation>
+        <translation>başlatılıyor</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="820"/>
         <location filename="../src-all/Global.cpp" line="838"/>
         <location filename="../src-all/Global.cpp" line="858"/>
         <source>started</source>
-        <translation type="unfinished"></translation>
+        <translation>başlatıldı</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="821"/>
         <location filename="../src-all/Global.cpp" line="840"/>
         <source>terminating</source>
-        <translation type="unfinished"></translation>
+        <translation>sonlandırılıyor</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="822"/>
         <location filename="../src-all/Global.cpp" line="859"/>
         <source>terminated</source>
-        <translation type="unfinished"></translation>
+        <translation>sonlandırıldı</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="823"/>
         <location filename="../src-all/Global.cpp" line="844"/>
         <location filename="../src-all/Global.cpp" line="862"/>
         <source>timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>zaman aşımına uğradı</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="824"/>
         <location filename="../src-all/Global.cpp" line="845"/>
         <source>timed out, hanging</source>
-        <translation type="unfinished"></translation>
+        <translation>zaman aşımına uğradı, dayanıyor</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="825"/>
         <location filename="../src-all/Global.cpp" line="846"/>
         <location filename="../src-all/Global.cpp" line="881"/>
         <source>killed</source>
-        <translation type="unfinished"></translation>
+        <translation>sonlandırıldı</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="826"/>
@@ -3526,117 +3526,117 @@
         <location filename="../src-all/Global.cpp" line="861"/>
         <location filename="../src-all/Global.cpp" line="882"/>
         <source>error</source>
-        <translation type="unfinished"></translation>
+        <translation>hata</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="839"/>
         <source>paused</source>
-        <translation type="unfinished"></translation>
+        <translation>duraklatıldı</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="841"/>
         <source>successfully terminated</source>
-        <translation type="unfinished"></translation>
+        <translation>başarılı olarak sonlandırıldı</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="842"/>
         <source>terminated by signal</source>
-        <translation type="unfinished"></translation>
+        <translation>sinyal ile sonlandırıldı</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="843"/>
         <source>abnormally aborted</source>
-        <translation type="unfinished"></translation>
+        <translation>anormal şekilde iptal edildi</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="860"/>
         <source>status changed</source>
-        <translation type="unfinished"></translation>
+        <translation>durum değişti</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="863"/>
         <source>stdin ready</source>
-        <translation type="unfinished"></translation>
+        <translation>stdin hazır</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="864"/>
         <source>data on stdout</source>
-        <translation type="unfinished"></translation>
+        <translation>stdout üzerinde veri</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="865"/>
         <source>data on stderr</source>
-        <translation type="unfinished"></translation>
+        <translation>stderr üzerinde veri</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="866"/>
         <source>waiting flag not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>bekleme işareti desteklenmiyor</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="877"/>
         <source>opening</source>
-        <translation type="unfinished"></translation>
+        <translation>açılıyor</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="878"/>
         <source>open</source>
-        <translation type="unfinished"></translation>
+        <translation>açık</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="879"/>
         <source>closing</source>
-        <translation type="unfinished"></translation>
+        <translation>kapanıyor</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="880"/>
         <source>closed</source>
-        <translation type="unfinished"></translation>
+        <translation>kapalı</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="893"/>
         <source>unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>bilinmiyor</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="894"/>
         <source>fifo</source>
-        <translation type="unfinished"></translation>
+        <translation>fifo</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="895"/>
         <source>char-device</source>
-        <translation type="unfinished"></translation>
+        <translation>char-device</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="896"/>
         <source>directory</source>
-        <translation type="unfinished"></translation>
+        <translation>dizin</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="897"/>
         <source>block-device</source>
-        <translation type="unfinished"></translation>
+        <translation>block-device</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="898"/>
         <source>file</source>
-        <translation type="unfinished">dosya</translation>
+        <translation>dosya</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="899"/>
         <source>symlink</source>
-        <translation type="unfinished"></translation>
+        <translation>symlink</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="900"/>
         <source>socket</source>
-        <translation type="unfinished"></translation>
+        <translation>yuva</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="901"/>
         <source>white-out</source>
-        <translation type="unfinished"></translation>
+        <translation>white-out</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="932"/>
@@ -3815,7 +3815,7 @@
     <message>
         <location filename="../src-server/GraphicsAdapterImpl.cpp" line="240"/>
         <source>Error getting VRAM range for selected graphics controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen grafik denetleyicisi için VRAM aralığı alınırken hata oldu</translation>
     </message>
     <message>
         <location filename="../src-server/GraphicsAdapterImpl.cpp" line="246"/>
@@ -3855,7 +3855,7 @@
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="465"/>
         <source>Guest Additions are not installed or not ready (yet)</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir Eklentileri yüklü değil veya hazır değil (henüz)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="469"/>
@@ -3986,12 +3986,12 @@
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="726"/>
         <source>Guest directory &quot;%s&quot; already exists</source>
-        <translation type="unfinished">&quot;%s&quot; misafir dizini zaten var</translation>
+        <translation>&quot;%s&quot; misafir dizini zaten var</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="727"/>
         <source>Guest directory &quot;%s&quot; cannot be created</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%s&quot; misafir dizini oluşturulamıyor</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="728"/>
@@ -4001,12 +4001,12 @@
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="729"/>
         <source>Guest directory &quot;%s&quot; has no more entries</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%s&quot; misafir dizininde başka giriş yok</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="730"/>
         <source>Path of guest directory &quot;%s&quot; not found</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%s&quot; misafir dizininin yolu bulunamadı</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="732"/>
@@ -4028,13 +4028,14 @@
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="1487"/>
         <source>Listing guest directory failed: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir dizini listeleme başarısız oldu: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="1501"/>
         <source>Listing guest directory &quot;%s&quot; returned unhandled error: %Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%s&quot; misafir dizinini listeleme işlenemeyen hata döndürdü: %Rrc
+</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="1541"/>
@@ -4060,12 +4061,13 @@
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="1568"/>
         <source>Reading guest directory &quot;%s&quot; returned unhandled error: %Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%s&quot; misafir dizinini okuma işlenemeyen hata döndürdü: %Rrc
+</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="1589"/>
         <source>Rewinding guest directory failed: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir dizini geri sarma başarısız oldu: %s</translation>
     </message>
     <message>
         <source>Reading guest directory &quot;%s&quot; returned error: %Rrc
@@ -4553,12 +4555,12 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="70"/>
         <source>Access to &quot;%s&quot; denied</source>
-        <translation type="unfinished">&quot;%s&quot; erişimi reddedildi</translation>
+        <translation>&quot;%s&quot; erişimi reddedildi</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="76"/>
         <source>No such file or directory &quot;%s&quot;</source>
-        <translation type="unfinished">Böyle bir &quot;%s&quot; dosyası veya dizini yok</translation>
+        <translation>Böyle bir &quot;%s&quot; dosyası veya dizini yok</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="80"/>
@@ -4568,62 +4570,62 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="84"/>
         <source>Invalid parameter specified</source>
-        <translation type="unfinished"></translation>
+        <translation>Geçersiz parametre belirtildi</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="88"/>
         <source>VMM device is not available (is the VM running?)</source>
-        <translation type="unfinished">VMM aygıtı mevcut değil (VM çalışıyor mu?)</translation>
+        <translation>VMM aygıtı mevcut değil (VM çalışıyor mu?)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="92"/>
         <source>The guest execution service is not available</source>
-        <translation type="unfinished">Misafir çalıştırma hizmeti kullanılabilir değil</translation>
+        <translation>Misafir çalıştırma hizmeti kullanılabilir değil</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="96"/>
         <source>The file &quot;%s&quot; is not an executable format</source>
-        <translation type="unfinished">&quot;%s&quot; dosyası çalıştırılabilir bir biçim değil</translation>
+        <translation>&quot;%s&quot; dosyası çalıştırılabilir bir biçim değil</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="100"/>
         <source>The user &quot;%s&quot; was not able to logon</source>
-        <translation type="unfinished">&quot;%s&quot; kullanıcısı oturum açamadı</translation>
+        <translation>&quot;%s&quot; kullanıcısı oturum açamadı</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="104"/>
         <source>The file &quot;%s&quot; is an invalid name</source>
-        <translation type="unfinished">&quot;%s&quot; dosyası geçersiz bir ad</translation>
+        <translation>&quot;%s&quot; dosyası geçersiz bir ad</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="108"/>
         <source>The guest did not respond within time</source>
-        <translation type="unfinished">Misafir zamanında yanıt vermedi</translation>
+        <translation>Misafir zamanında yanıt vermedi</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="112"/>
         <source>The execution operation was canceled</source>
-        <translation type="unfinished">Çalıştırma işlemi iptal edildi</translation>
+        <translation>Çalıştırma işlemi iptal edildi</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="116"/>
         <source>Maximum number of concurrent guest processes has been reached</source>
-        <translation type="unfinished">En fazla eşzamanlı misafir işlemi sayısına ulaşıldı</translation>
+        <translation>En fazla eşzamanlı misafir işlemi sayısına ulaşıldı</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="120"/>
         <source>The guest execution service is not ready (yet)</source>
-        <translation type="unfinished">Misafir çalıştırma hizmeti hazır değil (henüz)</translation>
+        <translation>Misafir çalıştırma hizmeti hazır değil (henüz)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="124"/>
         <source>Specified mode or flag is not supported on the guest</source>
-        <translation type="unfinished"></translation>
+        <translation>Belirtilen kip veya işaret misafirde desteklenmiyor</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="128"/>
         <source>Unhandled error %Rrc for &quot;%s&quot; occurred on guest -- please file a bug report</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafirde &quot;%s&quot; için işlenmemiş %Rrc hatası meydana geldi -- lütfen bir hata raporu gönderin</translation>
     </message>
 </context>
 <context>
@@ -4813,62 +4815,62 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3184"/>
         <source>Access to &quot;%s&quot; denied</source>
-        <translation type="unfinished">&quot;%s&quot; erişimi reddedildi</translation>
+        <translation>&quot;%s&quot; erişimi reddedildi</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3190"/>
         <source>No such file or directory &quot;%s&quot;</source>
-        <translation type="unfinished">Böyle bir &quot;%s&quot; dosyası veya dizini yok</translation>
+        <translation>Böyle bir &quot;%s&quot; dosyası veya dizini yok</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3194"/>
         <source>VMM device is not available (is the VM running?)</source>
-        <translation type="unfinished">VMM aygıtı mevcut değil (VM çalışıyor mu?)</translation>
+        <translation>VMM aygıtı mevcut değil (VM çalışıyor mu?)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3198"/>
         <source>The guest execution service is not available</source>
-        <translation type="unfinished">Misafir çalıştırma hizmeti kullanılabilir değil</translation>
+        <translation>Misafir çalıştırma hizmeti kullanılabilir değil</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3202"/>
         <source>The file &quot;%s&quot; is not an executable format</source>
-        <translation type="unfinished">&quot;%s&quot; dosyası çalıştırılabilir bir biçim değil</translation>
+        <translation>&quot;%s&quot; dosyası çalıştırılabilir bir biçim değil</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3206"/>
         <source>The user &quot;%s&quot; was not able to logon</source>
-        <translation type="unfinished">&quot;%s&quot; kullanıcısı oturum açamadı</translation>
+        <translation>&quot;%s&quot; kullanıcısı oturum açamadı</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3210"/>
         <source>The file &quot;%s&quot; is an invalid name</source>
-        <translation type="unfinished">&quot;%s&quot; dosyası geçersiz bir ad</translation>
+        <translation>&quot;%s&quot; dosyası geçersiz bir ad</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3214"/>
         <source>The guest did not respond within time</source>
-        <translation type="unfinished">Misafir zamanında yanıt vermedi</translation>
+        <translation>Misafir zamanında yanıt vermedi</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3218"/>
         <source>The execution operation was canceled</source>
-        <translation type="unfinished">Çalıştırma işlemi iptal edildi</translation>
+        <translation>Çalıştırma işlemi iptal edildi</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3222"/>
         <source>Maximum number of concurrent guest processes has been reached</source>
-        <translation type="unfinished">En fazla eşzamanlı misafir işlemi sayısına ulaşıldı</translation>
+        <translation>En fazla eşzamanlı misafir işlemi sayısına ulaşıldı</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3226"/>
         <source>The guest execution service is not ready (yet)</source>
-        <translation type="unfinished">Misafir çalıştırma hizmeti hazır değil (henüz)</translation>
+        <translation>Misafir çalıştırma hizmeti hazır değil (henüz)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3230"/>
         <source>Unhandled error %Rrc for &quot;%s&quot; occurred for tool &quot;%s&quot; on guest -- please file a bug report</source>
-        <translation type="unfinished">Misafirde &quot;%s&quot; için işlenmemiş %Rrc hatası, &quot;%s&quot; aracı için meydana geldi -- lütfen bir hata raporu gönderin</translation>
+        <translation>Misafirde &quot;%s&quot; için işlenmemiş %Rrc hatası, &quot;%s&quot; aracı için meydana geldi -- lütfen bir hata raporu gönderin</translation>
     </message>
 </context>
 <context>
@@ -4930,17 +4932,17 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="643"/>
         <source>Getting the mount points is not supported by installed Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Bağlama noktalarının alınması, yüklü Misafir Eklentileri tarafından desteklenmiyor</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="648"/>
         <source>Getting the mount points failed on the guest: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafirde bağlama noktalarının alınması başarısız oldu: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="655"/>
         <source>Getting the mount points failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Bağlama noktalarının alınması başarısız oldu: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="805"/>
@@ -5088,7 +5090,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="2381"/>
         <source>Session is not in started state (state is &apos;%s&apos;)</source>
-        <translation type="unfinished"></translation>
+        <translation>Oturum başlatıldı durumunda değil (durum &apos;%s&apos;)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4227"/>
@@ -5350,12 +5352,12 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5007"/>
         <source>Querying guest filesystem information failed: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir dosya sistemi bilgilerini sorgulama başarısız oldu: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5011"/>
         <source>Querying guest filesystem information for &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%s&quot; için misafir dosya sistemi bilgilerini sorgulama başarısız oldu: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5047"/>
@@ -5370,12 +5372,12 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5090"/>
         <source>Querying guest filesystem object information failed: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir dosya sistemi nesnesi bilgilerini sorgulama başarısız oldu: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5094"/>
         <source>Querying guest filesystem object information for &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%s&quot; için misafir dosya sistemi nesnesi bilgilerini sorgulama başarısız oldu: %Rrc</translation>
     </message>
     <message>
         <source>Querying guest file information failed: %s</source>
@@ -5429,7 +5431,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5272"/>
         <source>Setting the current working directory is not supported by the installed Guest Addtions!</source>
-        <translation type="unfinished"></translation>
+        <translation>Şu anki çalışma dizininin ayarlanması, yüklü Misafir Eklentileri tarafından desteklenmiyor!</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5344"/>
@@ -6004,22 +6006,22 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2761"/>
         <source>Running update file &quot;%s&quot; on guest failed with exit code %d</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%s&quot; güncelleme dosyasını misafir üzerinde çalıştırma %d çıkış koduyla başarısız oldu</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2824"/>
         <source>Files were installed, but user services were not reloaded automatically. Please consider rebooting the guest</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosyalar yüklendi ancak kullanıcı hizmetleri otomatik olarak yeniden yüklenemedi. Lütfen misafiri yeniden başlatmayı düşünün</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2829"/>
         <source>Files were installed, but kernel modules were not reloaded automatically. Please consider rebooting the guest</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosyalar yüklendi ancak çekirdek modüller otomatik olarak yeniden yüklenemedi. Lütfen misafiri yeniden başlatmayı düşünün</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2943"/>
         <source>Guest Additions were not ready within time, giving up</source>
-        <translation>Misafir Eklentileri zamanında hazır olmadı, vazgeçiliyor</translation>
+        <translation>Misafir Eklentileri zamanında hazır olamadı, vazgeçiliyor</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2956"/>
@@ -6069,27 +6071,27 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3115"/>
         <source>Creating update directory on guest failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafirde güncelleme dizini oluşturma başarısız oldu</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3121"/>
         <source>Creating update directory &quot;%s&quot; on guest failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafirde &quot;%s&quot; güncelleme dizinini oluşturma başarısız oldu: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3371"/>
         <source>Guest services were not restarted, please reinstall Guest Additions manually</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir hizmetleri yeniden başlatılamadı, lütfen Misafir Eklentilerini el ile yeniden yükleyin</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3401"/>
         <source>Operation was canceled</source>
-        <translation type="unfinished"></translation>
+        <translation>İşlem iptal edildi</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3408"/>
         <source>Operation has timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>İşlem zaman aşımına uğradı</translation>
     </message>
     <message>
         <source>Creating installation directory on guest failed</source>
@@ -6111,7 +6113,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3377"/>
         <source>Old guest session is still active, guest services were not restarted after installation, please reinstall Guest Additions manually</source>
-        <translation>Eski misafir oturumu hala etkin, misafir hizmetleri kurulumdan sonra yeniden başlatılmadı, lütfen Misafir Eklentilerini el ile yeniden yükleyin</translation>
+        <translation>Eski misafir oturumu hala etkin, misafir hizmetleri kurulumdan sonra yeniden başlatılamadı, lütfen Misafir Eklentilerini el ile yeniden yükleyin</translation>
     </message>
     <message>
         <source>Installation was canceled</source>
@@ -6452,12 +6454,12 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/HostX86Impl.cpp" line="97"/>
         <source>CPU no.%u is not present</source>
-        <translation type="unfinished">İşlemci no.%u mevcut değil</translation>
+        <translation>İşlemci no.%u mevcut değil</translation>
     </message>
     <message>
         <location filename="../src-server/HostX86Impl.cpp" line="98"/>
         <source>CPU no.%u is not online</source>
-        <translation type="unfinished">İşlemci no.%u çevrimiçi değil</translation>
+        <translation>İşlemci no.%u çevrimiçi değil</translation>
     </message>
 </context>
 <context>
@@ -8026,7 +8028,7 @@ Misafirin sunduğu: %s</translation>
         <location filename="../src-server/MediumImpl.cpp" line="1177"/>
         <location filename="../src-server/MediumImpl.cpp" line="1272"/>
         <source>Accessibility check was not yet performed</source>
-        <translation>Erişilebilirlik denetimi henüz yapılmadı</translation>
+        <translation>Erişilebilirlik denetimi henüz yapılamadı</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="1778"/>
@@ -9167,18 +9169,18 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="361"/>
         <source>This machine does not have an NVRAM store file</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu makinede bir NVRAM depolama dosyası yok</translation>
     </message>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="373"/>
         <source>No NVRAM store file found</source>
-        <translation type="unfinished"></translation>
+        <translation>Bulunan NVRAM depolama dosyası yok</translation>
     </message>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="399"/>
         <location filename="../src-all/NvramStoreImpl.cpp" line="1387"/>
         <source>The UEFI NVRAM file is not existing for this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>UEFI NVRAM dosyası bu makine için mevcut değil</translation>
     </message>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="449"/>
@@ -9199,7 +9201,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="1384"/>
         <source>Opening the UEFI variable store failed (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>UEFI değişken deposunu açma başarısız oldu (%Rrc)</translation>
     </message>
     <message>
         <source>Opening the UEFI variable store failed (%Rrc).</source>
@@ -9256,26 +9258,26 @@ Misafirin sunduğu: %s</translation>
         <location filename="../src-all/PlatformPropertiesImpl.cpp" line="515"/>
         <source>Invalid storage controller type %d
 </source>
-        <translation type="unfinished">Geçersiz depolama denetleyicisi türü %d
+        <translation>Geçersiz depolama denetleyicisi türü %d
 </translation>
     </message>
     <message>
         <location filename="../src-all/PlatformPropertiesImpl.cpp" line="565"/>
         <source>Invalid storage bus %d
 </source>
-        <translation type="unfinished">Geçersiz depolama taşıyıcı %d
+        <translation>Geçersiz depolama taşıyıcı %d
 </translation>
     </message>
     <message>
         <location filename="../src-all/PlatformPropertiesImpl.cpp" line="977"/>
         <source>Selected graphics controller not supported in this version</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen grafik denetleyicisi bu sürümde desteklenmiyor</translation>
     </message>
     <message>
         <location filename="../src-all/PlatformPropertiesImpl.cpp" line="980"/>
         <location filename="../src-all/PlatformPropertiesImpl.cpp" line="994"/>
         <source>The graphics controller type (%d) is invalid</source>
-        <translation type="unfinished">Grafik denetleyicisi türü (%d) geçersiz</translation>
+        <translation>Grafik denetleyicisi türü (%d) geçersiz</translation>
     </message>
 </context>
 <context>
@@ -9283,17 +9285,17 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/PlatformX86Impl.cpp" line="548"/>
         <source>Currently only aSubIdx values 0 and 0xffffffff are supported: %#x</source>
-        <translation type="unfinished">Şu anda yalnızca aSubIdx değerleri 0 ve 0xffffffff destekleniyor: %#x</translation>
+        <translation>Şu anda yalnızca aSubIdx değerleri 0 ve 0xffffffff destekleniyor: %#x</translation>
     </message>
     <message>
         <location filename="../src-server/PlatformX86Impl.cpp" line="552"/>
         <source>CpuId override leaf %#x is out of range</source>
-        <translation type="unfinished">CpuId geçersiz kılma yaprağı %#x aralığın dışında</translation>
+        <translation>CpuId geçersiz kılma yaprağı %#x aralığın dışında</translation>
     </message>
     <message>
         <location filename="../src-server/PlatformX86Impl.cpp" line="564"/>
         <source>Max of 256 CPUID override leaves reached</source>
-        <translation type="unfinished">En fazla 256 CPUID geçersiz kılma yaprağına ulaşıldı</translation>
+        <translation>En fazla 256 CPUID geçersiz kılma yaprağına ulaşıldı</translation>
     </message>
 </context>
 <context>
@@ -9484,7 +9486,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/RecordingSettingsImpl.cpp" line="335"/>
         <source>Recording not started</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt başlamadı</translation>
     </message>
     <message>
         <location filename="../src-server/RecordingSettingsImpl.cpp" line="357"/>
@@ -9494,7 +9496,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/RecordingSettingsImpl.cpp" line="401"/>
         <source>Recording already started</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt zaten başladı</translation>
     </message>
 </context>
 <context>
@@ -9867,7 +9869,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-all/SharedFolderImpl.cpp" line="415"/>
         <source>The symbolic link policy specified (%d) is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belirtilen sembolik bağlantı ilkesi (%d) geçersiz.</translation>
     </message>
 </context>
 <context>
@@ -10003,7 +10005,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/SystemPropertiesImpl.cpp" line="1682"/>
         <source>RTLogGroupSettings failed: %Rrc (input: %s)</source>
-        <translation type="unfinished"></translation>
+        <translation>RTLogGroupSettings başarısız oldu: %Rrc (giriş: %s)</translation>
     </message>
     <message>
         <location filename="../src-server/SystemPropertiesImpl.cpp" line="1760"/>
@@ -10340,7 +10342,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2613"/>
         <source>Could not locate the User Payload ISO file &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kullanıcı Yük ISO dosyası &apos;%s&apos; bulunamadı</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2616"/>
@@ -10350,7 +10352,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2687"/>
         <source>The machine is configured with EFI which is currently not supported by unatteded installation</source>
-        <translation type="unfinished"></translation>
+        <translation>Makine, şu anda katılımsız kurulum tarafından desteklenmeyen EFI ile yapılandırılmış</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2805"/>
@@ -10531,7 +10533,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="253"/>
         <source>Empty user password is not allowed</source>
-        <translation type="unfinished"></translation>
+        <translation>Boş kullanıcı parolasına izin verilmiyor</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="384"/>
@@ -10868,7 +10870,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/UnattendedScript.cpp" line="660"/>
         <source>RTCrShaCryptGenerateSalt failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>RTCrShaCryptGenerateSalt başarısız oldu: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedScript.cpp" line="717"/>
@@ -10961,7 +10963,8 @@ Misafirin sunduğu: %s</translation>
         <location filename="../src-server/VRDEServerImpl.cpp" line="330"/>
         <source>Failed to read server certificate &apos;%s&apos;: %Rrc%#RTeim
 </source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%s&apos; sunucu sertifikasını okuma başarısız: %Rrc%#RTeim
+</translation>
     </message>
     <message>
         <location filename="../src-server/VRDEServerImpl.cpp" line="372"/>
@@ -10970,7 +10973,8 @@ Misafirin sunduğu: %s</translation>
         <location filename="../src-server/VRDEServerImpl.cpp" line="422"/>
         <source>Failed to auto generate server key and certificate: (%Rrc)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Sunucu anahtarı ve sertifikasını otomatik oluşturma başarısız: (%Rrc)
+</translation>
     </message>
     <message>
         <location filename="../src-server/VRDEServerImpl.cpp" line="929"/>
@@ -11019,12 +11023,12 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2239"/>
         <source>&apos;Must specify a valid platform architecture</source>
-        <translation type="unfinished"></translation>
+        <translation>Geçerli bir platform mimarisi belirtilmek zorunda</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2247"/>
         <source>&apos;Creating VMs for platform architecture %s not supported on %s</source>
-        <translation type="unfinished"></translation>
+        <translation>%s platform mimarisi için VM&apos;ler oluşturma %s üzerinde desteklenmiyor</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2588"/>
@@ -11140,12 +11144,12 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4549"/>
         <source>&apos;%s&apos; is not a valid guest OS family identifier.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%s&apos; geçerli bir Misafir İS ailesi tanımlayıcı değil.</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4609"/>
         <source>&apos;%s&apos; is not a valid guest OS subtype.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%s&apos; geçerli bir Misafir İS alt türü değil.</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4814"/>
