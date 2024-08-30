@@ -3835,7 +3835,17 @@
         <translation>Недопустимый размер VRAM: %lu MB (должен быть в диапазоне [%lu, %lu] MB)</translation>
     </message>
     <message>
-        <location filename="../src-server/GraphicsAdapterImpl.cpp" line="326"/>
+        <location filename="../src-server/GraphicsAdapterImpl.cpp" line="268"/>
+        <source>The graphics controller does not support the given feature</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src-server/GraphicsAdapterImpl.cpp" line="286"/>
+        <source>The given feature is not implemented</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src-server/GraphicsAdapterImpl.cpp" line="340"/>
         <source>Invalid monitor count: %lu (must be in range [%lu, %lu])</source>
         <translation>Недопустимое количество мониторов: %lu (должен быть в диапазоне [%lu, %lu])</translation>
     </message>
@@ -4568,61 +4578,66 @@ Guest offers: %s</source>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="80"/>
-        <source>Invalid parameter specified</source>
+        <source>File or directory &quot;%s&quot; can&apos;t be created</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="84"/>
+        <source>Invalid parameter specified</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="88"/>
         <source>VMM device is not available (is the VM running?)</source>
         <translation type="unfinished">VMM устройство недоступно (ВМ работает?)</translation>
     </message>
     <message>
-        <location filename="../src-client/GuestCtrlPrivate.cpp" line="88"/>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="92"/>
         <source>The guest execution service is not available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestCtrlPrivate.cpp" line="92"/>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="96"/>
         <source>The file &quot;%s&quot; is not an executable format</source>
         <translation type="unfinished">Формат файла &quot;%s&quot; не является исполняемым</translation>
     </message>
     <message>
-        <location filename="../src-client/GuestCtrlPrivate.cpp" line="96"/>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="100"/>
         <source>The user &quot;%s&quot; was not able to logon</source>
         <translation type="unfinished">Пользователь &quot;%s&quot; не смог войти систему</translation>
     </message>
     <message>
-        <location filename="../src-client/GuestCtrlPrivate.cpp" line="100"/>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="104"/>
         <source>The file &quot;%s&quot; is an invalid name</source>
         <translation type="unfinished">У файла &quot;%s&quot; недопустимое имя</translation>
     </message>
     <message>
-        <location filename="../src-client/GuestCtrlPrivate.cpp" line="104"/>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="108"/>
         <source>The guest did not respond within time</source>
         <translation type="unfinished">Гостевая система не ответила за отведенное время</translation>
     </message>
     <message>
-        <location filename="../src-client/GuestCtrlPrivate.cpp" line="108"/>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="112"/>
         <source>The execution operation was canceled</source>
         <translation type="unfinished">Операция выполнения отменена</translation>
     </message>
     <message>
-        <location filename="../src-client/GuestCtrlPrivate.cpp" line="112"/>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="116"/>
         <source>Maximum number of concurrent guest processes has been reached</source>
         <translation type="unfinished">Достигнуто максимальное количество одновременных гостевых процессов</translation>
     </message>
     <message>
-        <location filename="../src-client/GuestCtrlPrivate.cpp" line="116"/>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="120"/>
         <source>The guest execution service is not ready (yet)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestCtrlPrivate.cpp" line="120"/>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="124"/>
         <source>Specified mode or flag is not supported on the guest</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestCtrlPrivate.cpp" line="124"/>
+        <location filename="../src-client/GuestCtrlPrivate.cpp" line="128"/>
         <source>Unhandled error %Rrc for &quot;%s&quot; occurred on guest -- please file a bug report</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6854,7 +6869,7 @@ Guest offers: %s</source>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="4779"/>
-        <location filename="../src-server/MachineImpl.cpp" line="15829"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15837"/>
         <source>The session has been accidentally closed</source>
         <translation>Сессия была случайно закрыта</translation>
     </message>
@@ -6871,13 +6886,13 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="353"/>
         <location filename="../src-server/MachineImpl.cpp" line="585"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16031"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16163"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16203"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16244"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16307"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16324"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16362"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16039"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16171"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16211"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16252"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16315"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16332"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16370"/>
         <source>Full VM encryption is not available with this build</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6888,13 +6903,13 @@ Guest offers: %s</source>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="394"/>
-        <location filename="../src-server/MachineImpl.cpp" line="15899"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15907"/>
         <source>New key store creation failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="405"/>
-        <location filename="../src-server/MachineImpl.cpp" line="15917"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15925"/>
         <source>Saving the key store failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7317,134 +7332,134 @@ Guest offers: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15679"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15687"/>
         <source>Obtain cipher for &apos;%s&apos; files failed (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15691"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15699"/>
         <source>Loading old key store for &apos;%s&apos; files failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15695"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15703"/>
         <source>Changing the password for &apos;%s&apos; files failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15702"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15710"/>
         <source>Saving the key store for &apos;%s&apos; files failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15719"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15727"/>
         <source>Getting file list for &apos;%s&apos; files failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15729"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15737"/>
         <source>Create new key store for &apos;%s&apos; files failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15736"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15744"/>
         <source>Saving the new key store for &apos;%s&apos; files failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15765"/>
-        <location filename="../src-server/MachineImpl.cpp" line="15769"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15773"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15777"/>
         <source>Opening file &apos;%s&apos; failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15775"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15783"/>
         <source>Changing encryption of the file &apos;%s&apos; failed with %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15795"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15803"/>
         <source>Renaming the file &apos;%s&apos; failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15850"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15858"/>
         <source>The password given for the encrypted VM is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15856"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15864"/>
         <source>The VM is not configured for encryption</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15860"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15868"/>
         <source>The password to decrypt the VM is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15874"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15882"/>
         <source>A password must be given for the VM encryption</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15877"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15885"/>
         <source>A valid identifier for the password must be given</source>
         <translation type="unfinished">Должен быть предоставлен действительный идентификатор пароля</translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15881"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15889"/>
         <source>The password and password identifier must be empty if the output should be unencrypted</source>
         <translation type="unfinished">Пароль и идентификатор пароля должны быть пусты если нужно расшифровать образ</translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15907"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15915"/>
         <source>Loading old key store failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15910"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15918"/>
         <source>Changing the password failed, (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15959"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15967"/>
         <source>Change encryption of the SAV files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15971"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15979"/>
         <source>Change encryption of the NVRAM files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15978"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15986"/>
         <source>Getting NVRAM encryption settings failed (%Rhrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15990"/>
+        <location filename="../src-server/MachineImpl.cpp" line="15998"/>
         <source>Setting NVRAM encryption settings failed (%Rhrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="15992"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16000"/>
         <source>Change encryption of log files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="16003"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16011"/>
         <source>Change encryption of the config file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="16038"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16046"/>
         <source>Machine is inaccessible</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../src-server/MachineImpl.cpp" line="16090"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16113"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16098"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16121"/>
         <source>Cannot encrypt medium &apos;%s&apos; because it is attached to %d virtual machines</source>
         <translation type="unfinished">
             <numerusform>Невозможно зашифровать носитель &apos;%s&apos;, потому что он подключен к %d виртуальной машине</numerusform>
@@ -7453,8 +7468,8 @@ Guest offers: %s</source>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src-server/MachineImpl.cpp" line="16096"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16119"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16104"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16127"/>
         <source>Cannot encrypt medium &apos;%s&apos; because it has %d children</source>
         <translation type="unfinished">
             <numerusform>Невозможно зашифровать носитель &apos;%s&apos;, потому что у него %d дочерний носитель</numerusform>
@@ -7463,39 +7478,39 @@ Guest offers: %s</source>
         </translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="16133"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16141"/>
         <source>Change encryption</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="16136"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16144"/>
         <source>Change encryption of the mediuma</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="16187"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16195"/>
         <source>Failed to query the encryption settings with %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="16191"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16231"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16199"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16239"/>
         <source>This VM is not encrypted</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="16228"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16236"/>
         <source>The password supplied for the encrypted machine is incorrect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="16310"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16318"/>
         <source>Id and passwords arrays must have the same size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="16344"/>
-        <location filename="../src-server/MachineImpl.cpp" line="16369"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16352"/>
+        <location filename="../src-server/MachineImpl.cpp" line="16377"/>
         <source>The machine is in online or transient state</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9272,26 +9287,27 @@ Guest offers: %s</source>
 <context>
     <name>PlatformProperties</name>
     <message>
-        <location filename="../src-all/PlatformPropertiesImpl.cpp" line="512"/>
+        <location filename="../src-all/PlatformPropertiesImpl.cpp" line="515"/>
         <source>Invalid storage controller type %d
 </source>
         <translation type="unfinished">Недопустимый тип контроллера %d
 </translation>
     </message>
     <message>
-        <location filename="../src-all/PlatformPropertiesImpl.cpp" line="562"/>
+        <location filename="../src-all/PlatformPropertiesImpl.cpp" line="565"/>
         <source>Invalid storage bus %d
 </source>
         <translation type="unfinished">Недопустимая шина %d
 </translation>
     </message>
     <message>
-        <location filename="../src-all/PlatformPropertiesImpl.cpp" line="908"/>
+        <location filename="../src-all/PlatformPropertiesImpl.cpp" line="977"/>
         <source>Selected graphics controller not supported in this version</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-all/PlatformPropertiesImpl.cpp" line="911"/>
+        <location filename="../src-all/PlatformPropertiesImpl.cpp" line="980"/>
+        <location filename="../src-all/PlatformPropertiesImpl.cpp" line="994"/>
         <source>The graphics controller type (%d) is invalid</source>
         <translation type="unfinished">Недопустимый тип графического контроллера (%d)</translation>
     </message>
@@ -9955,100 +9971,100 @@ Guest offers: %s</source>
 </translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="340"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="315"/>
         <source>Invalid or unsupported architecture value: %d</source>
         <translation>Недопустимое или неподдерживаемое значение архитектуры: %d</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="450"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="425"/>
         <source>&apos;%s&apos; is missing symbols: CPUMR3DbGetEntries, CPUMR3DbGetEntryByIndex</source>
         <translation>Отсутствуют символы в &apos;%s&apos;: CPUMR3DbGetEntries, CPUMR3DbGetEntryByIndex</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="454"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="429"/>
         <source>Failed to construct load &apos;%s&apos;: %Rrc</source>
         <translation>Не удалось загрузить &apos;%s&apos;: %Rc</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="457"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="432"/>
         <source>Failed to construct path to the VMM DLL/Dylib/SharedObject: %Rrc</source>
         <translation>Не удалось собрать путь к VMM DLL/Dylib/SharedObject: %Rrc</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="694"/>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="740"/>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="773"/>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="819"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="669"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="715"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="748"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="794"/>
         <source>The extension pack &apos;%s&apos; does not exist</source>
         <translation>Пакет расширения &apos;%s&apos; не существует</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="980"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="955"/>
         <source>Invalid ProxyMode value: %d</source>
         <translation>Недопустимое значение ProxyMode: %d</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1020"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="995"/>
         <source>Failed to parse proxy URL: %Rrc</source>
         <translation>Не удалось разобрать URL прокси: %Rrc</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1023"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="998"/>
         <source>Proxy URL must include a hostname</source>
         <translation>URL прокси должен включать имя хоста</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1025"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1000"/>
         <source>Proxy URL must not include a path component (%.*s)</source>
         <translation>URL прокси не должен включать компонент пути (%.*s)</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1028"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1003"/>
         <source>Proxy URL must not include a query component (?%.*s)</source>
         <translation>URL прокси не должен включать компонент запроса (%.*s)</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1031"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1006"/>
         <source>Proxy URL must not include a fragment component (#%.*s)</source>
         <translation>URL прокси не должен включать компонент фрагмента (%.*s)</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1639"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1630"/>
         <source>Cannot determine user home directory (%Rrc)</source>
         <translation>Невозможно определить домашнюю директорию пользователя (%Rrc)</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1670"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1661"/>
         <source>Given default machine folder &apos;%s&apos; is not fully qualified</source>
         <translation>Данная папка машины по умолчанию &apos;%s&apos; не полностью определена</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1691"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1682"/>
         <source>RTLogGroupSettings failed: %Rrc (input: %s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1769"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1760"/>
         <source>Cannot set the autostart database path (%Rrc)</source>
         <translation>Невозможно установить путь к базе данных автостарта (%Rc)</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1777"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1768"/>
         <source>Deleting the autostart database path failed (%Rrc)</source>
         <translation>Не удалось удалить путь к базе данных автостарта (%Rrc)</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1810"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1801"/>
         <source>Cannot determine default Guest Additions ISO location. Most likely they are not available</source>
         <translation>Невозможно определить стандартное расположение Дополнений Гостевой ОС. Наиболее вероятно, они недоступны</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1815"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1806"/>
         <source>Given default machine Guest Additions ISO file &apos;%s&apos; is not fully qualified</source>
         <translation>Данный файл Дополнений Гостевой ОС &apos;%s&apos; машины не полностью определен</translation>
     </message>
     <message>
-        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1820"/>
+        <location filename="../src-server/SystemPropertiesImpl.cpp" line="1811"/>
         <source>Given default machine Guest Additions ISO file &apos;%s&apos; does not exist</source>
         <translation>Данный файл Дополнений Гостевой ОС &apos;%s&apos; машины не существует</translation>
     </message>
