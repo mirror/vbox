@@ -340,10 +340,26 @@ HRESULT Unattended::initUnattended(VirtualBox *aParent)
 HRESULT Unattended::detectIsoOS()
 {
     HRESULT       hrc;
+    HRESULT       getSupportedGuestOSTypesRC;
+    /* Get a list of guest OS Type Ids supported by the host. */
+    ComPtr<ISystemProperties> pSystemProperties;
+    com::SafeIfaceArray<IGuestOSType> supportedGuestOSTypes;
+
+    hrc = mParent->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+    if (SUCCEEDED(hrc))
+    {
+        ComPtr<IPlatformProperties> pPlatformProperties;
+        hrc = pSystemProperties->COMGETTER(Platform)(pPlatformProperties.asOutParam());
+        if (SUCCEEDED(hrc))
+        {
+            getSupportedGuestOSTypesRC = pPlatformProperties->COMGETTER(SupportedGuestOSTypes)(ComSafeArrayAsOutParam(supportedGuestOSTypes));
+        }
+    }
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-/** @todo once UDF is implemented properly and we've tested this code a lot
- *        more, replace E_NOTIMPL with E_FAIL. */
+    /** @todo once UDF is implemented properly and we've tested this code a lot
+     *        more, replace E_NOTIMPL with E_FAIL. */
 
     /*
      * Reset output state before we start
@@ -489,6 +505,28 @@ HRESULT Unattended::detectIsoOS()
         }
     }
 
+    if (SUCCEEDED(getSupportedGuestOSTypesRC))
+    {
+        bool fSupported = false;
+        for (size_t i = 0; i < supportedGuestOSTypes.size() && !fSupported; ++i)
+        {
+            ComPtr<IGuestOSType> guestOSType = supportedGuestOSTypes[i];
+
+            Bstr guestId;
+            guestOSType->COMGETTER(Id)(guestId.asOutParam());
+            if (guestId == mStrDetectedOSTypeId)
+                fSupported = true;
+        }
+        if (!fSupported)
+        {
+            mStrDetectedOSTypeId.setNull();
+            mStrDetectedOSVersion.setNull();
+            mStrDetectedOSFlavor.setNull();
+            mDetectedOSLanguages.clear();
+            mStrDetectedOSHints.setNull();
+            mDetectedImages.clear();
+        }
+    }
     /** @todo implement actual detection logic. */
     return hrc;
 }
