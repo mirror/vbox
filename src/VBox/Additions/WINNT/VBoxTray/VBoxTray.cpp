@@ -1068,11 +1068,11 @@ int main(int cArgs, char **papszArgs)
     rc = VbglR3Init();
     if (RT_SUCCESS(rc))
     {
-        LogRel(("Verbosity level: %d\n", g_cVerbosity));
-
         rc = vboxTrayLogCreate(szLogFile[0] ? szLogFile : NULL);
         if (RT_SUCCESS(rc))
         {
+            LogRel(("Verbosity level: %d\n", g_cVerbosity));
+
             /* Log the major windows NT version: */
             uint64_t const uNtVersion = RTSystemGetNtVersion();
             LogRel(("Windows version %u.%u build %u (uNtVersion=%#RX64)\n", RTSYSTEM_NT_VERSION_GET_MAJOR(uNtVersion),
@@ -1141,11 +1141,14 @@ int main(int cArgs, char **papszArgs)
             }
 
             LogRel(("Ended\n"));
-            VbglR3Term();
+
+            vboxTrayLogDestroy();
         }
-        else
-            LogRel(("VbglR3Init failed: %Rrc\n", rc));
+
+        VbglR3Term();
     }
+    else
+        VBoxTrayShowError("VbglR3Init failed: %Rrc\n", rc);
 
     /* Release instance mutex. */
     if (hMutexAppRunning != NULL)
@@ -1153,8 +1156,6 @@ int main(int cArgs, char **papszArgs)
         CloseHandle(hMutexAppRunning);
         hMutexAppRunning = NULL;
     }
-
-    vboxTrayLogDestroy();
 
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
