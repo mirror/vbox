@@ -15121,7 +15121,7 @@
         <translation>&lt;h3&gt;歡迎使用 VirtualBox!&lt;/h3&gt;&lt;p&gt;這個應用程式視窗左部包含全域工具和列出在您電腦的所有虛擬機器及虛擬機器群組。 您可以使用相對應工具列按鈕匯入、加入和新建 VM，和使用相對應元素按鈕快顯目前所選元素的工具。&lt;/p&gt;&lt;p&gt;按下 &lt;b&gt;%1&lt;/b&gt; 鍵可以取得即時說明，或訪問 &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 取得更多資訊和最新新聞。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Please choose Experience Mode!&lt;/h3&gt;By default, the VirtualBox GUI is hiding some options, tools and wizards. &lt;p&gt;The &lt;b&gt;Basic Mode&lt;/b&gt; is intended for a users who are not interested in advanced functionality and prefer a simpler, cleaner interface.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Expert Mode&lt;/b&gt; is intended for experienced users who wish to utilize all VirtualBox functionality.&lt;/p&gt;&lt;p&gt;You can choose whether you are a beginner or experienced user by selecting required option at the right. This choice can always be changed in Global Preferences or Machine Settings windows.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Please choose Experience Mode!&lt;/h3&gt;By default, the VirtualBox GUI is hiding some options, tools and wizards. &lt;p&gt;The &lt;b&gt;Basic Mode&lt;/b&gt; is intended for those users who are not interested in advanced functionality and prefer a simpler, cleaner interface.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Expert Mode&lt;/b&gt; is intended for experienced users who wish to utilize all VirtualBox functionality.&lt;/p&gt;&lt;p&gt;You can choose whether you are a beginner or experienced user by selecting required option at the right. This choice can always be changed in Global Preferences or Machine Settings windows.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

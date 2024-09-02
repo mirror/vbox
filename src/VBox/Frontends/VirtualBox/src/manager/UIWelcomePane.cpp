@@ -100,7 +100,7 @@ void UIWelcomePane::sltRetranslateUI()
     if (m_pLabelMode)
         m_pLabelMode->setText(tr("<h3>Please choose Experience Mode!</h3>"
                                  "By default, the VirtualBox GUI is hiding some options, tools and wizards. "
-                                 "<p>The <b>Basic Mode</b> is intended for a users who are not interested in advanced "
+                                 "<p>The <b>Basic Mode</b> is intended for those users who are not interested in advanced "
                                  "functionality and prefer a simpler, cleaner interface.</p>"
                                  "<p>The <b>Expert Mode</b> is intended for experienced users who wish to utilize all "
                                  "VirtualBox functionality.</p>"
