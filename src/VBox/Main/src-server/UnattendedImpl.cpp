@@ -340,7 +340,7 @@ HRESULT Unattended::initUnattended(VirtualBox *aParent)
 HRESULT Unattended::detectIsoOS()
 {
     HRESULT       hrc;
-    HRESULT       getSupportedGuestOSTypesRC;
+
     /* Get a list of guest OS Type Ids supported by the host. */
     ComPtr<ISystemProperties> pSystemProperties;
     com::SafeIfaceArray<IGuestOSType> supportedGuestOSTypes;
@@ -352,7 +352,9 @@ HRESULT Unattended::detectIsoOS()
         hrc = pSystemProperties->COMGETTER(Platform)(pPlatformProperties.asOutParam());
         if (SUCCEEDED(hrc))
         {
-            getSupportedGuestOSTypesRC = pPlatformProperties->COMGETTER(SupportedGuestOSTypes)(ComSafeArrayAsOutParam(supportedGuestOSTypes));
+            hrc = pPlatformProperties->COMGETTER(SupportedGuestOSTypes)(ComSafeArrayAsOutParam(supportedGuestOSTypes));
+            if (!SUCCEEDED(hrc))
+                supportedGuestOSTypes.resize(0);
         }
     }
 
@@ -505,28 +507,28 @@ HRESULT Unattended::detectIsoOS()
         }
     }
 
-    if (SUCCEEDED(getSupportedGuestOSTypesRC))
+    /* Check if detected OS type is supported (covers platform architecture). */
+    bool fSupported = false;
+    for (size_t i = 0; i < supportedGuestOSTypes.size() && !fSupported; ++i)
     {
-        bool fSupported = false;
-        for (size_t i = 0; i < supportedGuestOSTypes.size() && !fSupported; ++i)
-        {
-            ComPtr<IGuestOSType> guestOSType = supportedGuestOSTypes[i];
+        ComPtr<IGuestOSType> guestOSType = supportedGuestOSTypes[i];
 
-            Bstr guestId;
-            guestOSType->COMGETTER(Id)(guestId.asOutParam());
-            if (guestId == mStrDetectedOSTypeId)
-                fSupported = true;
-        }
-        if (!fSupported)
-        {
-            mStrDetectedOSTypeId.setNull();
-            mStrDetectedOSVersion.setNull();
-            mStrDetectedOSFlavor.setNull();
-            mDetectedOSLanguages.clear();
-            mStrDetectedOSHints.setNull();
-            mDetectedImages.clear();
-        }
+        Bstr guestId;
+        guestOSType->COMGETTER(Id)(guestId.asOutParam());
+        if (guestId == mStrDetectedOSTypeId)
+            fSupported = true;
     }
+    if (!fSupported)
+    {
+        mStrDetectedOSTypeId.setNull();
+        mStrDetectedOSVersion.setNull();
+        mStrDetectedOSFlavor.setNull();
+        mDetectedOSLanguages.clear();
+        mStrDetectedOSHints.setNull();
+        mDetectedImages.clear();
+        hrc = E_FAIL;
+    }
+
     /** @todo implement actual detection logic. */
     return hrc;
 }
