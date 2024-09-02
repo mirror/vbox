@@ -9144,10 +9144,10 @@ Guest offers: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src-server/MachineImpl.cpp" line="12957"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="1770"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="2341"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="2984"/>
-        <location filename="../src-server/MachineImpl.cpp" line="12957"/>
         <source>The session has been accidentally closed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9822,203 +9822,203 @@ Guest offers: %s</source>
 <context>
     <name>Unattended</name>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="364"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="380"/>
         <source>Failed to open &apos;%s&apos; (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="417"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="433"/>
         <source>Failed to open &apos;%s&apos; as ISO FS (%Rrc) - %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="420"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="436"/>
         <source>Failed to open &apos;%s&apos; as ISO FS (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="964"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="1002"/>
         <source>Out of memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2531"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2569"/>
         <source>No machine associated with this IUnatteded instance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2596"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2634"/>
         <source>The prepare method has been called (must call done to restart)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2598"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2636"/>
         <source>The &apos;machine&apos; while we were using it - please don&apos;t do that</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2604"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2642"/>
         <source>Could not locate the installation ISO file &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2607"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2645"/>
         <source>Could not locate the Guest Additions ISO file &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2610"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2648"/>
         <source>Could not locate the validation kit ISO file &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2613"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2651"/>
         <source>Could not locate the User Payload ISO file &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2616"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2654"/>
         <source>Could not locate unattended installation script template &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2645"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2683"/>
         <source>imageIndex value %u not found in detectedImageIndices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2655"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2693"/>
         <source>The supplied ISO file does not contain an OS currently supported for unattended installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2678"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2716"/>
         <source>The supplied ISO file is incompatible with the guest OS type of the VM: CPU architecture mismatch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2687"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2725"/>
         <source>The machine is configured with EFI which is currently not supported by unatteded installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2805"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2843"/>
         <source>Unattended installation is not supported for guest type &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2942"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2980"/>
         <source>reconfigureVM running on other thread</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2838"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2951"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2876"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2989"/>
         <source>prepare() not yet called</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3106"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3144"/>
         <source>Found non-floppy device attached to port 0 device 0 on the floppy controller &apos;%ls&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../src-server/UnattendedImpl.cpp" line="3262"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3300"/>
         <source>Not enough free slots on controller &apos;%s&apos; to add %u DVD drive(s)</source>
         <translation type="unfinished">
             <numerusform></numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3450"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3467"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3482"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3497"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3512"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3527"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3542"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3557"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3572"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3587"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3602"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3617"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3632"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3671"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3696"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3711"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3733"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3764"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3846"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3866"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3882"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3925"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3950"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3969"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3984"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4003"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4153"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3488"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3505"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3520"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3535"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3550"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3565"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3580"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3595"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3610"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3625"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3640"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3655"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3670"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3709"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3734"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3749"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3771"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3802"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3884"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3904"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3920"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3963"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3988"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4007"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4022"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4041"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4191"/>
         <source>Cannot change after prepare() has been called</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3683"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3721"/>
         <source>Expected two lower cased letters, an underscore, and two upper cased letters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3720"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3758"/>
         <source>Expected two upper cased letters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3775"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3813"/>
         <source>Unknown keyword: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../src-server/UnattendedImpl.cpp" line="3796"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3834"/>
         <source>Hostname &apos;%s&apos; is %zu bytes long, max is 253 (excluding trailing dot)</source>
         <translation type="unfinished">
             <numerusform></numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3815"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3853"/>
         <source>Invalid hostname &apos;%s&apos; - label %u is too long, max is 63.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3820"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3858"/>
         <source>Invalid hostname &apos;%s&apos; - illegal char &apos;%c&apos; at position %zu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3825"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3863"/>
         <source>Invalid hostname &apos;%s&apos; - the name part must be at least two characters long</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3832"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3870"/>
         <source>Invalid hostname &apos;%s&apos; - illegal lead char &apos;%c&apos; at position %zu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3836"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3874"/>
         <source>Invalid hostname &apos;%s&apos; - trailing dot not permitted</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3840"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3878"/>
         <source>Incomplete hostname &apos;%s&apos; - must include both a name and a domain</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3861"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3899"/>
         <source>Empty base path is not allowed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3863"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3901"/>
         <source>Base path must be absolute</source>
         <translation type="unfinished"></translation>
     </message>

@@ -42,7 +42,7 @@
     <message>
         <location filename="../src-server/ApplianceImpl.cpp" line="1041"/>
         <source>RTManifestEntryAddPassthruIoStream failed with vrc=%Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>RTManifestEntryAddPassthruIoStream вернул ошибку vrc=%Rrc</translation>
     </message>
     <message>
         <source>RTManifestEntryAddPassthruIoStream failed with rc=%Rrc</source>
@@ -719,47 +719,47 @@
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="327"/>
         <source>Virtual appliance &quot;%s&quot; was configured with %u CPUs however VirtualBox supports a maximum of %u CPUs. Setting the CPU count to %u.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная конфигурация &quot;%s&quot; была настроена на %u ЦПУ, однако VirtualBox поддерживает максимум %u ЦПУ. Задаём количество ЦПУ равным %u.</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="355"/>
         <source>Virtual appliance &quot;%s&quot; was configured with %RU64 MB of memory (RAM) however VirtualBox supports a minimum of %u MB and a maximum of %u MB of memory.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная конфигурация &quot;%s&quot; была настроена на %RU64 МБ памяти (ОЗУ), однако VirtualBox поддерживает минимум %u МБ и максимум %u МБ памяти.</translation>
     </message>
     <message numerus="yes">
         <location filename="../src-server/ApplianceImplImport.cpp" line="423"/>
         <location filename="../src-server/ApplianceImplImport.cpp" line="453"/>
         <source>Virtual appliance &quot;%s&quot; was configured with %zu network adapters however VirtualBox supports a maximum of %u network adapters.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Виртуальная конфигурация &quot;%s&quot; была настроена на %zu сетевой адаптер, однако VirtualBox поддерживает максимум %u сетевых адаптера.</numerusform>
+            <numerusform>Виртуальная конфигурация &quot;%s&quot; была настроена на %zu сетевых адаптера, однако VirtualBox поддерживает максимум %u сетевых адаптера.</numerusform>
+            <numerusform>Виртуальная конфигурация &quot;%s&quot; была настроена на %zu сетевых адаптеров, однако VirtualBox поддерживает максимум %u сетевых адаптера.</numerusform>
         </translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="615"/>
         <source>Virtual appliance &quot;%s&quot; was configured with more than two IDE controllers however VirtualBox supports a maximum of two IDE controllers.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная конфигурация &quot;%s&quot; была настроена на более, чем два контроллера IDE, однако VirtualBox поддерживает масимум два контроллера IDE.</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="638"/>
         <source>Virtual appliance &quot;%s&quot; was configured with more than one SATA controller however VirtualBox supports a maximum of one SATA controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная конфигурация &quot;%s&quot; была настроена на более, чем один контроллер SATA, однако VirtualBox поддерживает масимум один контроллер SATA.</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="667"/>
         <source>Virtual appliance &quot;%s&quot; was configured with more than one SCSI controller of type &quot;%s&quot; with ID %s however VirtualBox supports a maximum of one SCSI controller for each type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная конфигурация &quot;%s&quot; была настроена на более, чем один контроллер SCSI типа &quot;%s&quot; с ИД равным %s, однако VirtualBox поддерживает масимум один контроллер SATA каждого типа.</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="689"/>
         <source>Virtual appliance &quot;%s&quot; was configured with more than one VirtioSCSI controller however VirtualBox supports a maximum of one VirtioSCSI controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная конфигурация &quot;%s&quot; была настроена на более, чем один контроллер VirtioSCSI, однако VirtualBox поддерживает масимум один контроллер VirtioSCSI.</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="711"/>
         <source>Virtual appliance &quot;%s&quot; was configured with more than one NVMe controller however VirtualBox supports a maximum of one NVMe controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная конфигурация &quot;%s&quot; была настроена на более, чем один контроллер NVMe, однако VirtualBox поддерживает масимум один контроллер NVMe.</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="3173"/>
@@ -1018,12 +1018,12 @@
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="4894"/>
         <source>Too many NVMe controllers in OVF; import facility only supports one</source>
-        <translation type="unfinished"></translation>
+        <translation>Слишком много NVMe контроллеров в OVF; Средство импорта поддерживает только один</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="4909"/>
         <source>Invalid NVMe controller type &quot;%s&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый тип NVMe контроллера &quot;%s&quot;</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="4927"/>
@@ -1048,57 +1048,58 @@
         <location filename="../src-server/ApplianceImplImport.cpp" line="5222"/>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5766"/>
         <source>Target controller value invalid or missing: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Значение целевого контроллера задано неверно или отсутствует: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5230"/>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5781"/>
         <source>Target controller port (&apos;channel=&apos;) invalid or missing: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Порт целевого контроллера (&apos;канал=&apos;) задан неверно или отсутствует: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5237"/>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5794"/>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5801"/>
         <source>Failed to find storage controller &apos;%u&apos; in the System Description list</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось найти контроллер %u&apos; в описании системы</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5264"/>
         <source>Invalid hard disk contoller type: &apos;%d&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверный тип контроллера жёстких дисков: &apos;%d&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5277"/>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5863"/>
         <source>Illegal channel: &apos;%u&apos;.  For %s controllers the valid values are 0 to %lu (inclusive).
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Неверное значение канала: &apos;%u&apos;.  Для %s контроллеров верные значения должны быть в диапазоне от 0 до %lu (включительно).
+</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5759"/>
         <source>Original controller value invalid or missing: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Значение исходного контроллера задано неверно или отсутствует: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5774"/>
         <source>Original controller port (&apos;channel=&apos;) invalid or missing: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Порт исходного контроллера (&apos;канал=&apos;) задан неверно или отсутствует: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5812"/>
         <source>Failed to find virtual disk &apos;%s&apos; in DiskImagesMap</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось найти виртуальный диск &apos;%s&apos; в DiskImagesMap</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5915"/>
         <source>Device of type &apos;%s&apos; already attached to the %s controller at this port/channel (%d).</source>
-        <translation type="unfinished"></translation>
+        <translation>Устройство типа &apos;%s&apos; уже подключено к %s контроллеру на данном порту/канале (%d).</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="5931"/>
         <source>Failed to add disk &apos;%s&apos; (uuid=%RTuuid) to the %s storage controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось добавить диск &apos;%s&apos; (uuid=%RTuuid) к контроллеру %s.</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="6019"/>
@@ -1157,22 +1158,22 @@
     <message>
         <location filename="../src-server/BandwidthControlImpl.cpp" line="417"/>
         <source>Bandwidth name is too long: %zu, max %u</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя полосы пропускания слишком длинное: %zu, максимум %u</translation>
     </message>
     <message>
         <location filename="../src-server/BandwidthControlImpl.cpp" line="421"/>
         <source>Invalid group type: %d</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый тип группы: %d</translation>
     </message>
     <message>
         <location filename="../src-server/BandwidthControlImpl.cpp" line="424"/>
         <source>Bandwidth group name must not be empty</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя группы полосы пропускания не должно быть пустым</translation>
     </message>
     <message>
         <location filename="../src-server/BandwidthControlImpl.cpp" line="474"/>
         <source>Too many network bandwidth groups (max %u)</source>
-        <translation type="unfinished"></translation>
+        <translation>Слишком много групп сетевых полос пропускания (максимум %u)</translation>
     </message>
     <message>
         <location filename="../src-server/BandwidthControlImpl.cpp" line="477"/>
@@ -1299,7 +1300,7 @@
     <message>
         <location filename="../include/ConsoleImpl.h" line="1295"/>
         <source>%s failed: vrc=%Rrc, pcszName=%s</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка %s: vrc=%Rrc, pcszName=%s</translation>
     </message>
     <message>
         <source>The saved state file &apos;%ls&apos; is invalid (%Rrc). Delete the saved state and try again</source>
@@ -1376,17 +1377,17 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="578"/>
         <source>Cannot run the machine because its platform architecture %s is not supported on %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно запустить машину поскольку архитектура её платформы %s не поддерживается на %s</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="1775"/>
         <source>The saved state file &apos;%s&apos; is invalid (%Rrc). Delete the saved state and try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректный файл сохраненного состояния &apos;%s&apos; (%Rrc). Удалите сохраненное состояние и попытайтесь снова</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="2569"/>
         <source>Hot-Remove failed (vrc=%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Горячее удаление не удалось (vrc=%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="2573"/>
@@ -1431,7 +1432,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="3010"/>
         <source>Invalid DeviceType for getDeviceActivity in entry #%u: %d</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый DeviceType для getDeviceActivity в записи #%u: %d</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="3078"/>
@@ -1644,7 +1645,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="5826"/>
         <source>Failed to change the CPU execution limit (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось изменить предел загрузки ЦПУ (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="6025"/>
@@ -1674,12 +1675,12 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="6242"/>
         <source>Attaching audio recording driver failed (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка подключения драйвера аудио записи (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="6265"/>
         <source>Detaching audio recording driver failed (%Rrc) -- please consult log file for details</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка отключения драйвера аудио записи (%Rrc) -- для получения деталей пожалуйста изучите файл журнала</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="6780"/>
@@ -1737,12 +1738,12 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="7524"/>
         <source>Could not get key store for state file(%Rhrc (0x%08X))</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось получить хранилище ключа файла состояний (%Rhrc (0x%08X))</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="7527"/>
         <source>Could not get key id for state file(%Rhrc (0x%08X))</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось получить идентификатур ключа файла состояний (%Rhrc (0x%08X))</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="7603"/>
@@ -1752,17 +1753,17 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="7762"/>
         <source>Recording initialization failed (%Rrc) -- please consult log file for details</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка инициализации записи (%Rrc) -- для получения деталей пожалуйста изучите файл журнала</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="7793"/>
         <source>Recording start failed (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запустить запись (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="7815"/>
         <source>Recording stop failed (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось остановить запись (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8228"/>
@@ -1778,12 +1779,12 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8292"/>
         <source>No VMM loaded!</source>
-        <translation type="unfinished"></translation>
+        <translation>VMM не загружен!</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8534"/>
         <source>Failed to set encryption for release log (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось задать шифрование для релизного журнала (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8549"/>
@@ -1814,12 +1815,12 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8684"/>
         <source>VM failed to start because the saved state file &apos;%s&apos; does not exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запустить ВМ, потому что файл сохраненного состояния &apos;%s&apos; не существует.</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8688"/>
         <source>VM failed to start because the saved state file &apos;%s&apos; is invalid (%Rrc). Delete the saved state prior to starting the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запустить ВМ, потому что некорректен файл сохраненного состояния &apos;%s&apos; (%Rrc). Удалите сохраненное состояние перед запуском ВМ.</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8864"/>
@@ -8689,7 +8690,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="8111"/>
         <source>Could not get the storage format of the medium &apos;%s&apos; (%Rrc)</source>
-        <translation>Невозможно получить форма хранения для носителя &apos;%s&apos; (%Rrc)</translation>
+        <translation>Невозможно получить формат хранения для носителя &apos;%s&apos; (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="8127"/>
@@ -9625,10 +9626,10 @@ Guest offers: %s</source>
         <translation>Сессия ВМ прервана</translation>
     </message>
     <message>
+        <location filename="../src-server/MachineImpl.cpp" line="12957"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="1770"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="2341"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="2984"/>
-        <location filename="../src-server/MachineImpl.cpp" line="12957"/>
         <source>The session has been accidentally closed</source>
         <translation>Сессия была случайно закрыта</translation>
     </message>
@@ -10331,103 +10332,103 @@ Guest offers: %s</source>
 <context>
     <name>Unattended</name>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="364"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="380"/>
         <source>Failed to open &apos;%s&apos; (%Rrc)</source>
         <translation>Не удалось открыть &apos;%s&apos; (%Rrc)</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="417"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="433"/>
         <source>Failed to open &apos;%s&apos; as ISO FS (%Rrc) - %s</source>
         <translation>Не удалось открыть &apos;%s&apos; как файловую систему ISO (%Rrc) - %s</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="420"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="436"/>
         <source>Failed to open &apos;%s&apos; as ISO FS (%Rrc)</source>
         <translation>Не удалось открыть &apos;%s&apos; как файловую систему ISO (%Rrc)</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="964"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="1002"/>
         <source>Out of memory</source>
         <translation type="unfinished">Не хватает памяти</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2531"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2569"/>
         <source>No machine associated with this IUnatteded instance</source>
         <translation>С этим экземпляром IUnatteded не связана ни одна машина</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2596"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2634"/>
         <source>The prepare method has been called (must call done to restart)</source>
         <translation>Вызван метод prepare (для перезагрузки нужно вызвать done)</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2598"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2636"/>
         <source>The &apos;machine&apos; while we were using it - please don&apos;t do that</source>
         <translation>Машина изменилась пока мы ее использовали - пожалуйста, не делайте так</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2604"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2642"/>
         <source>Could not locate the installation ISO file &apos;%s&apos;</source>
         <translation>Невозможно определить местоположение установочного ISO файла &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2607"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2645"/>
         <source>Could not locate the Guest Additions ISO file &apos;%s&apos;</source>
         <translation>Невозможно определить местоположение ISO файла Дополнений Гостевой ОС &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2610"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2648"/>
         <source>Could not locate the validation kit ISO file &apos;%s&apos;</source>
         <translation>Невозможно определить местоположение ISO файла комплекта для проверки &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2613"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2651"/>
         <source>Could not locate the User Payload ISO file &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2616"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2654"/>
         <source>Could not locate unattended installation script template &apos;%s&apos;</source>
         <translation>Невозможно определить местоположение шаблона скрипта unattended установки &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2645"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2683"/>
         <source>imageIndex value %u not found in detectedImageIndices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2655"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2693"/>
         <source>The supplied ISO file does not contain an OS currently supported for unattended installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2678"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2716"/>
         <source>The supplied ISO file is incompatible with the guest OS type of the VM: CPU architecture mismatch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2687"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2725"/>
         <source>The machine is configured with EFI which is currently not supported by unatteded installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2805"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2843"/>
         <source>Unattended installation is not supported for guest type &apos;%s&apos;</source>
         <translation>Unattended установка не поддерживается для типа гостевой системы &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2942"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2980"/>
         <source>reconfigureVM running on other thread</source>
         <translation>reconfigureVM запущена на другом потоке</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2838"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2951"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2876"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2989"/>
         <source>prepare() not yet called</source>
         <translation>prepare() еще не вызван</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3106"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3144"/>
         <source>Found non-floppy device attached to port 0 device 0 on the floppy controller &apos;%ls&apos;</source>
         <translation>Не найдено флоппи устройств подключенных к порту 0 устройства 0 флоппи контроллера &apos;%ls&apos;</translation>
     </message>
@@ -10436,7 +10437,7 @@ Guest offers: %s</source>
         <translation type="vanished">Поддержка рекомендованной шины %d не реализована</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src-server/UnattendedImpl.cpp" line="3262"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3300"/>
         <source>Not enough free slots on controller &apos;%s&apos; to add %u DVD drive(s)</source>
         <translation>
             <numerusform>Нет достаточно свободных слотов на контроллере &apos;%s&apos; для добавления %u DVD диска</numerusform>
@@ -10445,53 +10446,53 @@ Guest offers: %s</source>
         </translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3450"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3467"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3482"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3497"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3512"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3527"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3542"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3557"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3572"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3587"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3602"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3617"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3632"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3671"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3696"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3711"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3733"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3764"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3846"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3866"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3882"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3925"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3950"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3969"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3984"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4003"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4153"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3488"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3505"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3520"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3535"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3550"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3565"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3580"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3595"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3610"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3625"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3640"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3655"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3670"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3709"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3734"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3749"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3771"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3802"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3884"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3904"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3920"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3963"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3988"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4007"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4022"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4041"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4191"/>
         <source>Cannot change after prepare() has been called</source>
         <translation>Невозможно изменить после того, как prepare() вызван</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3683"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3721"/>
         <source>Expected two lower cased letters, an underscore, and two upper cased letters</source>
         <translation>Ожидается две буквы в нижнем регистре, символ подчеркивания, и две буквы в верхнем регистре</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3720"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3758"/>
         <source>Expected two upper cased letters</source>
         <translation>Ожидается две букве в верхнем регистре</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3775"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3813"/>
         <source>Unknown keyword: %s</source>
         <translation>Неизвестный символ: %s</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src-server/UnattendedImpl.cpp" line="3796"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3834"/>
         <source>Hostname &apos;%s&apos; is %zu bytes long, max is 253 (excluding trailing dot)</source>
         <translation>
             <numerusform>Имя хоста &apos;%s&apos; имеет длину %zu байт, максимально допустимо 253 (исключая завершающую точку)</numerusform>
@@ -10500,42 +10501,42 @@ Guest offers: %s</source>
         </translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3815"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3853"/>
         <source>Invalid hostname &apos;%s&apos; - label %u is too long, max is 63.</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - метка %u слишком длинная, максимально допустимо 63.</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3820"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3858"/>
         <source>Invalid hostname &apos;%s&apos; - illegal char &apos;%c&apos; at position %zu</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - недопустимый символ &apos;%c&apos; в позиции %zu</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3825"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3863"/>
         <source>Invalid hostname &apos;%s&apos; - the name part must be at least two characters long</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - часть с именем должна иметь длину хотя бы два символа</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3832"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3870"/>
         <source>Invalid hostname &apos;%s&apos; - illegal lead char &apos;%c&apos; at position %zu</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - недопустимый ведущий символ &apos;%c&apos; в позиции %zu</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3836"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3874"/>
         <source>Invalid hostname &apos;%s&apos; - trailing dot not permitted</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - завершающая точка не допускается</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3840"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3878"/>
         <source>Incomplete hostname &apos;%s&apos; - must include both a name and a domain</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - должно включать как имя так домен</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3861"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3899"/>
         <source>Empty base path is not allowed</source>
         <translation>Пустой базовый путь не допускается</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3863"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3901"/>
         <source>Base path must be absolute</source>
         <translation>Базовый путь должен быть абсолютным</translation>
     </message>
