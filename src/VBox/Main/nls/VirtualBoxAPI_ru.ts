@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="ru">
+<TS version="2.1" language="ru_RU">
 <context>
     <name>Appliance</name>
     <message>
@@ -176,7 +176,7 @@
     <message>
         <location filename="../src-server/ApplianceImplExport.cpp" line="1954"/>
         <source>Missing or bad extra config string in DVD drive medium: &quot;%s&quot;</source>
-        <translation>Отсутствует или неправильная строка конфигурации у носителя DVD: &quot;%s&quot;</translation>
+        <translation>Отсутствует или неправильная строка конфигурации у носителя оптического диска: &quot;%s&quot;</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplExport.cpp" line="2337"/>
@@ -1028,7 +1028,7 @@
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="4927"/>
         <source>Too many floppy controllers in OVF; import facility only supports one</source>
-        <translation>Слишком много флоппи контроллеров в  OVF; Средство импорта поддерживает только один</translation>
+        <translation>Слишком много контроллеров гибких дисков в OVF; Средство импорта поддерживает только один</translation>
     </message>
     <message>
         <location filename="../src-server/ApplianceImplImport.cpp" line="4995"/>
@@ -1183,7 +1183,7 @@
     <message>
         <location filename="../src-server/BandwidthControlImpl.cpp" line="496"/>
         <source>The bandwidth group &apos;%s&apos; is still in use</source>
-        <translation>Группа полосы пропускания &apos;%s&apos; все еще используется</translation>
+        <translation>Группа полосы пропускания &apos;%s&apos; всё ещё используется</translation>
     </message>
 </context>
 <context>
@@ -1392,7 +1392,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="2573"/>
         <source>Hot-Remove was aborted because the CPU may still be used by the guest</source>
-        <translation>Горячее удаление прервано, потому что ЦПУ все еще может использоваться гостевой системой</translation>
+        <translation>Горячее удаление прервано, потому что ЦПУ всё ещё может использоваться гостевой системой</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="2648"/>
@@ -1541,7 +1541,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="3534"/>
         <source>A password is still in use by the VM</source>
-        <translation>Пароль все еще используется ВМ</translation>
+        <translation>Пароль всё ещё используется ВМ</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="3536"/>
@@ -1718,7 +1718,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="7409"/>
         <source>VM is paused due to host power management</source>
-        <translation>ВМ приостановлена из-за управления питанием хоста</translation>
+        <translation>ВМ приостановлена средствами управления питанием ПК</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="7464"/>
@@ -1825,12 +1825,12 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8864"/>
         <source>Failed to setup CoreDumper. Couldn&apos;t create dump directory &apos;%s&apos; (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось настроить CoreDumper. Невозможно создать директорию &apos;%s&apos; (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8870"/>
         <source>Failed to setup CoreDumper (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось настроить CoreDumper.(%Rrc)</translation>
     </message>
     <message>
         <source>VM failed to start because the saved state file &apos;%ls&apos; does not exist.</source>
@@ -1853,7 +1853,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8968"/>
         <source>VM cannot start because host interface networking requires a host interface name to be set</source>
-        <translation>ВМ не может запуститься, потому что сетевая подсистема хоста требует задания имени интерфейсу хоста</translation>
+        <translation>ВМ не может запуститься, потому что сетевая подсистема ПК требует задания имени интерфейса</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="8977"/>
@@ -1926,52 +1926,52 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="9796"/>
         <source>Failed to query default extension pack name for the cryptographic module</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запросить имя пакета расширения по умолчанию для криптографического модуля</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="9804"/>
         <source>Ńo extension pack providing a cryptographic support module could be found</source>
-        <translation type="unfinished"></translation>
+        <translation>Не обнаружен пакет расширения, предоставляющий модуль криптографической поддержки</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="9824"/>
         <source>Failed to query the interface callback table from the cryptographic support module &apos;%s&apos; from extension pack &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запросить таблицу интерфейсов модуля криптографической поддержки &apos;%s&apos; пакета расширения &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="9829"/>
         <source>Failed to resolve the entry point for the cryptographic support module &apos;%s&apos; from extension pack &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось установить точку входа модуля криптографической поддержки &apos;%s&apos; пакета расширения &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="9840"/>
         <source>Couldn&apos;t load the cryptographic support module &apos;%s&apos; from extension pack &apos;%s&apos; (error: &apos;%s&apos;)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось загрузить модуль криптографической поддержки &apos;%s&apos; пакета расширения &apos;%s&apos; (error: &apos;%s&apos;)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="9845"/>
         <source>Couldn&apos;t resolve the library path of the crpytographic support module for extension pack &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось найти путь к библиотеке модуля криптографической поддержки пакета расширения &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="9849"/>
         <source>The cryptographic support module is not supported in this build because extension packs are not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Модуль криптографической поддержки не поддерживается в этой сборке поскольку не поддерживаются пакеты расширений</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="9895"/>
         <source>The cryptographic support module is in use and can&apos;t be unloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>Модуль криптографической поддержки используется и не может быть выгружен</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="10469"/>
         <source>Failed to create configuration for USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать конфигурацию USB устройства.</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="10473"/>
         <source>Failed to allocate config tree for USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать дерево настроек USB устройства.</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="10508"/>
@@ -2136,27 +2136,27 @@
     <message>
         <location filename="../src-all/ConsoleSharedFolderImpl.cpp" line="175"/>
         <source>Invalid shared folder path: &apos;%s&apos; (%Rrc)</source>
-        <translation type="unfinished">Недопустимый путь к общей папке: &apos;%s&apos; (%Rrc)</translation>
+        <translation>Недопустимый путь к общей папке: &apos;%s&apos; (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-all/ConsoleSharedFolderImpl.cpp" line="178"/>
         <source>Shared folder path &apos;%s&apos; is not absolute</source>
-        <translation type="unfinished">Путь к общей папке &apos;%s&apos; не абсолютный</translation>
+        <translation>Путь к общей папке &apos;%s&apos; не абсолютный</translation>
     </message>
     <message>
         <location filename="../src-all/ConsoleSharedFolderImpl.cpp" line="183"/>
         <source>RTPathQueryInfo failed on shared folder path &apos;%s&apos;: %Rrc</source>
-        <translation type="unfinished">RTPathQueryInfo завершился с ошибкой на пути к общей папке &apos;%s&apos;: %Rrc</translation>
+        <translation>RTPathQueryInfo завершился с ошибкой на пути к общей папке &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-all/ConsoleSharedFolderImpl.cpp" line="186"/>
         <source>Shared folder path &apos;%s&apos; is not a directory</source>
-        <translation type="unfinished">Путь к общей папке &apos;%s&apos; не указывает на директорию</translation>
+        <translation>Путь к общей папке &apos;%s&apos; не указывает на директорию</translation>
     </message>
     <message>
         <location filename="../src-all/ConsoleSharedFolderImpl.cpp" line="252"/>
         <source>&apos;%s&apos; is not accessible (%Rrc)</source>
-        <translation type="unfinished">&apos;%s&apos; не доступно (%Rrc)</translation>
+        <translation>&apos;%s&apos; не доступно (%Rrc)</translation>
     </message>
 </context>
 <context>
@@ -2193,7 +2193,7 @@
     <message>
         <location filename="../src-server/DHCPConfigImpl.cpp" line="431"/>
         <source>Malformed option %d value &apos;%s&apos; (encoding %d, vrc=%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Поврежденный параметр %d значение &apos;%s&apos; (кодировка %d, vrc=%Rrc)</translation>
     </message>
     <message>
         <source>Malformed option %d value &apos;%s&apos; (encoding %d, rc=%Rrc)</source>
@@ -2506,12 +2506,12 @@
     <message>
         <location filename="../src-client/DisplayImpl.cpp" line="2042"/>
         <source>Screenshot is not possible at this time, invalid size</source>
-        <translation type="unfinished"></translation>
+        <translation>Снимок экрана невозможен в данный момент, неверный размер</translation>
     </message>
     <message>
         <location filename="../src-client/DisplayImpl.cpp" line="2044"/>
         <source>Screenshot is not possible at this time</source>
-        <translation type="unfinished"></translation>
+        <translation>Снимок экрана невозможен в данный момент</translation>
     </message>
     <message>
         <source>Screenshot is not available at this time</source>
@@ -2552,7 +2552,7 @@
     <message>
         <location filename="../src-client/EmulatedUSBImpl.cpp" line="195"/>
         <source>Init emulated USB webcam (RTUuidCreate -&gt; %Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Инициализация эмулированной USB вебкамеры (RTUuidCreate -&gt; %Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/EmulatedUSBImpl.cpp" line="295"/>
@@ -2662,7 +2662,7 @@
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="1193"/>
         <source>The extension pack &apos;%s&apos; does not include a cryptographic module</source>
-        <translation type="unfinished"></translation>
+        <translation>Пакет расширения  &apos;%s&apos; не включает криптографический модуль</translation>
     </message>
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="1218"/>
@@ -2672,7 +2672,7 @@
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="1242"/>
         <source>Failed to locate the cryptographic module &apos;%s&apos; in extension pack &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось обнаружить криптографический модуль &apos;%s&apos; в пакете расширения &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="1265"/>
@@ -2930,17 +2930,17 @@
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="3146"/>
         <source>Upgrading extension pack &apos;%s&apos; failed because at least one VM is still running</source>
-        <translation>Не удалось произвести обновление пакета расширения &apos;%s&apos;, потому что как минимум одна ВМ все еще работает</translation>
+        <translation>Не удалось произвести обновление пакета расширения &apos;%s&apos;, потому что как минимум одна ВМ всё ещё работает</translation>
     </message>
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="3152"/>
         <source>Upgrading extension pack &apos;%s&apos; failed because at least one Cloud Provider is still busy</source>
-        <translation>Не удалось произвести обновление пакета расширения &apos;%s&apos;, потому что как минимум один провайдер облака все еще занят</translation>
+        <translation>Не удалось произвести обновление пакета расширения &apos;%s&apos;, потому что как минимум один провайдер облака всё ещё занят</translation>
     </message>
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="3158"/>
         <source>Upgrading extension pack &apos;%s&apos; failed because the cryptographic support module is still in use</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось произвести обновление пакета расширения &apos;%s&apos;, потому что криптографический модуль всё ещё занят</translation>
     </message>
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="3166"/>
@@ -2965,17 +2965,17 @@
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="3342"/>
         <source>Uninstall extension pack &apos;%s&apos; failed because at least one VM is still running</source>
-        <translation>Не удалось удалить пакет расширения &apos;%s&apos;, потому что как минимум одна ВМ все еще работает</translation>
+        <translation>Не удалось удалить пакет расширения &apos;%s&apos;, потому что как минимум одна ВМ всё ещё работает</translation>
     </message>
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="3348"/>
         <source>Uninstall extension pack &apos;%s&apos; failed because at least one Cloud Provider is still busy</source>
-        <translation>Не удалось удалить пакет расширения &apos;%s&apos;, потому что как минимум один провайдер облака все еще занят</translation>
+        <translation>Не удалось удалить пакет расширения &apos;%s&apos;, потому что как минимум один провайдер облака всё ещё занят</translation>
     </message>
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="3354"/>
         <source>Uninstall extension pack &apos;%s&apos; failed because the cryptographic support module is still in use</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось удалить пакет расширения &apos;%s&apos;, потому что криптографический модуль всё ещё занят</translation>
     </message>
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="3360"/>
@@ -2986,7 +2986,8 @@
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="3368"/>
         <source>Extension pack &apos;%s&apos; is not installed.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Пакет расширения &apos;%s&apos; не установлен.
+</translation>
     </message>
     <message>
         <location filename="../src-all/ExtPackManagerImpl.cpp" line="3612"/>
@@ -3096,7 +3097,7 @@
     <message>
         <location filename="../src-all/ExtPackUtil.cpp" line="233"/>
         <source>Invalid cryptographic module string: </source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимая строка криптографического модуля: </translation>
     </message>
     <message>
         <location filename="../src-all/ExtPackUtil.cpp" line="293"/>
@@ -3308,7 +3309,7 @@
     <message>
         <location filename="../src-all/TextScript.cpp" line="206"/>
         <source>parse called more than once</source>
-        <translation type="unfinished"></translation>
+        <translation>parse вызвана более одного раза</translation>
     </message>
     <message>
         <location filename="../src-all/TextScript.cpp" line="227"/>
@@ -3354,7 +3355,7 @@
     <message>
         <location filename="../src-all/TextScript.cpp" line="377"/>
         <source>appendLine() called before parse()</source>
-        <translation type="unfinished"></translation>
+        <translation>appendLine() вызвана перед parse()</translation>
     </message>
 </context>
 <context>
@@ -3406,7 +3407,7 @@
     <message>
         <location filename="../src-all/Global.cpp" line="739"/>
         <source>GuruMeditation</source>
-        <translation>Гуру Медитация</translation>
+        <translation>ГуруМедитация</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="740"/>
@@ -3416,7 +3417,7 @@
     <message>
         <location filename="../src-all/Global.cpp" line="741"/>
         <source>LiveSnapshotting</source>
-        <translation>Создание Живого Снимка</translation>
+        <translation>СозданиеЖивогоСнимка</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="742"/>
@@ -3441,37 +3442,37 @@
     <message>
         <location filename="../src-all/Global.cpp" line="746"/>
         <source>TeleportingPausedVM</source>
-        <translation>Портирование Приостановленной ВМ</translation>
+        <translation>ПортированиеПриостановленнойВМ</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="747"/>
         <source>TeleportingIn</source>
-        <translation>Портирование (Извне)</translation>
+        <translation>ПортированиеИзвне</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="748"/>
         <source>DeletingSnapshotOnline</source>
-        <translation>Удаление Снимка Работающей ВМ</translation>
+        <translation>УдалениеСнимкаРаботающейВМ</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="749"/>
         <source>DeletingSnapshotPaused</source>
-        <translation>Удаление Снимка Приостановленной ВМ</translation>
+        <translation>УдалениеСнимкаПриостановленнойВМ</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="750"/>
         <source>OnlineSnapshotting</source>
-        <translation>Создание Онлайн Снимка</translation>
+        <translation>СозданиеОнлайнСнимка</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="751"/>
         <source>RestoringSnapshot</source>
-        <translation>Восстановление Снимка</translation>
+        <translation>ВосстановлениеСнимка</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="752"/>
         <source>DeletingSnapshot</source>
-        <translation>Удаление Снимка</translation>
+        <translation>УдалениеСнимка</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="753"/>
@@ -3486,52 +3487,52 @@
     <message>
         <location filename="../src-all/Global.cpp" line="808"/>
         <source>SharedFolder</source>
-        <translation type="unfinished"></translation>
+        <translation>ОбщаяПапка</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="819"/>
         <location filename="../src-all/Global.cpp" line="837"/>
         <source>starting</source>
-        <translation type="unfinished"></translation>
+        <translation>запускается</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="820"/>
         <location filename="../src-all/Global.cpp" line="838"/>
         <location filename="../src-all/Global.cpp" line="858"/>
         <source>started</source>
-        <translation type="unfinished"></translation>
+        <translation>запущено</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="821"/>
         <location filename="../src-all/Global.cpp" line="840"/>
         <source>terminating</source>
-        <translation type="unfinished"></translation>
+        <translation>завершается</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="822"/>
         <location filename="../src-all/Global.cpp" line="859"/>
         <source>terminated</source>
-        <translation type="unfinished"></translation>
+        <translation>завершено</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="823"/>
         <location filename="../src-all/Global.cpp" line="844"/>
         <location filename="../src-all/Global.cpp" line="862"/>
         <source>timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>просрочено</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="824"/>
         <location filename="../src-all/Global.cpp" line="845"/>
         <source>timed out, hanging</source>
-        <translation type="unfinished"></translation>
+        <translation>просрочено, висит</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="825"/>
         <location filename="../src-all/Global.cpp" line="846"/>
         <location filename="../src-all/Global.cpp" line="881"/>
         <source>killed</source>
-        <translation type="unfinished"></translation>
+        <translation>убито</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="826"/>
@@ -3539,137 +3540,137 @@
         <location filename="../src-all/Global.cpp" line="861"/>
         <location filename="../src-all/Global.cpp" line="882"/>
         <source>error</source>
-        <translation type="unfinished"></translation>
+        <translation>ошибка</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="839"/>
         <source>paused</source>
-        <translation type="unfinished"></translation>
+        <translation>приостановлен</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="841"/>
         <source>successfully terminated</source>
-        <translation type="unfinished"></translation>
+        <translation>успешно завершён</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="842"/>
         <source>terminated by signal</source>
-        <translation type="unfinished"></translation>
+        <translation>завершён по сигналу</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="843"/>
         <source>abnormally aborted</source>
-        <translation type="unfinished"></translation>
+        <translation>внезапно завершён</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="860"/>
         <source>status changed</source>
-        <translation type="unfinished"></translation>
+        <translation>статус изменён</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="863"/>
         <source>stdin ready</source>
-        <translation type="unfinished"></translation>
+        <translation>stdin готов</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="864"/>
         <source>data on stdout</source>
-        <translation type="unfinished"></translation>
+        <translation>данные в stdout</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="865"/>
         <source>data on stderr</source>
-        <translation type="unfinished"></translation>
+        <translation>данные в stderr</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="866"/>
         <source>waiting flag not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>флаг ожидания не поддерживается</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="877"/>
         <source>opening</source>
-        <translation type="unfinished"></translation>
+        <translation>открывается</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="878"/>
         <source>open</source>
-        <translation type="unfinished"></translation>
+        <translation>открыт</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="879"/>
         <source>closing</source>
-        <translation type="unfinished"></translation>
+        <translation>закрывается</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="880"/>
         <source>closed</source>
-        <translation type="unfinished"></translation>
+        <translation>закрыт</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="893"/>
         <source>unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>неизвестно</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="894"/>
         <source>fifo</source>
-        <translation type="unfinished"></translation>
+        <translation>fifo</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="895"/>
         <source>char-device</source>
-        <translation type="unfinished"></translation>
+        <translation>символьное-устройство</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="896"/>
         <source>directory</source>
-        <translation type="unfinished"></translation>
+        <translation>директория</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="897"/>
         <source>block-device</source>
-        <translation type="unfinished"></translation>
+        <translation>блочное-устройство</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="898"/>
         <source>file</source>
-        <translation type="unfinished"></translation>
+        <translation>файл</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="899"/>
         <source>symlink</source>
-        <translation type="unfinished"></translation>
+        <translation>ссылка</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="900"/>
         <source>socket</source>
-        <translation type="unfinished"></translation>
+        <translation>сокет</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="901"/>
         <source>white-out</source>
-        <translation type="unfinished"></translation>
+        <translation>файл-заглушка</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="932"/>
         <source>IDE</source>
-        <translation type="unfinished"></translation>
+        <translation>IDE</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="933"/>
         <source>SATA</source>
-        <translation type="unfinished"></translation>
+        <translation>SATA</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="935"/>
         <source>SAS</source>
-        <translation type="unfinished"></translation>
+        <translation>SAS</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="937"/>
         <source>PCIe</source>
-        <translation type="unfinished"></translation>
+        <translation>PCIe</translation>
     </message>
     <message>
         <source>InvalidState-0x%08x
@@ -3700,59 +3701,59 @@
     <message>
         <location filename="../src-all/Global.cpp" line="781"/>
         <source>LsiLogic</source>
-        <translation type="unfinished"></translation>
+        <translation>LsiLogic</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="782"/>
         <source>BusLogic</source>
-        <translation type="unfinished"></translation>
+        <translation>BusLogic</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="783"/>
         <source>AHCI</source>
-        <translation type="unfinished"></translation>
+        <translation>AHCI</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="784"/>
         <source>PIIX3</source>
-        <translation type="unfinished"></translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="785"/>
         <source>PIIX4</source>
-        <translation type="unfinished"></translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="786"/>
         <source>ICH6</source>
-        <translation type="unfinished"></translation>
+        <translation>ICH6</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="787"/>
         <source>I82078</source>
-        <translation type="unfinished"></translation>
+        <translation>I82078</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="788"/>
         <source>LsiLogicSas</source>
-        <translation type="unfinished"></translation>
+        <translation>LsiLogicSas</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="790"/>
         <source>NVMe</source>
-        <translation type="unfinished"></translation>
+        <translation>NVMe</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="791"/>
         <location filename="../src-all/Global.cpp" line="938"/>
         <source>VirtioSCSI</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtioSCSI</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="803"/>
         <location filename="../src-all/Global.cpp" line="934"/>
         <source>Floppy</source>
-        <translation>Флоппи</translation>
+        <translation>ГибкийДиск</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="804"/>
@@ -3762,7 +3763,7 @@
     <message>
         <location filename="../src-all/Global.cpp" line="805"/>
         <source>HardDisk</source>
-        <translation>Жесткий Диск</translation>
+        <translation>ЖёсткийДиск</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="806"/>
@@ -3828,7 +3829,7 @@
     <message>
         <location filename="../src-server/GraphicsAdapterImpl.cpp" line="240"/>
         <source>Error getting VRAM range for selected graphics controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка получения диапазона видеопамяти выбранного графического контроллера</translation>
     </message>
     <message>
         <location filename="../src-server/GraphicsAdapterImpl.cpp" line="246"/>
@@ -3838,12 +3839,12 @@
     <message>
         <location filename="../src-server/GraphicsAdapterImpl.cpp" line="268"/>
         <source>The graphics controller does not support the given feature</source>
-        <translation type="unfinished"></translation>
+        <translation>Графический контроллер не поддерживает выбранную функцию</translation>
     </message>
     <message>
         <location filename="../src-server/GraphicsAdapterImpl.cpp" line="286"/>
         <source>The given feature is not implemented</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная функция не реализована</translation>
     </message>
     <message>
         <location filename="../src-server/GraphicsAdapterImpl.cpp" line="340"/>
@@ -3868,7 +3869,7 @@
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="465"/>
         <source>Guest Additions are not installed or not ready (yet)</source>
-        <translation type="unfinished"></translation>
+        <translation>Дополнения Гостевой ОС не установлены или не готовы (пока)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="469"/>
@@ -3999,12 +4000,12 @@
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="726"/>
         <source>Guest directory &quot;%s&quot; already exists</source>
-        <translation type="unfinished">Директория гостевой системы &quot;%s&quot; уже существует</translation>
+        <translation>Директория гостевой системы &quot;%s&quot; уже существует</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="727"/>
         <source>Guest directory &quot;%s&quot; cannot be created</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая директория  &quot;%s&quot; не может быть создана</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="728"/>
@@ -4014,12 +4015,12 @@
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="729"/>
         <source>Guest directory &quot;%s&quot; has no more entries</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая директория  &quot;%s&quot; более не содержит записей</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="730"/>
         <source>Path of guest directory &quot;%s&quot; not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Путь гостевой директории &quot;%s&quot; не найден</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="732"/>
@@ -4041,13 +4042,14 @@
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="1487"/>
         <source>Listing guest directory failed: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочесть гостевую директорию: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="1501"/>
         <source>Listing guest directory &quot;%s&quot; returned unhandled error: %Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Чтение гостевой директории &quot;%s&quot; возвратило ошибку: %Rrc
+</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="1541"/>
@@ -4073,12 +4075,13 @@
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="1568"/>
         <source>Reading guest directory &quot;%s&quot; returned unhandled error: %Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Чтение гостевой директории &quot;%s&quot; возвратило ошибку: %Rrc
+</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="1589"/>
         <source>Rewinding guest directory failed: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось перемотать гостевую директорию: %s</translation>
     </message>
     <message>
         <source>Reading guest directory &quot;%s&quot; returned error: %Rrc
@@ -4096,27 +4099,31 @@
 Host offers: %s
 
 Guest offers: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сопоставить форматы между гостевой и основной ОС!
+
+Основная ОС предлагает: %s
+
+Гостевая ОС предлагает: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="366"/>
         <source>Requesting pending data from guest failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запросить данные из гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="374"/>
         <source>Dragging from guest to host not allowed -- make sure that the correct drag&apos;n drop mode is set</source>
-        <translation type="unfinished"></translation>
+        <translation>Перенос из гостевой ОС в основную запрещён - убедитесь, что выбран нужный режим drag&apos;n drop</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="380"/>
         <source>Dragging from guest to host not supported by guest -- make sure that the Guest Additions are properly installed and running</source>
-        <translation type="unfinished"></translation>
+        <translation>Перенос из гостевой ОС в основную не поддерживается гостевой ОС - убедитесь, что Дополнения Гостевой ОС установлены и запущены</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="386"/>
         <source>Sending drag pending event to guest failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось отправить событие перетаскивания в гостевую систему</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="412"/>
@@ -4132,7 +4139,7 @@ Guest offers: %s</source>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="427"/>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="510"/>
         <source>Current drop operation to host still in progress</source>
-        <translation>Текущая операция перетаскивания в хост еще в процессе</translation>
+        <translation>Текущая операция перетаскивания в хост ещё в процессе</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="434"/>
@@ -4142,7 +4149,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="439"/>
         <source>Dropping data to host</source>
-        <translation type="unfinished"></translation>
+        <translation>Перетаскивание данных в основную ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="490"/>
@@ -4235,58 +4242,58 @@ Guest offers: %s</source>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="348"/>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="368"/>
         <source>Entering VM window failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось войти в окно ВМ</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="356"/>
         <source>Drag and drop to guest not allowed. Select the right mode first</source>
-        <translation type="unfinished"></translation>
+        <translation>Перетаскивание объектов в гостевую ОС запрещёно. Для начала выберите правильный режим</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="362"/>
         <source>Drag and drop to guest not possible -- either the guest OS does not support this, or the Guest Additions are not installed</source>
-        <translation type="unfinished"></translation>
+        <translation>Перетаскивание объектов в гостевую ОС невозможно - или гостевая ОС это не поддерживает, или Дополнения Гостевой ОС не установлены</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="456"/>
         <source>Moving to %RU32,%RU32 (screen %u) failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось перемещение в %RU32, %RU32 (экран %u)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="464"/>
         <source>Moving in guest not allowed. Select the right mode first</source>
-        <translation type="unfinished"></translation>
+        <translation>Перемещение объектов в гостевую ОС запрещёно. Для начала выберите правильный режим</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="470"/>
         <source>Moving in guest not possible -- either the guest OS does not support this, or the Guest Additions are not installed</source>
-        <translation type="unfinished"></translation>
+        <translation>Перемещение объектов в гостевой ОС невозможно - или гостевая ОС это не поддерживает, или Дополнения Гостевой ОС не установлены</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="476"/>
         <source>Moving in VM window failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось переместить в окно ВМ</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="482"/>
         <source>Retrieving move coordinates failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось получить координаты перемещения</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="529"/>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="549"/>
         <source>Leaving VM window failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось покинуть окно ВМ</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="537"/>
         <source>Leaving guest not allowed. Select the right mode first</source>
-        <translation type="unfinished"></translation>
+        <translation>Покидать гостевую ОС запрещёно. Для начала выберите правильный режим</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="543"/>
         <source>Leaving guest not possible -- either the guest OS does not support this, or the Guest Additions are not installed</source>
-        <translation type="unfinished"></translation>
+        <translation>Покинуть гостевую ОС невозможно - или гостевая ОС это не поддерживает, или Дополнения Гостевой ОС не установлены</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="571"/>
@@ -4306,22 +4313,22 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="654"/>
         <source>Guest accepted drop, but did not specify the format</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая система приняла перетаскивание, но не указала формат</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="656"/>
         <source>Guest accepted drop, but returned more than one drop format (%zu formats)</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая система приняла перетаскивание, но вернула более одного формата (%zu)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="662"/>
         <source>Dropping into VM failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось перетащить в ВМ</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="665"/>
         <source>Sending dropped event to guest failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось отправить событие перетаскивания в гостевую систему</translation>
     </message>
     <message numerus="yes">
         <source>Guest returned invalid drop formats (%zu formats)</source>
@@ -4358,7 +4365,7 @@ Guest offers: %s</source>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="712"/>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="892"/>
         <source>Current drop operation to guest still in progress</source>
-        <translation>Текущая операция перетаскивания в гостевую систему все еще в процессе</translation>
+        <translation>Текущая операция перетаскивания в гостевую систему всё ещё в процессе</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="716"/>
@@ -4368,7 +4375,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="721"/>
         <source>Dropping data to guest</source>
-        <translation type="unfinished"></translation>
+        <translation>Перетаскивание данных в гостевую ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="773"/>
@@ -4570,77 +4577,77 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="70"/>
         <source>Access to &quot;%s&quot; denied</source>
-        <translation type="unfinished">Доступ к &quot;%s&quot; запрещен</translation>
+        <translation>Доступ к &quot;%s&quot; запрещен</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="76"/>
         <source>No such file or directory &quot;%s&quot;</source>
-        <translation type="unfinished">Файл или директория &quot;%s&quot; не существует</translation>
+        <translation>Файл или директория &quot;%s&quot; не существует</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="80"/>
         <source>File or directory &quot;%s&quot; can&apos;t be created</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно создать файл или директорию &quot;%s&quot;</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="84"/>
         <source>Invalid parameter specified</source>
-        <translation type="unfinished"></translation>
+        <translation>Указан недопустимый параметр</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="88"/>
         <source>VMM device is not available (is the VM running?)</source>
-        <translation type="unfinished">VMM устройство недоступно (ВМ работает?)</translation>
+        <translation>VMM устройство недоступно (ВМ работает?)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="92"/>
         <source>The guest execution service is not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая служба выполнения не доступна</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="96"/>
         <source>The file &quot;%s&quot; is not an executable format</source>
-        <translation type="unfinished">Формат файла &quot;%s&quot; не является исполняемым</translation>
+        <translation>Формат файла &quot;%s&quot; не является исполняемым</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="100"/>
         <source>The user &quot;%s&quot; was not able to logon</source>
-        <translation type="unfinished">Пользователь &quot;%s&quot; не смог войти систему</translation>
+        <translation>Пользователь &quot;%s&quot; не смог войти систему</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="104"/>
         <source>The file &quot;%s&quot; is an invalid name</source>
-        <translation type="unfinished">У файла &quot;%s&quot; недопустимое имя</translation>
+        <translation>У файла &quot;%s&quot; недопустимое имя</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="108"/>
         <source>The guest did not respond within time</source>
-        <translation type="unfinished">Гостевая система не ответила за отведенное время</translation>
+        <translation>Гостевая система не ответила за отведенное время</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="112"/>
         <source>The execution operation was canceled</source>
-        <translation type="unfinished">Операция выполнения отменена</translation>
+        <translation>Операция выполнения отменена</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="116"/>
         <source>Maximum number of concurrent guest processes has been reached</source>
-        <translation type="unfinished">Достигнуто максимальное количество одновременных гостевых процессов</translation>
+        <translation>Достигнуто максимальное количество одновременных гостевых процессов</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="120"/>
         <source>The guest execution service is not ready (yet)</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая служба выполнения (ещё) не готова</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="124"/>
         <source>Specified mode or flag is not supported on the guest</source>
-        <translation type="unfinished"></translation>
+        <translation>Указанный режим или флаг не поддерживается гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="128"/>
         <source>Unhandled error %Rrc for &quot;%s&quot; occurred on guest -- please file a bug report</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка %Rrc для &quot;%s&quot; произошла в гостевой ОС -- пожалуйста, сообщите об ошибке разработчикам</translation>
     </message>
 </context>
 <context>
@@ -4730,7 +4737,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="2104"/>
         <source>Guest process is not in &apos;%s&apos; state anymore (current is in &apos;%s&apos;)</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевой процесс более не в состоянии &apos;%s&apos; (текущее состояние &apos;%s&apos;)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="2113"/>
@@ -4834,62 +4841,62 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3184"/>
         <source>Access to &quot;%s&quot; denied</source>
-        <translation type="unfinished">Доступ к &quot;%s&quot; запрещен</translation>
+        <translation>Доступ к &quot;%s&quot; запрещен</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3190"/>
         <source>No such file or directory &quot;%s&quot;</source>
-        <translation type="unfinished">Файл или директория &quot;%s&quot; не существует</translation>
+        <translation>Файл или директория &quot;%s&quot; не существует</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3194"/>
         <source>VMM device is not available (is the VM running?)</source>
-        <translation type="unfinished">VMM устройство недоступно (ВМ работает?)</translation>
+        <translation>VMM устройство недоступно (ВМ работает?)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3198"/>
         <source>The guest execution service is not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая служба выполнения не доступна</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3202"/>
         <source>The file &quot;%s&quot; is not an executable format</source>
-        <translation type="unfinished">Формат файла &quot;%s&quot; не является исполняемым</translation>
+        <translation>Формат файла &quot;%s&quot; не является исполняемым</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3206"/>
         <source>The user &quot;%s&quot; was not able to logon</source>
-        <translation type="unfinished">Пользователь &quot;%s&quot; не смог войти систему</translation>
+        <translation>Пользователь &quot;%s&quot; не смог войти систему</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3210"/>
         <source>The file &quot;%s&quot; is an invalid name</source>
-        <translation type="unfinished">У файла &quot;%s&quot; недопустимое имя</translation>
+        <translation>У файла &quot;%s&quot; недопустимое имя</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3214"/>
         <source>The guest did not respond within time</source>
-        <translation type="unfinished">Гостевая система не ответила за отведенное время</translation>
+        <translation>Гостевая система не ответила за отведенное время</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3218"/>
         <source>The execution operation was canceled</source>
-        <translation type="unfinished">Операция выполнения отменена</translation>
+        <translation>Операция выполнения отменена</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3222"/>
         <source>Maximum number of concurrent guest processes has been reached</source>
-        <translation type="unfinished">Достигнуто максимальное количество одновременных гостевых процессов</translation>
+        <translation>Достигнуто максимальное количество одновременных гостевых процессов</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3226"/>
         <source>The guest execution service is not ready (yet)</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая служба выполнения (ещё) не готова</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3230"/>
         <source>Unhandled error %Rrc for &quot;%s&quot; occurred for tool &quot;%s&quot; on guest -- please file a bug report</source>
-        <translation type="unfinished">Произошла необработанная ошибка %Rrc для &quot;%s&quot; у инструмента &quot;%s&quot; в гостевой системе -- пожалуйста, сообщите об ошибке разработчикам</translation>
+        <translation>Произошла необработанная ошибка %Rrc для &quot;%s&quot; у инструмента &quot;%s&quot; в гостевой системе -- пожалуйста, сообщите об ошибке разработчикам</translation>
     </message>
 </context>
 <context>
@@ -4916,7 +4923,7 @@ Guest offers: %s</source>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4732"/>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4753"/>
         <source>The base environment has not yet been reported by the guest</source>
-        <translation>Гостевая система еще не сообщила о базовом окружении</translation>
+        <translation>Гостевая система ещё не сообщила о базовом окружении</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="567"/>
@@ -4951,17 +4958,17 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="643"/>
         <source>Getting the mount points is not supported by installed Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Получение точки подключения не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="648"/>
         <source>Getting the mount points failed on the guest: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка получения точки подключения в гостевой ОС: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="655"/>
         <source>Getting the mount points failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка получения точки подключения: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="805"/>
@@ -5109,7 +5116,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="2381"/>
         <source>Session is not in started state (state is &apos;%s&apos;)</source>
-        <translation type="unfinished"></translation>
+        <translation>Сессия не в запущенном состоянии (текущее состояние &apos;%s&apos;)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4227"/>
@@ -5204,12 +5211,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4490"/>
         <source>Directory filters are not implemented yet</source>
-        <translation>Фильтры директории еще не реализованы</translation>
+        <translation>Фильтры директории ещё не реализованы</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4499"/>
         <source>Open flags (%#x) not implemented yet</source>
-        <translation>Флаги открытия (%#x) еще не реализованы</translation>
+        <translation>Флаги открытия (%#x) ещё не реализованы</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4526"/>
@@ -5311,7 +5318,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4858"/>
         <source>Append access modes are not yet implemented</source>
-        <translation>Добавление режимов доступа еще не реализовано</translation>
+        <translation>Добавление режимов доступа ещё не реализовано</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4860"/>
@@ -5371,12 +5378,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5007"/>
         <source>Querying guest filesystem information failed: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось опросить гостевую файловую систему: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5011"/>
         <source>Querying guest filesystem information for &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось опросить гостевую файловую систему по адресу &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5047"/>
@@ -5391,12 +5398,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5090"/>
         <source>Querying guest filesystem object information failed: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось опросить объект гостевой файловой системы: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5094"/>
         <source>Querying guest filesystem object information for &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось опросить объект гостевой файловой системы по адресу &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <source>Querying guest file information failed: %s</source>
@@ -5450,7 +5457,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5272"/>
         <source>Setting the current working directory is not supported by the installed Guest Addtions!</source>
-        <translation type="unfinished"></translation>
+        <translation>Изменение текущего рабочего каталога не поддерживается установленными Дополнениями Гостевой ОС!</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5344"/>
@@ -5561,37 +5568,37 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="485"/>
         <source>Copying guest file &quot;%s&quot; to host file &quot;%s&quot; failed (%RU64/%RU64 bytes transferred)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось скопировать файл гостевой ОС &quot;%s&quot; в файл основной ОС &quot;%s&quot; (%RU64/%RU64 байт передано)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="511"/>
         <source>Error closing guest file &quot;%s&quot;: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка закрытия файла гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="659"/>
         <source>Host destination &quot;%s&quot; is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Объект назначения в основной ОС &quot;%s&quot; является директорией</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="666"/>
         <source>Host destination &quot;%s&quot; is a symbolic link</source>
-        <translation type="unfinished"></translation>
+        <translation>Объект назначения в основной ОС &quot;%s&quot; является ссылкой</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="812"/>
         <source>Copying to guest file &quot;%s&quot; failed (%RU64/%RU64 bytes transferred)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось скопировать в файл гостевой ОС &quot;%s&quot; (%RU64/%RU64 байт передано)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="852"/>
         <source>Guest file &quot;%s&quot; could not be created or replaced</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл гостевой ОС &quot;%s&quot; не может быть создан или заменён</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="856"/>
         <source>Guest file &quot;%s&quot; could not be created or replaced: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл гостевой ОС &quot;%s&quot; не может быть создан или заменён: %Rrc</translation>
     </message>
     <message>
         <source>Copying guest file &quot;%s&quot; to host file &quot;%s&quot; failed (%RU64/%RU64 bytes transfered)</source>
@@ -5658,12 +5665,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="760"/>
         <source>Reading %RU32 bytes @ %RU64 from host file &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished">Не удалось прочитать %RU32 байт @ %RU64 с файла хоста &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось прочитать %RU32 байт @ %RU64 из файла основной ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="769"/>
         <source>Writing %zu bytes to guest file &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished">Не удалось записать %zu байт в файл гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось записать %zu байт в файл гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="804"/>
@@ -5692,7 +5699,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="938"/>
         <source>Host source file lookup for &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось найти оригинальный файл основной ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="972"/>
@@ -5703,7 +5710,8 @@ Guest offers: %s</source>
         <location filename="../include/GuestSessionImplTasks.h" line="201"/>
         <source>Task &apos;%s&apos; failed with %Rrc, but progress is still pending. Please report this bug!
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Задача &apos;%s&apos; провалена с ошибкой %Rrc, но прогресс всё ещё продолжается. Пожалуйста, сообщите об ошибке разработчикам!
+</translation>
     </message>
 </context>
 <context>
@@ -5711,7 +5719,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1499"/>
         <source>No guest sources specified</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указаны источники гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1504"/>
@@ -5726,37 +5734,37 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1542"/>
         <source>Guest source lookup failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось найти источник гостевой системы</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1545"/>
         <source>Guest source lookup for &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось найти источник гостевой системы &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1598"/>
         <source>Error adding guest source &quot;%s&quot; to list: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка добавления источника в гостевой системе &apos;&quot;%s&quot; в список: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1631"/>
         <source>Copying &quot;%s&quot; [and %zu %s] from guest to &quot;%s&quot; on the host ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Копирование &quot;%s&quot; [и %zu %s] из гостевой ОС в &quot;%s&quot; в основной ОС ...</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1632"/>
         <source>others</source>
-        <translation type="unfinished"></translation>
+        <translation>прочих</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1632"/>
         <source>other</source>
-        <translation type="unfinished"></translation>
+        <translation>прочий</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1635"/>
         <source>Copying &quot;%s&quot; from guest to &quot;%s&quot; on the host ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Копирование &quot;%s&quot; из гостевой ОС в &quot;%s&quot; в основной ОС ...</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1684"/>
@@ -6040,7 +6048,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2956"/>
         <source>Guest Additions are installed but not fully loaded yet, aborting automatic update</source>
-        <translation>Дополнения Гостевой ОС установлены, но еще не полностью загружены, прерывание автоматического обновления</translation>
+        <translation type="unfinished">Дополнения Гостевой ОС установлены, но ещё не полностью загружены, прерывание автоматического обновления</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2959"/>
@@ -6178,12 +6186,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/HostImpl.cpp" line="1760"/>
         <source>The host DVD drive named &apos;%s&apos; could not be found</source>
-        <translation>DVD дисковод хоста с именем &apos;%s&apos; не найден</translation>
+        <translation>Привод оптических дисков ПК с именем &apos;%s&apos; не найден</translation>
     </message>
     <message>
         <location filename="../src-server/HostImpl.cpp" line="1773"/>
         <source>The host floppy drive named &apos;%s&apos; could not be found</source>
-        <translation>Флоппи дисковод хоста с именем &apos;%s&apos; не найден</translation>
+        <translation>Привод гибких дисков ПК с именем &apos;%s&apos; не найден</translation>
     </message>
     <message>
         <location filename="../src-server/HostImpl.cpp" line="1814"/>
@@ -6223,7 +6231,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/HostImpl.cpp" line="3710"/>
         <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation>Служба USB прокси еще не портирована под этот хост</translation>
+        <translation>Служба USB прокси ещё не портирована под этот хост</translation>
     </message>
     <message>
         <location filename="../src-server/HostImpl.cpp" line="3713"/>
@@ -6319,7 +6327,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/HostUSBDeviceImpl.cpp" line="505"/>
         <source>USB device &apos;%s&apos; with UUID {%RTuuid} is in use by someone else</source>
-        <translation>USB устройство &apos;%s&apos; с UUID {%RTuuid} используется кем-то еще</translation>
+        <translation>USB устройство &apos;%s&apos; с UUID {%RTuuid} используется кем-то ещё</translation>
     </message>
     <message>
         <location filename="../src-server/HostUSBDeviceImpl.cpp" line="682"/>
@@ -6419,32 +6427,32 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="930"/>
         <source>Checking for update for %s ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Проверка обновлений %s ...</translation>
     </message>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="1053"/>
         <source>RTHttpCreate() failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>RTHttpCreate() завершился с ошибкой: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="1078"/>
         <source>RTHttpAddHeader() failed: %Rrc (user agent)</source>
-        <translation type="unfinished"></translation>
+        <translation>RTHttpAddHeader() завершился с ошибкой: %Rrc (user agent)</translation>
     </message>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="1087"/>
         <source>RTHttpGetBinary() failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>RTHttpGetBinary() завершился с ошибкой: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="1160"/>
         <source>Invalid server response [1]: %Rhrc (%.*Rhxs -- %.*Rhxs)</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый ответ сервера [1]: %Rhrc (%.*Rhxs -- %.*Rhxs)</translation>
     </message>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="1167"/>
         <source>Invalid server response [2]: %Rrc (%.*Rhxs -- %.*Rhxs)</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый ответ сервера [2]: %Rrc (%.*Rhxs -- %.*Rhxs)</translation>
     </message>
 </context>
 <context>
@@ -6460,12 +6468,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/HostX86Impl.cpp" line="97"/>
         <source>CPU no.%u is not present</source>
-        <translation type="unfinished">ЦПУ #%u отсутствует</translation>
+        <translation>ЦПУ #%u отсутствует</translation>
     </message>
     <message>
         <location filename="../src-server/HostX86Impl.cpp" line="98"/>
         <source>CPU no.%u is not online</source>
-        <translation type="unfinished">ЦПУ #%u не подключен</translation>
+        <translation>ЦПУ #%u не подключен</translation>
     </message>
 </context>
 <context>
@@ -6558,7 +6566,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="1680"/>
         <source>There is still a CPU attached to socket %lu.Detach the CPU before removing the socket</source>
-        <translation>Все еще существует ЦПУ подключенный к сокету %lu. Отключите ЦПУ перед удалением сокета</translation>
+        <translation type="unfinished">Все ещё существует ЦПУ подключенный к сокету %lu. Отключите ЦПУ перед удалением сокета</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="1712"/>
@@ -6779,12 +6787,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="3898"/>
         <source>Setting passthrough rejected as the device attached to device slot %d on port %d of controller &apos;%s&apos; is not a DVD</source>
-        <translation>Установка &quot;прямого доступа&quot; отклонена, так как устройство, подключенное к слоту устройств %d на порту %d контроллера &apos;%s&apos; не является DVD</translation>
+        <translation>Установка &quot;прямого доступа&quot; отклонена, так как устройство, подключенное к слоту устройств %d на порту %d контроллера &apos;%s&apos; не является оптическим диском</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="3943"/>
         <source>Setting temporary eject flag rejected as the device attached to device slot %d on port %d of controller &apos;%s&apos; is not a DVD</source>
-        <translation>Установка флага временного изьятия отклонена, так как устройство, подключенное к слоту устройств %d на порту %d контроллера &apos;%s&apos; не является DVD</translation>
+        <translation>Установка флага временного изьятия отклонена, так как устройство, подключенное к слоту устройств %d на порту %d контроллера &apos;%s&apos; не является оптическим диском</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="3966"/>
@@ -6812,7 +6820,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="4091"/>
         <source>Setting the hot-pluggable device flag rejected as the device attached to device slot %d on port %d of controller &apos;%s&apos; is a floppy drive</source>
-        <translation>Установка флага &quot;возможность горячего подключения&quot; отклонена, так как устройство, подключенное к слоту устройств %d на порту %d контроллера &apos;%s&apos; является флоппи диском</translation>
+        <translation>Установка флага &quot;возможность горячего подключения&quot; отклонена, так как устройство, подключенное к слоту устройств %d на порту %d контроллера &apos;%s&apos; является приводом гибких дисков</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="4139"/>
@@ -7750,7 +7758,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/MachineDebuggerImpl.cpp" line="622"/>
         <source>TMR3SetWarpDrive(, %u) failed with vrc=%Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>TMR3SetWarpDrive(, %u) завершился с ошибкой vrc=%Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/MachineDebuggerImpl.cpp" line="653"/>
@@ -7825,17 +7833,17 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/MachineDebuggerImpl.cpp" line="1089"/>
         <source>DBGFR3RegNmQuery failed with vrc=%Rrc querying register &apos;%s&apos; with default cpu set to %u</source>
-        <translation type="unfinished"></translation>
+        <translation>DBGFR3RegNmQuery завершился с ошибкой vrc=%Rrc запрашивая регистр &apos;%s&apos; с ЦПУ по умолчанию установленным в %u</translation>
     </message>
     <message>
         <location filename="../src-client/MachineDebuggerImpl.cpp" line="1511"/>
         <source>Incompatible VMM function table: %RX64 vs %RX64 (caller)</source>
-        <translation type="unfinished"></translation>
+        <translation>Несовместимая таблица VMM функций: %RX64 против %RX64 (caller)</translation>
     </message>
     <message>
         <location filename="../src-client/MachineDebuggerImpl.cpp" line="1518"/>
         <source>The method getUVMAndVMMFunctionTable is only for local calls</source>
-        <translation type="unfinished"></translation>
+        <translation>Метод getUVMAndVMMFunctionTable предназначен лишь для локальных вызовов</translation>
     </message>
     <message>
         <source>DBGFR3RegNmQuery failed with rc=%Rrc querying register &apos;%s&apos; with default cpu set to %u</source>
@@ -8040,7 +8048,7 @@ Guest offers: %s</source>
         <location filename="../src-server/MediumImpl.cpp" line="1177"/>
         <location filename="../src-server/MediumImpl.cpp" line="1272"/>
         <source>Accessibility check was not yet performed</source>
-        <translation>Проверка на доступность еще не проведена</translation>
+        <translation>Проверка на доступность ещё не проведена</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="1778"/>
@@ -8057,12 +8065,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="1962"/>
         <source>Cannot change the type of DVD medium &apos;%s&apos;</source>
-        <translation>Невозможно изменить тип носителя DVD &apos;%s&apos;</translation>
+        <translation>Невозможно изменить тип носителя оптических дисков &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="1969"/>
         <source>Cannot change the type of floppy medium &apos;%s&apos;</source>
-        <translation>Невозможно изменить тип носителя флоппи &apos;%s&apos;</translation>
+        <translation>Невозможно изменить тип носителя гибких дисков &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="1975"/>
@@ -8159,7 +8167,7 @@ Guest offers: %s</source>
         <location filename="../src-server/MediumImpl.cpp" line="2964"/>
         <location filename="../src-server/MediumImpl.cpp" line="3254"/>
         <source>Medium variant &apos;formatted&apos; applies to floppy images only</source>
-        <translation>Вариант носителя &apos;форматирован&apos; применимо только к образам флоппи-дисков</translation>
+        <translation>Вариант носителя &apos;форматирован&apos; применимо только к образам гибких дисков</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="2808"/>
@@ -8217,12 +8225,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="3077"/>
         <source>Resizing medium and cloning into it</source>
-        <translation type="unfinished"></translation>
+        <translation>Изменение размера носителя и клонирование в него</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="3080"/>
         <source>Resizing medium before clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Изменение размера носителя перед клонированием</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="3404"/>
@@ -8315,7 +8323,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="3898"/>
         <source>Cannot encrypt DVD or Floppy medium &apos;%s&apos;</source>
-        <translation>Невозможно зашифровать носитель DVD или флоппи &apos;%s&apos;</translation>
+        <translation>Невозможно зашифровать носитель оптических или гибких дисков &apos;%s&apos;</translation>
     </message>
     <message numerus="yes">
         <location filename="../src-server/MediumImpl.cpp" line="3904"/>
@@ -8458,15 +8466,15 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="5545"/>
         <source>Medium &apos;%s&apos; cannot be closed because it is already in the process of being closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Носитель &apos;%s&apos; не может быть закрыт поскольку он уже в процессе закрытия</translation>
     </message>
     <message numerus="yes">
         <location filename="../src-server/MediumImpl.cpp" line="5550"/>
         <source>Medium &apos;%s&apos; cannot be closed because it is still attached to %d virtual machines</source>
         <translation>
-            <numerusform>Носитель &apos;%s&apos; не может быть закрыт, потому что он еще подключен к %d виртуальной машине</numerusform>
-            <numerusform>Носитель &apos;%s&apos; не может быть закрыт, потому что он еще подключен к %d виртуальным машинам</numerusform>
-            <numerusform>Носитель &apos;%s&apos; не может быть закрыт, потому что он еще подключен к %d виртуальным машинам</numerusform>
+            <numerusform>Носитель &apos;%s&apos; не может быть закрыт, потому что он ещё подключен к %d виртуальной машине</numerusform>
+            <numerusform>Носитель &apos;%s&apos; не может быть закрыт, потому что он ещё подключен к %d виртуальным машинам</numerusform>
+            <numerusform>Носитель &apos;%s&apos; не может быть закрыт, потому что он ещё подключен к %d виртуальным машинам</numerusform>
         </translation>
     </message>
     <message>
@@ -8478,9 +8486,9 @@ Guest offers: %s</source>
         <location filename="../src-server/MediumImpl.cpp" line="5701"/>
         <source>Cannot delete storage: medium &apos;%s&apos; is still attached to the following %d virtual machine(s): %s</source>
         <translation>
-            <numerusform>Невозможно удалить файл носителя: носитель &apos;%s&apos; все еще подключен к %d виртуальной машине: %s</numerusform>
-            <numerusform>Невозможно удалить файл носителя: носитель &apos;%s&apos; все еще подключен к %d виртуальным машинам: %s</numerusform>
-            <numerusform>Невозможно удалить файл носителя: носитель &apos;%s&apos; все еще подключен к %d виртуальным машинам: %s</numerusform>
+            <numerusform>Невозможно удалить файл носителя: носитель &apos;%s&apos; всё ещё подключен к %d виртуальной машине: %s</numerusform>
+            <numerusform>Невозможно удалить файл носителя: носитель &apos;%s&apos; всё ещё подключен к %d виртуальным машинам: %s</numerusform>
+            <numerusform>Невозможно удалить файл носителя: носитель &apos;%s&apos; всё ещё подключен к %d виртуальным машинам: %s</numerusform>
         </translation>
     </message>
     <message>
@@ -8845,7 +8853,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="10452"/>
         <source>Compacting is not yet supported for medium &apos;%s&apos;</source>
-        <translation>Уплотнение еще не поддерживается для носителя &apos;%s&apos;</translation>
+        <translation>Уплотнение ещё не поддерживается для носителя &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="10456"/>
@@ -8865,7 +8873,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="10563"/>
         <source>Resizing to new size %llu is not yet supported for medium &apos;%s&apos;</source>
-        <translation>Изменение размера к %llu еще не поддерживается для носителя &apos;%s&apos;</translation>
+        <translation>Изменение размера к %llu ещё не поддерживается для носителя &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="10567"/>
@@ -8993,7 +9001,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MediumIOImpl.cpp" line="772"/>
         <source>whole-disk-in-one-entry is not implemented yet, sorry.</source>
-        <translation>&quot;весь диск в одном элементе таблицы разделов&quot; еще не реализован, извините.</translation>
+        <translation>&quot;весь диск в одном элементе таблицы разделов&quot; ещё не реализован, извините.</translation>
     </message>
     <message>
         <location filename="../src-server/MediumIOImpl.cpp" line="794"/>
@@ -9087,7 +9095,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/NATNetworkImpl.cpp" line="313"/>
         <source>%s: internal error: failed to convert prefix %d to netmask: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>%s: внутренняя ошибка: не удалось преобразовать префикс %d в сетевую маску: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/NATNetworkImpl.cpp" line="317"/>
@@ -9206,18 +9214,18 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="361"/>
         <source>This machine does not have an NVRAM store file</source>
-        <translation type="unfinished"></translation>
+        <translation>У этой машины нет файла хранения NVRAM</translation>
     </message>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="373"/>
         <source>No NVRAM store file found</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл хранения NVRAM не найден</translation>
     </message>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="399"/>
         <location filename="../src-all/NvramStoreImpl.cpp" line="1387"/>
         <source>The UEFI NVRAM file is not existing for this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет UEFI NVRAM файла для этой машины</translation>
     </message>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="449"/>
@@ -9238,7 +9246,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="1384"/>
         <source>Opening the UEFI variable store failed (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось открыть хранилище UEFI переменных (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-all/NvramStoreImpl.cpp" line="1457"/>
@@ -9291,26 +9299,26 @@ Guest offers: %s</source>
         <location filename="../src-all/PlatformPropertiesImpl.cpp" line="515"/>
         <source>Invalid storage controller type %d
 </source>
-        <translation type="unfinished">Недопустимый тип контроллера %d
+        <translation>Недопустимый тип контроллера %d
 </translation>
     </message>
     <message>
         <location filename="../src-all/PlatformPropertiesImpl.cpp" line="565"/>
         <source>Invalid storage bus %d
 </source>
-        <translation type="unfinished">Недопустимая шина %d
+        <translation>Недопустимая шина %d
 </translation>
     </message>
     <message>
         <location filename="../src-all/PlatformPropertiesImpl.cpp" line="977"/>
         <source>Selected graphics controller not supported in this version</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбранный тип графического контроллера не поддерживается в этой версии</translation>
     </message>
     <message>
         <location filename="../src-all/PlatformPropertiesImpl.cpp" line="980"/>
         <location filename="../src-all/PlatformPropertiesImpl.cpp" line="994"/>
         <source>The graphics controller type (%d) is invalid</source>
-        <translation type="unfinished">Недопустимый тип графического контроллера (%d)</translation>
+        <translation>Недопустимый тип графического контроллера (%d)</translation>
     </message>
 </context>
 <context>
@@ -9318,17 +9326,17 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/PlatformX86Impl.cpp" line="548"/>
         <source>Currently only aSubIdx values 0 and 0xffffffff are supported: %#x</source>
-        <translation type="unfinished">В настоящее время поддерживаются только aSubIdx значения 0 и 0xffffffff: %#x</translation>
+        <translation>В настоящее время поддерживаются только aSubIdx значения 0 и 0xffffffff: %#x</translation>
     </message>
     <message>
         <location filename="../src-server/PlatformX86Impl.cpp" line="552"/>
         <source>CpuId override leaf %#x is out of range</source>
-        <translation type="unfinished">Лист переопределения CpuId %#x вышел за границы диапазона</translation>
+        <translation>Лист переопределения CpuId %#x вышел за границы диапазона</translation>
     </message>
     <message>
         <location filename="../src-server/PlatformX86Impl.cpp" line="564"/>
         <source>Max of 256 CPUID override leaves reached</source>
-        <translation type="unfinished">Достигнут максимум 256 листов переопределения CPUID</translation>
+        <translation>Достигнут максимум 256 листов переопределения CPUID</translation>
     </message>
 </context>
 <context>
@@ -9336,12 +9344,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-all/ProgressImpl.cpp" line="666"/>
         <source>Result code is not available, operation is still in progress</source>
-        <translation>Результирующий код недоступен, операция еще в процессе</translation>
+        <translation>Результирующий код недоступен, операция ещё в процессе</translation>
     </message>
     <message>
         <location filename="../src-all/ProgressImpl.cpp" line="678"/>
         <source>Error info is not available, operation is still in progress</source>
-        <translation>Информация об ошибке недоступна, операция еще в процессе</translation>
+        <translation>Информация об ошибке недоступна, операция ещё в процессе</translation>
     </message>
     <message>
         <location filename="../src-all/ProgressImpl.cpp" line="747"/>
@@ -9388,7 +9396,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="401"/>
         <source>Destination type invalid / not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Конечный тип задан неверно / не поддерживается</translation>
     </message>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="429"/>
@@ -9408,7 +9416,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="473"/>
         <source>Could not set file name for recording screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно задать имя файла для экрана записи</translation>
     </message>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="497"/>
@@ -9437,17 +9445,17 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="604"/>
         <source>Audio codec not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Аудио кодек не поддерживается</translation>
     </message>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="639"/>
         <source>Cannot change audio deadline while recording is enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно изменить время отсечки аудио пока включена запись</translation>
     </message>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="674"/>
         <source>Cannot change audio rate control mode while recording is enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно изменить режим управления битрейтом пока включена запись</translation>
     </message>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="702"/>
@@ -9472,12 +9480,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="810"/>
         <source>Video codec not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Видео кодек не поддерживается</translation>
     </message>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="845"/>
         <source>Cannot change video deadline while recording is enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно изменить время отсечки видео пока включена запись</translation>
     </message>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="880"/>
@@ -9507,7 +9515,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/RecordingScreenSettingsImpl.cpp" line="1048"/>
         <source>Cannot change video scaling mode while recording is enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно изменить метод масштабирования видео пока включена запись</translation>
     </message>
     <message>
         <source>Cannot change video rate scaling method while recording is enabled</source>
@@ -9519,7 +9527,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/RecordingSettingsImpl.cpp" line="335"/>
         <source>Recording not started</source>
-        <translation type="unfinished"></translation>
+        <translation>Запись не запущена</translation>
     </message>
     <message>
         <location filename="../src-server/RecordingSettingsImpl.cpp" line="357"/>
@@ -9529,7 +9537,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/RecordingSettingsImpl.cpp" line="401"/>
         <source>Recording already started</source>
-        <translation type="unfinished"></translation>
+        <translation>Запись уже запущена</translation>
     </message>
 </context>
 <context>
@@ -9705,12 +9713,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/SnapshotImpl.cpp" line="1645"/>
         <source>Cannot take a snapshot of the virtual machine while it is changing state (machine state: %s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно сделать снимок машины пока она меняет состояние (состояние машины: %s)</translation>
     </message>
     <message>
         <location filename="../src-server/SnapshotImpl.cpp" line="1650"/>
         <source>Cannot take a live snapshot of a virtual machine unless it is running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно сделать живой снимок машины пока она не запущена.</translation>
     </message>
     <message>
         <location filename="../src-server/SnapshotImpl.cpp" line="1692"/>
@@ -9725,7 +9733,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/SnapshotImpl.cpp" line="1799"/>
         <source>Cannot take another snapshot for machine &apos;%s&apos;, because it exceeds the maximum snapshot depth limit. Please delete some earlier snapshot which you no longer need</source>
-        <translation>Невозможно получить еще один снимок для машины &apos;%s&apos;, потому что превышено ограничение на максимальную глубину снимков. Пожалуйста, удалите какой-нибудь старый ненужный снимок</translation>
+        <translation>Невозможно сделать очередной снимок для машины &apos;%s&apos;, потому что превышено ограничение на максимальную глубину снимков. Пожалуйста, удалите какой-нибудь старый ненужный снимок</translation>
     </message>
     <message>
         <location filename="../src-server/SnapshotImpl.cpp" line="1879"/>
@@ -9755,12 +9763,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/SnapshotImpl.cpp" line="2251"/>
         <source>This VM does not have any current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>У этой машины нет текущего снимка</translation>
     </message>
     <message>
         <location filename="../src-server/SnapshotImpl.cpp" line="2253"/>
         <source>The given snapshot is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Данный снимок неисправен</translation>
     </message>
     <message>
         <location filename="../src-server/SnapshotImpl.cpp" line="2286"/>
@@ -9906,7 +9914,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-all/SharedFolderImpl.cpp" line="415"/>
         <source>The symbolic link policy specified (%d) is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбранная политика символьных ссылок (%d) недопустима.</translation>
     </message>
 </context>
 <context>
@@ -10042,7 +10050,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/SystemPropertiesImpl.cpp" line="1682"/>
         <source>RTLogGroupSettings failed: %Rrc (input: %s)</source>
-        <translation type="unfinished"></translation>
+        <translation>RTLogGroupSettings завершился с ошибкой: %Rrc (input: %s)</translation>
     </message>
     <message>
         <location filename="../src-server/SystemPropertiesImpl.cpp" line="1760"/>
@@ -10349,7 +10357,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="1004"/>
         <source>Out of memory</source>
-        <translation type="unfinished">Не хватает памяти</translation>
+        <translation>Не хватает памяти</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2571"/>
@@ -10384,7 +10392,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2653"/>
         <source>Could not locate the User Payload ISO file &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно определить местоположение ISO файла User Payload &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2656"/>
@@ -10394,22 +10402,22 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2685"/>
         <source>imageIndex value %u not found in detectedImageIndices</source>
-        <translation type="unfinished"></translation>
+        <translation>значение imageIndex %u не найдено в detectedImageIndices</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2695"/>
         <source>The supplied ISO file does not contain an OS currently supported for unattended installation</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбранный ISO файл не содержит ОС, поддерживаемую для unattended установки</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2718"/>
         <source>The supplied ISO file is incompatible with the guest OS type of the VM: CPU architecture mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбранный ISO файл не совместим с типом ОС данной ВМ: несовместимая архитектура ЦПУ</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2727"/>
         <source>The machine is configured with EFI which is currently not supported by unatteded installation</source>
-        <translation type="unfinished"></translation>
+        <translation>Машина настроена на использование EFI, который в данный момент не поддерживается unatteded установкой</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2845"/>
@@ -10425,12 +10433,12 @@ Guest offers: %s</source>
         <location filename="../src-server/UnattendedImpl.cpp" line="2878"/>
         <location filename="../src-server/UnattendedImpl.cpp" line="2991"/>
         <source>prepare() not yet called</source>
-        <translation>prepare() еще не вызван</translation>
+        <translation>prepare() ещё не вызван</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="3146"/>
         <source>Found non-floppy device attached to port 0 device 0 on the floppy controller &apos;%ls&apos;</source>
-        <translation>Не найдено флоппи устройств подключенных к порту 0 устройства 0 флоппи контроллера &apos;%ls&apos;</translation>
+        <translation>Найдено устройство, не являющееся гибким диском, подключенное к порту 0 устройства 0 контроллера гибких дисков &apos;%ls&apos;</translation>
     </message>
     <message>
         <source>Support for recommended storage bus %d not implemented</source>
@@ -10440,9 +10448,9 @@ Guest offers: %s</source>
         <location filename="../src-server/UnattendedImpl.cpp" line="3302"/>
         <source>Not enough free slots on controller &apos;%s&apos; to add %u DVD drive(s)</source>
         <translation>
-            <numerusform>Нет достаточно свободных слотов на контроллере &apos;%s&apos; для добавления %u DVD диска</numerusform>
-            <numerusform>Нет достаточно свободных слотов на контроллере &apos;%s&apos; для добавления %u DVD дисков</numerusform>
-            <numerusform>Нет достаточно свободных слотов на контроллере &apos;%s&apos; для добавления %u DVD дисков</numerusform>
+            <numerusform>Нет достаточно свободных слотов на контроллере &apos;%s&apos; для добавления %u оптического диска</numerusform>
+            <numerusform>Нет достаточно свободных слотов на контроллере &apos;%s&apos; для добавления %u оптических дисков</numerusform>
+            <numerusform>Нет достаточно свободных слотов на контроллере &apos;%s&apos; для добавления %u оптических дисков</numerusform>
         </translation>
     </message>
     <message>
@@ -10574,56 +10582,56 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="253"/>
         <source>Empty user password is not allowed</source>
-        <translation type="unfinished"></translation>
+        <translation>Пустой пароль пользователя не допускается</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="384"/>
         <source>Failed to open FAT file system on newly created floppy image &apos;%s&apos;: %Rrc: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось открыть файловую систему FAT на вновь созданном образе гибкого диска &apos;%s&apos;: %Rrc: %s</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="388"/>
         <source>Failed to open FAT file system onnewly created floppy image &apos;%s&apos;: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось открыть файловую систему FAT на вновь созданном образе гибкого диска &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="422"/>
         <source>Failed to format floppy image &apos;%s&apos;: %Rrc</source>
-        <translation>Не удалось отформатировать образ флоппи &apos;%s&apos;: %Rrc</translation>
+        <translation>Не удалось отформатировать образ гибкого диска &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="427"/>
         <source>Failed to create floppy image &apos;%s&apos;: %Rrc</source>
-        <translation>Не удалось создать образ флоппи &apos;%s&apos;: %Rrc</translation>
+        <translation>Не удалось создать образ гибкого диска &apos;%s&apos;: %Rrc</translation>
     </message>
     <message numerus="yes">
         <location filename="../src-server/UnattendedInstaller.cpp" line="467"/>
         <source>Error writing %zu bytes to &apos;%s&apos; in floppy image &apos;%s&apos;: %Rrc</source>
         <translation>
-            <numerusform>Ощибка записи %zu байт в &apos;%s&apos; в образе флоппи &apos;%s&apos;: %Rrc</numerusform>
-            <numerusform>Ощибка записи %zu байта в &apos;%s&apos; в образе флоппи &apos;%s&apos;: %Rrc</numerusform>
-            <numerusform>Ощибка записи %zu байт в &apos;%s&apos; в образе флоппи &apos;%s&apos;: %Rrc</numerusform>
+            <numerusform>Ошибка записи %zu байта в &apos;%s&apos; в образ гибкого диска &apos;%s&apos;: %Rrc</numerusform>
+            <numerusform>Ошибка записи %zu байт в &apos;%s&apos; в образ гибкого диска &apos;%s&apos;: %Rrc</numerusform>
+            <numerusform>Ошибка записи %zu байт в &apos;%s&apos; в образ гибкого диска &apos;%s&apos;: %Rrc</numerusform>
         </translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="476"/>
         <source>Error creating &apos;%s&apos; in floppy image &apos;%s&apos;: %Rrc</source>
-        <translation>Ошибка создания  &apos;%s&apos; в образе флоппи &apos;%s&apos;: %Rrc</translation>
+        <translation>Ошибка создания &apos;%s&apos; в образе гибкого диска &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="509"/>
         <source>Error writing copying &apos;%s&apos; to floppy image &apos;%s&apos;: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка записи копирования &apos;%s&apos; в образ гибкого диска &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="515"/>
         <source>Error opening &apos;%s&apos; on floppy image &apos;%s&apos; for writing: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка открытия &apos;%s&apos; в образе гибкого диска &apos;%s&apos; для записи: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="521"/>
         <source>Error opening &apos;%s&apos; for copying onto floppy image &apos;%s&apos;: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка открытия &apos;%s&apos; для копирования в образ гибкого диска &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedInstaller.cpp" line="592"/>
@@ -10745,12 +10753,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="245"/>
         <source>Failed to format floppy image &apos;%s&apos;: %Rrc</source>
-        <translation type="unfinished">Не удалось отформатировать образ флоппи &apos;%s&apos;: %Rrc</translation>
+        <translation>Не удалось отформатировать образ гибкого диска &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="250"/>
         <source>Failed to create floppy image &apos;%s&apos;: %Rrc</source>
-        <translation type="unfinished">Не удалось создать образ флоппи &apos;%s&apos;: %Rrc</translation>
+        <translation>Не удалось создать образ гибкого диска &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="835"/>
@@ -10872,7 +10880,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedScript.cpp" line="157"/>
         <source>Malformed or too long template placeholder &apos;%.*s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Неправильная или слишком длинная шаблонная подстановка &apos;%.*s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedScript.cpp" line="237"/>
@@ -10899,23 +10907,23 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedScript.cpp" line="511"/>
         <source>Malformed @@VBOX_INSERT[expr]@@: Missing &apos;]&apos; (%.*s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Неправильный @@VBOX_INSERT[expr]@@: Пропущено &apos;]&apos; (%.*s)</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedScript.cpp" line="577"/>
         <location filename="../src-server/UnattendedScript.cpp" line="604"/>
         <source>Expression evaluation error for &apos;%.*s&apos;: %#RTeic</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка вычисления выражения для &apos;%.*s&apos;: %#RTeic</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedScript.cpp" line="590"/>
         <source>Malformed @@VBOX_COND[expr]@@: Missing &apos;]&apos; (%.*s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Неправильный @@VBOX_COND[expr]@@: Пропущено &apos;]&apos; (%.*s)</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedScript.cpp" line="660"/>
         <source>RTCrShaCryptGenerateSalt failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>RTCrShaCryptGenerateSalt завершился с ошибкой: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedScript.cpp" line="717"/>
@@ -10925,7 +10933,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedScript.cpp" line="791"/>
         <source>Unknown variable &apos;%.*s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестная переменная &apos;%.*s&apos;</translation>
     </message>
     <message>
         <source>Unknown template placeholder &apos;%.*s&apos;</source>
@@ -10942,28 +10950,28 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="510"/>
         <source>Frequency too small; one day is the minimum</source>
-        <translation type="unfinished"></translation>
+        <translation>Частота проверки слишком низкая; один день - минимальная</translation>
     </message>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="558"/>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="673"/>
         <source>Invalid URL scheme specified!</source>
-        <translation type="unfinished"></translation>
+        <translation>Указана недопустимая схема URL!</translation>
     </message>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="806"/>
         <source>RTHttpSetProxyByUrl() failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>RTHttpSetProxyByUrl() завершился с ошибкой: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="812"/>
         <source>RTHttpUseSystemProxySettings() failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>RTHttpUseSystemProxySettings() завершился с ошибкой: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UpdateAgentImpl.cpp" line="843"/>
         <source>Failed to format update agent error string (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось отформатировать строку ошибки агента обновления (%Rrc)</translation>
     </message>
 </context>
 <context>
@@ -11008,7 +11016,8 @@ Guest offers: %s</source>
         <location filename="../src-server/VRDEServerImpl.cpp" line="330"/>
         <source>Failed to read server certificate &apos;%s&apos;: %Rrc%#RTeim
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочесть сертификат сервера &apos;%s&apos;: %Rrc%#RTeim
+</translation>
     </message>
     <message>
         <location filename="../src-server/VRDEServerImpl.cpp" line="372"/>
@@ -11017,7 +11026,8 @@ Guest offers: %s</source>
         <location filename="../src-server/VRDEServerImpl.cpp" line="422"/>
         <source>Failed to auto generate server key and certificate: (%Rrc)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось автоматически сгенерировать ключ сервера: (%Rrc)
+</translation>
     </message>
     <message>
         <location filename="../src-server/VRDEServerImpl.cpp" line="929"/>
@@ -11043,14 +11053,14 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="604"/>
         <source>Could not create the cryptographic module critical section (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно создать критическую секцию криптографического модуля (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="1447"/>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2727"/>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2733"/>
         <source>Not yet implemented</source>
-        <translation>Еще не реализован</translation>
+        <translation>Ещё не реализован</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2048"/>
@@ -11066,12 +11076,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2239"/>
         <source>&apos;Must specify a valid platform architecture</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;Нужно указать правильную архитектуру платформы</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2247"/>
         <source>&apos;Creating VMs for platform architecture %s not supported on %s</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;Создание машин для архитектуры платформы %s не поддерживается на %s</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2588"/>
@@ -11082,7 +11092,7 @@ Guest offers: %s</source>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2604"/>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2657"/>
         <source>Device type must be HardDisk, DVD or Floppy %d</source>
-        <translation>Тип устройства должен быть Жесткий диск, DVD или Флоппи %d</translation>
+        <translation>Тип устройства должен быть Жёсткий, Оптический или Гибкий диск %d</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="2821"/>
@@ -11157,12 +11167,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4409"/>
         <source>Cannot mount DVD medium &apos;%s&apos; as floppy</source>
-        <translation>Невозможно подключить DVD носитель &apos;%s&apos; как флоппи</translation>
+        <translation>Невозможно подключить носитель оптического диска &apos;%s&apos; как гибкий диск</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4412"/>
         <source>Cannot mount floppy medium &apos;%s&apos; as DVD</source>
-        <translation>Невозможно подключить флоппи носитель &apos;%s&apos; как DVD</translation>
+        <translation>Невозможно подключить носитель гибкого диска &apos;%s&apos; как оптический диск</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4427"/>
@@ -11187,12 +11197,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4549"/>
         <source>&apos;%s&apos; is not a valid guest OS family identifier.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%s&apos; не является допустимым семейством гостевых ОС.</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4609"/>
         <source>&apos;%s&apos; is not a valid guest OS subtype.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%s&apos; не является допустимым подтипом гостевых ОС.</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4814"/>
@@ -11209,7 +11219,7 @@ Guest offers: %s</source>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4827"/>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="5373"/>
         <source>floppy image</source>
-        <translation>образ флоппи</translation>
+        <translation>образ гибкого диска</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="4843"/>
@@ -11224,12 +11234,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="5369"/>
         <source>DVD image</source>
-        <translation>Образ DVD</translation>
+        <translation>образ оптического диска</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="5412"/>
         <source>Cannot register %s &apos;%s&apos; {%RTuuid} because it is in the process of being closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно зарегистрировать %s &apos;%s&apos; {%RTuuid}, потому что он в процессе закрытия</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="5433"/>
@@ -11259,37 +11269,37 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="6455"/>
         <source>Ńo extension pack providing a cryptographic support module could be found</source>
-        <translation type="unfinished"></translation>
+        <translation>Не обнаружен пакет расширения, предоставляющий модуль криптографической поддержки</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="6474"/>
         <source>Failed to query the interface callback table from the cryptographic support module &apos;%s&apos; from extension pack &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запросить таблицу интерфейсов модуля криптографической поддержки &apos;%s&apos; пакета расширения &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="6479"/>
         <source>Failed to resolve the entry point for the cryptographic support module &apos;%s&apos; from extension pack &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось установить точку входа модуля криптографической поддержки &apos;%s&apos; пакета расширения &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="6484"/>
         <source>Couldn&apos;t load the cryptographic support module &apos;%s&apos; from extension pack &apos;%s&apos; (error: &apos;%s&apos;)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось загрузить модуль криптографической поддержки &apos;%s&apos; пакета расширения &apos;%s&apos; (error: &apos;%s&apos;)</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="6489"/>
         <source>Couldn&apos;t resolve the library path of the crpytographic support module for extension pack &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось найти путь к библиотеке модуля криптографической поддержки пакета расширения &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="6493"/>
         <source>The cryptographic support module is not supported in this build because extension packs are not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Модуль криптографической поддержки не поддерживается в этой сборке поскольку не поддерживаются пакеты расширений</translation>
     </message>
     <message>
         <location filename="../src-server/VirtualBoxImpl.cpp" line="6545"/>
         <source>The cryptographic support module is in use and can&apos;t be unloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>Модуль криптографической поддержки используется и не может быть выгружен</translation>
     </message>
 </context>
 <context>
@@ -11518,12 +11528,12 @@ Please contact the product vendor!</source>
     <message>
         <location filename="../src-client/VirtualBoxClientImpl.cpp" line="257"/>
         <source>Failed to create semaphore (vrc=%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать семафор (vrc=%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/VirtualBoxClientImpl.cpp" line="266"/>
         <source>Failed to create watcher thread (vrc=%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать поток наблюдения (vrc=%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/VirtualBoxClientImpl.cpp" line="317"/>
