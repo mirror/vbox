@@ -1091,6 +1091,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"--logfile=$(2)/UserManual_htmlhelp.log" \
 		"-Ddita.output.dir=$(2)" \
 		)
+	$$(QUIET)$$(MV) -f -- "$(2)/UserManual.hhc" "$(2)/UserManual.hhc.tmp"
+	$$(QUIET)$$(SED) \
+		-e 's|&reg;|®|g' \
+		-e 's|windows-1252|utf-8|g' \
+		--output "$(2)/UserManual.hhc" "$(2)/UserManual.hhc.tmp"
+	$$(QUIET)$$(RM) -f -- "$(2)/UserManual.hhc.tmp"
 
    ditamap-to-htmlhelp: $(2)/UserManual.hhp
 

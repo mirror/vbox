@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vmd_5md_pcc">
-  <title>Reference Implementations for Intel(R) Architecture Approximation Instructions VRCP14, VRSQRT14, VRCP28,
+  <title>Reference Implementations for Intel® Architecture Approximation Instructions VRCP14, VRSQRT14, VRCP28,
     VRSQRT28, and VEXP2</title>
   <body>
     <pre xml:space="preserve">/* Copyright (c) 2015, Intel Corporation Redistribution and use in source and
