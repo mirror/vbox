@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="license-opus-1.3.1">
+  
+ <title>opus</title>
+  
+ <body>
+  <pre xml:space="preserve">Opus licensing
+Opus has a freely available specification, a BSD-licensed, high-quality reference encoder and decoder, and protective, royalty-free licenses for the required patents. The copyright and patent licenses for Opus are automatically granted to everyone and do not require application or approval. The Opus FAQ has more information on why Opus is freely licensed.
+In brief:  (see below for details)
+        You can encode or decode Opus-compatible streams for any purpose at no cost.
+✔     You can integrate the reference Opus encoder and decoder in any application, program, or product, even commercially, at no cost.
+✔     You can create your own compatible implementations of the Opus specification and give them away or sell them.
+        You may not do these things if you engage in Opus-related patent litigation against any user of Opus.
+Licensing details
+Copyright
+Specification
+The specification is freely available as part of IETF RFC 6716. The RFC includes the reference implementation, which is available under the three-clause BSD license (see below).
+Implementation
+Both the reference implementation and the revised implementations on opus-codec.org are available under the three-clause BSD license. This BSD license is compatible with all common open source and commercial software licenses.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+- Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+- Neither the name of Internet Society, IETF or IETF Trust, nor the 
+names of specific contributors, may be used to endorse or promote
+products derived from this software without specific prior written
+permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS&#39;&#39; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Tools
+Most of the command-line Ogg-based tools that are shipped as part of the separate opus-tools package are also released under the three-clause BSD license. The only exception is the opusinfo tool, which is released under the GPLv2 license. Proprietary software developers wishing to use Opus may copy code from opusenc and opusdec, but they may not copy code from the opusinfo tool to build their applications.
+Patents
+Opus is covered by several patents. These patents are available under open-source-compatible, royalty-free licenses. If you are not trying to attack Opus with your patents, you will not have problems with these licenses.
+Some of these licenses have been updated in the past and may be updated again in the future. However, updates never invalidate the old licenses and users are always free to rely on any of the previously available licenses. In other words, newer licenses can give more rights, but never fewer.
+Xiph.Org Foundation
+The Xiph.Org foundation has several patent applications on techniques used in Opus. When issued, these patents will be automatically available under the terms provided in the below license. The license covers the listed patent applications, along with any other patent or application covering Opus that is owned by Xiph.Org.
+Xiph.Org
+Patents/Applications covered
+US 61/284,154
+US 61/450,041
+US 61/450,053
+US 61/450,060
+and any other applicable
+License Grant. Xiph.Org Foundation (“Xiph”) hereby grants to you a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this license) license under Licensed Patents to make, have made, use, offer to sell, sell, import, transfer, and otherwise run, modify (in a way that still complies with the Specification), and reproduce any Implementation.
+Definitions. Specification means, and includes the following, both individually and collectively, (a) any standard specification of the Opus codec adopted by the IETF Codec Working Group (Standard”) and (b) any reference implementation (each, a “Reference Implementation) published by the IETF Codec Working Group in the request for comments (“RFC”) issued by the IETF for the Specification draft for which this License is issued, or any RFC that is issued as an update or new version thereof. An Implementation means any Reference Implementation, or another implementation that complies with the Specification. Licensed Patents means all patents currently owned by Xiph or acquired hereafter that Xiph has the right to license as set forth above and that are necessarily infringed by the Specification, where necessarily infringed” means: in the case of (a) above, there is no commercially viable means of implementing the Specification without infringing such patent; in the case of (b) above, use of the reference implementation to the extent it infringes such patent.
+Termination. If you, directly or indirectly via controlled affiliate or subsidiary, agent, or exclusive licensee, file a Claim for patent infringement against any entity alleging that an Implementation in whole or in part constitutes direct or contributory patent infringement, or inducement of patent infringement (a “Claim), provided that a Reference Implementation also infringes the patents asserted in the Claim, then any patent rights granted to you under this License shall automatically terminate retroactively as of the date you first received the grant. Claims made against an Implementation in part will only trigger termination if the Implementation in part was done for the purpose of combining it with other technology that complies with the Specification so that the technology’s ultimate use will be consistent with the Standard as a whole.
+This license is also filed on the IETF site.
+Broadcom
+Broadcom has both issued patents and outstanding applications covering Opus. These are available under the same license as the Xiph.Org patents. The license covers the listed patents and patent applications, along with any other patent or application covering Opus that is owned by Broadcom.
+Broadcom
+Patents/Applications covered
+US 61/406,106
+US 61/394,842
+US 7,353,168
+and any other applicable
+License Grant. Broadcom Corporation (“Broadcom) hereby grants to you a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this license) license under Licensed Patents to make, have made, use, offer to sell, sell, import, transfer, and otherwise run, modify (in a way that still complies with the Specification), and reproduce any Implementation.
+Definitions. Specification means, and includes the following, both individually and collectively, (a) any standard specification of the Opus codec adopted by the IETF Codec Working Group (“Standard”) and (b) any reference implementation (each, a Reference Implementation”) published by the IETF Codec Working Group in the request for comments (“RFC) issued by the IETF for the Specification draft for which this License is issued, or any RFC that is issued as an update or new version thereof. An Implementation means any Reference Implementation, or another implementation that complies with the Specification. Licensed Patents means all patents currently owned by Broadcom or acquired hereafter that Broadcom has the right to license as set forth above and that are necessarily infringed by the Specification, where “necessarily infringed” means: in the case of (a) above, there is no commercially viable means of implementing the Specification without infringing such patent; in the case of (b) above, use of the reference implementation to the extent it infringes such patent.
+Termination. If you, directly or indirectly via controlled affiliate or subsidiary, agent, or exclusive licensee, file a Claim for patent infringement against any entity alleging that an Implementation in whole or in part constitutes direct or contributory patent infringement, or inducement of patent infringement (a Claim”), provided that a Reference Implementation also infringes the patents asserted in the Claim, then any patent rights granted to you under this License shall automatically terminate retroactively as of the date you first received the grant. Claims made against an Implementation in part will only trigger termination if the Implementation in part was done for the purpose of combining it with other technology that complies with the Specification so that the technology’s ultimate use will be consistent with the Standard as a whole.
+This license is also filed on the IETF site.
+Microsoft
+Microsoft acquired patents and applications related to Opus through their purchase of Skype. These patents (and any other Microsoft might have had) are available under a different, but still royalty-free, license detailed below. The license covers the listed patent applications, along with any other patent or application covering Opus that is owned by Microsoft.
+Microsoft
+Patents/Applications covered
+US-2008-0201137-A1
+US-2010-0174535-A1
+US-2010-0174534-A1
+US-2010-0174547-A1
+US-2010-0174532-A1
+US-2010-0174537-A1
+US-2010-0174542-A1
+US-2010-0174531-A1
+US-2010-0174541-A1
+US-2010-0174538-A1
+US-2011-0077940-A1
+and any other applicable
+Microsoft Opus Patent Terms
+11-7-2012
+1. Patent Terms.
+1.1. Specification License. Subject to all the terms and conditions of this Agreement, I, on behalf of myself and my successors in interest and assigns, hereby grant you a non-sublicensable, perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable license to my Necessary Decoder Claims for your Specification Implementation.
+1.2. Code License. Subject to all the terms and conditions of this Agreement, I, on behalf of myself and my successors in interest and assigns, hereby grant you a non-sublicensable, perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable patent license to my Necessary Reference Implementation Claims to make, use, sell, offer for sale, import or distribute a Code Implementation.
+1.3. Conditions.
+1.3.1. Availability. If you own or control Necessary Claims, the licenses set forth in Section 1 are subject to and will become effective starting on the date that you make a binding public irrevocable commitment to license, on reasonable and non-discriminatory royalty-free licensing terms 1) your Necessary Decoder Claims to all implementers for Specification Implementations, and 2) your Necessary Reference Implementation Claims to all implementers for Code Implementations, where the terms of this Agreement satisfy any reciprocity requirements in your reasonable and non-discriminatory royalty-free licensing terms. The promises set forth in Section 1 will remain in effect so long as you continue to make such claims available for Specification Implementations and Code Implementations under reasonable and non-discriminatory royalty-free licensing terms. In addition, as a condition of the licenses set forth in Section 1, you acknowledge and agree that you have not and will not knowingly take any action for the purpose of circumventing the conditions in this Section 1. Notwithstanding the foregoing, you are not required to make the commitments set forth in this Section 1.3.1 as a result of merely using a Specification Implementation or a Code Implementation as an end-user.
+1.3.2. Additional Conditions. This license is directly from me to you and you acknowledge as a condition of benefiting from it that no rights from me are received from suppliers, distributors, or otherwise in connection with this license. This license is not an assurance (i) that any of my issued patent claims covers a Specification Implementation or Code Implementation or are enforceable or (ii) that a Specification Implementation or Code Implementation would not infringe intellectual property rights of any third party.
+1.4. Termination. All rights, grants, and promises made by me to you under Section 1 are immediately terminated if you or your agent file, maintain, or voluntarily participate in a lawsuit against me or any person or entity asserting that a Specification Implementation infringes Necessary Decoder Claims or a Code Implementation infringes Necessary Reference Implementation Claims, unless that suit was in response to a corresponding suit regarding a Specification Implementation or Code Implementation first brought against you. In addition, all rights, grants, and promises made by me to you under Section 1 are terminated if you, your agent, or successor in interest seek to license Necessary Decoder Claims for Specification Implementations or Necessary Reference Implementations Claims for Code Implementations on a royalty-bearing basis, unless that royalty-bearing licensing activity is in addition to, and not in lieu of, reasonable and non-discriminatory royalty-free licensing terms for Necessary Decoder Claims for Specification Implementations or Necessary Reference Implementation Claims for Code Implementations. This Agreement may also be terminated, including back to the date of non-compliance, because of non-compliance with any other term or condition of this Agreement.
+2. Patent License Commitment. On behalf of me and my successors in interest and assigns, I agree to offer alternative reasonable and non-discriminatory royalty-bearing licensing terms 1) to my Necessary Decoder Claims solely for your Specification Implementation and 2) to my Necessary Reference Implementations Claims solely for your Code Implementation.
+3. Past Skype Declarations. You may, at your option, continue to rely on the terms set forth in Skypes past declarations made to the IETF for the Opus Audio Codec, subject to the terms of those declarations and in lieu of the terms of this Agreement solely for the patents set forth in those declarations.
+4. Good Faith Obligations. I agree that I have not and will not knowingly take any action for the purpose of circumventing my obligations under this Agreement. In addition, I will not 1) seek an injunction or exclusion order against a) Code Implementations for Necessary Reference Implementation Claims or b) Specification Implementations for Necessary Decoder Claims or 2) require that an implementer license its patents back to me, except for Necessary Reference Implementation Claims for Code Implementations and Necessary Decoder Claims for Specification Implementations. I will not transfer Necessary Reference Implementation Claims or Necessary Decoder Claims unless the transferee is subject to these obligations.
+5. Disclaimers. I expressly disclaim any warranties (express, implied, or otherwise), including implied warranties of merchantability, non-infringement, fitness for a particular purpose, or title, related to the Specification or Reference Implementation. The entire risk as to implementing or otherwise using the Specification, Specification Implementation, or Code Implementation is assumed by the implementer and user. IN NO EVENT WILL ANY PARTY BE LIABLE TO ANY OTHER PARTY FOR LOST PROFITS OR ANY FORM OF INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY CHARACTER FROM ANY CAUSES OF ACTION OF ANY KIND WITH RESPECT TO THIS AGREEMENT, WHETHER BASED ON BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), OR OTHERWISE, AND WHETHER OR NOT THE OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. Nothing in this Agreement requires me to undertake a patent search.
+6. Definitions.
+6.1. Agreement. “Agreement” means this document, which sets forth the rights, grants, limitations, conditions, obligations, and disclaimers made available for the particular Specification.
+6.2. Code Implementation. Code Implementation” means making, using, selling, offering for sale, importing or distributing 1) the Reference Implementation, or 2) an implementation that, in the case of an encoder, produces a bitstream that can be decoded by a Specification Implementation solely to the extent it produces such a bitstream, and, in the case of decoder, is a Specification Implementation, where that Specification Implementation may also infringe Necessary Reference Implementation Claims.
+6.3. Control. “Control means direct or indirect control of more than 50% of the voting power to elect directors of that corporation, or for any other entity, the power to direct management of such entity.
+6.4. I, Me, or My. “I,” me,” or “my refers to the party making this declaration, and any entity that I Control.
+6.5. Necessary Claims. “Necessary Claims” means Necessary Decoder Claims and Necessary Reference Implementation Claims.
+6.6. Necessary Decoder Claims. Necessary Decoder Claims” are those patent claims that a party owns or controls, including those claims acquired after the date of this declaration, that are necessarily infringed by an implementation of the required portions (including the required elements of optional portions) of the decoder Specification that are described in detail and not merely referenced in the Specification.
+6.7. Necessary Reference Implementation Claims. “Necessary Reference Implementation Claims are those patent claims that a party owns or controls, including those claims acquired after the date of this declaration, that are necessarily infringed by the Reference Implementation. Necessary Reference Implementation Claims do not include claims that would be infringed only as a consequence of further modification of the Reference Implementation.
+6.8. Reference Implementation. “Reference Implementation” means the implementation of the Opus encoder and/or decoder code extracted from Appendix A of the Specification.
+6.9. Specification. Specification” means IETF RFC 6716 dated September 2012.
+6.10. Specification Implementation. “Specification Implementation means making, using, selling, offering for sale, importing or distributing any conformant implementation of the decoder set forth in the Specification 1) only to the extent it implements the Specification and 2) so long as all required portions of the Specification are implemented. Specification Implementation also includes any implementation of a decoder included in subsequent versions of RFC 6716 1) only to the extent that it implements the decoder Specification, and 2) so long as all required portions of the decoder Specification are implemented.
+6.11. You or Your. “You,” you,” or “your means any person or entity who exercises patent rights granted under this Agreement, and any person or entity you Control.
+This license is also filed on the IETF site. The old license is still available.
+Other disclosures
+While Xiph.Org, Broadcom, and Microsoft filed IPR disclosures giving royalty-free licenses to their patents used in Opus, four companies that did not directly participate in the development of Opus, Qualcomm, Huawei, France Telecom, and Ericsson, filed IPR disclosures with potentially royalty-bearing terms. The IETF allows anyone (and their dog) to file an IPR disclosures if they think that their patents &#34;covers or may ultimately cover&#34; a standard. In fact, for any organization who can be said to have contributed in any (very loosely defined) way, these IPR statements are not just allowed, but required. It is thus safer for organisations to declare as much as they can. As an example, one can find similar non-free Qualcomm IPR statements on both SIP and SDP. To our advantage, however, the IETF IPR disclosure policies require companies to provide the actual patent numbers. This allows anyone to verify these claims for themselves, which is definitely a good thing.
+When it comes to patents, it is difficult to say much without making lawyers nervous. However, we can say something quite direct: external counsel Dergosits &amp; Noah has advised us that Opus can be implemented without the need to license the patents disclosed by Qualcomm, Huawei, France Telecom, or Ericsson. We can also say that Mozilla is confident enough in Opus to ship it to hundreds of millions of Firefox users. Similarly, Cisco and Google are also supporting Opus in some products. More companies are expected to do the same soon.
+Mozilla invested significant legal resources into avoiding known patent thickets when designing Opus. Whenever possible, we used processes and methods that have been long known in the field and which are considered patent-free. In addition, we filed numerous patent applications on the new things we invented to help defend the Opus community. As a result, Opus is available on a royalty-free basis and can be deployed by anyone, including other open-source projects. Everyone knows this is an incredibly challenging legal environment to operate in, but we think we&#39;ve succeeded.
+LIBJPEG-TURBO README FILE:
+*******************************************************************************
+**     Background
+*******************************************************************************
+libjpeg-turbo is a JPEG image codec that uses SIMD instructions (MMX, SSE2,
+NEON) to accelerate baseline JPEG compression and decompression on x86, x86-64,
+and ARM systems.  On such systems, libjpeg-turbo is generally 2-4x as fast as
+libjpeg, all else being equal.  On other types of systems, libjpeg-turbo can
+still outperform libjpeg by a significant amount, by virtue of its
+highly-optimized Huffman coding routines.  In many cases, the performance of
+libjpeg-turbo rivals that of proprietary high-speed JPEG codecs.
+libjpeg-turbo implements both the traditional libjpeg API as well as the less
+powerful but more straightforward TurboJPEG API.  libjpeg-turbo also features
+colorspace extensions that allow it to compress from/decompress to 32-bit and
+big-endian pixel buffers (RGBX, XBGR, etc.), as well as a full-featured Java
+interface.
+libjpeg-turbo was originally based on libjpeg/SIMD, an MMX-accelerated
+derivative of libjpeg v6b developed by Miyasaka Masaru.  The TigerVNC and
+VirtualGL projects made numerous enhancements to the codec in 2009, and in
+early 2010, libjpeg-turbo spun off into an independent project, with the goal
+of making high-speed JPEG compression/decompression technology available to a
+broader range of users and developers.
+*******************************************************************************
+**     License
+*******************************************************************************
+Most of libjpeg-turbo inherits the non-restrictive, BSD-style license used by
+libjpeg (see README.)  The TurboJPEG wrapper (both C and Java versions) and
+associated test programs bear a similar license, which is reproduced below:
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+- Neither the name of the libjpeg-turbo Project nor the names of its
+  contributors may be used to endorse or promote products derived from this
+  software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &#34;AS IS&#34;,
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************
+**     Using libjpeg-turbo
+*******************************************************************************
+libjpeg-turbo includes two APIs that can be used to compress and decompress
+JPEG images:
+  TurboJPEG API:  This API provides an easy-to-use interface for compressing
+  and decompressing JPEG images in memory.  It also provides some functionality
+  that would not be straightforward to achieve using the underlying libjpeg
+  API, such as generating planar YUV images and performing multiple
+  simultaneous lossless transforms on an image.  The Java interface for
+  libjpeg-turbo is written on top of the TurboJPEG API.
+  libjpeg API:  This is the de facto industry-standard API for compressing and
+  decompressing JPEG images.  It is more difficult to use than the TurboJPEG
+  API but also more powerful.  The libjpeg API implementation in libjpeg-turbo
+  is both API/ABI-compatible and mathematically compatible with libjpeg v6b.
+  It can also optionally be configured to be API/ABI-compatible with libjpeg v7
+  and v8 (see below.)
+There is no significant performance advantage to either API when both are used
+to perform similar operations.
+=====================
+Colorspace Extensions
+=====================
+libjpeg-turbo includes extensions that allow JPEG images to be compressed
+directly from (and decompressed directly to) buffers that use BGR, BGRX,
+RGBX, XBGR, and XRGB pixel ordering.  This is implemented with ten new
+colorspace constants:
+  JCS_EXT_RGB   /* red/green/blue */
+  JCS_EXT_RGBX  /* red/green/blue/x */
+  JCS_EXT_BGR   /* blue/green/red */
+  JCS_EXT_BGRX  /* blue/green/red/x */
+  JCS_EXT_XBGR  /* x/blue/green/red */
+  JCS_EXT_XRGB  /* x/red/green/blue */
+  JCS_EXT_RGBA  /* red/green/blue/alpha */
+  JCS_EXT_BGRA  /* blue/green/red/alpha */
+  JCS_EXT_ABGR  /* alpha/blue/green/red */
+  JCS_EXT_ARGB  /* alpha/red/green/blue */
+Setting cinfo.in_color_space (compression) or cinfo.out_color_space
+(decompression) to one of these values will cause libjpeg-turbo to read the
+red, green, and blue values from (or write them to) the appropriate position in
+the pixel when compressing from/decompressing to an RGB buffer.
+Your application can check for the existence of these extensions at compile
+time with:
+  #ifdef JCS_EXTENSIONS
+At run time, attempting to use these extensions with a libjpeg implementation
+that does not support them will result in a &#34;Bogus input colorspace&#34; error.
+Applications can trap this error in order to test whether run-time support is
+available for the colorspace extensions.
+When using the RGBX, BGRX, XBGR, and XRGB colorspaces during decompression, the
+X byte is undefined, and in order to ensure the best performance, libjpeg-turbo
+can set that byte to whatever value it wishes.  If an application expects the X
+byte to be used as an alpha channel, then it should specify JCS_EXT_RGBA,
+JCS_EXT_BGRA, JCS_EXT_ABGR, or JCS_EXT_ARGB.  When these colorspace constants
+are used, the X byte is guaranteed to be 0xFF, which is interpreted as opaque.
+Your application can check for the existence of the alpha channel colorspace
+extensions at compile time with:
+  #ifdef JCS_ALPHA_EXTENSIONS
+jcstest.c, located in the libjpeg-turbo source tree, demonstrates how to check
+for the existence of the colorspace extensions at compile time and run time.
+===================================
+libjpeg v7 and v8 API/ABI Emulation
+===================================
+With libjpeg v7 and v8, new features were added that necessitated extending the
+compression and decompression structures.  Unfortunately, due to the exposed
+nature of those structures, extending them also necessitated breaking backward
+ABI compatibility with previous libjpeg releases.  Thus, programs that were
+built to use libjpeg v7 or v8 did not work with libjpeg-turbo, since it is
+based on the libjpeg v6b code base.  Although libjpeg v7 and v8 are not
+as widely used as v6b, enough programs (including a few Linux distros) made
+the switch that there was a demand to emulate the libjpeg v7 and v8 ABIs
+in libjpeg-turbo.  It should be noted, however, that this feature was added
+primarily so that applications that had already been compiled to use libjpeg
+v7+ could take advantage of accelerated baseline JPEG encoding/decoding
+without recompiling.  libjpeg-turbo does not claim to support all of the
+libjpeg v7+ features, nor to produce identical output to libjpeg v7+ in all
+cases (see below.)
+By passing an argument of --with-jpeg7 or --with-jpeg8 to configure, or an
+argument of -DWITH_JPEG7=1 or -DWITH_JPEG8=1 to cmake, you can build a version
+of libjpeg-turbo that emulates the libjpeg v7 or v8 ABI, so that programs
+that are built against libjpeg v7 or v8 can be run with libjpeg-turbo.  The
+following section describes which libjpeg v7+ features are supported and which
+aren&#39;t.
+Support for libjpeg v7 and v8 Features:
+---------------------------------------
+Fully supported:
+-- libjpeg: IDCT scaling extensions in decompressor
+   libjpeg-turbo supports IDCT scaling with scaling factors of 1/8, 1/4, 3/8,
+   1/2, 5/8, 3/4, 7/8, 9/8, 5/4, 11/8, 3/2, 13/8, 7/4, 15/8, and 2/1 (only 1/4
+   and 1/2 are SIMD-accelerated.)
+-- libjpeg: arithmetic coding
+-- libjpeg: In-memory source and destination managers
+   See notes below.
+-- cjpeg: Separate quality settings for luminance and chrominance
+   Note that the libpjeg v7+ API was extended to accommodate this feature only
+   for convenience purposes.  It has always been possible to implement this
+   feature with libjpeg v6b (see rdswitch.c for an example.)
+-- cjpeg: 32-bit BMP support
+-- cjpeg: -rgb option
+-- jpegtran: lossless cropping
+-- jpegtran: -perfect option
+-- jpegtran: forcing width/height when performing lossless crop
+-- rdjpgcom: -raw option
+-- rdjpgcom: locale awareness
+Not supported:
+NOTE:  As of this writing, extensive research has been conducted into the
+usefulness of DCT scaling as a means of data reduction and SmartScale as a
+means of quality improvement.  The reader is invited to peruse the research at
+http://www.libjpeg-turbo.org/About/SmartScale and draw his/her own conclusions,
+but it is the general belief of our project that these features have not
+demonstrated sufficient usefulness to justify inclusion in libjpeg-turbo.
+-- libjpeg: DCT scaling in compressor
+   cinfo.scale_num and cinfo.scale_denom are silently ignored.
+   There is no technical reason why DCT scaling could not be supported when
+   emulating the libjpeg v7+ API/ABI, but without the SmartScale extension (see
+   below), only scaling factors of 1/2, 8/15, 4/7, 8/13, 2/3, 8/11, 4/5, and
+   8/9 would be available, which is of limited usefulness.
+-- libjpeg: SmartScale
+   cinfo.block_size is silently ignored.
+   SmartScale is an extension to the JPEG format that allows for DCT block
+   sizes other than 8x8.  Providing support for this new format would be
+   feasible (particularly without full acceleration.)  However, until/unless
+   the format becomes either an official industry standard or, at minimum, an
+   accepted solution in the community, we are hesitant to implement it, as
+   there is no sense of whether or how it might change in the future.  It is
+   our belief that SmartScale has not demonstrated sufficient usefulness as a
+   lossless format nor as a means of quality enhancement, and thus, our primary
+   interest in providing this feature would be as a means of supporting
+   additional DCT scaling factors.
+-- libjpeg: Fancy downsampling in compressor
+   cinfo.do_fancy_downsampling is silently ignored.
+   This requires the DCT scaling feature, which is not supported.
+-- jpegtran: Scaling
+   This requires both the DCT scaling and SmartScale features, which are not
+   supported.
+-- Lossless RGB JPEG files
+   This requires the SmartScale feature, which is not supported.
+What About libjpeg v9?
+----------------------
+libjpeg v9 introduced yet another field to the JPEG compression structure
+(color_transform), thus making the ABI backward incompatible with that of
+libjpeg v8.  This new field was introduced solely for the purpose of supporting
+lossless SmartScale encoding.  Further, there was actually no reason to extend
+the API in this manner, as the color transform could have just as easily been
+activated by way of a new JPEG colorspace constant, thus preserving backward
+ABI compatibility.
+Our research (see link above) has shown that lossless SmartScale does not
+generally accomplish anything that can&#39;t already be accomplished better with
+existing, standard lossless formats.  Thus, at this time, it is our belief that
+there is not sufficient technical justification for software to upgrade from
+libjpeg v8 to libjpeg v9, and therefore, not sufficient technical justification
+for us to emulate the libjpeg v9 ABI.
+=====================================
+In-Memory Source/Destination Managers
+=====================================
+By default, libjpeg-turbo 1.3 and later includes the jpeg_mem_src() and
+jpeg_mem_dest() functions, even when not emulating the libjpeg v8 API/ABI.
+Previously, it was necessary to build libjpeg-turbo from source with libjpeg v8
+API/ABI emulation in order to use the in-memory source/destination managers,
+but several projects requested that those functions be included when emulating
+the libjpeg v6b API/ABI as well.  This allows the use of those functions by
+programs that need them without breaking ABI compatibility for programs that
+don&#39;t, and it allows those functions to be provided in the &#34;official&#34;
+libjpeg-turbo binaries.
+Those who are concerned about maintaining strict conformance with the libjpeg
+v6b or v7 API can pass an argument of --without-mem-srcdst to configure or
+an argument of -DWITH_MEM_SRCDST=0 to CMake prior to building libjpeg-turbo.
+This will restore the pre-1.3 behavior, in which jpeg_mem_src() and
+jpeg_mem_dest() are only included when emulating the libjpeg v8 API/ABI.
+On Un*x systems, including the in-memory source/destination managers changes
+the dynamic library version from 62.0.0 to 62.1.0 if using libjpeg v6b API/ABI
+emulation and from 7.0.0 to 7.1.0 if using libjpeg v7 API/ABI emulation.
+Note that, on most Un*x systems, the dynamic linker will not look for a
+function in a library until that function is actually used.  Thus, if a program
+is built against libjpeg-turbo 1.3+ and uses jpeg_mem_src() or jpeg_mem_dest(),
+that program will not fail if run against an older version of libjpeg-turbo or
+against libjpeg v7- until the program actually tries to call jpeg_mem_src() or
+jpeg_mem_dest().  Such is not the case on Windows.  If a program is built
+against the libjpeg-turbo 1.3+ DLL and uses jpeg_mem_src() or jpeg_mem_dest(),
+then it must use the libjpeg-turbo 1.3+ DLL at run time.
+Both cjpeg and djpeg have been extended to allow testing the in-memory
+source/destination manager functions.  See their respective man pages for more
+details.
+*******************************************************************************
+**     Mathematical Compatibility
+*******************************************************************************
+For the most part, libjpeg-turbo should produce identical output to libjpeg
+v6b.  The one exception to this is when using the floating point DCT/IDCT, in
+which case the outputs of libjpeg v6b and libjpeg-turbo can differ for the
+following reasons:
+-- The SSE/SSE2 floating point DCT implementation in libjpeg-turbo is ever so
+   slightly more accurate than the implementation in libjpeg v6b, but not by
+   any amount perceptible to human vision (generally in the range of 0.01 to
+   0.08 dB gain in PNSR.)
+-- When not using the SIMD extensions, libjpeg-turbo uses the more accurate
+   (and slightly faster) floating point IDCT algorithm introduced in libjpeg
+   v8a as opposed to the algorithm used in libjpeg v6b.  It should be noted,
+   however, that this algorithm basically brings the accuracy of the floating
+   point IDCT in line with the accuracy of the slow integer IDCT.  The floating
+   point DCT/IDCT algorithms are mainly a legacy feature, and they do not
+   produce significantly more accuracy than the slow integer algorithms (to put
+   numbers on this, the typical difference in PNSR between the two algorithms
+   is less than 0.10 dB, whereas changing the quality level by 1 in the upper
+   range of the quality scale is typically more like a 1.0 dB difference.)
+-- When not using the SIMD extensions, then the accuracy of the floating point
+   DCT/IDCT can depend on the compiler and compiler settings.
+While libjpeg-turbo does emulate the libjpeg v8 API/ABI, under the hood, it is
+still using the same algorithms as libjpeg v6b, so there are several specific
+cases in which libjpeg-turbo cannot be expected to produce the same output as
+libjpeg v8:
+-- When decompressing using scaling factors of 1/2 and 1/4, because libjpeg v8
+   implements those scaling algorithms differently than libjpeg v6b does, and
+   libjpeg-turbo&#39;s SIMD extensions are based on the libjpeg v6b behavior.
+-- When using chrominance subsampling, because libjpeg v8 implements this
+   with its DCT/IDCT scaling algorithms rather than with a separate
+   downsampling/upsampling algorithm.  In our testing, the subsampled/upsampled
+   output of libjpeg v8 is less accurate than that of libjpeg v6b for this
+   reason.
+-- When decompressing using a scaling factor &gt; 1 and merged (AKA &#34;non-fancy&#34; or
+   &#34;non-smooth&#34;) chrominance upsampling, because libjpeg v8 does not support
+   merged upsampling with scaling factors &gt; 1.
+*******************************************************************************
+**     Performance Pitfalls
+*******************************************************************************
+===============
+Restart Markers
+===============
+The optimized Huffman decoder in libjpeg-turbo does not handle restart markers
+in a way that makes the rest of the libjpeg infrastructure happy, so it is
+necessary to use the slow Huffman decoder when decompressing a JPEG image that
+has restart markers.  This can cause the decompression performance to drop by
+as much as 20%, but the performance will still be much greater than that of
+libjpeg.  Many consumer packages, such as PhotoShop, use restart markers when
+generating JPEG images, so images generated by those programs will experience
+this issue.
+===============================================
+Fast Integer Forward DCT at High Quality Levels
+===============================================
+The algorithm used by the SIMD-accelerated quantization function cannot produce
+correct results whenever the fast integer forward DCT is used along with a JPEG
+quality of 98-100.  Thus, libjpeg-turbo must use the non-SIMD quantization
+function in those cases.  This causes performance to drop by as much as 40%.
+It is therefore strongly advised that you use the slow integer forward DCT
+whenever encoding images with a JPEG quality of 98 or higher.
+
+</pre>
+  </body>
+ </topic>

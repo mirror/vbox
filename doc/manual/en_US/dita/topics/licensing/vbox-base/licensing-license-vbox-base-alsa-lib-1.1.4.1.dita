@@ -5,8 +5,6 @@
  <title>alsa-lib</title>
   
  <body>
-
- 
   <pre xml:space="preserve">alsa-lib
 
 include/asoundlib.h:

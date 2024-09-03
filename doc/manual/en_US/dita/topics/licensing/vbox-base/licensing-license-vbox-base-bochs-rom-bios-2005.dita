@@ -5,11 +5,7 @@
  <title>Bochs ROM BIOS</title>
   
  <body>
-
- 
-  <pre xml:space="preserve">
-
-  ROM BIOS for use with Bochs/Plex86/QEMU emulation environment
+  <pre xml:space="preserve">  ROM BIOS for use with Bochs/Plex86/QEMU emulation environment
 
   Copyright (C) 2002  MandrakeSoft S.A.
 

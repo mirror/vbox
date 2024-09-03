@@ -5,11 +5,7 @@
  <title>Wayland</title>
   
  <body>
-
- 
-  <pre xml:space="preserve">
-
-Copyright © 2008-2012 Kristian Høgsberg
+  <pre xml:space="preserve">Copyright © 2008-2012 Kristian Høgsberg
 Copyright © 2010-2012 Intel Corporation
 Copyright © 2011 Benjamin Franzke
 Copyright © 2012 Collabora, Ltd.

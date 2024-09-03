@@ -5,8 +5,6 @@
  <title>xf86-input-mouse</title>
   
  <body>
-
- 
   <pre xml:space="preserve">xf86-input-mouse
 
 src/mouse.c

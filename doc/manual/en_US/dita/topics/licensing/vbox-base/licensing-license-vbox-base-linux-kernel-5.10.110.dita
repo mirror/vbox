@@ -5,8 +5,6 @@
  <title>Linux Kernel</title>
   
  <body>
-
- 
   <pre xml:space="preserve">vmwgfx kernel drivers
 
 The following files are used from https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/drivers/gpu/drm/vmwgfx/device_include?h=v5.10.110

@@ -5,8 +5,6 @@
  <title>Plex86/Bochs LGPL VGABios</title>
   
  <body>
-
- 
   <pre xml:space="preserve">vgabios.c:
 // ============================================================================================
 //  

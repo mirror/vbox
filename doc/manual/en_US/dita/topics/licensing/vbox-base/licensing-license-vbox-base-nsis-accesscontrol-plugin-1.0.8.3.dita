@@ -5,8 +5,6 @@
  <title>NSIS AccessControl plugin</title>
   
  <body>
-
- 
   <pre xml:space="preserve">From https://nsis.sourceforge.io/License:
 
 All NSIS source code, plug-ins, documentation, examples, header files and graphics, with the exception of the compression modules and where otherwise noted, are licensed under the zlib/libpng license.

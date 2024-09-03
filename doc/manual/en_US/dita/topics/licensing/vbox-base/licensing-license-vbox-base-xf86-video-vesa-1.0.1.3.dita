@@ -5,8 +5,6 @@
  <title>xf86-video-vesa</title>
   
  <body>
-
- 
   <pre xml:space="preserve">===============================================================
 src/vesa.h:
 /*
