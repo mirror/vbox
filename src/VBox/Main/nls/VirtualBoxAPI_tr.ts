@@ -3825,12 +3825,12 @@
     <message>
         <location filename="../src-server/GraphicsAdapterImpl.cpp" line="268"/>
         <source>The graphics controller does not support the given feature</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafik denetleyicisi verilen özelliği desteklemiyor</translation>
     </message>
     <message>
         <location filename="../src-server/GraphicsAdapterImpl.cpp" line="286"/>
         <source>The given feature is not implemented</source>
-        <translation type="unfinished"></translation>
+        <translation>Verilen özellik uygulanmadı</translation>
     </message>
     <message>
         <location filename="../src-server/GraphicsAdapterImpl.cpp" line="340"/>
@@ -4565,7 +4565,7 @@ Misafirin sunduğu: %s</translation>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="80"/>
         <source>File or directory &quot;%s&quot; can&apos;t be created</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%s&quot; dosyası veya dizini oluşturulamıyor</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="84"/>
@@ -9593,10 +9593,10 @@ Misafirin sunduğu: %s</translation>
         <translation>VM oturumu iptal edildi</translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="12957"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="1770"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="2341"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="2984"/>
+        <location filename="../src-server/MachineImpl.cpp" line="12957"/>
         <source>The session has been accidentally closed</source>
         <translation>Oturum yanlışlıkla kapatıldı</translation>
     </message>
@@ -10295,103 +10295,103 @@ Misafirin sunduğu: %s</translation>
 <context>
     <name>Unattended</name>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="380"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="382"/>
         <source>Failed to open &apos;%s&apos; (%Rrc)</source>
         <translation>&apos;%s&apos; açma başarısız (%Rrc)</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="433"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="435"/>
         <source>Failed to open &apos;%s&apos; as ISO FS (%Rrc) - %s</source>
         <translation>ISO DS olarak &apos;%s&apos; açma başarısız (%Rrc) - %s</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="436"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="438"/>
         <source>Failed to open &apos;%s&apos; as ISO FS (%Rrc)</source>
         <translation>ISO DS olarak &apos;%s&apos; açma başarısız (%Rrc)</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2569"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2571"/>
         <source>No machine associated with this IUnatteded instance</source>
         <translation>Bu IUnatteded örneğiyle ilişkilendirilmiş makine yok</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2634"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2636"/>
         <source>The prepare method has been called (must call done to restart)</source>
         <translation>Hazırlama yöntemi çağrıldı (yeniden başlatmak için çağrı yapılmak zorunda)</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2636"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2638"/>
         <source>The &apos;machine&apos; while we were using it - please don&apos;t do that</source>
         <translation>Kullandığımız &apos;makine&apos; - lütfen bunu yapmayın</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2642"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2644"/>
         <source>Could not locate the installation ISO file &apos;%s&apos;</source>
         <translation>Kurulum ISO dosyası &apos;%s&apos; bulunamadı</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2645"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2647"/>
         <source>Could not locate the Guest Additions ISO file &apos;%s&apos;</source>
         <translation>Misafir Eklentileri ISO dosyası &apos;%s&apos; bulunamadı</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2648"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2650"/>
         <source>Could not locate the validation kit ISO file &apos;%s&apos;</source>
         <translation>Doğrulama kiti ISO dosyası &apos;%s&apos; bulunamadı</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2651"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2653"/>
         <source>Could not locate the User Payload ISO file &apos;%s&apos;</source>
         <translation>Kullanıcı Yük ISO dosyası &apos;%s&apos; bulunamadı</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2654"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2656"/>
         <source>Could not locate unattended installation script template &apos;%s&apos;</source>
         <translation>Katılımsız kurulum komut kodu şablonu &apos;%s&apos; bulunamadı</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2725"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2727"/>
         <source>The machine is configured with EFI which is currently not supported by unatteded installation</source>
         <translation>Makine, şu anda katılımsız kurulum tarafından desteklenmeyen EFI ile yapılandırılmış</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2843"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2845"/>
         <source>Unattended installation is not supported for guest type &apos;%s&apos;</source>
         <translation>&apos;%s&apos; misafir türü için katılımsız kurulum desteklenmiyor</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2980"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2982"/>
         <source>reconfigureVM running on other thread</source>
         <translation>diğer iş parçacığında çalışan VM&apos;yi yeniden yapılandırın</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2876"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2989"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2878"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2991"/>
         <source>prepare() not yet called</source>
         <translation>prepare() henüz çağrılmadı</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="1002"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="1004"/>
         <source>Out of memory</source>
         <translation>Bellek yetersiz</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2683"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2685"/>
         <source>imageIndex value %u not found in detectedImageIndices</source>
         <translation>imageIndex değeri %u, detectedImageIndices içinde bulunamadı</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2693"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2695"/>
         <source>The supplied ISO file does not contain an OS currently supported for unattended installation</source>
         <translation>Sağlanan ISO dosyası, şu anda katılımsız kurulum için desteklenen bir İS içermiyor</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2716"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2718"/>
         <source>The supplied ISO file is incompatible with the guest OS type of the VM: CPU architecture mismatch</source>
         <translation>Sağlanan ISO dosyası, VM&apos;in misafir İS türüyle uyumlu değil: İşlemci mimarisi uyuşmazlığı</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3144"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3146"/>
         <source>Found non-floppy device attached to port 0 device 0 on the floppy controller &apos;%ls&apos;</source>
         <translation>&apos;%ls&apos; disket denetleyicisindeki bağlantı noktası 0 aygıt 0&apos;a takılı disket olmayan aygıt bulundu</translation>
     </message>
@@ -10400,102 +10400,102 @@ Misafirin sunduğu: %s</translation>
         <translation type="vanished">Önerilen depolama taşıyıcı %d için destek uygulanmadı</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src-server/UnattendedImpl.cpp" line="3300"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3302"/>
         <source>Not enough free slots on controller &apos;%s&apos; to add %u DVD drive(s)</source>
         <translation>
             <numerusform>%u DVD sürücüsü eklemek için &apos;%s&apos; denetleyicisinde yeterli boş alan yok</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3488"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3505"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3520"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3535"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3550"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3565"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3580"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3595"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3610"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3625"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3640"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3655"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3670"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3709"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3734"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3749"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3771"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3802"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3884"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3904"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3920"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3963"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3988"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4007"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4022"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4041"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4191"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3490"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3507"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3522"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3537"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3552"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3567"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3582"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3597"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3612"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3627"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3642"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3657"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3672"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3711"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3736"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3751"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3773"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3804"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3886"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3906"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3922"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3965"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3990"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4009"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4024"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4043"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4193"/>
         <source>Cannot change after prepare() has been called</source>
         <translation>prepare() çağrıldıktan sonra değiştirilemez</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3721"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3723"/>
         <source>Expected two lower cased letters, an underscore, and two upper cased letters</source>
         <translation>İki küçük harf, bir alt çizgi ve iki büyük harf beklenmekte</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3758"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3760"/>
         <source>Expected two upper cased letters</source>
         <translation>İki büyük harf beklenmekte</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3813"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3815"/>
         <source>Unknown keyword: %s</source>
         <translation>Bilinmeyen anahtar kelime: %s</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src-server/UnattendedImpl.cpp" line="3834"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3836"/>
         <source>Hostname &apos;%s&apos; is %zu bytes long, max is 253 (excluding trailing dot)</source>
         <translation>
             <numerusform>Anamakine adı &apos;%s&apos;, %zu bayt uzunluğunda, en fazla 253 (sondaki nokta hariç)</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3853"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3855"/>
         <source>Invalid hostname &apos;%s&apos; - label %u is too long, max is 63.</source>
         <translation>Geçersiz anamakine adı &apos;%s&apos; - %u etiketi çok uzun, en fazla 63.</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3858"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3860"/>
         <source>Invalid hostname &apos;%s&apos; - illegal char &apos;%c&apos; at position %zu</source>
         <translation>Geçersiz anamakine adı &apos;%s&apos; - %zu konumunda geçersiz karakter &apos;%c&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3863"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3865"/>
         <source>Invalid hostname &apos;%s&apos; - the name part must be at least two characters long</source>
         <translation>Geçersiz anamakine adı &apos;%s&apos; - ad kısmı en az iki karakter uzunluğunda olmak zorundadır</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3870"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3872"/>
         <source>Invalid hostname &apos;%s&apos; - illegal lead char &apos;%c&apos; at position %zu</source>
         <translation>Geçersiz anamakine adı &apos;%s&apos; - %zu konumunda geçersiz baştaki karakter &apos;%c&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3874"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3876"/>
         <source>Invalid hostname &apos;%s&apos; - trailing dot not permitted</source>
         <translation>Geçersiz anamakine adı &apos;%s&apos; - sondaki noktaya izin verilmez</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3878"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3880"/>
         <source>Incomplete hostname &apos;%s&apos; - must include both a name and a domain</source>
         <translation>Eksik anamakine adı &apos;%s&apos; - hem bir ad hem de etki alanı içermek zorunda</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3899"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3901"/>
         <source>Empty base path is not allowed</source>
         <translation>Boş temel yola izin verilmiyor</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3901"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3903"/>
         <source>Base path must be absolute</source>
         <translation>Temel yol kesin olmak zorundadır</translation>
     </message>
@@ -11321,9 +11321,9 @@ Lütfen ürün satıcısıyla iletişime geçin!</translation>
         <translation>Bağımsız değişken %s %s</translation>
     </message>
     <message>
+        <location filename="../include/Wrapper.h" line="52"/>
         <location filename="../include/VirtualBoxBase.h" line="516"/>
         <location filename="../include/VirtualBoxBase.h" line="531"/>
-        <location filename="../include/Wrapper.h" line="52"/>
         <source>Output argument %s points to invalid memory location (%p)</source>
         <translation>%s çıktı bağımsız değişkeni geçersiz bellek konumunu (%p) işaret ediyor</translation>
     </message>

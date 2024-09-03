@@ -9626,10 +9626,10 @@ Guest offers: %s</source>
         <translation>Сессия ВМ прервана</translation>
     </message>
     <message>
-        <location filename="../src-server/MachineImpl.cpp" line="12957"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="1770"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="2341"/>
         <location filename="../src-server/SnapshotImpl.cpp" line="2984"/>
+        <location filename="../src-server/MachineImpl.cpp" line="12957"/>
         <source>The session has been accidentally closed</source>
         <translation>Сессия была случайно закрыта</translation>
     </message>
@@ -10332,103 +10332,103 @@ Guest offers: %s</source>
 <context>
     <name>Unattended</name>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="380"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="382"/>
         <source>Failed to open &apos;%s&apos; (%Rrc)</source>
         <translation>Не удалось открыть &apos;%s&apos; (%Rrc)</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="433"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="435"/>
         <source>Failed to open &apos;%s&apos; as ISO FS (%Rrc) - %s</source>
         <translation>Не удалось открыть &apos;%s&apos; как файловую систему ISO (%Rrc) - %s</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="436"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="438"/>
         <source>Failed to open &apos;%s&apos; as ISO FS (%Rrc)</source>
         <translation>Не удалось открыть &apos;%s&apos; как файловую систему ISO (%Rrc)</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="1002"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="1004"/>
         <source>Out of memory</source>
         <translation type="unfinished">Не хватает памяти</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2569"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2571"/>
         <source>No machine associated with this IUnatteded instance</source>
         <translation>С этим экземпляром IUnatteded не связана ни одна машина</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2634"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2636"/>
         <source>The prepare method has been called (must call done to restart)</source>
         <translation>Вызван метод prepare (для перезагрузки нужно вызвать done)</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2636"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2638"/>
         <source>The &apos;machine&apos; while we were using it - please don&apos;t do that</source>
         <translation>Машина изменилась пока мы ее использовали - пожалуйста, не делайте так</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2642"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2644"/>
         <source>Could not locate the installation ISO file &apos;%s&apos;</source>
         <translation>Невозможно определить местоположение установочного ISO файла &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2645"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2647"/>
         <source>Could not locate the Guest Additions ISO file &apos;%s&apos;</source>
         <translation>Невозможно определить местоположение ISO файла Дополнений Гостевой ОС &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2648"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2650"/>
         <source>Could not locate the validation kit ISO file &apos;%s&apos;</source>
         <translation>Невозможно определить местоположение ISO файла комплекта для проверки &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2651"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2653"/>
         <source>Could not locate the User Payload ISO file &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2654"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2656"/>
         <source>Could not locate unattended installation script template &apos;%s&apos;</source>
         <translation>Невозможно определить местоположение шаблона скрипта unattended установки &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2683"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2685"/>
         <source>imageIndex value %u not found in detectedImageIndices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2693"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2695"/>
         <source>The supplied ISO file does not contain an OS currently supported for unattended installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2716"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2718"/>
         <source>The supplied ISO file is incompatible with the guest OS type of the VM: CPU architecture mismatch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2725"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2727"/>
         <source>The machine is configured with EFI which is currently not supported by unatteded installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2843"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2845"/>
         <source>Unattended installation is not supported for guest type &apos;%s&apos;</source>
         <translation>Unattended установка не поддерживается для типа гостевой системы &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2980"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2982"/>
         <source>reconfigureVM running on other thread</source>
         <translation>reconfigureVM запущена на другом потоке</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2876"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="2989"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2878"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="2991"/>
         <source>prepare() not yet called</source>
         <translation>prepare() еще не вызван</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3144"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3146"/>
         <source>Found non-floppy device attached to port 0 device 0 on the floppy controller &apos;%ls&apos;</source>
         <translation>Не найдено флоппи устройств подключенных к порту 0 устройства 0 флоппи контроллера &apos;%ls&apos;</translation>
     </message>
@@ -10437,7 +10437,7 @@ Guest offers: %s</source>
         <translation type="vanished">Поддержка рекомендованной шины %d не реализована</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src-server/UnattendedImpl.cpp" line="3300"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3302"/>
         <source>Not enough free slots on controller &apos;%s&apos; to add %u DVD drive(s)</source>
         <translation>
             <numerusform>Нет достаточно свободных слотов на контроллере &apos;%s&apos; для добавления %u DVD диска</numerusform>
@@ -10446,53 +10446,53 @@ Guest offers: %s</source>
         </translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3488"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3505"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3520"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3535"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3550"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3565"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3580"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3595"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3610"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3625"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3640"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3655"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3670"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3709"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3734"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3749"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3771"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3802"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3884"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3904"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3920"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3963"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3988"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4007"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4022"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4041"/>
-        <location filename="../src-server/UnattendedImpl.cpp" line="4191"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3490"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3507"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3522"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3537"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3552"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3567"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3582"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3597"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3612"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3627"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3642"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3657"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3672"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3711"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3736"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3751"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3773"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3804"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3886"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3906"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3922"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3965"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3990"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4009"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4024"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4043"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="4193"/>
         <source>Cannot change after prepare() has been called</source>
         <translation>Невозможно изменить после того, как prepare() вызван</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3721"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3723"/>
         <source>Expected two lower cased letters, an underscore, and two upper cased letters</source>
         <translation>Ожидается две буквы в нижнем регистре, символ подчеркивания, и две буквы в верхнем регистре</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3758"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3760"/>
         <source>Expected two upper cased letters</source>
         <translation>Ожидается две букве в верхнем регистре</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3813"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3815"/>
         <source>Unknown keyword: %s</source>
         <translation>Неизвестный символ: %s</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src-server/UnattendedImpl.cpp" line="3834"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3836"/>
         <source>Hostname &apos;%s&apos; is %zu bytes long, max is 253 (excluding trailing dot)</source>
         <translation>
             <numerusform>Имя хоста &apos;%s&apos; имеет длину %zu байт, максимально допустимо 253 (исключая завершающую точку)</numerusform>
@@ -10501,42 +10501,42 @@ Guest offers: %s</source>
         </translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3853"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3855"/>
         <source>Invalid hostname &apos;%s&apos; - label %u is too long, max is 63.</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - метка %u слишком длинная, максимально допустимо 63.</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3858"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3860"/>
         <source>Invalid hostname &apos;%s&apos; - illegal char &apos;%c&apos; at position %zu</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - недопустимый символ &apos;%c&apos; в позиции %zu</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3863"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3865"/>
         <source>Invalid hostname &apos;%s&apos; - the name part must be at least two characters long</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - часть с именем должна иметь длину хотя бы два символа</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3870"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3872"/>
         <source>Invalid hostname &apos;%s&apos; - illegal lead char &apos;%c&apos; at position %zu</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - недопустимый ведущий символ &apos;%c&apos; в позиции %zu</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3874"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3876"/>
         <source>Invalid hostname &apos;%s&apos; - trailing dot not permitted</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - завершающая точка не допускается</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3878"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3880"/>
         <source>Incomplete hostname &apos;%s&apos; - must include both a name and a domain</source>
         <translation>Недопустимое имя хоста &apos;%s&apos; - должно включать как имя так домен</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3899"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3901"/>
         <source>Empty base path is not allowed</source>
         <translation>Пустой базовый путь не допускается</translation>
     </message>
     <message>
-        <location filename="../src-server/UnattendedImpl.cpp" line="3901"/>
+        <location filename="../src-server/UnattendedImpl.cpp" line="3903"/>
         <source>Base path must be absolute</source>
         <translation>Базовый путь должен быть абсолютным</translation>
     </message>
@@ -11364,9 +11364,9 @@ Please contact the product vendor!</source>
         <translation>Аргумент %s %s</translation>
     </message>
     <message>
+        <location filename="../include/Wrapper.h" line="52"/>
         <location filename="../include/VirtualBoxBase.h" line="516"/>
         <location filename="../include/VirtualBoxBase.h" line="531"/>
-        <location filename="../include/Wrapper.h" line="52"/>
         <source>Output argument %s points to invalid memory location (%p)</source>
         <translation>Выходной аргумент %s указывает на недопустимый адрес в памяти (%p)</translation>
     </message>
