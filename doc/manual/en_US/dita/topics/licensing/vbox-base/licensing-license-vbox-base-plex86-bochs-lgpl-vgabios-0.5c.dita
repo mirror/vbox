@@ -5,8 +5,10 @@
  <title>Plex86/Bochs LGPL VGABios</title>
   
  <body>
+
+ 
   <pre xml:space="preserve">vgabios.c:
-// ============================================================================================
+// =============================================================================
 //  
 //  Copyright (C) 2001,2002 the LGPL VGABios developers Team
 //
@@ -24,12 +26,12 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 // 
-// ============================================================================================
+// =============================================================================
 //  
 //  This VGA Bios is specific to the plex86/bochs Emulated VGA card. 
 //  You can NOT drive any physical vga card with it. 
 //     
-// ============================================================================================
+// =============================================================================
 //  
 //  This file contains code ripped from :
 //   - rombios.c of plex86 
@@ -50,7 +52,7 @@
 // Thanks for patches, comments and ideas to :
 //   - techt@pikeonline.net
 //
-// ============================================================================================
+// =============================================================================
 
 COPYING:
 

@@ -5,9 +5,11 @@
  <title>libjpeg-turbo</title>
   
  <body>
+
+ 
   <pre xml:space="preserve">
 
-===================================================================================
+================================================================================
 https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/2.1.3/LICENSE.md
 
 libjpeg-turbo Licenses
@@ -145,7 +147,7 @@ that were granted to the IJG for code derived from their software.
 
 
 
-===================================================================================
+================================================================================
 https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/2.1.3/README.ijg
 
 [...]
@@ -201,7 +203,7 @@ assumed by the product vendor.
 
 [...]
 
-===================================================================================
+================================================================================
 https://opensource.org/licenses/Zlib
 
 Copyright (c) &lt;year&gt; &lt;copyright holders&gt;
@@ -217,7 +219,7 @@ Permission is granted to anyone to use this software for any purpose, including 
     3. This notice may not be removed or altered from any source distribution.
 
 
-===================================================================================
+================================================================================
 https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/2.1.3/turbojpeg.c
 
 /*
