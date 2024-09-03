@@ -41,7 +41,7 @@ vboxvideo_xorg_INCS = \
 	$(VBOX_PATH_X11_ROOT)/inputproto-1.9.99.902 \
 	$(VBOX_PATH_X11_ROOT)/kbproto-1.0.7 \
 	$(VBOX_PATH_X11_ROOT)/libpciaccess-0.10.8 \
-	$(VBOX_PATH_X11_ROOT)/pixman-0.40.0 \
+	$(VBOX_PATH_X11_ROOT)/pixman-0.43.4 \
 	$(VBOX_PATH_X11_ROOT)/randrproto-1.5.0 \
 	$(VBOX_PATH_X11_ROOT)/renderproto-0.11.1 \
 	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
@@ -76,7 +76,7 @@ vboxvideo_drv_lib_SOURCES  = \
 vboxvideo_drv_lib_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.18.0 \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
-	$(VBOX_PATH_X11_ROOT)/pixman-0.40.0 \
+	$(VBOX_PATH_X11_ROOT)/pixman-0.43.4 \
 	$(PATH_ROOT)/src/VBox/Runtime/include \
 	$(VBOX_GRAPHICS_INCS)
 vboxvideo_drv_lib_INST = $(INST_LIB)

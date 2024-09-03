@@ -31,7 +31,7 @@ include $(KBUILD_PATH)/subheader.kmk
 vboxmouse_xorg_INCS = \
 	$(VBOX_PATH_X11_ROOT)/inputproto-1.9.99.902 \
 	$(VBOX_PATH_X11_ROOT)/libpciaccess-0.10.8 \
-	$(VBOX_PATH_X11_ROOT)/pixman-0.40.0 \
+	$(VBOX_PATH_X11_ROOT)/pixman-0.43.4 \
 	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.31
 
