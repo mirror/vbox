@@ -75,22 +75,6 @@ Rules for adding a changelog entry to make them look more uniform:
 
     <title>Version 7.1.0 (date tbd)</title>
 
-    <para>This is a maintenance release. The following items were fixed and/or
-      added:</para>
-
-    <itemizedlist>
-
-      <listitem>
-       <para></para>
-      </listitem>
-
-    </itemizedlist>
-  </sect1>
-
-  <sect1>
-
-    <title>Version 7.1.0 (2024-08-20)</title>
-
     <para>This is a major update. The following new features were added:</para>
 
     <itemizedlist>
