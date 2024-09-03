@@ -361,7 +361,7 @@ typedef enum
     PIXMAN_FILTER_BEST,
     PIXMAN_FILTER_NEAREST,
     PIXMAN_FILTER_BILINEAR,
-    PIXMAN_FILTER_CONVOLUTION
+    PIXMAN_FILTER_CONVOLUTION,
 
     /* The SEPARABLE_CONVOLUTION filter takes the following parameters:
      *
