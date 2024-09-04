@@ -2,8 +2,7 @@
 <!DOCTYPE topic
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vm-info">
-            <title>Monitoring of Virtual Machines</title>
-  <!-- 7.1: metrics info now included for OCI instances -->        
+            <title>Monitoring of Virtual Machines</title>        
             <body>
                <p><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> includes the following tools for viewing runtime
       information, configuration details, and performance metrics of virtual machines and cloud VM instances. </p>

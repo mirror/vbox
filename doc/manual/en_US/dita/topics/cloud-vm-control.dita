@@ -2,7 +2,6 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-vm-control">
   <title>Controlling a Cloud VM</title>
-  <!-- 7.1: OCI instance reset feature-->
   <body>
     <p>You can use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to control a cloud VM as follows: </p>
     <ul>

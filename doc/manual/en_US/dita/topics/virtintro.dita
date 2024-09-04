@@ -19,13 +19,8 @@
           differences which we will point out where appropriate. </p>
                   </li>
                   <li>
-                     <p><b outputclass="bold">Guest operating system (guest OS).</b> This is the OS that is running
-          inside the virtual machine. Theoretically, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can run any
-          x86 OS such as DOS, Windows, OS/2, FreeBSD, and OpenBSD. But to achieve near-native performance of the guest
-          code on your machine, we had to go through a lot of optimizations that are specific to certain OSes. So while
-          your favorite OS <i>may</i> run as a guest, we officially support and optimize for a select few, which include
-          the most common OSes. </p>
-                     <p>See <xref href="guestossupport.dita#guestossupport"/>. </p>
+                     <p><b outputclass="bold">Guest operating system (guest OS).</b> This is the OS that is running inside the virtual machine. Theoretically, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can run any x86 OS such as DOS, Windows, OS/2, FreeBSD, and OpenBSD on an x86 host. But to achieve near-native performance of the guest code on your machine, we had to go through a lot of optimizations that are specific to certain OSs. So while your favorite OS <i>may</i> run as a guest, we officially support and optimize for a select few, which include the most common OSs. </p>
+                     <p>See <xref href="guest-os.dita"/>.</p>
                   </li>
                   <li>
                      <p><b outputclass="bold">Virtual machine (VM).</b> This is the special environment that <ph

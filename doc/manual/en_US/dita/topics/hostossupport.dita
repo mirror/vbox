@@ -2,7 +2,6 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="hostossupport">
   <title>Available Installation Packages</title>
-  <!-- 7.1: Arm platforms; require statement on host support -->
   <body>
     <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> runs on the following host Operating Systems (OSs): </p>
     <ul>

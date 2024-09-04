@@ -1,8 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="create-vm-wizard-name-os">
-  <title>Specify Name and Operating System</title>
- <!--7.1: Subtype field added --> 
+  <title>Specify Name and Operating System</title> 
   <body>
     <p>
       <ol id="ol_s3f_d13_4bc">

@@ -4,7 +4,7 @@
   <title>macOS Guests</title>
   
   <body>
-    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to install and execute unmodified versions of macOS and OS X guests on supported host hardware. Note that this feature is experimental and thus unsupported. </p>
+    <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to install and execute unmodified versions of macOS and OS X guests on supported host hardware. This feature is experimental and thus unsupported. </p>
     <p>Be aware of the following important issues before you try to install a macOS guest: </p>
     <ul>
       <li>

@@ -2,7 +2,6 @@
 <!DOCTYPE topic
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vm-activity-overview">
-  <!-- 7.1: Now shows activity info for cloud VMs -->
                <title>VM Activity Overview</title>
                <body>
                   <p>The VM Activity Overview tool displays several performance metrics for all running virtual machines

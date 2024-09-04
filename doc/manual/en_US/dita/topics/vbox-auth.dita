@@ -24,7 +24,7 @@
               credentials of the hosts. Depending on the host platform, this means the following: </p>
             <ul>
               <li>
-                <p>On Linux hosts, <userinput>VBoxAuth.so</userinput> authenticates users against the host's PAM system. </p>
+                <p>On Linux and Oracle Solaris hosts, <userinput>VBoxAuth.so</userinput> authenticates users against the host's PAM system. </p>
               </li>
               <li>
                 <p>On Windows hosts, <userinput>VBoxAuth.dll</userinput> authenticates users against the host's WinLogon

@@ -3,7 +3,6 @@
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 
 <topic xml:lang="en-us" id="soft-keyb">
-  <!-- 7.1: pic removed-->
   <title>Soft Keyboard</title>
   <body>
     <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a <i>soft keyboard</i> that enables you to input

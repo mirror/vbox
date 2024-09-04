@@ -2,7 +2,6 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="guestadd-gc-file-manager">
   <title>Guest Control File Manager</title>
-  <!-- 7.1: new icons added, pic removed-->
   <body>
     <p>If you have Guest Additions installed, you can use the Guest Control File Manager to copy files between a virtual
       machine (VM) and the host system. You can also create new folders, rename files and delete files. </p>
