@@ -849,3 +849,18 @@ HRESULT Platform::i_applyDefaults(GuestOSType *aOsType)
     return hrc;
 }
 
+/**
+ * Internal helper to return the currently set architecture of this platform.
+ *
+ * @returns Currently set architecture.
+ *
+ * @note    Takes the read lock.
+ */
+PlatformArchitecture_T Platform::i_getArchitecture(void)
+{
+    PlatformArchitecture_T enmArchitecture;
+    HRESULT const hrc = getArchitecture(&enmArchitecture);
+    AssertComRCReturn(hrc, PlatformArchitecture_None);
+    return enmArchitecture;
+}
+

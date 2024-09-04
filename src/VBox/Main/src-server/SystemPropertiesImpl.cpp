@@ -1152,16 +1152,21 @@ HRESULT SystemProperties::getSupportedExportOptions(std::vector<ExportOptions_T>
 
 HRESULT SystemProperties::getSupportedGraphicsFeatures(std::vector<GraphicsFeature_T> &aSupportedGraphicsFeatures)
 {
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     static const GraphicsFeature_T s_aGraphicsFeatures[] =
     {
-#ifdef VBOX_WITH_VIDEOHWACCEL
+# ifdef VBOX_WITH_VIDEOHWACCEL
         GraphicsFeature_Acceleration2DVideo,
-#endif
-#ifdef VBOX_WITH_3D_ACCELERATION
+# endif
+# ifdef VBOX_WITH_3D_ACCELERATION
         GraphicsFeature_Acceleration3D
-#endif
+# endif
     };
     RT_CPP_VECTOR_ASSIGN_ARRAY(aSupportedGraphicsFeatures, s_aGraphicsFeatures);
+#else
+    /* On ARM-based hosts we don't support any 2D/3D acceleration for now.*/
+    aSupportedGraphicsFeatures.clear();
+#endif
 
     return S_OK;
 }

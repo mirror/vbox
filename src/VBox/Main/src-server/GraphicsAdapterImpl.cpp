@@ -263,8 +263,9 @@ HRESULT GraphicsAdapter::setFeature(GraphicsFeature_T aFeature, BOOL aEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Validate if the given feature is supported by this graphics controller. */
-    if (!PlatformProperties::s_isGraphicsControllerFeatureSupported(mData->graphicsControllerType, aFeature))
+    /* Validate if the given feature is supported by this graphics controller on the given VM platform. */
+    if (!PlatformProperties::s_isGraphicsControllerFeatureSupported(mParent->i_getPlatform()->i_getArchitecture(),
+                                                                    mData->graphicsControllerType, aFeature))
         return setError(VBOX_E_NOT_SUPPORTED, tr("The graphics controller does not support the given feature"));
 
     bool *pfSetting = NULL;
@@ -304,16 +305,14 @@ HRESULT GraphicsAdapter::isFeatureEnabled(GraphicsFeature_T aFeature, BOOL *aEna
 
     switch (aFeature)
     {
-#ifndef VBOX_WITH_VIRT_ARMV8 /* On macOS (ARM) we don't support any 2D/3D acceleration for now. */
         case GraphicsFeature_Acceleration2DVideo:
             pfSetting = &mData->fAccelerate2DVideo;
-            *pfSetting = false; /* @bugref{9691} -- The legacy VHWA acceleration has been disabled completely. */
             break;
 
         case GraphicsFeature_Acceleration3D:
             pfSetting = &mData->fAccelerate3D;
             break;
-#endif
+
         default:
             break;
     }

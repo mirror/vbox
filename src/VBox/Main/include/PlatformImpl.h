@@ -70,6 +70,8 @@ public:
     HRESULT i_initArchitecture(PlatformArchitecture_T aArchitecture, Platform *that = NULL, bool fCopy = false);
     HRESULT i_applyDefaults(GuestOSType *aOsType);
 
+    PlatformArchitecture_T i_getArchitecture();
+
 public:
 
     // wrapped IPlatform properties
