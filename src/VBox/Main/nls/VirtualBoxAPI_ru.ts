@@ -1314,7 +1314,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="2047"/>
         <source>Temporary failure due to guest activity, please retry</source>
-        <translation>Временная неисправность из-за активности гостевой системы, пожалуйста, попробуйте снова</translation>
+        <translation>Временная неисправность из-за активности гостевой ОС, пожалуйста, попробуйте снова</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="2320"/>
@@ -1392,7 +1392,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="2573"/>
         <source>Hot-Remove was aborted because the CPU may still be used by the guest</source>
-        <translation>Горячее удаление прервано, потому что ЦПУ всё ещё может использоваться гостевой системой</translation>
+        <translation>Горячее удаление прервано, потому что ЦПУ всё ещё может использоваться гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="2648"/>
@@ -1417,7 +1417,7 @@
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="2799"/>
         <source>Checking if the ACPI Power Button event was handled by the guest OS failed (%Rrc)</source>
-        <translation>Не удалось проверить, что событие нажатия ACPI кнопки питания обрабатывается гостевой системой (%Rrc)</translation>
+        <translation>Не удалось проверить, что событие нажатия ACPI кнопки питания обрабатывается гостевой ОС (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/ConsoleImpl.cpp" line="2820"/>
@@ -3906,12 +3906,12 @@
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="548"/>
         <source>Rebooting guest</source>
-        <translation>Перезагрузка гостевой системы</translation>
+        <translation>Перезагрузка гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="548"/>
         <source>Shutting down guest</source>
-        <translation>Выключение гостевой системы</translation>
+        <translation>Выключение гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="571"/>
@@ -3921,7 +3921,7 @@
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="578"/>
         <source>Error %s guest: %Rrc</source>
-        <translation>Ошибка гостевой системы во время %s: %Rrc</translation>
+        <translation>Ошибка гостевой ОС во время %s: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="588"/>
@@ -3957,22 +3957,22 @@
     <message>
         <location filename="../src-client/GuestImpl.cpp" line="643"/>
         <source>Failed to create guest statistics update timer (%Rrc)</source>
-        <translation>Не удалось создать таймер обновления статистики гостевой системы(%Rrc)</translation>
+        <translation>Не удалось создать таймер обновления статистики гостевой ОС (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestImpl.cpp" line="648"/>
         <source>Failed to change guest statistics update timer interval from %u to %u failed (%Rrc)</source>
-        <translation>Не удалось изменить интервал таймера обновления статистики гостевой системы из %u в %u (%Rrc)</translation>
+        <translation>Не удалось изменить интервал таймера обновления статистики гостевой ОС из %u в %u (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestImpl.cpp" line="653"/>
         <source>Failed to start the guest statistics update timer (%Rrc)</source>
-        <translation>Не удалось запустить таймер обновления статистики гостевой системы (%Rrc)</translation>
+        <translation>Не удалось запустить таймер обновления статистики гостевой ОС (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestImpl.cpp" line="661"/>
         <source>Failed to stop the guest statistics update timer (%Rrc)</source>
-        <translation>Не удалось остановить таймер обновления статистики гостевой системы (%Rrc)</translation>
+        <translation>Не удалось остановить таймер обновления статистики гостевой ОС (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestImpl.cpp" line="837"/>
@@ -4000,7 +4000,7 @@
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="726"/>
         <source>Guest directory &quot;%s&quot; already exists</source>
-        <translation>Директория гостевой системы &quot;%s&quot; уже существует</translation>
+        <translation>Директория гостевой ОС &quot;%s&quot; уже существует</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDirectoryImpl.cpp" line="727"/>
@@ -4123,7 +4123,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="386"/>
         <source>Sending drag pending event to guest failed</source>
-        <translation>Не удалось отправить событие перетаскивания в гостевую систему</translation>
+        <translation>Не удалось отправить событие перетаскивания в гостевую ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="412"/>
@@ -4159,12 +4159,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="583"/>
         <source>For one or more guest files or directories selected for transferring to the host your guest user does not have the appropriate access rights for. Please make sure that all selected elements can be accessed and that your guest user has the appropriate rights</source>
-        <translation>У пользователя гостевой системы нет соответствующих прав доступа для, по крайней мере, одного или нескольких файлов или директорий гостевой системы, выбранных для передачи на хост. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа</translation>
+        <translation>У пользователя гостевой ОС нет соответствующих прав доступа для, по крайней мере, одного или нескольких файлов или директорий гостевой ОС, выбранных для передачи на хост. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="590"/>
         <source>One or more guest files or directories selected for transferring to the host were notfound on the guest anymore. This can be the case if the guest files were moved and/oraltered while the drag and drop operation was in progress</source>
-        <translation>Один или несколько файлов или директорий, выбранных для передачи на хост, не найдены в гостевой системе. Возможно, это из-за того, что файлы в гостевой системе были перемещены или удалены во время операции перетаскивания</translation>
+        <translation>Один или несколько файлов или директорий, выбранных для передачи на хост, не найдены в гостевой ОС. Возможно, это из-за того, что файлы в гостевой ОС были перемещены или удалены во время операции перетаскивания</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="596"/>
@@ -4174,17 +4174,17 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="602"/>
         <source>The guest was not able to retrieve the drag and drop data within time</source>
-        <translation>Гостевая система не смогла получить данные перетаскивания в установленное время</translation>
+        <translation>Гостевая ОС не смогла получить данные перетаскивания в установленное время</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="606"/>
         <source>Drag and drop error from guest (%Rrc)</source>
-        <translation>Ошибка перетаскивания из гостевой системы (%Rrc)</translation>
+        <translation>Ошибка перетаскивания из гостевой ОС (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="627"/>
         <source>For one or more host files or directories selected for transferring to the guest your host user does not have the appropriate access rights for. Please make sure that all selected elements can be accessed and that your host user has the appropriate rights.</source>
-        <translation>У пользователя хоста нет соответствующих прав доступа для, по крайней мере, одного или нескольких файлов или директорий, выбранных для передачи в гостевую систему. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа.</translation>
+        <translation>У пользователя хоста нет соответствующих прав доступа для, по крайней мере, одного или нескольких файлов или директорий, выбранных для передачи в гостевую ОС. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа.</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="633"/>
@@ -4194,12 +4194,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="638"/>
         <source>One or more host files or directories selected for transferring to the host were notfound on the host anymore. This can be the case if the host files were moved and/oraltered while the drag and drop operation was in progress.</source>
-        <translation>Один или несколько файлов или директорий, выбранных для передачи в гостевую систему, не найдены у хоста. Возможно, это из-за того, что файлы у хоста были перемещены или удалены во время операции перетаскивания.</translation>
+        <translation>Один или несколько файлов или директорий, выбранных для передачи в гостевую ОС, не найдены у хоста. Возможно, это из-за того, что файлы у хоста были перемещены или удалены во время операции перетаскивания.</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="644"/>
         <source>One or more host files or directories selected for transferring to the guest were locked. Please make sure that all selected elements can be accessed and that your host user has the appropriate rights.</source>
-        <translation>Один или несколько файлов или директорий, выбранных для передачи в гостевую систему, заблокированы. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа.</translation>
+        <translation>Один или несколько файлов или директорий, выбранных для передачи в гостевую ОС, заблокированы. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа.</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDSourceImpl.cpp" line="650"/>
@@ -4313,12 +4313,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="654"/>
         <source>Guest accepted drop, but did not specify the format</source>
-        <translation>Гостевая система приняла перетаскивание, но не указала формат</translation>
+        <translation>Гостевая ОС приняла перетаскивание, но не указала формат</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="656"/>
         <source>Guest accepted drop, but returned more than one drop format (%zu formats)</source>
-        <translation>Гостевая система приняла перетаскивание, но вернула более одного формата (%zu)</translation>
+        <translation>Гостевая ОС приняла перетаскивание, но вернула более одного формата (%zu)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="662"/>
@@ -4328,7 +4328,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="665"/>
         <source>Sending dropped event to guest failed</source>
-        <translation>Не удалось отправить событие перетаскивания в гостевую систему</translation>
+        <translation>Не удалось отправить событие перетаскивания в гостевую ОС</translation>
     </message>
     <message numerus="yes">
         <source>Guest returned invalid drop formats (%zu formats)</source>
@@ -4365,12 +4365,12 @@ Guest offers: %s</source>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="712"/>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="892"/>
         <source>Current drop operation to guest still in progress</source>
-        <translation>Текущая операция перетаскивания в гостевую систему всё ещё в процессе</translation>
+        <translation>Текущая операция перетаскивания в гостевую ОС всё ещё в процессе</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="716"/>
         <source>Another drag and drop operation to the guest already is in progress</source>
-        <translation>Уже производится другая операция перетаскивания в гостевую систему в настоящее время</translation>
+        <translation>Уже производится другая операция перетаскивания в гостевую ОС в настоящее время</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="721"/>
@@ -4385,12 +4385,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="794"/>
         <source>For one or more guest files or directories selected for transferring to the host your guest user does not have the appropriate access rights for. Please make sure that all selected elements can be accessed and that your guest user has the appropriate rights</source>
-        <translation>У пользователя гостевой системы нет соответствующих прав доступа для, по крайней мере, одного или нескольких файлов или директорий гостевой системы, выбранных для передачи на хост. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа</translation>
+        <translation>У пользователя гостевой ОС нет соответствующих прав доступа для, по крайней мере, одного или нескольких файлов или директорий гостевой ОС, выбранных для передачи на хост. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="801"/>
         <source>One or more guest files or directories selected for transferring to the host were notfound on the guest anymore. This can be the case if the guest files were moved and/oraltered while the drag and drop operation was in progress</source>
-        <translation>Один или несколько файлов или директорий, выбранных для передачи на хост, не найдены в гостевой системе. Возможно, это из-за того, что файлы в гостевой системе были перемещены или удалены во время операции перетаскивания</translation>
+        <translation>Один или несколько файлов или директорий, выбранных для передачи на хост, не найдены в гостевой ОС. Возможно, это из-за того, что файлы в гостевой ОС были перемещены или удалены во время операции перетаскивания</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="807"/>
@@ -4400,27 +4400,27 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="813"/>
         <source>The guest was not able to process the drag and drop data within time</source>
-        <translation>Гостевая система не смогла обработать данные перетаскивания в установленное время</translation>
+        <translation>Гостевая ОС не смогла обработать данные перетаскивания в установленное время</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="817"/>
         <source>Drag and drop error from guest (%Rrc)</source>
-        <translation>Ошибка перетаскивания из гостевой системы (%Rrc)</translation>
+        <translation>Ошибка перетаскивания из гостевой ОС (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="838"/>
         <source>For one or more host files or directories selected for transferring to the guest your host user does not have the appropriate access rights for. Please make sure that all selected elements can be accessed and that your host user has the appropriate rights.</source>
-        <translation>У пользователя хоста нет соответствующих прав доступа для, по крайней мере, одного или нескольких файлов или директорий, выбранных для передачи в гостевую систему. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа.</translation>
+        <translation>У пользователя хоста нет соответствующих прав доступа для, по крайней мере, одного или нескольких файлов или директорий, выбранных для передачи в гостевую ОС. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа.</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="845"/>
         <source>One or more host files or directories selected for transferring to the host were notfound on the host anymore. This can be the case if the host files were moved and/oraltered while the drag and drop operation was in progress.</source>
-        <translation>Один или несколько файлов или директорий, выбранных для передачи в гостевую систему, не найдены у хоста. Возможно это из-за того, что файлы у хоста были перемещены или удалены во время операции перетаскивания.</translation>
+        <translation>Один или несколько файлов или директорий, выбранных для передачи в гостевую ОС, не найдены у хоста. Возможно это из-за того, что файлы у хоста были перемещены или удалены во время операции перетаскивания.</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="851"/>
         <source>One or more host files or directories selected for transferring to the guest were locked. Please make sure that all selected elements can be accessed and that your host user has the appropriate rights.</source>
-        <translation>Один или несколько файлов или директорий, выбранных для передачи в гостевую систему, заблокированы. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа.</translation>
+        <translation>Один или несколько файлов или директорий, выбранных для передачи в гостевую ОС, заблокированы. Пожалуйста, убедитесь что все выбранные элементы доступны и пользователь имеет соответствующие права доступа.</translation>
     </message>
     <message>
         <location filename="../src-client/GuestDnDTargetImpl.cpp" line="857"/>
@@ -4433,17 +4433,17 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="453"/>
         <source>Access to guest file &quot;%s&quot; denied</source>
-        <translation>Доступ к файлу гостевой системы &quot;%s&quot; запрещен</translation>
+        <translation>Доступ к файлу гостевой ОС &quot;%s&quot; запрещен</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="454"/>
         <source>Guest file &quot;%s&quot; already exists</source>
-        <translation>Файл гостевой системы &quot;%s&quot; уже существует</translation>
+        <translation>Файл гостевой ОС &quot;%s&quot; уже существует</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="455"/>
         <source>Guest file &quot;%s&quot; not found</source>
-        <translation>Файл гостевой системы &quot;%s&quot; не найден</translation>
+        <translation>Файл гостевой ОС &quot;%s&quot; не найден</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="456"/>
@@ -4453,51 +4453,51 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="457"/>
         <source>Sharing violation for guest file &quot;%s&quot;</source>
-        <translation>Нарушение разделяемого доступа к файлу гостевой системы &quot;%s&quot;</translation>
+        <translation>Нарушение разделяемого доступа к файлу гостевой ОС &quot;%s&quot;</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="459"/>
         <source>Error %Rrc for guest file &quot;%s&quot; occurred
 </source>
-        <translation>Произошла ошибка %Rrc для файла гостевой системы &quot;%s&quot;
+        <translation>Произошла ошибка %Rrc для файла гостевой ОС &quot;%s&quot;
 </translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1535"/>
         <source>Closing guest file failed: %s</source>
-        <translation>Не удалось закрыть файл гостевой системы: %s</translation>
+        <translation>Не удалось закрыть файл гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1538"/>
         <source>Closing guest file &quot;%s&quot; failed with %Rrc
 </source>
-        <translation>Не удалось закрыть файл гостевой системы &quot;%s&quot;: %Rrc
+        <translation>Не удалось закрыть файл гостевой ОС &quot;%s&quot;: %Rrc
 </translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1569"/>
         <source>Initialization of guest file object for &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось инициализировать объект файла гостевой системы для &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось инициализировать объект файла гостевой ОС для &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1584"/>
         <source>Querying guest file information failed: %s</source>
-        <translation>Не удалось запросить информацию о файле гостевой системы: %s</translation>
+        <translation>Не удалось запросить информацию о файле гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1589"/>
         <source>Querying guest file information for &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось запросить информацию о файле гостевой системы для &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось запросить информацию о файле гостевой ОС для &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1623"/>
         <source>Querying guest file size failed: %s</source>
-        <translation>Не удалось запросить размер файла гостевой системы: %s</translation>
+        <translation>Не удалось запросить размер файла гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1627"/>
         <source>Querying guest file size for &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось запросить размер файла гостевой системы для &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось запросить размер файла гостевой ОС для &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1640"/>
@@ -4512,7 +4512,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1688"/>
         <source>The size to read for guest file &quot;%s&quot; is zero</source>
-        <translation>Размер читаемых данных из файла гостевой системы &quot;%s&quot; равен 0</translation>
+        <translation>Размер читаемых данных из файла гостевой ОС &quot;%s&quot; равен 0</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1722"/>
@@ -4522,7 +4522,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1752"/>
         <source>Invalid seek type for guest file &quot;%s&quot; specified</source>
-        <translation>Указан недопустимый тип изменения указателя для файла гостевой системы &quot;%s&quot;</translation>
+        <translation>Указан недопустимый тип изменения указателя для файла гостевой ОС &quot;%s&quot;</translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1763"/>
@@ -4532,15 +4532,15 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1784"/>
         <source>The size (%RI64) for guest file &quot;%s&quot; cannot be a negative value</source>
-        <translation>Размер (%RI64) для файла гостевой системы &quot;%s&quot; не может быть отрицательным</translation>
+        <translation>Размер (%RI64) для файла гостевой ОС &quot;%s&quot; не может быть отрицательным</translation>
     </message>
     <message numerus="yes">
         <location filename="../src-client/GuestFileImpl.cpp" line="1849"/>
         <source>Setting the guest file size of &quot;%s&quot; to %RU64 (%#RX64) bytes failed: %Rrc</source>
         <translation>
-            <numerusform>Не удалось установить размер для файла гостевой системы&quot;%s&quot; в %RU64 (%#RX64) байт: %Rrc</numerusform>
-            <numerusform>Не удалось установить размер для файла гостевой системы&quot;%s&quot; в %RU64 (%#RX64) байта: %Rrc</numerusform>
-            <numerusform>Не удалось установить размер для файла гостевой системы&quot;%s&quot; в %RU64 (%#RX64) байт: %Rrc</numerusform>
+            <numerusform>Не удалось установить размер для файла гостевой ОС &quot;%s&quot; в %RU64 (%#RX64) байт: %Rrc</numerusform>
+            <numerusform>Не удалось установить размер для файла гостевой ОС &quot;%s&quot; в %RU64 (%#RX64) байта: %Rrc</numerusform>
+            <numerusform>Не удалось установить размер для файла гостевой ОС &quot;%s&quot; в %RU64 (%#RX64) байт: %Rrc</numerusform>
         </translation>
     </message>
     <message>
@@ -4552,15 +4552,15 @@ Guest offers: %s</source>
         <location filename="../src-client/GuestFileImpl.cpp" line="1871"/>
         <source>Writing %zu bytes to guest file &quot;%s&quot; failed: %Rrc</source>
         <translation>
-            <numerusform>Не удалось записать %zu байт в файл гостевой системы &quot;%s&quot;: %Rrc</numerusform>
-            <numerusform>Не удалось записать %zu байта в файл гостевой системы &quot;%s&quot;: %Rrc</numerusform>
-            <numerusform>Не удалось записать %zu байт в файл гостевой системы &quot;%s&quot;: %Rrc</numerusform>
+            <numerusform>Не удалось записать %zu байт в файл гостевой ОС &quot;%s&quot;: %Rrc</numerusform>
+            <numerusform>Не удалось записать %zu байта в файл гостевой ОС &quot;%s&quot;: %Rrc</numerusform>
+            <numerusform>Не удалось записать %zu байт в файл гостевой ОС &quot;%s&quot;: %Rrc</numerusform>
         </translation>
     </message>
     <message>
         <location filename="../src-client/GuestFileImpl.cpp" line="1884"/>
         <source>No data to write at for guest file &quot;%s&quot; specified</source>
-        <translation>Не указаны данные для записи в файл гостевой системы &quot;%s&quot;</translation>
+        <translation>Не указаны данные для записи в файл гостевой ОС &quot;%s&quot;</translation>
     </message>
     <message numerus="yes">
         <location filename="../src-client/GuestFileImpl.cpp" line="1895"/>
@@ -4622,7 +4622,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="108"/>
         <source>The guest did not respond within time</source>
-        <translation>Гостевая система не ответила за отведенное время</translation>
+        <translation>Гостевая ОС не ответила за отведенное время</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlPrivate.cpp" line="112"/>
@@ -4661,7 +4661,7 @@ Guest offers: %s</source>
         <location filename="../src-client/GuestProcessImpl.cpp" line="557"/>
         <location filename="../src-client/GuestProcessImpl.cpp" line="558"/>
         <source>No such file or directory &quot;%s&quot; on guest</source>
-        <translation>Файл или директория &quot;%s&quot; не существует в гостевой системе</translation>
+        <translation>Файл или директория &quot;%s&quot; не существует в гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="559"/>
@@ -4676,12 +4676,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="561"/>
         <source>The file &quot;%s&quot; is not an executable format on guest</source>
-        <translation>Формат файла &quot;%s&quot; не является исполняемым в гостевой системе</translation>
+        <translation>Формат файла &quot;%s&quot; не является исполняемым в гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="562"/>
         <source>The user &quot;%s&quot; was not able to logon on guest</source>
-        <translation>Пользователь &quot;%s&quot; не смог войти в гостевую систему</translation>
+        <translation>Пользователь &quot;%s&quot; не смог войти в гостевую ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="563"/>
@@ -4691,7 +4691,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="564"/>
         <source>The guest did not respond within time</source>
-        <translation>Гостевая система не ответила за отведенное время</translation>
+        <translation>Гостевая ОС не ответила за отведенное время</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="565"/>
@@ -4876,7 +4876,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3214"/>
         <source>The guest did not respond within time</source>
-        <translation>Гостевая система не ответила за отведенное время</translation>
+        <translation>Гостевая ОС не ответила за отведенное время</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3218"/>
@@ -4896,7 +4896,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="3230"/>
         <source>Unhandled error %Rrc for &quot;%s&quot; occurred for tool &quot;%s&quot; on guest -- please file a bug report</source>
-        <translation>Произошла необработанная ошибка %Rrc для &quot;%s&quot; у инструмента &quot;%s&quot; в гостевой системе -- пожалуйста, сообщите об ошибке разработчикам</translation>
+        <translation>Произошла необработанная ошибка %Rrc для &quot;%s&quot; у инструмента &quot;%s&quot; в гостевой ОС -- пожалуйста, сообщите об ошибке разработчикам</translation>
     </message>
 </context>
 <context>
@@ -4923,7 +4923,7 @@ Guest offers: %s</source>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4732"/>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4753"/>
         <source>The base environment has not yet been reported by the guest</source>
-        <translation>Гостевая система ещё не сообщила о базовом окружении</translation>
+        <translation>Гостевая ОС ещё не сообщила о базовом окружении</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="567"/>
@@ -4933,7 +4933,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="572"/>
         <source>Getting the user&apos;s home path failed on the guest: %Rrc</source>
-        <translation>Не удалось получить путь к домашней директории пользователя на гостевой системе: %Rrc</translation>
+        <translation>Не удалось получить путь к домашней директории пользователя на гостевой ОС: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="579"/>
@@ -4948,7 +4948,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="610"/>
         <source>Getting the user&apos;s documents path failed on the guest: %Rrc</source>
-        <translation>Не удалось получить путь к директории пользователя c документами на гостевой системе: %Rrc</translation>
+        <translation>Не удалось получить путь к директории пользователя c документами на гостевой ОС: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="617"/>
@@ -4994,7 +4994,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="846"/>
         <source>Starting thread for copying from guest to the host failed</source>
-        <translation>Не удалось запустить поток для копирования с гостевой системы в хост</translation>
+        <translation>Не удалось запустить поток для копирования с гостевой ОС в хост</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="850"/>
@@ -5009,12 +5009,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="897"/>
         <source>Copying to &quot;%s&quot; on the guest</source>
-        <translation>Копирование в &quot;%s&quot; гостевой системы</translation>
+        <translation>Копирование в &quot;%s&quot; гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="913"/>
         <source>Starting thread for copying from host to the guest failed</source>
-        <translation>Не удалось запустить поток для копирования с хоста в гостевую систему</translation>
+        <translation>Не удалось запустить поток для копирования с хоста в гостевую ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="917"/>
@@ -5044,17 +5044,17 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="2325"/>
         <source>The specified user account on the guest is restricted and can&apos;t be used to logon</source>
-        <translation>Указанная учетная запись пользователя гостевой системы ограничена и не может использоваться для входа в систему</translation>
+        <translation>Указанная учетная запись пользователя гостевой ОС ограничена и не может использоваться для входа в систему</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="2329"/>
         <source>The specified user was not able to logon on guest</source>
-        <translation>Указанный пользователь не смог войти в гостевую систему</translation>
+        <translation>Указанный пользователь не смог войти в гостевую ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="2333"/>
         <source>The guest did not respond within time</source>
-        <translation>Гостевая система не ответила за отведенное время</translation>
+        <translation>Гостевая ОС не ответила за отведенное время</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="2337"/>
@@ -5102,12 +5102,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4161"/>
         <source>Querying type for guest source failed: %s</source>
-        <translation>Не удалось запросить тип источника в гостевой системе: %s</translation>
+        <translation>Не удалось запросить тип источника в гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4164"/>
         <source>Querying type for guest source &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось запросить тип источника гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось запросить тип источника гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <source>Source type %#x invalid / not supported</source>
@@ -5146,22 +5146,22 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4367"/>
         <source>Guest directory creation failed: %s</source>
-        <translation>Не удалось создать директорию в гостевой системе: %s</translation>
+        <translation>Не удалось создать директорию в гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4373"/>
         <source>Guest directory creation failed: Invalid parameters given</source>
-        <translation>Не удалось создать директорию в гостевой системе: Данные параметры недопустимы</translation>
+        <translation>Не удалось создать директорию в гостевой ОС: Данные параметры недопустимы</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4377"/>
         <source>Guest directory creation failed: Unexpectedly aborted</source>
-        <translation>Не удалось создать директорию в гостевой системе: Неожиданно прерван</translation>
+        <translation>Не удалось создать директорию в гостевой ОС: Неожиданно прерван</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4381"/>
         <source>Guest directory creation failed: %Rrc</source>
-        <translation>Не удалось создать директорию в гостевой системе: %Rrc</translation>
+        <translation>Не удалось создать директорию в гостевой ОС: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4393"/>
@@ -5181,12 +5181,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4415"/>
         <source>Temporary guest directory creation failed: %s</source>
-        <translation>Не удалось создать временную директорию в гостевой системе: %s</translation>
+        <translation>Не удалось создать временную директорию в гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4420"/>
         <source>Temporary guest directory creation &quot;%s&quot; with template &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось создать временную директорию &quot;%s&quot; по шаблону &quot;%s&quot; в гостевой системе: %Rrc</translation>
+        <translation>Не удалось создать временную директорию &quot;%s&quot; по шаблону &quot;%s&quot; в гостевой ОС: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4432"/>
@@ -5241,7 +5241,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4568"/>
         <source>Handling removing guest directories not supported by installed Guest Additions</source>
-        <translation>Обработка удаления директорий гостевой системы не поддерживается установленными Дополнениями Гостевой ОС</translation>
+        <translation>Обработка удаления директорий гостевой ОС не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4574"/>
@@ -5266,12 +5266,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4628"/>
         <source>Removing guest directory</source>
-        <translation>Удаление директории гостевой системы</translation>
+        <translation>Удаление директории гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4649"/>
         <source>Handling removing guest directories recursively not supported by installed Guest Additions</source>
-        <translation>Обработка рекурсивного удаления директорий гостевой системы не поддерживается установленными Дополнениями Гостевой ОС</translation>
+        <translation>Обработка рекурсивного удаления директорий гостевой ОС не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4655"/>
@@ -5303,12 +5303,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4803"/>
         <source>Querying guest file existence failed: %s</source>
-        <translation>Не удалось запросить существование файла гостевой системы: %s</translation>
+        <translation>Не удалось запросить существование файла гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4816"/>
         <source>Querying guest file information for &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось запросить информацию о файле гостевой системы для &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось запросить информацию о файле гостевой ОС для &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4838"/>
@@ -5344,17 +5344,17 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4918"/>
         <source>Handling guest files not supported by installed Guest Additions</source>
-        <translation>Обработка файлов гостевой системы не поддерживается установленными Дополнениями Гостевой ОС</translation>
+        <translation>Обработка файлов гостевой ОС не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4924"/>
         <source>Opening guest file failed: %s</source>
-        <translation>Не удалось открыть файл гостевой системы: %s</translation>
+        <translation>Не удалось открыть файл гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4929"/>
         <source>Opening guest file &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось открыть файл гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось открыть файл гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4940"/>
@@ -5368,12 +5368,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4956"/>
         <source>Querying guest file size failed: %s</source>
-        <translation>Не удалось запросить размер файла гостевой системы: %s</translation>
+        <translation>Не удалось запросить размер файла гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4960"/>
         <source>Querying guest file size of &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось запросить размер файла гостевой системы для &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось запросить размер файла гостевой ОС для &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5007"/>
@@ -5388,12 +5388,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5047"/>
         <source>Querying guest file existence information failed: %s</source>
-        <translation>Не удалось запросить информацию о существовании файла гостевой системы для: %s</translation>
+        <translation>Не удалось запросить информацию о существовании файла гостевой ОС для: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5052"/>
         <source>Querying guest file existence information for &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось запросить информацию о существовании файла гостевой системы для &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось запросить информацию о существовании файла гостевой ОС для &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5090"/>
@@ -5412,12 +5412,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5118"/>
         <source>Removing guest file failed: %s</source>
-        <translation>Не удалось удалить файл гостевой системы: %s</translation>
+        <translation>Не удалось удалить файл гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5122"/>
         <source>Removing guest file &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось удалить файл гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось удалить файл гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5139"/>
@@ -5437,17 +5437,17 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5174"/>
         <source>Handling renaming guest paths not supported by installed Guest Additions</source>
-        <translation>Обработка переименования путей гостевой системы не поддерживается установленными Дополнениями Гостевой ОС</translation>
+        <translation>Обработка переименования путей гостевой ОС не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5180"/>
         <source>Renaming guest path failed: %s</source>
-        <translation>Не удалось переименовать путь гостевой системы: %s</translation>
+        <translation>Не удалось переименовать путь гостевой ОС: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5185"/>
         <source>Renaming guest path &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось переименовать путь гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось переименовать путь гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5260"/>
@@ -5472,7 +5472,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5351"/>
         <source>Failed to create guest process object: %Rrc</source>
-        <translation>Не удалось создать объект процесса гостевой системы: %Rrc</translation>
+        <translation>Не удалось создать объект процесса гостевой ОС: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="5355"/>
@@ -5515,12 +5515,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="300"/>
         <source>Guest directory &quot;%s&quot; already exists</source>
-        <translation>Директория гостевой системы &quot;%s&quot; уже существует</translation>
+        <translation>Директория гостевой ОС &quot;%s&quot; уже существует</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="325"/>
         <source>Guest error creating directory &quot;%s&quot; on the guest: %Rrc</source>
-        <translation>Ошибка гостевой системы во время создания гостевой директории &quot;%s&quot;: %Rrc</translation>
+        <translation>Ошибка гостевой ОС во время создания гостевой директории &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="332"/>
@@ -5540,15 +5540,15 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="414"/>
         <source>Seeking to offset %RU64 of guest file &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось изменить указатель в позицию %RI64 для файла гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось изменить указатель в позицию %RI64 для файла гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message numerus="yes">
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="429"/>
         <source>Reading %RU32 bytes @ %RU64 from guest &quot;%s&quot; failed: %Rrc</source>
         <translation>
-            <numerusform>Не удалось прочитать %RU32 байт @ %RU64 с гостевой системы &quot;%s&quot;: %Rrc</numerusform>
-            <numerusform>Не удалось прочитать %RU32 байта @ %RU64 с гостевой системы &quot;%s&quot;: %Rrc</numerusform>
-            <numerusform>Не удалось прочитать %RU32 байт @ %RU64 с гостевой системы &quot;%s&quot;: %Rrc</numerusform>
+            <numerusform>Не удалось прочитать %RU32 байт @ %RU64 с гостевой ОС &quot;%s&quot;: %Rrc</numerusform>
+            <numerusform>Не удалось прочитать %RU32 байта @ %RU64 с гостевой ОС &quot;%s&quot;: %Rrc</numerusform>
+            <numerusform>Не удалось прочитать %RU32 байт @ %RU64 с гостевой ОС &quot;%s&quot;: %Rrc</numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -5563,7 +5563,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="477"/>
         <source>Writing guest file &quot;%s&quot; to host file &quot;%s&quot; failed: Access denied</source>
-        <translation>Не удалось записать файл гостевой системы &quot;%s&quot; в файл хоста &quot;%s&quot;: Доступ запрещен</translation>
+        <translation>Не удалось записать файл гостевой ОС &quot;%s&quot; в файл хоста &quot;%s&quot;: Доступ запрещен</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="485"/>
@@ -5607,32 +5607,32 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="549"/>
         <source>Guest file lookup failed</source>
-        <translation>Не удалось найти файл гостевой системы</translation>
+        <translation>Не удалось найти файл гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="553"/>
         <source>Guest file lookup for &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось найти файл гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось найти файл гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="566"/>
         <source>Guest file &quot;%s&quot; is a symbolic link</source>
-        <translation>Файл гостевой системы &quot;%s&quot; является символической ссылкой</translation>
+        <translation>Файл гостевой ОС &quot;%s&quot; является символической ссылкой</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="574"/>
         <source>Guest object &quot;%s&quot; is not a file (is type %#x)</source>
-        <translation>Объект гостевой системы &quot;%s&quot; не является файлом (тип %#x)</translation>
+        <translation>Объект гостевой ОС &quot;%s&quot; не является файлом (тип %#x)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="588"/>
         <source>Guest file could not be opened</source>
-        <translation>Не удалось открыть файл гостевой системы</translation>
+        <translation>Не удалось открыть файл гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="592"/>
         <source>Guest file &quot;%s&quot; could not be opened: %Rrc</source>
-        <translation>Не удалось открыть файл гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось открыть файл гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="653"/>
@@ -5675,7 +5675,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="804"/>
         <source>Writing to guest file &quot;%s&quot; failed: Access denied</source>
-        <translation>Не удалось записать в файл гостевой системы &quot;%s&quot;: Доступ запрещен</translation>
+        <translation>Не удалось записать в файл гостевой ОС &quot;%s&quot;: Доступ запрещен</translation>
     </message>
     <message>
         <source>Copying to guest file &quot;%s&quot; failed (%RU64/%RU64 bytes transfered)</source>
@@ -5689,12 +5689,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="923"/>
         <source>Guest error while determining object data for guest file &quot;%s&quot;: %Rrc</source>
-        <translation>Ошибка гостевой системы во времы определения данных объекта для файла гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Ошибка гостевой ОС во времы определения данных объекта для файла гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="930"/>
         <source>Host error while determining object data for guest file &quot;%s&quot;: %Rrc</source>
-        <translation>Ошибка хоста во времы определения данных объекта для файла гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Ошибка хоста во времы определения данных объекта для файла гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="938"/>
@@ -5729,22 +5729,22 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1519"/>
         <source>Guest source entry must not be empty</source>
-        <translation>Путь источника в гостевой системе не должен быть пустым</translation>
+        <translation>Путь источника в гостевой ОС не должен быть пустым</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1542"/>
         <source>Guest source lookup failed</source>
-        <translation>Не удалось найти источник гостевой системы</translation>
+        <translation>Не удалось найти источник гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1545"/>
         <source>Guest source lookup for &quot;%s&quot; failed: %Rrc</source>
-        <translation>Не удалось найти источник гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось найти источник гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1598"/>
         <source>Error adding guest source &quot;%s&quot; to list: %Rrc</source>
-        <translation>Ошибка добавления источника в гостевой системе &apos;&quot;%s&quot; в список: %Rrc</translation>
+        <translation>Ошибка добавления источника в гостевой ОС &apos;&quot;%s&quot; в список: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1631"/>
@@ -5769,49 +5769,49 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1684"/>
         <source>Building host destination root path &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось составить корневой путь источника &quot;%s&quot; в основной ОС (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1741"/>
         <source>Host path lookup for &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось найти путь &quot;%s&quot; в основной ОС: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1762"/>
         <source>Host root directory &quot;%s&quot; already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>Корневая директория &quot;%s&quot; в основной ОС уже существует</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1772"/>
         <source>Destination &quot;%s&quot; on the host already exists and is a file</source>
-        <translation type="unfinished"></translation>
+        <translation>Путь назначения &quot;%s&quot; в основной ОС уже сущесвует и является файлом</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1780"/>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1899"/>
         <source>Unknown object type (%#x) on host for &quot;%s&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестный тип объекта (%#x) в основной ОС для &quot;%s&quot;</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1823"/>
         <source>Translating guest source path &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось проверить путь источника гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1833"/>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1915"/>
         <source>Translating host destination path &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось проверить путь назначения основной ОС &quot;%s&quot;: (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1878"/>
         <source>Destination &quot;%s&quot; on the host already exists and is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Путь назначения &quot;%s&quot; в основной ОС уже сущесвует и является директорией</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1889"/>
         <source>Host file &quot;%s&quot; already exists</source>
-        <translation type="unfinished">Файл хоста &quot;%s&quot; уже существует</translation>
+        <translation>Файл основной ОС &quot;%s&quot; уже существует</translation>
     </message>
     <message>
         <source>Guest file lookup failed</source>
@@ -5824,12 +5824,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1554"/>
         <source>Guest source is not a file: %s</source>
-        <translation>Источник в гостевой системе не является файлом: %s</translation>
+        <translation>Источник в гостевой ОС не является файлом: %s</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1563"/>
         <source>Guest source is not a directory: %s</source>
-        <translation>Источник в гостевой системе не является директорией: %s</translation>
+        <translation>Источник в гостевой ОС не является директорией: %s</translation>
     </message>
     <message>
         <source>Error adding guest source &apos;%s&apos; to list: %Rrc</source>
@@ -5846,12 +5846,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1988"/>
         <source>No host sources specified</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указаны источники основной ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="1993"/>
         <source>Guest destination must not be empty</source>
-        <translation>Путь назначения в гостевой системе не должен быть пустым</translation>
+        <translation>Путь назначения в гостевой ОС не должен быть пустым</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2008"/>
@@ -5866,78 +5866,78 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2039"/>
         <source>Host source &quot;%s&quot; is not a file (is a directory)</source>
-        <translation type="unfinished"></translation>
+        <translation>Источник &quot;%s&quot; основной ОС не является файлом (директория)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2049"/>
         <source>Host source &quot;%s&quot; is not a directory (is a file)</source>
-        <translation type="unfinished"></translation>
+        <translation>Источник &quot;%s&quot; основной ОС не является директорией (файл)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2059"/>
         <source>Host source &quot;%s&quot; is a symbolic link</source>
-        <translation type="unfinished"></translation>
+        <translation>Источник &quot;%s&quot; основной ОС является ссылкой</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2081"/>
         <source>Querying symbolic link info for host source &quot;%s&quot; failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запросить информацию по ссылке &quot;%s&quot; в основной ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2087"/>
         <source>Resolving symbolic link for host source &quot;%s&quot; failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось проверить ссылку &quot;%s&quot; в основной ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2138"/>
         <source>Error adding host source &quot;%s&quot; to list: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка добавления источника &quot;%s&quot; основной ОС в список: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2171"/>
         <source>Copying &quot;%s&quot; [and %zu %s] from host to &quot;%s&quot; on the guest ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Копирование &quot;%s&quot; [и %zu %s] из основной ОС в &quot;%s&quot; в гостевой ОС ...</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2172"/>
         <source>others</source>
-        <translation type="unfinished"></translation>
+        <translation>прочих</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2172"/>
         <source>other</source>
-        <translation type="unfinished"></translation>
+        <translation>прочий</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2175"/>
         <source>Copying &quot;%s&quot; from host to &quot;%s&quot; on the guest ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Копирование &quot;%s&quot; из основной ОС в &quot;%s&quot; в гостевой ОС ...</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2362"/>
         <source>Translating host source path&quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось проверить путь источника основной ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2373"/>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2460"/>
         <source>Translating guest destination path &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось проверить путь назначения гостевой ОС &quot;%s&quot;: (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2424"/>
         <source>Destination &quot;%s&quot; on the guest already exists and is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Путь назначения &quot;%s&quot; в гостевой ОС уже сущесвует и является директорией</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2435"/>
         <source>Guest file &quot;%s&quot; already exists</source>
-        <translation type="unfinished">Файл гостевой системы &quot;%s&quot; уже существует</translation>
+        <translation>Файл гостевой ОС &quot;%s&quot; уже существует</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2444"/>
         <source>Unsupported guest file system type (%#x) for &quot;%s&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Неподдерживаемое значение типа файловой системы (%#x) в гостевой ОС для &quot;%s&quot;</translation>
     </message>
     <message>
         <source>Host source is not a file: %s</source>
@@ -5959,23 +5959,23 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2225"/>
         <source>Building guest destination root path &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось составить корневой путь назначения &quot;%s&quot; в гостевой ОС (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2269"/>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2277"/>
         <source>Querying information on guest for &quot;%s&quot; failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запросить информацию о &quot;%s&quot; у гостевой ОС: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2298"/>
         <source>Guest root directory &quot;%s&quot; already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>Корневая директория &quot;%s&quot; в гостевой ОС уже существует</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2308"/>
         <source>Destination &quot;%s&quot; on guest already exists and is a file</source>
-        <translation type="unfinished"></translation>
+        <translation>Путь назначения &quot;%s&quot; в гостевой ОС уже сущесвует и является файлом</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2320"/>
@@ -6004,7 +6004,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2670"/>
         <source>Guest file &quot;%s&quot; could not be opened: %Rrc</source>
-        <translation>Не удалось открыть файл гостевой системы &quot;%s&quot;: %Rrc</translation>
+        <translation>Не удалось открыть файл гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <source>Running update file &quot;%s&quot; on guest failed: %Rrc</source>
@@ -6013,12 +6013,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2761"/>
         <source>Running update file &quot;%s&quot; on guest failed with exit code %d</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось выполнить файл &quot;%s&quot; в гостевой ОС, ошибка: %d</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2767"/>
         <source>Running update file on guest failed</source>
-        <translation>Не удалось обновить файл гостевой системы</translation>
+        <translation>Не удалось обновить файл гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2773"/>
@@ -6028,27 +6028,27 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2779"/>
         <source>Error while running update file &quot;%s&quot; on guest: %Rrc</source>
-        <translation>Ошибка во время запуска файла обновления &quot;%s&quot; в гостевой системе: %Rrc</translation>
+        <translation>Ошибка во время запуска файла обновления &quot;%s&quot; в гостевой ОС: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2824"/>
         <source>Files were installed, but user services were not reloaded automatically. Please consider rebooting the guest</source>
-        <translation type="unfinished"></translation>
+        <translation>Файлы были установлены, но сервисы пользователя не были автоматически перезапущены. Пожалуйста, перезагрузите гостевую ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2829"/>
         <source>Files were installed, but kernel modules were not reloaded automatically. Please consider rebooting the guest</source>
-        <translation type="unfinished"></translation>
+        <translation>Файлы были установлены, но корневые модули не были автоматически перезапущены. Пожалуйста, перезагрузите гостевую ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2943"/>
         <source>Guest Additions were not ready within time, giving up</source>
-        <translation>Дополнения Гостевой ОС не стали готовы за отведенное время, сдаюсь</translation>
+        <translation>Дополнения Гостевой ОС не подготовлены за отведенное время, отмена</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2956"/>
         <source>Guest Additions are installed but not fully loaded yet, aborting automatic update</source>
-        <translation type="unfinished">Дополнения Гостевой ОС установлены, но ещё не полностью загружены, прерывание автоматического обновления</translation>
+        <translation>Дополнения Гостевой ОС установлены, но ещё не полностью загружены, прерывание автоматического обновления</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2959"/>
@@ -6058,7 +6058,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2976"/>
         <source>Guest has too old Guest Additions (%s) installed for automatic updating, please update manually</source>
-        <translation>В гостевой системе установлена слишком старая версия Дополнений Гостевой ОС (%s). Автоматическое обновление невозможно. Пожалуйста, обновите вручную</translation>
+        <translation>В гостевой ОС установлена слишком старая версия Дополнений Гостевой ОС (%s). Автоматическое обновление невозможно. Пожалуйста, обновите вручную</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3010"/>
@@ -6093,32 +6093,32 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3115"/>
         <source>Creating update directory on guest failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать директорию обновления в гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3121"/>
         <source>Creating update directory &quot;%s&quot; on guest failed: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать директорию обновления &quot;%s&quot; в гостевой ОС: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3371"/>
         <source>Guest services were not restarted, please reinstall Guest Additions manually</source>
-        <translation type="unfinished"></translation>
+        <translation>Сервисы гостевой ОС не были перезапущены, пожалуйста, переустановите Дополнения Гостевой ОС вручную</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3377"/>
         <source>Old guest session is still active, guest services were not restarted after installation, please reinstall Guest Additions manually</source>
-        <translation type="unfinished"></translation>
+        <translation>Старая сессия гостевой ОС всё ещё активна, сервисы гостевой ОС не были перезапущены после установки, пожалуйста, переустановите Дополнения Гостевой ОС вручную</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3401"/>
         <source>Operation was canceled</source>
-        <translation type="unfinished"></translation>
+        <translation>Операция отменена</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3408"/>
         <source>Operation has timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Срок выполнения операция истёк</translation>
     </message>
     <message>
         <source>Creating installation directory on guest failed</source>
@@ -6131,7 +6131,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="3308"/>
         <source>Error while copying file &quot;%s&quot; to &quot;%s&quot; on the guest: %Rrc</source>
-        <translation>Ошибка во время копирования файла &quot;%s&quot; в &quot;%s&quot; в гостевой системе: %Rrc</translation>
+        <translation>Ошибка во время копирования файла &quot;%s&quot; в &quot;%s&quot; в гостевой ОС: %Rrc</translation>
     </message>
     <message>
         <source>Installation was canceled</source>
@@ -6302,7 +6302,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/HostUSBDeviceImpl.cpp" line="437"/>
         <source>USB device &apos;%s&apos; with UUID {%RTuuid} cannot be accessed by guest computers</source>
-        <translation>USB устройство &apos;%s&apos; с UUID {%RTuuid} не имеет доступа из гостевой системы</translation>
+        <translation>USB устройство &apos;%s&apos; с UUID {%RTuuid} не имеет доступа из гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-server/HostUSBDeviceImpl.cpp" line="441"/>
@@ -6566,7 +6566,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="1680"/>
         <source>There is still a CPU attached to socket %lu.Detach the CPU before removing the socket</source>
-        <translation type="unfinished">Все ещё существует ЦПУ подключенный к сокету %lu. Отключите ЦПУ перед удалением сокета</translation>
+        <translation>Всё ещё существует ЦПУ подключенный к сокету %lu. Отключите ЦПУ перед удалением сокета</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="1712"/>
@@ -6903,60 +6903,60 @@ Guest offers: %s</source>
         <location filename="../src-server/MachineImpl.cpp" line="16332"/>
         <location filename="../src-server/MachineImpl.cpp" line="16370"/>
         <source>Full VM encryption is not available with this build</source>
-        <translation type="unfinished"></translation>
+        <translation>Полное шифрование ВМ недоступно в этой сборке</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="386"/>
         <source>The cipher &apos;%s&apos; is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип шифрования &apos;%s&apos; не поддерживается</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="394"/>
         <location filename="../src-server/MachineImpl.cpp" line="15907"/>
         <source>New key store creation failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать новое хранилище ключей, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="405"/>
         <location filename="../src-server/MachineImpl.cpp" line="15925"/>
         <source>Saving the key store failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сохранить хранилище ключей, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="660"/>
         <source>Decryption of the machine {%RTuuid} failed. Incorrect or unknown password</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось расшифровать машину {%RTuuid}. Неверный или неизвестный пароль</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="884"/>
         <source>existing settings file</source>
-        <translation type="unfinished"></translation>
+        <translation>файл настроек уже существует</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="938"/>
         <source>Failed to retain key for key ID &apos;%s&apos; with %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось получить ключ с ИД &apos;%s&apos; с ошибкой %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="970"/>
         <source>Config decryption of the machine {%RTuuid} failed. Incorrect or unknown password</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось расшифровать конфигурацию машины {%RTuuid}. Неверный или неизвестный пароль</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="3212"/>
         <location filename="../src-server/MachineImpl.cpp" line="3792"/>
         <source>Controller &apos;%s&apos; does not support hot-plugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер &apos;%s&apos; не поддерживает горячее подключение</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="3806"/>
         <source>The device slot %d on port %d of controller &apos;%s&apos; does not support hot-plugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Слот устройства %d на порту %d контроллера &apos;%s&apos; не поддерживает горячее подключение</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="3878"/>
         <source>Controller &apos;%s&apos; does not support hot-plugging which is required to change the passthrough setting while the VM is running</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер &apos;%s&apos; не поддерживает горячее подключение, которое требуется для изменения настроек &quot;прямого доступа&quot; во время работы ВМ</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="4852"/>
@@ -6998,12 +6998,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="5236"/>
         <source>Invalid guest property flag values: &apos;%s&apos;</source>
-        <translation>Недопустимые значения флага свойства гостевой системы: &apos;%s&apos;</translation>
+        <translation>Недопустимые значения флага свойства гостевой ОС: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="5239"/>
         <source>Properties with TRANSIENT or TRANSRESET flag cannot be set or modified if VM is not running</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно задать или изменить параметры с флагом TRANSIENT или TRANSRESET пока ВМ не запущена</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="5261"/>
@@ -7045,7 +7045,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="5922"/>
         <source>Saved guest size is not available (%Rrc)</source>
-        <translation>Размер сохраненной гостевой системы недоступен (%Rrc)</translation>
+        <translation>Размер сохраненной гостевой ОС недоступен (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="5946"/>
@@ -7197,7 +7197,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="7227"/>
         <source>hardening log file</source>
-        <translation type="unfinished"></translation>
+        <translation>hardening файл журнала</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="7286"/>
@@ -7338,139 +7338,139 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="9148"/>
         <source>Controller &apos;%s&apos; port %u unit %u has device with unknown type (%d) - virtual machine &apos;%s&apos; (&apos;%s&apos;)</source>
-        <translation type="unfinished"></translation>
+        <translation>На контроллере &apos;%s&apos;, порту %u, устройстве %u обнаружено устройство неизвестного типа (%d) - виртуальная машина &apos;%s&apos; (&apos;%s&apos;)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15687"/>
         <source>Obtain cipher for &apos;%s&apos; files failed (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось получить шифр для файлов &apos;%s&apos; (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15699"/>
         <source>Loading old key store for &apos;%s&apos; files failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось загрузить старое хранилище ключей для файлов &apos;%s&apos;, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15703"/>
         <source>Changing the password for &apos;%s&apos; files failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сменить пароль для файлов &apos;%s&apos;, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15710"/>
         <source>Saving the key store for &apos;%s&apos; files failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сохранить хранилище ключей для файлов &apos;%s&apos;, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15727"/>
         <source>Getting file list for &apos;%s&apos; files failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось получить список файлов для файлов &apos;%s&apos;, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15737"/>
         <source>Create new key store for &apos;%s&apos; files failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать новое хранилище ключей для файлов &apos;%s&apos;, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15744"/>
         <source>Saving the new key store for &apos;%s&apos; files failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сохранить новое хранилище ключей для файлов &apos;%s&apos;, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15773"/>
         <location filename="../src-server/MachineImpl.cpp" line="15777"/>
         <source>Opening file &apos;%s&apos; failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось открыть файл &apos;%s&apos;, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15783"/>
         <source>Changing encryption of the file &apos;%s&apos; failed with %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сменить шифр файла &apos;%s&apos; с ошибкой %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15803"/>
         <source>Renaming the file &apos;%s&apos; failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось переименовать файл &apos;%s&apos;, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15858"/>
         <source>The password given for the encrypted VM is incorrect</source>
-        <translation type="unfinished"></translation>
+        <translation>Пароль для шифрованной ВМ неправильный</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15864"/>
         <source>The VM is not configured for encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>ВМ не сконфигурирована для шифрования</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15868"/>
         <source>The password to decrypt the VM is incorrect</source>
-        <translation type="unfinished"></translation>
+        <translation>Пароль для расшифровки ВМ неправильный</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15882"/>
         <source>A password must be given for the VM encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>Должен быть предоставлен пароль для шифрования ВМ</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15885"/>
         <source>A valid identifier for the password must be given</source>
-        <translation type="unfinished">Должен быть предоставлен действительный идентификатор пароля</translation>
+        <translation>Должен быть предоставлен действительный идентификатор пароля</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15889"/>
         <source>The password and password identifier must be empty if the output should be unencrypted</source>
-        <translation type="unfinished">Пароль и идентификатор пароля должны быть пусты если нужно расшифровать образ</translation>
+        <translation>Пароль и идентификатор пароля должны быть пусты если нужно расшифровать образ</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15915"/>
         <source>Loading old key store failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось загрузить старое хранилище ключей, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15918"/>
         <source>Changing the password failed, (%Rrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сменить пароль, (%Rrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15967"/>
         <source>Change encryption of the SAV files</source>
-        <translation type="unfinished"></translation>
+        <translation>Смена шифрования SAV файлов</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15979"/>
         <source>Change encryption of the NVRAM files</source>
-        <translation type="unfinished"></translation>
+        <translation>Смена шифрования NVRAM файлов</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15986"/>
         <source>Getting NVRAM encryption settings failed (%Rhrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось получить настройки шифрования NVRAM (%Rhrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="15998"/>
         <source>Setting NVRAM encryption settings failed (%Rhrc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось задать настройки шифрования NVRAM (%Rhrc)</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="16000"/>
         <source>Change encryption of log files</source>
-        <translation type="unfinished"></translation>
+        <translation>Смена шифрования файлов журналов</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="16011"/>
         <source>Change encryption of the config file</source>
-        <translation type="unfinished"></translation>
+        <translation>Смена шифрования файлов конфигурации</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="16046"/>
         <source>Machine is inaccessible</source>
-        <translation type="unfinished"></translation>
+        <translation>Машина недоступна</translation>
     </message>
     <message numerus="yes">
         <location filename="../src-server/MachineImpl.cpp" line="16098"/>
         <location filename="../src-server/MachineImpl.cpp" line="16121"/>
         <source>Cannot encrypt medium &apos;%s&apos; because it is attached to %d virtual machines</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>Невозможно зашифровать носитель &apos;%s&apos;, потому что он подключен к %d виртуальной машине</numerusform>
             <numerusform>Невозможно зашифровать носитель &apos;%s&apos;, потому что он подключен к %d виртуальным машинам</numerusform>
             <numerusform>Невозможно зашифровать носитель &apos;%s&apos;, потому что он подключен к %d виртуальным машинам</numerusform>
@@ -7480,7 +7480,7 @@ Guest offers: %s</source>
         <location filename="../src-server/MachineImpl.cpp" line="16104"/>
         <location filename="../src-server/MachineImpl.cpp" line="16127"/>
         <source>Cannot encrypt medium &apos;%s&apos; because it has %d children</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>Невозможно зашифровать носитель &apos;%s&apos;, потому что у него %d дочерний носитель</numerusform>
             <numerusform>Невозможно зашифровать носитель &apos;%s&apos;, потому что у него %d дочерних носителя</numerusform>
             <numerusform>Невозможно зашифровать носитель &apos;%s&apos;, потому что у него %d дочерних носителей</numerusform>
@@ -7489,39 +7489,39 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="16141"/>
         <source>Change encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>Смена шифрования</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="16144"/>
         <source>Change encryption of the mediuma</source>
-        <translation type="unfinished"></translation>
+        <translation>Смена шифрования носителей</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="16195"/>
         <source>Failed to query the encryption settings with %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запросить настройки шифрования с ошибкой %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="16199"/>
         <location filename="../src-server/MachineImpl.cpp" line="16239"/>
         <source>This VM is not encrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная ВМ не зашифрована</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="16236"/>
         <source>The password supplied for the encrypted machine is incorrect</source>
-        <translation type="unfinished"></translation>
+        <translation>Пароль для шифрованной машины неправильный</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="16318"/>
         <source>Id and passwords arrays must have the same size</source>
-        <translation type="unfinished"></translation>
+        <translation>Массивы ИД и паролей должны совпадать в размерах</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="16352"/>
         <location filename="../src-server/MachineImpl.cpp" line="16377"/>
         <source>The machine is in online or transient state</source>
-        <translation type="unfinished"></translation>
+        <translation>Машина в онлайн или временном состоянии</translation>
     </message>
     <message>
         <source>Device &apos;%s&apos; with unknown type is attached to the virtual machine &apos;%s&apos; (&apos;%s&apos;)</source>
@@ -7582,12 +7582,12 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="9725"/>
         <source>Failed to retain VM encryption password using ID &apos;%s&apos; with %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось получить пароль шифрования ВМ с ИД равным &apos;%s&apos; с ошибкой %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="10532"/>
         <source>file</source>
-        <translation type="unfinished"></translation>
+        <translation>файл</translation>
     </message>
     <message>
         <location filename="../src-server/MachineImpl.cpp" line="10637"/>
@@ -7882,7 +7882,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-client/MachineDebuggerImpl.cpp" line="1438"/>
         <source>Creating guest sample report...</source>
-        <translation>Создание образца отчета гостевой системы...</translation>
+        <translation>Создание образца отчета гостевой ОС...</translation>
     </message>
     <message>
         <location filename="../src-client/MachineDebuggerImpl.cpp" line="1461"/>
@@ -8729,7 +8729,7 @@ Guest offers: %s</source>
         <location filename="../src-server/MediumImpl.cpp" line="8682"/>
         <location filename="../src-server/MediumImpl.cpp" line="10994"/>
         <source>The password to decrypt the image is incorrect</source>
-        <translation>Пароль для расшифровки неправильный</translation>
+        <translation>Пароль для расшифровки образа неправильный</translation>
     </message>
     <message>
         <location filename="../src-server/MediumImpl.cpp" line="8684"/>
@@ -10422,7 +10422,7 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2845"/>
         <source>Unattended installation is not supported for guest type &apos;%s&apos;</source>
-        <translation>Unattended установка не поддерживается для типа гостевой системы &apos;%s&apos;</translation>
+        <translation>Unattended установка не поддерживается для типа гостевой ОС &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="2982"/>
@@ -10723,32 +10723,32 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="189"/>
         <source>Failed to write bootsector: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось записать загрузочный сектор: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="192"/>
         <source>Failed to read bootsector: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось считать загрузочный сектор: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="195"/>
         <source>Error reading SYSINSTX.COM: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочесть SYSINSTX.COM: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="198"/>
         <source>Unable to locate bootsector template in SYSINSTX.COM</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось обнаружить шаблон загрузочного сектора в SYSINSTX.COM</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="202"/>
         <source>Failed to open SYSINSTX.COM: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось открыть SYSINSTX.COM: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="205"/>
         <source>Failed to construct SYSINSTX.COM path</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось составить путь к SYSINSTX.COM</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="245"/>
@@ -10763,99 +10763,99 @@ Guest offers: %s</source>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="835"/>
         <source>RTPathJoin/Append failed for %s: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>RTPathJoin/Append завершился с ошибкой на %s: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="859"/>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="884"/>
         <source>Failed to write %s to the floppy: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось записать %s на гибкий диск: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="888"/>
         <source>Patcher failed for &apos;%s&apos;: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка патчера на &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="893"/>
         <source>Error reading &apos;%s&apos; into memory for patching: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка чтения &apos;%s&apos; в память для патчинга: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="898"/>
         <source>Failed to allocate %zu bytes for &apos;%s&apos;</source>
-        <translation type="unfinished">Не удалось выделить %zu байт для &apos;%s&apos;</translation>
+        <translation>Не удалось выделить %zu байт для &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="903"/>
         <source>Failed to query the size of &apos;%s&apos;: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запросить размер &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="906"/>
         <source>File too big to patch: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл слишком большой для патчинга: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="912"/>
         <source>Failed to open %s on floppy: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось открыть %s на гибком диске: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="927"/>
         <source>Failed to locate &apos;%s&apos; needed for the install floppy</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось обнаружить &apos;%s&apos;, необходимый для установочного гибкого диска</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="969"/>
         <source>Failed to create &apos;ALTF2ON.$$$&apos; on the install floppy</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать &apos;ALTF2ON.$$$&apos; на установочном гибком диске</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="1087"/>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="1135"/>
         <source>Unexpected splitter tag in &apos;%s&apos; at offset %p: @@VBOX_SPLITTER_%.64s</source>
-        <translation type="unfinished"></translation>
+        <translation>Неожиданный тэг разделителя в &apos;%s&apos; с отступом %p: @@VBOX_SPLITTER_%.64s</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="1099"/>
         <source>Malformed splitter tag in &apos;%s&apos; at offset %p: @@VBOX_SPLITTER_START[%.64s</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый тэг разделителя в &apos;%s&apos; с отступом %p: @@VBOX_SPLITTER_START[%.64s</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="1104"/>
         <source>Malformed splitter tag in &apos;%s&apos; at offset %p: @@VBOX_SPLITTER_START[%.*Rhxs</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый тэг разделителя в &apos;%s&apos; с отступом %p: @@VBOX_SPLITTER_START[%.*Rhxs</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="1132"/>
         <source>No END splitter tag for &apos;%s&apos; in &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не обнаружен конечный тэг разделителя для &apos;%s&apos; в &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="1143"/>
         <source>Mismatching splitter tag for &apos;%s&apos; in &apos;%s&apos; at offset %p: @@VBOX_SPLITTER_END[%.64Rhxs</source>
-        <translation type="unfinished"></translation>
+        <translation>Несовпадающий тэг разделителя для &apos;%s&apos; в &apos;%s&apos; с отступом %p: @@VBOX_SPLITTER_END[%.64Rhxs</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="1169"/>
         <source>Error writing &apos;%s&apos; (split out from &apos;%s&apos;): %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка записи &apos;%s&apos; (отдельно от &apos;%s&apos;): %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="1174"/>
         <source>File splitter failed to open output file &apos;%s&apos; in &apos;%s&apos;: %Rrc (%s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Делитель файлов не смог открыть выходной файл &apos;%s&apos; в &apos;%s&apos;: %Rrc (%s)</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="1179"/>
         <source>File splitter failed to construct path for &apos;%s&apos; in &apos;%s&apos;: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Делитель файлов не смог составить путь для &apos;%s&apos; в &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedOs2Installer.cpp" line="1207"/>
         <source>Failed to read &apos;%s&apos; for splitting up: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось считать &apos;%s&apos; для деления: %Rrc</translation>
     </message>
 </context>
 <context>
