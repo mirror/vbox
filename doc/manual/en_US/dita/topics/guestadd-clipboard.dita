@@ -4,9 +4,10 @@
   <title>Clipboard</title>
   
   <body>
+    <!-- 7.1: Shared clipboard check box; clarify operation with dev -->
     <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to copy clipboard content from the host to the
       guest, and vice versa. For this to work the latest version of the Guest Additions must be installed on the
-      guest.</p>
+      guest.</p>    
     <p>For security reasons drag and drop can be configured at runtime on a per-VM basis either using the <b
         outputclass="bold">Shared Clipboard</b> menu item in the <b outputclass="bold">Devices</b> menu of the virtual
       machine, or the <userinput>VBoxManage</userinput> command. </p>

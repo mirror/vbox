@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="guest-os-arm">
+<topic xml:lang="en-us" id="guestossupport">
   <title>Arm Guest Operating Systems</title>
+  
   <body>
     <p>Oracle Premier Support covers the running of the following guest OSs in a VM with an Arm platform architecture.</p>
     <p>
@@ -18,5 +19,7 @@
           </ul></li>
       </ul>
     </p>
+    
+    
   </body>
 </topic>

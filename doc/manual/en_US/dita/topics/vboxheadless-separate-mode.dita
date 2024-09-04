@@ -3,6 +3,7 @@
 <topic xml:lang="en-us" id="vboxheadless-separate-mode">
   <title>Separate Mode</title> 
   <body>
+    <!-- 7.1: Include this topic? Get feedback during doc review -->
     <p>Separate mode is an alternative front end for local and remote virtual machines. Separate
       mode is based on the <userinput>VBoxHeadless</userinput> front end but uses the <ph
         conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user interface to control and display virtual

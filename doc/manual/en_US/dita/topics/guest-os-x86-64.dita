@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="guest-os-x86">
+<topic xml:lang="en-us" id="guestossupport">
   <title>x86 Guest Operating Systems</title>
+  
   <body>
     <p>Oracle Premier Support covers the running of the following guest OSs in a VM with an x86 or x86-64 platform architecture, as appropriate.</p>
     <p>

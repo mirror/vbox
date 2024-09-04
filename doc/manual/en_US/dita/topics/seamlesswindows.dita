@@ -4,7 +4,7 @@
   <title>Seamless Windows</title>
   
   <body>
-    <p>With the <i>seamless windows</i> feature of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, you can have the windows that are displayed within a virtual machine appear side by side next to the windows of your host. This feature is supported for the following x86 or x86_64 guest operating systems, provided that the Guest Additions are installed: </p>
+    <p>With the <i>seamless windows</i> feature of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, you can have the windows that are displayed within a virtual machine appear side by side next to the windows of your host. This feature is supported for the following guest operating systems, provided that the Guest Additions are installed: </p>
     <ul>
       <li>
         <p>Legacy Windows guests (prior to Windows 10). </p>

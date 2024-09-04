@@ -19,5 +19,6 @@
     <p>You must supply an operating system image, in ISO format, for the operating system you intend to install on the
       VM. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> does not supply the OS or any license required to use
       it. </p>
+    <p><!--7.1: Note added re platforms and paragraph re ISO requirement. Reworded when removing screenshots. Subpages also updated.--></p>
   </body>
 </topic>

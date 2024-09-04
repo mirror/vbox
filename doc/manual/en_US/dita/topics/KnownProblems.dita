@@ -18,7 +18,6 @@
         <p>Poor performance when using <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and <b outputclass="bold"
             >Hyper-V</b> on the same host. To fix this, certain Windows features like "Hyper-V Platform", "Virtual
           Machine Platform" and "Windows Hypervisor Platform" must be turned off, followed by a host reboot. </p>
-        <p>On newer Windows versions, enabling the device security features Core Isolation or Memory Integrity will use Hyper-V, even if you had previously turned it off.</p>
         <p>Additionally, the Microsoft Device Guard and Credential Guard hardware readiness tool might have to be used
           in order to turn off more features. For example, by running the following command: </p>
         <pre xml:space="preserve">.\DG_Readiness_Tool_vX.X.ps1 -Disable -AutoReboot</pre>
@@ -138,9 +137,9 @@
         <p><b outputclass="bold">macOS/Arm 64 (Apple silicon) host package</b>
           <ul id="ul_ddr_kzn_hcc">
             <li>
-              <p>x86-based guest operating systems will not run.</p>
-            </li>
-            <li>
+              <p>x86-based guest operating systems will not run</p>
+      </li>
+      <li>
               <p>Arm(AArch64) guests only. Arm 32 is not supported at present.</p>
             </li>
             <li>
@@ -199,7 +198,8 @@
         </p>
         <ul>
           <li>
-            <p>USB support on Oracle Solaris hosts requires Oracle Solaris 11 FCS or later. Webcams and other isochronous devices are known to have poor performance. </p>
+            <p>USB support on Oracle Solaris hosts requires Oracle Solaris 11 version snv_124 or later. Webcams and
+              other isochronous devices are known to have poor performance. </p>
           </li>
           <li>
             <p>Host Webcam passthrough is restricted to 640x480 frames at 20 frames per second due to limitations in the
@@ -212,7 +212,9 @@
             <p>No support for using wireless adapters with bridged networking. </p>
           </li>
           <li>
-            <p>Crossbow-based bridged networking on Oracle Solaris 11 hosts does not work directly with aggregate links. However, you can use <userinput>dladm</userinput> to manually create a VNIC over the aggregate link and use that with a VM. This limitation does not exist in Oracle Solaris 11 update 1 (11.1) and later. </p>
+            <p>Crossbow-based bridged networking on Oracle Solaris 11 hosts does not work directly with aggregate links.
+              However, you can use <userinput>dladm</userinput> to manually create a VNIC over the aggregate link and
+              use that with a VM. This limitation does not exist in Oracle Solaris 11u1 build 17 and later. </p>
           </li>
         </ul>
       </li>

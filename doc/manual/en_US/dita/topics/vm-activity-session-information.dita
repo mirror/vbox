@@ -3,6 +3,8 @@
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vm-activity-session-information">
                <title>Session Information Dialog</title>
+  <!-- 7.1: metrics info for OCI instances-->  
+  <!-- 7.1: Add pic for cloud VM Activity info? No.. removing pics.-->
                <body>
                   <p>The Session Information dialog includes multiple tabs that show important configuration and runtime
       information for the guest system. The tabs are as follows: </p>

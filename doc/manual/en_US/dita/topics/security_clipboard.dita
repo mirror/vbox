@@ -2,6 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="security_clipboard">
   <title>Clipboard</title>
+  <!-- 7.1: Shared clipboard toggle in guest VM, bugref:10481; input from dev required -->
   <body>
     <p>The shared clipboard enables users to share data between the host and the guest. Enabling the clipboard in
       Bidirectional mode enables the guest to read and write the host clipboard. The Host to Guest mode and the Guest to

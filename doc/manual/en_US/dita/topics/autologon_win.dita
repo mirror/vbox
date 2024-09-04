@@ -57,7 +57,17 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</p
           support the Windows XP-style welcome dialog. </p>
       </li>
       <li>
-        <p><b outputclass="bold">Windows Vista, Windows 7, Windows 8, Windows 10 and Windows 11 guests.</b> The login subsystem does not support the so-called Secure Attention Sequence, <codeph>Ctrl+Alt+Del</codeph>. As a result, the guest's group policy settings need to be changed to not use the Secure Attention Sequence. Also, the user name given is only compared to the true user name, not the user friendly name. This means that when you rename a user, you still have to supply the original user name as Windows never renames user accounts internally. </p>
+        <p><b outputclass="bold">Windows Vista, Windows 7, Windows 8,
+            and Windows 10 guests.</b> The login subsystem does
+            not support the so-called Secure Attention Sequence,
+            <codeph>Ctrl+Alt+Del</codeph>. As a result, the guest's
+            group policy settings need to be changed to not use the
+            Secure Attention Sequence. Also, the user name given is only
+            compared to the true user name, not the user friendly name.
+            This means that when you rename a user, you still have to
+            supply the original user name as Windows never renames user
+            accounts internally.
+          </p>
       </li>
       <li>
         <p>Automatic login handling of the built-in <b outputclass="bold">Windows Remote Desktop Service</b>, formerly

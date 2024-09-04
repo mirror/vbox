@@ -4,6 +4,7 @@
   <title>Using VM Groups</title>
   
   <body>
+      <!-- 7.1: pic removed-->
     <p>Create VM groups if you want to manage several VMs together, and perform functions on them collectively, as well
       as individually. </p>
     <p>The following features are available for groups: </p>

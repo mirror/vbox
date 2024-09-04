@@ -50,7 +50,8 @@
           the Guest Additions are installed. The video resolution in the guest will be automatically adjusted, as if you
           had manually entered an arbitrary resolution in the guest's <b outputclass="bold">Display</b> settings. See
             <xref href="intro-resize-window.dita#intro-resize-window"/>. </p>
-        <p>If the Guest Additions are installed, 3D graphics for guest applications can be accelerated. See <xref href="guestadd-video.dita#guestadd-video"/>. </p>
+        <p>If the Guest Additions are installed, 3D graphics and 2D video for guest applications can be accelerated. See
+            <xref href="guestadd-video.dita#guestadd-video"/>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Seamless windows.</b> With this

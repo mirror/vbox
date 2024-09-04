@@ -9,7 +9,7 @@
     </draft-comment>
     <p>The following legacy guest operating systems can be used with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, but only qualify for limited support because of the vintage of the technology involved. Therefore, resolution of customer issues for such legacy guest operating systems cannot be assured. </p>
     <p>See also <xref href="host-guest-matrix.dita"/>.</p>
-    <p>VMs with an x86 or x86-64 platform architecture, as appropriate might run<ul id="guest-os-other">
+    <p>VMs with an x86 or x86-64 platform architecture, as appropriate might run<ul id="ul_j5n_srf_3cc">
         <li>Windows 8 and 8.1 (32-bit and 64-bit) </li>
         <li>Windows 7 (32-bit and 64-bit) </li>
         <li>Windows Vista SP2 and later (32-bit and 64-bit)</li>

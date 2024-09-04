@@ -5,7 +5,11 @@
             <title>Introduction</title>
             
             <body>
-               <p>As briefly mentioned in <xref href="frontends.dita#frontends"/>, <userinput>VBoxManage</userinput> is the CLI to <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. With it, you can control <ph conkeyref="vbox-conkeyref-phrases/product-name"/> from the command line of your host operating system. <userinput>VBoxManage</userinput> supports all the features that the graphical user interface gives you access to, but it supports a lot more than that. It exposes all the features of the virtualization engine, even those that cannot be accessed from the GUI. </p>
+               <p>As briefly mentioned in <xref href="frontends.dita#frontends"/>, <userinput>VBoxManage</userinput> is
+      the command-line interface to <ph conkeyref = "vbox-conkeyref-phrases/product-name"/>. With it, you can completely control <ph conkeyref = "vbox-conkeyref-phrases/product-name"/> from the
+      command line of your host operating system. <userinput>VBoxManage</userinput> supports all the features that the
+      graphical user interface gives you access to, but it supports a lot more than that. It exposes all the features of
+      the virtualization engine, even those that cannot be accessed from the GUI. </p>
                <p>You will need to use the command line if you want to do the
       following:
     </p>
@@ -52,7 +56,8 @@
                      <pre xml:space="preserve">VBoxManage startvm 670e746d-abea-4ba6-ad02-2a3b043810a5</pre>
                   </li>
                </ul>
-               <p>You can enter <userinput>VBoxManage list vms</userinput> to have all currently registered VMs listed with their respective names and UUIDs. </p>
+               <p>You can enter <userinput>VBoxManage list vms</userinput> to have all currently registered VMs listed
+      with all their settings, including their respective names and UUIDs. </p>
                <p>Some typical examples of how to control <ph conkeyref="vbox-conkeyref-phrases/product-name"/> from the
       command line are listed below: </p>
                <ul>
@@ -60,11 +65,16 @@
                      <p>To create a new virtual machine from the command line and immediately register it with <ph
             conkeyref="vbox-conkeyref-phrases/product-name"/>, use <userinput>VBoxManage createvm</userinput> with the
           <!--option not processed within -->--register option, as follows: </p>
-                     <pre xml:space="preserve">$ VBoxManage createvm --name "SUSE 15.2" --register
-Virtual machine 'SUSE 15.2' is created.
+                     <pre xml:space="preserve">$ VBoxManage createvm --name "SUSE 10.2" --register
+VirtualBox Command Line Management Interface Version <varname>version-number</varname>
+(C) 2005-2018 Oracle Corporation
+All rights reserved.
+
+Virtual machine 'SUSE 10.2' is created.
 UUID: c89fc351-8ec6-4f02-a048-57f4d25288e5
-Settings file: '/home/username/VirtualBox VMs/SUSE 15.2/SUSE 15.2.vbox'</pre>
-                     <p>As can be seen from the above output, a new virtual machine has been created with a new UUID and a new XML-formatted settings file. </p>
+Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'</pre>
+                     <p>As can be seen from the above output, a new virtual machine has been created with a new UUID and
+          a new XML settings file. </p>
                      <p>
           For more details, see
           <xref href="vboxmanage-createvm.dita"/>.
@@ -85,11 +95,18 @@ Settings file: '/home/username/VirtualBox VMs/SUSE 15.2/SUSE 15.2.vbox'</pre>
           disk, use <userinput>VBoxManage storagectl</userinput> and <userinput>VBoxManage storageattach</userinput>.
           See <xref href="vboxmanage-storagectl.dita"/> and <xref href="vboxmanage-storageattach.dita"/>. </p>
                   </li>
-         <li>
-            <p>To start a VM that is currently powered off, use <userinput>VBoxManage startvm</userinput>. See <xref href="vboxmanage-startvm.dita"/>. </p>
-         </li>
                   <li>
-                     <p>To change a running VM's setttings or change its state (such as pausing, saving, or powering off the VM) use <userinput>VBoxManage controlvm</userinput> See <xref href="vboxmanage-controlvm.dita"/>.</p>
+                     <p>To control VM operation, use one of the following: </p>
+                     <ul>
+                        <li>
+                           <p>To start a VM that is currently powered off, use <userinput>VBoxManage
+              startvm</userinput>. See <xref href="vboxmanage-startvm.dita"/>. </p>
+                        </li>
+                        <li>
+                           <p>To pause or save a VM that is currently running or change some of its settings, use
+                <userinput>VBoxManage controlvm</userinput>. See <xref href="vboxmanage-controlvm.dita"/>. </p>
+                        </li>
+                     </ul>
                   </li>
                </ul>
             </body>

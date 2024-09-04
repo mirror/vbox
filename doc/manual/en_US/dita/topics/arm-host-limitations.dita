@@ -2,14 +2,18 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="arm-host-limitations">
   <title>Arm Host Limitations</title>
+  <!-- 7.1: Arm platform limitations -->
   <body>
     <p>The following limitations apply when using an Arm platform host:</p>
     <ul><li><p>Virtual machines must use an Arm-based guest operating system. Running an x86-based guest operating 
       system on an Arm host platform is not supported. </p></li>
     <li><p>Only VMSVGA is supported as a graphics controller.</p></li>
       <li>
-        <p>3D video acceleration isn't available on Arm hosts.</p>
-      </li>   
+        <p>2D and 3D video acceleration isn't available on Arm hosts.</p>
+      </li>
+      <li><p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions are not available for Arm
+          host platforms. Therefore, features such as seamless windows and shared folders are not
+          available.</p></li>   
       <li><p>Unattended installation isn't available.</p></li>
       <li><p>The following <b>System</b> page settings aren't available for Arm guests:</p>
       <ul><li><p><b>Motherboard tab:</b> Chipset, TPM</p></li>
