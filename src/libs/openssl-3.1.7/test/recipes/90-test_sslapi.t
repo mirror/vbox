@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2016-2024 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -7,12 +7,15 @@
 # https://www.openssl.org/source/license.html
 
 use OpenSSL::Test::Utils;
-use OpenSSL::Test qw/:DEFAULT srctop_file srctop_dir bldtop_dir bldtop_file result_dir result_file/;
+use OpenSSL::Test qw/:DEFAULT srctop_file srctop_dir bldtop_dir bldtop_file/;
 use File::Temp qw(tempfile);
 
 BEGIN {
 setup("test_sslapi");
 }
+
+use lib srctop_dir('Configurations');
+use lib bldtop_dir('.');
 
 my $no_fips = disabled('fips') || ($ENV{NO_FIPS} // 0);
 my $fipsmodcfg_filename = "fipsmodule.cnf";
@@ -22,10 +25,10 @@ my $provconf = srctop_file("test", "fips-and-base.cnf");
 
 # A modified copy of "fipsmodule.cnf"
 my $fipsmodcfgnew_filename = "fipsmodule_mod.cnf";
-my $fipsmodcfgnew = result_file($fipsmodcfgnew_filename);
+my $fipsmodcfgnew = bldtop_file("test", $fipsmodcfgnew_filename);
 
 # A modified copy of "fips-and-base.cnf"
-my $provconfnew = result_file("fips-and-base-temp.cnf");
+my $provconfnew = bldtop_file("test", "temp.cnf");
 
 plan skip_all => "No TLS/SSL protocols are supported by this OpenSSL build"
     if alldisabled(grep { $_ ne "ssl3" } available_protocols("tls"));
@@ -48,9 +51,6 @@ SKIP: {
     skip "Skipping FIPS tests", 2
         if $no_fips;
 
-    # NOTE that because by default we setup fips provider in pedantic mode,
-    # with >= 3.1.0 this just runs test_no_ems() to check that the connection
-    # fails if ems is not used and the fips check is enabled.
     ok(run(test(["sslapitest", srctop_dir("test", "certs"),
                  srctop_file("test", "recipes", "90-test_sslapi_data",
                              "passwd.txt"), $tmpfilename, "fips",
@@ -59,7 +59,7 @@ SKIP: {
                              "recipes",
                              "90-test_sslapi_data",
                              "dhparams.pem")])),
-                 "running sslapitest with default fips config");
+                 "running sslapitest");
 
     run(test(["fips_version_test", "-config", $provconf, ">=3.1.0"]),
              capture => 1, statusvar => \my $exit);
@@ -70,7 +70,7 @@ SKIP: {
     # Read in a text $infile and replace the regular expression in $srch with the
     # value in $repl and output to a new file $outfile.
     sub replace_line_file_internal {
-
+    
         my ($infile, $srch, $repl, $outfile) = @_;
         my $msg;
 
@@ -85,7 +85,7 @@ SKIP: {
         close $fh;
         return 1;
     }
-
+    
     # Read in the text input file $infile
     # and replace a single Key = Value line with a new value in $value.
     # OR remove the Key = Value line if the passed in $value is empty.
@@ -102,7 +102,7 @@ SKIP: {
         }
         return replace_line_file_internal($infile, $srch, $rep, $outfile);
     }
-
+    
     # Read in the text $input file
     # and search for the $key and replace with $newkey
     # and then output a new file $outfile.
@@ -114,13 +114,13 @@ SKIP: {
                                           $srch, $rep, $outfile);
     }
 
-    # The default fipsmodule.cnf in tests is set with -pedantic.
-    # In order to enable the tls1-prf-ems-check=0 in a fips config file
+    # In order to enable the tls1-prf-ems-check=1 in a fips config file
     # copy the existing fipsmodule.cnf and modify it.
     # Then copy fips-and-base.cfg to make a file that includes the changed file
-    $ENV{OPENSSL_CONF_INCLUDE} = result_dir();
+    # NOTE that this just runs test_no_ems() to check that the connection
+    # fails if ems is not used and the fips check is enabled.
     ok(replace_kv_file($fipsmodcfg,
-                       'tls1-prf-ems-check', '0',
+                       'tls1-prf-ems-check', '1',
                        $fipsmodcfgnew)
        && replace_line_file($provconf,
                             $fipsmodcfg_filename, $fipsmodcfgnew_filename,
@@ -134,7 +134,10 @@ SKIP: {
                                 "recipes",
                                 "90-test_sslapi_data",
                                 "dhparams.pem")])),
-       "running sslapitest with modified fips config");
+       "running sslapitest");
+
+    unlink $fipsmodcfgnew;
+    unlink $provconfnew;
 }
 
 unlink $tmpfilename;

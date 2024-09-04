@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2003-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -229,14 +229,12 @@ static int buf2hexstr_sep(char *str, size_t str_n, size_t *strlength,
     int has_sep = (sep != CH_ZERO);
     size_t len = has_sep ? buflen * 3 : 1 + buflen * 2;
 
-    if (len == 0)
-        ++len;
     if (strlength != NULL)
         *strlength = len;
     if (str == NULL)
         return 1;
 
-    if (str_n < len) {
+    if (str_n < (unsigned long)len) {
         ERR_raise(ERR_LIB_CRYPTO, CRYPTO_R_TOO_SMALL_BUFFER);
         return 0;
     }
@@ -248,12 +246,12 @@ static int buf2hexstr_sep(char *str, size_t str_n, size_t *strlength,
         if (has_sep)
             *q++ = sep;
     }
-    if (has_sep && buflen > 0)
+    if (has_sep)
         --q;
     *q = CH_ZERO;
 
 #ifdef CHARSET_EBCDIC
-    ebcdic2ascii(str, str, q - str);
+    ebcdic2ascii(str, str, q - str - 1);
 #endif
     return 1;
 }
