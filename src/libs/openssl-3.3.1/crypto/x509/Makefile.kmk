@@ -57,12 +57,16 @@ crypto_x509_SOURCES = \
 	v3_enum.c \
 	v3_extku.c \
 	v3_genn.c \
+	v3_group_ac.c \
 	v3_ia5.c \
+	v3_ind_iss.c \
 	v3_info.c \
 	v3_int.c \
 	v3_ist.c \
 	v3_lib.c \
 	v3_ncons.c \
+	v3_no_ass.c \
+	v3_no_rev_avail.c \
 	v3_pci.c \
 	v3_pcia.c \
 	v3_pcons.c \
@@ -71,7 +75,9 @@ crypto_x509_SOURCES = \
 	v3_prn.c \
 	v3_purp.c \
 	v3_san.c \
+	v3_single_use.c \
 	v3_skid.c \
+	v3_soa_id.c \
 	v3_sxnet.c \
 	v3_tlsf.c \
 	v3_utf8.c \

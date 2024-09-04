@@ -36,7 +36,9 @@ crypto_err_SOURCES = \
 	err_all.c \
 	err_all_legacy.c \
 	err_blocks.c \
-	err_prn.c
+	err_mark.c \
+	err_prn.c \
+	err_save.c
 $(evalcall VBOX_OPENSSL_X86,crypto_err)
 
 include $(FILE_KBUILD_SUB_FOOTER)

@@ -39,6 +39,7 @@ crypto_rand_SOURCES = \
 	rand_lib.c \
 	rand_meth.c \
 	rand_pool.c \
+	rand_uniform.c \
 	randfile.c
 $(evalcall VBOX_OPENSSL_X86,crypto_rand)
 

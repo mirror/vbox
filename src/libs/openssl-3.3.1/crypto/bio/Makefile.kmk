@@ -52,6 +52,7 @@ crypto_bio_SOURCES = \
 	bss_conn.c \
 	bss_core.c \
 	bss_dgram.c \
+	bss_dgram_pair.c \
 	bss_fd.c \
 	bss_file.c \
 	bss_log.c \

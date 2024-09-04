@@ -255,6 +255,7 @@ endif
 TEMPLATE_LibCrypto_DEFS = \
 	$(TEMPLATE_VBoxR3RuntimeDllNonPedantic_DEFS) \
 	VBOX_SUFF_DLL=$(VBOX_SUFF_DLL) \
+	OPENSSLDIR="/usr/local/ssl" \
 	DSO_NONE \
 	OPENSSL_USE_NODELETE \
 	OPENSSL_PIC \

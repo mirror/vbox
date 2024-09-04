@@ -36,6 +36,7 @@ crypto_cmp_SOURCES = \
 	cmp_client.c \
 	cmp_ctx.c \
 	cmp_err.c \
+	cmp_genm.c \
 	cmp_hdr.c \
 	cmp_http.c \
 	cmp_msg.c \

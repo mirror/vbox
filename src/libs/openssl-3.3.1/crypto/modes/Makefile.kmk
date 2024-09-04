@@ -42,7 +42,8 @@ crypto_modes_SOURCES = \
 	ofb128.c \
 	siv128.c \
 	wrap128.c \
-	xts128.c
+	xts128.c \
+	xts128gb.c
 ifdef VBOX_WITH_CRYPTO_ASM
  crypto_modes_SOURCES.x86 += \
  	$(VBOX_PATH_CRYPTO_GENASM)/ghash-x86.S

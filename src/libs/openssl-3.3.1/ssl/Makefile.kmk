@@ -44,14 +44,8 @@ VBox-libssl_SOURCES  = \
 	d1_srtp.c \
 	methods.c \
 	pqueue.c \
-	record/dtls1_bitmap.c \
 	record/rec_layer_d1.c \
 	record/rec_layer_s3.c \
-	record/ssl3_buffer.c \
-	record/ssl3_record.c \
-	record/ssl3_record_tls13.c \
-	record/tls_pad.c \
-	s3_cbc.c \
 	s3_enc.c \
 	s3_lib.c \
 	s3_msg.c \
