@@ -2359,7 +2359,8 @@ void UIVirtualBoxManager::sltPerformShowHelpBrowser()
     QString strHelpKeyword;
     if (m_pWidget)
         strHelpKeyword = m_pWidget->currentHelpKeyword();
-    UIHelpBrowserDialog::findManualFileAndShow(strHelpKeyword);
+    if (!strHelpKeyword.isEmpty())
+        UIHelpBrowserDialog::findManualFileAndShow(strHelpKeyword);
 }
 
 void UIVirtualBoxManager::sltExtensionPackInstalledUninstalled(const QString &strName)

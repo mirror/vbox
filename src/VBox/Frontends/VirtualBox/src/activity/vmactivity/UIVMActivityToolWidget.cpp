@@ -33,6 +33,7 @@
 /* GUI includes: */
 #include "QIToolBar.h"
 #include "UIActionPoolManager.h"
+#include "UICommon.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVMActivityToolWidget.h"
 #include "UIMessageCenter.h"
@@ -56,6 +57,7 @@ UIVMActivityToolWidget::UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPoo
     , m_pToolBar(0)
     , m_pMonitorContainer(0)
 {
+    uiCommon().setHelpKeyword(this, "vm-activity-session-information");
     prepare();
     prepareActions();
     prepareToolBar();
