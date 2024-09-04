@@ -2,7 +2,6 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="create-optical-disk-image">
   <title>Creating a Virtual Optical Disk Image</title>
-  <!-- 7.1: Can now import VISO files-->
   <body>
     <p>Use the <b outputclass="bold">VISO Creator</b> tool to create a virtual optical disk image. This enables you to
       create a virtual ISO from selected files on the host. </p>

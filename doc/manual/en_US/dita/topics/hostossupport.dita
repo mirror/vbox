@@ -2,7 +2,6 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="hostossupport">
   <title>Available Installation Packages</title>
-  <!-- 7.1: Arm platforms; require statement on host support -->
   <body>
     <p><ph conkeyref="vbox-conkeyref-phrases/product-name"/> runs on the following host Operating Systems (OSs): </p>
     <ul>
@@ -12,10 +11,13 @@
         </p>
         <ul>
           <li>
+            <p>Windows 11 </p>
+          </li>
+          <li>
             <p>Windows 10 </p>
           </li>
           <li>
-            <p>Windows 11 </p>
+            <p>Windows Server 2025 </p>
           </li>
           <li>
             <p>Windows Server 2022 </p>
@@ -28,16 +30,16 @@
         </p>
         <ul>
           <li>
-            <p>11 (Big Sur) </p>
-          </li>
-          <li>
-            <p>12 (Monterey) </p>
+            <p>14 (Sonoma)</p>
           </li>
           <li>
             <p>13 (Ventura) </p>
           </li>
           <li>
-            <p>14 (Sonoma)</p>
+            <p>12 (Monterey) </p>
+          </li>
+          <li>
+            <p>11 (Big Sur) </p>
           </li>
         </ul>
         <p>See also <xref href="KnownIssues.dita">Known Limitations</xref>. </p>
@@ -47,16 +49,16 @@
           <b outputclass="bold">Arm macOS hosts (64-bit):</b></p>
         <ul>
           <li>
-            <p>11 (Big Sur) </p>
-          </li>
-          <li>
-            <p>12 (Monterey) </p>
+            <p>14 (Sonoma)</p>
           </li>
           <li>
             <p>13 (Ventura) </p>
           </li>
           <li>
-            <p>14 (Sonoma)</p>
+            <p>12 (Monterey) </p>
+          </li>
+          <li>
+            <p>11 (Big Sur) </p>
           </li>
         </ul>
         <p>See also <xref href="guest-os.dita"/> for limitations on the VMs you can create on an Arm host. </p>
@@ -65,25 +67,25 @@
         <p><b outputclass="bold">x86-64 Linux hosts.</b> Includes the following: </p>
         <ul>
           <li>
-            <p>Ubuntu 20.04 LTS, 22.04 and 24.04</p>
+            <p>Ubuntu 24.04 LTS, 22.04 LTS and 20.04 LTS</p>
           </li>
           <li>
-            <p>Debian GNU/Linux 11 (Bullseye) and 12 (Bookworm)</p>
+            <p>Debian GNU/Linux 12 (Bookworm) and 11 (Bullseye)</p>
           </li>
           <li>
-            <p>Oracle Linux 8 and 9 </p>
+            <p>Oracle Linux 9 and 8</p>
           </li>
           <li>
-            <p>CentOS/Red Hat Enterprise Linux 8 and 9 </p>
+            <p>CentOS/Red Hat Enterprise Linux 9 and 8</p>
           </li>
           <li>
-            <p>Fedora 39 and 40</p>
+            <p>Fedora 40 and 39</p>
           </li>
           <li>
             <p>SUSE Linux Enterprise server 15</p>
           </li>
           <li>
-            <p>openSUSE Leap 15.3, 15.4 and 15.5</p>
+            <p>openSUSE Leap 15.5, 15.4 and 15.3</p>
           </li>
         </ul>
         <p>It should be possible to use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on
@@ -92,7 +94,6 @@
           installation. See <xref href="install-linux-host.dita#install-linux-host"/>. However, the
           formally tested and supported Linux distributions are those for which we offer a dedicated
           package. </p>
-        <p>Note that Linux 2.4-based host OSes are no longer supported. </p>
       </li>
       <li>
         <p><b outputclass="bold">Oracle Solaris hosts (64-bit

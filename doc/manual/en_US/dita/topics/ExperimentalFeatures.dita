@@ -4,24 +4,12 @@
   <title>Experimental Features</title>
   
   <body>
-    <p>
-      Some <ph conkeyref="vbox-conkeyref-phrases/product-name"/> features are labeled as experimental. Such
-      features are provided on an "as-is" basis and are not formally
-      supported. However, feedback and suggestions about such features
-      are welcome. A comprehensive list of experimental features is as
-      follows:
-    </p>
+    <p> Some <ph conkeyref="vbox-conkeyref-phrases/product-name"/> features are labeled as experimental. Such features are provided on an "as-is" basis and are not formally supported. However, feedback and suggestions about such features are welcome. A comprehensive list of experimental features is as follows: </p>
     <ul>
       <li>
         <p>
           Hardware 3D acceleration support for Windows, Linux, and
           Oracle Solaris guests
-        </p>
-      </li>
-      <li>
-        <p>
-          Hardware 2D video playback acceleration support for Windows
-          guests
         </p>
       </li>
       <li>
@@ -50,9 +38,7 @@
         </p>
       </li>
       <li>
-        <p>
-          Using <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and Hyper-V on the same host
-        </p>
+        <p> Using <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and Hyper-V on the same host </p>
       </li>
     </ul>
   </body>

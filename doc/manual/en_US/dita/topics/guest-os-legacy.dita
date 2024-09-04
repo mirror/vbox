@@ -1,16 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="guestossupport">
+<topic xml:lang="en-us" id="guest-os-other">
   <title>Other Guest Operating Systems</title>
-  
   <body>
-    <draft-comment author="Mhari Duncan">
-      <p>Possible wording instead of the paragraph and lists below... Other guest operating systems can be used with Oracle VirtualBox, but only qualify for limited support. Resolution of customer issues with running such guest operating systems in <ph conkeyref="vbox-conkeyref-phrases/product-name"/> cannot be assured.</p>
-    </draft-comment>
-    <p>The following legacy guest operating systems can be used with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, but only qualify for limited support because of the vintage of the technology involved. Therefore, resolution of customer issues for such legacy guest operating systems cannot be assured. </p>
+    <p>The following guest operating systems can be used with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, but only qualify for limited support. Therefore, resolution of customer issues for such guest operating systems cannot be assured.</p>
     <p>See also <xref href="host-guest-matrix.dita"/>.</p>
-    <p>VMs with an x86 or x86-64 platform architecture, as appropriate might run<ul id="ul_j5n_srf_3cc">
-        <li>Windows 8 and 8.1 (32-bit and 64-bit) </li>
+    <p>VMs with an x86 or x86-64 platform architecture, as appropriate, might run<ul id="guest-os-other">
+        <li>Windows 8.1 and 8 (32-bit and 64-bit) </li>
         <li>Windows 7 (32-bit and 64-bit) </li>
         <li>Windows Vista SP2 and later (32-bit and 64-bit)</li>
         <li>Windows XP (32-bit)</li>
@@ -34,33 +30,24 @@
         <li>Ubuntu 24.04 LTS (Noble Numbat) (64-bit)</li>
         <li>Ubuntu 22.04 LTS (Jammy Jellyfish) (64-bit)</li>
         <li>Ubuntu 20.04 LTS (Focal Fossa) (64-bit)</li>
-        <li>Ubuntu 16.04 LTS (Xenial Xerus) (32-bit and 64-bit) </li>
         <li>Ubuntu 18.04 LTS (Bionic Beaver) (64-bit)</li>
+        <li>Ubuntu 16.04 LTS (Xenial Xerus) (32-bit and 64-bit) </li>
         <li>Ubuntu 14.04.5 LTS (Trusty Tahr) (32-bit and 64-bit)</li>
         <li>SUSE Linux Enterprise Server 15 (64-bit)</li>
         <li>SUSE Linux Enterprise Server 12 (64-bit)</li>
         <li>OS/2 Warp 4.5</li>
       </ul></p>
-    <p>VMs with an Arm platform architecture might run<ul id="ul_oyj_1bg_3cc">
-        <li>Oracle Solaris 10 8/11 Update 10 and later (32-bit and 64-bit)</li>
-        <li>CentOS Stream 8 (64-bit)</li>
-        <li>CentOS Linux 7 (64-bit)</li>
-        <li>Oracle Linux 6 (32-bit and 64-bit)<ul>
-            <li>Red Hat Enterprise Linux 6 (32-bit and 64-bit)</li>
-            <li>CentOS 6 (32-bit and 64-bit)</li>
-          </ul></li>
-        <li>Oracle Linux 5 (32-bit and 64-bit)<ul>
-            <li>Red Hat Enterprise Linux 5 (32-bit and 64-bit)</li>
-            <li>CentOS 5 (32-bit and 64-bit)</li>
-          </ul></li>
-        <li>Ubuntu 24.04 LTS (Noble Numbat) (64-bit)</li>
-        <li>Ubuntu 22.04 LTS (Jammy Jellyfish) (64-bit)</li>
-        <li>Ubuntu 20.04 LTS (Focal Fossa) (64-bit)</li>
-        <li>Ubuntu 16.04 LTS (Xenial Xerus) (32-bit and 64-bit) </li>
-        <li>Ubuntu 18.04 LTS (Bionic Beaver) (64-bit)</li>
-        <li>Ubuntu 14.04 LTS (Trusty Tahr) (32-bit and 64-bit)</li>
-        <li>SUSE Linux Enterprise Server 15 (64-bit)</li>
-        <li>SUSE Linux Enterprise Server 12 (64-bit)</li>
+    <p>VMs with an Arm64 platform architecture might run<ul id="ul_oyj_1bg_3cc">
+        <li>CentOS Stream 8</li>
+        <li>CentOS Linux 7</li>
+        <li>Debian 12</li>
+        <li>Debian 11</li>
+        <li>Ubuntu 24.04 LTS (Noble Numbat)</li>
+        <li>Ubuntu 22.04 LTS (Jammy Jellyfish)</li>
+        <li>Ubuntu 20.04 LTS (Focal Fossa)</li>
+        <li>Ubuntu 18.04 LTS (Bionic Beaver)</li>
+        <li>SUSE Linux Enterprise Server 15</li>
+        <li>SUSE Linux Enterprise Server 12</li>
       </ul></p>
   </body>
 </topic>

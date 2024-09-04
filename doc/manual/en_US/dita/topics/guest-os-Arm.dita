@@ -1,25 +1,22 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="guestossupport">
+<topic xml:lang="en-us" id="guest-os-arm">
   <title>Arm Guest Operating Systems</title>
-  
   <body>
-    <p>Oracle Premier Support covers the running of the following guest OSs in a VM with an Arm platform architecture.</p>
+    <p>Oracle Premier Support covers the running of the following guest OSs in a VM with an Arm64 platform architecture.</p>
     <p>
       <ul id="ul_bcg_bpf_3cc">
-        <li>Oracle Linux 9 (64-bit)<ul>
-            <li>Red Hat Enterprise Linux 9 (64-bit)</li>
-            <li>CentOS Stream 9 (64-bit)</li>
+        <li>Oracle Linux 9 <ul>
+            <li>Red Hat Enterprise Linux 9</li>
+            <li>CentOS Stream 9</li>
           </ul></li>
-        <li>Oracle Linux 8 (64-bit)<ul>
-            <li>Red Hat Enterprise Linux 8 (64-bit)</li>
+        <li>Oracle Linux 8<ul>
+            <li>Red Hat Enterprise Linux 8</li>
           </ul></li>
-        <li>Oracle Linux 7 (64-bit)<ul>
-            <li>Red Hat Enterprise Linux 7 (64-bit)</li>
+        <li>Oracle Linux 7<ul>
+            <li>Red Hat Enterprise Linux 7</li>
           </ul></li>
       </ul>
     </p>
-    
-    
   </body>
 </topic>

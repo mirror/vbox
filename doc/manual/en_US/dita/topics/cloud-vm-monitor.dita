@@ -2,7 +2,6 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-vm-monitor">
   <title>Monitoring Cloud VM Performance</title>
-  <!--7.1: OCI instance monitoring -->
   <body>
     <p>You can monitor the performance of cloud VM instances in the following ways:</p>
     

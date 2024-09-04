@@ -8,10 +8,10 @@
         <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can virtualize the following types of networking hardware: </p>
     <ul>
       <li>
-        <p>AMD PCNet PCI II (Am79C970A) </p>
+        <p>AMD PCNet PCI II (Am79C970A) Not available on Arm guests.</p>
       </li>
       <li>
-        <p>AMD PCNet FAST III (Am79C973), the default setting </p>
+        <p>AMD PCNet FAST III (Am79C973), the default setting on x86 guests. Not available on Arm guests.</p>
       </li>
       <li>
         <p>Intel PRO/1000 MT Desktop (82540EM) </p>

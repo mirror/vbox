@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="gui-tools-global">
   <title>Global Tools</title>
-  <!-- 7.1: May be best to remove screen shots of menus. Too much of a maintenance headache. DONE. This topic needs turned around to be global config tasks.-->
+  <!--This topic needs turned around to be global config tasks.-->
   <body>
     <p>In the left pane of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window, click the <b outputclass="bold"
         >Menu</b> icon in the <b outputclass="bold">Tools</b> banner located above the machine list. The <b

@@ -9,7 +9,7 @@
       <publisherinformation>
          <published>
             <completed>
-               <month>July</month>
+          <month>September</month>
                <year>2024</year>
             </completed>
          </published>
@@ -257,7 +257,6 @@
          </topicref>
          <topicref href="topics/guestadd-video.dita">
             <topicref href="topics/guestadd-3d.dita"/>
-            <topicref href="topics/guestadd-2d.dita"/>
          </topicref>
          <topicref href="topics/seamlesswindows.dita"/>
          <topicref href="topics/guestadd-guestprops.dita">
@@ -561,7 +560,6 @@
          <topicref href="topics/ts_host-freq-scaling.dita"/>
          <topicref href="topics/ts_win-cpu-usage-rept.dita"/>
          <topicref href="topics/ts_host-powermgmt.dita"/>
-         <topicref href="topics/ts_gui-2d-grayed-out.dita"/>
       </topicref>
       <topicref href="topics/ts_win-guests.dita">
          <topicref href="topics/ts_win7-guest-usb3-support.dita"/>

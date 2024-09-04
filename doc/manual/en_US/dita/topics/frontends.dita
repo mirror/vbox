@@ -32,7 +32,6 @@
             Server</xref>. </p>
       </li>
       <li>
-        <!-- Separate mode: check with Klaus whether this needs to be covered in 7.1-->
         <p><b>Separate mode.</b> A front end that is based on <userinput>VBoxHeadless</userinput>, 
           but does not require VRDE or an RDP viewer. See <xref href="vboxheadless-separate-mode.dita">Separate Mode</xref>.</p>
       </li>
