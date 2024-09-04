@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="ru">
+<TS version="2.1" language="ru_RU">
 <context>
     <name>Appliance</name>
     <message>
@@ -444,68 +444,74 @@
         <location filename="../VBoxManageAppliance.cpp" line="757"/>
         <source>%2u: Guest memory specified with --memory: %RU32 MB
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: Размер памяти гостевой системы, указанный через --memory: %RU32 МБ
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="773"/>
         <source>%2u: Guest memory: %RU64 MB
     (change with &quot;--vsys %u --memory &lt;MB&gt;&quot;)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: Размер памяти гостевой системы: %RU64 МБ
+    (изменить через &quot;--vsys %u --memory &lt;MB&gt;&quot;)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="875"/>
         <source>%2u: NVMe controller, type %ls -- disabled
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: NVMe контроллер, тип %ls -- отключен
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="881"/>
         <source>%2u: NVMe controller, type %ls
     (disable with &quot;--vsys %u --unit %u --ignore&quot;)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: NVMe контроллер, тип %ls
+    (отключить через &quot;--vsys %u --unit %u --ignore&quot;)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="906"/>
         <source>Option --ImportToVDI can not be used together with a manually set target path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Опция --ImportToVDI не должна использоваться вместе с путем назначения, указанным вручную.</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="934"/>
         <source>Invalid controller value: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимое значение контроллера &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="939"/>
         <location filename="../VBoxManageAppliance.cpp" line="1006"/>
         <source>Invalid storage controller specified: %u</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый контроллер носителей %u</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="952"/>
         <source>Invalid port value: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимое значение порта: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="967"/>
         <source>Failed to extract controller value from ExtraConfig: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось извлечь значение контроллера из ExtraConfig: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="973"/>
         <source>Failed to extract channel value from ExtraConfig: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось извлечь значение канала из ExtraConfig: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="999"/>
         <source>Device already attached to controller %u at this port (%u) location.</source>
-        <translation type="unfinished"></translation>
+        <translation>Устройство уже подключено к контроллеру %u на этом порту (%u).</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="1044"/>
         <source>Illegal port value: %u. For %ls controllers the only valid values are 0 to %lu (inclusive)</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверное значение порта: %u. Для контроллеров типа %ls значения должны быть в диапазоне от 0 до %lu (включительно)</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="1066"/>
@@ -513,28 +519,37 @@
     (change controller with &quot;--vsys %u --unit %u --controller &lt;index&gt;&quot;;
     change controller port with &quot;--vsys %u --unit %u --port &lt;n&gt;&quot;)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: Образ жесткого диска, указанный через --disk: образ источника=%ls, путь назначения=%ls, %s
+    (изменить контроллер через &quot;--vsys %u --unit %u --controller &lt;index&gt;&quot;;
+    изменить порт контроллера через &quot;--vsys %u --unit %u -- port &lt;n&gt;&quot;)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="1078"/>
         <source>%2u: Hard disk image specified with --disk and --controller: source image=%ls, target path=%ls, %s
     (change controller port with &quot;--vsys %u --unit %u --port &lt;n&gt;&quot;)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: Образ жесткого диска, указанный через --disk и --controller: образ источника=%ls, путь назначения=%ls, %s
+    изменить порт контроллера через &quot;--vsys %u --unit %u -- port &lt;n&gt;&quot;)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="1088"/>
         <source>%2u: Hard disk image specified with --disk and --port: source image=%ls, target path=%ls, %s
     (change controller with &quot;--vsys %u --unit %u --controller &lt;index&gt;&quot;)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: Образ жесткого диска, указанный через --disk и --port: образ источника=%ls, путь назначения=%ls, %s
+    (изменить контроллер через &quot;--vsys %u --unit %u --controller &lt;index&gt;&quot;)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="1098"/>
         <source>%2u: Hard disk image specified with --controller and --port: source image=%ls, target path=%ls, %s
     (change target path with &quot;--vsys %u --unit %u --disk path&quot;)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: Образ жесткого диска, указанный через --controller и --port: образ источника=%ls, путь назначения=%ls, %s
+    (изменить путь назначения через &quot;--vsys %u --unit %u --disk path&quot;)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="1108"/>
@@ -542,7 +557,10 @@
     (change target path with &quot;--vsys %u --unit %u --disk path&quot;;
     change controller with &quot;--vsys %u --unit %u --controller &lt;index&gt;&quot;)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: Образ жесткого диска, указанный через --port: образ источника=%ls, путь назначения=%ls, %s
+    (изменить путь назначения через &quot;--vsys %u --unit %u --disk path&quot;;
+    изменить контроллер через &quot;--vsys %u --unit %u -- controller &lt;index&gt;&quot;)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="1120"/>
@@ -550,13 +568,17 @@
     (change target path with &quot;--vsys %u --unit %u --disk path&quot;;
     change controller port with &quot;--vsys %u --unit %u --port &lt;n&gt;&quot;)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: Образ жесткого диска, указанный через --controller: образ источника=%ls, путь назначения=%ls, %s
+    (изменить путь назначения через &quot;--vsys %u --unit %u --disk path&quot;;
+    изменить порт контроллера через &quot;--vsys %u --unit %u -- port &lt;n&gt;&quot;)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="1132"/>
         <source>%2u: Hard disk image specified with --disk and --controller and --port: source image=%ls, target path=%ls, %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: Образ жесткого диска, указанный через --disk и --controller и --port: образ источника=%ls, путь назначения=%ls, %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="1217"/>
@@ -566,7 +588,12 @@
     change controller port with &quot;--vsys %u --unit %u --port &lt;n&gt;&quot;;
     disable with &quot;--vsys %u --unit %u --ignore&quot;)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%2u: Образ жесткого диска: образ источника=%ls, путь назначения=%ls, %s
+    (изменить путь назначения через &quot;--vsys %u --unit %u --disk path&quot;;
+    изменить контроллер через &quot;--vsys %u --unit %u --controller &lt;index&gt;&quot;;
+    изменить порт контроллера через &quot;--vsys %u --unit %u -- port &lt;n&gt;&quot;;
+    отключить через &quot;--vsys %u --unit %u --ignore&quot;)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageAppliance.cpp" line="1234"/>
@@ -1098,7 +1125,8 @@
         <location filename="../VBoxManageAppliance.cpp" line="2687"/>
         <source>Encountered a problem when validating the signature we just created: %Rrc%#RTeim
 Please make sure the certificate and private key matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Столкнулись с проблемой при проверке только что созданной подписи: %Rrc%#RTeim
+Пожалуйста, убедитесь, что сертификат и приватный ключ соответствуют друг другу.</translation>
     </message>
     <message>
         <source>Encountered a problem when validating the signature we just created: %Rrc%#RTeim
@@ -1371,43 +1399,50 @@ and compartment &apos;%s&apos;:
         <location filename="../VBoxManageCloud.cpp" line="496"/>
         <source>Filters: &apos;%s&apos; 
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Фильтры: &apos;%s&apos; 
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="538"/>
         <source>Parameter --compartment-id is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>Требуется параметр --compartment-id.</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="555"/>
         <source>Reply is in the form &apos;Vnic attachment &lt;id&gt;&apos;: 
 	 &apos;Vnic &lt;id&gt;&apos;
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Ответ в формате &apos;подключение Vnic &lt;id&gt;&apos;: 
+	 &apos;Vnic &lt;id&gt;&apos;
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="563"/>
         <source>Failed to list Vnic attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось перечислить подключения Vnic</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="572"/>
         <source>The list of the Vnic attachments:
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Список подключений Vnic:
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="577"/>
         <source>	Empty
 </source>
-        <translation type="unfinished"></translation>
+        <translation>	Пуст
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="585"/>
         <source>Vnic attachment id [%ls]:
 	 Vnic id - %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>ID Vnic подключения [%ls]:
+	 Vnic id - %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="637"/>
@@ -1490,36 +1525,40 @@ and compartment &apos;%s&apos;:
     <message>
         <location filename="../VBoxManageCloud.cpp" line="951"/>
         <source>Missing parameter --id.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует параметр: --id.</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="966"/>
         <source>Cloning cloud instance with Id &apos;%s&apos;...
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Клонирование облачного экземпляра с ID &apos;%s&apos;...
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="974"/>
         <source>Cloning cloud instance failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось клонировать облачный экземпляр</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="978"/>
         <source>Cloned instance UUID in VirtualBox: %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>UUID клонированного экземпляра в VirtualBox: %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="981"/>
         <source>Cloned instance name: %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Имя клонированного экземпляра: %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="984"/>
         <source>Cloud instance was cloned successfully
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Облачный экземпляр клонирован успешно
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1028"/>
@@ -1744,19 +1783,22 @@ and compartment &apos;%s&apos;:
         <location filename="../VBoxManageCloud.cpp" line="1109"/>
         <source>Miscellanious wasn&apos;t found
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Дополнительное не найдено
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1110"/>
         <source>Free-form tags weren&apos;t found
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Теги произвольной формы не найдены
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1111"/>
         <source>Metadata was&apos;t found
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Метаданные не найдены
+</translation>
     </message>
     <message>
         <source>Free-form tags or metadata weren&apos;t found
@@ -4274,22 +4316,22 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
         <location filename="../VBoxManageDisk.cpp" line="469"/>
         <location filename="../VBoxManageDisk.cpp" line="491"/>
         <source>Parameter --filename is required</source>
-        <translation type="unfinished"></translation>
+        <translation>Требуется параметр --filename</translation>
     </message>
     <message>
         <location filename="../VBoxManageDisk.cpp" line="471"/>
         <source>Parameter --size is required</source>
-        <translation type="unfinished"></translation>
+        <translation>Требуется параметр --size</translation>
     </message>
     <message>
         <location filename="../VBoxManageDisk.cpp" line="485"/>
         <source>Variant &apos;Rawdisk&apos; requires &apos;--format=VMDK&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Вариант &apos;Rawdisk&apos; требует &apos;--format=VMDK&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageDisk.cpp" line="596"/>
         <source>Property &apos;%s&apos; was not found in the list of medium properties for the requested medium format (%s).</source>
-        <translation type="unfinished"></translation>
+        <translation>В списке свойств носителя не найдено свойство &apos;%s&apos; для запрошенного формата (%s).</translation>
     </message>
     <message>
         <location filename="../VBoxManageDisk.cpp" line="1335"/>
@@ -4573,7 +4615,7 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
     <message>
         <location filename="../VBoxManageDisk.cpp" line="1873"/>
         <source>Failed to delete medium. Error code %Rhrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось удалить носитель. Код ошибки %Rhrc</translation>
     </message>
     <message>
         <source>Failed to delete medium. Error code %Rrc</source>
@@ -5410,61 +5452,71 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
         <location filename="../VBoxManageGuestCtrl.cpp" line="286"/>
         <source>Unable to install console control handler, vrc=%Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно установить обработчик управления консоли, vrc=%Rrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="313"/>
         <source>Unable to uninstall console control handler, vrc=%Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно удалить обработчик управления консоли, vrc=%Rrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="910"/>
         <source>Now %zu guest sessions registered
 </source>
-        <translation type="unfinished"></translation>
+        <translation>В данный момент зарегистрировано %zu гостевых сессий
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="1076"/>
         <source>Unable to write output, vrc=%Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно записать выходной поток, vrc=%Rrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="1336"/>
         <source>Executing:
   Image : %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Исполняется:
+  Образ : %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="1338"/>
         <source>  arg[%d]: %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>  arg[%d]: %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="1452"/>
         <source>Wait result is &apos;%s&apos; (%d)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Результат ожидания &apos;%s&apos; (%d)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="1795"/>
         <source>Source &apos;%s&apos; is a %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Источник &apos;%s&apos; - %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="1812"/>
         <source>Error looking file system information for source &apos;%s&apos;, vrc=%Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка поиска информации файловой системы для источника &apos;%s&apos;, vrc=%Rrc</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="2207"/>
         <source>Failed to initialize, vrc=%Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось проинициализировать, vrc=%Rrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="2211"/>
@@ -5601,37 +5653,37 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="2521"/>
         <source>No path specified to query information for!</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указан путь для запроса информации!</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="2538"/>
         <source>Filesystem</source>
-        <translation type="unfinished"></translation>
+        <translation>Файловая система</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="2539"/>
         <source>Total</source>
-        <translation type="unfinished"></translation>
+        <translation>Всего</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="2539"/>
         <source>Used</source>
-        <translation type="unfinished"></translation>
+        <translation>Использовано</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="2539"/>
         <source>Avail</source>
-        <translation type="unfinished"></translation>
+        <translation>Доступно</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="2540"/>
         <source>Use%</source>
-        <translation type="unfinished"></translation>
+        <translation>% использования</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="2542"/>
         <source>Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Путь</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="2662"/>
@@ -6226,7 +6278,7 @@ Total guest sessions: %zu
     <message>
         <location filename="../VBoxManageGuestProp.cpp" line="319"/>
         <source>No VM name or UUID was specified</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указано имя или UUID ВМ</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestProp.cpp" line="346"/>
@@ -6246,7 +6298,8 @@ Total guest sessions: %zu
         <location filename="../VBoxManageGuestProp.cpp" line="540"/>
         <source>Property %ls was deleted
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Свойство %ls было удалено
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestProp.cpp" line="542"/>
@@ -6830,17 +6883,17 @@ Syntax error: %N
     <message>
         <location filename="../VBoxManageInfo.cpp" line="956"/>
         <source>, hot-pluggable</source>
-        <translation type="unfinished"></translation>
+        <translation>, с горячим подключением</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="957"/>
         <source>, non-rotational (SSD)</source>
-        <translation type="unfinished"></translation>
+        <translation>, твердотельный (SSD)</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="958"/>
         <source>, discards unused blocks</source>
-        <translation type="unfinished"></translation>
+        <translation>, с отбрасыванием неиспользуемых блоков</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="996"/>
@@ -7232,98 +7285,99 @@ Syntax error: %N
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2909"/>
         <source>Recording status:</source>
-        <translation type="unfinished"></translation>
+        <translation>Статус записи:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2909"/>
         <source>started</source>
-        <translation type="unfinished">запущен</translation>
+        <translation>запущена</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2909"/>
         <source>stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>остановлена</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2913"/>
         <source>Recording enabled:</source>
-        <translation type="unfinished"></translation>
+        <translation>Запись включена:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2918"/>
         <source>Recording screens:</source>
-        <translation type="unfinished"></translation>
+        <translation>Записываемые экраны:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2924"/>
         <source>Screen %u:</source>
-        <translation type="unfinished"></translation>
+        <translation>Экран %u:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2925"/>
         <source> %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation> %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2961"/>
         <source>    Enabled:</source>
-        <translation type="unfinished"></translation>
+        <translation>    Включен:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2963"/>
         <source>    ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>    ID:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2964"/>
         <source>    Record video:</source>
-        <translation type="unfinished"></translation>
+        <translation>    Запись видео:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2967"/>
         <source>    Record audio:</source>
-        <translation type="unfinished"></translation>
+        <translation>    Запись аудио:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2970"/>
         <source>    Destination:</source>
-        <translation type="unfinished"></translation>
+        <translation>    Расположение:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2972"/>
         <source>File</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2975"/>
         <source>    File:</source>
-        <translation type="unfinished"></translation>
+        <translation>    Файл:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2977"/>
         <source>    Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>    Опции:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2981"/>
         <source>    Video dimensions:</source>
-        <translation type="unfinished"></translation>
+        <translation>    Размеры видео:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2982"/>
         <source>    Video rate:</source>
-        <translation type="unfinished"></translation>
+        <translation>    Качество видео:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2983"/>
         <source>    Video FPS:</source>
-        <translation type="unfinished"></translation>
+        <translation>    Частота кадров:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2983"/>
         <source>fps</source>
-        <translation type="unfinished"></translation>
+        <translation>кдр/сек</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="3019"/>
@@ -7381,26 +7435,31 @@ Syntax error: %N
         <location filename="../VBoxManageInfo.cpp" line="742"/>
         <source>#%zu: Name: &apos;%ls&apos;, Type: %s, Limit: none (disabled)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>#%zu: Имя: &apos;%ls&apos;, Тип: %s, Лимит: нет (отключено)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="790"/>
         <source>#%zu: Name: &apos;%ls&apos;, Type: %s, Limit: %RI64 %s (%RI64 %s)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>#%zu: Имя: &apos;%ls&apos;, Тип: %s, Лимит: %RI64 %s (%RI64 %s)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="794"/>
         <source>#%zu: Name: &apos;%ls&apos;, Type: %s, Limit: %RI64 %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>#%zu: Имя: &apos;%ls&apos;, Тип: %s, Лимит: %RI64 %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="951"/>
         <source>  Port %u, Unit %u: UUID: %ls%s%s%s%s%s%s
     Location: &quot;%ls&quot;
 </source>
-        <translation type="unfinished"></translation>
+        <translation>  Порт %u, Устройство %u: UUID: %ls%s%s%s%s%s%s
+    Расположение: &quot;%ls&quot;
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="1668"/>
@@ -7839,27 +7898,27 @@ Attached physical PCI devices:
     <message>
         <location filename="../VBoxManageInfo.cpp" line="846"/>
         <source>, symlink-policy: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>, политика ссылок: %s</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="1209"/>
         <source>Cipher:</source>
-        <translation type="unfinished"></translation>
+        <translation>Шифр:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="1210"/>
         <source>Password ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>ID пароля:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="1214"/>
         <source>Platform Architecture:</source>
-        <translation type="unfinished"></translation>
+        <translation>Архитектура платформы:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="1442"/>
         <source>UEFI Secure Boot:</source>
-        <translation type="unfinished"></translation>
+        <translation>Безопасная загрузка UEFI:</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="1600"/>
@@ -7888,12 +7947,13 @@ Attached physical PCI devices:
         <location filename="../VBoxManageInfo.cpp" line="1753"/>
         <source>NIC %d Rule(%d):   name = %s, protocol = %s, host ip = %s, host port = %s, guest ip = %s, guest port = %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>NIC %d Правило(%d):   имя = %s, протокол = %s, хост ip = %s, хост порт = %s, гостевой ip = %s, гостевой порт = %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2109"/>
         <source>%-28s I/O address: %#06x, IRQ: %d</source>
-        <translation type="unfinished"></translation>
+        <translation>%-28s I/O адрес: %#06x, IRQ: %d</translation>
     </message>
     <message>
         <location filename="../VBoxManageInfo.cpp" line="2661"/>
@@ -8626,7 +8686,15 @@ Commands:
          problems. It is completely unsupported and will change in
          incompatible ways without warning.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Использование: VBoxManage internalcommands &lt;команда&gt; [аргументы команды]
+
+Команды:
+
+%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%sПРЕДУПРЕЖДЕНИЕ: Это инструмент разработчика и должен использоваться
+         только для анализа проблем. Он не поддерживается вообще
+         и может быть изменен без предупреждения и без сохранения
+         совместимости.
+</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="229"/>
@@ -8662,60 +8730,65 @@ Commands:
         <source>
 Syntax error: %N
 </source>
-        <translation type="unfinished">
+        <translation>
 Синтаксическая ошибка: %N
 </translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="390"/>
         <source>Invalid option -%c</source>
-        <translation type="unfinished">Недопустимая опция -%c</translation>
+        <translation>Недопустимая опция -%c</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="391"/>
         <source>Invalid option case %i</source>
-        <translation type="unfinished">Недопустимый вариант опции %i</translation>
+        <translation>Недопустимый вариант опции %i</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="394"/>
         <source>Unknown option: %s</source>
-        <translation type="unfinished">Неизвестная опция: %s</translation>
+        <translation>Неизвестная опция: %s</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="396"/>
         <source>Invalid argument format: %s</source>
-        <translation type="unfinished">Недопустимый формат аргумента: %s</translation>
+        <translation>Недопустимый формат аргумента: %s</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="631"/>
         <source>Failed to read delta &apos;%s&apos;, vrc=%Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочесть дельту &apos;%s&apos;, vrc=%Rrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="643"/>
         <location filename="../VBoxInternalManage.cpp" line="708"/>
         <source>Failed to read module address &apos;%s&apos;, vrc=%Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочесть адрес модуля &apos;%s&apos;, vrc=%Rrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="651"/>
         <source>Failed to read module size &apos;%s&apos;, vrc=%Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочесть размер модуля &apos;%s&apos;, vrc=%Rrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="719"/>
         <source>Failed to read subtrahend &apos;%s&apos;, vrc=%Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочесть вычитаемое &apos;%s&apos;, vrc=%Rrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="727"/>
         <source>Failed to read segment number &apos;%s&apos;, vrc=%Rrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочесть номер сегмента &apos;%s&apos;, vrc=%Rrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="1245"/>
@@ -8871,24 +8944,24 @@ Syntax error: %N
     <message>
         <location filename="../VBoxInternalManage.cpp" line="1338"/>
         <source>Mandatory parameter --filename missing</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует обязательный параметр --filename</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="1340"/>
         <source>Mandatory parameter --rawdisk missing</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует обязательный параметр --rawdisk</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="1343"/>
         <source>The parameter --mbr is only valid when the parameter -partitions is also present</source>
-        <translation type="unfinished"></translation>
+        <translation>Параметр --mbr действителен только когда также присутствует параметр -partitions</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="1349"/>
         <location filename="../VBoxInternalManage.cpp" line="1358"/>
         <location filename="../VBoxInternalManage.cpp" line="1365"/>
         <source>Failed to allocate memory for argument array</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось выделить память для массива аргументов</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="1370"/>
@@ -8898,7 +8971,12 @@ available using the &apos;VBoxManage createmedium&apos; command and should be us
 instead.  See &apos;VBoxManage help createmedium&apos; for details.
 
 </source>
-        <translation type="unfinished"></translation>
+        <translation>
+Подкоманда &apos;createrawvdk&apos; устарела.  Аналогичный функционал доступен с
+помощью команды &apos;VBoxManage createmedium&apos; и должен быть использован
+в дальнейшем.  Подробнее смотрите &apos;VBoxManage help createmedium&apos;.
+
+</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="1418"/>
@@ -9251,7 +9329,9 @@ instead.  See &apos;VBoxManage help createmedium&apos; for details.
         <source>VBoxNetworkName: hostonly-%ls
 
 </source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxNetworkName: hostonly-%ls
+
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="282"/>
@@ -9726,18 +9806,28 @@ Crypto Module:  %ls
 Usable:         %RTbool
 Why unusable:   %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Пакет №%2zu:     %ls
+Версия:          %ls
+Ревизия:         %u
+Редакция:        %ls
+Описание:        %ls
+VRDE модуль:     %ls
+Крипто модуль:   %ls
+Годный:          %RTbool
+Почему не годен: %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="2171"/>
         <source>CPU Architecture: %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Архитектура ЦПУ: %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="2719"/>
         <source>Invalid platform architecture specified</source>
-        <translation type="unfinished"></translation>
+        <translation>Указана недопустимая архитектура платформы</translation>
     </message>
     <message>
         <source>Serial Number:    %ls
@@ -10281,7 +10371,7 @@ Why unusable:   %ls
         <location filename="../VBoxManageList.cpp" line="1175"/>
         <source>Last check date:                 %ls
 </source>
-        <translation>Последняя дата проверки:                 %ls
+        <translation>Последняя дата проверки: %ls
 </translation>
     </message>
     <message>
@@ -10295,313 +10385,363 @@ Why unusable:   %ls
         <location filename="../VBoxManageList.cpp" line="714"/>
         <source>Serial Number:    %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Серийный номер:    %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="716"/>
         <source>Port:             %ls
 
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Порт:             %ls
+
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="799"/>
         <source>Maximum %s Network Adapter count:   %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально сетевых адаптеров типа %s:   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="801"/>
         <source>Maximum %s IDE Controllers:   %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально IDE контроллеров типа %s:   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="803"/>
         <source>Maximum %s SATA Controllers:  %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально SATA контроллеров типа %s:   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="805"/>
         <source>Maximum %s SCSI Controllers:  %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально SCSI контроллеров типа %s:   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="807"/>
         <source>Maximum %s SAS Controllers:   %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально SAS контроллеров типа %s:   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="809"/>
         <source>Maximum %s NVMe Controllers:  %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально NVMe контроллеров типа %s:   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="811"/>
         <source>Maximum %s virtio-scsi Controllers:  %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально virtio-scsi контроллеров типа %s:   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="813"/>
         <source>Maximum %s Floppy Controllers:%u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально Floppy контроллеров типа %s:   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="845"/>
         <source>Description:      %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Описание:           %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="846"/>
         <source>Family ID:        %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>ID семейства:       %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="847"/>
         <source>Family Desc:      %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Описание семейства: %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="849"/>
         <source>OS Subtype:       %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Подтип гостевой ОС: %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="850"/>
         <source>Architecture:     %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Архитектура:        %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="851"/>
         <source>64 bit:           %RTbool
 </source>
-        <translation type="unfinished"></translation>
+        <translation>64 бит:             %RTbool
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="857"/>
         <source>Family:           %ls / %ls (%ls)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Семейство:          %ls / %ls (%ls)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="860"/>
         <source>Family:           %ls (%ls)
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Семейство:          %ls (%ls)
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="861"/>
         <source>Architecture:     %s%s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Архитектура:        %s%s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="882"/>
         <source>Supported guest OS types%s:
 
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Поддерживаемые типы гостевых ОС%s:
+
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="931"/>
         <source>Maximum Serial Port count:              %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально последовательных портов:       %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="933"/>
         <source>Maximum Parallel Port count:            %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально параллельных портов:           %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="935"/>
         <source>Maximum Boot Position:                  %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимальная загрузочная позиция:          %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="937"/>
         <source>Maximum Floppy Port count:              %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально Floppy портов:                 %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="939"/>
         <source>Maximum Floppy Devices per Port:        %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально Floppy устройств на порт:      %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="943"/>
         <source>Maximum virtio-scsi Devices per Port:   %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально virtio-scsi устройств на порт: %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="945"/>
         <source>Maximum IDE Port count:                 %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально IDE портов:                    %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="947"/>
         <source>Maximum IDE Devices per port:           %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально IDE устройств на порт:         %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="949"/>
         <source>Maximum SATA Port count:                %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально SATA портов:                   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="951"/>
         <source>Maximum SATA Device per port:          %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально SATA устройств на порт:        %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="953"/>
         <source>Maximum SCSI Port count:                %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально SCSI портов:                   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="955"/>
         <source>Maximum SCSI Devices per port:          %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально SCSI устройств на порт:        %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="957"/>
         <source>Maximum SAS Port count:                 %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально SAS портов:                    %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="959"/>
         <source>Maximum SAS Devices per Port:           %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально SAS устройств на порт:         %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="961"/>
         <source>Maximum NVMe Port count:                %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально NVMe портов:                   %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="963"/>
         <source>Maximum NVMe Devices per Port:          %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Максимально NVMe устройств на порт:        %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="968"/>
         <source>Supported chipsets:                     </source>
-        <translation type="unfinished"></translation>
+        <translation>Поддерживаемые чипсеты:                     </translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="981"/>
         <source>%s chipset properties:
 </source>
-        <translation type="unfinished"></translation>
+        <translation>параметры чипсета %s:
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1053"/>
         <source>VM encryption ExtPack:           %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Пакет расширения шифрования ВМ:                      %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1062"/>
         <source>Default</source>
-        <translation type="unfinished">По умолчанию</translation>
+        <translation>По умолчанию</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1125"/>
         <source>%s platform properties:
 </source>
-        <translation type="unfinished"></translation>
+        <translation>параметры платформы %s:
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1137"/>
         <source>Enabled:                      %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Включено:                %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1140"/>
         <source>Check count:                  %u
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Количество проверок:     %u
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1143"/>
         <source>Check frequency:              never
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Частота проверки:        никогда
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1145"/>
         <source>Check frequency:              every day
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Частота проверки:        каждый день
+</translation>
     </message>
     <message numerus="yes">
         <location filename="../VBoxManageList.cpp" line="1147"/>
         <source>Check frequency:              every %u days
 </source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Частота проверки:        каждый %u день
+</numerusform>
+            <numerusform>Частота проверки:        каждые %u дня
+</numerusform>
+            <numerusform>Частота проверки:        каждые %u дней
+</numerusform>
         </translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1156"/>
         <source>Stable: Maintenance and minor releases within the same major release</source>
-        <translation type="unfinished"></translation>
+        <translation>Стабильные: Корректирующие и минорные релизы внутри того же мажорного релиза</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1159"/>
         <source>All releases: All stable releases, including major versions</source>
-        <translation type="unfinished"></translation>
+        <translation>Все релизы: Все стабильные релизы, включая мажорные версии</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1162"/>
         <source>With Betas: All stable and major releases, including beta versions</source>
-        <translation type="unfinished"></translation>
+        <translation>С бета-версиями: Все стабильные и мажорные релизы, включая бета-версии</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1165"/>
         <source>With Testing: All stable, major and beta releases, including testing versions</source>
-        <translation type="unfinished"></translation>
+        <translation>С тест-версиями: Все стабильные, мажорные и бета-релизы, включая тестовые версии</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1171"/>
         <source>Channel:                         %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Канал:                   %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1173"/>
         <source>Repository:                      %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Репозиторий:             %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="1203"/>
@@ -11396,17 +11536,17 @@ in few seconds, discarding all collected data and parameters.</source>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="126"/>
         <source>Enter password:</source>
-        <translation type="unfinished">Введите пароль:</translation>
+        <translation>Введите пароль:</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="134"/>
         <source>Failed to read password from file</source>
-        <translation type="unfinished">Не удалось прочесть пароль из файла</translation>
+        <translation>Не удалось прочесть пароль из файла</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="150"/>
         <source>Failed to convert &quot;%s&quot; to an absolute path: %Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сконвертировать &quot;%s&quot; в абсолютный путь: %Rrc</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="225"/>
@@ -11423,7 +11563,7 @@ in few seconds, discarding all collected data and parameters.</source>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="360"/>
         <source>Invalid --platform-architecture argument &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый аргумент к --platform-architecture &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="370"/>
@@ -11433,7 +11573,7 @@ in few seconds, discarding all collected data and parameters.</source>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="381"/>
         <source>Unknown or invalid guest OS type given.</source>
-        <translation type="unfinished"></translation>
+        <translation>Указан неизвестный или недопустимый тип гостевой ОС.</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="456"/>
@@ -11591,58 +11731,58 @@ UUID: %s
         <location filename="../VBoxManageMisc.cpp" line="501"/>
         <location filename="../VBoxManageMisc.cpp" line="2054"/>
         <source>RTPathAbs(%s,,) failed with vrc=%Rrc</source>
-        <translation type="unfinished"></translation>
+        <translation>RTPathAbs(%s,,) завершен с ошибкой vrc=%Rrc</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1026"/>
         <location filename="../VBoxManageMisc.cpp" line="1186"/>
         <source>%s: %Rrs</source>
-        <translation type="unfinished"></translation>
+        <translation>%s: %Rrs</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1033"/>
         <location filename="../VBoxManageMisc.cpp" line="1193"/>
         <source>VM name or UUID required</source>
-        <translation type="unfinished">Требуется имя ВМ или UUID</translation>
+        <translation>Требуется имя ВМ или UUID</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1036"/>
         <location filename="../VBoxManageMisc.cpp" line="1196"/>
         <source>No password specified</source>
-        <translation type="unfinished">Не указан пароль</translation>
+        <translation>Не указан пароль</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1040"/>
         <source>A new password must always have a valid identifier set at the same time</source>
-        <translation type="unfinished">Новый пароль должен всегда иметь действительный идентификатор заданный в то же время</translation>
+        <translation>Новый пароль должен всегда иметь действительный идентификатор заданный в то же время</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1113"/>
         <location filename="../VBoxManageMisc.cpp" line="1236"/>
         <source>Invalid number of arguments: %d</source>
-        <translation type="unfinished">Неправильное количество аргументов: %d</translation>
+        <translation>Неправильное количество аргументов: %d</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1199"/>
         <source>No password identifier specified</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указан идентификатор пароля</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1252"/>
         <source>subcommand required</source>
-        <translation type="unfinished"></translation>
+        <translation>необходима подкоманда</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1267"/>
         <source>unknown subcommand</source>
-        <translation type="unfinished"></translation>
+        <translation>неизвестная подкоманда</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1657"/>
         <location filename="../VBoxManageMisc.cpp" line="1769"/>
         <location filename="../VBoxManageMisc.cpp" line="1899"/>
         <source>Machine name given more than once: first &apos;%s&apos;, then &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя машины указано более одного раза: сначала &apos;%s&apos;, затем &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1667"/>
@@ -11697,29 +11837,31 @@ UUID: %s
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1895"/>
         <source>Invalid --symlink-policy argument &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый аргумент к --symlink-policy &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1911"/>
         <source>No shared folder name (--name) was supplied.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указано имя общей папки (--name).</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1914"/>
         <source>No shared folder attributes specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указаны атрибуты общей папки.</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1936"/>
         <source>Machine &apos;%s&apos; has no shared folders configured.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Нет настроенных общих папок машины &apos;%s&apos;.
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="1961"/>
         <source>Could not find a shared folder named &apos;%s&apos;.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно найти общую папку с именем &apos;%s&apos;.
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="2040"/>
@@ -11842,13 +11984,15 @@ to the VBoxManage command line.
         <location filename="../VBoxManageMisc.cpp" line="2270"/>
         <source>    Unattended installation supported = yes
 </source>
-        <translation type="unfinished"></translation>
+        <translation>    Unattended установка поддерживается = да
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="2272"/>
         <source>    Unattended installation supported = no
 </source>
-        <translation type="unfinished"></translation>
+        <translation>    Unattended установка поддерживается = нет
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="2353"/>
@@ -11902,7 +12046,8 @@ to the VBoxManage command line.
         <location filename="../VBoxManageMisc.cpp" line="2653"/>
         <source>  %32 = failed: %Rhrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>  %32 = завершено с ошибкой: %Rhrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageMisc.cpp" line="2669"/>
@@ -12037,7 +12182,7 @@ to the VBoxManage command line.
         <location filename="../VBoxManageModifyVM.cpp" line="2623"/>
         <location filename="../VBoxManageModifyVM.cpp" line="3066"/>
         <source>Missing or invalid argument to &apos;%s&apos;</source>
-        <translation type="unfinished">Отсутствует или недопустимый аргумент к &apos;%s&apos;</translation>
+        <translation>Отсутствует или недопустимый аргумент к &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageModifyVM.cpp" line="1094"/>
@@ -12161,22 +12306,23 @@ to the VBoxManage command line.
         <location filename="../VBoxManageModifyVM.cpp" line="2697"/>
         <source>Warning: --audio is deprecated and will be removed soon. Use --audio-driver instead!
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Предупреждение: --audio устарел и скоро будет удалён. Используйте --audio-driver!
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageModifyVM.cpp" line="2738"/>
         <source>Invalid %s argument &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый аргумент %s: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageModifyVM.cpp" line="3684"/>
         <source>Invalid --guest-debug-provider &apos;%s&apos; (valid: none, native, gdb, kd)</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый аргумент к --guest-debug-provider &apos;%s&apos; (допустимые: none, native, gdb, kd)</translation>
     </message>
     <message>
         <location filename="../VBoxManageModifyVM.cpp" line="3711"/>
         <source>Invalid --guest-debug-io-provider &apos;%s&apos; (valid: none, tcp, udp, ipc)</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый аргумент к --guest-debug-io-provider &apos;%s&apos; (допустимые: none, tcp, udp, ipc)</translation>
     </message>
     <message>
         <source>Invalid --audio argument &apos;%s&apos;</source>
@@ -12296,7 +12442,7 @@ to the VBoxManage command line.
     <message>
         <location filename="../VBoxManageModifyVM.cpp" line="3634"/>
         <source>Invalid --vm-execution-engine &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый --vm-execution-engine &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageModifyVM.cpp" line="3663"/>
@@ -12374,27 +12520,28 @@ to the VBoxManage command line.
         <location filename="../VBoxManageNATNetwork.cpp" line="126"/>
         <source>DHCP Server:  %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP сервер:  %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageNATNetwork.cpp" line="152"/>
         <source>Port-forwarding (ipv4)
 </source>
-        <translation type="unfinished">Перенаправление портов (ipv4)
+        <translation>Перенаправление портов (ipv4)
 </translation>
     </message>
     <message>
         <location filename="../VBoxManageNATNetwork.cpp" line="156"/>
         <source>Port-forwarding (ipv6)
 </source>
-        <translation type="unfinished">Перенаправление портов (ipv6)
+        <translation>Перенаправление портов (ipv6)
 </translation>
     </message>
     <message>
         <location filename="../VBoxManageNATNetwork.cpp" line="160"/>
         <source>loopback mappings (ipv4)
 </source>
-        <translation type="unfinished">отображение локальной петли (ipv4)
+        <translation>локальное перенаправление (ipv4)
 </translation>
     </message>
     <message>
@@ -12467,7 +12614,7 @@ to the VBoxManage command line.
     <message>
         <location filename="../VBoxManageNATNetwork.cpp" line="313"/>
         <source>You can specify --ipv6-default only once.</source>
-        <translation type="unfinished"></translation>
+        <translation>--ipv6-default можно указать только один раз.</translation>
     </message>
     <message>
         <location filename="../VBoxManageNATNetwork.cpp" line="323"/>
@@ -12619,18 +12766,18 @@ to the VBoxManage command line.
     <message>
         <location filename="../VBoxManageModifyNvram.cpp" line="240"/>
         <source>No machine owner key file path was given to &quot;enrollpk&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указан путь к файлу с ключом машины для &quot;enrollpk&quot;</translation>
     </message>
     <message>
         <location filename="../VBoxManageModifyNvram.cpp" line="296"/>
         <location filename="../VBoxManageModifyNvram.cpp" line="302"/>
         <source>You can specify either --enable or --disable once.</source>
-        <translation type="unfinished">--enable и --disable можно указать только один раз.</translation>
+        <translation>--enable и --disable можно указать только один раз.</translation>
     </message>
     <message>
         <location filename="../VBoxManageModifyNvram.cpp" line="312"/>
         <source>You have to specify either --enable or --disable.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вам придётся указать или --enable или --disable.</translation>
     </message>
     <message>
         <location filename="../VBoxManageModifyNvram.cpp" line="391"/>
@@ -13028,73 +13175,85 @@ to the VBoxManage command line.
         <location filename="../VBoxManageUpdateCheck.cpp" line="143"/>
         <source>Channel:                %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Канал:                  %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="110"/>
         <source>Frequency:              Never
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Частота:                Никогда
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="112"/>
         <source>Frequency:              Every day
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Частота:                Каждый день
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="114"/>
         <source>Frequency:              Every %u days
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Частота:                Каждые %u дня/дней
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="157"/>
         <source>Repository:             %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Репозиторий:            %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="206"/>
         <source>Invalid channel specified: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Указан недопустимый канал: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="282"/>
         <source>Checking for a new %ls version...
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Проверка на наличие новой версии %ls...
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="293"/>
         <source>Failed to create update progress object: %Rhrc
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать объект прогресса обновления: %Rhrc
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="301"/>
         <source>Checking for update failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось проверить обновления.</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="320"/>
         <source>A new version of %ls has been released! Version %ls is available at virtualbox.org.
 You can download this version here: %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Выпущена новая версия %ls! Версия %ls доступна на сайте virtualbox.org.
+Вы можете загрузить эту версию здесь: %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="336"/>
         <source>You are already running the most recent version of %ls.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Вы уже используете последнюю версию %ls.
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageUpdateCheck.cpp" line="348"/>
         <source>Something went wrong while checking for updates!
 Please check network connection and try again later.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Во время поиска обновлений что-то пошло не так!
+Пожалуйста, проверьте наличие соединения и попробуйте снова.
+</translation>
     </message>
     <message>
         <source>Target:                 %s
@@ -13206,22 +13365,22 @@ You can download this version here: %ls
         <location filename="../VBoxManageUSB.cpp" line="306"/>
         <location filename="../VBoxManageUSB.cpp" line="348"/>
         <source>Missing required option: --target</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует требуемая опция: --target</translation>
     </message>
     <message>
         <location filename="../VBoxManageUSB.cpp" line="311"/>
         <source>Missing required option: --name</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует требуемая опция: --name</translation>
     </message>
     <message>
         <location filename="../VBoxManageUSB.cpp" line="314"/>
         <source>Missing required option: --action</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует требуемая опция: --action</translation>
     </message>
     <message>
         <location filename="../VBoxManageUSB.cpp" line="317"/>
         <source>Option --remote applies to VM filters only (--target=&lt;uuid|vmname&gt;)</source>
-        <translation type="unfinished"></translation>
+        <translation>Опция --remote применима только к фильтрам VM (--target=&lt;uuid|vmname&gt;)</translation>
     </message>
     <message>
         <location filename="../VBoxManageUSB.cpp" line="545"/>
@@ -13290,7 +13449,8 @@ You can download this version here: %ls
         <location filename="../VBoxManage.cpp" line="431"/>
         <source>%02u%%: %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%02u%%: %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManage.cpp" line="501"/>
