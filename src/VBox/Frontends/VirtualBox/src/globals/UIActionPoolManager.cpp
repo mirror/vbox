@@ -3185,14 +3185,6 @@ protected:
         return QKeySequence("Ctrl+Shift+H");
     }
 
-    /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIType) const RT_OVERRIDE
-    {
-        return   actionPool()->isTemporary()
-               ? QKeySequence()
-               : UIShortcutPool::standardSequence(QKeySequence::HelpContents);
-    }
-
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {

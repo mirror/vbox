@@ -1100,7 +1100,7 @@ void UIVMActivityOverviewWidget::prepare()
     prepareActions();
     sltRetranslateUI();
     updateModelColumVisibilityCache();
-    uiCommon().setHelpKeyword(this, "vm-activity-overview-widget");
+    uiCommon().setHelpKeyword(this, "vm-activity-overview");
     connect(&uiCommon(), &UICommon::sigAskToCommitData,
             this, &UIVMActivityOverviewWidget::sltSaveSettings);
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM,

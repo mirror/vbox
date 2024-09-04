@@ -234,9 +234,10 @@ void UIHelpBrowserDialog::showUserManual(const QString &strHelpFilePath, const Q
         AssertReturnVoid(m_pInstance);
     }
 
-    if (!strKeyword.isEmpty())
-        m_pInstance->showHelpForKeyword(strKeyword);
     m_pInstance->show();
     m_pInstance->setWindowState(m_pInstance->windowState() & ~Qt::WindowMinimized);
     m_pInstance->activateWindow();
+    if (!strKeyword.isEmpty())
+        m_pInstance->showHelpForKeyword(strKeyword);
+
 }
