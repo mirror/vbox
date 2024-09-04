@@ -4,11 +4,7 @@
   <title>Introduction to Guest Additions</title>
   
   <body>
-    <p>As mentioned in <xref href="virtintro.dita#virtintro"/>, the Guest Additions are designed to be installed
-        <i>inside</i> a virtual machine after the guest operating system has been installed. They consist of device
-      drivers and system applications that optimize the guest operating system for better performance and usability. See
-        <xref href="guestossupport.dita#guestossupport"/> for details on what guest operating systems are fully
-      supported with Guest Additions by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. </p>
+    <p>As mentioned in <xref href="virtintro.dita#virtintro"/>, the Guest Additions are designed to be installed <i>inside</i> a virtual machine after the guest operating system has been installed. They consist of device drivers and system applications that optimize the guest operating system for better performance and usability. See <xref href="guest-os.dita"/> for details on what guest operating systems are fully supported with Guest Additions by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.</p>
     <p>The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions for all supported guest operating
       systems are provided as a single CD-ROM image file which is called <filepath>VBoxGuestAdditions.iso</filepath>.
       This image file is located in the installation directory of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.

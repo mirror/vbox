@@ -6,17 +6,6 @@
   <body>
     <p>The Details pane shows configuration information for a virtual machine that is selected in the machine list. The
       pane also includes a toolbar for performing tasks. </p>
-    <fig id="fig-vbox-details-pane">
-      <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Details Pane, Including Toolbar</title>
-      <xref href="images/details-pane.png" format="png" platform="htmlhelp">
-        <image href="images/details-pane.png" width="12cm" placement="break">
-          <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Details Pane, Including Toolbar</alt>
-        </image>
-      </xref>
-      <image platform="ohc" href="images/details-pane.png" width="12cm" placement="break">
-        <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Details Pane, Including Toolbar</alt>
-      </image>
-    </fig>
     <p>The Details pane includes the following: </p>
   </body>
 </topic>
