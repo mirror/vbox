@@ -419,8 +419,6 @@ static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgB
                 for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
                 {
                     void  *pvSeg;
-
-                    /** @todo r=jack: is this fine leaving as a constant instead of dynamic? */
                     pvSeg = RTMemAlloc(DRVNAT_MAXFRAMESIZE);
 
                     uint32_t cbPayload, cbHdrs;
@@ -522,8 +520,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
         pSgBuf->pvUser      = RTMemDup(pGso, sizeof(*pGso));
         pSgBuf->pvAllocator = NULL;
 
-        /** @todo r=jack: figure out why need *2 */
-        pSgBuf->aSegs[0].cbSeg = RT_ALIGN_Z(cbMin*2, 128);
+        pSgBuf->aSegs[0].cbSeg = RT_ALIGN_Z(cbMin, 128);
         pSgBuf->aSegs[0].pvSeg = RTMemAlloc(pSgBuf->aSegs[0].cbSeg);
         if (!pSgBuf->pvUser || !pSgBuf->aSegs[0].pvSeg)
         {
@@ -1612,74 +1609,53 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
              "  Network: %lu\n"
              "  Netmask: %lu\n", Network, Netmask));
 
-#ifndef RT_OS_WINDOWS /** @todo r=bird: Why do we need special windows code here?!? */
     struct in_addr vnetwork = RTNetIPv4AddrHEToInAddr(&Network);
     struct in_addr vnetmask = RTNetIPv4AddrHEToInAddr(&Netmask);
     struct in_addr vhost = RTNetInAddrFromU8(10, 0, 2, 2);
     struct in_addr vdhcp_start = RTNetInAddrFromU8(10, 0, 2, 15);
     struct in_addr vnameserver = RTNetInAddrFromU8(10, 0, 2, 3);
-#else
-    struct in_addr vnetwork;
-    vnetwork.S_un.S_addr = RT_BSWAP_U32(Network.u);
 
-    struct in_addr vnetmask;
-    vnetmask.S_un.S_addr = RT_BSWAP_U32(Netmask.u);
+    SlirpConfig slirpCfg = { 0 };
+    static SlirpCb slirpCallbacks = { 0 };
 
-    struct in_addr vhost;
-    vhost.S_un.S_addr = RT_BSWAP_U32(0x0a000202);
+    slirpCfg.version = 4;
+    slirpCfg.restricted = false;
+    slirpCfg.in_enabled = true;
+    slirpCfg.vnetwork = vnetwork;
+    slirpCfg.vnetmask = vnetmask;
+    slirpCfg.vhost = vhost;
+    slirpCfg.in6_enabled = true;
 
-    struct in_addr vdhcp_start;
-    vdhcp_start.S_un.S_addr = RT_BSWAP_U32(0x0a00020f);
+    inet_pton(AF_INET6, "fd00::", &slirpCfg.vprefix_addr6);
+    slirpCfg.vprefix_len = 64;
+    inet_pton(AF_INET6, "fd00::2", &slirpCfg.vhost6);
 
-    struct in_addr vnameserver;
-    vnameserver.S_un.S_addr = RT_BSWAP_U32(0x0a000203);
-#endif
+    slirpCfg.vhostname = "vbox";
+    slirpCfg.tftp_server_name = pThis->pszNextServer;
+    slirpCfg.tftp_path = pThis->pszTFTPPrefix;
+    slirpCfg.bootfile = pThis->pszBootFile;
+    slirpCfg.vdhcp_start = vdhcp_start;
+    slirpCfg.vnameserver = vnameserver;
+    slirpCfg.if_mtu = MTU;
 
-    /** @todo r=bird: This is leaked.  It can be a stack structure since libslirp
-     *        only copies values from it and doesn't retain the pointer. */
-    SlirpConfig *pSlirpCfg = new SlirpConfig { 0 };
+    inet_pton(AF_INET6, "fd00::3", &slirpCfg.vnameserver6);
 
-    pSlirpCfg->version = 4;
-    pSlirpCfg->restricted = false;
-    pSlirpCfg->in_enabled = true;
-    pSlirpCfg->vnetwork = vnetwork;
-    pSlirpCfg->vnetmask = vnetmask;
-    pSlirpCfg->vhost = vhost;
-    pSlirpCfg->in6_enabled = true;
+    slirpCfg.vdnssearch = NULL;
+    slirpCfg.vdomainname = NULL;
 
-    inet_pton(AF_INET6, "fd00::", &pSlirpCfg->vprefix_addr6);
-    pSlirpCfg->vprefix_len = 64;
-    inet_pton(AF_INET6, "fd00::2", &pSlirpCfg->vhost6);
+    slirpCallbacks.send_packet = &drvNAT_SendPacketCb;
+    slirpCallbacks.guest_error = &drvNAT_GuestErrorCb;
+    slirpCallbacks.clock_get_ns = &drvNAT_ClockGetNsCb;
+    slirpCallbacks.timer_new = &drvNAT_TimerNewCb;
+    slirpCallbacks.timer_free = &drvNAT_TimerFreeCb;
+    slirpCallbacks.timer_mod = &drvNAT_TimerModCb;
+    slirpCallbacks.register_poll_fd = &drvNAT_RegisterPoll;
+    slirpCallbacks.unregister_poll_fd = &drvNAT_UnregisterPoll;
+    slirpCallbacks.notify = &drvNAT_NotifyCb;
+    slirpCallbacks.init_completed = NULL;
+    slirpCallbacks.timer_new_opaque = NULL;
 
-    pSlirpCfg->vhostname = "vbox";
-    pSlirpCfg->tftp_server_name = pThis->pszNextServer;
-    pSlirpCfg->tftp_path = pThis->pszTFTPPrefix;
-    pSlirpCfg->bootfile = pThis->pszBootFile;
-    pSlirpCfg->vdhcp_start = vdhcp_start;
-    pSlirpCfg->vnameserver = vnameserver;
-    pSlirpCfg->if_mtu = MTU;
-
-    inet_pton(AF_INET6, "fd00::3", &pSlirpCfg->vnameserver6);
-
-    pSlirpCfg->vdnssearch = NULL;
-    pSlirpCfg->vdomainname = NULL;
-
-    /** @todo r=bird: This is leaked.  It can be a static structure.   */
-    SlirpCb *slirpCallbacks = (struct SlirpCb *)RTMemAlloc(sizeof(SlirpCb));
-
-    slirpCallbacks->send_packet = &drvNAT_SendPacketCb;
-    slirpCallbacks->guest_error = &drvNAT_GuestErrorCb;
-    slirpCallbacks->clock_get_ns = &drvNAT_ClockGetNsCb;
-    slirpCallbacks->timer_new = &drvNAT_TimerNewCb;
-    slirpCallbacks->timer_free = &drvNAT_TimerFreeCb;
-    slirpCallbacks->timer_mod = &drvNAT_TimerModCb;
-    slirpCallbacks->register_poll_fd = &drvNAT_RegisterPoll;
-    slirpCallbacks->unregister_poll_fd = &drvNAT_UnregisterPoll;
-    slirpCallbacks->notify = &drvNAT_NotifyCb;
-    slirpCallbacks->init_completed = NULL;
-    slirpCallbacks->timer_new_opaque = NULL;
-
-    Slirp *pSlirp = slirp_new(/* cfg */ pSlirpCfg, /* callbacks */ slirpCallbacks, /* opaque */ pThis);
+    Slirp *pSlirp = slirp_new(/* cfg */ &slirpCfg, /* callbacks */ &slirpCallbacks, /* opaque */ pThis);
 
     if (pSlirp == NULL)
         return VERR_INVALID_POINTER;
