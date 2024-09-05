@@ -1441,7 +1441,7 @@ and compartment &apos;%s&apos;:
 	 Vnic id - %ls
 </source>
         <translation>ID Vnic подключения [%ls]:
-	 Vnic id - %ls
+	 Vnic ID - %ls
 </translation>
     </message>
     <message>
@@ -1817,134 +1817,148 @@ and compartment &apos;%s&apos;:
         <location filename="../VBoxManageCloud.cpp" line="1215"/>
         <source>Getting list of metric names for the cloud instance with id %s
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Получение списка имён метрик облачного экземпляра с ID %s
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1216"/>
         <source>Reply is the list, each metric name is placed on a separate line as &apos; - &lt;metric name&gt;&apos;
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Ответ представлен в виде списка, каждая метрика расположена на отдельной строке в формате &apos; - &lt;метрика имя&gt;&apos;
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1223"/>
         <location filename="../VBoxManageCloud.cpp" line="1424"/>
         <source>First, reading the cloud machines list...
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Первым делом, считываем список облачных машин...
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1225"/>
         <location filename="../VBoxManageCloud.cpp" line="1429"/>
         <source>Reading the cloud machines list failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось считать список облачных машин</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1270"/>
         <location filename="../VBoxManageCloud.cpp" line="1474"/>
         <source>Second, refresh information about cloud instance ...
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Во-вторых, обновляем информацию об облачном экземпляре ...
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1279"/>
         <location filename="../VBoxManageCloud.cpp" line="1483"/>
         <source>Refreshing information about cloud instance failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось обновить информацию об облачном экземпляре</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1282"/>
         <source>Third, getting information about cloud instance metric names...
 </source>
-        <translation type="unfinished"></translation>
+        <translation>В-третьих, получаем информацию об именах метрик облачного экземпляра...
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1288"/>
         <source>Getting information about cloud instance metrics failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось получить информацию о метриках облачного экземпляра</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1295"/>
         <source>Available metric names:
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Доступные имена метрик:
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1300"/>
         <source>	The list of metric names is empty. It may mean that an appropriate service wasn&apos;t run on the instance.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>	Список имён метрик пуст. Это, возможно, означает, что соответствующий сервис не был запущен в экземпляре.
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1313"/>
         <source> - %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation> - %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1367"/>
         <source>Duplicate parameter: --metric-name</source>
-        <translation type="unfinished"></translation>
+        <translation>Дублированный параметр: --metric-name</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1371"/>
         <source>Empty parameter: --metric-name</source>
-        <translation type="unfinished"></translation>
+        <translation>Пустой параметр: --metric-name</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1378"/>
         <source>Duplicate parameter: --metric-points</source>
-        <translation type="unfinished"></translation>
+        <translation>Дублированный параметр: --metric-points</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1382"/>
         <source>Empty parameter: --metric-points</source>
-        <translation type="unfinished"></translation>
+        <translation>Пустой параметр: --metric-points</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1405"/>
         <source>Missing parameter: --metric-name</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует параметр: --metric-name</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1416"/>
         <source>Getting %s metric for the cloud instance with id %s...
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Получение метрики %s облачного экземпляра с ID %s...
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1417"/>
         <source>Reply is in the form &apos;%s[Rfc2822 time format]&apos; = &apos;value&apos;
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Ответ в формате &apos;%s[Rfc2822 формат фремени]&apos; = &apos;значение&apos;
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1486"/>
         <source>Third, request metric data from cloud instance ...
 </source>
-        <translation type="unfinished"></translation>
+        <translation>В-третьих, запрашиваем данные метрики облачного экземпляра ...
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1500"/>
         <source>Getting metric data failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось запросить данные метрики</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1519"/>
         <source>The %s metric values (in %ls):
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Данные метрики %s (в %ls):
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1522"/>
         <source>	The list of metric data is empty. It may mean that an appropriate service wasn&apos;t run on the instance.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>	Список данных метрик пуст. Это, возможно, означает, что соответствующий сервис не был запущен в экземпляре.
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1530"/>
         <source>%d: %s[%s] = %ls
 </source>
-        <translation type="unfinished"></translation>
+        <translation>%d: %s[%s] = %ls
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1602"/>
@@ -2007,18 +2021,20 @@ and compartment &apos;%s&apos;:
         <location filename="../VBoxManageCloud.cpp" line="1849"/>
         <source>Reset cloud instance with id %s...
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Сброс облачного экземпляра с ID %s...
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1856"/>
         <source>Reset the cloud instance failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сбросить облачный экземпляр</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="1859"/>
         <source>Cloud instance with id %s (provider = &apos;%s&apos;, profile = &apos;%s&apos;) was reset
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Облачный экземпляр с ID %s (провайдер = &apos;%s&apos;, профиль = &apos;%s&apos;) сброшен
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloud.cpp" line="2055"/>
@@ -3112,18 +3128,18 @@ Try &apos;--help&apos; for more information.</source>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="73"/>
         <source>Invalid %s number &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый номер %s &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="230"/>
         <source>Failed to send a scancode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось послать сканкод.</translation>
     </message>
     <message numerus="yes">
         <location filename="../VBoxManageControlVM.cpp" line="331"/>
         <source>Out of memory allocating %d bytes.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Не хватает памяти под буфер %d байт.</numerusform>
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
@@ -3131,28 +3147,28 @@ Try &apos;--help&apos; for more information.</source>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="334"/>
         <source>File size %RI64 is greater than %RI64: &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Размер файла %RI64 больше чем %RI64: &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="337"/>
         <source>Cannot get size of file &apos;%s&apos;: %Rrc.</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно получить размер файла &apos;%s&apos;: %Rrc.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="342"/>
         <source>Cannot open file &apos;%s&apos;: %Rrc.</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно открыть файл &apos;%s&apos;: %Rrc.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="359"/>
         <location filename="../VBoxManageControlVM.cpp" line="1386"/>
         <source>Not enough parameters.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недостаточно параметров.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="379"/>
         <source>Machine &apos;%s&apos; is not currently running.</source>
-        <translation type="unfinished">Машина &apos;%s&apos; сейчас не запущена.</translation>
+        <translation>Машина &apos;%s&apos; сейчас не запущена.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="405"/>
@@ -3180,53 +3196,53 @@ Try &apos;--help&apos; for more information.</source>
         <location filename="../VBoxManageControlVM.cpp" line="2028"/>
         <location filename="../VBoxManageControlVM.cpp" line="2153"/>
         <source>Missing argument to &apos;%s&apos;.</source>
-        <translation type="unfinished">Отсутствует аргумент к &apos;%s&apos;.</translation>
+        <translation>Отсутствует аргумент к &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="455"/>
         <location filename="../VBoxManageControlVM.cpp" line="482"/>
         <location filename="../VBoxManageControlVM.cpp" line="2264"/>
         <source>Invalid value &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимое значение &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="464"/>
         <location filename="../VBoxManageControlVM.cpp" line="491"/>
         <source>Audio adapter not enabled in VM configuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Аудио адаптер не включен в конфигурации ВМ.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="512"/>
         <location filename="../VBoxManageControlVM.cpp" line="542"/>
         <source>Missing argument to &apos;%s %s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует аргумент к &apos;%s %s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="527"/>
         <location filename="../VBoxManageControlVM.cpp" line="550"/>
         <source>Invalid &apos;%s %s&apos; argument &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый аргумент &apos;%s&apos; &apos;%s&apos; к &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="561"/>
         <location filename="../VBoxManageControlVM.cpp" line="588"/>
         <source>Invalid &apos;%s&apos; argument &apos;%s&apos;.</source>
-        <translation type="unfinished">Недопустимый аргумент к &apos;%s&apos; &apos;%s&apos;.</translation>
+        <translation>Недопустимый аргумент &apos;%s&apos; к &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="605"/>
         <source>Failed to power off machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось выключить машину.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="625"/>
         <source>Machine in invalid state %d -- %s.</source>
-        <translation type="unfinished"></translation>
+        <translation>Машина в недопустимом состоянии %d -- %s.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="648"/>
         <source>Failed to save machine state.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сохранить состояние машины.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="679"/>
@@ -3240,154 +3256,154 @@ Try &apos;--help&apos; for more information.</source>
         <location filename="../VBoxManageControlVM.cpp" line="1769"/>
         <location filename="../VBoxManageControlVM.cpp" line="2037"/>
         <source>Guest not running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая ОС не запущена.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="700"/>
         <source>Current installed Guest Additions don&apos;t support rebooting the guest.</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущие установленные Дополнения Гостевой ОС не поддерживают перезагрузку гостевой ОС.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="702"/>
         <source>Current installed Guest Additions don&apos;t support shutting down the guest.</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущие установленные Дополнения Гостевой ОС не поддерживают завершение работы гостевой ОС.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="721"/>
         <source>Missing argument to &apos;%s&apos;. Expected IBM PC AT set 2 keyboard scancode(s).</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует аргумент к &apos;%s&apos;. Ожидаются сканкоды клавиатуры IBM PC AT set 2.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="741"/>
         <source>Converting &apos;%s&apos; returned %Rrc!</source>
-        <translation type="unfinished">Преобразование &apos;%s&apos; вернуло %Rrc!</translation>
+        <translation>Преобразование &apos;%s&apos; вернуло %Rrc!</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="750"/>
         <source>&apos;%s&apos; is not a hex byte!</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%s&apos; не является hex байтом!</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="775"/>
         <source>Missing argument to &apos;%s&apos;. Expected ASCII string(s).</source>
-        <translation type="unfinished">Отсутствует аргумент к &apos;%s&apos;. Ожидается строка ASCII.</translation>
+        <translation>Отсутствует аргумент к &apos;%s&apos;. Ожидается строка ASCII.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="828"/>
         <source>Invalid link state &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимое состояние подключения &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="874"/>
         <source>Filename not specified for NIC %lu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указано имя файла NIC %lu.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="882"/>
         <source>The NIC %d is currently disabled and thus its tracefile can&apos;t be changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>NIC %d в настоящее время отключен и поэтому его трассировочный файл не может быть изменен.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="915"/>
         <source>Invalid nictrace%lu argument &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый аргумент к nictrace%lu: &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="923"/>
         <source>The NIC %d is currently disabled and thus its trace flag can&apos;t be changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>NIC %d в настоящее время отключен и поэтому его трассировочный флаг не может быть изменен.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="975"/>
         <source>Missing or invalid argument to &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует или недопустимый аргумент к &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1010"/>
         <source>Wrong rule proto &apos;%s&apos; specified -- only &apos;udp&apos; and &apos;tcp&apos; are allowed.</source>
-        <translation type="unfinished">Указан неправильный протокол правила &apos;%s&apos; -- разрешены только &apos;udp&apos; и &apos;tcp&apos;.</translation>
+        <translation>Указан неправильный протокол правила &apos;%s&apos; -- разрешены только &apos;udp&apos; и &apos;tcp&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1064"/>
         <source>Invalid nicproperty%d argument &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый аргумент к nicproperty%d: &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1071"/>
         <source>Failed to allocate memory for nicproperty%d &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось выделить память для nicproperty%d &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1079"/>
         <source>The NIC %d is currently disabled and thus its properties can&apos;t be changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>NIC %d отключен в настоящее время, и поэтому невозможно изменить его свойства.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1119"/>
         <source>Unknown promiscuous mode policy &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестная политика неразборчивого режима &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1129"/>
         <source>The NIC %d is currently disabled and thus its promiscuous mode can&apos;t be changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>NIC %d отключен в настоящее время, и поэтому невозможно изменить его неразборчивый режим.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1231"/>
         <source>Invalid type &apos;%s&apos; specfied for NIC %lu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Указан недопустимый тип &apos;%s&apos; для NIC %lu.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1239"/>
         <source>The NIC %d is currently disabled and thus its attachment type can&apos;t be changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>NIC %d отключен в настоящее время, и поэтому невозможно изменить его тип подключения.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1247"/>
         <source>&apos;vrdp&apos; is deprecated. Use &apos;vrde&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;vrdp&apos; устарел. Используйте &apos;vrde&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1263"/>
         <source>Invalid remote desktop server state &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимое состояние сервера удаленного рабочего стола &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1276"/>
         <source>&apos;vrdpport&apos; is deprecated. Use &apos;vrdeport&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;vrdpport&apos; устарел. Используйте &apos;vrdeport&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1307"/>
         <source>&apos;vrdpvideochannelquality&apos; is deprecated. Use &apos;vrdevideochannelquality&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;vrdpvideochannelquality&apos; устарел. Используйте &apos;vrdevideochannelquality&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1358"/>
         <source>Invalid vrdeproperty argument &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый аргумент к vrdeproperty &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1365"/>
         <source>Failed to allocate memory for VRDE property &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось выделить память для свойства VRDE &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1392"/>
         <source>Wrong number of arguments.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неправильное количество аргументов.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1406"/>
         <location filename="../VBoxManageControlVM.cpp" line="1601"/>
         <location filename="../VBoxManageControlVM.cpp" line="2297"/>
         <source>Invalid parameter &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый параметр &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1439"/>
         <source>Zero UUID argument &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Нулевой UUID аргумент &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1458"/>
@@ -3408,119 +3424,121 @@ Try &apos;--help&apos; for more information.</source>
         <location filename="../VBoxManageControlVM.cpp" line="2084"/>
         <location filename="../VBoxManageControlVM.cpp" line="2129"/>
         <source>Incorrect number of parameters.</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректное количество параметров.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1476"/>
         <source>Either &quot;yes&quot; or &quot;no&quot; is expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ожидается только &quot;yes&quot; или &quot;no&quot;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1541"/>
         <source>Display status must be &lt;on&gt; or &lt;off&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Статус экрана должен быть &lt;on&gt; или &lt;off&gt;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1661"/>
         <source>Error parsing guest memory balloon size &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка разбора размера balloon памяти гостевой ОС &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1742"/>
         <source>Teleportation failed</source>
-        <translation type="unfinished">Не удалось произвести портирование</translation>
+        <translation>Не удалось произвести портирование</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1760"/>
         <source>Error parsing display number &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка разбора номера экрана &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1783"/>
         <source>Failed to create file &apos;%s&apos; (%Rrc).</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать файл &apos;%s&apos; (%Rrc).</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1790"/>
         <source>Failed to write screenshot to file &apos;%s&apos; (%Rrc).</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось записать снимок экрана в файл &apos;%s&apos; (%Rrc).</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1802"/>
         <source>Sub command &apos;videocap&apos; is deprecated -- please use &apos;recording&apos; instead .</source>
-        <translation type="unfinished"></translation>
+        <translation>Подкоманда &apos;videocap&apos; устарела -- пожалуйста, используйте &apos;recording&apos; .</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1828"/>
         <source>Recording enabled. Use &apos;start&apos; to start recording.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Запись включена. Используйте &apos;start&apos; для запуска записи.
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1842"/>
         <source>Recording failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка записи.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1845"/>
         <source>Recording started (detacted).
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Запись запущена.
+</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1872"/>
         <source>Error parsing list of screen IDs &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка при разборе списка ID дисплеев &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1906"/>
         <source>Error parsing video width &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка при разборе ширины видео &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1915"/>
         <source>Error parsing video height &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка при разборе высоты видео &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1939"/>
         <source>Error parsing video rate &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка при разборе битрейта видео &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1960"/>
         <source>Error parsing video FPS &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка при разборе FPS видео &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="1981"/>
         <source>Error parsing maximum time &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка при разборе максимального времени &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="2002"/>
         <source>Error parsing maximum file size &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка при разборе максимального размера файла &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="2073"/>
         <source>Invalid argument to &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый аргумент к &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="2095"/>
         <source>Invalid parameters.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимые параметры.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="2108"/>
         <source>Enter password:</source>
-        <translation type="unfinished">Введите пароль:</translation>
+        <translation>Введите пароль:</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="2117"/>
         <source>Failed to read new password from file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочесть новый пароль из файла.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="2167"/>
@@ -3530,17 +3548,17 @@ Try &apos;--help&apos; for more information.</source>
         <location filename="../VBoxManageControlVM.cpp" line="2257"/>
         <location filename="../VBoxManageControlVM.cpp" line="2277"/>
         <source>Incorrect arguments to &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректные аргументы к &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="2243"/>
         <source>Invalid vm-process-priority &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимый vm-process-priority &apos;%s&apos;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageControlVM.cpp" line="2286"/>
         <source>Invalid autostart delay number &apos;%s&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Недопустимое время задержки автостарта &apos;%s&apos;.</translation>
     </message>
 </context>
 <context>
@@ -8723,7 +8741,32 @@ Commands:
        details.
 
 </source>
-        <translation type="unfinished"></translation>
+        <translation>  createrawvmdk --filename &lt;имя_файла&gt; --rawdisk &lt;имя_диска&gt;
+                [--partitions &lt;список_номеров_разделов&gt; [--mbr &lt;имя_файла&gt;] ]
+                [--relative]
+       Создаёт новый VMDK образ, предоставляющий прямой доступ к
+       физическому диску основной ОС. Весь диск может быть предоставлен
+       гостевой ОС или только выбранные разделы, указанные с помощью
+       параметра --partitions.
+       Если доступ к индивидуальным разделам выдан, параметр --mbr
+       может быть использован, чтоб указать альтернативный Master Boot
+       Record (MBR) (учтите, что информация о разделах из файла MBR будет
+       проигнорирована). Формат аргумента имя_диска параметра --rawdisk
+       зависит от платформы, но может быть определён с помощью команды:
+         VBoxManage list hostdrives
+       Выданный список - доступные диски и их разделы, указанные вместе с
+       типами разделов и размерами.
+       На Linux, FreeBSD, and Windows платформах параметр --relative создаёт
+       файл VMDK образа, ссылающегося на указанные индивидуальные
+       разделы напрямую, вместо адресации разделов через смещение от
+       начала физического диска.
+
+       Внимание: Подкоманда &apos;createrawvdk&apos; устарела. Аналогичный
+       функционал доступен с использованием команды
+       &apos;VBoxManage createmedium&apos;, которая должна быть использована впредь.
+       Подробнее смотрите &apos;VBoxManage help createmedium&apos;.
+
+</translation>
     </message>
     <message>
         <location filename="../VBoxInternalManage.cpp" line="345"/>
