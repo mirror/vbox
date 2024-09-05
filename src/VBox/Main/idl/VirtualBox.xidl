@@ -15149,9 +15149,10 @@
     </const>
   </enum>
 
+  <!-- Note: Must match GSTCTLDIR_F_XXX. -->
   <enum
     name="DirectoryOpenFlag"
-    uuid="5138837a-8fd2-4194-a1b0-08f7bc3949d0"
+    uuid="92f838f6-cbf9-4760-bb63-92c567773366"
     >
     <desc>
       Directory open flags.
@@ -15162,7 +15163,16 @@
     <const name="NoSymlinks"            value="1">
       <desc>Don't allow symbolic links as part of the path.</desc>
     </const>
-<!-- r=bird: need a "NoFollowSymlinks" value here.  IPRT probably needs that too. -->
+    <const name="DenyAscent"            value="2">
+      <desc>Deny relative opening of anything above this directory.
+
+      Not implemented yet.</desc>
+    </const>
+    <const name="NoFollowSymlinks"      value="4">
+      <desc>Don't follow symbolic links in the final component.
+
+      Not implemented yet.</desc>
+    </const>
   </enum>
 
   <interface
