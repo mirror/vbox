@@ -838,7 +838,9 @@ int PlatformProperties::s_getSupportedGraphicsControllerFeatures(PlatformArchite
                                                                  GraphicsControllerType_T enmController,
                                                                  std::vector<GraphicsFeature_T> &vecSupportedGraphicsFeatures)
 {
-   switch (enmArchitecture)
+    vecSupportedGraphicsFeatures.clear();
+
+    switch (enmArchitecture)
     {
         case PlatformArchitecture_x86:
         {
@@ -850,7 +852,8 @@ int PlatformProperties::s_getSupportedGraphicsControllerFeatures(PlatformArchite
                     static const GraphicsFeature_T s_aGraphicsFeatures[] =
                     {
 # ifdef VBOX_WITH_VIDEOHWACCEL
-                        GraphicsFeature_Acceleration2DVideo,
+                        /* @bugref{9691} -- The legacy VHWA acceleration has been disabled completely. */
+                        //GraphicsFeature_Acceleration2DVideo,
 # endif
 # ifdef VBOX_WITH_3D_ACCELERATION
                         GraphicsFeature_Acceleration3D
@@ -864,14 +867,14 @@ int PlatformProperties::s_getSupportedGraphicsControllerFeatures(PlatformArchite
                     RT_FALL_THROUGH();
                 case GraphicsControllerType_QemuRamFB:
                 {
-                    vecSupportedGraphicsFeatures.clear(); /* None supported. */
+                    /* None supported. */
                     break;
                 }
 
                 default:
                 {
-                    AssertFailedStmt(vecSupportedGraphicsFeatures.clear());
-                    return VERR_INVALID_PARAMETER;
+                    AssertFailedReturn(VERR_INVALID_PARAMETER);
+                    break; /* Never reached. */
                 }
             }
 
@@ -880,7 +883,7 @@ int PlatformProperties::s_getSupportedGraphicsControllerFeatures(PlatformArchite
 
         case PlatformArchitecture_ARM:
         {
-            vecSupportedGraphicsFeatures.clear(); /* None supported. */
+            /* None supported. */
             break;
         }
 
