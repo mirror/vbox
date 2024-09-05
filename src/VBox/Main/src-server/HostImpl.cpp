@@ -245,9 +245,6 @@ struct Host::Data
 
     /** @}  */
 
-    /** 3D hardware acceleration supported? Tristate, -1 meaning not probed. */
-    int                     f3DAccelerationSupported;
-
     HostPowerService        *pHostPowerService;
     /** Host's DNS information fetching */
     HostDnsMonitorProxy     hostDnsMonitorProxy;
@@ -455,13 +452,6 @@ HRESULT Host::init(VirtualBox *aParent)
         m->fVTSupported = m->fNestedPagingSupported = true;
         m->fRecheckVTSupported = false;
     }
-
-#ifdef VBOX_WITH_3D_ACCELERATION
-    /* Test for 3D hardware acceleration support later when (if ever) need. */
-    m->f3DAccelerationSupported = -1;
-#else
-    m->f3DAccelerationSupported = false;
-#endif
 
 #if defined(VBOX_WITH_HOSTNETIF_API) && (defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD))
     /* Extract the list of configured host-only interfaces */
@@ -1470,36 +1460,6 @@ HRESULT Host::getUTCTime(LONG64 *aUTCTime)
     *aUTCTime = RTTimeSpecGetMilli(RTTimeNow(&now));
 
     return S_OK;
-}
-
-
-HRESULT Host::getAcceleration3DAvailable(BOOL *aSupported)
-{
-    HRESULT hrc = S_OK;
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    if (m->f3DAccelerationSupported != -1)
-        *aSupported = m->f3DAccelerationSupported;
-    else
-    {
-        alock.release();
-
-#ifdef VBOX_WITH_3D_ACCELERATION
-        bool fSupported = true; // Test if Vulkan or DirectX is appropriately supported on the host
-#else
-        bool fSupported = false; /* shouldn't get here, but just in case. */
-#endif
-        AutoWriteLock alock2(this COMMA_LOCKVAL_SRC_POS);
-
-        m->f3DAccelerationSupported = fSupported;
-        alock2.release();
-        *aSupported = fSupported;
-    }
-
-#ifdef DEBUG_misha
-    AssertMsgFailed(("should not be here any more!\n"));
-#endif
-
-    return hrc;
 }
 
 HRESULT Host::createHostOnlyNetworkInterface(ComPtr<IHostNetworkInterface> &aHostInterface,

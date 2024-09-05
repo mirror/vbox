@@ -129,7 +129,6 @@ private:
     HRESULT getOperatingSystem(com::Utf8Str &aOperatingSystem);
     HRESULT getOSVersion(com::Utf8Str &aOSVersion);
     HRESULT getUTCTime(LONG64 *aUTCTime);
-    HRESULT getAcceleration3DAvailable(BOOL *aAcceleration3DAvailable);
     HRESULT getVideoInputDevices(std::vector<ComPtr<IHostVideoInputDevice> > &aVideoInputDevices);
     HRESULT getUpdateHost(ComPtr<IUpdateAgent> &aUpdate);
     HRESULT getUpdateExtPack(ComPtr<IUpdateAgent> &aUpdate);

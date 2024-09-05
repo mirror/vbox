@@ -4858,6 +4858,11 @@ AuthResult AUTHCALL AuthEntry(
           added. This requires 7.1 (or newer) Guest Additions to be installed on the guest.</para>
         </listitem>
 
+        <listitem><para>The attribute IHost::acceleration3DAvailable has been removed. Use
+          <link linkend="ISystempProperties__supportedGraphicsFeatures">ISystempProperties::supportedGraphicsFeatures</link>
+            instead.</para>
+        </listitem>
+
         <listitem><para>Starting a recording now has to be done via the newly introduced method
           <link linkend="IRecordingSettings__start">IRecordingSettings::start</link>. This method also will return
           a recording progress object on success, which also can be retrieved at a later time via the new attribute

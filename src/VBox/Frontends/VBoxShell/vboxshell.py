@@ -1632,10 +1632,6 @@ def hostCmd(ctx, _args):
     print("  %dM (free %dM)" % (host.memorySize, host.memoryAvailable))
     print(colCat(ctx, "OS:"))
     print("  %s (%s)" % (host.operatingSystem, host.OSVersion))
-    if host.acceleration3DAvailable:
-        print(colCat(ctx, "3D acceleration available"))
-    else:
-        print(colCat(ctx, "3D acceleration NOT available"))
 
     print(colCat(ctx, "Network interfaces:"))
     for iface in ctx['global'].getArray(host, 'networkInterfaces'):

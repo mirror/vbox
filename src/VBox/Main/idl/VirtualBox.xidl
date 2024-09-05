@@ -12382,7 +12382,7 @@
 
   <interface
     name="IHost" extends="$unknown"
-    uuid="89b05229-cecf-4ef6-816f-c0c13f2c4da3"
+    uuid="d5dcece0-b202-4416-a138-03502784cc07"
     wsmap="managed"
     rest="managed"
     reservedMethods="6" reservedAttributes="12"
@@ -12565,10 +12565,6 @@
 
     <attribute name="UTCTime" type="long long" readonly="yes">
       <desc>Returns the current host time in milliseconds since 1970-01-01 UTC.</desc>
-    </attribute>
-
-    <attribute name="acceleration3DAvailable" type="boolean" readonly="yes">
-      <desc>Returns @c true when the host supports 3D hardware acceleration.</desc>
     </attribute>
 
     <method name="createHostOnlyNetworkInterface">
