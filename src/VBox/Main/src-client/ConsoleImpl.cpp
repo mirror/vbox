@@ -11466,6 +11466,11 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                     machineDebugger->i_flushQueuedSettings();
 
                 /*
+                 * Set domain name and DNS search list for DrvNAT
+                 */
+                pConsole->i_onNATDnsChanged();
+
+                /*
                  * Shared Folders
                  */
                 if (pConsole->m_pVMMDev->isShFlActive())
