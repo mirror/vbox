@@ -365,6 +365,9 @@ QString UIToolPaneMachine::currentHelpKeyword() const
         case UIToolType_VMActivity:
             pCurrentToolWidget = m_pPaneVMActivityMonitor;
             break;
+        case UIToolType_FileManager:
+            pCurrentToolWidget = m_pPaneFileManager;
+            break;
         default:
             break;
     }
