@@ -5932,8 +5932,7 @@ AuthResult AUTHCALL AuthEntry(
                 <entry><link linkend="IHostNetworkInterface__DHCPRediscover">IHostNetworkInterface::DHCPRediscover()</link></entry>
               </row>
               <row>
-                <entry>IHost::Acceleration3DAvailable</entry>
-                <entry><link linkend="IHost__acceleration3DAvailable">IHost::acceleration3DAvailable</link></entry>
+                <entry>IHost::acceleration3DAvailable</entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedPae</entry>
