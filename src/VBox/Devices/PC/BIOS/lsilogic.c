@@ -47,7 +47,11 @@
 
 
 #ifdef USE_VDS
-#define NUM_SG_BUFFERS      34
+/* The disk BIOS won't transfer more than 64K at a time. The extended
+ * INT 13h interface is limited to 127 sectors (Phoenix EDD 3.0).
+ * We need at most enough for 64K + 1 page for alignment.
+ */
+#define NUM_SG_BUFFERS      17
 #endif
 
 
