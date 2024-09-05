@@ -13682,8 +13682,9 @@
 
     <attribute name="supportedGraphicsFeatures" type="GraphicsFeature" safearray="yes" readonly="yes">
       <desc>
-        Returns an array of officially supported values for enum <link to="GraphicsFeature"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+        Returns an array of officially supported values for enum <link to="GraphicsFeature"/> on the host side.
+        For querying supported features of a specific graphics controller, use
+        <link to="IPlatformProperties::getSupportedGfxFeaturesForType"/>.
       </desc>
     </attribute>
 
