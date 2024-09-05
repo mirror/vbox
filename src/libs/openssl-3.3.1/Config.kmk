@@ -130,6 +130,7 @@ crypto-headers_SOURCES  := \
 	include/openssl/evp.h=>evp.h \
 	include/openssl/evperr.h=>evperr.h \
 	include/openssl/e_os2.h=>e_os2.h \
+	include/openssl/e_ostime.h=>e_ostime.h \
 	include/openssl/fips_names.h=>fips_names.h \
 	include/openssl/hmac.h=>hmac.h \
 	include/openssl/http.h=>http.h \
@@ -159,6 +160,7 @@ crypto-headers_SOURCES  := \
 	include/openssl/prov_ssl.h=>prov_ssl.h \
 	include/openssl/proverr.h=>proverr.h \
 	include/openssl/provider.h=>provider.h \
+	include/openssl/quic.h=>quic.h \
 	include/openssl/rand.h=>rand.h \
 	include/openssl/randerr.h=>randerr.h \
 	include/openssl/rc2.h=>rc2.h \
@@ -256,6 +258,8 @@ TEMPLATE_LibCrypto_DEFS = \
 	$(TEMPLATE_VBoxR3RuntimeDllNonPedantic_DEFS) \
 	VBOX_SUFF_DLL=$(VBOX_SUFF_DLL) \
 	OPENSSLDIR="/usr/local/ssl" \
+	OPENSSL_NO_QUIC \
+	OPENSSL_NO_QLOG \
 	DSO_NONE \
 	OPENSSL_USE_NODELETE \
 	OPENSSL_PIC \

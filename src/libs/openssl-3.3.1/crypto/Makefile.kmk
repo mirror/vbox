@@ -58,6 +58,7 @@ LIBRARIES += VBox-libcrypto
 VBox-libcrypto_TEMPLATE = LibCrypto
 VBox-libcrypto_INCS     = $(VBox-libcrypto_0_OUTDIR)
 VBox-libcrypto_SOURCES  = \
+	$(VBOX_PATH_OPENSSL)/gen-sources/crypto/params_idx.c \
 	asn1_dsa.c \
 	bsearch.c \
 	context.c \
@@ -211,6 +212,10 @@ recreate-openssl-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
 	perl $(VBOX_PATH_CRYPTO)/x86cpuid.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/x86cpuid.S
 	perl $(VBOX_PATH_CRYPTO)/x86_64cpuid.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/x86_64cpuid.S
 
+recreate-crypto-sources: $(VBOX_PATH_OPENSSL)/util/dofile.pl
+	perl -I$(VBOX_PATH_OPENSSL) \
+		-Mconfigdata $(VBOX_PATH_OPENSSL)/util/dofile.pl -oMakefile \
+		$(VBOX_PATH_CRYPTO)/params_idx.c.in > $(VBOX_PATH_OPENSSL)/gen-sources/crypto/params_idx.c
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
