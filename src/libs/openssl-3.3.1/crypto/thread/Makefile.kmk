@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2019-2023 Oracle and/or its affiliates.
+# Copyright (C) 2022-2024 Oracle and/or its affiliates.
 #
 # This file is part of VirtualBox base platform packages, as
 # available from https://www.virtualbox.org.
@@ -28,17 +28,11 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-if 0 # Disabled following OL's example.
- LIBRARIES += crypto_sm2
- crypto_sm2_TEMPLATE = SubLibCrypto
- crypto_sm2_DEFS = OPENSSL_NO_DEPRECATED
- crypto_sm2_SOURCES = \
- 	sm2_crypt.c \
- 	sm2_err.c \
- 	sm2_pmeth.c \
- 	sm2_key.c \
- 	sm2_sign.c
- $(evalcall VBOX_OPENSSL_X86,crypto_sm2)
-endif
+LIBRARIES += crypto_thread
+crypto_thread_TEMPLATE = SubLibCrypto
+crypto_thread_DEFS = OPENSSL_NO_DEPRECATED
+crypto_thread_SOURCES = \
+	api.c
+$(evalcall VBOX_OPENSSL_X86,crypto_thread)
 
 include $(FILE_KBUILD_SUB_FOOTER)
