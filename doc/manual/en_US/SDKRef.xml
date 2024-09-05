@@ -4859,7 +4859,7 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem><para>The attribute IHost::acceleration3DAvailable has been removed. Use
-          <link linkend="ISystempProperties__supportedGraphicsFeatures">ISystempProperties::supportedGraphicsFeatures</link>
+          <link linkend="ISystemProperties__supportedGraphicsFeatures">ISystempProperties::supportedGraphicsFeatures</link>
             instead.</para>
         </listitem>
 
