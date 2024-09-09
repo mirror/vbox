@@ -413,7 +413,7 @@ void UISnapshotDetailsElement::paintEvent(QPaintEvent * /* pEvent */)
 
 void UISnapshotDetailsElement::prepare()
 {
-    /* Install QIComboBox accessibility interface factory: */
+    /* Install UISnapshotDetailsElement accessibility interface factory: */
     QAccessible::installFactory(UIAccessibilityInterfaceForUISnapshotDetailsElement::pFactory);
 
     /* Create layout: */
