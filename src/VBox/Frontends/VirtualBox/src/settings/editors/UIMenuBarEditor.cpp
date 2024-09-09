@@ -1122,15 +1122,6 @@ QMenu *UIMenuBarEditorWidget::prepareNamedMenu(const QString &strName)
                     QAccessible::deleteAccessibleInterface(QAccessible::uniqueId(pInterface));
                     QAccessible::queryAccessibleInterface(pNamedMenuToolButton); // <= new one, proper..
                 }
-                /* Create spacing after named menu tool-button: */
-                QWidget *pSpacing = new QWidget;
-                AssertPtrReturn(pSpacing, 0);
-                {
-                    /* Configure spacing: */
-                    pSpacing->setFixedSize(5, 1);
-                    /* Add spacing into tool-bar: */
-                    m_pToolBar->addWidget(pSpacing);
-                }
             }
         }
     }
@@ -1173,15 +1164,6 @@ QMenu *UIMenuBarEditorWidget::prepareCopiedMenu(const UIAction *pAction)
                 {
                     QAccessible::deleteAccessibleInterface(QAccessible::uniqueId(pInterface));
                     QAccessible::queryAccessibleInterface(pCopiedMenuToolButton); // <= new one, proper..
-                }
-                /* Create spacing after copied menu tool-button: */
-                QWidget *pSpacing = new QWidget;
-                AssertPtrReturn(pSpacing, 0);
-                {
-                    /* Configure spacing: */
-                    pSpacing->setFixedSize(5, 1);
-                    /* Add spacing into tool-bar: */
-                    m_pToolBar->addWidget(pSpacing);
                 }
             }
         }
