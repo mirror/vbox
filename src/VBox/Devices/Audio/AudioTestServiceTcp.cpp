@@ -697,6 +697,7 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
         else
         {
             RTMemFree(pbData);
+            pbData = NULL;
 
             /* assume fatal connection error. */
             LogRelFunc(("RTTcpRead -> %Rrc -> atsTcpDisconnectClient(%RTsock)\n", rc, pClient->hTcpClient));
