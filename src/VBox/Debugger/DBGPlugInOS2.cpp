@@ -89,7 +89,7 @@ typedef struct DBGDIGGEROS2
 typedef DBGDIGGEROS2 *PDBGDIGGEROS2;
 
 /**
- * 32-bit OS/2 loader module table entry.
+ * 32-bit OS/2 loader module table entry (V3.0 and later).
  */
 typedef struct LDRMTE
 {
@@ -105,6 +105,25 @@ typedef struct LDRMTE
     uint32_t    mte_RAS;        /**< added later */
     uint32_t    mte_modver;     /**< added even later. */
 } LDRMTE;
+AssertCompileSize(LDRMTE, 40);
+
+/**
+ * 32-bit OS/2 loader module table entry (V2.11).
+ */
+typedef struct LDRMTE2
+{
+    uint16_t    mte_flags2;
+    uint16_t    mte_handle;
+    uint32_t    mte_swapmte;    /**< Pointer to LDRSMTE. */
+    uint32_t    mte_modname;    /**< Pointer to module name. */
+    uint32_t    mte_link;       /**< Pointer to next LDRMTE2. */
+    uint32_t    mte_flags1;
+    uint32_t    mte_impmodcnt;
+    uint16_t    mte_sfn;
+    uint16_t    mte_usecnt;
+} LDRMTE2;
+AssertCompileSize(LDRMTE2, 28);
+
 /** @name LDRMTE::mte_flag2 values
  * @{ */
 #define MTEFORMATMASK       UINT16_C(0x0003)
@@ -873,6 +892,57 @@ static DECLCALLBACK(int) dbgdiggerOs2OpenModule(RTDBGCFG hDbgCfg, const char *ps
 }
 
 
+static void dbgdiggerOS2FixupMTE(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGDIGGEROS2 pThis, DBGDIGGEROS2BUF *pBuf)
+{
+    /** @todo OS/2 2.0 used a different format of SAS and likely MTE as well; not supported */
+    if (pThis->OS2MajorVersion == 20 && pThis->OS2MinorVersion < 30)
+    {
+        /*
+         * The MTE was laid out differently in OS/2 2.11, but contained the
+         * same information as in 3.0. After reading the MTE from guest memory,
+         * we can just shuffle things around.
+         * NB: The OS/2 Debugging Handbook doesn't exactly explain that in the
+         * old MTE format, mte_modname is actually a pointer to the ASCII string,
+         * preceded by a length byte.
+         * Must be called before dbgdiggerOS2ProcessModule().
+         */
+        LDRMTE2 OldMte;
+        char    achNameBuf[9];
+
+        memcpy(&OldMte, &pBuf->mte, sizeof(OldMte));
+
+        pBuf->mte.mte_flags2    = OldMte.mte_flags2;
+        pBuf->mte.mte_handle    = OldMte.mte_handle;
+        pBuf->mte.mte_swapmte   = OldMte.mte_swapmte;
+        pBuf->mte.mte_link      = OldMte.mte_link;
+        pBuf->mte.mte_flags1    = OldMte.mte_flags1;
+        pBuf->mte.mte_impmodcnt = OldMte.mte_impmodcnt;
+        pBuf->mte.mte_sfn       = OldMte.mte_sfn;
+        pBuf->mte.mte_usecnt    = OldMte.mte_usecnt;
+
+        /*
+         * Deal with the module name. We assume that in OS/2 V2.x the module name was in
+         * practice restricted to 8 chars, just like it is in V3.0 (pretty safe assumption).
+         */
+        DBGFADDRESS     Addr;
+        int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, OldMte.mte_modname),
+                                        &achNameBuf, sizeof(achNameBuf));
+        if (RT_SUCCESS(rc))
+        {
+            memset(pBuf->mte.mte_modname, 0, 8);
+            if((uint8_t)achNameBuf[0] <= 8)
+                memcpy(pBuf->mte.mte_modname, &achNameBuf[1], achNameBuf[0]);
+            else
+                memcpy(pBuf->mte.mte_modname, "!NameErr", 8);
+        }
+        else
+        {
+            memcpy(pBuf->mte.mte_modname, "!RdErr", 6);
+        }
+    }
+}
+
+
 static void dbgdiggerOS2ProcessModule(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGDIGGEROS2 pThis, DBGDIGGEROS2BUF *pBuf,
                                       const char *pszCacheSubDir, RTDBGAS hAs, RTDBGCFG hDbgCfg)
 {
@@ -1123,6 +1193,7 @@ static DECLCALLBACK(int)  dbgDiggerOS2Init(PUVM pUVM, PCVMMR3VTABLE pVMM, void *
                         rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &uBuf.mte, sizeof(uBuf.mte));
                         if (RT_FAILURE(rc))
                             break;
+                        dbgdiggerOS2FixupMTE(pUVM, pVMM, pThis, &uBuf);
                         LogRel(("DbgDiggerOs2: Module @ %#010RX32: %.8s %#x %#x\n", (uint32_t)Addr.FlatPtr,
                                 uBuf.mte.mte_modname, uBuf.mte.mte_flags1, uBuf.mte.mte_flags2));
                         if (uBuf.mte.mte_flags1 & MTE1_DOSMOD)
@@ -1140,6 +1211,7 @@ static DECLCALLBACK(int)  dbgDiggerOS2Init(PUVM pUVM, PCVMMR3VTABLE pVMM, void *
                                                     &uBuf.mte, sizeof(uBuf.mte));
                         if (RT_SUCCESS(rc))
                         {
+                            dbgdiggerOS2FixupMTE(pUVM, pVMM, pThis, &uBuf);
                             LogRel(("DbgDiggerOs2: Module @ %#010RX32: %.8s %#x %#x [again]\n", (uint32_t)Addr.FlatPtr,
                                     uBuf.mte.mte_modname, uBuf.mte.mte_flags1, uBuf.mte.mte_flags2));
                             dbgdiggerOS2ProcessModule(pUVM, pVMM, pThis, &uBuf, szCacheSubDir, hAs, hDbgCfg);
