@@ -99,6 +99,13 @@ ifdef VBOX_WITH_TESTCASES
   tstDisasmArmv8-1_LIBS       = \
   	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
   	$(LIB_RUNTIME)
+
+  if defined(TST_DISASM_WITH_CAPSTONE_DISASSEMBLER)
+   tstDisasmArmv8-1_DEFS        += TST_DISASM_WITH_CAPSTONE_DISASSEMBLER
+   tstDisasmArmv8-1_LIBS.darwin += /opt/homebrew/lib/libcapstone.dylib
+   tstDisasmArmv8-1_LIBS.linux  += capstone
+  endif
+
  endif
 
  # Tests that will be build, disassembled and re-build from disassembly.

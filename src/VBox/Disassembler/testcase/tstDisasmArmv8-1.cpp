@@ -31,19 +31,25 @@
 *********************************************************************************************************************************/
 #define VBOX_DIS_WITH_ARMV8
 #include <VBox/dis.h>
+#include <VBox/err.h>
 #include <iprt/test.h>
 #include <iprt/ctype.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
 #include <iprt/script.h>
+#include <iprt/sg.h>
 #include <iprt/stream.h>
+
+#ifdef TST_DISASM_WITH_CAPSTONE_DISASSEMBLER
+# include "/opt/homebrew/include/capstone/capstone.h"
+#endif
 
 #include "tstDisasmArmv8-1-tests.h"
 
 typedef struct TESTRDR
 {
-    const char *pb;
-    unsigned   cb;
+    RTSGSEG aSegs[3];
+    RTSGBUF SgBuf;
 } TESTRDR;
 typedef TESTRDR *PTESTRDR;
 
@@ -140,20 +146,16 @@ static const RTSCRIPTLEXCFG s_LexCfg =
 static DECLCALLBACK(int) testDisasmLexerRead(RTSCRIPTLEX hScriptLex, size_t offBuf, char *pchCur,
                                              size_t cchBuf, size_t *pcchRead, void *pvUser)
 {
-    RT_NOREF(hScriptLex);
+    RT_NOREF(hScriptLex, offBuf);
 
     PTESTRDR pRdr = (PTESTRDR)pvUser;
-    size_t cbCopy = RT_MIN(cchBuf / sizeof(char), pRdr->cb - offBuf);
-    int rc = VINF_SUCCESS;
+    size_t cbCopied = RTSgBufCopyToBuf(&pRdr->SgBuf, pchCur, cchBuf * sizeof(char));
 
-    *pcchRead = cbCopy * sizeof(char);
+    *pcchRead = cbCopied * sizeof(char);
+    if (!cbCopied)
+        return VINF_EOF;
 
-    if (cbCopy)
-        memcpy(pchCur, &pRdr->pb[offBuf], cbCopy);
-    else
-        rc = VINF_EOF;
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -165,8 +167,9 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
     RTSCRIPTLEX hLexSource = NULL;
     TESTRDR Rdr;
 
-    Rdr.pb = (const char *)pbSrc;
-    Rdr.cb = cbSrc;
+    Rdr.aSegs[0].pvSeg = (void *)pbSrc;
+    Rdr.aSegs[0].cbSeg = cbSrc;
+    RTSgBufInit(&Rdr.SgBuf, &Rdr.aSegs[0], 1);
     int rc = RTScriptLexCreateFromReader(&hLexSource, testDisasmLexerRead,
                                          NULL /*pfnDtor*/, &Rdr /*pvUser*/, cbSrc,
                                          NULL /*phStrCacheId*/, NULL /*phStrCacheStringLit*/,
@@ -409,6 +412,195 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
 }
 
 
+#if defined(TST_DISASM_WITH_CAPSTONE_DISASSEMBLER) && !defined(DIS_CORE_ONLY)
+/**
+ * Testcase generating all possible 32-bit instruction values and checking our disassembler
+ * for compliance against the capstone disassembler (based on LLVM).
+ */
+static void testDisasComplianceAgaistCapstone(void)
+{
+    /** @todo SMP */
+
+    csh    hDisasm = ~(size_t)0;
+    cs_err rcCs    = cs_open(CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN, &hDisasm);
+    AssertMsgReturnVoid(rcCs == CS_ERR_OK, ("%d (%#x)\n", rcCs, rcCs));
+
+    char szOutput[256] = {0};
+
+    for (uint32_t u32Insn = 0; u32Insn < UINT32_MAX; u32Insn++)
+    {
+        cs_insn *pInstr;
+        size_t   cInstrs = cs_disasm(hDisasm, (const uint8_t *)&u32Insn, sizeof(u32Insn),
+                                     (uintptr_t)&u32Insn, 1, &pInstr);
+
+        DISSTATE        Dis;
+        uint32_t        cb = 1;
+
+        /*
+         * Can't use DISInstrToStr() here as it would add addresses and opcode bytes
+         * which would trip the semantic matching later on.
+         */
+        int rc = DISInstrEx((uintptr_t)&u32Insn, DISCPUMODE_ARMV8_A64, DISOPTYPE_ALL,
+                            NULL /*pfnReadBytes*/, NULL /*pvUser*/, &Dis, &cb);
+        if (rc == VERR_DIS_INVALID_OPCODE)
+        {
+            /* Check whether capstone could successfully disassembler the instruction. */
+            if (cInstrs)
+            {
+                RTTestIFailureDetails("%#08RX32: rcDis==VERR_DIS_INVALID_OPCODE, capstone=%s %s\n",
+                                      u32Insn, pInstr->mnemonic, pInstr->op_str);
+            }
+            /* else: Invalid encoding from both disassemblers, continue. */
+        }
+        else
+        {
+            RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+            RTTESTI_CHECK(cb == Dis.cbInstr);
+            RTTESTI_CHECK(cb == sizeof(uint32_t));
+
+            size_t cch = DISFormatArmV8Ex(&Dis, &szOutput[0], sizeof(szOutput),
+                                          DIS_FMT_FLAGS_RELATIVE_BRANCH,
+                                          NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+            Assert(cch);
+
+            szOutput[cch] = '\0';
+            RTStrStripR(szOutput);
+            RTTESTI_CHECK(szOutput[0]);
+
+            if (cInstrs > 0)
+            {
+                /* Compare semantically. */
+
+                RTSCRIPTLEX hLexCapstone = NULL;
+                TESTRDR Rdr;
+
+                Rdr.aSegs[0].pvSeg = pInstr->mnemonic;
+                Rdr.aSegs[0].cbSeg = strlen(pInstr->mnemonic);
+                Rdr.aSegs[1].pvSeg = (void *)" ";
+                Rdr.aSegs[1].cbSeg = 1;
+                Rdr.aSegs[2].pvSeg = pInstr->op_str;
+                Rdr.aSegs[2].cbSeg = strlen(pInstr->op_str);
+                RTSgBufInit(&Rdr.SgBuf, &Rdr.aSegs[0], 3);
+                rc = RTScriptLexCreateFromReader(&hLexCapstone, testDisasmLexerRead,
+                                                 NULL /*pfnDtor*/, &Rdr /*pvUser*/, 0 /*cchBuf*/,
+                                                 NULL /*phStrCacheId*/, NULL /*phStrCacheStringLit*/,
+                                                 &s_LexCfg);
+                RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+
+                /* Build the lexer and compare that it semantically is equal to the source input. */
+                RTSCRIPTLEX hLexDis = NULL;
+                rc = RTScriptLexCreateFromString(&hLexDis, szOutput, NULL /*phStrCacheId*/,
+                                                 NULL /*phStrCacheStringLit*/, &s_LexCfg);
+                RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+                if (RT_SUCCESS(rc))
+                {
+                    PCRTSCRIPTLEXTOKEN pTokDis;
+                    rc = RTScriptLexQueryToken(hLexDis, &pTokDis);
+                    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+
+                    PCRTSCRIPTLEXTOKEN pTokCapstone;
+                    rc = RTScriptLexQueryToken(hLexCapstone, &pTokCapstone);
+                    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+
+                    /* Now compare the token streams until we hit EOS in the disassembly lexer. */
+                    bool fFailed = false;
+                    do
+                    {
+                        if (pTokCapstone->enmType == pTokDis->enmType)
+                        {
+                            switch (pTokCapstone->enmType)
+                            {
+                                case RTSCRIPTLEXTOKTYPE_IDENTIFIER:
+                                {
+                                    int iCmp = strcmp(pTokCapstone->Type.Id.pszIde, pTokDis->Type.Id.pszIde);
+                                    if (iCmp)
+                                        fFailed = true;
+                                    break;
+                                }
+                                case RTSCRIPTLEXTOKTYPE_NUMBER:
+                                    if (pTokCapstone->Type.Number.enmType == pTokDis->Type.Number.enmType)
+                                    {
+                                        switch (pTokCapstone->Type.Number.enmType)
+                                        {
+                                            case RTSCRIPTLEXTOKNUMTYPE_NATURAL:
+                                            {
+                                                if (pTokCapstone->Type.Number.Type.u64 != pTokDis->Type.Number.Type.u64)
+                                                    fFailed = true;
+                                                break;
+                                            }
+                                            case RTSCRIPTLEXTOKNUMTYPE_INTEGER:
+                                            {
+                                                if (pTokCapstone->Type.Number.Type.i64 != pTokDis->Type.Number.Type.i64)
+                                                    fFailed = true;
+                                                break;
+                                            }
+                                        case RTSCRIPTLEXTOKNUMTYPE_REAL:
+                                            default:
+                                                AssertReleaseFailed();
+                                        }
+                                    }
+                                    else
+                                        fFailed = true;
+                                    break;
+                                case RTSCRIPTLEXTOKTYPE_PUNCTUATOR:
+                                {
+                                    int iCmp = strcmp(pTokCapstone->Type.Punctuator.pPunctuator->pszMatch,
+                                                      pTokDis->Type.Punctuator.pPunctuator->pszMatch);
+                                    if (iCmp)
+                                        fFailed = true;
+                                    break;
+                                }
+
+                                /* These should never occur and indicate an issue in the lexer. */
+                                case RTSCRIPTLEXTOKTYPE_KEYWORD:
+                                case RTSCRIPTLEXTOKTYPE_STRINGLIT:
+                                case RTSCRIPTLEXTOKTYPE_OPERATOR:
+                                case RTSCRIPTLEXTOKTYPE_INVALID:
+                                case RTSCRIPTLEXTOKTYPE_ERROR:
+                                case RTSCRIPTLEXTOKTYPE_EOS:
+                                    fFailed = true;
+                                    break;
+                                default:
+                                    AssertFailed();
+                            }
+                        }
+                        else
+                            fFailed = true;
+
+                        /* Abort on error. */
+                        if (fFailed)
+                            break;
+
+                        /* Advance to the next token. */
+                        pTokDis = RTScriptLexConsumeToken(hLexDis);
+                        Assert(pTokDis);
+
+                        pTokCapstone = RTScriptLexConsumeToken(hLexCapstone);
+                        Assert(pTokCapstone);
+                    } while (   pTokDis->enmType != RTSCRIPTLEXTOKTYPE_EOS
+                             || pTokCapstone->enmType != RTSCRIPTLEXTOKTYPE_EOS);
+
+                    if (fFailed)
+                        RTTestIFailureDetails("%#08RX32: rcDis=%s, capstone=%s %s\n",
+                                              u32Insn, szOutput, pInstr->mnemonic, pInstr->op_str);
+                }
+
+                RTScriptLexDestroy(hLexCapstone);
+                RTScriptLexDestroy(hLexDis);
+            }
+            else
+            {
+                RTTestIFailureDetails("%#08RX32: Dis=%s, capstone=disassembly failure\n",
+                                      u32Insn, szOutput);
+            }
+        }
+    }
+
+    /* Cleanup. */
+    cs_close(&hDisasm);
+}
+#endif
+
 int main(int argc, char **argv)
 {
     RT_NOREF2(argc, argv);
@@ -437,6 +629,10 @@ int main(int argc, char **argv)
     for (unsigned i = 0; i < RT_ELEMENTS(aSnippets); i++)
         testDisas(aSnippets[i].pszDesc, aSnippets[i].pbStart, aSnippets[i].uEndPtr, aSnippets[i].enmCpuMode,
                   aSnippets[i].pbSrc, aSnippets[i].cbSrc);
+
+#if defined(TST_DISASM_WITH_CAPSTONE_DISASSEMBLER) && !defined(DIS_CORE_ONLY)
+    testDisasComplianceAgaistCapstone();
+#endif
 
     return RTTestSummaryAndDestroy(hTest);
 }
