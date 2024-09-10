@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2023 Oracle and/or its affiliates.
+ * Copyright (C) 2023-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -54,6 +54,7 @@ typedef enum DISPARMPARSEIDX
     kDisParmParseImm,
     kDisParmParseImmRel,
     kDisParmParseImmAdr,
+    kDisParmParseImmZero,
     kDisParmParseReg,
     kDisParmParseRegOff,
     kDisParmParseImmsImmrN,
@@ -73,6 +74,12 @@ typedef enum DISPARMPARSEIDX
     kDisParmParseS,
     kDisParmParseSetPreIndexed,
     kDisParmParseSetPostIndexed,
+    kDisParmParseFpType,
+    kDisParmParseFpReg,
+    kDisParmParseFpScale,
+    kDisParmParseFpFixupFCvt,
+    kDisParmParseSimdRegScalar,
+    kDisParmParseImmHImmB,
     kDisParmParseMax
 } DISPARMPARSEIDX;
 /** @}  */
@@ -295,6 +302,12 @@ typedef const struct DISARMV8DECODEMAP *PCDISARMV8DECODEMAP;
     }; \
     static const DISARMV8DECODEMAP g_aArmV8A64Insn ## a_Name = { { kDisArmV8DecodeType_Map, RT_ELEMENTS(g_aArmV8A64Insn ## a_Name ## MapHdrs) }, \
                                                                  a_fMask, a_cShift, & g_aArmV8A64Insn ## a_Name ## MapHdrs[0] }
+
+#define DIS_ARMV8_DECODE_MAP_DEFINE_END_SINGLE_BIT(a_Name, a_idxBit) \
+    }; \
+    static const DISARMV8DECODEMAP g_aArmV8A64Insn ## a_Name = { { kDisArmV8DecodeType_Map, RT_ELEMENTS(g_aArmV8A64Insn ## a_Name ## MapHdrs) }, \
+                                                                 RT_BIT_32(a_idxBit), a_idxBit, & g_aArmV8A64Insn ## a_Name ## MapHdrs[0] }
+
 
 #define DIS_ARMV8_DECODE_MAP_DEFINE_END_NON_STATIC(a_Name, a_fMask, a_cShift) \
     }; \

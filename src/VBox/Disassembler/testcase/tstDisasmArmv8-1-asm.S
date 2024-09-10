@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2023 Oracle and/or its affiliates.
+ * Copyright (C) 2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -663,6 +663,280 @@ _TestProcA64:
         ccmn w0, w1, #0xf, le
         ccmn x0, x1, #0x3, al
         ccmn w0, w1, #0xf, al
+
+        msr spsel,   #1
+        msr spsel,   #0
+        msr daifset, #0
+        msr daifset, #15
+        msr daifclr, #0
+        msr daifclr, #15
+        msr uao,     #1
+        msr uao,     #0
+        msr pan,     #1
+        msr pan,     #0
+        ; msr allint,  #1 Not supported by the toolchain
+        ; msr allint,  #0 Not supported by the toolchain
+        msr pm,      #1
+        msr pm,      #0
+        msr ssbs,    #1
+        msr ssbs,    #0
+        msr dit,     #1
+        msr dit,     #0
+        ; msr tco,     #1 Not supported by the toolchain
+        ; msr tco,     #0 Not supported by the toolchain
+        ; msr svcrsm,  #1 Not supported by the toolchain
+        ; msr svcrsm,  #0 Not supported by the toolchain
+        ; msr svcrza,  #1 Not supported by the toolchain
+        ; msr svcrza,  #0 Not supported by the toolchain
+        ; msr svcrsma, #1 Not supported by the toolchain
+        ; msr svcrsma, #0 Not supported by the toolchain
+
+        ; Floating Point instructions.
+        fmadd  s0, s1, s3, s31
+        fmadd  d0, d1, d3, d31
+        fmadd  h0, h1, h3, h31
+
+        fmsub  s0, s1, s3, s31
+        fmsub  d0, d1, d3, d31
+        fmsub  h0, h1, h3, h31
+
+        fnmadd s0, s1, s3, s31
+        fnmadd d0, d1, d3, d31
+        fnmadd h0, h1, h3, h31
+
+        fnmsub s0, s1, s3, s31
+        fnmsub d0, d1, d3, d31
+        fnmsub h0, h1, h3, h31
+
+        fcvtzu x0, s0, #1
+        fcvtzu x0, s0, #31
+        fcvtzu x0, s0, #63
+        fcvtzu w0, s0, #1
+        fcvtzu w0, s0, #32
+
+        fcvtzu x0, d0, #1
+        fcvtzu x0, d0, #31
+        fcvtzu x0, d0, #63
+        fcvtzu w0, d0, #1
+        fcvtzu w0, d0, #32
+
+        fcvtzu x0, h0, #1
+        fcvtzu x0, h0, #31
+        fcvtzu x0, h0, #63
+        fcvtzu w0, h0, #1
+        fcvtzu w0, h0, #32
+
+        fcvtzs x0, s0, #1
+        fcvtzs x0, s0, #31
+        fcvtzs x0, s0, #63
+        fcvtzs w0, s0, #1
+        fcvtzs w0, s0, #32
+
+        fcvtzs x0, d0, #1
+        fcvtzs x0, d0, #31
+        fcvtzs x0, d0, #63
+        fcvtzs w0, d0, #1
+        fcvtzs w0, d0, #32
+
+        fcvtzs x0, h0, #1
+        fcvtzs x0, h0, #31
+        fcvtzs x0, h0, #63
+        fcvtzs w0, h0, #1
+        fcvtzs w0, h0, #32
+
+        ucvtf  s0, x0, #1
+        ucvtf  s0, x0, #31
+        ucvtf  s0, x0, #63
+        ucvtf  s0, w0, #1
+        ucvtf  s0, w0, #32
+
+        ucvtf  d0, x0, #1
+        ucvtf  d0, x0, #31
+        ucvtf  d0, x0, #63
+        ucvtf  d0, w0, #1
+        ucvtf  d0, w0, #32
+
+        ucvtf  h0, x0, #1
+        ucvtf  h0, x0, #31
+        ucvtf  h0, x0, #63
+        ucvtf  h0, w0, #1
+        ucvtf  h0, w0, #32
+
+        scvtf  s0, x0, #1
+        scvtf  s0, x0, #31
+        scvtf  s0, x0, #63
+        scvtf  s0, w0, #1
+        scvtf  s0, w0, #32
+
+        scvtf  d0, x0, #1
+        scvtf  d0, x0, #31
+        scvtf  d0, x0, #63
+        scvtf  d0, w0, #1
+        scvtf  d0, w0, #32
+
+        scvtf  h0, x0, #1
+        scvtf  h0, x0, #31
+        scvtf  h0, x0, #63
+        scvtf  h0, w0, #1
+        scvtf  h0, w0, #32
+
+        fcsel  s0, s1, s2, eq
+        fcsel  d0, d1, d2, eq
+        fcsel  h0, h1, h2, eq
+
+        fmul   s0, s1, s2
+        fmul   d0, d1, d2
+        fmul   h0, h1, h2
+
+        fdiv   s0, s1, s2
+        fdiv   d0, d1, d2
+        fdiv   h0, h1, h2
+
+        fadd   s0, s1, s2
+        fadd   d0, d1, d2
+        fadd   h0, h1, h2
+
+        fsub   s0, s1, s2
+        fsub   d0, d1, d2
+        fsub   h0, h1, h2
+
+        fmax   s0, s1, s2
+        fmax   d0, d1, d2
+        fmax   h0, h1, h2
+
+        fmin   s0, s1, s2
+        fmin   d0, d1, d2
+        fmin   h0, h1, h2
+
+        fmaxnm s0, s1, s2
+        fmaxnm d0, d1, d2
+        fmaxnm h0, h1, h2
+
+        fminnm s0, s1, s2
+        fminnm d0, d1, d2
+        fminnm h0, h1, h2
+
+        fnmul  s0, s1, s2
+        fnmul  d0, d1, d2
+        fnmul  h0, h1, h2
+
+        fccmp  s0, s1, #0,  eq
+        fccmp  s0, s1, #15, ne
+        fccmp  d0, d1, #0,  eq
+        fccmp  d0, d1, #15, ne
+        fccmp  h0, h1, #0,  eq
+        fccmp  h0, h1, #15, ne
+
+        fccmpe s0, s1, #0,  eq
+        fccmpe s0, s1, #15, ne
+        fccmpe d0, d1, #0,  eq
+        fccmpe d0, d1, #15, ne
+        fccmpe h0, h1, #0,  eq
+        fccmpe h0, h1, #15, ne
+
+        ;fmov   s0, #1 @todo Needs FP immediate parsing
+
+        fcmp s0, s1
+        ;fcmp s0, #0.0
+        fcmp d0, d1
+        ;fcmp d0, #0.0
+        fcmp h0, h1
+        ;fcmp h0, #0.0
+
+        fcmpe s0, s1
+        ;fcmpe s0, #0.0
+        fcmpe d0, d1
+        ;fcmpe d0, #0.0
+        fcmpe h0, h1
+        ;fcmpe h0, #0.0
+
+        fmov  s0, s1
+        fmov  d0, d1
+        fmov  h0, h1
+
+        fabs  s0, s1
+        fabs  d0, d1
+        fabs  h0, h1
+
+        fneg  s0, s1
+        fneg  d0, d1
+        fneg  h0, h1
+
+        fsqrt s0, s1
+        fsqrt d0, d1
+        fsqrt h0, h1
+
+        fcvt s0, d1
+        fcvt s0, h1
+        fcvt d0, s1
+        fcvt d0, h1
+        fcvt h0, s1
+        fcvt h0, d1
+
+        frintn s0, s1
+        frintn d0, d1
+        frintn h0, h1
+
+        frintp s0, s1
+        frintp d0, d1
+        frintp h0, h1
+
+        frintm s0, s1
+        frintm d0, d1
+        frintm h0, h1
+
+        frintz s0, s1
+        frintz d0, d1
+        frintz h0, h1
+
+        frinta s0, s1
+        frinta d0, d1
+        frinta h0, h1
+
+        frintx s0, s1
+        frintx d0, d1
+        frintx h0, h1
+
+        frinti s0, s1
+        frinti d0, d1
+        frinti h0, h1
+
+        frint32z s0, s1
+        frint32z d0, d1
+
+        frint32x s0, s1
+        frint32x d0, d1
+
+        frint64z s0, s1
+        frint64z d0, d1
+
+        frint64x s0, s1
+        frint64x d0, d1
+
+        sshr d0, d1, #1
+        sshr d0, d1, #64
+
+        ssra d0, d1, #1
+        ssra d0, d1, #64
+
+        srshr d0, d1, #1
+        srshr d0, d1, #64
+
+        srsra d0, d1, #1
+        srsra d0, d1, #64
+
+        ; @todo
+        ;shl   d0, d1, #0
+        ;shl   d0, d1, #63
+
+        ;sqshl d0, d1, #0
+        ;sqshl d0, d1, #63
+
+        ;sqshrn q0, q1, #1
+        ;sqshrn q0, q1, #64
+
+        ;sqrshrn q0, dq, #1
+        ;sqrshrn q0, q1, #64
 
         ;
         ; Keep last so the testcase can catch errors in

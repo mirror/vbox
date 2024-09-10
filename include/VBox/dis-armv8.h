@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2023 Oracle and/or its affiliates.
+ * Copyright (C) 2023-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -48,17 +48,30 @@ RT_C_DECLS_BEGIN
 
 /** @addtogroup grp_dis   VBox Disassembler
  * @{ */
+
+typedef enum DISOPPARAMARMV8REGTYPE
+{
+    kDisOpParamArmV8RegType_Gpr_32Bit = 0,
+    kDisOpParamArmV8RegType_Gpr_64Bit,
+    kDisOpParamArmV8RegType_FpReg_Single,
+    kDisOpParamArmV8RegType_FpReg_Double,
+    kDisOpParamArmV8RegType_FpReg_Half,
+    kDisOpParamArmV8RegType_Simd_Scalar_64Bit,
+    kDisOpParamArmV8RegType_Simd_Scalar_128Bit,
+    kDisOpParamArmV8RegType_Simd_Vector
+} DISOPPARAMARMV8REGTYPE;
+
 /**
- * GPR definition
+ * Register definition
  */
 typedef struct
 {
-    /** Flag whether this is a 32-bit or 64-bit register. */
-                     bool    f32Bit : 1;
-    /** The register index. */
-    RT_GCC_EXTENSION uint8_t idGpr  : 7;
+    /** The register type (DISOPPARAMARMV8REGTYPE). */
+    uint8_t  enmRegType;
+    /** The register ID. */
+    uint8_t  idReg;
 } DISOPPARAMARMV8REG;
-AssertCompileSize(DISOPPARAMARMV8REG, sizeof(uint8_t));
+AssertCompileSize(DISOPPARAMARMV8REG, sizeof(uint16_t));
 /** Pointer to a disassembler GPR. */
 typedef DISOPPARAMARMV8REG *PDISOPPARAMARMV8REG;
 /** Pointer to a const disasssembler GPR. */
@@ -74,22 +87,19 @@ typedef struct
     uint8_t                         enmType;
     /** Any extension applied (DISARMV8OPPARMEXTEND). */
     uint8_t                         enmExtend;
-    /** The register operand. */
+    /** The operand. */
     union
     {
         /** General register index (DISGREG_XXX), applicable if DISUSE_REG_GEN32
          * or DISUSE_REG_GEN64 is set in fUse. */
-        DISOPPARAMARMV8REG          Gpr;
+        DISOPPARAMARMV8REG          Reg;
         /** IPRT System register encoding. */
         uint16_t                    idSysReg;
-        /**
-         *  Conditional parameter (not a register I know but this saves us struct size and
-         *  and these never occur at the same time, might get renamed if everything is done).
-         *
-         *  DISARMV8INSTRCOND
-         */
+        /** Conditional parameter - DISARMV8INSTRCOND */
         uint8_t                     enmCond;
-    } Reg;
+        /** PState field (for MSR) - DISARMV8INSTRPSTATE. */
+        uint8_t                     enmPState;
+    } Op;
     /** Register holding the offset. Applicable if DISUSE_INDEX is set in fUse. */
     DISOPPARAMARMV8REG              GprIndex;
     /** Parameter size. */
@@ -116,6 +126,8 @@ typedef struct
 {
     /** Condition flag for the instruction - kArmv8InstrCond_Al if not conditional instruction. */
     DISARMV8INSTRCOND   enmCond;
+    /** Floating point type for floating point instructions. */
+    DISARMV8INSTRFPTYPE enmFpType;
     /** Operand size (for loads/stores primarily). */
     uint8_t             cbOperand;
 } DIS_STATE_ARMV8_T;

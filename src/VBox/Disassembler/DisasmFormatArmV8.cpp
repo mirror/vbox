@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Disassembler - Yasm(/Nasm) Style Formatter.
+ * VBox Disassembler - ARMv8 Style Formatter.
  */
 
 /*
- * Copyright (C) 2008-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2008-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -54,9 +54,45 @@ static const char g_aszArmV8RegGen64[32][4] =
     "x0\0",  "x1\0",  "x2\0",  "x3\0",  "x4\0",  "x5\0",  "x6\0",  "x7\0",  "x8\0",  "x9\0",  "x10",  "x11",  "x12",  "x13",  "x14",  "x15",
     "x16",   "x17",   "x18",   "x19",   "x20",   "x21",   "x22",   "x23",   "x24",   "x25",   "x26",  "x27",  "x28",  "x29",  "x30",  "xzr"
 };
+static const char g_aszArmV8RegFpSingle[32][4] =
+{
+    "s0\0",  "s1\0",  "s2\0",  "s3\0",  "s4\0",  "s5\0",  "s6\0",  "s7\0",  "s8\0",  "s9\0",  "s10",  "s11",  "s12",  "s13",  "s14",  "s15",
+    "s16",   "s17",   "s18",   "s19",   "s20",   "s21",   "s22",   "s23",   "s24",   "s25",   "s26",  "s27",  "s28",  "s29",  "s30",  "s31"
+};
+static const char g_aszArmV8RegFpDouble[32][4] =
+{
+    "d0\0",  "d1\0",  "d2\0",  "d3\0",  "d4\0",  "d5\0",  "d6\0",  "d7\0",  "d8\0",  "d9\0",  "d10",  "d11",  "d12",  "d13",  "d14",  "d15",
+    "d16",   "d17",   "d18",   "d19",   "d20",   "d21",   "d22",   "d23",   "d24",   "d25",   "d26",  "d27",  "d28",  "d29",  "d30",  "d31"
+};
+static const char g_aszArmV8RegFpHalf[32][4] =
+{
+    "h0\0",  "h1\0",  "h2\0",  "h3\0",  "h4\0",  "h5\0",  "h6\0",  "h7\0",  "h8\0",  "h9\0",  "h10",  "h11",  "h12",  "h13",  "h14",  "h15",
+    "h16",   "h17",   "h18",   "h19",   "h20",   "h21",   "h22",   "h23",   "h24",   "h25",   "h26",  "h27",  "h28",  "h29",  "h30",  "h31"
+};
+static const char g_aszArmV8RegSimdScalar128Bit[32][4] =
+{
+    "q0\0",  "q1\0",  "q2\0",  "q3\0",  "q4\0",  "q5\0",  "q6\0",  "q7\0",  "q8\0",  "q9\0",  "q10",  "q11",  "q12",  "q13",  "q14",  "q15",
+    "q16",   "q17",   "q18",   "q19",   "q20",   "q21",   "q22",   "q23",   "q24",   "q25",   "q26",  "q27",  "q28",  "q29",  "q30",  "q31"
+};
 static const char g_aszArmV8Cond[16][3] =
 {
     "eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "al", "al"
+};
+static const char *g_apszArmV8PState[] =
+{
+    /* kDisArmv8InstrPState_SPSel    */ "spsel",
+    /* kDisArmv8InstrPState_DAIFSet  */ "daifset",
+    /* kDisArmv8InstrPState_DAIFClr  */ "daifclr",
+    /* kDisArmv8InstrPState_UAO      */ "uao",
+    /* kDisArmv8InstrPState_PAN      */ "pan",
+    /* kDisArmv8InstrPState_ALLINT   */ "allint",
+    /* kDisArmv8InstrPState_PM       */ "pm",
+    /* kDisArmv8InstrPState_SSBS     */ "ssbs",
+    /* kDisArmv8InstrPState_DIT      */ "dit",
+    /* kDisArmv8InstrPState_SVCRSM   */ "svcrsm",
+    /* kDisArmv8InstrPState_SVCRZA   */ "svcrza",
+    /* kDisArmv8InstrPState_SVCRSMZA */ "svcrsmza",
+    /* kDisArmv8InstrPState_TCO      */ "tco"
 };
 
 
@@ -309,18 +345,66 @@ DECLINLINE(const char *) disasmFormatArmV8Reg(PCDISSTATE pDis, PCDISOPPARAMARMV8
 {
     RT_NOREF_PV(pDis);
 
-    if (pReg->f32Bit)
+    switch (pReg->enmRegType)
     {
-        Assert(pReg->idGpr < RT_ELEMENTS(g_aszArmV8RegGen32));
-        const char *psz = g_aszArmV8RegGen32[pReg->idGpr];
-        *pcchReg = 2 + !!psz[2];
-        return psz;
+        case kDisOpParamArmV8RegType_Gpr_32Bit:
+        {
+            Assert(pReg->idReg < RT_ELEMENTS(g_aszArmV8RegGen32));
+            const char *psz = g_aszArmV8RegGen32[pReg->idReg];
+            *pcchReg = 2 + !!psz[2];
+            return psz;
+        }
+        case kDisOpParamArmV8RegType_Gpr_64Bit:
+        {
+            Assert(pReg->idReg < RT_ELEMENTS(g_aszArmV8RegGen64));
+            const char *psz = g_aszArmV8RegGen64[pReg->idReg];
+            *pcchReg = 2 + !!psz[2];
+            return psz;
+        }
+        case kDisOpParamArmV8RegType_FpReg_Single:
+        {
+            Assert(pDis->armv8.enmFpType != kDisArmv8InstrFpType_Invalid);
+            Assert(pReg->idReg < RT_ELEMENTS(g_aszArmV8RegFpSingle));
+            const char *psz = g_aszArmV8RegFpSingle[pReg->idReg];
+            *pcchReg = 2 + !!psz[2];
+            return psz;
+        }
+        case kDisOpParamArmV8RegType_FpReg_Double:
+        {
+            Assert(pDis->armv8.enmFpType != kDisArmv8InstrFpType_Invalid);
+            Assert(pReg->idReg < RT_ELEMENTS(g_aszArmV8RegFpDouble));
+            const char *psz = g_aszArmV8RegFpDouble[pReg->idReg];
+            *pcchReg = 2 + !!psz[2];
+            return psz;
+        }
+        case kDisOpParamArmV8RegType_FpReg_Half:
+        {
+            Assert(pDis->armv8.enmFpType != kDisArmv8InstrFpType_Invalid);
+            Assert(pReg->idReg < RT_ELEMENTS(g_aszArmV8RegFpHalf));
+            const char *psz = g_aszArmV8RegFpHalf[pReg->idReg];
+            *pcchReg = 2 + !!psz[2];
+            return psz;
+        }
+        case kDisOpParamArmV8RegType_Simd_Scalar_64Bit:
+        {
+            /* Using the floating point double register names here. */
+            Assert(pReg->idReg < RT_ELEMENTS(g_aszArmV8RegFpDouble));
+            const char *psz = g_aszArmV8RegFpDouble[pReg->idReg];
+            *pcchReg = 2 + !!psz[2];
+            return psz;
+        }
+        case kDisOpParamArmV8RegType_Simd_Scalar_128Bit:
+        {
+            Assert(pReg->idReg < RT_ELEMENTS(g_aszArmV8RegSimdScalar128Bit));
+            const char *psz = g_aszArmV8RegSimdScalar128Bit[pReg->idReg];
+            *pcchReg = 2 + !!psz[2];
+            return psz;
+        }
+        default:
+            AssertFailed();
+            *pcchReg = 0;
+            return NULL;
     }
-
-    Assert(pReg->idGpr < RT_ELEMENTS(g_aszArmV8RegGen64));
-    const char *psz = g_aszArmV8RegGen64[pReg->idGpr];
-    *pcchReg = 2 + !!psz[2];
-    return psz;
 }
 
 
@@ -342,7 +426,7 @@ static const char *disasmFormatArmV8SysReg(PCDISSTATE pDis, PCDISOPPARAM pParam,
     /** @todo Binary search (lazy). */
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aArmV8SysReg64); i++)
     {
-        if (g_aArmV8SysReg64[i].idSysReg == pParam->armv8.Reg.idSysReg)
+        if (g_aArmV8SysReg64[i].idSysReg == pParam->armv8.Op.idSysReg)
         {
             *pcchReg = g_aArmV8SysReg64[i].cchSysReg;
             return g_aArmV8SysReg64[i].pszSysReg;
@@ -350,7 +434,7 @@ static const char *disasmFormatArmV8SysReg(PCDISSTATE pDis, PCDISOPPARAM pParam,
     }
 
     /* Generate S<op0>_<op1>_<Cn>_<Cm>_<op2> identifier. */
-    uint32_t const idSysReg = pParam->armv8.Reg.idSysReg;
+    uint32_t const idSysReg = pParam->armv8.Op.idSysReg;
     uint8_t idx = 0;
     pachTmp[idx++] = 'S';
     pachTmp[idx++] = '2' + ((idSysReg >> 14) & 0x1);
@@ -384,7 +468,7 @@ static const char *disasmFormatArmV8SysReg(PCDISSTATE pDis, PCDISOPPARAM pParam,
 
 
 /**
- * Formats the current instruction in Yasm (/ Nasm) style.
+ * Formats the current instruction in ARMv8 style.
  *
  *
  * @returns The number of output characters. If this is >= cchBuf, then the content
@@ -679,12 +763,12 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                         PUT_SYMBOL(DIS_FMT_SEL_FROM_REG(DISSELREG_CS), uTrgAddr, " (", ')');
                     break;
                 }
-                case kDisArmv8OpParmGpr:
+                case kDisArmv8OpParmReg:
                 {
                     Assert(!(pParam->fUse & (DISUSE_DISPLACEMENT8 | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT64 | DISUSE_RIPDISPLACEMENT32)));
 
                     size_t cchReg;
-                    const char *pszReg = disasmFormatArmV8Reg(pDis, &pParam->armv8.Reg.Gpr, &cchReg);
+                    const char *pszReg = disasmFormatArmV8Reg(pDis, &pParam->armv8.Op.Reg, &cchReg);
                     PUT_STR(pszReg, cchReg);
                     break;
                 }
@@ -709,7 +793,7 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                     PUT_C('[');
 
                     size_t cchReg;
-                    const char *pszReg = disasmFormatArmV8Reg(pDis, &pParam->armv8.Reg.Gpr, &cchReg);
+                    const char *pszReg = disasmFormatArmV8Reg(pDis, &pParam->armv8.Op.Reg, &cchReg);
                     PUT_STR(pszReg, cchReg);
 
                     if (pParam->fUse & DISUSE_POST_INDEXED)
@@ -765,8 +849,14 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                 }
                 case kDisArmv8OpParmCond:
                 {
-                    Assert((uint16_t)pParam->armv8.Reg.enmCond < RT_ELEMENTS(g_aszArmV8Cond));
-                    PUT_STR(g_aszArmV8Cond[pParam->armv8.Reg.enmCond], sizeof(g_aszArmV8Cond[0]) - 1);
+                    Assert((uint16_t)pParam->armv8.Op.enmCond < RT_ELEMENTS(g_aszArmV8Cond));
+                    PUT_STR(g_aszArmV8Cond[pParam->armv8.Op.enmCond], sizeof(g_aszArmV8Cond[0]) - 1);
+                    break;
+                }
+                case kDisArmv8OpParmPState:
+                {
+                    Assert((uint16_t)pParam->armv8.Op.enmPState < RT_ELEMENTS(g_apszArmV8PState));
+                    PUT_PSZ(g_apszArmV8PState[pParam->armv8.Op.enmPState]);
                     break;
                 }
                 default:
@@ -777,7 +867,7 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
                 && pParam->armv8.enmExtend != kDisArmv8OpParmExtendNone)
             {
                 Assert(   pParam->armv8.enmType == kDisArmv8OpParmImm
-                       || pParam->armv8.enmType == kDisArmv8OpParmGpr);
+                       || pParam->armv8.enmType == kDisArmv8OpParmReg);
                 PUT_SZ(", ");
                 switch (pParam->armv8.enmExtend)
                 {
@@ -861,9 +951,9 @@ DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, u
 
 
 /**
- * Formats the current instruction in Yasm (/ Nasm) style.
+ * Formats the current instruction in ARMv8 style.
  *
- * This is a simplified version of DISFormatYasmEx() provided for your convenience.
+ * This is a simplified version of DISFormatArmV8Ex() provided for your convenience.
  *
  *
  * @returns The number of output characters. If this is >= cchBuf, then the content

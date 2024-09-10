@@ -162,6 +162,42 @@ enum OPCODESARMV8
     OP_ARMV8_A64_ERETAB,
     OP_ARMV8_A64_ESB,
     OP_ARMV8_A64_EXTR,
+    OP_ARMV8_A64_FABS,
+    OP_ARMV8_A64_FADD,
+    OP_ARMV8_A64_FCCMP,
+    OP_ARMV8_A64_FCCMPE,
+    OP_ARMV8_A64_FCMP,
+    OP_ARMV8_A64_FCMPE,
+    OP_ARMV8_A64_FCSEL,
+    OP_ARMV8_A64_FCVT,
+    OP_ARMV8_A64_FCVTZS,
+    OP_ARMV8_A64_FCVTZU,
+    OP_ARMV8_A64_FDIV,
+    OP_ARMV8_A64_FMADD,
+    OP_ARMV8_A64_FMAX,
+    OP_ARMV8_A64_FMAXNM,
+    OP_ARMV8_A64_FMIN,
+    OP_ARMV8_A64_FMINNM,
+    OP_ARMV8_A64_FMOV,
+    OP_ARMV8_A64_FMSUB,
+    OP_ARMV8_A64_FMUL,
+    OP_ARMV8_A64_FNEG,
+    OP_ARMV8_A64_FNMADD,
+    OP_ARMV8_A64_FNMSUB,
+    OP_ARMV8_A64_FNMUL,
+    OP_ARMV8_A64_FRINT32X,
+    OP_ARMV8_A64_FRINT32Z,
+    OP_ARMV8_A64_FRINT64X,
+    OP_ARMV8_A64_FRINT64Z,
+    OP_ARMV8_A64_FRINTA,
+    OP_ARMV8_A64_FRINTI,
+    OP_ARMV8_A64_FRINTM,
+    OP_ARMV8_A64_FRINTN,
+    OP_ARMV8_A64_FRINTP,
+    OP_ARMV8_A64_FRINTX,
+    OP_ARMV8_A64_FRINTZ,
+    OP_ARMV8_A64_FSQRT,
+    OP_ARMV8_A64_FSUB,
     OP_ARMV8_A64_GMI,
     OP_ARMV8_A64_HINT,
     OP_ARMV8_A64_HLT,
@@ -370,6 +406,7 @@ enum OPCODESARMV8
     OP_ARMV8_A64_SBFIZ,
     OP_ARMV8_A64_SBFM,
     OP_ARMV8_A64_SBFX,
+    OP_ARMV8_A64_SCVTF,
     OP_ARMV8_A64_SDIV,
     OP_ARMV8_A64_SETF8,
     OP_ARMV8_A64_SETF16,
@@ -399,6 +436,7 @@ enum OPCODESARMV8
     OP_ARMV8_A64_SETETN,
     OP_ARMV8_A64_SEV,
     OP_ARMV8_A64_SEVL,
+    OP_ARMV8_A64_SHL,
     OP_ARMV8_A64_SMADDL,
     OP_ARMV8_A64_SMC,
     OP_ARMV8_A64_SMNEGL,
@@ -407,7 +445,14 @@ enum OPCODESARMV8
     OP_ARMV8_A64_SMSUBL,
     OP_ARMV8_A64_SMULH,
     OP_ARMV8_A64_SMULL,
+    OP_ARMV8_A64_SQRSHRN,
+    OP_ARMV8_A64_SQSHL,
+    OP_ARMV8_A64_SQSHRN,
+    OP_ARMV8_A64_SRSHR,
+    OP_ARMV8_A64_SRSRA,
     OP_ARMV8_A64_SSBB,
+    OP_ARMV8_A64_SSHR,
+    OP_ARMV8_A64_SSRA,
     OP_ARMV8_A64_ST2G,
     OP_ARMV8_A64_ST64B,
     OP_ARMV8_A64_ST64BV0,
@@ -497,6 +542,7 @@ enum OPCODESARMV8
     OP_ARMV8_A64_UBFIZ,
     OP_ARMV8_A64_UBFM,
     OP_ARMV8_A64_UBFX,
+    OP_ARMV8_A64_UCVTF,
     OP_ARMV8_A64_UDF,
     OP_ARMV8_A64_UDIV,
     OP_ARMV8_A64_UMADDL,
@@ -552,6 +598,37 @@ typedef enum DISARMV8INSTRCOND
 } DISARMV8INSTRCOND;
 
 
+/** Armv8 PState fields.    */
+typedef enum DISARMV8INSTRPSTATE
+{
+    kDisArmv8InstrPState_SPSel = 0,
+    kDisArmv8InstrPState_DAIFSet,
+    kDisArmv8InstrPState_DAIFClr,
+    kDisArmv8InstrPState_UAO,
+    kDisArmv8InstrPState_PAN,
+    kDisArmv8InstrPState_ALLINT,
+    kDisArmv8InstrPState_PM,
+    kDisArmv8InstrPState_SSBS,
+    kDisArmv8InstrPState_DIT,
+    kDisArmv8InstrPState_SVCRSM,
+    kDisArmv8InstrPState_SVCRZA,
+    kDisArmv8InstrPState_SVCRSMZA,
+    kDisArmv8InstrPState_TCO
+} DISARMV8INSTRPSTATE;
+
+
+/**
+ * Floating point types.
+ */
+typedef enum DISARMV8INSTRFPTYPE
+{
+    kDisArmv8InstrFpType_Invalid = 0,
+    kDisArmv8InstrFpType_Single,
+    kDisArmv8InstrFpType_Double,
+    kDisArmv8InstrFpType_Half
+} DISARMV8INSTRFPTYPE;
+
+
 /** @defgroup grp_dis_opparam_armv8 Opcode parameters (DISOPCODE::fParam1,
  *            DISOPCODE::fParam2, DISOPCODE::fParam3)
  * @ingroup grp_dis
@@ -565,18 +642,20 @@ typedef enum DISARMV8OPPARM
 {
     /** Parameter is not used. */
     kDisArmv8OpParmNone = 0,
-    /** Imediate value. */
+    /** Immediate value. */
     kDisArmv8OpParmImm,
     /** Relative address immediate. */
     kDisArmv8OpParmImmRel,
-    /** General purpose register. */
-    kDisArmv8OpParmGpr,
+    /** Register. */
+    kDisArmv8OpParmReg,
     /** System register. */
     kDisArmv8OpParmSysReg,
     /** Accessing memory from address in base register + potential offset. */
     kDisArmv8OpParmAddrInGpr,
     /** Conditional as parameter (CCMN/CCMP). */
-    kDisArmv8OpParmCond
+    kDisArmv8OpParmCond,
+    /** PSTATE field (specific to MSR). */
+    kDisArmv8OpParmPState
 } DISARMV8OPPARM;
 
 
