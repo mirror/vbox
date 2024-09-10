@@ -88,11 +88,11 @@ public:
     /** Returns text 1. */
     QString text1() const { return m_strText1; }
     /** Defines @a strText1. */
-    void setText1(const QString &strText1) { m_strText1 = strText1; }
+    void setText1(const QString &strText1);
     /** Returns text 2. */
     QString text2() const { return m_strText2; }
     /** Defines @a strText2. */
-    void setText2(const QString &strText2) { m_strText2 = strText2; }
+    void setText2(const QString &strText2);
 
 protected:
 
@@ -101,6 +101,9 @@ protected:
 
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+
+    /** Calculates and returns minimum size-hint. */
+    virtual QSize minimumSizeHint() const RT_OVERRIDE;
 
 private:
 
@@ -263,6 +266,18 @@ UIModeCheckBox::UIModeCheckBox(QWidget *pParent)
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 }
 
+void UIModeCheckBox::setText1(const QString &strText1)
+{
+    m_strText1 = strText1;
+    updateGeometry();
+}
+
+void UIModeCheckBox::setText2(const QString &strText2)
+{
+    m_strText2 = strText2;
+    updateGeometry();
+}
+
 bool UIModeCheckBox::event(QEvent *pEvent)
 {
     /* Handle desired events: */
@@ -347,26 +362,54 @@ void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
     painter.strokePath(painterPath2, uiCommon().isInDarkMode() ? backColor2.lighter(120) : backColor2.darker(110));
     painter.restore();
 
-    /* Prepare text1/text2: */
+    /* Prepare text stuff: */
     const QFont fnt = font();
     const QFontMetrics fm(fnt);
     const QColor foreground1 = suitableForegroundColor(pal, backColor1);
-    const QString strName1 = text1();
-    const QPoint point1 = QPoint(contentRect.left() + 5 /** @todo justify! */,
-                                 contentRect.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
     const QColor foreground2 = suitableForegroundColor(pal, backColor2);
-    const QString strName2 = text2();
-    const QPoint point2 = QPoint(contentRect.width() / 2 + 1 + 5 /** @todo justify! */,
+    /* Calculate text1 position: */
+    const int iMaxSpace1 = contentRect.width() / 2 - 2 * fm.height();
+    const int iTextSize1 = fm.horizontalAdvance(m_strText1);
+    const int iIndent1 = iMaxSpace1 > iTextSize1 ? (iMaxSpace1 - iTextSize1) / 2 : 0;
+    const QPoint point1 = QPoint(contentRect.left() + 5 /* margin */ + iIndent1,
+                                 contentRect.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
+    /* Calculate text2 position: */
+    const int iMaxSpace2 = contentRect.width() / 2 - 2 * fm.height();
+    const int iTextSize2 = fm.horizontalAdvance(m_strText2);
+    const int iIndent2 = iMaxSpace2 > iTextSize2 ? (iMaxSpace2 - iTextSize2) / 2 : 0;
+    const QPoint point2 = QPoint(contentRect.width() / 2 + iIndent2,
                                  contentRect.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
 
     /* Paint text: */
     painter.save();
     painter.setFont(fnt);
     painter.setPen(foreground1);
-    painter.drawText(point1, strName1);
+    painter.drawText(point1, text1());
     painter.setPen(foreground2);
-    painter.drawText(point2, strName2);
+    painter.drawText(point2, text2());
     painter.restore();
+}
+
+QSize UIModeCheckBox::minimumSizeHint() const
+{
+    /* Acquire metrics: */
+    const QFontMetrics fm(font());
+
+    /* Looking for a max text size among those two: */
+    int iMaxLength = 0;
+    iMaxLength = qMax(iMaxLength, fm.horizontalAdvance(m_strText1));
+    iMaxLength = qMax(iMaxLength, fm.horizontalAdvance(m_strText2));
+
+    /* Composing result: */
+    QSize result(  5               /* left margin */
+                 + iMaxLength + 2  /* padding */
+                 + 2 * fm.height() /* spacing */
+                 + iMaxLength + 2  /* padding */
+                 + 2 * fm.height() /* right marging */,
+                   2 * fm.height() /* vertical hint */);
+    //printf("UIModeCheckBox::minimumSizeHint(%dx%d)\n",
+    //       result.width(), result.height());
+    return result;
 }
 
 
