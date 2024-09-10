@@ -500,6 +500,9 @@ typedef enum
     kIemNativeLabelType_ReturnBreakViaLookupWithTlbAndIrq,
     kIemNativeLabelType_ReturnWithFlags,
     kIemNativeLabelType_NonZeroRetOrPassUp,
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+    kIemNativeLabelType_ReturnZero,             /**< Sets eax/w0 to zero and returns. */
+#endif
     kIemNativeLabelType_Return,
     /** The last fixup for branches that can span almost the whole TB length.
      * @note Whether kIemNativeLabelType_Return needs to be one of these is

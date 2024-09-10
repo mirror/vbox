@@ -2095,7 +2095,6 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     AssertCompile(sizeof(pReNative->Core.bmStack) * 8 == IEMNATIVE_FRAME_VAR_SLOTS); /* Must set reserved slots to 1 otherwise. */
     pReNative->Core.u64ArgVars             = UINT64_MAX;
 
-    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 23);
     pReNative->aidxUniqueLabels[0]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[1]         = UINT32_MAX;
     pReNative->aidxUniqueLabels[2]         = UINT32_MAX;
@@ -2119,6 +2118,12 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->aidxUniqueLabels[20]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[21]        = UINT32_MAX;
     pReNative->aidxUniqueLabels[22]        = UINT32_MAX;
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+    pReNative->aidxUniqueLabels[23]        = UINT32_MAX;
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 24);
+#else
+    AssertCompile(RT_ELEMENTS(pReNative->aidxUniqueLabels) == 23);
+#endif
 
     pReNative->idxLastCheckIrqCallNo       = UINT32_MAX;
 
@@ -8948,6 +8953,9 @@ static const char *iemNativeGetLabelName(IEMNATIVELABELTYPE enmLabel, bool fComm
         STR_CASE_CMN(NeedCsLimChecking);
         STR_CASE_CMN(CheckBranchMiss);
         STR_CASE_CMN(Return);
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+        STR_CASE_CMN(ReturnZero);
+#endif
         STR_CASE_CMN(ReturnBreak);
         STR_CASE_CMN(ReturnBreakFF);
         STR_CASE_CMN(ReturnWithFlags);
@@ -9783,6 +9791,9 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
         /*
          * Emit the epilog code.
          */
+        aoffLabels[kIemNativeLabelType_ReturnZero] = off;
+        off = iemNativeEmitGprZero(pReNative, off, IEMNATIVE_CALL_RET_GREG);
+
         aoffLabels[kIemNativeLabelType_Return] = off;
         off = iemNativeEmitCoreEpilog(pReNative, off);
 
@@ -9882,8 +9893,8 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
 # ifdef VBOX_STRICT
         /* Make sure we've generate code for all labels. */
         for (uint32_t i = kIemNativeLabelType_Invalid + 1; i < RT_ELEMENTS(aoffLabels); i++)
-            Assert(aoffLabels[i] != 0 || i == kIemNativeLabelType_Return);
-#endif
+            Assert(aoffLabels[i] != 0 || i == kIemNativeLabelType_ReturnZero);
+# endif
     }
     IEMNATIVE_CATCH_LONGJMP_BEGIN(pReNative, rc);
     {
@@ -9921,7 +9932,7 @@ DECLHIDDEN(PCIEMNATIVEPERCHUNKCTX) iemNativeRecompileAttachExecMemChunkCtx(PVMCP
     pCtx->apExitLabels[kIemNativeLabelType_Invalid] = 0;
     for (uint32_t i = kIemNativeLabelType_Invalid + 1; i < RT_ELEMENTS(pCtx->apExitLabels); i++)
     {
-        Assert(aoffLabels[i] != 0 || i == kIemNativeLabelType_Return);
+        Assert(aoffLabels[i] != 0 || i == kIemNativeLabelType_ReturnZero);
         pCtx->apExitLabels[i] = &paFinalCommonCodeRx[aoffLabels[i]];
         Log10(("    apExitLabels[%u]=%p %s\n", i, pCtx->apExitLabels[i], iemNativeGetLabelName((IEMNATIVELABELTYPE)i, true)));
     }
@@ -10179,12 +10190,12 @@ l_profile_again:
         /* Flush any pending writes before returning from the last instruction (RIP updates, etc.). */
         off = iemNativeRegFlushPendingWrites(pReNative, off);
 
+#ifndef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
         /*
          * Successful return, so clear the return register (eax, w0).
          */
         off = iemNativeEmitGprZero(pReNative, off, IEMNATIVE_CALL_RET_GREG);
 
-#ifndef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
         /*
          * Emit the epilog code.
          */
@@ -10195,7 +10206,7 @@ l_profile_again:
          * Jump to the common per-chunk epilog code.
          */
         //off = iemNativeEmitBrk(pReNative, off, 0x1227);
-        off = iemNativeEmitTbExit(pReNative, off, kIemNativeLabelType_Return);
+        off = iemNativeEmitTbExit(pReNative, off, kIemNativeLabelType_ReturnZero);
 #endif
 
 #ifndef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
