@@ -511,7 +511,7 @@ void UIRecordingSettingsEditor::prepareWidgets()
                 if (m_pEditorFilePath)
                 {
                     if (m_pLabelFilePath)
-                        m_pLabelFilePath->setBuddy(m_pEditorFilePath->focusProxy());
+                        m_pLabelFilePath->setBuddy(m_pEditorFilePath);
                     m_pEditorFilePath->setEditable(false);
                     m_pEditorFilePath->setMode(UIFilePathSelector::Mode_File_Save);
 

@@ -68,7 +68,7 @@ static int differFrom(const QString &str1, const QString &str2)
 }
 
 UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
-    : QIComboBox(pParent)
+    : QComboBox(pParent)
     , m_enmMode(Mode_Folder)
     , m_strInitialPath(QDir::current().absolutePath())
     , m_fResetEnabled(true)
@@ -138,11 +138,14 @@ void UIFilePathSelector::setEditable(bool fEditable)
 
     if (m_fEditable)
     {
-        QIComboBox::setEditable(true);
+        /* Call to base-class: */
+        QComboBox::setEditable(true);
 
         /* Install combo-box event-filter: */
-        Assert(comboBox());
-        comboBox()->installEventFilter(this);
+        this->installEventFilter(this);
+
+        /* Configure a type of line-edit: */
+        setLineEdit(new QILineEdit);
 
         /* Install line-edit connection/event-filter: */
         Assert(lineEdit());
@@ -159,13 +162,28 @@ void UIFilePathSelector::setEditable(bool fEditable)
             disconnect(lineEdit(), &QLineEdit::textEdited,
                        this, &UIFilePathSelector::onTextEdited);
         }
-        if (comboBox())
-        {
-            /* Remove combo-box event-filter: */
-            comboBox()->removeEventFilter(this);
-        }
-        QIComboBox::setEditable(false);
+
+        /* Remove combo-box event-filter: */
+        this->removeEventFilter(this);
+
+        /* Call to base-class: */
+        QComboBox::setEditable(false);
     }
+}
+
+void UIFilePathSelector::setMarkable(bool fMarkable)
+{
+    QILineEdit *pLineEdit = isEditable() ? qobject_cast<QILineEdit*>(lineEdit()) : 0;
+    if (pLineEdit)
+        pLineEdit->setMarkable(fMarkable);
+}
+
+void UIFilePathSelector::mark(bool fError, const QString &strErrorMessage, const QString &strNoErrorMessage)
+{
+    QILineEdit *pLineEdit = isEditable() ? qobject_cast<QILineEdit*>(lineEdit()) : 0;
+    setMarkable(true);
+    if (pLineEdit)
+        pLineEdit->mark(fError, strErrorMessage, strNoErrorMessage);
 }
 
 void UIFilePathSelector::setResetEnabled(bool fEnabled)
@@ -201,7 +219,7 @@ bool UIFilePathSelector::isValid() const
 void UIFilePathSelector::setToolTip(const QString &strToolTip)
 {
     /* Call to base-class: */
-    QIComboBox::setToolTip(strToolTip);
+    QComboBox::setToolTip(strToolTip);
 
     /* Remember if the tool-tip overriden: */
     m_fToolTipOverriden = !toolTip().isEmpty();
@@ -243,7 +261,7 @@ void UIFilePathSelector::setPath(const QString &strPath, bool fRefreshText /* = 
 bool UIFilePathSelector::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* If the object is private combo-box: */
-    if (pObject == comboBox())
+    if (pObject == this)
     {
         /* Handle focus events related to private child: */
         switch (pEvent->type())
@@ -262,12 +280,12 @@ bool UIFilePathSelector::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIComboBox::eventFilter(pObject, pEvent);
+    return QComboBox::eventFilter(pObject, pEvent);
 }
 
 void UIFilePathSelector::resizeEvent(QResizeEvent *pEvent)
 {
-    QIComboBox::resizeEvent(pEvent);
+    QComboBox::resizeEvent(pEvent);
     refreshText();
 }
 
@@ -282,7 +300,7 @@ void UIFilePathSelector::focusInEvent(QFocusEvent *pEvent)
         else
             refreshText();
     }
-    QIComboBox::focusInEvent(pEvent);
+    QComboBox::focusInEvent(pEvent);
 }
 
 void UIFilePathSelector::focusOutEvent(QFocusEvent *pEvent)
@@ -292,7 +310,7 @@ void UIFilePathSelector::focusOutEvent(QFocusEvent *pEvent)
         m_fEditableMode = false;
         refreshText();
     }
-    QIComboBox::focusOutEvent(pEvent);
+    QComboBox::focusOutEvent(pEvent);
 }
 
 void UIFilePathSelector::sltRetranslateUI()
@@ -560,7 +578,7 @@ void UIFilePathSelector::refreshText()
 
         /* Set the tool-tip: */
         if (!m_fToolTipOverriden)
-            QIComboBox::setToolTip(fullPath());
+            QComboBox::setToolTip(fullPath());
         setItemData(PathId, toolTip(), Qt::ToolTipRole);
 
         if (m_fMouseAwaited)
@@ -590,7 +608,7 @@ void UIFilePathSelector::refreshText()
 
             /* Set the tool-tip: */
             if (!m_fToolTipOverriden)
-                QIComboBox::setToolTip(m_strNoneToolTip);
+                QComboBox::setToolTip(m_strNoneToolTip);
             setItemData(PathId, toolTip(), Qt::ToolTipRole);
         }
     }
@@ -610,7 +628,7 @@ void UIFilePathSelector::refreshText()
 
         /* Set the tool-tip: */
         if (!m_fToolTipOverriden)
-            QIComboBox::setToolTip(fullPath());
+            QComboBox::setToolTip(fullPath());
         setItemData(PathId, toolTip(), Qt::ToolTipRole);
     }
 }
