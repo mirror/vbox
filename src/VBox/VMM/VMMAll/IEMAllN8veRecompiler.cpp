@@ -3818,7 +3818,8 @@ iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEMRECOMPILERSTATE pReNative, u
 #ifdef IEMNATIVE_WITH_LIVENESS_ANALYSIS
     AssertMsg(   pReNative->idxCurCall == 0
               || IEMLIVENESS_STATE_IS_INPUT_EXPECTED(iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstReg))
-              || enmGstReg == kIemNativeGstReg_Pc,
+              || enmGstReg == kIemNativeGstReg_Pc
+              || enmGstReg == kIemNativeGstReg_EFlags /** @todo EFlags shadowing+liveness is weird and needs fixing (@bugref{10720}) */,
               ("%s - %u\n", g_aGstShadowInfo[enmGstReg].pszName, iemNativeLivenessGetPrevStateByGstReg(pReNative, enmGstReg)));
 #endif
 
@@ -7342,7 +7343,8 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocConst(PIEMRECOMPILERSTATE pReNative,
 }
 
 
-DECL_HIDDEN_THROW(uint8_t)  iemNativeVarAllocAssign(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint8_t cbType, uint8_t idxVarOther)
+DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocAssign(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
+                                                   uint8_t cbType, uint8_t idxVarOther)
 {
     uint8_t const idxVar = IEMNATIVE_VAR_IDX_PACK(iemNativeVarAllocInt(pReNative, cbType));
     iemNativeVarSetKindToStack(pReNative, IEMNATIVE_VAR_IDX_PACK(idxVar));
@@ -7350,6 +7352,7 @@ DECL_HIDDEN_THROW(uint8_t)  iemNativeVarAllocAssign(PIEMRECOMPILERSTATE pReNativ
     uint8_t const idxVarOtherReg = iemNativeVarRegisterAcquire(pReNative, idxVarOther, poff, true /*fInitialized*/);
     uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVar, poff);
 
+/** @todo combine MOV and AND using MOVZX/similar. */
     *poff = iemNativeEmitLoadGprFromGpr(pReNative, *poff, idxVarReg, idxVarOtherReg);
 
     /* Truncate the value to this variables size. */

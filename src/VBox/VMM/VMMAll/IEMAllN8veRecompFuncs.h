@@ -300,7 +300,8 @@ iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILERSTATE pReNative, uint32_t of
 # define IEM_MC_NATIVE_SET_AMD64_HOST_REG_FOR_LOCAL(a_VarNm, a_idxHostReg) \
     off = iemNativeVarSetAmd64HostRegisterForLocal(pReNative, off, a_VarNm, a_idxHostReg)
 
-DECL_INLINE_THROW(uint8_t) iemNativeVarRegisterSet(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint8_t idxReg, uint32_t off);
+DECL_INLINE_THROW(uint8_t) iemNativeVarRegisterSet(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint8_t idxReg,
+                                                   uint32_t off, bool fAllocated);
 
 DECL_INLINE_THROW(uint32_t)
 iemNativeVarSetAmd64HostRegisterForLocal(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVar, uint8_t idxHstReg)
@@ -316,7 +317,7 @@ iemNativeVarSetAmd64HostRegisterForLocal(PIEMRECOMPILERSTATE pReNative, uint32_t
         off = iemNativeRegFlushDirtyGuest(pReNative, off, pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows);
 # endif
 
-    iemNativeVarRegisterSet(pReNative, idxVar, idxHstReg, off);
+    iemNativeVarRegisterSet(pReNative, idxVar, idxHstReg, off, false /*fAllocated*/);
     return off;
 }
 
@@ -3888,8 +3889,7 @@ iemNativeEmitIfGregBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 /**
  * Sets the host register for @a idxVarRc to @a idxReg.
  *
- * The register must not be allocated. Any guest register shadowing will be
- * implictly dropped by this call.
+ * Any guest register shadowing will be implictly dropped by this call.
  *
  * The variable must not have any register associated with it (causes
  * VERR_IEM_VAR_IPE_10 to be raised).  Conversion to a stack variable is
@@ -3900,17 +3900,20 @@ iemNativeEmitIfGregBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
  * @param   idxVar      The variable.
  * @param   idxReg      The host register (typically IEMNATIVE_CALL_RET_GREG).
  * @param   off         For recording in debug info.
+ * @param   fAllocated  Set if the register is already allocated, false if not.
  *
  * @throws  VERR_IEM_VAR_IPE_10, VERR_IEM_VAR_IPE_11
  */
-DECL_INLINE_THROW(uint8_t) iemNativeVarRegisterSet(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint8_t idxReg, uint32_t off)
+DECL_INLINE_THROW(uint8_t)
+iemNativeVarRegisterSet(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint8_t idxReg, uint32_t off, bool fAllocated)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
     PIEMNATIVEVAR const pVar = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)];
     Assert(!pVar->fRegAcquired);
     Assert(idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs));
     AssertStmt(pVar->idxReg == UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_10));
-    AssertStmt(!(pReNative->Core.bmHstRegs & RT_BIT_32(idxReg)), IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_11));
+    AssertStmt(RT_BOOL(pReNative->Core.bmHstRegs & RT_BIT_32(idxReg)) == fAllocated,
+               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_11));
 
     iemNativeRegClearGstRegShadowing(pReNative, idxReg, off);
     iemNativeRegMarkAllocated(pReNative, idxReg, kIemNativeWhat_Var, idxVar);
@@ -3928,7 +3931,7 @@ DECL_INLINE_THROW(uint8_t) iemNativeVarRegisterSet(PIEMRECOMPILERSTATE pReNative
 DECL_INLINE_THROW(uint8_t) iemNativeVarRegisterSetAndAcquire(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar,
                                                              uint8_t idxReg, uint32_t *poff)
 {
-    idxReg = iemNativeVarRegisterSet(pReNative, idxVar, idxReg, *poff);
+    idxReg = iemNativeVarRegisterSet(pReNative, idxVar, idxReg, *poff, false /*fAllocated*/);
     pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVar)].fRegAcquired = true;
     return idxReg;
 }
@@ -4252,7 +4255,7 @@ iemNativeEmitCallAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
      */
     off = iemNativeEmitCallImm(pReNative, off, pfnAImpl);
     if (idxVarRc != UINT8_MAX)
-        iemNativeVarRegisterSet(pReNative, idxVarRc, IEMNATIVE_CALL_RET_GREG, off);
+        iemNativeVarRegisterSet(pReNative, idxVarRc, IEMNATIVE_CALL_RET_GREG, off, false /*fAllocated*/);
 
     return off;
 }
@@ -5860,12 +5863,36 @@ iemNativeEmitFetchEFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t id
 
     IEMNATIVE_STRICT_EFLAGS_SKIPPING_EMIT_CHECK(pReNative, off, fEflInput);
 
-    /** @todo this is suboptimial. EFLAGS is probably shadowed and we should use
-     *        the existing shadow copy. */
-    uint8_t const idxReg = iemNativeVarRegisterAcquire(pReNative, idxVarEFlags, &off, false /*fInitialized*/);
-    iemNativeRegClearAndMarkAsGstRegShadow(pReNative, idxReg, kIemNativeGstReg_EFlags, off);
-    off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxReg, RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.eflags));
-    iemNativeVarRegisterRelease(pReNative, idxVarEFlags);
+    /** @todo This could be prettier...*/
+    /** @todo Also, the shadowing+liveness handling of EFlags is currently
+     *        problematic, but I'll try tackle that soon (@bugref{10720}). */
+    PCIEMNATIVEVAR const pVar = &pReNative->Core.aVars[IEMNATIVE_VAR_IDX_UNPACK(idxVarEFlags)];
+    Assert(pVar->enmKind == kIemNativeVarKind_Invalid || pVar->enmKind == kIemNativeVarKind_Stack);
+    Assert(pVar->idxReg  == UINT8_MAX);
+    if (pVar->uArgNo >= IEMNATIVE_CALL_ARG_GREG_COUNT)
+    {
+        /** @todo We could use kIemNativeGstRegUse_ReadOnly here when fOutput is
+         *        zero, but since iemNativeVarRegisterSet clears the shadowing,
+         *        that's counter productive... */
+        uint8_t const idxGstReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                                  kIemNativeGstRegUse_ForUpdate, false /*fNoVolatileRegs*/,
+                                                                  true /** @todo EFlags shadowing+liveness weirdness (@bugref{10720}). */);
+        iemNativeVarRegisterSet(pReNative, idxVarEFlags, idxGstReg, off, true /*fAllocated*/);
+    }
+    else
+    {
+        /* Register argument variable: Avoid assertions in generic call code and load it the traditional way. */
+        uint8_t const idxVarReg = iemNativeVarRegisterAcquire(pReNative, idxVarEFlags, &off, false /*fInitialized*/);
+        uint8_t const idxGstReg = iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(pReNative, &off, kIemNativeGstReg_EFlags);
+        if (idxGstReg != UINT8_MAX)
+        {
+            off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxVarReg, idxGstReg);
+            iemNativeRegFreeTmp(pReNative, idxGstReg);
+        }
+        else
+            off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxVarReg, RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.eflags));
+        iemNativeVarRegisterRelease(pReNative, idxVarEFlags);
+    }
     return off;
 }
 
