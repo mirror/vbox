@@ -478,13 +478,13 @@ typedef struct VIRTIONET
     /** All unicast mode -- RX filter accepts all unicast packets. */
     uint8_t                 fAllUnicast;
 
-    /** No multicast mode - Supresses multicast receive */
+    /** No multicast mode - Suppresses multicast receive */
     uint8_t                 fNoMulticast;
 
     /** No unicast mode - Suppresses unicast receive */
     uint8_t                 fNoUnicast;
 
-    /** No broadcast mode - Supresses broadcast receive */
+    /** No broadcast mode - Suppresses broadcast receive */
     uint8_t                 fNoBroadcast;
 
     /** Type of network pkt header based on guest driver version/features */

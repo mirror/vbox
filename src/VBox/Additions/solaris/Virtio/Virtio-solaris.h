@@ -77,7 +77,7 @@ typedef VIRTIORINGDESC *PVIRTIORINGDESC;
  */
 struct VirtioRingAvail
 {
-    uint16_t                fFlags;             /* Interrupt supression flag. */
+    uint16_t                fFlags;             /* Interrupt suppression flag. */
     uint16_t                Index;              /* Index of available ring. */
     uint16_t                aRings[1];          /* Array of indices into descriptor table. */
 };

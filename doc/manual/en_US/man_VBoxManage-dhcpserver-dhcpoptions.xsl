@@ -34,7 +34,7 @@
   <xsl:strip-space elements="*"/>
 
 
-<!-- Default operation is to supress output -->
+<!-- Default operation is to suppress output -->
 <xsl:template match="node()|@*">
   <xsl:apply-templates/>
 </xsl:template>

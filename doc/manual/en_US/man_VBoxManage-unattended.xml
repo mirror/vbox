@@ -163,7 +163,7 @@
         </varlistentry>
         <varlistentry>
           <term><option>--install-additions</option>, <option>--no-install-additions</option></term>
-          <listitem><para>Whether to install the VirtualBox guest additions.  (default: --no-install-addations)</para></listitem>
+          <listitem><para>Whether to install the VirtualBox guest additions.  (default: --no-install-additions)</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--additions-iso=<replaceable>add-iso</replaceable></option></term>
@@ -173,7 +173,7 @@
         <varlistentry>
           <term><option>--install-txs</option>, <option>--no-install-txs</option></term>
           <listitem>
-            <para>Whether to install the test execution service (TXS) from the VirtualBox ValidationKit.
+            <para>Whether to install the Test eXecution Service (TXS) from the VirtualBox ValidationKit.
               This is useful when preparing VMs for testing or similar.  (default: --no-install-txs)</para></listitem>
         </varlistentry>
         <varlistentry>
@@ -204,7 +204,7 @@
         <varlistentry>
           <term><option>--package-selection-adjustment=<replaceable>keyword</replaceable></option></term>
           <listitem>
-            <para>Adjustments to the guest OS packages/components selection.  This can be specfied more than once.  Currently
+            <para>Adjustments to the guest OS packages/components selection.  This can be specified more than once.  Currently
               the only recognized keyword is <computeroutput>minimal</computeroutput> which triggers a minimal installation for
               some of the guest OSes.</para></listitem>
         </varlistentry>
@@ -252,7 +252,7 @@
           <term><option>--extra-install-kernel-parameters=<replaceable>params</replaceable></option></term>
           <listitem>
             <para>
-              List of extra linux kernel parameters to use during the installation. (default: IMachine::OSTypeId dependent)
+              List of extra Linux kernel parameters to use during the installation. (default: IMachine::OSTypeId dependent)
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -260,7 +260,7 @@
           <listitem>
             <para>
               Specifies the UI language for a Windows installation.  The <replaceable>lang</replaceable> is
-              generally on the form {ll}-{CC}.  See detectedOSLanguages results from <command>VBoxManage unattended detect</command>.
+              generally of the form {ll}-{CC}.  See the detectedOSLanguages results from <command>VBoxManage unattended detect</command>.
               (default: detectedOSLanguages[0])</para></listitem>
         </varlistentry>
 

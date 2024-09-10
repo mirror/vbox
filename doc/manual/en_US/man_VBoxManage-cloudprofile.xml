@@ -92,8 +92,10 @@
     <refsect2 id="vboxmanage-cloudprofile-common-options">
       <title>Common options</title>
       <remark role="help-scope" condition="GLOBAL"/>
-      <para>The subcommands of <command>cloudprofile</command> implement the standard CRUD operations for a cloud profile.
-        The next common options must be placed between the "cloud" and  the following sub-commands:</para>
+      <para>The subcommands of <command>cloudprofile</command> implement the standard Create, Read,
+        Update, and Delete (CRUD) operations for a cloud profile.
+        The following common options must be placed after the <command>cloudprofile</command> argument and
+        before the following sub-commands:</para>
       <variablelist>
         <varlistentry>
           <term>--provider=<replaceable>name</replaceable></term>
@@ -101,7 +103,7 @@
         </varlistentry>
         <varlistentry>
           <term>--profile=<replaceable>name</replaceable></term>
-          <listitem><para>Cloud profile name. </para></listitem>
+          <listitem><para>Cloud profile name.</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
@@ -110,7 +112,7 @@
       <title>cloudprofile add</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Add new cloud profile for a specified cloud provider.
+        Add a new cloud profile for the specified cloud provider.
       </para>
       <variablelist>
         <varlistentry>
@@ -119,19 +121,19 @@
         </varlistentry>
         <varlistentry>
           <term><option>--fingerprint=<replaceable>MD5 string</replaceable></option></term>
-          <listitem><para>Fingerprint for the key pair being used.</para></listitem>
+          <listitem><para>Fingerprint of the key pair being used.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--keyfile=<replaceable>path</replaceable></option></term>
-          <listitem><para>Full path and filename of the private key. </para></listitem>
+          <listitem><para>Full path and filename of the private key.</para></listitem>
         </varlistentry>
         <varlistentry>
         <term><option>--passphrase=<replaceable>string</replaceable></option></term>
-        <listitem><para>Passphrase used for the key, if it is encrypted.</para></listitem>
+        <listitem><para>Passphrase used for the key if it is encrypted.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--tenancy=<replaceable>unique id</replaceable></option></term>
-        <listitem><para>ID of your tenancy. </para></listitem>
+        <listitem><para>ID of your tenancy.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--compartment=<replaceable>unique id</replaceable></option></term>
@@ -148,7 +150,7 @@
       <title>cloudprofile show</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Display information about a cloud profile for a specified cloud provider.
+        Display information about a cloud profile for the specified cloud provider.
       </para>
     </refsect2>
 
@@ -169,19 +171,19 @@
         </varlistentry>
         <varlistentry>
           <term><option>--keyfile=<replaceable>path</replaceable></option></term>
-          <listitem><para>Full path and filename of the private key. </para></listitem>
+          <listitem><para>Full path and filename of the private key.</para></listitem>
         </varlistentry>
         <varlistentry>
         <term><option>--passphrase=<replaceable>string</replaceable></option></term>
-        <listitem><para>Passphrase used for the key, if it is encrypted.</para></listitem>
+        <listitem><para>Passphrase used for the key if it is encrypted.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--tenancy=<replaceable>unique id</replaceable></option></term>
-        <listitem><para>ID of your tenancy. </para></listitem>
+        <listitem><para>ID of the tenancy.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--compartment=<replaceable>unique id</replaceable></option></term>
-        <listitem><para>ID of your compartment.</para></listitem>
+        <listitem><para>ID of the compartment.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--region=<replaceable>string</replaceable></option></term>

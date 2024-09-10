@@ -370,7 +370,7 @@
       <arg>--verbose</arg>
       <arg>--source=<replaceable>guest-additions.ISO</replaceable></arg>
       <arg>--wait-start</arg>
-      <arg>-- <arg rep="repeat"><replaceable>argument</replaceable></arg></arg>
+      <arg>--<arg rep="repeat"><replaceable>argument</replaceable></arg></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-watch">
@@ -441,7 +441,7 @@
         policy. If a user account does not have an associated password,
         specify an empty password. On OSes such as Windows, you might
         need to adjust the security policy to permit user accounts with
-        an empty password. In additional, global domain rules might
+        an empty password. In addition, global domain rules might
         apply and therefore cannot be changed.
       </para>
       <para>
@@ -460,14 +460,14 @@
           <listitem><para>
               Specifies the password for the specified user. If you do
               not specify a password on the command line or if the
-              password file is empty, the specified user needs to have
+              password is empty, the specified user needs to have
               an empty password.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--passwordfile=<replaceable>filename</replaceable></option></term>
           <listitem><para>
-              Specifies the absolute path to a file on the guest OS that
+              Specifies the absolute path to a file on the host system that
               contains the password for the specified user. If the
               password file is empty or if you do not specify a password
               on the command line, the specified user needs to have an
@@ -477,8 +477,10 @@
         <varlistentry>
           <term><option>--username=<replaceable>username</replaceable></option></term>
           <listitem><para>
-              Specifies an existing user on the guest OS that runs the
-              process. If unspecified, the host user runs the process.
+              Specifies an existing user in the guest OS that runs the
+              process. If unspecified, the name of the user on the host
+              invoking the <command>VBoxManage</command> command will be
+              used as the username for the guest OS login.
             </para></listitem>
         </varlistentry>
       </variablelist>
@@ -486,53 +488,31 @@
     <refsect2 id="vboxmanage-guestcontrol-process-restrictions">
       <title>Guest Process Restrictions</title>
       <para>
-        By default, you can run up to five guest processes
-        simultaneously. If a new guest process starts and would exceed
-        this limit, the oldest not-running guest process is discarded to
-        run the new process. You cannot retrieve output from a discarded
-        guest process. If all five guest processes are active and
-        running, attempting to start a new guest process fails.
-      </para>
-      <para>
-        You can modify the guest process execution limit in two ways:
-      </para>
-      <itemizedlist>
-        <listitem><para>
-            Use the <command>VBoxManage setproperty</command> command to
-            update the
-            <literal>/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept</literal>
-            guest property value.
-          </para></listitem>
-        <listitem><para>
-            Use the <command>VBoxService</command> command and specify
-            the
-            <option>--control-procs-max-kept=<replaceable>value</replaceable></option>
-            option.
-          </para></listitem>
-      </itemizedlist>
-      <para>
-        After you change the limit, you must restart the guest OS.
-      </para>
-      <para>
-        You can serve an unlimited number guest processes by specifing a
-        value of <literal>0</literal>, however this action is not
-        recommended.
+        By default, you can run up to 255 guest processes simultaneously.
+        If attempting to start a new guest process would exceed
+        this limit and there are inactive guest processes then the the
+        oldest inactive guest process is discarded to run the new process.
+        You cannot retrieve the output from a discarded guest process. If
+        all 255 guest processes are active and running, attempting to start
+        a new guest process fails.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-guestcontrol-run">
-      <title>Run a Command on the guest</title>
+      <title>Run a Command in the guest</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage guestcontrol
         <replaceable>vmname</replaceable> run</command> command enables
-        you to execute a program on the guest VM. Standard input,
+        you to execute a program in the guest VM. Standard input,
         standard output, and standard error are redirected from the VM
         to the host system until the program completes.
       </para>
       <note>
         <para>
-          The Windows OS imposes certain limitations for graphical
-          applications. See <xref linkend="KnownIssues" />.
+          Microsoft Windows imposes certain limitations when running
+          graphical user interface applications launched using
+          <command>VBoxManage guestcontrol run</command>. See
+          <xref linkend="KnownIssues" />.
         </para>
       </note>
       <variablelist>
@@ -540,8 +520,15 @@
           <term><option>--exe=<replaceable>path-to-executable</replaceable></option></term>
           <listitem><para>
               Specifies the absolute path of the executable program to
-              run on the guest VM. For example:
+              run in the guest VM. For example:
               <filename>C:\Windows\System32\calc.exe</filename>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--arg0=<replaceable>alternate-executable-name</replaceable></option></term>
+          <listitem><para>
+              Specifies an alternate name (i.e. arg0 or argv[0]) for the
+              executable being run in the guest.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -583,7 +570,7 @@
               by <replaceable>NAME</replaceable>.
             </para><para>
               Use the
-              <option>--putenv=<replaceable>NAME</replaceable>=[<replaceable>value</replaceable>]</option>
+              <option>--putenv=<replaceable>NAME</replaceable>=</option>
               option to unset the environment variable specified by
               <replaceable>NAME</replaceable>.
             </para><para>
@@ -668,10 +655,10 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--[<replaceable>argument</replaceable>...]</option></term>
+          <term><option>-- [<replaceable>argument</replaceable>...]</option></term>
           <listitem><para>
-              Specifies the name of the program and any arguments to
-              pass to the program.
+              Specifies one or more arguments to pass to the program
+              being run in the guest.
             </para><para>
               Ensure that any command argument that includes spaces is
               enclosed by quotes.
@@ -685,12 +672,17 @@
       <para>
         The <command>VBoxManage guestcontrol
         <replaceable>vmname</replaceable> start</command> command
-        enables you to execute a guest program until it completes.
+        enables you to execute a guest program and returns after
+        the command has been successfully started.  The invoked
+        command doesn't wait until all data from stdout or stderr
+        has been read before returning.
       </para>
       <note>
         <para>
-          The Windows OS imposes certain limitations for graphical
-          applications. See <xref linkend="KnownIssues" />.
+          Microsoft Windows imposes certain limitations when running
+          graphical user interface applications launched using
+          <command>VBoxManage guestcontrol start</command>. See
+          <xref linkend="KnownIssues" />.
         </para>
       </note>
     </refsect2>
@@ -969,7 +961,7 @@
         <varlistentry>
           <term><literal><replaceable>guest-file</replaceable> [<replaceable>guest-file</replaceable>...]</literal></term>
           <listitem><para>
-              Specifies an absolute path of one or more file to remove
+              Specifies an absolute path of one or more files to remove
               from the guest VM. You can use wildcards to specify the
               file names. For example,
               <filename>D:\Foo\Bar\text*.txt</filename>.
@@ -1430,9 +1422,9 @@ $ VBoxManage --nologo guestcontrol "My OL VM" run --exe "/usr/bin/busybox" \
       to use for the command to execute.
     </para>
   <para>
-    The default behavior of argument 0 is to either use
-    the value from <option>--exe</option>, or, if not set, the first
-    value passed after <option>--</option>.
+    The default value of argument 0 (i.e. arg0 or argv[0]) is the value
+    from the <option>--exe</option> option unless the <option>--arg0</option>
+    option has been supplied.
   </para>
   </refsect1>
 </refentry>

@@ -109,7 +109,7 @@
       (VM). See <xref linkend="guestadd-guestprops" />. Guest properties
       are arbitrary name-value string pairs that can be written to and
       read from by either the guest or the host. As a result, these
-      properties can be used as a low-volume communication channel for
+      properties can be used as a low-overhead communication channel for
       strings provided that a guest is running and has the Guest
       Additions installed. In addition, the Guest Additions
       automatically set and maintain values whose keywords begin with
@@ -130,13 +130,13 @@
     <refsect2 id="vboxmanage-guestproperty-enumerate">
       <title>List All Properties for a Virtual Machine</title>
       <remark role="help-copy-synopsis"/>
-      <para>
         <!-- @todo the help output doesn't correctly insert a space after the /command tag if it comes last on a line...  -->
+      <para>
         The <command>VBoxManage guestproperty enumerate</command> command
         lists each guest property and value for the specified
-        VM. Note that the output is limited if the guest's service is
-        not updating the properties, for example because the VM is not
-        running or because the Guest Additions are not installed.
+        VM. Note that the output is limited if the guest's property
+        store is not being updated, for example because the VM is not
+        running or because the &product-name; Guest Additions are not installed.
       </para>
       <variablelist>
         <varlistentry>

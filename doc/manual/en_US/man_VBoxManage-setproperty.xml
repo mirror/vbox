@@ -101,7 +101,7 @@
             <listitem><para>
                 <literal>off</literal> shares these extensions with
                 other hypervisors that run simultaneously. Note that
-                disabling this setting has negative performance
+                sharing these extensions has negative performance
                 implications.
               </para></listitem>
           </itemizedlist></listitem>
@@ -111,10 +111,12 @@
         <listitem><para>
             Specifies the user language used to translate API messages.
             Valid values are <literal>C</literal>, which means no
-            translation or language code in form either <literal>ll</literal>
-            or <literal>ll_CC</literal>, where <literal>ll</literal> is
-            language 2 letters code in lower case and
-            <literal>CC</literal> is country 2 letter code in upper case.
+            translation or a language code in the form of either
+            <literal>ll</literal> or <literal>ll_CC</literal>, where
+            <literal>ll</literal> is an ISO 639 two-letter language code and
+            <literal>CC</literal> an ISO 3166 two-letter country code.  For
+            example, for Greek in Greece, <literal>ll</literal> is <literal>el</literal>,
+            and <literal>CC</literal> is <literal>GR</literal>.
           </para></listitem>
       </varlistentry>
       <varlistentry>

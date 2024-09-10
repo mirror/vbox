@@ -257,7 +257,7 @@
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg choice="plain">natpf<replaceable>N</replaceable> delete</arg>
+      <arg choice="plain">natpf<replaceable>N</replaceable>delete</arg>
 
       <arg choice="req"><replaceable>rulename</replaceable></arg>
     </cmdsynopsis>
@@ -805,7 +805,7 @@
         on a VM as pressing the Reset button on a physical computer.
       </para>
       <para>
-        The cold reboot immediately restarts and reboots the guest
+        A cold reboot immediately restarts and reboots the guest
         operating system (OS). The state of the VM is not saved prior to
         the reset, so data might be lost. This action is equivalent to
         selecting <emphasis role="bold">Reset</emphasis> from the
@@ -830,7 +830,8 @@
         <emphasis role="bold">Power Off the Machine</emphasis>.
       </para>
       <para>
-        When in the powered off state, you can restart the VM. See
+        The <command>poweroff</command> subcommand places a VM into
+        the Powered Off state from which you can restart the VM using
         <xref linkend="vboxmanage-startvm" />.
       </para>
     </refsect2>
@@ -850,8 +851,10 @@
         <emphasis role="bold">Save the Machine State</emphasis>.
       </para>
       <para>
-        When in the saved state, you can restart the VM. It will continue
-        exactly in the state you saved.
+        The <command>savestate</command> subcommand places a VM into
+        the Saved state from which you can restart the VM using
+        <xref linkend="vboxmanage-startvm" />.  The VM will resume
+        from the exact point at which it was saved.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-acpipowerbutton">
@@ -893,7 +896,8 @@
         command asks the guest OS to reboot itself.
       </para>
       <para>
-        This commands requires Guest Additions to be installed in the VM.
+        This command requires the &product-name; Guest Additions to be
+        installed in the VM.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-shutdown">
@@ -906,7 +910,8 @@
         the shutdown.
       </para>
       <para>
-        This commands requires Guest Additions to be installed in the VM.
+        This command requires the &product-name; Guest Additions to be
+        installed in the VM.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-keyboardputscancode">
@@ -974,8 +979,8 @@
             connected to the host system.
           </para></listitem>
         <listitem><para>
-            <literal>nat</literal> specifies that the VM uses network
-            address translation (NAT).
+            <literal>nat</literal> specifies that the VM uses Network
+            Address Translation (NAT).
           </para></listitem>
         <listitem><para>
             <literal>bridged</literal> specifies that the VM uses
@@ -1014,7 +1019,7 @@
         <literal>off</literal>.
       </para>
       <para>
-        If you did not configure a file name for the trace file then
+        If you do not configure a file name for the trace file then
         a default one is used, placing it in the VM subdirectory.
       </para>
     </refsect2>
@@ -1060,9 +1065,9 @@
         backends.
       </para>
       <para>
-        Those properties are backend engine-specific, and are different
-        between UDP Tunnel and the VDE backend drivers. See
-        <xref linkend="network_udp_tunnel" />.
+        Those properties are backend engine-specific and are different
+        between UDP Tunnel and the Virtual Distributed Ethernet (VDE) backend
+        drivers. See <xref linkend="network_udp_tunnel" />.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-natpf">
@@ -1173,8 +1178,8 @@
         <xref linkend="generalsettings" />.
       </para>
       <para>
-        This feature requires that the &product-name; Guest Additions
-        are installed in the VM.
+        This feature requires the &product-name; Guest Additions
+        to be installed in the VM.
       </para>
     </refsect2>
 
@@ -1185,13 +1190,14 @@
         The <command>VBoxManage controlvm
         <replaceable>vmname</replaceable> clipboard filetransfers</command>
         command specifies if it is possible to transfer files through the
-        clipboard between the host and VM, in the direction which is allowed.
-        Valid values are <literal>off</literal> and <literal>on</literal>.
-        The default value is <literal>off</literal>.
+        clipboard between the host and VM in the direction(s) configured for
+        the <command>clipboard mode</command>.  Valid values are
+        <literal>off</literal> and <literal>on</literal>.  The default value
+        is <literal>off</literal>.
       </para>
       <para>
-        This feature requires that the &product-name; Guest Additions
-        are installed in the VM.
+        This feature requires the &product-name; Guest Additions
+        to be installed in the VM.
       </para>
     </refsect2>
 
@@ -1209,8 +1215,8 @@
         <xref linkend="guestadd-dnd" />.
       </para>
       <para>
-        This feature requires that the &product-name; Guest Additions
-        are installed in the VM.
+        This feature requires the &product-name; Guest Additions
+        to be installed in the VM.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-vrde">
@@ -1233,11 +1239,11 @@
         <replaceable>vmname</replaceable> vrdeport</command> command
         specifies the port or range of ports to which the VRDE server
         can bind. The default value is <literal>default</literal> or
-        <literal>0</literal>, which is the standard RDP port,
+        <literal>0</literal>, which uses the standard RDP port,
         <literal>3389</literal>.
       </para>
       <para>
-        Also see the <option>--vrde-port</option> option description in
+        See also the <option>--vrde-port</option> option description in
         <xref linkend="vboxmanage-modifyvm-vrde" />.
       </para>
     </refsect2>
@@ -1257,16 +1263,16 @@
             is <literal>default</literal> or <literal>0</literal>, which
             is the standard RDP port, <literal>3389</literal>.
           </para><para>
-            Also see the <option>--vrde-port</option> option description
+            See also the <option>--vrde-port</option> option description
             in <xref linkend="vboxmanage-modifyvm-vrde" />.
           </para></listitem>
         <listitem><para>
             <literal>TCP/Address</literal> specifies the IP address of
             the host network interface to which the VRDE server binds.
-            When specified, the server accepts to connect only on the
+            When specified, the server accepts connections only on the
             specified host network interface.
           </para><para>
-            Also see the <option>--vrde-address</option> option
+            See also the <option>--vrde-address</option> option
             description in <xref linkend="vboxmanage-modifyvm-vrde" />.
           </para></listitem>
         <listitem><para>
@@ -1274,7 +1280,7 @@
             enable the VirtualBox Remote Desktop Protocol (VRDP) video
             channel. Valid values are <literal>1</literal> to enable the
             video channel and <literal>0</literal> to disable the video
-            channel. The default value is <literal>off</literal>. See
+            channel. The default value is <literal>0</literal>. See
             <xref linkend="vrde-videochannel" />.
           </para></listitem>
         <listitem><para>
@@ -1336,7 +1342,7 @@
             to disable the VRDE clipboard feature. Valid values are
             <literal>1</literal> to disable the feature and an empty
             string (<literal>""</literal>) to enable the feature.
-            To reenable the feature, use
+            To re-enable the feature, use
             <literal>Client/DisableClipboard=</literal>. The default
             value is <literal>1</literal>. See
             <xref linkend="vrde-customization"/>.
@@ -1346,7 +1352,7 @@
             whether to disable the VRDE upstream audio feature. Valid
             values are <literal>1</literal> to disable the feature and
             an empty string (<literal>""</literal>) to enable the
-            feature. To reenable the feature, use
+            feature. To re-enable the feature, use
             <literal>Client/DisableUpstreamAudio=</literal>. The default
             value is <literal>1</literal>. See
             <xref linkend="vrde-customization"/>.
@@ -1525,7 +1531,7 @@
         command enables you to specify which VM screens to record. The
         recording for each screen that you specify is saved to its own
         file in the machine folder. You cannot modify this setting while
-        recording is enabled.
+        a screen recording is in progress.
       </para>
       <itemizedlist>
         <listitem><para>
@@ -1546,7 +1552,7 @@
         The <command>VBoxManage controlvm
         <replaceable>vmname</replaceable> recording filename</command>
         command specifies the file in which to save the recording. You
-        cannot modify this setting while recording is enabled.
+        cannot modify this setting while a screen recording is in progress.
       </para>
       <para>
         The default setting is to store a recording in the machine
@@ -1555,16 +1561,17 @@
       </para>
 
       <para>
-        <command>VBoxManage controlvm <replaceable>vmname</replaceable>
+        The <command>VBoxManage controlvm <replaceable>vmname</replaceable>
         recording videores</command> command specifies the resolution of
         the recorded video in pixels. You cannot modify this setting
-        while recording is enabled.
+        while a screen recording is in progress.
       </para>
       <para>
-        Use the Settings tool to view the video recording settings,
-        which are based on the resolution (frame size). See the Frame
-        Size field on the Recording tab of the Display page to view the
-        default value.
+        The <emphasis role="bold">Recording</emphasis> settings in the GUI
+        which are located in the <emphasis role="bold">Display</emphasis>
+        page show the current video recording settings which are based on
+        the resolution (frame size). The <emphasis role="bold">Frame Size</emphasis>
+        field shows the default value for the recording video resolution.
       </para>
       <para>
         Specify the resolution as
@@ -1584,17 +1591,18 @@
       <para>
         The <command>VBoxManage controlvm
         <replaceable>vmname</replaceable> recording videorate</command>
-        command specifies the bit rate,
+        command specifies the
         <replaceable>bit-rate</replaceable>, of the video in kilobits
         per second. Increasing this value improves the appearance of the
         video at the cost of an increased file size. You cannot modify
-        this setting while recording is enabled.
+        this setting while a VM is running with recording enabled.
       </para>
       <para>
-        Use the Settings tool to view the video recording settings,
-        which are based on the frame size. See the Video Quality field
-        on the Recording tab of the Display page to view the default
-        value.
+        The <emphasis role="bold">Recording</emphasis> settings in the GUI
+        which are located in the <emphasis role="bold">Display</emphasis>
+        page show the current video recording settings which are based on
+        the resolution (frame size). The <emphasis role="bold">Video Quality</emphasis>
+        field shows the default value for the recording video quality.
       </para>
 
       <para>
@@ -1605,12 +1613,14 @@
         recording skips any frames that have a frequency higher than the
         specified maximum. Increasing the frequency reduces the number
         of skipped frames and increases the file size. You cannot modify
-        this setting while recording is enabled.
+        this setting while a VM is running with recording enabled.
       </para>
       <para>
-        Use the Settings tool to view the video recording settings,
-        which are based on the frame size. See the Frame Rate field on
-        the Recording tab of the Display page to view the default value.
+        The <emphasis role="bold">Recording</emphasis> settings in the GUI
+        which are located in the <emphasis role="bold">Display</emphasis>
+        page show the current video recording settings which are based on
+        the resolution (frame size). The <emphasis role="bold">Frame Rate</emphasis>
+        field shows the default value for the recording frame rate.
       </para>
 
       <para>
@@ -1619,7 +1629,7 @@
         command specifies the maximum amount time to record in seconds.
         The recording stops after the specified number of seconds
         elapses. If this value is zero, the recording continues until
-        you stop the recording.
+        you stop the VM or stop the recording.
       </para>
 
       <para>
@@ -1628,8 +1638,9 @@
         maxfilesize</command> command specifies the maximum size of the
         recorded video file in megabytes. The recording stops when the
         file reaches the specified size. If this value is zero, the
-        recording continues until you stop the recording. You cannot
-        modify this setting while recording is enabled.
+        recording continues until you stop the VM or stop the recording.
+        You cannot modify this setting while a screen recording is in
+        progress.
       </para>
 
       <para>
@@ -1638,7 +1649,7 @@
         opts</command> command specifies additional recording options
         in a comma-separated keyword-value format. For example,
         <computeroutput>foo=bar,a=b</computeroutput>. You cannot
-        modify this setting while recording is enabled.
+        modify this setting while a screen recording is in progress.
       </para>
       <para>
         Use this option if you are an advanced user only. For
@@ -1665,7 +1676,7 @@
             specifies the file from which to obtain the password for
             <replaceable>username</replaceable>.
           </para><para>
-            The <option>--passwordfile</option> is mutually exclusive
+            The <option>--passwordfile</option> option is mutually exclusive
             with the <option>--password</option> option.
           </para></listitem>
         <listitem><para>
@@ -1678,11 +1689,11 @@
             the command line because the password can be seen in a
             process listing.
           </remark><para>
-            The <option>--password</option> is mutually exclusive with
+            The <option>--password</option> option is mutually exclusive with
             the <option>--passwordfile</option> option.
           </para></listitem>
         <listitem><para>
-            <option>--allowlocallogin</option> specifies whether to
+            <option>--allowlocallogon</option> specifies whether to
             enable or disable local logins. Valid values are
             <literal>on</literal> to enable local logins and
             <literal>off</literal> to disable local logins.
@@ -1738,7 +1749,7 @@
               on the command line because the password can be seen in a
               process listing.
             </remark><para>
-              The <option>--password</option> is mutually exclusive with
+              The <option>--password</option> option is mutually exclusive with
               the <option>--passwordfile</option> option.
             </para></listitem>
         </varlistentry>
@@ -1753,7 +1764,7 @@
               When you specify a file name of <literal>stdin</literal>,
               you can read the password from standard input.
             </para><para>
-              The <option>--passwordfile</option> is mutually exclusive
+              The <option>--passwordfile</option> option is mutually exclusive
               with the <option>--password</option> option.
             </para></listitem>
         </varlistentry>
@@ -1789,7 +1800,7 @@
       <para>
         The <command>VBoxManage controlvm
         <replaceable>vmname</replaceable> cpuexecutioncap</command>
-        command specifies how the maximum amount of physical CPU time
+        command specifies the maximum amount of physical CPU time
         used by a virtual CPU. Valid values are a percentage between
         <literal>1</literal> and <literal>100</literal>. A value of
         <literal>50</literal> specifies that a single virtual CPU can
@@ -1821,23 +1832,23 @@
             priority determined by the OS.
           </para></listitem>
         <listitem><para>
-            <literal>flat</literal> &ndash; Assumes a scheduling
+            <literal>flat</literal> &ndash; Uses a scheduling
             policy which puts the process at the default priority
             and with all threads at the same priority.
           </para></listitem>
         <listitem><para>
-            <literal>low</literal> &ndash;  Assumes a scheduling
+            <literal>low</literal> &ndash; Uses a scheduling
             policy which puts the process mostly below the default
             priority of the host OS.
           </para></listitem>
         <listitem><para>
-            <literal>normal</literal> &ndash; Assume a scheduling
+            <literal>normal</literal> &ndash; Uses a scheduling
             policy which shares the CPU resources fairly with
             other processes running with the default priority of
             the host OS.
           </para></listitem>
         <listitem><para>
-            <literal>high</literal> &ndash; Assumes a scheduling
+            <literal>high</literal> &ndash; Uses a scheduling
             policy which puts the task above the default priority of
             the host OS. This policy might easily cause other tasks
             in the system to starve.
@@ -1864,7 +1875,7 @@
       </para>
       <para>
         You can specify optional settings in the form of
-        semi-colon-separated (<literal>;</literal>) name-value pairs.
+        semicolon-separated (<literal>;</literal>) name-value pairs.
         These properties enable you to configure the emulated webcam
         device.
       </para>
@@ -1891,7 +1902,7 @@
               setting is <literal>3060</literal> bytes, which is used by
               some webcams. If the VM is able to use larger buffers,
               higher values might reduce CPU load slightly. Note that
-              some guest OSes might not suppport higher
+              some guest OSes might not support higher
               <literal>MaxPayloadTransferSize</literal> values.
             </para></listitem>
         </varlistentry>
@@ -1905,8 +1916,8 @@
         <replaceable>vmname</replaceable> webcam detach</command>
         command detaches a webcam from a running VM. Specify the webcam
         as the absolute path of the webcam on the host OS or as an
-        alias. Use the <command>VBoxManage list webcams</command> to
-        obtain the webcam alias.
+        alias. Use the <command>VBoxManage list webcams</command> command
+        to obtain the webcam alias.
       </para>
       <para>
         When a webcam device is detached from the host, the host OS
@@ -1942,24 +1953,47 @@
         The <command>VBoxManage controlvm
         <replaceable>vmname</replaceable> webcam list</command> command
         lists webcams that are attached to the running VM. The output
-        shows a list of absolute paths or aliases that attached the
-        webcams to the VM by using the <command>VBoxManage controlvm
+        shows a list of absolute paths or aliases of the webcams which
+        were attached to the VM using the <command>VBoxManage controlvm
         <replaceable>vmname</replaceable> webcam attach</command>
         command.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-addencpassword">
-      <title>Set an Encryption Password for a Virtual Machine</title>
+      <title>Starting a Virtual Machine with Encrypted Images</title>
       <remark role="help-copy-synopsis"/>
+      <para>
+        You can encrypt the data stored in the hard disk images used
+        by the VM. &product-name; uses the AES algorithm in XTS mode and
+        supports 128-bit or 256-bit data encryption keys (DEK). The
+        encrypted DEK is stored in the medium properties and is
+        decrypted during VM startup when you provide the encryption
+        password.
+      </para>
+      <para>
+        Use the <command>VBoxManage encryptmedium</command> command to
+        create a DEK encrypted medium. See
+        <xref linkend="diskencryption-encryption" />.
+      </para>
+      <para>
+        When a VM which contains one or more encrypted disk images is
+        started using the &product-name; GUI a dialog will open to prompt
+        the user for the password of each encrypted disk attached to the
+        VM.  If the <command>VBoxHeadless</command> frontend is used, the
+        VM will be paused as soon as the guest tries to access an encrypted
+        disk. The user needs to provide the passwords by using
+        <command>addencpassword</command> subcommand.
+      </para>
       <para>
         The <command>VBoxManage controlvm
         <replaceable>vmname</replaceable> addencpassword</command>
-        command provides the <replaceable>vmname</replaceable> encrypted
-        VM with the encryption password to enable a headless start.
-        Specify the absolute path of a password file on the host system.
-        If <replaceable>filename</replaceable> is <literal>-</literal>,
-        <command>VBoxManage</command> prompts for the encryption
-        password.
+        command provides the encryption password to the VM named
+        <replaceable>vmname</replaceable> which contains encrypted disks
+        that has been started using the <command>VBoxHeadless</command>
+        frontend.  Specify the absolute path of a password file on the
+        host system.  If <replaceable>filename</replaceable> is
+        <literal>-</literal>, <command>VBoxManage</command> prompts for
+        the encryption password.
       </para>
       <para>
         Use the <option>--removeonsuspend</option> option to specify
@@ -1971,38 +2005,19 @@
         <command>VBoxManage controlvm <replaceable>vmname</replaceable>
         addencpassword</command> to provide the password to resume
         execution on the VM. Use this feature when you do not want to
-        store the password in VM memory while the VM is suspended by a
+        store the password in VM memory when the VM is suspended by a
         host suspend event.
       </para>
-      <note>
-        <para>
-          You can encrypt data stored on hard disk images used by the
-          VM. &product-name; uses the AES algorithm in XTS mode and
-          supports 128-bit or 256-bit data encryption keys (DEK). The
-          encrypted DEK is stored in the medium properties and is
-          decrypted during VM startup when you provide the encryption
-          password.
-        </para>
-      </note>
       <para>
-        Use the <command>VBoxManage encryptmedium</command> command to
-        create a DEK encrypted medium. See
-        <xref linkend="diskencryption-encryption" />.
-      </para>
-      <para>
-        The &product-name; GUI prompts you for the encryption password
-        when you start an encrypted VM.
-      </para>
-      <para>
-        Use the following command to perform a headless start of an
-        encrypted VM:
+        The following is one way to perform a headless start of VM which
+        contains encrypted disk images:
       </para>
 <screen>
           $ VBoxManage startvm <replaceable>vmname</replaceable> --type headless
         </screen>
       <para>
-        Then, use the following command to provide the encryption
-        password:
+        The following command provides the encryption password to the VM
+        so that it can resume starting up:
       </para>
 <screen>
           $ VBoxManage <replaceable>vmname</replaceable> controlvm addencpassword <replaceable>vmname</replaceable> -
@@ -2096,10 +2111,10 @@
         The <command>VBoxManage controlvm
         <replaceable>vmname</replaceable> autostart-enabled</command>
         command specifies whether to enable or disable automatically
-        start the VM at host system boot-up. You must do some host
+        starting of the VM at host system boot-up. You must do some host
         system configuration before you can use this feature.
         See <xref linkend="autostart" />. Valid values are
-        <literal>on</literal>, which enables autostart feature for
+        <literal>on</literal>, which enables the autostart feature for
         the VM and <literal>off</literal>, which disables it. The
         default value is <literal>off</literal>.
       </para>

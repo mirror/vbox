@@ -69,7 +69,7 @@ static int rtAsn1Time_NormalizeTime(PRTASN1CURSOR pCursor, PRTASN1TIME pThis, co
         && pThis->Time.u8Second <= 60)
     {
         /* Work around clever rounding error in DER_CFDateToUTCTime() on OS X.  This also
-           supresses any attempt at feeding us leap seconds.  If we pass 60 to the
+           suppresses any attempt at feeding us leap seconds.  If we pass 60 to the
            normalization code will move on to the next min/hour/day, which is wrong both
            for the OS X issue and for unwanted leap seconds.  Leap seconds are not valid
            ASN.1 by the by according to the specs available to us.  */

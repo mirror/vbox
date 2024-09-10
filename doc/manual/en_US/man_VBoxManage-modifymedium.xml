@@ -96,7 +96,7 @@
             name of the disk image on the host file system. You can
             specify the UUID only if the medium is registered. Use the
             <command>VBoxManage list hdds</command> command to list the
-            registered images. You can specfy an absolute or relative
+            registered images. You can specify an absolute or relative
             path to the medium.
           </para></listitem>
       </varlistentry>
@@ -173,11 +173,11 @@
       <varlistentry>
         <term><option>--resize=<replaceable>size</replaceable></option></term>
         <listitem><para>
-            Specifes the new capacity of an existing image in MB. You
+            Specifies the new capacity of an existing image in MB. You
             can use this option only to expand the capacity of an image.
             You can cannot shrink the capacity of an image.
           </para><para>
-            Note that you can resize only dynamically allocated disk
+            Note that you can only resize dynamically allocated disk
             images that use the VDI and VHD formats. This option adjusts
             the <emphasis>logical</emphasis> size of a virtual disk and
             has only a minor affect on the physical size.
@@ -197,7 +197,7 @@
       <varlistentry>
         <term><option>--resizebyte=<replaceable>size</replaceable></option></term>
         <listitem><para>
-            Specifes the new capacity of an existing image in bytes.
+            Specifies the new capacity of an existing image in bytes.
             This option is similar to the <option>--resize</option>
             option, but you specify the size in bytes instead of
             megabytes.

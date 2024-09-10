@@ -194,7 +194,7 @@
         <varlistentry>
           <term><replaceable>bytes</replaceable></term>
           <listitem><para>
-              Specifies the capacity of the targe image name. Needs to be
+              Specifies the capacity of the target image name. This needs to be
               given explicitly, because generally pipes do not support
               querying the overall size of the data stream.
             </para></listitem>
@@ -219,7 +219,7 @@
           <listitem><para>
               Specifies any required file format variants for the output
               file. This is a comma-separated list of variant values.
-              Following are the valid values:
+              The list of valid values is:
             </para><itemizedlist>
               <listitem><para>
                   <literal>Standard</literal> is the default disk image

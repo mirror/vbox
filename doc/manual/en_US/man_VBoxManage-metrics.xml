@@ -117,15 +117,12 @@
       monitor system resource usage for the host system and for virtual
       machines (VMs). For example, you can monitor particular metrics,
       such as the percentage of time CPUs spend executing in user mode
-      (<literal>CPU/Load/User</literal>) over a specified sampling
+      (<literal>CPU/Load/User</literal>), over a specified sampling
       period.
     </para>
     <para>
-      While it runs, the <command>VBoxSVC</command> process collects and
-      saves the specified metric data internally. The
-      <command>VBoxSVC</command> process runs until shortly after you
-      close all VMs and frontends. Use the <command>VBoxManage metrics
-      query</command> command to retrieve data at any time.
+      Use the <command>VBoxManage metrics query</command> command to
+      retrieve data at any time.
     </para>
     <para>
       By default, metrics are not collected unless you run the
@@ -133,14 +130,14 @@
       sampling interval in seconds and the number of metrics to save.
     </para>
     <para>
-      Note that you can enable metric collection only for started VMs.
+      Note that you can enable metric collection only for running VMs.
       Collected data and collection settings for a VM are discarded when
       the VM shuts down.
     </para>
     <refsect2 id="vboxmanage-metrics-description-metrics">
       <title>Metrics</title>
       <para>
-        The host and VMs have different sets of associated metrics,
+        The host and VMs have different sets of associated metrics
         which you can view by running the <command>VBoxManage metrics
         list</command> command.
       </para>

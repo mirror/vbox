@@ -112,7 +112,7 @@
       <para>
         The <command>VBoxManage bandwidthctl add</command> command
         creates a bandwidth group for the specified VM. You must specify
-        whether the bandwidth group is for disks or for networks, and
+        whether the bandwidth group is for disks or for networks and
         specify the bandwidth limit.
       </para>
       <variablelist>
@@ -133,14 +133,14 @@
           <term><option>--type=disk|network</option></term>
           <listitem><para>
               Specifies the type of the bandwidth group:
-              <literal>disk</literal> and <literal>network</literal>.
+              <literal>disk</literal> or <literal>network</literal>.
               For more information, see
               <xref linkend="storage-bandwidth-limit" /> or
               <xref linkend="network_bandwidth_limit" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--limit=<replaceable>bandwidth-limit</replaceable>[k|m|g|K|M|G]</option></term>
+          <term><option>--limit=<replaceable>bandwidth-limit[k|m|g|K|M|G]</replaceable></option></term>
           <listitem><para>
               Specifies the bandwidth limit for a bandwidth group. The
               default unit is megabytes per second. You can modify this
@@ -246,7 +246,7 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--limit=<replaceable>bandwidth-limit</replaceable>[k|m|g|K|M|G]</option></term>
+          <term><option>--limit=<replaceable>bandwidth-limit[k|m|g|K|M|G]</replaceable></option></term>
           <listitem><para>
               Specifies the bandwidth limit for a bandwidth group. The
               default unit is megabytes per second. You can modify this

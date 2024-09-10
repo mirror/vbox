@@ -125,10 +125,10 @@
   <refsect1 id="vboxmanage-storageattach-description">
     <title>Description</title>
     <para>
-      The <command>VBoxManage storageattach</command> command enables
-      you to manage a storage medium that you connected to a storage
-      controller by using the <command>VBoxManage storagectl</command>
-      command.
+      The <command>VBoxManage storageattach</command> command
+      attaches, modifies, or removes a storage medium connected to a
+      storage controller that was previously added with the
+      <command>VBoxManage storagectl</command> command.
     </para>
     <variablelist>
       <varlistentry>
@@ -188,7 +188,7 @@
               <listitem><para>
                   For a virtual DVD or floppy drive only.
                 </para><para>
-                  Makes the device slot behave like a removeable drive
+                  Makes the device slot behave like a removable drive
                   into which no media has been inserted.
                 </para></listitem>
             </varlistentry>
@@ -240,7 +240,7 @@
                 </para></listitem>
             </varlistentry>
           </variablelist><para>
-            For removeable media such as floppies and DVDs, you can make
+            For removable media such as floppies and DVDs, you can make
             configuration changes while a VM is running. Changes to
             devices or hard disk device slots require that the VM be
             powered off.

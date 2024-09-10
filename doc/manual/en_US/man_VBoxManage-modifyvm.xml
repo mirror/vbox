@@ -2206,7 +2206,7 @@ it unless this changes. -->
               uses port <literal>3389</literal>, which is the standard
               RDP port.
             </para><para>
-              Also see the <option>--vrde-port</option> option
+              See also the <option>--vrde-port</option> option
               description.
             </para></listitem>
         </varlistentry>
@@ -2218,7 +2218,7 @@ it unless this changes. -->
               When specified, the server accepts connections only on the
               host network interface at that IP address.
             </para><para>
-              Also see the <option>--vrde-address</option> option
+              See also the <option>--vrde-address</option> option
               description.
             </para></listitem>
         </varlistentry>
@@ -2273,8 +2273,8 @@ it unless this changes. -->
           <listitem><para>
               Disables the display VRDE server feature.
             </para><para>
-              To reenable a feature, assign an empty value. For example,
-              to reenable the display feature, specify the
+              To re-enable a feature, assign an empty value. For example,
+              to re-enable the display feature, specify the
               <command>VBoxManage modifyvm
               --vrde-property=Client/DisableDisplay=</command> command.
               See <xref linkend="vrde-customization" />.
@@ -2301,7 +2301,7 @@ it unless this changes. -->
         <varlistentry>
           <term><option>--vrde-property=Client/DisableClipboard=1</option></term>
           <listitem><para>
-              Disables the clipboard VRDE server feature. To reenable
+              Disables the clipboard VRDE server feature. To re-enable
               the feature, assign an empty value. See
               <xref linkend="vrde-customization" />.
             </para></listitem>
@@ -2310,7 +2310,7 @@ it unless this changes. -->
           <term><option>--vrde-property=DisableUpstreamAudio=1</option></term>
           <listitem><para>
               Disables the upstream audio VRDE server feature. To
-              reenable the feature, assign an empty value. See
+              re-enable the feature, assign an empty value. See
               <xref linkend="vrde-customization" />.
             </para></listitem>
         </varlistentry>
@@ -2318,7 +2318,7 @@ it unless this changes. -->
           <term><option>--vrde-property=Client/DisableRDPDR=1</option></term>
           <listitem><para>
               Disables the RDP device redirection for smart cards VRDE
-              server feature. To reenable this feature, assign an empty
+              server feature. To re-enable this feature, assign an empty
               value.
             </para></listitem>
         </varlistentry>
@@ -2605,7 +2605,7 @@ it unless this changes. -->
               integer values designate more restrictive behavior. The
               default level of <literal>0</literal> indicates that all
               virtualized features supported by the host are made available
-              to the guest. The value <literal>3</literal> supresses most
+              to the guest. The value <literal>3</literal> suppresses most
               features. Values of <literal>1</literal> and <literal>2</literal>
               represent restrictions in between. The behavior may change
               depending on the product version.
@@ -2803,7 +2803,7 @@ it unless this changes. -->
           <term><option>--testing-cfg-dword<replaceable>idx</replaceable>=<replaceable>value</replaceable></option></term>
           <listitem><para>
                 This sets one of the 10 dword configuration values. The
-                <replaceable>idx</replaceable> must be in the range 0 thru 9.
+                <replaceable>idx</replaceable> must be in the range 0 through 9.
                 The <replaceable>value</replaceable> is limited to 32 bits (dword).
             </para></listitem>
         </varlistentry>

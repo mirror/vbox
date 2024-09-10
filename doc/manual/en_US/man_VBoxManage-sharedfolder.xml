@@ -106,7 +106,7 @@
     <title>Description</title>
     <para>
       Shared folders enable you to share data between the host system
-      and guests. To use shared folders you must first install the
+      and guest VMs. To use shared folders you must first install the
       &product-name; Guest Additions software in the guest VM.
     </para>
     <para>
@@ -120,8 +120,8 @@
       <para>
         The <command>VBoxManage sharedfolder add</command> command
         creates a shared folder. The folder you specify is on the host
-        computer. When configured the contents of the folder on the
-        host system can be shared with the guest OS.
+        computer. Once created the contents of the folder on the
+        host system can be accessed from within the guest OS.
       </para>
       <variablelist>
         <varlistentry>
@@ -184,7 +184,7 @@
                For Windows and OS/2 guests this must be an unused drive letter.
                If left blank (or if the drive letter is already in use), the
                last unused drive letter is used instead (i.e. searching from
-               <literal>Z:</literal> thru <literal>A:</literal>).
+               <literal>Z:</literal> through <literal>A:</literal>).
              </para><para>
                For Linux, Solaris and other Unix guests, it must be an absolute
                path such as <filename>/mnt/mysharedfolder</filename>.  If left

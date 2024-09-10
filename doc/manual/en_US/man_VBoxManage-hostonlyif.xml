@@ -107,7 +107,7 @@
               Uses DHCP for the network interface.
             </para><para>
               You cannot use this option with the <option>--ip</option>,
-              <option>--ipv6</option>, <option>--netmask</option>, and
+              <option>--ipv6</option>, <option>--netmask</option>, or
               <option>--netmasklengthv6</option> options.
             </para></listitem>
         </varlistentry>
@@ -117,7 +117,7 @@
               Specifies the IPv4 IP address for the network interface.
             </para><para>
               You cannot use this option with the
-              <option>--dhcp</option>, <option>--ipv6</option>, and
+              <option>--dhcp</option>, <option>--ipv6</option>, or
               <option>--netmasklengthv6</option> options.
             </para></listitem>
         </varlistentry>
@@ -127,7 +127,7 @@
               Specifies the IPv4 netmask of the network interface. The
               default value is <literal>255.255.255.0</literal>.
             </para><para>
-              You can use this option only with the
+              You can only use this option with the
               <option>--ip</option> option.
             </para></listitem>
         </varlistentry>
@@ -137,7 +137,7 @@
               Specifies the IPv6 IP address for the network interface.
             </para><para>
               You cannot use this option with the
-              <option>--dhcp</option>, <option>--ip</option>, and
+              <option>--dhcp</option>, <option>--ip</option>, or
               <option>--netmask</option> options.
             </para></listitem>
         </varlistentry>
@@ -147,7 +147,7 @@
               Specifies the length of the IPv6 network interface. The
               default value is <literal>64</literal>.
             </para><para>
-              You can use this option only with the
+              You can only use this option with the
               <option>--ipv6</option> option.
             </para></listitem>
         </varlistentry>
@@ -165,6 +165,12 @@
         run this command before you can attach virtual machines (VMs) to
         the host-only network.
       </para>
+      <para>
+        This command is currently unavailable on Solaris hosts but the
+        equivalent functionality is to run
+        <command>ifconfig vboxnet0 plumb</command> as root or with sufficient
+        privileges.
+      </para>
     </refsect2>
     <refsect2 id="vboxmanage-hostonlyif-remove">
       <title>Remove a Network Interface From the Host System</title>
@@ -173,6 +179,12 @@
         The <command>VBoxManage hostonlyif remove</command> command
         removes the specified host-only network interface from the host
         OS.
+      </para>
+      <para>
+        This command is currently unavailable on Solaris hosts but the
+        equivalent functionality is to run
+        <command>ifconfig vboxnet0 unplumb</command> as root or with sufficient
+        privileges.
       </para>
       <variablelist>
         <varlistentry>

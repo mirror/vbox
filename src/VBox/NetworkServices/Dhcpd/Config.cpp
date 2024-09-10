@@ -747,7 +747,7 @@ void ConfigLevelBase::i_parseOption(const xml::ElementNode *pElmOption)
     if (rc != VINF_SUCCESS) /* no warnings either */
         throw ConfigFileError(pElmOption, "Bad option name '%s': %Rrc", pszName, rc);
 
-    /* The opional 'encoding' attribute: */
+    /* The optional 'encoding' attribute: */
     uint32_t u32Enc = 0;            /* XXX: DHCPOptionEncoding_Normal */
     const char *pszEncoding;
     if (pElmOption->getAttributeValue("encoding", &pszEncoding))
@@ -782,7 +782,7 @@ void ConfigLevelBase::i_parseOption(const xml::ElementNode *pElmOption)
 
 
 /**
- * Internal worker for parsing \<ForcedOption\> and \<SupressedOption\> elements
+ * Internal worker for parsing \<ForcedOption\> and \<SupcressedOption\> elements
  * found under /DHCPServer/Options/, /DHCPServer/Group/ and /DHCPServer/Config/.
  *
  * @param   pElmOption          The element.
@@ -832,7 +832,7 @@ void ConfigLevelBase::i_parseChild(const xml::ElementNode *pElmChild, bool fStri
     }
 
     /*
-     * Forced and supressed options.
+     * Forced and suppressed options.
      */
     bool const fForced = pElmChild->nameEquals("ForcedOption");
     if (fForced || pElmChild->nameEquals("SuppressedOption"))
@@ -1170,8 +1170,8 @@ Config::ConfigVec &Config::getConfigsForClient(Config::ConfigVec &a_rRetConfigs,
 optmap_t &Config::getOptionsForClient(optmap_t &a_rRetOpts, const OptParameterRequest &a_rReqOpts, ConfigVec &a_rConfigs) const
 {
     /*
-     * The client typcially requests a list of options.  The list is subject to
-     * forced and supressed lists on each configuration level in a_rConfig.  To
+     * The client typically requests a list of options.  The list is subject to
+     * forced and suppressed lists on each configuration level in a_rConfig.  To
      * efficiently manage it without resorting to maps, the current code
      * assembles a C-style array of options on the stack that should be returned
      * to the client.

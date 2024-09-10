@@ -45,7 +45,7 @@
   <xsl:variable name="sInManual"  select="'in the user manual'"/>
 
 
-<!-- Default operation is to supress output -->
+<!-- Default operation is to suppress output -->
 <xsl:template match="node()|@*">
   <xsl:apply-templates/>
 </xsl:template>

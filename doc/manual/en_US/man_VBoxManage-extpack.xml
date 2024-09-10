@@ -70,21 +70,24 @@
       <remark role="help-copy-synopsis"/>
       <para>
         Installs a new extension pack on the system.  This command will fail if an older
-        version of the same extension pack is already installed.  The
-        <option>--replace</option> option can be used to uninstall any
-        old package before the new one is installed.
+        version of the same extension pack type is already installed and the
+        <option>--replace</option> isn't supplied.  The <option>--replace</option> option
+        uninstalls any previously installed extension packs of the same type being installed
+        before the new extension pack is installed.
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--replace</option></term><listitem><para>Uninstall existing extension pack version.</para></listitem>
+          <term><option>--replace</option></term><listitem><para>Uninstall existing extension
+          pack before installing the specified extension pack.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--accept-license=<replaceable>sha256</replaceable></option></term>
           <listitem>
             <para>Accept the license text with the given SHA-256 hash value.</para>
             <para>VBoxManage will display the SHA-256 value when performing a manual
-            installation.  The hash can of course be calculated by looking inside
-            the extension pack and using sha256sum or similar on the license file.</para>
+            installation.  The hash can be calculated manually by extracting the license
+            file from the extension pack using tar(1) and running sha256sum or similar to
+            generate the hash value.</para>
           </listitem>
         </varlistentry>
         <varlistentry>
@@ -102,7 +105,7 @@
       <para>
         Uninstalls an extension pack from the system.  The subcommand will also succeed
         in the case where the specified extension pack is not present on the system.
-        You can use <computeroutput>VBoxManage list extpacks</computeroutput> to show
+        You can use <computeroutput>VBoxManage list extpacks</computeroutput> to list
         the names of the extension packs which are currently installed.
       </para>
       <variablelist>

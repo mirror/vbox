@@ -161,21 +161,21 @@
       snapshots.
     </para>
     <para>
-      &product-name; uses the snapshot to capture the state of a virtual
+      &product-name; uses snapshots to capture the state of a virtual
       machine (VM). You can later use the snapshot to revert to the
       state described by the snapshot.
     </para>
     <para>
-      A snapshot is a complete copy of a VM's settings. If you take the
+      A snapshot is a complete copy of a VM's settings. If you take a
       snapshot while the VM is running, the snapshot also includes the
-      VM's state file.
+      VM's current running state.
     </para>
     <para>
       After you take a snapshot, &product-name; creates a
       <emphasis>differencing hard disk</emphasis> for each normal hard
       disk that is associated with the host machine. When you restore a
       snapshot, &product-name; uses these differencing files to quickly
-      reset the contents of the VM's virtual hard disks.
+      restore the contents of the VM's virtual hard disks.
     </para>
     <para>
       For each <command>VBoxManage snapshot</command> command, you must
@@ -201,7 +201,8 @@
         snapshot of the current state of the VM. You must supply a name
         for the snapshot and can optionally supply a description. The
         new snapshot is inserted into the snapshots tree as a child of
-        the current snapshot and then becomes the new current snapshot.
+        the current snapshot (if the VM has any snapshots) and then
+        becomes the new current snapshot.
       </para>
       <variablelist>
         <varlistentry>
@@ -264,7 +265,7 @@
         settings and current state to that of the snapshot. The state of
         the VM on which you restore a snapshot is lost. When restored,
         the specified snapshot becomes the new current snapshot and
-        subsequent snapshots are children of that snapshot.
+        subsequent snapshots become children of that snapshot.
       </para>
       <variablelist>
         <varlistentry>

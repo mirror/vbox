@@ -9107,7 +9107,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     }
     else
     {
-        /* We use IEMExecOneBypassEx() here as it supresses attempt to continue emulating any
+        /* We use IEMExecOneBypassEx() here as it suppresses attempt to continue emulating any
            instruction(s) when interrupt inhibition is set as part of emulating the VMRUN
            instruction itself, see @bugref{7243#c126} */
         rcStrict = IEMExecOneBypassEx(pVCpu, NULL /* pcbWritten */);

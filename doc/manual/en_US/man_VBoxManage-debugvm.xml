@@ -53,7 +53,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">dumpvmcore</arg>
-      <arg>--filename=<replaceable>name</replaceable></arg>
+      <arg choice="req">--filename=<replaceable>name</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-info">
       <command>VBoxManage debugvm</command>
@@ -226,7 +226,7 @@
       <variablelist>
         <varlistentry>
           <term><option>--filename=<replaceable>filename</replaceable></option></term>
-          <listitem><para>The name of the output file.</para></listitem>
+          <listitem><para>The name of the output file. This option is required.</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
@@ -254,7 +254,7 @@
           <term><replaceable>args</replaceable></term>
           <listitem>
             <para>Optional argument string for the info item handler.  Most info items
-            does not take any extra arguments.  Arguments not recognized are generally
+            do not take any extra arguments.  Arguments not recognized are generally
             ignored.</para>
           </listitem>
         </varlistentry>
@@ -276,19 +276,19 @@
       <title>debugvm log</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Changes the group settings for either debug (<option>--debug</option>)
+        Changes the group settings for either the debug (<option>--debug</option>)
         or release (<option>--release</option>) logger of the VM process.
       </para>
       <para>
-        The <replaceable>group-settings</replaceable> are typically strings on the form
+        The <replaceable>group-settings</replaceable> are typically strings of the form
         <computeroutput>em.e.f.l</computeroutput>, <computeroutput>hm=~0</computeroutput>
         and <computeroutput>-em.f</computeroutput>.  Basic wildcards are supported for
         group matching.  The <computeroutput>all</computeroutput> group is an alias for
         all the groups.
       </para>
       <para>
-        Please do keep in mind that the group settings are applied as modifications
-        to the current ones.
+        Please keep in mind that the group settings are applied as modifications
+        to the current values.
       </para>
       <para>
         This corresponds to the <command>log</command> command in the debugger.
@@ -299,47 +299,47 @@
       <title>debugvm logdest</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Changes the destination settings for either debug (<option>--debug</option>)
+        Changes the destination settings for either the debug (<option>--debug</option>)
         or release (<option>--release</option>) logger of the VM process.  For details
         on the destination format, the best source is src/VBox/Runtime/common/log/log.cpp.
       </para>
       <para>
-        The <replaceable>destinations</replaceable> is one or more mnemonics, optionally
-        prefixed by "no" to disable them.  Some of them take values after a ":" or "="
-        separator.  Multiple mnemonics can be separated by space or given as separate
+        The <replaceable>destinations</replaceable> argument is one or more mnemonics, optionally
+        prefixed by "no" to disable them.  Some of these take values after a ":" or "="
+        separator.  Multiple mnemonics can be separated by whitespace or given as separate
         arguments on the command line.
       </para>
       <para>
-        List of available destination:
+        List of available destinations:
       </para>
       <variablelist>
         <varlistentry>
           <term><option>file[=<replaceable>file</replaceable>], nofile</option></term>
           <listitem><para>Specifies a log file.  If no filename is given, one will be
               generated based on the current UTC time and VM process name and placed in
-              the current directory of the VM process.  Note that this will currently not
+              the current directory of the VM process.  Note that this will not
               have any effect if the log file has already been opened.
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>dir=<replaceable>directory</replaceable>, nodir</option></term>
           <listitem><para>Specifies the output directory for log files.  Note that this
-              will currently not  have any effect if the log file has already been opened.
+              will not have any effect if the log file has already been opened.
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>history=<replaceable>count</replaceable>, nohistory</option></term>
-          <listitem><para>A non-zero value enables log historization, with the value
+          <listitem><para>A non-zero value enables log rotation, with the value
             specifying how many old log files to keep.
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>histsize=<replaceable>bytes</replaceable></option></term>
-          <listitem><para>The max size of a log file before it is historized.  Default is infinite.</para></listitem>
+          <listitem><para>The max size of a log file before it is rotated.  Default is infinite.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>histtime=<replaceable>seconds</replaceable></option></term>
-          <listitem><para>The max age (in seconds) of a log file before it is historized.  Default is infinite.</para></listitem>
+          <listitem><para>The max age (in seconds) of a log file before it is rotated.  Default is infinite.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>ringbuffer, noringbuffer</option></term>
@@ -364,7 +364,7 @@
         </varlistentry>
         <varlistentry>
           <term><option>user, nouser</option></term>
-          <listitem><para>Custom destination which has no meaning to VM processes..</para></listitem>
+          <listitem><para>Custom destination which has no meaning to VM processes.</para></listitem>
         </varlistentry>
       </variablelist>
       <para>
@@ -376,19 +376,19 @@
       <title>debugvm logflags</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Changes the flags on either debug (<option>--debug</option>) or release
+        Changes the flags for either the debug (<option>--debug</option>) or release
         (<option>--release</option>) logger of the VM process.  Please note that the
-        modifications are applied onto the existing changes, they are not replacing them.
+        modifications are applied to the existing values, they do not replace them.
       </para>
       <para>
         The <replaceable>flags</replaceable> are a list of flag mnemonics, optionally
         prefixed by a "no", "!", "~" or "-" to negate their meaning.  The "+" prefix
-        can be used to undo previous negation or use as a separator, though better use
-        whitespace or separate arguments for that.
+        can be used to undo a previous negation or as a separator, although it is better
+        to use whitespace or separate arguments for that.
       </para>
       <para>
-        List of log flag mnemonics, with their counter form where applicable
-        (asterisk indicates defaults):
+        List of log flag mnemonics, with their opposite value where applicable
+        (an asterisk indicates the default value):
       </para>
       <variablelist>
         <varlistentry>
@@ -397,7 +397,7 @@
         </varlistentry>
         <varlistentry>
           <term><option>buffered, unbuffered*</option></term>
-          <listitem><para>Enabling buffering of log output before it hits the destinations.</para></listitem>
+          <listitem><para>Enables buffering of log output before it hits the destinations.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>writethrough(/writethru)</option></term>
@@ -422,7 +422,7 @@
         </varlistentry>
         <varlistentry>
           <term><option>flagno</option></term>
-          <listitem><para>Prefix each log line with the numberic flags corresponding to the log statement.</para></listitem>
+          <listitem><para>Prefix each log line with the numeric flags corresponding to the log statement.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>flag</option></term>
@@ -466,13 +466,13 @@
         </varlistentry>
         <varlistentry>
           <term><option>rel, abs*</option></term>
-          <listitem><para>Selects the whether <computeroutput>ts</computeroutput> and
+          <listitem><para>Selects whether the <computeroutput>ts</computeroutput> and
               <computeroutput>tsc</computeroutput> prefixes should be displayed as relative to the
               previous log line or as absolute time.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>hex*, dec</option></term>
-          <listitem><para>Selects the whether the <computeroutput>ts</computeroutput> and
+          <listitem><para>Selects whether the <computeroutput>ts</computeroutput> and
               <computeroutput>tsc</computeroutput> prefixes should be formatted as hexadecimal
               or decimal.</para></listitem>
         </varlistentry>
@@ -544,7 +544,7 @@
         <varlistentry>
           <term><replaceable>reg-set.reg-name</replaceable></term>
           <listitem>
-            <para>One of more registers, each having one of the following forms:</para>
+            <para>One or more registers, each having one of the following forms:</para>
             <orderedlist>
               <listitem><para>register-set.register-name.sub-field</para></listitem>
               <listitem><para>register-set.register-name</para></listitem>
@@ -576,7 +576,7 @@
         <varlistentry>
           <term><replaceable>reg-set.reg-name=value</replaceable></term>
           <listitem>
-            <para>One of more register assignment, each having one of the following forms:</para>
+            <para>One or more register assignment, each having one of the following forms:</para>
             <orderedlist>
               <listitem><para>register-set.register-name.sub-field=value</para></listitem>
               <listitem><para>register-set.register-name=value</para></listitem>

@@ -148,7 +148,7 @@
         </varlistentry>
         <varlistentry>
           <term><option>--install-additions</option>, <option>--no-install-additions</option></term>
-          <listitem><para>Устанавливать ли Дополнения Гостевой ОС VirtualBox.  (по умолчанию: --no-install-addations)</para></listitem>
+          <listitem><para>Устанавливать ли Дополнения Гостевой ОС VirtualBox.  (по умолчанию: --no-install-additions)</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--additions-iso=<replaceable>iso-дополнений</replaceable></option></term>

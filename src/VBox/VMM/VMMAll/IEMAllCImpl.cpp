@@ -9526,7 +9526,7 @@ static void iemCImplCommonFpuRestoreEnv(PVMCPUCC pVCpu, IEMMODE enmEffOpSize, RT
 #ifdef LOG_ENABLED
     if ((pDstX87->FSW & X86_FSW_ES) ^ (fOldFsw & X86_FSW_ES))
         Log11(("iemCImplCommonFpuRestoreEnv: %04x:%08RX64: %s FPU exception (FCW=%#x FSW=%#x -> %#x)\n",
-               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fOldFsw & X86_FSW_ES ? "Supressed" : "Raised",
+               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fOldFsw & X86_FSW_ES ? "Suppressed" : "Raised",
                pDstX87->FCW, fOldFsw, pDstX87->FSW));
 #endif
 
@@ -9568,7 +9568,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fnstenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCP
 #ifdef LOG_ENABLED
     if ((pFpuCtx->FSW & X86_FSW_ES) ^ (fOldFsw & X86_FSW_ES))
         Log11(("fnstenv: %04x:%08RX64: %s FPU exception (FCW=%#x, FSW %#x -> %#x)\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
-               fOldFsw & X86_FSW_ES ? "Supressed" : "Raised", pFpuCtx->FCW, fOldFsw, pFpuCtx->FSW));
+               fOldFsw & X86_FSW_ES ? "Suppressed" : "Raised", pFpuCtx->FCW, fOldFsw, pFpuCtx->FSW));
 #endif
 
     iemHlpUsedFpu(pVCpu);
@@ -9720,7 +9720,7 @@ IEM_CIMPL_DEF_1(iemCImpl_fldcw, uint16_t, u16Fcw)
 #ifdef LOG_ENABLED
     if ((pFpuCtx->FSW & X86_FSW_ES) ^ (fOldFsw & X86_FSW_ES))
         Log11(("fldcw: %04x:%08RX64: %s FPU exception (FCW=%#x, FSW %#x -> %#x)\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
-               fOldFsw & X86_FSW_ES ? "Supressed" : "Raised", pFpuCtx->FCW, fOldFsw, pFpuCtx->FSW));
+               fOldFsw & X86_FSW_ES ? "Suppressed" : "Raised", pFpuCtx->FCW, fOldFsw, pFpuCtx->FSW));
 #endif
 
     /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */

@@ -115,14 +115,15 @@
       captured by any VM.
     </para>
     <para>
-      Global filters are applied in a particular order. Only the first
-      filter that fits a device is applied. For example, the first
-      global filter makes a specific Kingston memory stick device
-      available while the second filter ignores all Kingston devices.
-      The result of applying these filters is that the specific Kingston
-      memory stick is made available to any machine that has the
-      appropriate filter, but no other Kingston devices are made
-      available.
+      Global filters are applied in sequence based on where they were
+      located in the list (see the <command>--index</command> option below
+      for the list ordering details). Only the first filter that matches
+      a device is applied. For example, if two global filters were created
+      and the first filter made a specific Kingston memory stick device
+      available while the second filter ignored all Kingston devices the
+      result of applying these two filters would be that this specific
+      Kingston memory stick would made available to any VM but no other
+      Kingston USB devices would be made available.
     </para>
     <refsect2 id="vboxmanage-usbfilter-common">
       <title>Common Operand and Options</title>
@@ -142,16 +143,16 @@
         <varlistentry>
           <term><option>--action=ignore | hold</option></term>
           <listitem><para>
-              Specifies whether to permit VMs access to devices that fit
-              the filter description (<literal>hold</literal>) or to
-              deny them access (<literal>ignore</literal>). This option
-              applies only to global filters.
+              Specifies whether to allow VMs access to devices that match
+              a USB filter (<literal>hold</literal>) or to deny them access
+              (<literal>ignore</literal>). This option applies only to global
+              filters.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--active=yes | no</option></term>
           <listitem><para>
-              Specifies whether the USB filter is active or temporarily
+              Specifies whether a USB filter is active or temporarily
               disabled. Valid values are <literal>yes</literal>, which
               activates the filter, and <literal>no</literal>, which
               disables the filter. The default value is
@@ -212,12 +213,8 @@
               Specifies a remote filter that indicates whether the
               device is physically connected to a remote VRDE client or
               to a local host system. This option applies to VM filters
-              only. The default value is an empty string
-              (<literal>""</literal>).
-            </para><remark>
-              Why is the default value an empty string when valid values
-              are <literal>yes</literal> or <literal>no</literal>?
-            </remark></listitem>
+              only. The default value is <literal>no</literal>.
+            </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--revision=<replaceable>IIFF</replaceable></option></term>
@@ -276,7 +273,7 @@
       <para>
         In addition, specify parameters by which to filter. You can use
         the <command>VBoxManage list usbhost</command> command to view
-        the parameters for devices that are attached to your system.
+        the parameters of the USB devices that are attached to your system.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-usbfilter-modify">
@@ -287,7 +284,7 @@
         to modify a USB filter. You can use the <command>VBoxManage list
         usbfilters</command> command to list global filter indexes and
         the <command>VBoxManage showvminfo</command> command to list
-        indexes for a specific machine.
+        indexes for a specific virtual machine.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-usbfilter-remove">

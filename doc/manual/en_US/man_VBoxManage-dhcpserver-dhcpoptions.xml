@@ -88,7 +88,7 @@
           <listitem><para>Whether non-local datagrams should be forwarded by the client (boolean)</para></listitem>
         </varlistentry>        <varlistentry>
           <term>21 - PolicyFilter</term>
-          <listitem><para>List of IPv4 addresses and masks paris controlling non-local source routing.</para></listitem>
+          <listitem><para>List of IPv4 addresses and masks pairs controlling non-local source routing.</para></listitem>
         </varlistentry>        <varlistentry>
           <term>22 - MaxDgramReassemblySize</term>
           <listitem><para>The maximum datagram size the client should reassemble (16-bit decimal value).</para></listitem>
@@ -196,7 +196,7 @@
           <listitem><para>Space separated list of IPv4 mobile IP agent addresses.</para></listitem>
         </varlistentry>        <varlistentry>
           <term>69 - SMTPServers</term>
-          <listitem><para>Space separated list of IPv4 simple mail transport protocol (SMPT) server addresses.</para></listitem>
+          <listitem><para>Space separated list of IPv4 simple mail transport protocol (SMTP) server addresses.</para></listitem>
         </varlistentry>        <varlistentry>
           <term>70 - POP3Servers</term>
           <listitem><para>Space separated list of IPv4 post office protocol 3 (POP3) server addresses.</para></listitem>
@@ -220,10 +220,10 @@
           <listitem><para>Space separated list of IPv4 StreetTalk directory assistance (STDA) server addresses.</para></listitem>
         </varlistentry>        <varlistentry>
           <term>78 - SLPDirectoryAgent</term>
-          <listitem><para>Addresses of one or more service location protocol (SLP) directory agent, and an indicator of whether their use is mandatory. Only accessible using --set-opt-hex.</para></listitem>
+          <listitem><para>Address of one or more service location protocol (SLP) directory agents, and an indicator of whether their use is mandatory. Only accessible using --set-opt-hex.</para></listitem>
         </varlistentry>        <varlistentry>
           <term>79 - SLPServiceScope</term>
-          <listitem><para>List of service scopes for the service location protocol (SLP) and whether using the list is mandator. Only accessible using --set-opt-hex.</para></listitem>
+          <listitem><para>List of service scopes for the service location protocol (SLP) and whether using the list is mandatory. Only accessible using --set-opt-hex.</para></listitem>
         </varlistentry>        <varlistentry>
           <term>119 - DomainSearch</term>
           <listitem><para>Domain search list, see RFC3397 and section 4.1.4 in RFC1035 for encoding.  Only accessible using --set-opt-hex.</para></listitem>

@@ -66,7 +66,7 @@
         <arg rep="repeat">--set-opt=<replaceable>номер-опции-dhcp значение</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>номер-опции-dhcp строка-hex</replaceable></arg>
         <arg rep="repeat">--force-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--supress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--suppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg>--min-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--default-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--max-lease-time=<replaceable>секунды</replaceable></arg>
@@ -77,7 +77,7 @@
         <arg rep="repeat">--set-opt=<replaceable>номер-опции-dhcp значение</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>номер-опции-dhcp строка-hex</replaceable></arg>
         <arg rep="repeat">--force-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--supress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--suppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg rep="repeat">--incl-mac=<replaceable>адрес</replaceable></arg>
         <arg rep="repeat">--excl-mac=<replaceable>адрес</replaceable></arg>
         <arg rep="repeat">--incl-mac-wild=<replaceable>шаблон</replaceable></arg>
@@ -101,7 +101,7 @@
         <arg rep="repeat">--set-opt=<replaceable>номер-опции-dhcp значение</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>номер-опции-dhcp строка-hex</replaceable></arg>
         <arg rep="repeat">--force-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--supress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--suppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg>--min-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--default-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--max-lease-time=<replaceable>секунды</replaceable></arg>
@@ -113,7 +113,7 @@
         <arg rep="repeat">--set-opt=<replaceable>номер-опции-dhcp значение</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>номер-опции-dhcp строка-hex</replaceable></arg>
         <arg rep="repeat">--force-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--supress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--suppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg>--min-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--default-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--max-lease-time=<replaceable>секунды</replaceable></arg>
@@ -142,8 +142,8 @@
         <arg rep="repeat">--set-opt-hex=<replaceable>номер-опции-dhcp значение</replaceable></arg>
         <arg rep="repeat">--force-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg rep="repeat">--unforce-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--supress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--unsupress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--suppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--unsuppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg>--min-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--default-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--max-lease-time=<replaceable>секунды</replaceable></arg>
@@ -156,8 +156,8 @@
         <arg rep="repeat">--set-opt-hex=<replaceable>номер-опции-dhcp строка-hex</replaceable></arg>
         <arg rep="repeat">--force-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg rep="repeat">--unforce-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--supress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--unsupress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--suppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--unsuppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg rep="repeat">--del-mac=<replaceable>адрес</replaceable></arg>
         <arg rep="repeat">--incl-mac=<replaceable>адрес</replaceable></arg>
         <arg rep="repeat">--excl-mac=<replaceable>адрес</replaceable></arg>
@@ -191,7 +191,7 @@
         <arg rep="repeat">--set-opt-hex=<replaceable>номер-опции-dhcp строка-hex</replaceable></arg>
         <arg rep="repeat">--force-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg rep="repeat">--unforce-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--supress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--suppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg rep="repeat">--unsupress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg>--min-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--default-lease-time=<replaceable>секунды</replaceable></arg>
@@ -207,8 +207,8 @@
         <arg rep="repeat">--set-opt-hex=<replaceable>номер-опции-dhcp строка-hex</replaceable></arg>
         <arg rep="repeat">--force-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg rep="repeat">--unforce-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--supress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
-        <arg rep="repeat">--unsupress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--suppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
+        <arg rep="repeat">--unsuppress-opt=<replaceable>номер-опции-dhcp</replaceable></arg>
         <arg>--min-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--default-lease-time=<replaceable>секунды</replaceable></arg>
         <arg>--max-lease-time=<replaceable>секунды</replaceable></arg>

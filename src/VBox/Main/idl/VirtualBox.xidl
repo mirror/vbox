@@ -7669,11 +7669,11 @@
     </attribute>
 
     <attribute name="CPUIDPortabilityLevel" type="unsigned long">
-      <desc>Virtual CPUID portability level, the higher number the fewer newer
-        or vendor specific CPU feature is reported to the guest (via the CPUID
+      <desc>Virtual CPUID portability level. The higher the number the fewer
+        vendor-specific or recent CPU features are reported to the guest (via the CPUID
         instruction).  The default level of zero (0) means that all virtualized
-        features supported by the host is pass thru to the guest.  While the
-        three (3) is currently the level supressing the most features.
+        features supported by the host are passed through to the guest.  While the
+        value of three (3) is currently the level suppressing the most features.
 
         Exactly which of the CPUID features are left out by the VMM at which
         level is subject to change with each major version.

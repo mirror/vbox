@@ -64,7 +64,7 @@
           <xsl:text>Each time </xsl:text><xsl:element name="userinput"><xsl:text>VBoxManage</xsl:text></xsl:element>
           <xsl:text> is invoked, only one command can be executed. However, a command
           might support several subcommands which then can be invoked in one single
-          call. The following sections provide detailed reference information on then
+          call. The following sections provide detailed reference information on the
           different commands.</xsl:text>
         </xsl:element>
 

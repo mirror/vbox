@@ -84,14 +84,14 @@
       <varlistentry>
         <term><option>--certificate=<replaceable>file</replaceable></option></term>
         <listitem><para>File containing the certificate that the OVA should be
-          signed with.  This can either be in PEM format (base64) or DER (binary),
-          the command will detect which.</para></listitem>
+          signed with.  This can be in either PEM format (base64) or DER (binary).
+          </para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--private-key=<replaceable>file</replaceable></option></term>
-        <listitem><para>The file containing the private key.  This can either be
-          in PEM (base64) or DER (binary) format, the command will detect
-          which.</para></listitem>
+        <listitem><para>The file containing the private key.  This can be in either
+          PEM (base64) or DER (binary) format.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--private-key-password-file=<replaceable>password-file</replaceable></option></term>
@@ -99,15 +99,15 @@
       </varlistentry>
       <varlistentry>
         <term><option>--private-key-password=<replaceable>password</replaceable></option></term>
-        <listitem><para>The private key password. <!-- add warning about visibility --> </para></listitem>
+        <!-- add warning about visibility -->
+        <listitem><para>The private key password.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--digest-type=<replaceable>type</replaceable></option></term>
-        <listitem>
-          <para>Select the cryptographic digest algorithm to use in the
-            signing. Possible values: SHA-256 (default), SHA-512 and SHA-1.</para>
-          <para>Some older versions of OVFTool and other VMware produces may
-            require <option>--digest-type=sha-1</option> to accept the OVA.</para>
+        <listitem><para>Select the cryptographic digest algorithm to use for signing the
+            OVA file. The possible values are : SHA-256 (default), SHA-512 and SHA-1.</para>
+          <para>Some older versions of VMware's OVF Tool command line utility and other
+            VMware products may require the <option>--digest-type=sha-1</option> option.</para>
           </listitem>
       </varlistentry>
       <varlistentry>
@@ -118,10 +118,10 @@
       <varlistentry>
         <term><option>--intermediate-cert=<replaceable>file</replaceable></option></term>
         <listitem><para>File containing an intermediary certificate that should be
-          included in the optional PKCS#7/CMS signature.  Like the others, the file can
-          either be in PEM or DER format.  This option can be repeated to add
-          multiple intermediate certificates.  This option implies the
-          <option>--pkcs7</option> option.</para></listitem>
+          included in the optional PKCS#7/CMS signature.  The file can be in either PEM
+          format (base64) or DER (binary).  This option can be repeated to add multiple
+          intermediate certificates.  This option implies the <option>--pkcs7</option> option.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--force</option></term>
@@ -134,8 +134,8 @@
       </varlistentry>
       <varlistentry>
         <term><option>-v</option>, <option>--verbose</option>, <option>-q</option>, <option>--quiet</option></term>
-        <listitem><para>Controls the verbositity of the command execution.  The
-          <option>--verbose</option> option can be used multiple times to get more output.
+        <listitem><para>Controls the verbosity of the command execution.  The
+          <option>--verbose</option> option can be specified multiple times to get more output.
           </para></listitem>
       </varlistentry>
     </variablelist>

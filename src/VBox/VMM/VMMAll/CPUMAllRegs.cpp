@@ -991,7 +991,7 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPUCC pVCpu, uint32_t uLeaf, uint32_t uSubLea
                     AssertMsgFailed(("uLeaf=%#x\n", uLeaf));
             }
 
-            /* Intel CPUs supresses the SYSCALL bit when not executing in 64-bit mode: */
+            /* Intel CPUs suppress the SYSCALL bit when not executing in 64-bit mode: */
             if (   uLeaf == UINT32_C(0x80000001)
                 && f64BitMode == false
                 && (*pEdx & X86_CPUID_EXT_FEATURE_EDX_SYSCALL)

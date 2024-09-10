@@ -104,7 +104,7 @@
     <title>Description</title>
     <para>
       The <command>VBoxManage natnetwork</command> command enables you
-      to create, modify and manage a NAT network.
+      to create, modify, and manage a NAT network.
     </para>
     <para>
       NAT networks use the Network Address Translation (NAT) service.
@@ -126,7 +126,7 @@
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage natnetwork add</command> command creates
-        a new internal network interface, and adds a NAT network
+        a new internal network interface and adds a NAT network
         service. You must use this command before you can attach the VM
         to the NAT network.
       </para>
@@ -161,8 +161,8 @@
         <varlistentry>
           <term><option>--dhcp</option></term>
           <listitem><para>
-              Enables or disables the DHCP server that you specify by
-              using the <option>--netname</option> option.
+              Enables or disables the DHCP server specified with
+              the <option>--netname</option> option.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -175,29 +175,25 @@
         <varlistentry>
           <term><option>--loopback-4=<replaceable>rule</replaceable></option></term>
           <listitem><para>
-              Enables an IPv4 loopback interface by using the specified
-              rule.
+              Enables an IPv4 loopback interface using the specified rule.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--loopback-6=<replaceable>rule</replaceable></option></term>
           <listitem><para>
-              Enables an IPv6 loopback interface by using the specified
-              rule.
+              Enables an IPv6 loopback interface using the specified rule.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--port-forward-4=<replaceable>rule</replaceable></option></term>
           <listitem><para>
-              Enables IPv4 port forwarding by using the rule specified
-              by <replaceable>rule</replaceable>.
+              Enables IPv4 port forwarding using the specified rule.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--port-forward-6=<replaceable>rule</replaceable></option></term>
           <listitem><para>
-              Enables IPv6 port forwarding by using the rule specified
-              by <replaceable>rule</replaceable>.
+              Enables IPv6 port forwarding using the specified rule.
             </para></listitem>
         </varlistentry>
       </variablelist>
@@ -305,8 +301,8 @@
         <varlistentry>
           <term><option>--dhcp</option></term>
           <listitem><para>
-              Enables or disables the DHCP server that you specify by
-              using the <option>--netname</option> option.
+              Enables or disables the DHCP server specified
+              with the <option>--netname</option> option.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -319,29 +315,25 @@
         <varlistentry>
           <term><option>--loopback-4=<replaceable>rule</replaceable></option></term>
           <listitem><para>
-              Enables an IPv4 loopback interface by using the specified
-              rule.
+              Enables an IPv4 loopback interface using the specified rule.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--loopback-6=<replaceable>rule</replaceable></option></term>
           <listitem><para>
-              Enables an IPv6 loopback interface by using the specified
-              rule.
+              Enables an IPv6 loopback interface using the specified rule.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--port-forward-4=<replaceable>rule</replaceable></option></term>
           <listitem><para>
-              Enables IPv4 port forwarding by using the rule specified
-              by <replaceable>rule</replaceable>.
+              Enables IPv4 port forwarding using the specified rule.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--port-forward-6=<replaceable>rule</replaceable></option></term>
           <listitem><para>
-              Enables IPv6 port forwarding by using the rule specified
-              by <replaceable>rule</replaceable>.
+              Enables IPv6 port forwarding using the specified rule.
             </para></listitem>
         </varlistentry>
       </variablelist>

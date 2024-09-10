@@ -82,7 +82,7 @@
         </para></listitem>
     </itemizedlist>
     <para>
-      The medium must be specified either by its UUID, if the medium is
+      The medium must be specified by either its UUID, if the medium is
       registered, or by its filename. Registered images can be listed
       using <command>VBoxManage list hdds</command>, <command>VBoxManage
       list dvds</command>, or <command>VBoxManage list

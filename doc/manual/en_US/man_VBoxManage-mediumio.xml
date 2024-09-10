@@ -92,8 +92,9 @@
     <refsect2 id="vboxmanage-mediumio-common-options">
       <title>Common options</title>
       <remark role="help-scope" condition="GLOBAL"/>
-      <para>The subcommands of <command>mediumio</command> all operate on a medium which need to be specified, optionally
-        with an encryption password.  The following common options can be placed before or after the sub-command:</para>
+      <para>The subcommands of <command>mediumio</command> all operate on a medium which must be specified using
+        one of the following options along with an optional encryption password.  The following common options
+        can be placed before or after the sub-command:</para>
       <variablelist>
         <varlistentry>
           <term>--disk=<replaceable>uuid|filename</replaceable></term>
@@ -119,8 +120,8 @@
       <title>mediumio formatfat</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Formats a floppy medium with the FAT file system. This will erase the
-        content of the medium.
+        Formats a medium with the FAT file system. This will erase the
+        contents of the medium.
       </para>
       <variablelist>
         <varlistentry>
@@ -133,7 +134,7 @@
       <title>mediumio cat</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Dumps the medium content to stdout or the specified file.
+        Dumps the contents of the medium to stdout or the specified file.
       </para>
       <variablelist>
         <varlistentry>

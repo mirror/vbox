@@ -73,7 +73,7 @@
   </xsl:template>
 
   <!--
-    map: Default operation is to supress all output, except for topic elements
+    map: Default operation is to suppress all output, except for topic elements
          which are transformed to topicref.
   -->
   <xsl:template match="node()|@*" mode="map">

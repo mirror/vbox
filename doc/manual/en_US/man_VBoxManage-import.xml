@@ -62,7 +62,7 @@
       <arg>--vsys=<replaceable>n</replaceable></arg>
       <arg>--ostype=<replaceable>ostype</replaceable></arg>
       <arg>--vmname=<replaceable>name</replaceable></arg>
-      <arg>--settingsfile=<replaceable>file</replaceable></arg>
+      <arg>--settingsfile=<replaceable>filename</replaceable></arg>
       <arg>--basefolder=<replaceable>folder</replaceable></arg>
       <arg>--group=<replaceable>group</replaceable></arg>
       <arg>--memory=<replaceable>MB</replaceable></arg>
@@ -105,7 +105,7 @@
     <title>Description</title>
     <para>
       The <command>VBoxManage import</command> command imports a virtual
-      appliance either in OVF format or from a cloud service such as &oci;.
+      appliance either in OVF format or from a cloud service such as &oci; (OCI).
       The import is performed by copying virtual disk images (by default using
       the VMDK image format) and by creating virtual machines (VMs) in
       &product-name;. See <xref linkend="ovf" />.
@@ -147,7 +147,7 @@
           <!-- Does this option really work for cloud import? -->
           <listitem><para>
               Performs a dry run of the <command>VBoxManage
-              import</command> command before you perform the actual
+              import</command> command instead of performing the actual
               import operation. A dry run operation does the following:
             </para><itemizedlist>
               <listitem><para>
@@ -168,7 +168,7 @@
           <term><option>--options=keepallmacs | keepnatmacs | importtovdi</option></term>
           <!-- Does this option really work for cloud import? -->
           <listitem><para>
-              Enables you to fine tune the import operation.
+              Enables you to fine-tune the import operation.
             </para><para>
               Valid arguments are as follows:
             </para><itemizedlist>
@@ -184,7 +184,7 @@
                 </para></listitem>
               <listitem><para>
                   <literal>importtovdi</literal>: Specifies that all new
-                  disk images are in VDI file format.
+                  disk images are to be created using the VDI file format.
                 </para></listitem>
             </itemizedlist></listitem>
         </varlistentry>
@@ -199,7 +199,7 @@
         <varlistentry>
           <term><option>--vmname=<replaceable>name</replaceable></option></term>
           <listitem><para>
-              Specifies the name of the VM to be used by &product-name;.
+              Specifies the name for the imported VM to be used by &product-name;.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -235,7 +235,7 @@
     <refsect2 id="vboxmanage-import-ovf">
       <title>OVF / OVA Import Options</title>
       <para>
-        The following options are specific for importing a virtual appliance
+        The following options are specific to importing a virtual appliance
         in OVF or OVA format. Such an appliance can contain one or more VMs,
         which requires specifying which VM configuration should be adjusted
         in case you want to change it. See <xref linkend="ovf-import-appliance" />.
@@ -257,13 +257,13 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--settingsfile=<replaceable>file</replaceable></option></term>
+          <term><option>--settingsfile=<replaceable>filename</replaceable></option></term>
           <listitem><para>
-              Specifies the name (with or without path) of the VM config
-              file which will be created as part of the import. Usually
-              the preferred way is overriding the VM name with
-              <option>--vmname</option> and if necessary specify the
-              folder in which to create the VM with
+              Specifies the filename (as a relative or absolute path) of
+              the VM config file which will be created as part of the
+              import. The preferred way to rename the settings file is to
+              override the VM name using the <option>--vmname</option> option
+              and if necessary specify the folder in which to create the VM with
               <option>--basefolder</option>.
             </para></listitem>
         </varlistentry>
@@ -294,8 +294,9 @@
         <varlistentry>
           <term><option>--ignore</option></term>
           <listitem><para>
-              Ignores the current unit of an imported VM, effectively
-              removing the associated hardware.
+              Ignores the hardware associated with the VM specified with
+              the <option>--unit</option> option when importing the VM,
+              effectively removing all of its associated hardware.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -322,7 +323,7 @@
     <refsect2 id="vboxmanage-import-cloud">
       <title>Cloud Import Options</title>
       <para>
-        The following options are specific for importing a VM instance
+        The following options are specific to importing a VM instance
         from a cloud service provider. It always deals with a single VM.
         See <xref linkend="cloud-import-oci" />.
       </para>

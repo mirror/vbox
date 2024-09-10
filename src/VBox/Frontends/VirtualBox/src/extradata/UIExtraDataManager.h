@@ -198,9 +198,9 @@ public:
 
     /** @name Messaging
       * @{ */
-        /** Returns the list of supressed messages for the Message/Popup center frameworks. */
+        /** Returns the list of suppressed messages for the Message/Popup center frameworks. */
         QStringList suppressedMessages(const QUuid &uID = GlobalID);
-        /** Defines the @a list of supressed messages for the Message/Popup center frameworks. */
+        /** Defines the @a list of suppressed messages for the Message/Popup center frameworks. */
         void setSuppressedMessages(const QStringList &list);
 
         /** Returns the list of messages for the Message/Popup center frameworks with inverted check-box state. */

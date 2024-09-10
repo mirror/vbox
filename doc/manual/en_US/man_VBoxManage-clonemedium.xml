@@ -97,7 +97,7 @@
       <varlistentry>
         <term><replaceable>uuid</replaceable> | <replaceable>source-medium</replaceable></term>
         <listitem><para>
-            Specifies the UUID or the absolute or relative file name of
+            Specifies the UUID or the absolute or relative pathname of
             the source medium to clone. You can specify the UUID of the
             medium only if it is registered. Use the <command>VBoxManage
             list hdds</command> command to list registered images.
@@ -106,7 +106,7 @@
       <varlistentry>
         <term><replaceable>uuid</replaceable> | <replaceable>target-medium</replaceable></term>
         <listitem><para>
-            Specifies the UUID or the absolute or relative file name of
+            Specifies the UUID or the absolute or relative pathname of
             the target (clone) medium. You can specify the UUID of the
             target medium only if it is registered. Use the
             <command>VBoxManage list hdds</command> command to list

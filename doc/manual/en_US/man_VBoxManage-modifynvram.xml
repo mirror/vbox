@@ -146,8 +146,8 @@
     <title>Description</title>
 
     <para>The "modifynvram" commands are for experts who want to inspect and modify the
-      UEFI variable store of a virtual machine. Any mistakes done here can bring the virtual
-      machine in a non working state.</para>
+      UEFI variable store of a virtual machine. Any mistakes made here can result in
+      a non-bootable virtual machine.</para>
 
     <refsect2 id="vboxmanage-modifynvram-common-options">
       <title>Common options</title>
@@ -166,7 +166,7 @@
       <title>modifynvram inituefivarstore</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Iniitalizes the UEFI variable store to a default state. Any previous existing variable
+        Initalizes the UEFI variable store to a default state. Any previous existing variable
         store is deleted. Use with extreme caution!
       </para>
     </refsect2>
@@ -218,13 +218,13 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--enable></option></term>
+          <term><option>--enable</option></term>
           <listitem><para>Enables UEFI secure boot if the state of the key
             enrolment permits.</para>
           </listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--disable></option></term>
+          <term><option>--disable</option></term>
           <listitem><para>Disables UEFI secure boot.</para>
           </listitem>
         </varlistentry>
@@ -235,7 +235,7 @@
       <title>modifynvram listvars</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Lists all UEFI variables in the virtual machines's store along with their owner UUID.
+        Lists all UEFI variables in the virtual machine's store along with their owner UUID.
       </para>
     </refsect2>
 

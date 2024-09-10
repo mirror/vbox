@@ -122,11 +122,6 @@
         </para></listitem>
     </itemizedlist>
     <para>
-      In addition to managing virtual machines (VMs) with this CLI or
-      the GUI, you can use the <command>VBoxHeadless</command> CLI to
-      manage VMs remotely.
-    </para>
-    <para>
       The <command>VBoxManage</command> command performs particular
       tasks by using subcommands, such as <command>list</command>,
       <command>createvm</command>, and <command>startvm</command>. See
@@ -143,8 +138,8 @@
       names and associated UUIDs.
     </para>
     <para>
-      Note that you must enclose the entire VM name in double quotes if
-      it contains spaces.
+      Note that VM names which contain spaces or special characters
+      must be enclosed in quotes.
     </para>
     <refsect2 id="vboxmanage-common-options">
       <title>General Options</title>
@@ -171,10 +166,12 @@
               stored settings, which are stored as plain text by
               default.
             </para><para>
-              You cannot unencrypt encrypted settings. So, if the
-              settings are encrypted, you must continue to specify the
+              Settings which have been encrypted are done so using a
+              one-way encryption algorithm so cannot be decrypted. Thus,
+              if the settings are encrypted you must include the
               <option>--settingspw</option> or
-              <option>--settingspwfile</option> option.
+              <option>--settingspwfile</option> option every time
+              <command>VBoxManage</command> is used.
             </para><para>
               Only the iSCSI secret is encrypted at this time.
             </para><remark>
@@ -253,7 +250,7 @@ Settings file: '/home/<replaceable>username</replaceable>/VirtualBox VMs/Win8/Wi
 <screen>$ VBoxManage modifyvm "Windows XP" --memory 1024</screen>
     <para>
       Note that you can use the <command>VBoxManage modifyvm</command>
-      command even when the VM is powered off.
+      command only for VMs that are powered off.
     </para>
     <para>
       You can use the <command>VBoxManage storagectl</command> command
