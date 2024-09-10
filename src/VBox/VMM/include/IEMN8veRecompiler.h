@@ -501,15 +501,24 @@ typedef enum
     kIemNativeLabelType_ReturnWithFlags,
     kIemNativeLabelType_NonZeroRetOrPassUp,
 #ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
-    kIemNativeLabelType_ReturnZero,             /**< Sets eax/w0 to zero and returns. */
-#endif
+    kIemNativeLabelType_ReturnSuccess,          /**< Sets eax/w0 to zero and returns. */
+#else
     kIemNativeLabelType_Return,
+#endif
     /** The last fixup for branches that can span almost the whole TB length.
      * @note Whether kIemNativeLabelType_Return needs to be one of these is
      *       a bit questionable, since nobody jumps to it except other tail code. */
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+    kIemNativeLabelType_LastWholeTbBranch = kIemNativeLabelType_ReturnSuccess,
+#else
     kIemNativeLabelType_LastWholeTbBranch = kIemNativeLabelType_Return,
+#endif
     /** The last fixup for branches that exits the TB. */
+#ifdef IEMNATIVE_WITH_RECOMPILER_PER_CHUNK_TAIL_CODE
+    kIemNativeLabelType_LastTbExit        = kIemNativeLabelType_ReturnSuccess,
+#else
     kIemNativeLabelType_LastTbExit        = kIemNativeLabelType_Return,
+#endif
 
     /** Loop-jump target. */
     kIemNativeLabelType_LoopJumpTarget,
