@@ -166,11 +166,6 @@ void UIScaleFactorEditor::setDefaultScaleFactor(double dDefaultScaleFactor)
     m_dDefaultScaleFactor = dDefaultScaleFactor;
 }
 
-void UIScaleFactorEditor::setSpinBoxWidthHint(int iHint)
-{
-    m_pScaleSpinBox->setMinimumWidth(iHint);
-}
-
 int UIScaleFactorEditor::minimumLabelHorizontalHint() const
 {
     return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;

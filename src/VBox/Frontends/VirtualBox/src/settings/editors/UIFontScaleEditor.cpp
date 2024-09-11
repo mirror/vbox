@@ -73,11 +73,6 @@ UIFontScaleEditor::UIFontScaleEditor(QWidget *pParent)
     prepare();
 }
 
-void UIFontScaleEditor::setSpinBoxWidthHint(int iHint)
-{
-    m_pScaleSpinBox->setMinimumWidth(iHint);
-}
-
 int UIFontScaleEditor::minimumLabelHorizontalHint() const
 {
     return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;

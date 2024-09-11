@@ -52,9 +52,6 @@ public:
     /** Constructs editor passing @a pParent to the base-class. */
     UIFontScaleEditor(QWidget *pParent);
 
-    /** Defines minimum width @a iHint for internal spin-box. */
-    void setSpinBoxWidthHint(int iHint);
-
     /** Returns minimum layout hint. */
     int minimumLabelHorizontalHint() const;
     /** Defines minimum layout @a iIndent. */

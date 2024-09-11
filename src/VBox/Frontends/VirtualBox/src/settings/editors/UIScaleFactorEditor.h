@@ -64,9 +64,6 @@ public:
     /** Defines @a dDefaultScaleFactor. */
     void setDefaultScaleFactor(double dDefaultScaleFactor);
 
-    /** Defines minimum width @a iHint for internal spin-box. */
-    void setSpinBoxWidthHint(int iHint);
-
     /** Returns minimum layout hint. */
     int minimumLabelHorizontalHint() const;
     /** Defines minimum layout @a iIndent. */
