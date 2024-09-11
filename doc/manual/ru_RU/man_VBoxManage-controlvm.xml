@@ -3,7 +3,7 @@
     manpage, user manual, usage: VBoxManage controlvm
 -->
 <!--
-    Copyright (C) 2006-2023 Oracle and/or its affiliates.
+    Copyright (C) 2006-2024 Oracle and/or its affiliates.
 
     This file is part of VirtualBox base platform packages, as
     available from https://www.virtualbox.org.
@@ -1560,7 +1560,7 @@
       </itemizedlist>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-recording">
-      <title>Recording of a Virtual Machine Session</title>
+      <title>Запись сессии виртуальной машины</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Команда <command>VBoxManage controlvm
@@ -1575,22 +1575,21 @@
       </para>
 
       <para>
-        The <command>VBoxManage controlvm
-        <replaceable>vmname</replaceable> recording start</command> command
-        starts the recording of a VM session into a
-        WebM/VP8 file.
+        Команда <command>VBoxManage controlvm
+        <replaceable>имя-ВМ</replaceable> recording start</command> запускает
+        запись сессии ВМ в WebM/VP8 файл.
       </para>
 
       <para>
-        The <command>VBoxManage controlvm
-        <replaceable>vmname</replaceable> recording stop</command> command
-        stops the recording of a VM session.
+        Команда <command>VBoxManage controlvm
+        <replaceable>имя-ВМ</replaceable> recording stop</command> останавливает
+        запись сессии ВМ.
       </para>
 
       <para>
-        The <command>VBoxManage controlvm
-        <replaceable>vmname</replaceable> recording attach</command> command
-        attaches to a running recording of a VM session.
+        Команда <command>VBoxManage controlvm
+        <replaceable>имя-ВМ</replaceable> recording attach</command> подключается
+        к запущенной записи сессии ВМ.
       </para>
 
       <para>
