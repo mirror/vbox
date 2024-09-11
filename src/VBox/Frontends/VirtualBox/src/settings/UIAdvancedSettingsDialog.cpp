@@ -947,10 +947,7 @@ void UIAdvancedSettingsDialog::showEvent(QShowEvent *pEvent)
 {
     /* Polish stuff: */
     if (!m_fPolished)
-    {
-        m_fPolished = true;
         polishEvent();
-    }
 
     /* Call to base-class: */
     QMainWindow::showEvent(pEvent);
@@ -958,6 +955,9 @@ void UIAdvancedSettingsDialog::showEvent(QShowEvent *pEvent)
 
 void UIAdvancedSettingsDialog::polishEvent()
 {
+    /* Prevent handler from calling twice: */
+    m_fPolished = true;
+
     /* Install event-filters for all the required children.
      * These children can be added together with pages. */
     foreach (QWidget *pChild, findChildren<QWidget*>())
@@ -974,15 +974,14 @@ void UIAdvancedSettingsDialog::polishEvent()
             pChild->installEventFilter(this);
     }
 
-    /* Resize to minimum size: */
-    resize(minimumSizeHint());
-
     /* Choose page/tab finally: */
     choosePageAndTab();
 
     /* Apply actual experience mode: */
     sltHandleExperienceModeChanged();
 
+    /* Resize to minimum size: */
+    resize(minimumSizeHint());
     /* Explicit centering according to our parent: */
     gpDesktop->centerWidget(this, parentWidget(), false);
 }
