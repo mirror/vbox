@@ -566,6 +566,8 @@ void UIUSBFiltersEditor::prepareTreeWidget()
         if (m_pLabelSeparator)
             m_pLabelSeparator->setBuddy(m_pTreeWidget);
         m_pTreeWidget->header()->hide();
+        m_pTreeWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
+        m_pTreeWidget->setMinimumHeight(150);
         m_pTreeWidget->setRootIsDecorated(false);
         m_pTreeWidget->setUniformRowHeights(true);
         m_pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);

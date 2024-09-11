@@ -643,7 +643,8 @@ void UISharedFoldersEditor::prepareTreeWidget()
     if (m_pTreeWidget)
     {
         m_pTreeWidget->header()->setSectionsMovable(false);
-        m_pTreeWidget->setMinimumSize(QSize(0, 200));
+        m_pTreeWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
+        m_pTreeWidget->setMinimumHeight(150);
         m_pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pTreeWidget->setUniformRowHeights(true);
         m_pTreeWidget->setAllColumnsShowFocus(true);
