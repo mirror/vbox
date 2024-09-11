@@ -336,7 +336,6 @@ void UINetworkFeaturesEditor::prepare()
                 m_pLabelMAC->setBuddy(m_pEditorMAC);
             m_pEditorMAC->setAllowToCopyContentsWhenDisabled(true);
             m_pEditorMAC->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9A-Fa-f]{12}"), this));
-            m_pEditorMAC->setMinimumWidthByText(QString().fill('0', 12));
 
             m_pLayoutSettings->addWidget(m_pEditorMAC, 2, 1, 1, 2);
         }
