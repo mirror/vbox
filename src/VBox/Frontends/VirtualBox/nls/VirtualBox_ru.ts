@@ -7011,7 +7011,7 @@
     </message>
     <message>
         <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
-        <translation>Имеет смысл уменьшить число виртуальных процессоров данной машины, а не .предел загрузки ЦПУ.</translation>
+        <translation>Имеет смысл уменьшить число виртуальных процессоров данной машины, а не предел загрузки ЦПУ.</translation>
     </message>
     <message>
         <source>Lowering the processor execution cap may result in a decline in performance.</source>
