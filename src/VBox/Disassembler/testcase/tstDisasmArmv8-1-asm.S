@@ -676,8 +676,8 @@ _TestProcA64:
         msr pan,     #0
         ; msr allint,  #1 Not supported by the toolchain
         ; msr allint,  #0 Not supported by the toolchain
-        msr pm,      #1
-        msr pm,      #0
+        ;msr pm,      #1 Not supported by the maca1 toolchain
+        ;msr pm,      #0 Not supported by the maca1 toolchain
         msr ssbs,    #1
         msr ssbs,    #0
         msr dit,     #1
