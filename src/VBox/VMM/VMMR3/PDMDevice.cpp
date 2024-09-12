@@ -500,6 +500,8 @@ int pdmR3DevInit(PVM pVM)
         /*
          * Link it into all the lists.
          */
+        RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+
         /* The global instance FIFO. */
         PPDMDEVINS pPrev1 = pVM->pdm.s.pDevInstances;
         if (!pPrev1)
@@ -535,7 +537,7 @@ int pdmR3DevInit(PVM pVM)
                 if (VMR3GetErrorCount(pVM->pUVM) == 0)
                     VMSetError(pVM, rc, RT_SRC_POS, "Failed to construct device '%s' instance #%u",
                                pDevIns->pReg->szName, pDevIns->iInstance);
-                paDevs[i].pDev->cInstances--;
+                RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
                 return VERR_NO_MEMORY;
             }
 
@@ -549,6 +551,8 @@ int pdmR3DevInit(PVM pVM)
          * Call the constructor.
          */
         paDevs[i].pDev->cInstances++;
+        RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
+
         Log(("PDM: Constructing device '%s' instance %d...\n", pDevIns->pReg->szName, pDevIns->iInstance));
         rc = pDevIns->pReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfg);
         if (RT_FAILURE(rc))
@@ -559,7 +563,7 @@ int pdmR3DevInit(PVM pVM)
                            pDevIns->pReg->szName, pDevIns->iInstance);
             /* Because we're damn lazy, the destructor will be called even if
                the constructor fails.  So, no unlinking. */
-            paDevs[i].pDev->cInstances--;
+            //paDevs[i].pDev->cInstances--;
             return rc == VERR_VERSION_MISMATCH ? VERR_PDM_DEVICE_VERSION_MISMATCH : rc;
         }
 
@@ -583,7 +587,8 @@ int pdmR3DevInit(PVM pVM)
                 if (VMR3GetErrorCount(pVM->pUVM) == 0)
                     VMSetError(pVM, rc, RT_SRC_POS, "The ring-0 constructor of device '%s' instance #%u failed",
                                pDevIns->pReg->szName, pDevIns->iInstance);
-                paDevs[i].pDev->cInstances--;
+                /* No unlinking, see above. */
+                //paDevs[i].pDev->cInstances--;
                 return rc == VERR_VERSION_MISMATCH ? VERR_PDM_DEVICE_VERSION_MISMATCH : rc;
             }
         }
@@ -616,10 +621,12 @@ int pdmR3DevInitComplete(PVM pVM)
     /*
      * Iterate thru the device instances and work the callback.
      */
+    RTCritSectRwEnterShared(&pVM->pdm.s.CoreListCritSectRw);
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
         if (pDevIns->pReg->pfnInitComplete)
         {
+            RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
             PDMCritSectEnter(pVM, pDevIns->pCritSectRoR3, VERR_IGNORED);
             rc = pDevIns->pReg->pfnInitComplete(pDevIns);
             PDMCritSectLeave(pVM, pDevIns->pCritSectRoR3);
@@ -629,8 +636,10 @@ int pdmR3DevInitComplete(PVM pVM)
                                  pDevIns->pReg->szName, pDevIns->iInstance, rc));
                 return rc;
             }
+            RTCritSectRwEnterShared(&pVM->pdm.s.CoreListCritSectRw);
         }
     }
+    RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
 
 #ifdef VBOX_WITH_USB
     rc = pdmR3UsbVMInitComplete(pVM);
@@ -652,11 +661,16 @@ int pdmR3DevInitComplete(PVM pVM)
  */
 PPDMDEV pdmR3DevLookup(PVM pVM, const char *pszName)
 {
-    size_t cchName = strlen(pszName);
+    size_t const cchName = strlen(pszName);
+    RTCritSectRwEnterShared(&pVM->pdm.s.CoreListCritSectRw);
     for (PPDMDEV pDev = pVM->pdm.s.pDevs; pDev; pDev = pDev->pNext)
-        if (    pDev->cchName == cchName
-            &&  !strcmp(pDev->pReg->szName, pszName))
+        if (   pDev->cchName == cchName
+            && !strcmp(pDev->pReg->szName, pszName))
+        {
+            RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
             return pDev;
+        }
+    RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
     return NULL;
 }
 
@@ -915,12 +929,16 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
      * Check for duplicate and find FIFO entry at the same time.
      */
     PCPDMDEVREGCBINT pRegCB = (PCPDMDEVREGCBINT)pCallbacks;
+    PVM const        pVM    = pRegCB->pVM;
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+
     PPDMDEV pDevPrev = NULL;
-    PPDMDEV pDev = pRegCB->pVM->pdm.s.pDevs;
+    PPDMDEV pDev     = pVM->pdm.s.pDevs;
     for (; pDev; pDevPrev = pDev, pDev = pDev->pNext)
-        AssertMsgReturn(strcmp(pDev->pReg->szName, pReg->szName),
-                        ("Device '%s' already exists\n", pReg->szName),
-                        VERR_PDM_DEVICE_NAME_CLASH);
+        AssertMsgReturnStmt(strcmp(pDev->pReg->szName, pReg->szName),
+                            ("Device '%s' already exists\n", pReg->szName),
+                            RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw),
+                            VERR_PDM_DEVICE_NAME_CLASH);
 
     /*
      * Allocate new device structure, initialize and insert it into the list.
@@ -943,6 +961,8 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
                 pDevPrev->pNext = pDev;
             else
                 pRegCB->pVM->pdm.s.pDevs = pDev;
+
+            RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
             Log(("PDM: Registered device '%s'\n", pReg->szName));
             return VINF_SUCCESS;
         }
@@ -951,6 +971,8 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
     }
     else
         rc = VERR_NO_MEMORY;
+
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
     return rc;
 }
 
@@ -971,7 +993,8 @@ int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned
     /*
      * Iterate registered devices looking for the device.
      */
-    size_t cchDevice = strlen(pszDevice);
+    size_t const cchDevice = strlen(pszDevice);
+    RTCritSectRwEnterShared(&pVM->pdm.s.CoreListCritSectRw);
     for (PPDMDEV pDev = pVM->pdm.s.pDevs; pDev; pDev = pDev->pNext)
     {
         if (    pDev->cchName == cchDevice
@@ -991,16 +1014,20 @@ int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned
                     {
                         if (pLun->iLun == iLun)
                         {
+                            RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
                             *ppLun = pLun;
                             return VINF_SUCCESS;
                         }
                     }
+                    RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
                     return VERR_PDM_LUN_NOT_FOUND;
                 }
             }
+            RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
             return VERR_PDM_DEVICE_INSTANCE_NOT_FOUND;
         }
     }
+    RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
     return VERR_PDM_DEVICE_NOT_FOUND;
 }
 
@@ -1019,8 +1046,11 @@ int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned
  * @param   ppBase          Where to store the base interface pointer. Optional.
  * @thread  EMT
  */
-VMMR3DECL(int) PDMR3DeviceAttach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPPDMIBASE ppBase)
+VMMR3DECL(int) PDMR3DeviceAttach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun,
+                                 uint32_t fFlags, PPPDMIBASE ppBase)
 {
+    if (ppBase)
+        *ppBase = NULL;
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
@@ -1031,6 +1061,7 @@ VMMR3DECL(int) PDMR3DeviceAttach(PUVM pUVM, const char *pszDevice, unsigned iIns
     /*
      * Find the LUN in question.
      */
+    RTCritSectRwEnterShared(&pVM->pdm.s.CoreListCritSectRw);
     PPDMLUN pLun;
     int rc = pdmR3DevFindLun(pVM, pszDevice, iInstance, iLun, &pLun);
     if (RT_SUCCESS(rc))
@@ -1043,9 +1074,11 @@ VMMR3DECL(int) PDMR3DeviceAttach(PUVM pUVM, const char *pszDevice, unsigned iIns
         {
             if (!pLun->pTop)
             {
+                RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
                 PDMCritSectEnter(pVM, pDevIns->pCritSectRoR3, VERR_IGNORED);
                 rc = pDevIns->pReg->pfnAttach(pDevIns, iLun, fFlags);
                 PDMCritSectLeave(pVM, pDevIns->pCritSectRoR3);
+                RTCritSectRwEnterShared(&pVM->pdm.s.CoreListCritSectRw);
             }
             else
                 rc = VERR_PDM_DRIVER_ALREADY_ATTACHED;
@@ -1056,8 +1089,7 @@ VMMR3DECL(int) PDMR3DeviceAttach(PUVM pUVM, const char *pszDevice, unsigned iIns
         if (ppBase)
             *ppBase = pLun->pTop ? &pLun->pTop->IBase : NULL;
     }
-    else if (ppBase)
-        *ppBase = NULL;
+    RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
 
     if (ppBase)
         LogFlow(("PDMR3DeviceAttach: returns %Rrc *ppBase=%p\n", rc, *ppBase));
@@ -1127,21 +1159,22 @@ VMMR3_INT_DECL(PPDMCRITSECT) PDMR3DevGetCritSect(PVM pVM, PPDMDEVINS pDevIns)
  *
  * @thread  EMT
  */
-VMMR3DECL(int) PDMR3DriverAttach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPPDMIBASE ppBase)
+VMMR3DECL(int) PDMR3DriverAttach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun,
+                                 uint32_t fFlags, PPPDMIBASE ppBase)
 {
     LogFlow(("PDMR3DriverAttach: pszDevice=%p:{%s} iInstance=%d iLun=%d fFlags=%#x ppBase=%p\n",
              pszDevice, pszDevice, iInstance, iLun, fFlags, ppBase));
+    if (ppBase)
+        *ppBase = NULL;
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_EMT(pVM);
 
-    if (ppBase)
-        *ppBase = NULL;
-
     /*
      * Find the LUN in question.
      */
+    RTCritSectRwEnterShared(&pVM->pdm.s.CoreListCritSectRw);
     PPDMLUN pLun;
     int rc = pdmR3DevFindLun(pVM, pszDevice, iInstance, iLun, &pLun);
     if (RT_SUCCESS(rc))
@@ -1156,11 +1189,13 @@ VMMR3DECL(int) PDMR3DriverAttach(PUVM pUVM, const char *pszDevice, unsigned iIns
             PPDMDEVINS pDevIns = pLun->pDevIns;
             if (pDevIns->pReg->pfnAttach)
             {
+                RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
                 PDMCritSectEnter(pVM, pDevIns->pCritSectRoR3, VERR_IGNORED);
                 rc = pDevIns->pReg->pfnAttach(pDevIns, iLun, fFlags);
                 if (RT_SUCCESS(rc) && ppBase)
                     *ppBase = pLun->pTop ? &pLun->pTop->IBase : NULL;
                 PDMCritSectLeave(pVM, pDevIns->pCritSectRoR3);
+                RTCritSectRwEnterShared(&pVM->pdm.s.CoreListCritSectRw);
             }
             else
                 rc = VERR_PDM_DEVICE_NO_RT_ATTACH;
@@ -1172,7 +1207,9 @@ VMMR3DECL(int) PDMR3DriverAttach(PUVM pUVM, const char *pszDevice, unsigned iIns
                 pDrvIns = pDrvIns->Internal.s.pDown;
             if (pDrvIns->pReg->pfnAttach)
             {
+                RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
                 rc = pDrvIns->pReg->pfnAttach(pDrvIns, fFlags);
+                RTCritSectRwEnterShared(&pVM->pdm.s.CoreListCritSectRw);
                 if (RT_SUCCESS(rc) && ppBase)
                     *ppBase = pDrvIns->Internal.s.pDown
                             ? &pDrvIns->Internal.s.pDown->IBase
@@ -1182,6 +1219,7 @@ VMMR3DECL(int) PDMR3DriverAttach(PUVM pUVM, const char *pszDevice, unsigned iIns
                 rc = VERR_PDM_DRIVER_NO_RT_ATTACH;
         }
     }
+    RTCritSectRwLeaveShared(&pVM->pdm.s.CoreListCritSectRw);
 
     if (ppBase)
         LogFlow(("PDMR3DriverAttach: returns %Rrc *ppBase=%p\n", rc, *ppBase));
@@ -1220,7 +1258,7 @@ VMMR3DECL(int) PDMR3DriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDev
     LogFlow(("PDMR3DriverDetach: pszDevice=%p:{%s} iDevIns=%u iLun=%u pszDriver=%p:{%s} iOccurrence=%u fFlags=%#x\n",
              pszDevice, pszDevice, iDevIns, iLun, pszDriver, pszDriver, iOccurrence, fFlags));
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    PVM pVM = pUVM->pVM;
+    PVM const pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_EMT(pVM);
     AssertPtr(pszDevice);
@@ -1231,6 +1269,7 @@ VMMR3DECL(int) PDMR3DriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDev
     /*
      * Find the LUN in question.
      */
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
     PPDMLUN pLun;
     int rc = pdmR3DevFindLun(pVM, pszDevice, iDevIns, iLun, &pLun);
     if (RT_SUCCESS(rc))
@@ -1255,13 +1294,14 @@ VMMR3DECL(int) PDMR3DriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDev
                 }
             }
             if (pDrvIns)
-                rc = pdmR3DrvDetach(pDrvIns, fFlags);
+                rc = pdmR3DrvDetach(pVM, pDrvIns, fFlags);
             else
                 rc = VERR_PDM_DRIVER_INSTANCE_NOT_FOUND;
         }
         else
             rc = VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN;
     }
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
 
     LogFlow(("PDMR3DriverDetach: returns %Rrc\n", rc));
     return rc;

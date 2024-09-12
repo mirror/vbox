@@ -280,6 +280,7 @@ EXPORTS
     PDMR3DeviceDetach
     PDMR3DriverAttach
     PDMR3DriverDetach
+    PDMR3DriverEnumInstances
     PDMR3NsBwGroupSetLimit
     PDMR3QueryDeviceLun
     PDMR3QueryDriverOnLun

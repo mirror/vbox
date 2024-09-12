@@ -416,6 +416,8 @@ typedef struct PDMDRVINSINT
     R3PTRTYPE(PCFGMNODE)            pCfgHandle;
     /** Pointer to the ring-0 request handler function. */
     PFNPDMDRVREQHANDLERR0           pfnReqHandlerR0;
+    /** Pointer to the next instance (starts at PDMDRV::pInstances). */
+    R3PTRTYPE(PPDMDRVINS)           pNext;
 } PDMDRVINSINT;
 
 
@@ -609,7 +611,7 @@ typedef struct PDMLUN
     /** Pointer to the bottom driver in the driver chain. */
     PPDMDRVINS                      pBottom;
     /** Pointer to the device instance which the LUN belongs to.
-     * Either this is set or pUsbIns is set. Both is never set at the same time. */
+     * Either this is set or pUsbIns is set. Both are never set at the same time. */
     PPDMDEVINS                      pDevIns;
     /** Pointer to the USB device instance which the LUN belongs to. */
     PPDMUSBINS                      pUsbIns;
@@ -697,6 +699,8 @@ typedef struct PDMDRV
     char                           *pszRCSearchPath;
     /** The search path for ring-0 context modules (';' as separator). */
     char                           *pszR0SearchPath;
+    /** Pointer to chain of instances. */
+    PPDMDRVINSR3                    pInstances;
 } PDMDRV;
 
 
@@ -1463,6 +1467,11 @@ typedef struct PDM
      * serialization but instead let all threads enter immediately and
      * concurrently. */
     PDMCRITSECT                     NopCritSect;
+    /** Critical read/write section protecting the core list: devices,
+     *  usb devices, drivers.
+     * @note The PDMUSERPERVM::ListCritSect lock covers queues and the stuff in
+     *       PDMUSERPERVM. */
+    RTCRITSECTRW                    CoreListCritSectRw;
 
     /** The ring-0 capable task sets (max 128). */
     PDMTASKSET                      aTaskSets[2];
@@ -1503,10 +1512,12 @@ typedef struct PDM
     R3PTRTYPE(PPDMDMAC)             pDmac;
     /** The registered RTC device. */
     R3PTRTYPE(PPDMRTC)              pRtc;
-    /** The registered USB HUBs. (FIFO) */
+    /** The registered USB HUBs. (FIFO)
+     * @note Protected by CoreListCritSectRw. */
     R3PTRTYPE(PPDMUSBHUB)           pUsbHubs;
 
     /** @name Queues
+     * @note Protected by PDMUSERPERVM::ListCritSect.
      * @{ */
     /** Number of ring-0 capable queues in apQueues. */
     uint32_t                        cRing0Queues;
@@ -1651,7 +1662,7 @@ typedef struct PDMUSERPERVM
 {
     /** @todo move more stuff over here. */
 
-    /** Lock protecting the lists below it and the queue list. */
+    /** Lock protecting the lists below it and the queue list (in PDM). */
     RTCRITSECT                      ListCritSect;
     /** Pointer to list of loaded modules. */
     PPDMMOD                         pModules;
@@ -1771,8 +1782,8 @@ int         pdmR3UsbVMInitComplete(PVM pVM);
 int         pdmR3DrvInit(PVM pVM);
 int         pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDMDRVINS pDrvAbove,
                                 PPDMLUN pLun, PPDMIBASE *ppBaseInterface);
-int         pdmR3DrvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags);
-void        pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags);
+int         pdmR3DrvDetach(PVM pVM, PPDMDRVINS pDrvIns, uint32_t fFlags);
+void        pdmR3DrvDestroyChain(PVM pVM, PPDMDRVINS pDrvIns, uint32_t fFlags);
 PPDMDRV     pdmR3DrvLookup(PVM pVM, const char *pszName);
 
 int         pdmR3LdrInitU(PUVM pUVM);

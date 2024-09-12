@@ -156,7 +156,7 @@ struc VM
     alignb 64
     .mm                     resb 192
     alignb 64
-    .pdm                    resb 22400
+    .pdm                    resb 22528
     alignb 64
     .iom                    resb 1152
     alignb 64

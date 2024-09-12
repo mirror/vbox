@@ -180,9 +180,9 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlp_IoPortWrite(PPDMDEVINS pDevIns, RT
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnMmioCreateEx} */
-static DECLCALLBACK(int) pdmR3DevHlp_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
-                                                  uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
-                                                  PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill,
+static DECLCALLBACK(int) pdmR3DevHlp_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion, uint32_t fFlags,
+                                                  PPDMPCIDEV pPciDev, uint32_t iPciRegion, PFNIOMMMIONEWWRITE pfnWrite,
+                                                  PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill,
                                                   void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2598,7 +2598,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iI
 static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
+    PVM const pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_DriverAttach: caller='%s'/%d: iLun=%d pBaseInterface=%p ppBaseInterface=%p pszDesc=%p:{%s}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, iLun, pBaseInterface, ppBaseInterface, pszDesc, pszDesc));
@@ -2606,6 +2606,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t i
     /*
      * Lookup the LUN, it might already be registered.
      */
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+
     PPDMLUN pLunPrev = NULL;
     PPDMLUN pLun = pDevIns->Internal.s.pLunsR3;
     for (; pLun; pLunPrev = pLun, pLun = pLun->pNext)
@@ -2617,10 +2619,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t i
      */
     if (!pLun)
     {
-        if (    !pBaseInterface
-            ||  !pszDesc
-            ||  !*pszDesc)
+        if (   !pBaseInterface
+            || !pszDesc
+            || !*pszDesc)
         {
+            RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
             Assert(pBaseInterface);
             Assert(pszDesc || *pszDesc);
             return VERR_INVALID_PARAMETER;
@@ -2628,7 +2631,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t i
 
         pLun = (PPDMLUN)MMR3HeapAlloc(pVM, MM_TAG_PDM_LUN, sizeof(*pLun));
         if (!pLun)
+        {
+            RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
             return VERR_NO_MEMORY;
+        }
 
         pLun->iLun      = iLun;
         pLun->pNext     = pLunPrev ? pLunPrev->pNext : NULL;
@@ -2647,6 +2653,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t i
     }
     else if (pLun->pTop)
     {
+        RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
         AssertMsgFailed(("Already attached! The device should keep track of such things!\n"));
         LogFlow(("pdmR3DevHlp_DriverAttach: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_PDM_DRIVER_ALREADY_ATTACHED));
         return VERR_PDM_DRIVER_ALREADY_ATTACHED;
@@ -2658,11 +2665,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t i
      * Get the attached driver configuration.
      */
     int rc;
-    PCFGMNODE pNode = CFGMR3GetChildF(pDevIns->Internal.s.pCfgHandle, "LUN#%u", iLun);
+    PCFGMNODE const pNode = CFGMR3GetChildF(pDevIns->Internal.s.pCfgHandle, "LUN#%u", iLun);
     if (pNode)
         rc = pdmR3DrvInstantiate(pVM, pNode, pBaseInterface, NULL /*pDrvAbove*/, pLun, ppBaseInterface);
     else
         rc = VERR_PDM_NO_ATTACHED_DRIVER;
+
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
 
     LogFlow(("pdmR3DevHlp_DriverAttach: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -2676,12 +2685,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverDetach(PPDMDEVINS pDevIns, PPDMDRVINS
     LogFlow(("pdmR3DevHlp_DriverDetach: caller='%s'/%d: pDrvIns=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pDrvIns));
 
-#ifdef VBOX_STRICT
-    PVM pVM = pDevIns->Internal.s.pVMR3;
+    PVM const pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
-#endif
 
-    int rc = pdmR3DrvDetach(pDrvIns, fFlags);
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+    int rc = pdmR3DrvDetach(pVM, pDrvIns, fFlags);
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
 
     LogFlow(("pdmR3DevHlp_DriverDetach: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -2693,7 +2702,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverReconfigure(PPDMDEVINS pDevIns, uint3
                                                        const char * const *papszDrivers, PCFGMNODE *papConfigs, uint32_t fFlags)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
+    PVM const pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_DriverReconfigure: caller='%s'/%d: iLun=%u cDepth=%u fFlags=%#x\n",
              pDevIns->pReg->szName, pDevIns->iInstance, iLun, cDepth, fFlags));
@@ -2716,6 +2725,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverReconfigure(PPDMDEVINS pDevIns, uint3
     AssertReturn(fFlags == 0, VERR_INVALID_FLAGS);
 
     /*
+     * Exclusively lock the core stuff (mind, pdmR3DrvDetach will leave + reenter).
+     */
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+
+    /*
      * Do we have to detach an existing driver first?
      */
     for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
@@ -2723,8 +2737,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverReconfigure(PPDMDEVINS pDevIns, uint3
         {
             if (pLun->pTop)
             {
-                int rc = pdmR3DrvDetach(pLun->pTop, 0);
-                AssertRCReturn(rc, rc);
+                int rc = pdmR3DrvDetach(pVM, pLun->pTop, 0);
+                AssertRCReturnStmt(rc, RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw), rc);
             }
             break;
         }
@@ -2766,6 +2780,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverReconfigure(PPDMDEVINS pDevIns, uint3
         AssertRCReturn(rc, rc);
     }
 
+    /* Keep the lock till the end to serialize the CFGM changes. */
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
     LogFlow(("pdmR3DevHlp_DriverReconfigure: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -3512,34 +3528,37 @@ static DECLCALLBACK(int) pdmR3DevHlp_RTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG
     /*
      * Only one DMA device.
      */
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    if (pVM->pdm.s.pRtc)
-    {
-        AssertMsgFailed(("Only one RTC device is supported!\n"));
-        LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Rrc\n",
-                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
+    PVM const pVM = pDevIns->Internal.s.pVMR3;
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
 
-    /*
-     * Allocate and initialize pci bus structure.
-     */
     int rc = VINF_SUCCESS;
-    PPDMRTC pRtc = (PPDMRTC)MMR3HeapAlloc(pDevIns->Internal.s.pVMR3, MM_TAG_PDM_DEVICE, sizeof(*pRtc));
-    if (pRtc)
+    if (!pVM->pdm.s.pRtc)
     {
-        pRtc->pDevIns   = pDevIns;
-        pRtc->Reg       = *pRtcReg;
-        pVM->pdm.s.pRtc = pRtc;
+        /*
+         * Allocate and initialize pci bus structure.
+         */
+        PPDMRTC pRtc = (PPDMRTC)MMR3HeapAlloc(pDevIns->Internal.s.pVMR3, MM_TAG_PDM_DEVICE, sizeof(*pRtc));
+        if (pRtc)
+        {
+            pRtc->pDevIns   = pDevIns;
+            pRtc->Reg       = *pRtcReg;
+            pVM->pdm.s.pRtc = pRtc;
 
-        /* set the helper pointer. */
-        *ppRtcHlp = &g_pdmR3DevRtcHlp;
-        Log(("PDM: Registered RTC device '%s'/%d pDevIns=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+            /* set the helper pointer. */
+            *ppRtcHlp = &g_pdmR3DevRtcHlp;
+            Log(("PDM: Registered RTC device '%s'/%d pDevIns=%p\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+        }
+        else
+            rc = VERR_NO_MEMORY;
     }
     else
-        rc = VERR_NO_MEMORY;
+    {
+        AssertMsgFailed(("Only one RTC device is supported!\n"));
+        rc = VERR_ALREADY_EXISTS;
+    }
 
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
     LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3554,9 +3573,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMARegister(PPDMDEVINS pDevIns, unsigned uC
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_DMARegister: caller='%s'/%d: uChannel=%d pfnTransferHandler=%p pvUser=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uChannel, pfnTransferHandler, pvUser));
-    int rc = VINF_SUCCESS;
-    if (pVM->pdm.s.pDmac)
-        pVM->pdm.s.pDmac->Reg.pfnRegister(pVM->pdm.s.pDmac->pDevIns, uChannel, pDevIns, pfnTransferHandler, pvUser);
+    int            rc    = VINF_SUCCESS;
+    PPDMDMAC const pDmac = pVM->pdm.s.pDmac;
+    if (pDmac)
+        pDmac->Reg.pfnRegister(pDmac->pDevIns, uChannel, pDevIns, pfnTransferHandler, pvUser);
     else
     {
         AssertMsgFailed(("Configuration error: No DMAC controller available. This could be related to init order too!\n"));
@@ -3576,10 +3596,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMAReadMemory(PPDMDEVINS pDevIns, unsigned 
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_DMAReadMemory: caller='%s'/%d: uChannel=%d pvBuffer=%p off=%#x cbBlock=%#x pcbRead=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uChannel, pvBuffer, off, cbBlock, pcbRead));
-    int rc = VINF_SUCCESS;
-    if (pVM->pdm.s.pDmac)
+    int            rc    = VINF_SUCCESS;
+    PPDMDMAC const pDmac = pVM->pdm.s.pDmac;
+    if (pDmac)
     {
-        uint32_t cb = pVM->pdm.s.pDmac->Reg.pfnReadMemory(pVM->pdm.s.pDmac->pDevIns, uChannel, pvBuffer, off, cbBlock);
+        uint32_t cb = pDmac->Reg.pfnReadMemory(pDmac->pDevIns, uChannel, pvBuffer, off, cbBlock);
         if (pcbRead)
             *pcbRead = cb;
     }
@@ -3602,10 +3623,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMAWriteMemory(PPDMDEVINS pDevIns, unsigned
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_DMAWriteMemory: caller='%s'/%d: uChannel=%d pvBuffer=%p off=%#x cbBlock=%#x pcbWritten=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uChannel, pvBuffer, off, cbBlock, pcbWritten));
-    int rc = VINF_SUCCESS;
-    if (pVM->pdm.s.pDmac)
+    int            rc    = VINF_SUCCESS;
+    PPDMDMAC const pDmac = pVM->pdm.s.pDmac;
+    if (pDmac)
     {
-        uint32_t cb = pVM->pdm.s.pDmac->Reg.pfnWriteMemory(pVM->pdm.s.pDmac->pDevIns, uChannel, pvBuffer, off, cbBlock);
+        uint32_t cb = pDmac->Reg.pfnWriteMemory(pDmac->pDevIns, uChannel, pvBuffer, off, cbBlock);
         if (pcbWritten)
             *pcbWritten = cb;
     }
@@ -3628,9 +3650,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMASetDREQ(PPDMDEVINS pDevIns, unsigned uCh
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_DMASetDREQ: caller='%s'/%d: uChannel=%d uLevel=%d\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uChannel, uLevel));
-    int rc = VINF_SUCCESS;
-    if (pVM->pdm.s.pDmac)
-        pVM->pdm.s.pDmac->Reg.pfnSetDREQ(pVM->pdm.s.pDmac->pDevIns, uChannel, uLevel);
+    int            rc    = VINF_SUCCESS;
+    PPDMDMAC const pDmac = pVM->pdm.s.pDmac;
+    if (pDmac)
+        pDmac->Reg.pfnSetDREQ(pDmac->pDevIns, uChannel, uLevel);
     else
     {
         AssertMsgFailed(("Configuration error: No DMAC controller available. This could be related to init order too!\n"));
@@ -3649,9 +3672,10 @@ static DECLCALLBACK(uint8_t) pdmR3DevHlp_DMAGetChannelMode(PPDMDEVINS pDevIns, u
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_DMAGetChannelMode: caller='%s'/%d: uChannel=%d\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uChannel));
-    uint8_t u8Mode;
-    if (pVM->pdm.s.pDmac)
-        u8Mode = pVM->pdm.s.pDmac->Reg.pfnGetChannelMode(pVM->pdm.s.pDmac->pDevIns, uChannel);
+    uint8_t        u8Mode;
+    PPDMDMAC const pDmac = pVM->pdm.s.pDmac;
+    if (pDmac)
+        u8Mode = pDmac->Reg.pfnGetChannelMode(pDmac->pDevIns, uChannel);
     else
     {
         AssertMsgFailed(("Configuration error: No DMAC controller available. This could be related to init order too!\n"));
@@ -3687,13 +3711,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg
     LogFlow(("pdmR3DevHlp_CMOSWrite: caller='%s'/%d: iReg=%#04x u8Value=%#04x\n",
              pDevIns->pReg->szName, pDevIns->iInstance, iReg, u8Value));
     int rc;
-    if (pVM->pdm.s.pRtc)
+    PPDMRTC const pRtc = pVM->pdm.s.pRtc;
+    if (pRtc)
     {
-        PPDMDEVINS pDevInsRtc = pVM->pdm.s.pRtc->pDevIns;
+        PPDMDEVINS const pDevInsRtc = pRtc->pDevIns;
         rc = PDMCritSectEnter(pVM, pDevInsRtc->pCritSectRoR3, VERR_IGNORED);
         if (RT_SUCCESS(rc))
         {
-            rc = pVM->pdm.s.pRtc->Reg.pfnWrite(pDevInsRtc, iReg, u8Value);
+            rc = pRtc->Reg.pfnWrite(pDevInsRtc, iReg, u8Value);
             PDMCritSectLeave(pVM, pDevInsRtc->pCritSectRoR3);
         }
     }
@@ -3716,13 +3741,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg,
     LogFlow(("pdmR3DevHlp_CMOSWrite: caller='%s'/%d: iReg=%#04x pu8Value=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, iReg, pu8Value));
     int rc;
-    if (pVM->pdm.s.pRtc)
+    PPDMRTC const pRtc = pVM->pdm.s.pRtc;
+    if (pRtc)
     {
-        PPDMDEVINS pDevInsRtc = pVM->pdm.s.pRtc->pDevIns;
+        PPDMDEVINS const pDevInsRtc = pRtc->pDevIns;
         rc = PDMCritSectEnter(pVM, pDevInsRtc->pCritSectRoR3, VERR_IGNORED);
         if (RT_SUCCESS(rc))
         {
-            rc = pVM->pdm.s.pRtc->Reg.pfnRead(pDevInsRtc, iReg, pu8Value);
+            rc = pRtc->Reg.pfnRead(pDevInsRtc, iReg, pu8Value);
             PDMCritSectLeave(pVM, pDevInsRtc->pCritSectRoR3);
         }
     }
@@ -3978,6 +4004,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     AssertPtrNullReturn(piBus, VERR_INVALID_POINTER);
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
 
+    /* Take the core lock exclusively just to be safe. */
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+
     /*
      * Find free PCI bus entry.
      */
@@ -3985,9 +4014,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     for (iBus = 0; iBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses); iBus++)
         if (!pVM->pdm.s.aPciBuses[iBus].pDevInsR3)
             break;
-    AssertLogRelMsgReturn(iBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses),
-                          ("Too many PCI buses. Max=%u\n", RT_ELEMENTS(pVM->pdm.s.aPciBuses)),
-                          VERR_OUT_OF_RESOURCES);
+    AssertLogRelMsgReturnStmt(iBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses),
+                              ("Too many PCI buses. Max=%u\n", RT_ELEMENTS(pVM->pdm.s.aPciBuses)),
+                              RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw),
+                              VERR_OUT_OF_RESOURCES);
     PPDMPCIBUS pPciBus = &pVM->pdm.s.aPciBuses[iBus];
 
     /*
@@ -4004,6 +4034,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     pPciBus->pfnSetIrqR3                = pPciBusReg->pfnSetIrqR3;
 
     Log(("PDM: Registered PCI bus device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
 
     /* set the helper pointer and return. */
     *ppPciHlp = &g_pdmR3DevPciHlp;
@@ -4041,6 +4073,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
     VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
+    /* Take the core lock exclusively just to be safe. */
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+
     /*
      * Find free IOMMU slot.
      * The IOMMU at the root complex is the one at 0.
@@ -4050,14 +4085,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
     for (idxIommu = 0; idxIommu < RT_ELEMENTS(pVM->pdm.s.aIommus); idxIommu++)
         if (!pVM->pdm.s.aIommus[idxIommu].pDevInsR3)
             break;
-    AssertLogRelMsgReturn(idxIommu < RT_ELEMENTS(pVM->pdm.s.aIommus),
-                          ("Too many IOMMUs. Max=%u\n", RT_ELEMENTS(pVM->pdm.s.aIommus)),
-                          VERR_OUT_OF_RESOURCES);
+    AssertLogRelMsgReturnStmt(idxIommu < RT_ELEMENTS(pVM->pdm.s.aIommus),
+                              ("Too many IOMMUs. Max=%u\n", RT_ELEMENTS(pVM->pdm.s.aIommus)),
+                              RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw),
+                              VERR_OUT_OF_RESOURCES);
 #else
     /* Currently we support only a single IOMMU. */
-    AssertMsgReturn(!pVM->pdm.s.aIommus[0].pDevInsR3,
-                    ("%s/%u: Only one IOMMU device is supported!\n", pDevIns->pReg->szName, pDevIns->iInstance),
-                    VERR_ALREADY_EXISTS);
+    AssertMsgReturnStmt(!pVM->pdm.s.aIommus[idxIommu].pDevInsR3,
+                        ("%s/%u: Only one IOMMU device is supported!\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                        RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw),
+                        VERR_ALREADY_EXISTS);
 #endif
     PPDMIOMMUR3 pIommu = &pVM->pdm.s.aIommus[idxIommu];
 
@@ -4070,6 +4107,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
     pIommu->pfnMemBulkAccess = pIommuReg->pfnMemBulkAccess;
     pIommu->pfnMsiRemap      = pIommuReg->pfnMsiRemap;
     Log(("PDM: Registered IOMMU device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
 
     /* Set the helper pointer and return. */
     *ppIommuHlp = &g_pdmR3DevIommuHlp;
@@ -4106,11 +4145,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
     VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
+    /* Take the core lock exclusively just to be safe. */
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+
     /*
      * Only one PIC device.
      */
-    AssertMsgReturn(pVM->pdm.s.Pic.pDevInsR3 == NULL, ("%s/%d: Only one PIC!\n", pDevIns->pReg->szName, pDevIns->iInstance),
-                    VERR_ALREADY_EXISTS);
+    AssertMsgReturnStmt(pVM->pdm.s.Pic.pDevInsR3 == NULL,
+                        ("%s/%d: Only one PIC!\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                        RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw),
+                        VERR_ALREADY_EXISTS);
 
     /*
      * Take down the callbacks and instance.
@@ -4119,6 +4163,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     pVM->pdm.s.Pic.pfnSetIrqR3 = pPicReg->pfnSetIrq;
     pVM->pdm.s.Pic.pfnGetInterruptR3 = pPicReg->pfnGetInterrupt;
     Log(("PDM: Registered PIC device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
 
     /* set the helper pointer and return. */
     *ppPicHlp = &g_pdmR3DevPicHlp;
@@ -4139,13 +4185,17 @@ static DECLCALLBACK(int) pdmR3DevHlp_ApicRegister(PPDMDEVINS pDevIns)
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
     VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
+    /* Take the core lock exclusively just to be safe. */
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+
     /*
      * Only one APIC device. On SMP we have single logical device covering all LAPICs,
      * as they need to communicate and share state easily.
      */
-    AssertMsgReturn(pVM->pdm.s.Apic.pDevInsR3 == NULL,
-                    ("%s/%u: Only one APIC device is supported!\n", pDevIns->pReg->szName, pDevIns->iInstance),
-                    VERR_ALREADY_EXISTS);
+    AssertMsgReturnStmt(pVM->pdm.s.Apic.pDevInsR3 == NULL,
+                        ("%s/%u: Only one APIC device is supported!\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                        RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw),
+                        VERR_ALREADY_EXISTS);
 
     /*
      * Set the ring-3 and raw-mode bits, leave the ring-0 to ring-0 setup.
@@ -4155,6 +4205,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_ApicRegister(PPDMDEVINS pDevIns)
     pVM->pdm.s.Apic.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     Assert(pVM->pdm.s.Apic.pDevInsRC || !VM_IS_RAW_MODE_ENABLED(pVM));
 #endif
+
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
 
     LogFlow(("pdmR3DevHlp_ApicRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
@@ -4185,18 +4237,25 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoApicRegister(PPDMDEVINS pDevIns, PPDMIOAP
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
     VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
+    /* Take the core lock exclusively just to be safe. */
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+
     /*
      * The I/O APIC requires the APIC to be present (hacks++).
      * If the I/O APIC does GC stuff so must the APIC.
      */
-    AssertMsgReturn(pVM->pdm.s.Apic.pDevInsR3 != NULL, ("Configuration error / Init order error! No APIC!\n"), VERR_WRONG_ORDER);
+    AssertMsgReturnStmt(pVM->pdm.s.Apic.pDevInsR3 != NULL,
+                        ("Configuration error / Init order error! No APIC!\n"),
+                        RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw),
+                        VERR_WRONG_ORDER);
 
     /*
      * Only one I/O APIC device.
      */
-    AssertMsgReturn(pVM->pdm.s.IoApic.pDevInsR3 == NULL,
-                    ("Only one IOAPIC device is supported! (caller %s/%d)\n", pDevIns->pReg->szName, pDevIns->iInstance),
-                    VERR_ALREADY_EXISTS);
+    AssertMsgReturnStmt(pVM->pdm.s.IoApic.pDevInsR3 == NULL,
+                        ("Only one IOAPIC device is supported! (caller %s/%d)\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                        RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw),
+                        VERR_ALREADY_EXISTS);
 
     /*
      * Initialize the R3 bits.
@@ -4206,6 +4265,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoApicRegister(PPDMDEVINS pDevIns, PPDMIOAP
     pVM->pdm.s.IoApic.pfnSendMsiR3 = pIoApicReg->pfnSendMsi;
     pVM->pdm.s.IoApic.pfnSetEoiR3  = pIoApicReg->pfnSetEoi;
     Log(("PDM: Registered I/O APIC device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
 
     /* set the helper pointer and return. */
     *ppIoApicHlp = &g_pdmR3DevIoApicHlp;
@@ -4234,14 +4295,20 @@ static DECLCALLBACK(int) pdmR3DevHlp_HpetRegister(PPDMDEVINS pDevIns, PPDMHPETRE
     /*
      * Only one HPET device.
      */
-    AssertMsgReturn(pVM->pdm.s.pHpet == NULL,
-                    ("Only one HPET device is supported! (caller %s/%d)\n", pDevIns->pReg->szName, pDevIns->iInstance),
-                    VERR_ALREADY_EXISTS);
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
+
+    AssertMsgReturnStmt(pVM->pdm.s.pHpet == NULL,
+                        ("Only one HPET device is supported! (caller %s/%d)\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                        RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw),
+                        VERR_ALREADY_EXISTS);
 
     /*
      * Do the job (what there is of it).
      */
     pVM->pdm.s.pHpet = pDevIns;
+
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
+
     *ppHpetHlpR3 = &g_pdmR3DevHpetHlp;
 
     LogFlow(("pdmR3DevHlp_HpetRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
@@ -4329,34 +4396,38 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACRE
     /*
      * Only one DMA device.
      */
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    if (pVM->pdm.s.pDmac)
-    {
-        AssertMsgFailed(("Only one DMA device is supported!\n"));
-        LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Rrc\n",
-                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
+    PVM const pVM = pDevIns->Internal.s.pVMR3;
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
 
-    /*
-     * Allocate and initialize pci bus structure.
-     */
     int rc = VINF_SUCCESS;
-    PPDMDMAC  pDmac = (PPDMDMAC)MMR3HeapAlloc(pDevIns->Internal.s.pVMR3, MM_TAG_PDM_DEVICE, sizeof(*pDmac));
-    if (pDmac)
+    if (!pVM->pdm.s.pDmac)
     {
-        pDmac->pDevIns   = pDevIns;
-        pDmac->Reg       = *pDmacReg;
-        pVM->pdm.s.pDmac = pDmac;
 
-        /* set the helper pointer. */
-        *ppDmacHlp = &g_pdmR3DevDmacHlp;
-        Log(("PDM: Registered DMAC device '%s'/%d pDevIns=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+        /*
+         * Allocate and initialize pci bus structure.
+         */
+        PPDMDMAC pDmac = (PPDMDMAC)MMR3HeapAlloc(pDevIns->Internal.s.pVMR3, MM_TAG_PDM_DEVICE, sizeof(*pDmac));
+        if (pDmac)
+        {
+            pDmac->pDevIns   = pDevIns;
+            pDmac->Reg       = *pDmacReg;
+            pVM->pdm.s.pDmac = pDmac;
+
+            /* set the helper pointer. */
+            *ppDmacHlp = &g_pdmR3DevDmacHlp;
+            Log(("PDM: Registered DMAC device '%s'/%d pDevIns=%p\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+        }
+        else
+            rc = VERR_NO_MEMORY;
     }
     else
-        rc = VERR_NO_MEMORY;
+    {
+        AssertMsgFailed(("Only one DMA device is supported!\n"));
+        rc = VERR_ALREADY_EXISTS;
+    }
 
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
     LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -4374,6 +4445,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGC
     LogFlow(("pdmR3DevHlp_RegisterVMMDevHeap: caller='%s'/%d: GCPhys=%RGp pvHeap=%p cbHeap=%#x\n",
              pDevIns->pReg->szName, pDevIns->iInstance, GCPhys, pvHeap, cbHeap));
 
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
     if (pVM->pdm.s.pvVMMDevHeap == NULL)
     {
         pVM->pdm.s.pvVMMDevHeap     = pvHeap;
@@ -4389,10 +4461,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGC
         if (pVM->pdm.s.GCPhysVMMDevHeap != GCPhys)
         {
             pVM->pdm.s.GCPhysVMMDevHeap = GCPhys;
-            if (pVM->pdm.s.pfnVMMDevHeapNotify)
-                pVM->pdm.s.pfnVMMDevHeapNotify(pVM, pvHeap, GCPhys);
+            PFNPDMVMMDEVHEAPNOTIFY const pfnVMMDevHeapNotify = pVM->pdm.s.pfnVMMDevHeapNotify;
+            if (pfnVMMDevHeapNotify)
+                pfnVMMDevHeapNotify(pVM, pvHeap, GCPhys);
         }
     }
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
 
     LogFlow(("pdmR3DevHlp_RegisterVMMDevHeap: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
@@ -4437,36 +4511,39 @@ static DECLCALLBACK(int) pdmR3DevHlp_FirmwareRegister(PPDMDEVINS pDevIns, PCPDMF
     }
 
     /*
-     * Only one DMA device.
+     * Only one firmware registration.
      */
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    if (pVM->pdm.s.pFirmware)
-    {
-        AssertMsgFailed(("Only one firmware device is supported!\n"));
-        LogFlow(("pdmR3DevHlp_FirmwareRegister: caller='%s'/%d: returns %Rrc\n",
-                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
+    PVM const pVM = pDevIns->Internal.s.pVMR3;
+    RTCritSectRwEnterExcl(&pVM->pdm.s.CoreListCritSectRw);
 
-    /*
-     * Allocate and initialize pci bus structure.
-     */
     int rc = VINF_SUCCESS;
-    PPDMFW pFirmware = (PPDMFW)MMR3HeapAlloc(pDevIns->Internal.s.pVMR3, MM_TAG_PDM_DEVICE, sizeof(*pFirmware));
-    if (pFirmware)
+    if (!pVM->pdm.s.pFirmware)
     {
-        pFirmware->pDevIns   = pDevIns;
-        pFirmware->Reg       = *pFwReg;
-        pVM->pdm.s.pFirmware = pFirmware;
+        /*
+         * Allocate and initialize pci bus structure.
+         */
+        PPDMFW pFirmware = (PPDMFW)MMR3HeapAlloc(pDevIns->Internal.s.pVMR3, MM_TAG_PDM_DEVICE, sizeof(*pFirmware));
+        if (pFirmware)
+        {
+            pFirmware->pDevIns   = pDevIns;
+            pFirmware->Reg       = *pFwReg;
+            pVM->pdm.s.pFirmware = pFirmware;
 
-        /* set the helper pointer. */
-        *ppFwHlp = &g_pdmR3DevFirmwareHlp;
-        Log(("PDM: Registered firmware device '%s'/%d pDevIns=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+            /* set the helper pointer. */
+            *ppFwHlp = &g_pdmR3DevFirmwareHlp;
+            Log(("PDM: Registered firmware device '%s'/%d pDevIns=%p\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
+        }
+        else
+            rc = VERR_NO_MEMORY;
     }
     else
-        rc = VERR_NO_MEMORY;
+    {
+        AssertMsgFailed(("Only one firmware device is supported!\n"));
+        rc = VERR_ALREADY_EXISTS;
+    }
 
+    RTCritSectRwLeaveExcl(&pVM->pdm.s.CoreListCritSectRw);
     LogFlow(("pdmR3DevHlp_FirmwareRegister: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -4804,7 +4881,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleCheckAll(PPDMDEVINS pDevIns)
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnQueryLun} */
 static DECLCALLBACK(int) pdmR3DevHlp_QueryLun(PPDMDEVINS pDevIns, const char *pszDevice,
-                                                 unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
+                                              unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
 

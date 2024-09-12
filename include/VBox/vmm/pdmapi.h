@@ -168,6 +168,7 @@ VMMR3DECL(int)          PDMR3QueryDeviceLun(PUVM pUVM, const char *pszDevice, un
 VMMR3DECL(int)          PDMR3QueryLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
 VMMR3DECL(int)          PDMR3QueryDriverOnLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun,
                                               const char *pszDriver, PPPDMIBASE ppBase);
+
 VMMR3DECL(int)          PDMR3DeviceAttach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags,
                                           PPDMIBASE *ppBase);
 VMMR3DECL(int)          PDMR3DeviceDetach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags);
@@ -179,6 +180,28 @@ VMMR3DECL(int)          PDMR3DriverDetach(PUVM pUVM, const char *pszDevice, unsi
 VMMR3DECL(int)          PDMR3DriverReattach(PUVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
                                             const char *pszDriver, unsigned iOccurrence, uint32_t fFlags, PCFGMNODE pCfg,
                                             PPPDMIBASE ppBase);
+/**
+ * Driver instance enumeration callback function.
+ *
+ * @returns VBox status code. Failures will stop the enumeration and be
+ *          returned, informational statuses will be ignored and not returned.
+ * @param   pIBase          The base interface of the driver.
+ * @param   uDrvInstance    The driver instance number.
+ * @param   fUsbDev         Set if @a pszDevice is a USB device, clear if a
+ *                          regular device.
+ * @param   pszDevice       The device the driver is attached to.
+ * @param   uDevInstance    The device instance number.
+ * @param   uLun            The LUN on the device this instance is attached to.
+ * @param   pvUser          User argument.
+ *
+ * @note    Called owning the core PDM list lock in shared mode.
+ */
+typedef DECLCALLBACKTYPE(int, FNPDMENUMDRVINS,(PPDMIBASE pIBase, uint32_t uDrvInstance, bool fUsbDev, const char *pszDevice,
+                                               uint32_t uDevInstance, unsigned uLun, void *pvUser));
+/** Pointer to a FNPDMENUMDRVINS() function. */
+typedef FNPDMENUMDRVINS *PFNPDMENUMDRVINS;
+VMMR3DECL(int)          PDMR3DriverEnumInstances(PUVM pUVM, const char *pszDriver, PFNPDMENUMDRVINS pfnCallback, void *pvUser);
+
 VMMR3DECL(void)         PDMR3DmaRun(PVM pVM);
 
 VMMR3_INT_DECL(int)     PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, PFNPDMVMMDEVHEAPNOTIFY pfnNotify, RTR3PTR *ppv);
