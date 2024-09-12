@@ -953,7 +953,7 @@ static int ssmR3LazyInit(PVM pVM)
      * Initialize the cancellation critsect now.
      */
     if (RT_SUCCESS(rc))
-        rc = RTCritSectInit(&pVM->ssm.s.CancelCritSect);
+        rc = RTCritSectInitNamed(&pVM->ssm.s.CancelCritSect, "SSM-CancelCritSect");
     if (RT_SUCCESS(rc))
     {
         STAM_REL_REG_USED(pVM, &pVM->ssm.s.uPass, STAMTYPE_U32, "/SSM/uPass", STAMUNIT_COUNT, "Current pass");
