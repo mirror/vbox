@@ -197,7 +197,7 @@ typedef struct {
 
 /* SCSI specific device information. */
 typedef struct {
-    uint16_t    hba_seg;        /* Segment of HBA driver data block. */
+    uint16_t    hba_ofs;        /* Offset (in paragraphs) of HBA driver data block within EBDA. */
     uint8_t     idx_hba;        /* The HBA driver to use. */
     uint8_t     target_id;      /* Target ID. */
 } scsi_dev_t;
@@ -284,7 +284,7 @@ typedef struct {
     /* SATA (AHCI) bus-specific device information. */
     ahci_dev_t  ahcidev[BX_MAX_AHCI_DEVICES];
     uint8_t     ahci_devcnt;        /* Number of SATA devices. */
-    uint16_t    ahci_seg;           /* Segment of AHCI data block. */
+    uint16_t    ahci_ofs;           /* Offset (in paragraphs) of AHCI data block within EBDA. */
 #endif
 
     dpte_t      dpte;               /* Buffer for building a DPTE. */

@@ -282,6 +282,7 @@ extern  uint16_t    cdrom_boot(void);
 extern  void        show_logo(void);
 extern  void        delay_boot(uint16_t secs);
 extern  bx_bool     set_enable_a20(bx_bool val);
+extern  uint16_t    ebda_mem_alloc(int n_kb);
 
 #define printf(...)  bios_printf(BIOS_PRINTF_SCREEN, __VA_ARGS__)
 

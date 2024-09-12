@@ -103,29 +103,6 @@ scsi_hba_t hbaacc[] =
 };
 
 /**
- * Allocates 1K of conventional memory.
- */
-static uint16_t scsi_hba_mem_alloc(void)
-{
-    uint16_t    base_mem_kb;
-    uint16_t    hba_seg;
-
-    base_mem_kb = read_word(0x00, 0x0413);
-
-    DBG_SCSI("SCSI: %dK of base mem\n", base_mem_kb);
-
-    if (base_mem_kb == 0)
-        return 0;
-
-    base_mem_kb--; /* Allocate one block. */
-    hba_seg = (((uint32_t)base_mem_kb * 1024) >> 4); /* Calculate start segment. */
-
-    write_word(0x00, 0x0413, base_mem_kb);
-
-    return hba_seg;
-}
-
-/**
  * Read sectors from an attached SCSI device.
  *
  * @returns status code.
@@ -159,7 +136,7 @@ int scsi_read_sectors(bio_dsk_t __far *bios_dsk)
     cdb.pad2    = 0;
 
 
-    hba_seg   = bios_dsk->scsidev[device_id].hba_seg;
+    hba_seg   = read_word(0x0040, 0x000E) + bios_dsk->scsidev[device_id].hba_ofs;
     idx_hba   = bios_dsk->scsidev[device_id].idx_hba;
     target_id = bios_dsk->scsidev[device_id].target_id;
 
@@ -212,7 +189,7 @@ int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
     cdb.nsect32 = swap_32(count);
     cdb.pad2    = 0;
 
-    hba_seg   = bios_dsk->scsidev[device_id].hba_seg;
+    hba_seg   = read_word(0x0040, 0x000E) + bios_dsk->scsidev[device_id].hba_ofs;
     idx_hba   = bios_dsk->scsidev[device_id].idx_hba;
     target_id = bios_dsk->scsidev[device_id].target_id;
 
@@ -274,7 +251,7 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
              bios_dsk->drqp.nsect, bios_dsk->drqp.sect_sz);
 
     high_bits_save(&eax_hi);
-    hba_seg   = bios_dsk->scsidev[device_id].hba_seg;
+    hba_seg   = read_word(0x0040, 0x000E) + bios_dsk->scsidev[device_id].hba_ofs;
     idx_hba   = bios_dsk->scsidev[device_id].idx_hba;
     target_id = bios_dsk->scsidev[device_id].target_id;
 
@@ -300,9 +277,10 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
  * Enumerate attached devices.
  *
  * @param   hba_seg    Segement of the HBA controller block.
+ * @param   hba_ofs    Offset of the HBA controller block within the EBDA.
  * @param   idx_hba    The HBA driver index used for accessing the enumerated devices.
  */
-static void scsi_enumerate_attached_devices(uint16_t hba_seg, uint8_t idx_hba)
+static void scsi_enumerate_attached_devices(uint16_t hba_seg, uint16_t hba_ofs, uint8_t idx_hba)
 {
     int                 i;
     uint8_t             buffer[0x0200];
@@ -432,7 +410,7 @@ static void scsi_enumerate_attached_devices(uint16_t hba_seg, uint8_t idx_hba)
                 /* Calculate index into the generic disk table. */
                 hd_index = devcount_scsi + BX_MAX_ATA_DEVICES;
 
-                bios_dsk->scsidev[devcount_scsi].hba_seg   = hba_seg;
+                bios_dsk->scsidev[devcount_scsi].hba_ofs   = hba_ofs;
                 bios_dsk->scsidev[devcount_scsi].idx_hba   = idx_hba;
                 bios_dsk->scsidev[devcount_scsi].target_id = i;
                 bios_dsk->devices[hd_index].type        = DSK_TYPE_SCSI;
@@ -493,7 +471,7 @@ static void scsi_enumerate_attached_devices(uint16_t hba_seg, uint8_t idx_hba)
 
             removable = buffer[1] & 0x80 ? 1 : 0;
 
-            bios_dsk->scsidev[devcount_scsi].hba_seg   = hba_seg;
+            bios_dsk->scsidev[devcount_scsi].hba_ofs   = hba_ofs;
             bios_dsk->scsidev[devcount_scsi].idx_hba   = idx_hba;
             bios_dsk->scsidev[devcount_scsi].target_id = i;
             bios_dsk->devices[hd_index].type        = DSK_TYPE_SCSI;
@@ -543,9 +521,12 @@ void BIOSCALL scsi_init(void)
         {
             int rc;
             uint8_t  u8Bus, u8DevFn;
-            uint16_t hba_seg = scsi_hba_mem_alloc();
-            if (hba_seg == 0) /* No point in trying the rest if we are out of memory. */
+            uint16_t hba_seg;
+            uint16_t hba_ofs = ebda_mem_alloc(1/*KB*/);
+            if (hba_ofs == 0) /* No point in trying the rest if we are out of memory. */
                 break;
+
+            hba_seg = read_word(0x0040, 0x000E) + hba_ofs;
 
             u8Bus = (busdevfn & 0xff00) >> 8;
             u8DevFn = busdevfn & 0x00ff;
@@ -553,7 +534,7 @@ void BIOSCALL scsi_init(void)
             DBG_SCSI("SCSI HBA at Bus %u DevFn 0x%x (raw 0x%x)\n", u8Bus, u8DevFn, busdevfn);
             rc = hbaacc[i].init(hba_seg :> 0, u8Bus, u8DevFn);
             if (!rc)
-                scsi_enumerate_attached_devices(hba_seg, i);
+                scsi_enumerate_attached_devices(hba_seg, hba_ofs, i);
             /** @todo Free memory on error. */
         }
     }
