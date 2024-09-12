@@ -5327,13 +5327,13 @@ HRESULT Console::i_doNetworkAdapterChange(PUVM pUVM, PCVMMR3VTABLE pVMM, const c
  * @note Locks the Console object for writing.
  * @note The VM must not be running.
  */
-DECLCALLBACK(int) Console::i_changeNetworkAttachment(Console *pThis,
-                                                     PUVM pUVM,
-                                                     PCVMMR3VTABLE pVMM,
-                                                     const char *pszDevice,
-                                                     unsigned uInstance,
-                                                     unsigned uLun,
-                                                     INetworkAdapter *aNetworkAdapter)
+/*static*/ DECLCALLBACK(int) Console::i_changeNetworkAttachment(Console *pThis,
+                                                                PUVM pUVM,
+                                                                PCVMMR3VTABLE pVMM,
+                                                                const char *pszDevice,
+                                                                unsigned uInstance,
+                                                                unsigned uLun,
+                                                                INetworkAdapter *aNetworkAdapter)
 {
     LogFlowFunc(("pThis=%p pszDevice=%p:{%s} uInstance=%u uLun=%u aNetworkAdapter=%p\n",
                  pThis, pszDevice, pszDevice, uInstance, uLun, aNetworkAdapter));
@@ -5343,6 +5343,7 @@ DECLCALLBACK(int) Console::i_changeNetworkAttachment(Console *pThis,
     AutoCaller autoCaller(pThis);
     AssertComRCReturn(autoCaller.hrc(), VERR_ACCESS_DENIED);
 
+#ifdef VBOX_STRICT
     ComPtr<IPlatform> pPlatform;
     HRESULT hrc = pThis->mMachine->COMGETTER(Platform)(pPlatform.asOutParam());
     AssertComRC(hrc);
@@ -5365,21 +5366,18 @@ DECLCALLBACK(int) Console::i_changeNetworkAttachment(Console *pThis,
     ULONG maxNetworkAdapters = 0;
     hrc = pPlatformProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
     AssertComRC(hrc);
-    AssertMsg(   (   !strcmp(pszDevice, "pcnet")
-                  || !strcmp(pszDevice, "e1000")
-                  || !strcmp(pszDevice, "virtio-net"))
-              && uLun == 0
-              && uInstance < maxNetworkAdapters,
+    AssertMsg(uLun == 0 && uInstance < maxNetworkAdapters,
               ("pszDevice=%s uLun=%d uInstance=%d\n", pszDevice, uLun, uInstance));
+#endif
     Log(("pszDevice=%s uLun=%d uInstance=%d\n", pszDevice, uLun, uInstance));
 
     /*
      * Check the VM for correct state.
      */
-    PCFGMNODE pCfg = NULL;          /* /Devices/Dev/.../Config/ */
+    PCFGMNODE pCfg   = NULL;        /* /Devices/Dev/.../Config/ */
     PCFGMNODE pLunL0 = NULL;        /* /Devices/Dev/0/LUN#0/ */
-    PCFGMNODE pInst = pVMM->pfnCFGMR3GetChildF(pVMM->pfnCFGMR3GetRootU(pUVM), "Devices/%s/%d/", pszDevice, uInstance);
-    AssertRelease(pInst);
+    PCFGMNODE pInst  = pVMM->pfnCFGMR3GetChildF(pVMM->pfnCFGMR3GetRootU(pUVM), "Devices/%s/%d/", pszDevice, uInstance);
+    AssertLogRelMsgReturn(pInst, ("pszDevices=%s uInstance=%u\n", pszDevice, uInstance), VERR_CFGM_CHILD_NOT_FOUND);
 
     int vrc = pThis->i_configNetwork(pszDevice, uInstance, uLun, aNetworkAdapter, pCfg, pLunL0, pInst,
                                      true /*fAttachDetach*/, false /*fIgnoreConnectFailure*/, pUVM, pVMM);
