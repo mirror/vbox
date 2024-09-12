@@ -4647,57 +4647,35 @@ HRESULT Console::i_onNATDnsChanged()
     /*
      * Notify all the NAT drivers.
      */
-    /** @todo r=bird: This is the worst way of "enumerating" network devices
-     *        ever conceived. */
-    ComPtr<IPlatform> ptrPlatform;
-    hrc = mMachine->COMGETTER(Platform)(ptrPlatform.asOutParam());
-    AssertComRCReturn(hrc, hrc);
-
-    ChipsetType_T enmChipsetType;
-    hrc = ptrPlatform->COMGETTER(ChipsetType)(&enmChipsetType);
-    AssertComRCReturn(hrc, hrc);
-
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
-    {
-        ULONG const ulInstanceMax = PlatformProperties::s_getMaxNetworkAdapters(enmChipsetType);
-
-        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "pcnet", ulInstanceMax, &DnsConfig.Core);
-        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "e1000", ulInstanceMax, &DnsConfig.Core);
-        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "virtio-net", ulInstanceMax, &DnsConfig.Core);
-    }
+        ptrVM.vtable()->pfnPDMR3DriverEnumInstances(ptrVM.rawUVM(), "NAT", Console::notifyNatDnsChangeCallback, &DnsConfig.Core);
 
     return S_OK;
 }
 
-
 /**
- * This routine walks over all network device instances, checking if
- * device instance has DrvNAT attachment and triggering DrvNAT DNS
- * change callback.
+ * @callback_method_impl{FNPDMENUMDRVINS,Helper for Console::i_onNATDnsChanged.}
  */
-void Console::notifyNatDnsChange(PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszDevice, ULONG ulInstanceMax,
-                                 PCPDMINETWORKNATDNSCONFIG pDnsConfig)
+/*static*/ DECLCALLBACK(int)
+Console::notifyNatDnsChangeCallback(PPDMIBASE pIBase, uint32_t uDrvInstance, bool fUsbDev, const char *pszDevice,
+                                    uint32_t uDevInstance, unsigned uLun, void *pvUser)
 {
-    Log(("notifyNatDnsChange: looking for DrvNAT attachment on %s device instances\n", pszDevice));
-    for (ULONG ulInstance = 0; ulInstance < ulInstanceMax; ulInstance++)
+    PPDMINETWORKNATCONFIG const pINetNatCfg = (PPDMINETWORKNATCONFIG)pIBase->pfnQueryInterface(pIBase, PDMINETWORKNATCONFIG_IID);
+    if (pINetNatCfg && pINetNatCfg->pfnNotifyDnsChanged)
     {
-        PPDMIBASE pBase;
-        int vrc = pVMM->pfnPDMR3QueryDriverOnLun(pUVM, pszDevice, ulInstance, 0 /* iLun */, "NAT", &pBase);
-        if (RT_FAILURE(vrc))
-            continue;
-
-        Log(("Instance %s#%d has DrvNAT attachment; do actual notify\n", pszDevice, ulInstance));
-        if (pBase)
-        {
-            PPDMINETWORKNATCONFIG pNetNatCfg = NULL;
-            pNetNatCfg = (PPDMINETWORKNATCONFIG)pBase->pfnQueryInterface(pBase, PDMINETWORKNATCONFIG_IID);
-            if (pNetNatCfg && pNetNatCfg->pfnNotifyDnsChanged)
-                pNetNatCfg->pfnNotifyDnsChanged(pNetNatCfg, pDnsConfig);
-        }
+        LogFunc(("Notifying instance #%u attached to %s%s#%u on lun #%u...\n",
+                 uDrvInstance, fUsbDev ? "usb device " : "", pszDevice, uDevInstance, uLun));
+        pINetNatCfg->pfnNotifyDnsChanged(pINetNatCfg, (PCPDMINETWORKNATDNSCONFIG)pvUser);
     }
-}
+    else
+        LogFunc(("Not notifying instance #%u attached to %s%s#%u on lun #%u: pINetNatCfg=%p pfnNotifyDnsChanged=%p\n",
+                 uDrvInstance, fUsbDev ? "usb device " : "",  pszDevice, uDevInstance, uLun,
+                 pINetNatCfg, pINetNatCfg ? pINetNatCfg->pfnNotifyDnsChanged : NULL));
 
+    RT_NOREF(uDrvInstance, fUsbDev, pszDevice, uDevInstance, uLun);
+    return VINF_SUCCESS;
+}
 
 VMMDevMouseInterface *Console::i_getVMMDevMouseInterface()
 {

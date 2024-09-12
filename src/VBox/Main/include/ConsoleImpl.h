@@ -438,8 +438,9 @@ private:
     HRESULT removeEncryptionPassword(const com::Utf8Str &aId);
     HRESULT clearAllEncryptionPasswords();
 
-    void notifyNatDnsChange(PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszDevice, ULONG ulInstanceMax,
-                            struct PDMINETWORKNATDNSCONFIG const *pDnsConfig);
+    static DECLCALLBACK(int) notifyNatDnsChangeCallback(PPDMIBASE pIBase, uint32_t uDrvInstance, bool fUsbDev,
+                                                        const char *pszDevice, uint32_t uDevInstance, unsigned uLun,
+                                                        void *pvUser);
     Utf8Str VRDPServerErrorToMsg(int vrc);
 
     /**
