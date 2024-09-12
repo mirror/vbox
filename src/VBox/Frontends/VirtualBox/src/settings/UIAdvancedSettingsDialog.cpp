@@ -778,6 +778,7 @@ UIAdvancedSettingsDialog::UIAdvancedSettingsDialog(QWidget *pParent,
     , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_pSerializeProcess(0)
     , m_fPolished(false)
+    , m_fFirstSerializationDone(false)
     , m_fSerializationIsInProgress(false)
     , m_fSerializationClean(false)
     , m_fClosed(false)
@@ -872,6 +873,27 @@ void UIAdvancedSettingsDialog::sltHandleSerializationFinished()
 
     /* Mark serialization finished: */
     m_fSerializationIsInProgress = false;
+
+    /* Finally make sure layouts freshly activated after
+     * all the pages loaded (as overall size-hint changed): */
+    foreach (QLayout *pLayout, findChildren<QLayout*>())
+        pLayout->activate();
+    /* Update scroll-area geometry finally: */
+    m_pScrollArea->updateGeometry();
+
+    /* For the 1st serialization we have some additional handling: */
+    if (!m_fFirstSerializationDone)
+    {
+        /* Which should be called just once: */
+        m_fFirstSerializationDone = true;
+
+        /* Make sure layout request processed before we resize widget to new size: */
+        QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+        /* Resize to minimum size: */
+        resize(minimumSizeHint());
+        /* Explicit centering according to our parent: */
+        gpDesktop->centerWidget(this, parentWidget(), false);
+    }
 }
 
 bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
