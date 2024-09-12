@@ -80,6 +80,11 @@ ifdef VBOX_INSTALLER_QUICK
  VBOX_CAB_COMPRESSION_LEVEL     := none
 endif
 
+# Make sure that we show the license page in non-OSE release builds.
+if !defined(VBOX_OSE) && defined(VBOX_RELEASE_EXACT_MATCH) && !defined(VBOX_WITH_LICENSE_DISPLAY)
+ $(error In release mode the non-OSE installer must be built with license agreement being displayed!)
+endif
+
 #
 # Globals.
 #

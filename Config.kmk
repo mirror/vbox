@@ -781,6 +781,11 @@ endif
 ## @{
 # Build the installer.
 VBOX_WITH_INSTALLER = 1
+# Show license pages for non-OSE versions by default.
+# This is required for e.g. the Windows host installer.
+ifndef VBOX_OSE
+ VBOX_WITH_LICENSE_DISPLAY = 1
+endif
 VBOX_WITH_GUEST_INSTALLER_UNICODE = 1
 # The kernel driver/module and related runtime libraries.
 # On Linux we build this as a test case instead.
