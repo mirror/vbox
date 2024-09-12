@@ -37,6 +37,9 @@
 # SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 #
 
+# Convert \r\n -> \n if running a windows checkout with unix tools (IEM).
+s/[\r]$//
+
 # Pass thru the file header and copyright.
 1,/^\#ifndef/{
 /^\#ifndef/b next
@@ -57,6 +60,7 @@ b end
 :check-newline-escape
 /\\$/!bno-more-newline-escapes
 N
+s/[\r]$//
 b check-newline-escape
 :no-more-newline-escapes
 
@@ -72,6 +76,7 @@ h
 :load_another_c_style_comment_line
 /\*\//b strip_c_style_comment
 N
+s/[\r]$//
 b load_another_c_style_comment_line
 :strip_c_style_comment
 s/\/\*.*\*\// /g
@@ -246,6 +251,7 @@ s/.*$//
 :asm-inc-c-style-block-next
 h
 N
+s/[\r]$//
 /\*\//!b asm-inc-c-style-block-next
 x
 b end
