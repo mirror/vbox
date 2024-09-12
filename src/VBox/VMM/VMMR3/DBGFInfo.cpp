@@ -109,7 +109,7 @@ int dbgfR3InfoInit(PUVM pUVM)
     /*
      * Initialize the crit sect.
      */
-    int rc = RTCritSectRwInit(&pUVM->dbgf.s.CritSect);
+    int rc = RTCritSectRwInitNamed(&pUVM->dbgf.s.CritSect, "DBGF-CritSect-RW");
     AssertRCReturn(rc, rc);
 
     /*
