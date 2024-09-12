@@ -6759,7 +6759,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulss(uint8_t bMode)
               /*128:out  */ X86_MXCSR_DE,
               /*256:out  */ X86_MXCSR_DE,
               /*xcpt?    */ true, true },
-          { { /*src2     */ { FP32_DENORM_MAX(0), FP32_RAND_V5(0), FP32_1(1),       FP32_RAND_V0(1), FP32_RAND_V5(0), FP32_1(1),       FP32_RAND_V0(1), FP32_RAND_V5(1) } },
+          { { /*src2     */ { FP32_DENORM_MIN(0), FP32_RAND_V5(0), FP32_1(1),       FP32_RAND_V0(1), FP32_RAND_V5(0), FP32_1(1),       FP32_RAND_V0(1), FP32_RAND_V5(1) } },
             { /*src1     */ { FP32_0(0),          FP32_1(0),       FP32_RAND_V3(1), FP32_1(1),       FP32_1(0),       FP32_RAND_V3(1), FP32_1(1),       FP32_1(1)       } },
             { /* =>      */ { FP32_0(0),          FP32_RAND_V5(1), FP32_RAND_V3(0), FP32_RAND_V0(0), FP32_RAND_V5(1), FP32_RAND_V3(0), FP32_RAND_V0(0), FP32_RAND_V5(0) } },
               /*mxcsr:in */ 0,
