@@ -2308,7 +2308,7 @@ static DECLCALLBACK(void) iemR3InfoTbTop(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs,
                 break;
 
             default:
-                pHlp->pfnPrintf(pHlp, "TB#%#zx:%zu: PC=%RGp (%%%RGv) cUsed=%u msLastUsed=%u fFlags=%#010x - ???\n",
+                pHlp->pfnPrintf(pHlp, "TB#%#zx: PC=%RGp (%%%RGv) cUsed=%u msLastUsed=%u fFlags=%#010x - ???\n",
                                 idxTbNo, pTb->GCPhysPc, pTb->FlatPc, pTb->cUsed, pTb->msLastUsed, pTb->fFlags);
                 break;
         }
