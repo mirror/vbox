@@ -1922,7 +1922,10 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
         // Handle NVRAM file snapshotting
         Utf8Str strNVRAM = mNvramStore->i_getNonVolatileStorageFile();
         Utf8Str strNVRAMSnap = pSnapshotMachine->i_getSnapshotNVRAMFilename();
-        if (strNVRAM.isNotEmpty() && strNVRAMSnap.isNotEmpty() && RTFileExists(strNVRAM.c_str()))
+        if (   strNVRAM.isNotEmpty()
+            && strNVRAMSnap.isNotEmpty()
+            && RTFileExists(strNVRAM.c_str())
+            && mFirmwareSettings->i_getFirmwareType() != FirmwareType_BIOS)
         {
             Utf8Str strNVRAMSnapAbs;
             i_calculateFullPath(strNVRAMSnap, strNVRAMSnapAbs);
