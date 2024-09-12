@@ -10039,6 +10039,7 @@ Console::i_vmstateChangeCallback(PUVM pUVM, PCVMMR3VTABLE pVMM, VMSTATE enmState
                     stopCloudGateway(pVirtualBox, that->mGateway);
             }
 #endif /* VBOX_WITH_CLOUD_NET */
+
             /* Terminate host interface networking. If pUVM is NULL, we've been
              * manually called from powerUpThread() either before calling
              * VMR3Create() or after VMR3Create() failed, so no need to touch
@@ -10857,8 +10858,9 @@ HRESULT Console::i_powerDownHostInterfaces()
     /* sanity check */
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
+#if (defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT)
     /*
-     * host interface termination handling
+     * Host TAP interface termination handling.
      */
     ComPtr<IVirtualBox> pVirtualBox;
     mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
@@ -10898,15 +10900,18 @@ HRESULT Console::i_powerDownHostInterfaces()
         pNetworkAdapter->COMGETTER(AttachmentType)(&attachment);
         if (attachment == NetworkAttachmentType_Bridged)
         {
-#if ((defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT))
             HRESULT hrc2 = i_detachFromTapInterface(pNetworkAdapter);
             if (FAILED(hrc2) && SUCCEEDED(hrc))
                 hrc = hrc2;
-#endif /* (RT_OS_LINUX || RT_OS_FREEBSD) && !VBOX_WITH_NETFLT */
         }
     }
 
     return hrc;
+
+#else
+    /* Nothing to do here. */
+    return S_OK;
+#endif
 }
 
 
