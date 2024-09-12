@@ -76,6 +76,13 @@ RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect)
 RT_EXPORT_SYMBOL(RTCritSectInit);
 
 
+RTDECL(int) RTCritSectInitNamed(PRTCRITSECT pCritSect, const char *pszName)
+{
+    return RTCritSectInitEx(pCritSect, 0, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "%s", pszName);
+}
+RT_EXPORT_SYMBOL(RTCritSectInitNamed);
+
+
 RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCLASS hClass, uint32_t uSubClass,
                              const char *pszNameFmt, ...)
 {

@@ -133,6 +133,11 @@ AssertCompileSize(RTCRITSECT, HC_ARCH_BITS == 32 ? 32 : 48);
 RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect);
 
 /**
+ * Initialize a critical section with a simple name,
+ */
+RTDECL(int) RTCritSectInitNamed(PRTCRITSECT pCritSect, const char *pszName);
+
+/**
  * Initialize a critical section.
  *
  * @returns iprt status code.
@@ -375,10 +380,17 @@ DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
 
 /* Strict lock order: Automatically classify locks by init location. */
 #if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3) && !defined(RTCRITSECT_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
+# undef  RTCritSectInit
 # define RTCritSectInit(pCritSect) \
     RTCritSectInitEx((pCritSect), 0 /*fFlags*/, \
                      RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \
                      RTLOCKVAL_SUB_CLASS_NONE, NULL)
+
+# undef  RTCritSectInitNamed
+# define RTCritSectInitNamed(a_pCritSect, a_pszName) \
+    RTCritSectInitEx((a_pCritSect), 0 /*fFlags*/, \
+                     RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \
+                     RTLOCKVAL_SUB_CLASS_NONE, "%s", a_pszName)
 #endif
 
 /** @}  */
@@ -484,12 +496,17 @@ AssertCompileSize(RTCRITSECTRW, HC_ARCH_BITS == 32 ? 48 : 64);
 #if defined(IN_RING3) || defined(IN_RING0)
 
 /**
- * Initialize a critical section.
+ * Initialize a read/write critical section.
  */
 RTDECL(int) RTCritSectRwInit(PRTCRITSECTRW pThis);
 
 /**
- * Initialize a critical section.
+ * Initialize a read/write critical section with a simple name.
+ */
+RTDECL(int) RTCritSectRwInitNamed(PRTCRITSECTRW pThis, const char *pszName);
+
+/**
+ * Initialize a read/write critical section.
  *
  * @returns IPRT status code.
  * @param   pThis           Pointer to the read/write critical section.
@@ -757,7 +774,12 @@ DECLINLINE(bool) RTCritSectRwIsInitialized(PCRTCRITSECTRW pThis)
 # define RTCritSectRwInit(a_pThis) \
     RTCritSectRwInitEx((a_pThis), 0 /*fFlags*/, \
                        RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \
-                        RTLOCKVAL_SUB_CLASS_NONE, NULL)
+                       RTLOCKVAL_SUB_CLASS_NONE, NULL)
+
+# define RTCritSectRwInitNamed(a_pThis, a_pszName) \
+    RTCritSectRwInitEx((a_pThis), 0 /*fFlags*/, \
+                       RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \
+                       RTLOCKVAL_SUB_CLASS_NONE, "%s", a_pszName)
 #endif
 
 /** @} */
