@@ -210,11 +210,7 @@ QString UIVersionInfo::vboxVersionStringNormalized()
 /* static */
 bool UIVersionInfo::isBeta()
 {
-#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    return true;
-#else
     return vboxVersionString().contains(QRegularExpression("BETA|ALPHA", QRegularExpression::CaseInsensitiveOption));
-#endif
 }
 
 /* static */
