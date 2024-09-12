@@ -1151,6 +1151,18 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 
 #define IEM_MC_HINT_FLUSH_GUEST_SHADOW(g_fGstShwFlush)                  ((void)fMcBegin)
 
+#define IEM_MC_LIVENESS_GREG_INPUT(a_iGReg)                             ((void)a_iGReg)
+#define IEM_MC_LIVENESS_GREG_CLOBBER(a_iGReg)                           ((void)a_iGReg)
+#define IEM_MC_LIVENESS_GREG_MODIFY(a_iGReg)                            ((void)a_iGReg)
+
+#define IEM_MC_LIVENESS_MREG_INPUT(a_iMReg)                             ((void)a_iMReg)
+#define IEM_MC_LIVENESS_MREG_CLOBBER(a_iMReg)                           ((void)a_iMReg)
+#define IEM_MC_LIVENESS_MREG_MODIFY(a_iMReg)                            ((void)a_iMReg)
+
+#define IEM_MC_LIVENESS_XREG_INPUT(a_iXReg)                             ((void)a_iXReg)
+#define IEM_MC_LIVENESS_XREG_CLOBBER(a_iXReg)                           ((void)a_iXReg)
+#define IEM_MC_LIVENESS_XREG_MODIFY(a_iXReg)                            ((void)a_iXReg)
+
 /** @}  */
 
 #include "../VMMAll/IEMAllIntprTables1.cpp"

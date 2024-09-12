@@ -2289,34 +2289,42 @@ iemNativeEmit_pmovmskb_rr_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                uint8_t const idxGstRegDst, uint8_t const idxSimdGstRegSrc)
 {
 #ifdef RT_ARCH_AMD64
-    uint8_t const idxRegDst = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGstRegDst), kIemNativeGstRegUse_ForFullWrite);
-    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxRegDst = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGstRegDst),
+                                                              kIemNativeGstRegUse_ForFullWrite);
+    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off,
+                                                                          IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128,
+                                                                          kIemNativeGstRegUse_ReadOnly);
     PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
 
     pCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
     if (idxRegDst >= 8 || idxSimdRegSrc >= 8)
-        pCodeBuf[off++] =   (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0)
-                          | (idxRegDst     >= 8 ? X86_OP_REX_R : 0);
+        pCodeBuf[off++] = (idxSimdRegSrc >= 8 ? X86_OP_REX_B : 0)
+                        | (idxRegDst     >= 8 ? X86_OP_REX_R : 0);
     pCodeBuf[off++] = 0x0f;
     pCodeBuf[off++] = 0xd7;
     pCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, idxRegDst & 7, idxSimdRegSrc & 7);
 
     iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc);
     iemNativeRegFreeTmp(pReNative, idxRegDst);
+
 #elif defined(RT_ARCH_ARM64)
-    uint8_t const idxRegDst = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGstRegDst), kIemNativeGstRegUse_ForFullWrite);
+    uint8_t const idxRegDst = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGstRegDst),
+                                                              kIemNativeGstRegUse_ForFullWrite);
     uint8_t const idxRegTmp = iemNativeRegAllocTmp(pReNative, &off);
-    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off, IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc),
-                                                                          kIemNativeGstSimdRegLdStSz_Low128, kIemNativeGstRegUse_Calculation);
+    uint8_t const idxSimdRegSrc = iemNativeSimdRegAllocTmpForGuestSimdReg(pReNative, &off,
+                                                                          IEMNATIVEGSTSIMDREG_SIMD(idxSimdGstRegSrc),
+                                                                          kIemNativeGstSimdRegLdStSz_Low128,
+                                                                          kIemNativeGstRegUse_Calculation);
     PIEMNATIVEINSTR const pCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
 
     /*
      * See https://community.arm.com/arm-community-blogs/b/infrastructure-solutions-blog/posts/porting-x86-vector-bitmask-optimizations-to-arm-neon
      * for different approaches as NEON doesn't has an instruction equivalent for pmovmskb, so we have to emulate that.
      *
-     * As there is no way around emulating the exact semantics of pmovmskb we will use the same algorithm as the sse2neon implementation because
-     * there we can get away with loading any constants and the base algorithm is only 4 NEON instructions (+ 3 for extracting the result to a general register).
+     * As there is no way around emulating the exact semantics of pmovmskb we will use the same algorithm
+     * as the sse2neon implementation because there we can get away with loading any constants and the
+     * base algorithm is only 4 NEON instructions (+ 3 for extracting the result to a general register).
      *
      * The following illustrates the algorithm:
      *
@@ -2346,6 +2354,7 @@ iemNativeEmit_pmovmskb_rr_u128(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     iemNativeSimdRegFreeTmp(pReNative, idxSimdRegSrc);
     iemNativeRegFreeTmp(pReNative, idxRegTmp);
     iemNativeRegFreeTmp(pReNative, idxRegDst);
+
 #else
 # error "Port me"
 #endif

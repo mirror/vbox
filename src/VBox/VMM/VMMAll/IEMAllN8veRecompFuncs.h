@@ -250,6 +250,24 @@ iemNativeRegFlushPendingSpecificWrite(PIEMRECOMPILERSTATE pReNative, uint32_t of
 
 
 /*********************************************************************************************************************************
+*   Liveness Stubs                                                                                                               *
+*********************************************************************************************************************************/
+
+#define IEM_MC_LIVENESS_GREG_INPUT(a_iGReg)     ((void)0)
+#define IEM_MC_LIVENESS_GREG_CLOBBER(a_iGReg)   ((void)0)
+#define IEM_MC_LIVENESS_GREG_MODIFY(a_iGReg)    ((void)0)
+
+#define IEM_MC_LIVENESS_MREG_INPUT(a_iMReg)     ((void)0)
+#define IEM_MC_LIVENESS_MREG_CLOBBER(a_iMReg)   ((void)0)
+#define IEM_MC_LIVENESS_MREG_MODIFY(a_iMReg)    ((void)0)
+
+#define IEM_MC_LIVENESS_XREG_INPUT(a_iXReg)     ((void)0)
+#define IEM_MC_LIVENESS_XREG_CLOBBER(a_iXReg)   ((void)0)
+#define IEM_MC_LIVENESS_XREG_MODIFY(a_iXReg)    ((void)0)
+
+
+
+/*********************************************************************************************************************************
 *   Native Emitter Support.                                                                                                      *
 *********************************************************************************************************************************/
 
@@ -5977,7 +5995,8 @@ template<IEMNATIVEMITEFLOP const a_enmOp>
 DECL_INLINE_THROW(uint32_t) iemNativeEmitModifyEFlagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fEflBit)
 {
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
-                                                              kIemNativeGstRegUse_ForUpdate, false /*fNoVolatileRegs*/);
+                                                              kIemNativeGstRegUse_ForUpdate, false /*fNoVolatileRegs*/,
+                                                              true /*fSkipLivenessAssert*/); /** @todo proper liveness / eflags fix */
 
     /* Using 'if constexpr' forces code elimination in debug builds with VC. */
     if RT_CONSTEXPR_IF(a_enmOp == kIemNativeEmitEflOp_Set)

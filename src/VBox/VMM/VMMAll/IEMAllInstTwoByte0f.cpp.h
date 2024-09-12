@@ -13124,6 +13124,8 @@ FNIEMOP_DEF(iemOp_pmovmskb_Gd_Ux)
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
         IEM_MC_NATIVE_IF(RT_ARCH_VAL_AMD64 | RT_ARCH_VAL_ARM64) {
+            IEM_MC_LIVENESS_GREG_CLOBBER(IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_LIVENESS_XREG_INPUT(IEM_GET_MODRM_RM(pVCpu, bRm));
             IEM_MC_NATIVE_EMIT_2(iemNativeEmit_pmovmskb_rr_u128, IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
         } IEM_MC_NATIVE_ELSE() {
             IEM_MC_ARG(uint64_t *,              puDst, 0);
