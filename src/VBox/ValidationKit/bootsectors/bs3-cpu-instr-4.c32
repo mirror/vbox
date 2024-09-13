@@ -2765,14 +2765,6 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
               /*128:out  */ X86_MXCSR_RC_ZERO | X86_MXCSR_PE,
               /*256:out  */ X86_MXCSR_RC_ZERO | X86_MXCSR_PE,
               /*xcpt?    */ true, true },
-          /** @todo Why does the below on cause PE?! */
-          { { /*src2     */ { FP64_V(0, 0xc000000000000, 0x3ff)/* 1.75*/, FP64_NORM_MAX(0), FP64_0(0), FP64_V(0, 0,               0x3fd)/*0.25*/ } },
-            { /*src1     */ { FP64_V(1, 0,               0x07d)/*-0.25*/, FP64_NORM_MAX(1), FP64_0(0), FP64_V(0, 0,               0x3fe)/*0.50*/ } },
-            { /* =>      */ { FP64_V(0, 0xbffffffffffff, 0x3ff)/* 1.50*/, FP64_0(1),        FP64_0(0), FP64_V(0, 0x8000000000000, 0x3fe)/*0.75*/ } },
-              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
-              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_PE,
-              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_PE,
-              /*xcpt?    */ false, false },
     /*
      * Normals.
      */
@@ -2825,10 +2817,17 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
               /*128:out  */ X86_MXCSR_RC_UP,
               /*256:out  */ X86_MXCSR_RC_UP,
               /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_V(0, 0xc000000000000, 0x3ff)/* 1.75*/, FP64_NORM_MAX(0), FP64_0(0), FP64_V(0, 0,               0x3fd)/*0.25*/ } },
+            { /*src1     */ { FP64_V(1, 0,               0x3fd)/*-0.25*/, FP64_NORM_MAX(1), FP64_0(0), FP64_V(0, 0,               0x3fe)/*0.50*/ } },
+            { /* =>      */ { FP64_V(0, 0x8000000000000, 0x3ff)/* 1.50*/, FP64_0(1),        FP64_0(0), FP64_V(0, 0x8000000000000, 0x3fe)/*0.75*/ } },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+              /*xcpt?    */ false, false },
     /*
      * Denormals.
      */
-    /*24*/{ { /*src2     */ { FP64_DENORM_MAX(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
+    /*25*/{ { /*src2     */ { FP64_DENORM_MAX(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
             { /*src1     */ { FP64_0(0),          FP64_0(0), FP64_0(0), FP64_0(0) } },
             { /* =>      */ { FP64_0(0),          FP64_0(0), FP64_0(0), FP64_0(0) } },
               /*mxcsr:in */ 0,
@@ -2853,7 +2852,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*27*/ BS3CPUINSTR4_PD_INVALIDS
+    /*28*/ BS3CPUINSTR4_PD_INVALIDS
     /** @todo Underflow, Precision; Rounding; FZ etc. */
     };
 
