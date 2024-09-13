@@ -684,10 +684,12 @@ void UIVMActivityOverviewTableView::mousePressEvent(QMouseEvent *pEvent)
 void UIVMActivityOverviewTableView::resizeHeaders()
 {
     QHeaderView* pHeader = horizontalHeader();
-    if (!pHeader)
+    if (!pHeader || pHeader->count() <= 0)
         return;
     int iSectionCount = pHeader->count();
     int iHiddenSectionCount = pHeader->hiddenSectionCount();
+    if (iSectionCount == iHiddenSectionCount)
+        return;
     int iWidth = width() / (iSectionCount - iHiddenSectionCount);
     for (int i = 0; i < iSectionCount; ++i)
     {
