@@ -829,25 +829,6 @@ private:
 };
 
 
-/** QWidget sub-class
-  * with manual size-hint recalculation.
-  * Tries to take into account size-hint even for hidden items.
-  * Assumes QGridLayout is present as this widget is used purely
-  * for controller/attachment pane. */
-class UIWidgetOfMaximumSize : public QWidget
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs widget passing @a pParent to base-class. */
-    UIWidgetOfMaximumSize(QWidget *pParent = 0);
-
-    /** Returns the minimum widget size. */
-    virtual QSize minimumSizeHint() const RT_OVERRIDE;
-};
-
-
 /*********************************************************************************************************************************
 *   Class UIIconPoolStorageSettings implementation.                                                                              *
 *********************************************************************************************************************************/
@@ -2849,69 +2830,6 @@ void StorageDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
 
 
 /*********************************************************************************************************************************
-*   Class UIWidgetOfMaximumSize implementation.                                                                                  *
-*********************************************************************************************************************************/
-
-UIWidgetOfMaximumSize::UIWidgetOfMaximumSize(QWidget *pParent /* = 0 */)
-    : QWidget(pParent)
-{
-}
-
-QSize UIWidgetOfMaximumSize::minimumSizeHint() const
-{
-    /* Assume there is just one grid-layout: */
-    QList<QGridLayout*> gridLayouts = findChildren<QGridLayout*>();
-    AssertReturn(gridLayouts.size() == 1, QWidget::minimumSizeHint());
-    QGridLayout *pLayout = gridLayouts.first();
-    AssertPtrReturn(pLayout, QWidget::minimumSizeHint());
-
-    /* Acquire layout spacing: */
-    const int iSpacing = pLayout->spacing();
-
-    /* Calcualte column widths: */
-    QList<int> columns(pLayout->columnCount());
-    for (int iColumn = 0; iColumn < pLayout->columnCount(); ++iColumn)
-        for (int iRow = 0; iRow < pLayout->rowCount(); ++iRow)
-        {
-            QLayoutItem *pItem = pLayout->itemAtPosition(iRow, iColumn);
-            if (!pItem)
-                continue;
-            if (QWidget *pWidget = pItem->widget())
-            {
-                const QSizePolicy sp = pWidget->sizePolicy();
-                if (sp.horizontalPolicy() != QSizePolicy::Ignored)
-                    columns[iColumn] = qMax(columns.at(iColumn), pWidget->minimumSizeHint().width());
-            }
-        }
-
-    /* Calcualte row heights: */
-    QList<int> rows(pLayout->rowCount());
-    for (int iRow = 0; iRow < pLayout->rowCount(); ++iRow)
-        for (int iColumn = 0; iColumn < pLayout->columnCount(); ++iColumn)
-        {
-            QLayoutItem *pItem = pLayout->itemAtPosition(iRow, iColumn);
-            if (!pItem)
-                continue;
-            if (QWidget *pWidget = pItem->widget())
-            {
-                const QSizePolicy sp = pWidget->sizePolicy();
-                if (sp.verticalPolicy() != QSizePolicy::Ignored)
-                    rows[iRow] = qMax(rows.at(iRow), pWidget->minimumSizeHint().height());
-            }
-        }
-
-    /* Calculate effective layout size: */
-    int iTotalWidth = 0;
-    for (int iColumn = 0; iColumn < columns.size(); ++iColumn)
-        iTotalWidth += columns.at(iColumn) + iSpacing;
-    int iTotalHeight = 0;
-    for (int iRow = 0; iRow < rows.size(); ++iRow)
-        iTotalHeight += rows.at(iRow) + iSpacing;
-    return QSize(iTotalWidth, iTotalHeight);
-}
-
-
-/*********************************************************************************************************************************
 *   Class UIStorageSettingsEditor implementation.                                                                                *
 *********************************************************************************************************************************/
 
@@ -4607,6 +4525,8 @@ void UIStorageSettingsEditor::prepareTreeView()
     {
         if (m_pLabelSeparatorLeftPane)
             m_pLabelSeparatorLeftPane->setBuddy(m_pTreeViewStorage);
+        m_pTreeViewStorage->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        m_pTreeViewStorage->setMinimumHeight(150);
         m_pTreeViewStorage->setMouseTracking(true);
         m_pTreeViewStorage->setAcceptDrops(true);
         m_pTreeViewStorage->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -4784,7 +4704,7 @@ void UIStorageSettingsEditor::prepareEmptyWidget()
 void UIStorageSettingsEditor::prepareControllerWidget()
 {
     /* Create widget for controller case: */
-    UIWidgetOfMaximumSize *pWidgetController = new UIWidgetOfMaximumSize;
+    QWidget *pWidgetController = new QWidget;
     if (pWidgetController)
     {
         /* Create widget layout for controller case: */
@@ -4863,7 +4783,7 @@ void UIStorageSettingsEditor::prepareControllerWidget()
 void UIStorageSettingsEditor::prepareAttachmentWidget()
 {
     /* Create widget for attachment case: */
-    UIWidgetOfMaximumSize *pWidgetAttachment = new UIWidgetOfMaximumSize;
+    QWidget *pWidgetAttachment = new QWidget;
     if (pWidgetAttachment)
     {
         /* Create widget layout for attachment case: */
@@ -5078,6 +4998,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pLabelCDType = new QLabel(pWidgetAttachment);
             if (m_pLabelCDType)
             {
+                m_pLabelCDType->hide();
                 m_pLabelCDType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 m_pLayoutAttachment->addWidget(m_pLabelCDType, 12, 1);
             }
@@ -5085,6 +5006,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pFieldCDType = new QILabel(pWidgetAttachment);
             if (m_pFieldCDType)
             {
+                m_pFieldCDType->hide();
                 m_pFieldCDType->setFullSizeSelection(true);
                 m_pFieldCDType->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldCDType, 12, 2);
@@ -5094,6 +5016,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pLabelCDSize = new QLabel(pWidgetAttachment);
             if (m_pLabelCDSize)
             {
+                m_pLabelCDSize->hide();
                 m_pLabelCDSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 m_pLayoutAttachment->addWidget(m_pLabelCDSize, 13, 1);
             }
@@ -5101,6 +5024,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pFieldCDSize = new QILabel(pWidgetAttachment);
             if (m_pFieldCDSize)
             {
+                m_pFieldCDSize->hide();
                 m_pFieldCDSize->setFullSizeSelection(true);
                 m_pFieldCDSize->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldCDSize, 13, 2);
@@ -5110,6 +5034,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pLabelCDLocation = new QLabel(pWidgetAttachment);
             if (m_pLabelCDLocation)
             {
+                m_pLabelCDLocation->hide();
                 m_pLabelCDLocation->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 m_pLayoutAttachment->addWidget(m_pLabelCDLocation, 14, 1);
             }
@@ -5117,6 +5042,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pFieldCDLocation = new QILabel(pWidgetAttachment);
             if (m_pFieldCDLocation)
             {
+                m_pFieldCDLocation->hide();
                 m_pFieldCDLocation->setFullSizeSelection(true);
                 m_pFieldCDLocation->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldCDLocation, 14, 2);
@@ -5126,6 +5052,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pLabelCDUsage = new QLabel(pWidgetAttachment);
             if (m_pLabelCDUsage)
             {
+                m_pLabelCDUsage->hide();
                 m_pLabelCDUsage->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 m_pLayoutAttachment->addWidget(m_pLabelCDUsage, 15, 1);
             }
@@ -5133,6 +5060,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pFieldCDUsage = new QILabel(pWidgetAttachment);
             if (m_pFieldCDUsage)
             {
+                m_pFieldCDUsage->hide();
                 m_pFieldCDUsage->setFullSizeSelection(true);
                 m_pFieldCDUsage->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldCDUsage, 15, 2);
@@ -5142,6 +5070,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pLabelFDType = new QLabel(pWidgetAttachment);
             if (m_pLabelFDType)
             {
+                m_pLabelFDType->hide();
                 m_pLabelFDType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 m_pLayoutAttachment->addWidget(m_pLabelFDType, 16, 1);
             }
@@ -5149,6 +5078,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pFieldFDType = new QILabel(pWidgetAttachment);
             if (m_pFieldFDType)
             {
+                m_pFieldFDType->hide();
                 m_pFieldFDType->setFullSizeSelection(true);
                 m_pFieldFDType->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldFDType, 16, 2);
@@ -5158,6 +5088,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pLabelFDSize = new QLabel(pWidgetAttachment);
             if (m_pLabelFDSize)
             {
+                m_pLabelFDSize->hide();
                 m_pLabelFDSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 m_pLayoutAttachment->addWidget(m_pLabelFDSize, 17, 1);
             }
@@ -5165,6 +5096,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pFieldFDSize = new QILabel(pWidgetAttachment);
             if (m_pFieldFDSize)
             {
+                m_pFieldFDSize->hide();
                 m_pFieldFDSize->setFullSizeSelection(true);
                 m_pFieldFDSize->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldFDSize, 17, 2);
@@ -5174,6 +5106,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pLabelFDLocation = new QLabel(pWidgetAttachment);
             if (m_pLabelFDLocation)
             {
+                m_pLabelFDLocation->hide();
                 m_pLabelFDLocation->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 m_pLayoutAttachment->addWidget(m_pLabelFDLocation, 18, 1);
             }
@@ -5181,6 +5114,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pFieldFDLocation = new QILabel(pWidgetAttachment);
             if (m_pFieldFDLocation)
             {
+                m_pFieldFDLocation->hide();
                 m_pFieldFDLocation->setFullSizeSelection(true);
                 m_pFieldFDLocation->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldFDLocation, 18, 2);
@@ -5190,6 +5124,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pLabelFDUsage = new QLabel(pWidgetAttachment);
             if (m_pLabelFDUsage)
             {
+                m_pLabelFDUsage->hide();
                 m_pLabelFDUsage->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 m_pLayoutAttachment->addWidget(m_pLabelFDUsage, 19, 1);
             }
@@ -5197,6 +5132,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             m_pFieldFDUsage = new QILabel(pWidgetAttachment);
             if (m_pFieldFDUsage)
             {
+                m_pFieldFDUsage->hide();
                 m_pFieldFDUsage->setFullSizeSelection(true);
                 m_pFieldFDUsage->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldFDUsage, 19, 2);
