@@ -347,7 +347,7 @@ static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val)
  */
 static uint16_t ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
 {
-    ahci_t __far    *ahci  = (read_word(0x0040, 0x000E) + bios_dsk->ahci_ofs) :> 0;
+    ahci_t __far    *ahci  = bios_dsk->ahci_seg :> 0;
     uint16_t        n_sect = bios_dsk->drqp.nsect;
     uint16_t        sectsz = bios_dsk->drqp.sect_sz;
     fis_d2h __far   *d2h;
@@ -523,7 +523,6 @@ int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
 {
     uint16_t        device_id;
     uint16_t        rc;
-    uint16_t        ahci_seg = read_word(0x0040, 0x000E) + bios_dsk->ahci_ofs;
 
     device_id = VBOX_GET_AHCI_DEVICE(bios_dsk->drqp.dev_id);
     if (device_id > BX_MAX_AHCI_DEVICES)
@@ -533,15 +532,15 @@ int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
              bios_dsk->drqp.nsect, bios_dsk->drqp.lba,
              device_id, bios_dsk->ahcidev[device_id].port);
 
-    high_bits_save(ahci_seg :> 0);
-    ahci_port_init(ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
+    high_bits_save(bios_dsk->ahci_seg :> 0);
+    ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
     rc = ahci_cmd_data(bios_dsk, AHCI_CMD_READ_DMA_EXT);
     DBG_AHCI("%s: transferred %lu bytes\n", __func__, ((ahci_t __far *)(bios_dsk->ahci_seg :> 0))->aCmdHdr[1]);
     bios_dsk->drqp.trsfsectors = bios_dsk->drqp.nsect;
 #ifdef DMA_WORKAROUND
     rep_movsw(bios_dsk->drqp.buffer, bios_dsk->drqp.buffer, bios_dsk->drqp.nsect * 512 / 2);
 #endif
-    high_bits_restore(ahci_seg :> 0);
+    high_bits_restore(bios_dsk->ahci_seg :> 0);
     return rc;
 }
 
@@ -556,7 +555,6 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
 {
     uint16_t        device_id;
     uint16_t        rc;
-    uint16_t        ahci_seg = read_word(0x0040, 0x000E) + bios_dsk->ahci_ofs;
 
     device_id = VBOX_GET_AHCI_DEVICE(bios_dsk->drqp.dev_id);
     if (device_id > BX_MAX_AHCI_DEVICES)
@@ -566,12 +564,12 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
              bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
              bios_dsk->ahcidev[device_id].port);
 
-    high_bits_save(ahci_seg :> 0);
-    ahci_port_init(ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
+    high_bits_save(bios_dsk->ahci_seg :> 0);
+    ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
     rc = ahci_cmd_data(bios_dsk, AHCI_CMD_WRITE_DMA_EXT);
     DBG_AHCI("%s: transferred %lu bytes\n", __func__, ((ahci_t __far *)(bios_dsk->ahci_seg :> 0))->aCmdHdr[1]);
     bios_dsk->drqp.trsfsectors = bios_dsk->drqp.nsect;
-    high_bits_restore(ahci_seg :> 0);
+    high_bits_restore(bios_dsk->ahci_seg :> 0);
     return rc;
 }
 
@@ -583,9 +581,7 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
 uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
                          uint32_t length, uint8_t inout, char __far *buffer)
 {
-    uint16_t        ebda_seg = read_word(0x0040, 0x000E);
-    bio_dsk_t __far *bios_dsk = ebda_seg :> &EbdaData->bdisk;
-    uint16_t        ahci_seg = ebda_seg + bios_dsk->ahci_ofs;
+    bio_dsk_t __far *bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
     ahci_t __far    *ahci;
 
     /* Data out is currently not supported. */
@@ -607,10 +603,10 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     bios_dsk->drqp.nsect   = length / bios_dsk->drqp.sect_sz;
 //    bios_dsk->drqp.sect_sz = 2048;
 
-    ahci = ahci_seg :> 0;
+    ahci = bios_dsk->ahci_seg :> 0;
     high_bits_save(ahci);
 
-    ahci_port_init(ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
+    ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
 
     /* Copy the ATAPI command where the HBA can fetch it. */
     _fmemcpy(ahci->abAcmd, cmdbuf, cmdlen);
@@ -835,21 +831,23 @@ static int ahci_hba_init(uint16_t io_base)
     uint8_t             i, cPorts;
     uint32_t            val;
     uint16_t            ebda_seg;
-    uint16_t            ahci_ofs;
     uint16_t            ahci_seg;
     bio_dsk_t __far     *bios_dsk;
     ahci_t __far        *ahci;
 
-    /* Allocate 1K of base memory (this will move the EBDA). */
-    ahci_ofs = ebda_mem_alloc(1/*KB*/);
-    if (ahci_ofs == 0)
+    /* Allocate 1K of base memory (this will move the EBDA).
+     * NB: The AHCI memory block must be 1K aligned. If the EBDA
+     * gets relocated, it will land on a paragraph aligned boundary;
+     * therefore the memory is allocated outside of the EBDA.
+     */
+    ahci_seg = conv_mem_alloc(1/*KB*/, 0/*in_ebda*/);
+    if (ahci_seg == 0)
     {
         DBG_AHCI("AHCI: Could not allocate 1K of memory\n");
         return 0;
     }
 
     ebda_seg = read_word(0x0040, 0x000E);
-    ahci_seg = ebda_seg + ahci_ofs;
     bios_dsk = ebda_seg :> &EbdaData->bdisk;
 
     AHCI_READ_REG(io_base, AHCI_REG_VS, val);
@@ -857,10 +855,10 @@ static int ahci_hba_init(uint16_t io_base)
              ahci_ctrl_extract_bits(val, 0xffff0000, 16),
              ahci_ctrl_extract_bits(val, 0x0000ffff,  0));
 
-    DBG_AHCI("AHCI: ahci_ofs=%04x, size=%04x, pointer at EBDA:%04x (EBDA size=%04x)\n",
-             ahci_ofs, sizeof(ahci_t), (uint16_t)&EbdaData->bdisk.ahci_ofs, sizeof(ebda_data_t));
+    DBG_AHCI("AHCI: ahci_seg=%04x, size=%04x, pointer at EBDA:%04x (EBDA size=%04x)\n",
+             ahci_seg, sizeof(ahci_t), (uint16_t)&EbdaData->bdisk.ahci_seg, sizeof(ebda_data_t));
 
-    bios_dsk->ahci_ofs    = ahci_ofs;
+    bios_dsk->ahci_seg    = ahci_seg;
     bios_dsk->ahci_devcnt = 0;
 
     ahci = ahci_seg :> 0;

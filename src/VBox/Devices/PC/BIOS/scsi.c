@@ -522,7 +522,7 @@ void BIOSCALL scsi_init(void)
             int rc;
             uint8_t  u8Bus, u8DevFn;
             uint16_t hba_seg;
-            uint16_t hba_ofs = ebda_mem_alloc(1/*KB*/);
+            uint16_t hba_ofs = conv_mem_alloc(1/*KB*/, 1/*in_ebda*/);
             if (hba_ofs == 0) /* No point in trying the rest if we are out of memory. */
                 break;
 

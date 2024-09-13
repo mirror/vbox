@@ -218,9 +218,12 @@ void BIOSCALL apic_setup(void)
 #endif
 
 /**
- * Allocate n KB of conventional memory at the end of the EBDA.
+ * Allocate n KB of conventional memory, and either add it to
+ * the EBDA or just take it away from memory below 640K.
+ *
  * Returns offset (in paragraphs) to the allocated block within
- * the EBDA.
+ * the EBDA when adding to the EBDA, or segment address when
+ * allocating outside of the EBDA.
  *
  * NB: By default, the EBDA is 1KB in size, located at 639KB
  * into the start of memory (just below the video RAM). Optional
@@ -236,9 +239,13 @@ void BIOSCALL apic_setup(void)
  * allocated at the end and the original EBDA contents are
  * shifted down.
  *
+ * To make relocating the EBDA practical, the EBDA must
+ * immediately follow the end of conventional memory. Therefore,
+ * new
+ *
  * WARNING: When successful, this function moves the EBDA!
  */
-uint16_t ebda_mem_alloc(int n_kb)
+uint16_t conv_mem_alloc(int n_kb, int in_ebda)
 {
     uint16_t        base_mem_kb;
     uint16_t        ebda_kb;
@@ -246,6 +253,7 @@ uint16_t ebda_mem_alloc(int n_kb)
     uint16_t        user_size;
     uint16_t        old_ebda_seg;
     uint16_t        new_ebda_seg;
+    uint16_t        ret_val;
 
     base_mem_kb = read_word(0x00, 0x0413);
 
@@ -270,12 +278,16 @@ uint16_t ebda_mem_alloc(int n_kb)
     _fmemcpy(MK_FP(new_ebda_seg, 0), MK_FP(old_ebda_seg, 0), user_ofs * 16);
     _fmemset(MK_FP(new_ebda_seg + user_ofs, 0), 0, user_size * 16);
 
-    /* Update the EBDA location and size. */
+    /* Update the EBDA location and possibly size. */
     write_word(0x0040, 0x000E, new_ebda_seg);
-    write_byte(new_ebda_seg, 0, ebda_kb + n_kb);
+    if (in_ebda) {
+        write_byte(new_ebda_seg, 0, ebda_kb + n_kb);
+        ret_val = user_ofs;
+    } else {
+        ret_val = new_ebda_seg + user_ofs;
+    }
 
-    DPRINT("BIOS: added %04X paras at EBDA offset %04X\n", user_size, user_ofs);
-
-    return user_ofs;
+    DPRINT("BIOS: added %04X paras ofs or seg %04X\n", user_size, ret_val);
+    return ret_val;
 }
 
