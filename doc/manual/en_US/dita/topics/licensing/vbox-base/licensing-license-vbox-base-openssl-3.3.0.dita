@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="license-openssl-3.3.0">
-  
- <title>OpenSSL</title>
-  
+
+ <title>OpenSSL 3.3.0</title>
+
  <body>
   <pre xml:space="preserve">Copyright (c) 1998-2024 The OpenSSL Project
 Copyright (c) 1995-1998 Eric A. Young, Tim J. Hudson
@@ -16,7 +16,7 @@ All rights reserved.
  * https://www.openssl.org/source/license.html
  *
 
---------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
 
                                  Apache License
                            Version 2.0, January 2004
@@ -195,6 +195,6 @@ All rights reserved.
 
    END OF TERMS AND CONDITIONS
 
---------------------------------------------------------------------------------</pre>
+---------------------------------------------------------------------------------------------------------------</pre>
   </body>
  </topic>
