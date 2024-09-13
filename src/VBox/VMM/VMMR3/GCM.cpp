@@ -78,20 +78,41 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+typedef enum
+{
+    /** Invalid zero value. */
+    kGcmLoadAct_Invalid = 0,
+    /** The fixer is set up at VM config and has additional state/whatever that
+     *  prevents it from being reconfigured during state load. */
+    kGcmLoadAct_NoReconfigFail,
+    /** The fixer is set up at VM config but it doesn't really matter too
+     *  much whether we keep using the VM config instead of the saved state. */
+    kGcmLoadAct_NoReconfigIgnore,
+    /** The fixer state is only checked at runtime, so it's no problem to
+     * reconfigure it during state load. */
+    kGcmLoadAct_Reconfigurable,
+    kGcmLoadAct_End
+} GCMLOADACTION;
 /** Fixer flag configuration names. */
 static struct
 {
-    const char *pszName;
-    uint8_t     cchName;
-    bool        fSafeToClearOnLoad;
-    uint32_t    fFlag;
+    const char   *pszName;
+    uint8_t       cchName;
+    uint8_t       uBit;
+    GCMLOADACTION enmLoadAction;
 } const g_aGcmFixerIds[] =
 {
-    { RT_STR_TUPLE("DivByZeroDOS"),     false,  GCMFIXER_DBZ_DOS         }, /* These aren't safe to clear on load, */
-    { RT_STR_TUPLE("DivByZeroOS2"),     false,  GCMFIXER_DBZ_OS2         }, /* because HM and NEM only queries them */
-    { RT_STR_TUPLE("DivByZeroWin9x"),   false,  GCMFIXER_DBZ_WIN9X       }, /* on VM init. */
-    { RT_STR_TUPLE("MesaVmsvgaDrv"),    true,   GCMFIXER_MESA_VMSVGA_DRV }, /* This is checked for every access, so okay. */
+    { RT_STR_TUPLE("DivByZeroDOS"),   GCMFIXER_DBZ_DOS_BIT,         kGcmLoadAct_NoReconfigIgnore },
+    { RT_STR_TUPLE("DivByZeroOS2"),   GCMFIXER_DBZ_OS2_BIT,         kGcmLoadAct_NoReconfigIgnore },
+    { RT_STR_TUPLE("DivByZeroWin9x"), GCMFIXER_DBZ_WIN9X_BIT,       kGcmLoadAct_NoReconfigIgnore },
+    { RT_STR_TUPLE("MesaVmsvgaDrv"),  GCMFIXER_MESA_VMSVGA_DRV_BIT, kGcmLoadAct_Reconfigurable   },
 };
+
+/** Max g_aGcmFixerIds::cchName value. */
+#define GCM_FIXER_ID_MAX_NAME_LEN       30
+
+/** Max size of the gcmFixerIdsToString output. */
+#define GCM_FIXER_SET_MAX_STRING_SIZE   (2 + (GCM_FIXER_ID_MAX_NAME_LEN + 2) * (RT_ELEMENTS(g_aGcmFixerIds) + 1) + 2)
 
 
 /*********************************************************************************************************************************
@@ -131,10 +152,12 @@ VMMR3_INT_DECL(int) GCMR3Init(PVM pVM)
      * Read & validate configuration.
      */
     /* Assemble valid value names for CFMGR3ValidateConfig. */
-    char   szValidValues[1024];
+    char   szValidValues[GCM_FIXER_SET_MAX_STRING_SIZE];
     size_t offValidValues = 0;
     for (unsigned i = 0; i < RT_ELEMENTS(g_aGcmFixerIds); i++)
     {
+        Assert(g_aGcmFixerIds[i].cchName > 0 && g_aGcmFixerIds[i].cchName <= GCM_FIXER_ID_MAX_NAME_LEN);
+
         AssertReturn(offValidValues + g_aGcmFixerIds[i].cchName + 2 <= sizeof(szValidValues), VERR_INTERNAL_ERROR_2);
         if (offValidValues)
             szValidValues[offValidValues++] = '|';
@@ -164,7 +187,7 @@ VMMR3_INT_DECL(int) GCMR3Init(PVM pVM)
             return VMR3SetError(pVM->pUVM, rc, RT_SRC_POS, "Error reading /GCM/%s as boolean: %Rrc",
                                 g_aGcmFixerIds[i].pszName, rc);
         if (fEnabled)
-            pVM->gcm.s.fFixerSet = g_aGcmFixerIds[i].fFlag;
+            pVM->gcm.s.fFixerSet = RT_BIT_32(g_aGcmFixerIds[i].uBit);
     }
 
 #if 0 /* development override */
@@ -191,7 +214,7 @@ static char *gcmFixerIdsToString(char *pszDst, size_t cbDst, uint32_t fFixerIds,
 
     size_t offDst = 0;
     for (unsigned i = 0; i < RT_ELEMENTS(g_aGcmFixerIds); i++)
-        if (fFixerIds & g_aGcmFixerIds[i].fFlag)
+        if (fFixerIds & RT_BIT_32(g_aGcmFixerIds[i].uBit))
         {
             AssertReturn(offDst + g_aGcmFixerIds[i].cchName + 4 <= cbDst, pszDst);
             if (offDst)
@@ -208,7 +231,7 @@ static char *gcmFixerIdsToString(char *pszDst, size_t cbDst, uint32_t fFixerIds,
             offDst += g_aGcmFixerIds[i].cchName;
             pszDst[offDst] = '\0';
 
-            fFixerIds &= ~g_aGcmFixerIds[i].fFlag;
+            fFixerIds &= ~RT_BIT_32(g_aGcmFixerIds[i].uBit);
             if (!fFixerIds)
                 break;
         }
@@ -281,38 +304,68 @@ static DECLCALLBACK(int) gcmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     /*
      * Check if we can reconfigure to the loaded fixer set.
      */
-    if ((fFixerSet & pVM->gcm.s.fFixerSet) == fFixerSet)
+    bool     fSuccess     = false;
+    uint32_t fNewFixerSet = fFixerSet;
+    uint32_t fDiffSet     = fFixerSet ^ pVM->gcm.s.fFixerSet;
+    while (fDiffSet)
     {
-        uint32_t fNotSetInSavedState = fFixerSet ^ pVM->gcm.s.fFixerSet;
-        while (fNotSetInSavedState)
+        unsigned const uBit  = ASMBitFirstSetU32(fDiffSet) - 1U;
+        unsigned       idxEntry;
+        for (idxEntry = 0; idxEntry < RT_ELEMENTS(g_aGcmFixerIds); idxEntry++)
+            if (g_aGcmFixerIds[idxEntry].uBit == uBit)
+                break;
+        if (idxEntry < RT_ELEMENTS(g_aGcmFixerIds))
         {
-            unsigned iBit  = ASMBitFirstSetU32(fNotSetInSavedState) - 1U;
-            uint32_t fFlag = RT_BIT_32(iBit);
-
-            unsigned idxEntry;
-            for (idxEntry = 0; idxEntry < RT_ELEMENTS(g_aGcmFixerIds); idxEntry++)
-                if (g_aGcmFixerIds[idxEntry].fFlag == fFlag)
+            switch (g_aGcmFixerIds[idxEntry].enmLoadAction)
+            {
+                case kGcmLoadAct_Reconfigurable:
+                    if (fFixerSet & RT_BIT_32(uBit))
+                        LogRel(("GCM: Enabling %s (loading state).\n", g_aGcmFixerIds[idxEntry].pszName));
+                    else
+                        LogRel(("GCM: Disabling %s (loading state).\n", g_aGcmFixerIds[idxEntry].pszName));
                     break;
-            if (idxEntry >= RT_ELEMENTS(g_aGcmFixerIds))
-            {
-                LogRel(("GCM: Error! Unknown fixer flag set in saved state: %#x\n", fFlag));
-                break;
+
+                case kGcmLoadAct_NoReconfigIgnore:
+                    if (fFixerSet & RT_BIT_32(uBit))
+                        LogRel(("GCM: %s is disabled in VM config but enabled in saved state being loaded, keeping it disabled as configured.\n",
+                                g_aGcmFixerIds[idxEntry].pszName));
+                    else
+                        LogRel(("GCM: %s is enabled in VM config but disabled in saved state being loaded, keeping it enabled as configured.\n",
+                                g_aGcmFixerIds[idxEntry].pszName));
+                    fNewFixerSet &= ~RT_BIT_32(uBit);
+                    fNewFixerSet |= pVM->gcm.s.fFixerSet & RT_BIT_32(uBit);
+                    break;
+
+                default:
+                    AssertFailed();
+                    RT_FALL_THRU();
+                case kGcmLoadAct_NoReconfigFail:
+                    if (fFixerSet & RT_BIT_32(uBit))
+                        LogRel(("GCM: Error! %s is disabled in VM config but enabled in saved state being loaded!\n",
+                                g_aGcmFixerIds[idxEntry].pszName));
+                    else
+                        LogRel(("GCM: Error! %s is enabled in VM config but disabled in saved state being loaded!\n",
+                                g_aGcmFixerIds[idxEntry].pszName));
+                    fSuccess = false;
+                    break;
             }
-            if (g_aGcmFixerIds[idxEntry].fSafeToClearOnLoad)
-            {
-                LogRel(("GCM: Error! Fixer flag %s is set in saved state but no in the VM configuration!\n",
-                        g_aGcmFixerIds[idxEntry].pszName));
-                break;
-            }
-            fNotSetInSavedState &= ~fFlag;
         }
-        if (!fNotSetInSavedState)
+        else
         {
-            pVM->gcm.s.fFixerSet &= fFixerSet;
-            return VINF_SUCCESS;
+            /* For max flexibility, we just ignore unknown fixers. */
+            LogRel(("GCM: Warning! Ignoring unknown fixer ID set in saved state: %#x (bit %u)\n", RT_BIT_32(uBit), uBit));
+            fNewFixerSet &= ~RT_BIT_32(uBit);
         }
+        fDiffSet &= ~RT_BIT_32(uBit);
     }
-    char szTmp1[1024], szTmp2[1024];
+    if (fSuccess)
+    {
+        pVM->gcm.s.fFixerSet = fNewFixerSet;
+        return VINF_SUCCESS;
+    }
+
+    char szTmp1[GCM_FIXER_SET_MAX_STRING_SIZE];
+    char szTmp2[GCM_FIXER_SET_MAX_STRING_SIZE];
     return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Saved GCM fixer set %#x%s differs from the configured one (%#x%s)."),
                             fFixerSet, gcmFixerIdsToString(szTmp1, sizeof(szTmp1), fFixerSet, true),
                             pVM->gcm.s.fFixerSet, gcmFixerIdsToString(szTmp2, sizeof(szTmp2), pVM->gcm.s.fFixerSet, true));
