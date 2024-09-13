@@ -55,7 +55,8 @@ RT_C_DECLS_BEGIN
 #define GCMFIXER_DBZ_OS2            RT_BIT_32(1)
 /** Windows 9x division by zero. */
 #define GCMFIXER_DBZ_WIN9X          RT_BIT_32(2)
-/** Workaround for the Mesa vmsvga driver using a IN/OUT backdoor. */
+/** Workaround for the Mesa vmsvga driver using a IN/OUT backdoor.
+ * @since 7.0  */
 #define GCMFIXER_MESA_VMSVGA_DRV    RT_BIT_32(3)
 /** @} */
 
