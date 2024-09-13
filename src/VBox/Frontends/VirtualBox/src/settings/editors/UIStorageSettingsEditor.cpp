@@ -2956,6 +2956,8 @@ UIStorageSettingsEditor::UIStorageSettingsEditor(QWidget *pParent /* = 0 */)
     , m_pLabelMedium(0)
     , m_pComboSlot(0)
     , m_pToolButtonOpen(0)
+    , m_pContainerForCheckBoxes1(0)
+    , m_pContainerForCheckBoxes2(0)
     , m_pCheckBoxPassthrough(0)
     , m_pCheckBoxTempEject(0)
     , m_pCheckBoxNonRotational(0)
@@ -3687,22 +3689,32 @@ void UIStorageSettingsEditor::sltGetInformation()
                 m_pLabelMedium->setEnabled(fIsEditable);
                 m_pToolButtonOpen->setEnabled(fIsEditable);
 
+                /* Prepare setting #1 to show: */
+                int iIndexForSetting1 = 0;
                 /* Getting passthrough state: */
                 const bool fHostDrive = pModel->data(index, StorageModel::R_AttIsHostDrive).toBool();
-                m_pCheckBoxPassthrough->setVisible(enmDeviceType == KDeviceType_DVD && fHostDrive);
+                if (enmDeviceType == KDeviceType_DVD && fHostDrive)
+                    iIndexForSetting1 = 1;
                 m_pCheckBoxPassthrough->setChecked(fHostDrive && pModel->data(index, StorageModel::R_AttIsPassthrough).toBool());
-
                 /* Getting temp-eject state: */
-                m_pCheckBoxTempEject->setVisible(enmDeviceType == KDeviceType_DVD && !fHostDrive);
+                if (enmDeviceType == KDeviceType_DVD && !fHostDrive)
+                    iIndexForSetting1 = 2;
                 m_pCheckBoxTempEject->setChecked(!fHostDrive && pModel->data(index, StorageModel::R_AttIsTempEject).toBool());
-
                 /* Getting non-rotational state: */
-                m_pCheckBoxNonRotational->setVisible(enmDeviceType == KDeviceType_HardDisk);
+                if (enmDeviceType == KDeviceType_HardDisk)
+                    iIndexForSetting1 = 3;
                 m_pCheckBoxNonRotational->setChecked(pModel->data(index, StorageModel::R_AttIsNonRotational).toBool());
+                /* Trigger setting #1 to show: */
+                m_pContainerForCheckBoxes1->setCurrentIndex(iIndexForSetting1);
 
+                /* Prepare setting #2 to show: */
+                int iIndexForSetting2 = 0;
                 /* Fetch hot-pluggable state: */
-                m_pCheckBoxHotPluggable->setVisible(slt.bus == KStorageBus_SATA);
+                if (slt.bus == KStorageBus_SATA)
+                    iIndexForSetting2 = 1;
                 m_pCheckBoxHotPluggable->setChecked(fIsHotPluggable);
+                /* Trigger setting #2 to show: */
+                m_pContainerForCheckBoxes2->setCurrentIndex(iIndexForSetting2);
 
                 /* Update optional widgets visibility: */
                 m_pLabelHDFormat->setVisible(enmDeviceType == KDeviceType_HardDisk);
@@ -4808,7 +4820,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
         {
             m_pLayoutAttachment->setContentsMargins(10, 0, 0, 0);
             m_pLayoutAttachment->setColumnStretch(2, 1);
-            m_pLayoutAttachment->setRowStretch(13, 1);
+            m_pLayoutAttachment->setRowStretch(14, 1);
 
             /* Prepare separator for attachment case: */
             m_pLabelSeparatorAttributes = new QILabelSeparator(pWidgetAttachment);
@@ -4853,58 +4865,57 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
                 m_pLayoutAttachment->addLayout(pLayoutContainer, 1, 2);
             }
 
-            /* Prepare attachment settings layout: */
-            QVBoxLayout *pLayoutAttachmentSettings = new QVBoxLayout;
-            if (pLayoutAttachmentSettings)
+            /* Prepare attachment settings container #1: */
+            m_pContainerForCheckBoxes1 = new QStackedWidget(pWidgetAttachment);
+            if (m_pContainerForCheckBoxes1)
             {
-                pLayoutAttachmentSettings->setContentsMargins(0, 0, 0, 0);
+                /* Prepare placeholder: */
+                m_pContainerForCheckBoxes1->addWidget(new QWidget);
 
                 /* Prepare attachment passthrough check-box: */
-                m_pCheckBoxPassthrough = new QCheckBox(pWidgetAttachment);
+                m_pCheckBoxPassthrough = new QCheckBox(m_pContainerForCheckBoxes1);
                 if (m_pCheckBoxPassthrough)
-                {
-                    m_pCheckBoxPassthrough->hide();
-                    pLayoutAttachmentSettings->addWidget(m_pCheckBoxPassthrough);
-                }
+                    m_pContainerForCheckBoxes1->addWidget(m_pCheckBoxPassthrough);
 
                 /* Prepare attachment temporary eject check-box: */
-                m_pCheckBoxTempEject = new QCheckBox(pWidgetAttachment);
+                m_pCheckBoxTempEject = new QCheckBox(m_pContainerForCheckBoxes1);
                 if (m_pCheckBoxTempEject)
-                {
-                    m_pCheckBoxTempEject->hide();
-                    pLayoutAttachmentSettings->addWidget(m_pCheckBoxTempEject);
-                }
+                    m_pContainerForCheckBoxes1->addWidget(m_pCheckBoxTempEject);
 
                 /* Prepare attachment non rotational check-box: */
-                m_pCheckBoxNonRotational = new QCheckBox(pWidgetAttachment);
+                m_pCheckBoxNonRotational = new QCheckBox(m_pContainerForCheckBoxes1);
                 if (m_pCheckBoxNonRotational)
-                {
-                    m_pCheckBoxNonRotational->hide();
-                    pLayoutAttachmentSettings->addWidget(m_pCheckBoxNonRotational);
-                }
+                    m_pContainerForCheckBoxes1->addWidget(m_pCheckBoxNonRotational);
+
+                m_pLayoutAttachment->addWidget(m_pContainerForCheckBoxes1, 2, 2);
+            }
+
+            /* Prepare attachment settings container #2: */
+            m_pContainerForCheckBoxes2 = new QStackedWidget(pWidgetAttachment);
+            if (m_pContainerForCheckBoxes2)
+            {
+                /* Prepare placeholder: */
+                m_pContainerForCheckBoxes2->addWidget(new QWidget);
 
                 /* Prepare attachment hot pluggable check-box: */
-                m_pCheckBoxHotPluggable = new QCheckBox(pWidgetAttachment);
+                m_pCheckBoxHotPluggable = new QCheckBox(m_pContainerForCheckBoxes2);
                 if (m_pCheckBoxHotPluggable)
-                {
-                    m_pCheckBoxHotPluggable->hide();
-                    pLayoutAttachmentSettings->addWidget(m_pCheckBoxHotPluggable);
-                }
+                    m_pContainerForCheckBoxes2->addWidget(m_pCheckBoxHotPluggable);
 
-                m_pLayoutAttachment->addLayout(pLayoutAttachmentSettings, 2, 2);
+                m_pLayoutAttachment->addWidget(m_pContainerForCheckBoxes2, 3, 2);
             }
 
             /* Prepare separator for attachment case: */
             m_pLabelSeparatorInformation = new QILabelSeparator(pWidgetAttachment);
             if (m_pLabelSeparatorInformation)
-                m_pLayoutAttachment->addWidget(m_pLabelSeparatorInformation, 3, 0, 1, 3);
+                m_pLayoutAttachment->addWidget(m_pLabelSeparatorInformation, 4, 0, 1, 3);
 
             /* Prepare HD format label: */
             m_pLabelHDFormat = new QLabel(pWidgetAttachment);
             if (m_pLabelHDFormat)
             {
                 m_pLabelHDFormat->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelHDFormat, 4, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelHDFormat, 5, 1);
             }
             /* Prepare HD format field: */
             m_pFieldHDFormat = new QILabel(pWidgetAttachment);
@@ -4912,7 +4923,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldHDFormat->setFullSizeSelection(true);
                 m_pFieldHDFormat->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldHDFormat, 4, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldHDFormat, 5, 2);
             }
 
             /* Prepare CD/FD type label: */
@@ -4920,7 +4931,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelCDFDType)
             {
                 m_pLabelCDFDType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelCDFDType, 5, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelCDFDType, 6, 1);
             }
             /* Prepare CD/FD type field: */
             m_pFieldCDFDType = new QILabel(pWidgetAttachment);
@@ -4928,7 +4939,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldCDFDType->setFullSizeSelection(true);
                 m_pFieldCDFDType->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldCDFDType, 5, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldCDFDType, 6, 2);
             }
 
             /* Prepare HD virtual size label: */
@@ -4936,7 +4947,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelHDVirtualSize)
             {
                 m_pLabelHDVirtualSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelHDVirtualSize, 6, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelHDVirtualSize, 7, 1);
             }
             /* Prepare HD virtual size field: */
             m_pFieldHDVirtualSize = new QILabel(pWidgetAttachment);
@@ -4944,7 +4955,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldHDVirtualSize->setFullSizeSelection(true);
                 m_pFieldHDVirtualSize->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldHDVirtualSize, 6, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldHDVirtualSize, 7, 2);
             }
 
             /* Prepare HD actual size label: */
@@ -4952,7 +4963,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelHDActualSize)
             {
                 m_pLabelHDActualSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelHDActualSize, 7, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelHDActualSize, 8, 1);
             }
             /* Prepare HD actual size field: */
             m_pFieldHDActualSize = new QILabel(pWidgetAttachment);
@@ -4960,7 +4971,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldHDActualSize->setFullSizeSelection(true);
                 m_pFieldHDActualSize->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldHDActualSize, 7, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldHDActualSize, 8, 2);
             }
 
             /* Prepare CD/FD size label: */
@@ -4968,7 +4979,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelCDFDSize)
             {
                 m_pLabelCDFDSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelCDFDSize, 8, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelCDFDSize, 9, 1);
             }
             /* Prepare CD/FD size field: */
             m_pFieldCDFDSize = new QILabel(pWidgetAttachment);
@@ -4976,7 +4987,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldCDFDSize->setFullSizeSelection(true);
                 m_pFieldCDFDSize->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldCDFDSize, 8, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldCDFDSize, 9, 2);
             }
 
             /* Prepare HD details label: */
@@ -4984,7 +4995,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelHDDetails)
             {
                 m_pLabelHDDetails->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelHDDetails, 9, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelHDDetails, 10, 1);
             }
             /* Prepare HD details field: */
             m_pFieldHDDetails = new QILabel(pWidgetAttachment);
@@ -4992,7 +5003,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldHDDetails->setFullSizeSelection(true);
                 m_pFieldHDDetails->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldHDDetails, 9, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldHDDetails, 10, 2);
             }
 
             /* Prepare location label: */
@@ -5000,7 +5011,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelLocation)
             {
                 m_pLabelLocation->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelLocation, 10, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelLocation, 11, 1);
             }
             /* Prepare location field: */
             m_pFieldLocation = new QILabel(pWidgetAttachment);
@@ -5008,7 +5019,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldLocation->setFullSizeSelection(true);
                 m_pFieldLocation->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldLocation, 10, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldLocation, 11, 2);
             }
 
             /* Prepare usage label: */
@@ -5016,7 +5027,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelUsage)
             {
                 m_pLabelUsage->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelUsage, 11, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelUsage, 12, 1);
             }
             /* Prepare usage field: */
             m_pFieldUsage = new QILabel(pWidgetAttachment);
@@ -5024,7 +5035,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldUsage->setFullSizeSelection(true);
                 m_pFieldUsage->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldUsage, 11, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldUsage, 12, 2);
             }
 
             /* Prepare encryption label: */
@@ -5032,7 +5043,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelEncryption)
             {
                 m_pLabelEncryption->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelEncryption, 12, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelEncryption, 13, 1);
             }
             /* Prepare encryption field: */
             m_pFieldEncryption = new QILabel(pWidgetAttachment);
@@ -5040,7 +5051,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldEncryption->setFullSizeSelection(true);
                 m_pFieldEncryption->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldEncryption, 12, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldEncryption, 13, 2);
             }
 
             m_pLayoutAttachment->setColumnMinimumWidth(0, 10);

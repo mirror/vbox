@@ -482,6 +482,10 @@ private:
         QComboBox        *m_pComboSlot;
         /** Holds the open tool-button instance. */
         QIToolButton     *m_pToolButtonOpen;
+        /** Holds the 1st check-box container instance. */
+        QStackedWidget   *m_pContainerForCheckBoxes1;
+        /** Holds the 2nd check-box container instance. */
+        QStackedWidget   *m_pContainerForCheckBoxes2;
         /** Holds the passthrough check-box instance. */
         QCheckBox        *m_pCheckBoxPassthrough;
         /** Holds the temporary eject check-box instance. */
