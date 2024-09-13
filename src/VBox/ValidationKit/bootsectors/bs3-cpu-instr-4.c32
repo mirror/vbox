@@ -7432,6 +7432,379 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_divss(uint8_t bMode)
 
 
 /*
+ * [V]DIVSD.
+ */
+BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_divsd(uint8_t bMode)
+{
+    static BS3CPUINSTR4_TEST1_VALUES_SD_T const s_aValues[] =
+    {
+    /*
+     * Zero.
+     */
+    /* 0*/{ { /*src2     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
+            { /*src1     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
+            { /* =>      */ { FP64_QNAN(1), FP64_0(0), FP64_0(0), FP64_0(0) } },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
+            { /*src1     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
+            { /* =>      */ { FP64_QNAN(1), FP64_0(0), FP64_0(0), FP64_0(0) } },
+              /*mxcsr:in */ 0,
+              /*128:out  */ X86_MXCSR_IE,
+              /*256:out  */ X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
+          { { /*src2     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
+            { /*src1     */ { FP64_0(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
+            { /* =>      */ { FP64_QNAN(1), FP64_0(0), FP64_0(0), FP64_0(0) } },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_0(0), FP64_NORM_V3(0), FP64_NORM_V2(0), FP64_0(0)       } },
+            { /*src1     */ { FP64_0(0), FP64_0(1),       FP64_0(1),       FP64_NORM_V1(0) } },
+            { /* =>      */ { FP64_QNAN(1), FP64_0(1),       FP64_0(1),       FP64_NORM_V1(0) } },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_IE,
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_0(1), FP64_RAND_V3(0), FP64_RAND_V2(1), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_0(1), FP64_RAND_V0(1), FP64_RAND_V1(1), FP64_RAND_V2(0) } },
+            { /* =>      */ { FP64_QNAN(1), FP64_RAND_V0(1), FP64_RAND_V1(1), FP64_RAND_V2(0) } },
+              /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP,
+              /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_IE,
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_UP | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
+          { { /*src2     */ { FP64_0(1), FP64_RAND_V0(0), FP64_RAND_V1(0), FP64_RAND_V2(1) } },
+            { /*src1     */ { FP64_0(0), FP64_RAND_V2(1), FP64_RAND_V3(0), FP64_RAND_V0(0) } },
+            { /* =>      */ { FP64_QNAN(1), FP64_RAND_V2(1), FP64_RAND_V3(0), FP64_RAND_V0(0) } },
+              /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO,
+              /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
+          { { /*src2     */ { FP64_0(0), FP64_RAND_V0(0), FP64_RAND_V1(0), FP64_RAND_V2(1) } },
+            { /*src1     */ { FP64_0(1), FP64_RAND_V1(1), FP64_RAND_V2(0), FP64_RAND_V0(0) } },
+            { /* =>      */ { FP64_QNAN(1), FP64_RAND_V1(1), FP64_RAND_V2(0), FP64_RAND_V0(0) } },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ,
+              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_IE,
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_0(0), FP64_RAND_V0(0), FP64_RAND_V1(0), FP64_RAND_V2(1) } },
+            { /*src1     */ { FP64_1(0), FP64_RAND_V3(1), FP64_RAND_V2(0), FP64_RAND_V0(0) } },
+            { /* =>      */ { FP64_INF(0), FP64_RAND_V3(1), FP64_RAND_V2(0), FP64_RAND_V0(0) } },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN,
+              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_FSW_ZE,
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ | X86_MXCSR_RC_DOWN | X86_FSW_ZE,
+              /*xcpt?    */ false, false },
+    /*
+     * Infinity.
+     */
+    /* 8*/{ { /*src2     */ { FP64_INF(0), FP64_0(0), FP64_0(0), FP64_0(0) } },
+            { /*src1     */ { FP64_1(1),   FP64_0(0), FP64_0(0), FP64_0(0) } },
+            { /* =>      */ { FP64_0(1),   FP64_0(0), FP64_0(0), FP64_0(0) } },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK & ~X86_MXCSR_IM,
+              /*128:out  */ X86_MXCSR_XCPT_MASK & ~X86_MXCSR_IM,
+              /*256:out  */ X86_MXCSR_XCPT_MASK & ~X86_MXCSR_IM,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_INF(1), FP64_0(0), FP64_0(0), FP64_0(0) } },
+            { /*src1     */ { FP64_1(1),   FP64_0(0), FP64_0(0), FP64_0(0) } },
+            { /* =>      */ { FP64_0(0),   FP64_0(0), FP64_0(0), FP64_0(0) } },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+              /*128:out  */ X86_MXCSR_XCPT_MASK,
+              /*256:out  */ X86_MXCSR_XCPT_MASK,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_INF(0), FP64_RAND_V1(0), FP64_RAND_V2(0), FP64_RAND_V3(1) } },
+            { /*src1     */ { FP64_INF(0), FP64_RAND_V0(0), FP64_RAND_V1(1), FP64_RAND_V2(1) } },
+            { /* =>      */ { FP64_INF(0), FP64_RAND_V0(0), FP64_RAND_V1(1), FP64_RAND_V2(1) } },
+              /*mxcsr:in */ (X86_MXCSR_XCPT_MASK & ~X86_MXCSR_IM) | X86_MXCSR_DAZ | X86_MXCSR_FZ,
+              /*128:out  */ (X86_MXCSR_XCPT_MASK & ~X86_MXCSR_IM) | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_IE,
+              /*256:out  */ (X86_MXCSR_XCPT_MASK & ~X86_MXCSR_IM) | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
+          { { /*src2     */ { FP64_INF(1), FP64_RAND_V3(0), FP64_RAND_V2(1), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_INF(0), FP64_RAND_V0(0), FP64_RAND_V1(1), FP64_RAND_V0(0) } },
+            { /* =>      */ { FP64_QNAN(1), FP64_RAND_V0(0), FP64_RAND_V1(1), FP64_RAND_V0(0) } },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO,
+              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_1(0),   FP64_RAND_V3(0), FP64_RAND_V2(1), FP64_RAND_V0(1) } },
+            { /*src1     */ { FP64_INF(0), FP64_RAND_V1(0), FP64_RAND_V2(0), FP64_RAND_V3(1) } },
+            { /* =>      */ { FP64_INF(0), FP64_RAND_V1(0), FP64_RAND_V2(0), FP64_RAND_V3(1) } },
+              /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ,
+              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ,
+              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_FZ,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_INF(0), FP64_INF(0), FP64_INF(1), FP64_INF(1) } },
+            { /*src1     */ { FP64_1(1),   FP64_INF(1), FP64_INF(1), FP64_INF(0) } },
+            { /* =>      */ { FP64_0(1),   FP64_INF(1), FP64_INF(0), FP64_INF(1) } },
+              /*mxcsr:in */ X86_MXCSR_FZ,
+              /*128:out  */ X86_MXCSR_FZ,
+              /*256:out  */ X86_MXCSR_FZ,
+              /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_INF(1), FP64_QNAN(0), FP64_SNAN(0), FP64_RAND_V0(0) } },
+            { /*src1     */ { FP64_INF(0), FP64_QNAN(0), FP64_SNAN(0), FP64_RAND_V0(0) } },
+            { /* =>      */ { FP64_QNAN(1), FP64_QNAN(0), FP64_SNAN(0), FP64_RAND_V0(0) } },
+              /*mxcsr:in */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+              /*128:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,
+              /*xcpt?    */ true, true },
+    /*
+     * Normals.
+     */
+    /*15*/{ { /*src2     */ { FP64_V(0, 0xe66f500000000, 0x40d)/*31131.828125*/, FP64_RAND_V1(0), FP64_RAND_V2(0), FP64_RAND_V3(1) } },
+            { /*src1     */ { FP64_V(0, 0xe66f500000000, 0x40d)/*31131.828125*/, FP64_RAND_V0(0), FP64_RAND_V1(1), FP64_RAND_V2(1) } },
+            { /* =>      */ { FP64_1(0),                                         FP64_RAND_V0(0), FP64_RAND_V1(1), FP64_RAND_V2(1) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK,
+             /*256:out  */ X86_MXCSR_XCPT_MASK,
+             /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_V(0, 0xaf00000000000, 0x406)/*      215.50*/, FP64_RAND_V2(0), FP64_RAND_V3(0), FP64_RAND_V2(1) } },
+            { /*src1     */ { FP64_V(0, 0xfb74e1d800000, 0x41a)/*266053390.75*/, FP64_RAND_V1(0), FP64_RAND_V1(1), FP64_RAND_V0(1) } },
+            { /* =>      */ { FP64_V(0, 0x2d69a80000000, 0x413)/*  1234586.50*/, FP64_RAND_V1(0), FP64_RAND_V1(1), FP64_RAND_V0(1) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK,
+             /*256:out  */ X86_MXCSR_XCPT_MASK,
+             /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_V(1, 0x107526e749f80, 0x42b)/*-18723145413791.50*/, FP64_RAND_V3(0), FP64_RAND_V1(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_V(0, 0x549270a11c760, 0x42c)/* 46807863534478.75*/, FP64_RAND_V0(0), FP64_RAND_V2(1), FP64_RAND_V2(1) } },
+            { /* =>      */ { FP64_V(1, 0x4000000000000, 0x400)/*             -2.50*/, FP64_RAND_V0(0), FP64_RAND_V2(1), FP64_RAND_V2(1) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK,
+             /*256:out  */ X86_MXCSR_XCPT_MASK,
+             /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_V(0, 0x6fee0e4bd0000, 0x420)/* 12345678999.62500*/, FP64_RAND_V3(0), FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_V(0, 0x3c30944926c00, 0x424)/*169753086244.84375*/, FP64_RAND_V2(0), FP64_RAND_V1(1), FP64_RAND_V3(1) } },
+            { /* =>      */ { FP64_V(0, 0xb800000000000, 0x402)/*          13.75000*/, FP64_RAND_V2(0), FP64_RAND_V1(1), FP64_RAND_V3(1) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK,
+             /*256:out  */ X86_MXCSR_XCPT_MASK,
+             /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_NORM_MAX(1), FP64_RAND_V2(1), FP64_RAND_V2(1), FP64_RAND_V3(1) } },
+            { /*src1     */ { FP64_NORM_MAX(0), FP64_RAND_V1(1), FP64_RAND_V0(0), FP64_RAND_V2(0) } },
+            { /* =>      */ { FP64_1(1),        FP64_RAND_V1(1), FP64_RAND_V0(0), FP64_RAND_V2(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_V(0, 0xbcd80e0108cc0, 0x42e)/*244555555308646.00*/, FP64_RAND_V2(0), FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_V(0, 0x4da20a80c6990, 0x42e)/*183416666481484.50*/, FP64_RAND_V1(1), FP64_RAND_V2(1), FP64_RAND_V3(1) } },
+            { /* =>      */ { FP64_V(0, 0x8000000000000, 0x3fe)/*              0.75*/, FP64_RAND_V1(1), FP64_RAND_V2(1), FP64_RAND_V3(1) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_V(1, 0x68b83b1ed4000, 0x41e)/*-3025935759.4140625*/, FP64_RAND_V0(0), FP64_RAND_V1(0), FP64_RAND_V2(1) } },
+            { /*src1     */ { FP64_V(0, 0x68b83b1ed4000, 0x41f)/* 6051871518.8281250*/, FP64_RAND_V2(0), FP64_RAND_V1(1), FP64_RAND_V3(1) } },
+            { /* =>      */ { FP64_V(1, 0,               0x400)/*         -2.0000000*/, FP64_RAND_V2(0), FP64_RAND_V1(1), FP64_RAND_V3(1) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_V(0, 0xb88e0395d49b0, 0x42d)/*121098765432102.75*/, FP64_RAND_V3(0), FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_V(0, 0x4a6a82b05f744, 0x42f)/*363296296296308.25*/, FP64_RAND_V1(1), FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_V(0, 0x8000000000000, 0x400)/*              3.00*/, FP64_RAND_V1(1), FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_1(0),                 FP64_0(0),                                                FP64_NORM_SAFE_INT_MIN(0), FP64_NORM_MAX(1)          } },
+            { /*src1     */ { FP64_NORM_SAFE_INT_MAX(0), FP64_V(0, FP64_FRAC_NORM_MAX - 1, FP64_EXP_SAFE_INT_MAX), FP64_INF(1),               FP64_NORM_SAFE_INT_MIN(1) } },
+            { /* =>      */ { FP64_NORM_SAFE_INT_MAX(0), FP64_V(0, FP64_FRAC_NORM_MAX - 1, FP64_EXP_SAFE_INT_MAX), FP64_INF(1),               FP64_NORM_SAFE_INT_MIN(1) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO,
+             /*xcpt?    */ false, false },
+          { { /*src2     */ { FP64_NORM_V0(0), FP64_NORM_V1(1), FP64_NORM_V2(0), FP64_NORM_V3(1) } },
+            { /*src1     */ { FP64_NORM_V0(0), FP64_SNAN(0),    FP64_SNAN(1),    FP64_QNAN(0)    } },
+            { /* =>      */ { FP64_1(0),       FP64_SNAN(0),    FP64_SNAN(1),    FP64_QNAN(0)    } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_DOWN,
+             /*xcpt?    */ false, false },
+    /*
+     * Denormals.
+     */
+    /*25*/{ { /* UNMASKED:           0 /  DENORM_MAX = 0       &&_DE */
+              /*src2     */ { FP64_DENORM_MAX(0), FP64_0(0),           FP64_DENORM_MIN(0), FP64_0(0)          } },
+            { /*src1     */ { FP64_0(0),          FP64_DENORM_MIN(0),  FP64_0(0),          FP64_DENORM_MAX(0) } },
+            { /* =>      */ { FP64_0(0),          FP64_DENORM_MIN(0),  FP64_0(0),          FP64_DENORM_MAX(0) } },
+             /*mxcsr:in */ 0,
+             /*128:out  */ X86_MXCSR_DE,
+             /*256:out  */ X86_MXCSR_DE,
+             /*xcpt?    */ true, true },
+          { { /*   MASKED:           0 /  DENORM_MAX = 0        &_DE */
+              /*src2     */ { FP64_DENORM_MAX(0), FP64_0(0),           FP64_DENORM_MIN(0), FP64_0(0)          } },
+            { /*src1     */ { FP64_0(0),          FP64_DENORM_MIN(0),  FP64_0(0),          FP64_DENORM_MAX(0) } },
+            { /* =>      */ { FP64_0(0),          FP64_DENORM_MIN(0),  FP64_0(0),          FP64_DENORM_MAX(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE,
+             /*xcpt?    */ false, false },
+          { { /* UNMASKED:  DENORM_MAX / -0          = -INF    &&_ZE */
+              /*src2     */ { FP64_0(1),          FP64_0(0),           FP64_DENORM_MIN(0), FP64_0(0)          } },
+            { /*src1     */ { FP64_DENORM_MAX(0), FP64_DENORM_MIN(0),  FP64_0(0),          FP64_DENORM_MAX(0) } },
+            { /* =>      */ { FP64_INF(1),        FP64_DENORM_MIN(0),  FP64_0(0),          FP64_DENORM_MAX(0) } },
+             /*mxcsr:in */ 0,
+             /*128:out  */ X86_MXCSR_ZE,
+             /*256:out  */ X86_MXCSR_ZE,
+             /*xcpt?    */ true, true },
+          { { /*   MASKED: -DENORM_MAX / -0          = INF      &_ZE */
+              /*src2     */ { FP64_0(1),          FP64_0(0),           FP64_DENORM_MIN(0), FP64_0(0)          } },
+            { /*src1     */ { FP64_DENORM_MAX(1), FP64_DENORM_MIN(0),  FP64_0(0),          FP64_DENORM_MAX(0) } },
+            { /* =>      */ { FP64_INF(0),        FP64_DENORM_MIN(0),  FP64_0(0),          FP64_DENORM_MAX(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_ZE,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_ZE,
+             /*xcpt?    */ false, false },
+          { { /*   MASKED: -DENORM_MAX /  DENORM_MIN = (-huge)  &_DE */
+              /*src2     */ { FP64_DENORM_MIN(0), FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_DENORM_MAX(1), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_V(1, 0xffffffffffffe, 0x432)/*-4503599627370495.0*/, FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_UP,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_UP | X86_MXCSR_DE,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_RC_UP | X86_MXCSR_DE,
+             /*xcpt?    */ false, false },
+          { { /* UNMASKED: -DENORM_MAX / -DENORM_MIN = (huge)  &&_DE */
+              /*src2     */ { FP64_DENORM_MIN(1), FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_DENORM_MAX(1), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_V(0, 0xffffffffffffe, 0x432)/*4503599627370495.0*/, FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_RC_UP,
+             /*128:out  */ X86_MXCSR_RC_UP | X86_MXCSR_DE,
+             /*256:out  */ X86_MXCSR_RC_UP | X86_MXCSR_DE,
+             /*xcpt?    */ true, true },
+          { { /*   MASKED: -DENORM_MIN /  DENORM_MAX = (-tiny)  &_DE,_PE */
+              /*src2     */ { FP64_DENORM_MAX(0), FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_DENORM_MIN(1), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_V(1, 0x0000000000001, 0x3cb)/*-22204460492503135739e-35*/, FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE | X86_MXCSR_PE,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE | X86_MXCSR_PE,
+             /*xcpt?    */ false, false },
+          { { /*   MASKED:          -0 /  DENORM_MIN = -0       &_DE */
+              /*src2     */ { FP64_DENORM_MIN(0), FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_0(1), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_0(1), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE,
+             /*xcpt?    */ false, false },
+          { { /*   MASKED:       -0.25 /  DENORM_MAX = (-HUGE)  &_DE &_PE */
+              /*src2     */ { FP64_DENORM_MAX(0), FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_V(1, 0, 0x3fd)/*0.25*/, FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_V(1, 1, 0x7fb)/*1.1XYZe307*/, FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE | X86_MXCSR_PE,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE | X86_MXCSR_PE,
+             /*xcpt?    */ false, false },
+          { { /*   MASKED:        42.0 /  DENORM_MIN = INF      &_DE &_PE &_OE */
+              /*src2     */ { FP64_DENORM_MIN(0), FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_V(0, 0x5000000000000, 0x404)/*42.0*/, FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_INF(0), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE | X86_MXCSR_PE | X86_MXCSR_OE,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE | X86_MXCSR_PE | X86_MXCSR_OE,
+             /*xcpt?    */ false, false },
+          { { /* ~OMASKED:        42.0 /  DENORM_MIN = INF      &_DE &&_OE */
+              /*src2     */ { FP64_DENORM_MIN(0), FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_V(0, 0x5000000000000, 0x404)/*42.0*/, FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_INF(0), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK & ~X86_MXCSR_OM,
+             /*128:out  */ (X86_MXCSR_XCPT_MASK & ~X86_MXCSR_OM) | X86_MXCSR_DE | X86_MXCSR_OE,
+             /*256:out  */ (X86_MXCSR_XCPT_MASK & ~X86_MXCSR_OM) | X86_MXCSR_DE | X86_MXCSR_OE,
+             /*xcpt?    */ true, true },
+          { { /* DAZ+MASK:        42.0 /  DENORM_MIN = INF      &_ZE */
+              /*src2     */ { FP64_DENORM_MIN(0), FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_V(0, 0x5000000000000, 0x404)/*42.0*/, FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_INF(0), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_ZE | X86_MXCSR_DAZ,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_ZE | X86_MXCSR_DAZ,
+             /*xcpt?    */ false, false },
+          { { /*   MASKED:  DENORM_MAX /       -42.0 = -5e-310  &_DE &_PE &_UE */
+              /*src2     */ { FP64_V(1, 0x5000000000000, 0x404)/*-42.0*/, FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_DENORM_MAX(0), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_V(1, 0x618618618618, 0)/*-5.29XYZe-310*/, FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE | X86_MXCSR_PE | X86_MXCSR_UE,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE | X86_MXCSR_PE | X86_MXCSR_UE,
+             /*xcpt?    */ false, false },
+#ifdef TODO_X86_MXCSR_PE /** @todo: THIS FAILS ON IEM: X86_MXCSR_PE not set in 128:out */
+          { { /* ~UMASKED:  DENORM_MAX /        42.0 = 5e-310   &_DE &_PE &&_UE */
+              /*src2     */ { FP64_V(0, 0x5000000000000, 0x404)/*-42.0*/, FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_DENORM_MAX(0), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_V(0, 0x618618618618, 0)/*-5.29XYZe-310*/, FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK & ~X86_MXCSR_UM,
+             /*128:out  */ (X86_MXCSR_XCPT_MASK & ~X86_MXCSR_UM) | X86_MXCSR_PE | X86_MXCSR_DE | X86_MXCSR_UE,
+             /*256:out  */ (X86_MXCSR_XCPT_MASK & ~X86_MXCSR_UM) | X86_MXCSR_PE | X86_MXCSR_DE | X86_MXCSR_UE,
+             /*xcpt?    */ true, true },
+#endif /* TODO_X86_MXCSR_PE */
+          { { /* DAZ+MASK:  DENORM_MAX /       -42.0 = -0       &- */
+              /*src2     */ { FP64_V(1, 0x5000000000000, 0x404)/*-42.0*/, FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_DENORM_MAX(0), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_0(1), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ,
+             /*xcpt?    */ false, false },
+          { { /* DAZ+FZ+M:  DENORM_MAX /       -42.0 = -0       &- */
+              /*src2     */ { FP64_V(1, 0x5000000000000, 0x404)/*-42.0*/, FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
+            { /*src1     */ { FP64_DENORM_MAX(0), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+            { /* =>      */ { FP64_0(1), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
+             /*mxcsr:in */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ,
+             /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ,
+             /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ,
+             /*xcpt?    */ false, false },
+          /** @todo: how to usefully test FZ, RC_{NEAREST,UP,DOWN,ZERO} ? */
+
+    /*
+     * Invalids.
+     */
+    /*40*/ BS3CPUINSTR4_SD_INVALIDS
+    /** @todo Underflow, Precision; Rounding; FZ etc. */
+    };
+
+#define PASS_s_aValues RT_ELEMENTS(s_aValues), (BS3CPUINSTR4_TEST1_VALUES_T *)s_aValues
+    static BS3CPUINSTR4_TEST1_T const s_aTests16[] =
+    {
+        { bs3CpuInstr4_divsd_XMM1_XMM2_icebp_c16,        255,         RM_REG, T_SSE,     1, 1, 2,   PASS_s_aValues },
+        { bs3CpuInstr4_divsd_XMM1_FSxBX_icebp_c16,       255,         RM_MEM, T_SSE,     1, 1, 255, PASS_s_aValues },
+
+        { bs3CpuInstr4_vdivsd_XMM1_XMM2_XMM3_icebp_c16,  255,         RM_REG, T_AVX_128, 1, 2, 3,   PASS_s_aValues },
+        { bs3CpuInstr4_vdivsd_XMM1_XMM2_FSxBX_icebp_c16, X86_XCPT_AC, RM_MEM, T_AVX_128, 1, 2, 255, PASS_s_aValues },
+    };
+    static BS3CPUINSTR4_TEST1_T const s_aTests32[] =
+    {
+        { bs3CpuInstr4_divsd_XMM1_XMM2_icebp_c32,        255,         RM_REG, T_SSE,     1, 1, 2,   PASS_s_aValues },
+        { bs3CpuInstr4_divsd_XMM1_FSxBX_icebp_c32,       255,         RM_MEM, T_SSE,     1, 1, 255, PASS_s_aValues },
+
+        { bs3CpuInstr4_vdivsd_XMM1_XMM2_XMM3_icebp_c32,  255,         RM_REG, T_AVX_128, 1, 2, 3,   PASS_s_aValues },
+        { bs3CpuInstr4_vdivsd_XMM1_XMM2_FSxBX_icebp_c32, X86_XCPT_AC, RM_MEM, T_AVX_128, 1, 2, 255, PASS_s_aValues },
+    };
+    static BS3CPUINSTR4_TEST1_T const s_aTests64[] =
+    {
+        { bs3CpuInstr4_divsd_XMM1_XMM2_icebp_c64,        255,         RM_REG, T_SSE,     1, 1, 2,   PASS_s_aValues },
+        { bs3CpuInstr4_divsd_XMM1_FSxBX_icebp_c64,       255,         RM_MEM, T_SSE,     1, 1, 255, PASS_s_aValues },
+
+        { bs3CpuInstr4_vdivsd_XMM1_XMM2_XMM3_icebp_c64,  255,         RM_REG, T_AVX_128, 1, 2, 3,   PASS_s_aValues },
+        { bs3CpuInstr4_vdivsd_XMM1_XMM2_FSxBX_icebp_c64, X86_XCPT_AC, RM_MEM, T_AVX_128, 1, 2, 255, PASS_s_aValues },
+
+        { bs3CpuInstr4_divsd_XMM8_XMM9_icebp_c64,        255,         RM_REG, T_SSE,     8, 8, 9,   PASS_s_aValues },
+        { bs3CpuInstr4_divsd_XMM8_FSxBX_icebp_c64,       X86_XCPT_AC, RM_MEM, T_SSE,     8, 8, 255, PASS_s_aValues },
+
+        { bs3CpuInstr4_vdivsd_XMM8_XMM9_XMM10_icebp_c64, 255,         RM_REG, T_AVX_128, 8, 9, 10,  PASS_s_aValues },
+        { bs3CpuInstr4_vdivsd_XMM8_XMM9_FSxBX_icebp_c64, X86_XCPT_AC, RM_MEM, T_AVX_128, 8, 9, 255, PASS_s_aValues },
+    };
+#undef PASS_s_aValues
+
+    static BS3CPUINSTR4_TEST1_MODE_T const s_aTests[3] = BS3CPUINSTR4_TEST1_MODES_INIT(s_aTests16, s_aTests32, s_aTests64);
+    unsigned const                         iTest       = BS3CPUINSTR4_TEST_MODES_INDEX(bMode);
+    return bs3CpuInstr4_WorkerTestType1(bMode, s_aTests[iTest].paTests, s_aTests[iTest].cTests,
+                                        g_aXcptConfig3, RT_ELEMENTS(g_aXcptConfig3));
+}
+
+
+/*
  * [V]ADDSUBPS.
  */
 BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addsubps(uint8_t bMode)
@@ -8506,6 +8879,7 @@ BS3_DECL(void) Main_pe32()
         { "[v]mulss",       bs3CpuInstr4_v_mulss,    0 },
         { "[v]mulsd",       bs3CpuInstr4_v_mulsd,    0 },
         { "[v]divss",       bs3CpuInstr4_v_divss,    0 },
+        { "[v]divsd",       bs3CpuInstr4_v_divsd,    0 },
         { "[v]addsubps",    bs3CpuInstr4_v_addsubps, 0 },
         { "[v]addsubpd",    bs3CpuInstr4_v_addsubpd, 0 },
         { "[v]maxps",       bs3CpuInstr4_v_maxps,    0 },
