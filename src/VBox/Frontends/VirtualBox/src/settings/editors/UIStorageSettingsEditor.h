@@ -516,6 +516,14 @@ private:
         QLabel           *m_pLabelHDDetails;
         /** Holds the HD details field instance. */
         QILabel          *m_pFieldHDDetails;
+        /** Holds the HD location label instance. */
+        QLabel           *m_pLabelHDLocation;
+        /** Holds the HD location field instance. */
+        QILabel          *m_pFieldHDLocation;
+        /** Holds the HD usage label instance. */
+        QLabel           *m_pLabelHDUsage;
+        /** Holds the HD usage field instance. */
+        QILabel          *m_pFieldHDUsage;
         /** Holds the HD encryption label instance. */
         QLabel           *m_pLabelHDEncryption;
         /** Holds the HD encryption field instance. */
@@ -528,6 +536,14 @@ private:
         QLabel           *m_pLabelCDSize;
         /** Holds the CD size field instance. */
         QILabel          *m_pFieldCDSize;
+        /** Holds the CD location label instance. */
+        QLabel           *m_pLabelCDLocation;
+        /** Holds the CD location field instance. */
+        QILabel          *m_pFieldCDLocation;
+        /** Holds the CD usage label instance. */
+        QLabel           *m_pLabelCDUsage;
+        /** Holds the CD usage field instance. */
+        QILabel          *m_pFieldCDUsage;
         /** Holds the FD type label instance. */
         QLabel           *m_pLabelFDType;
         /** Holds the FD type field instance. */
@@ -536,14 +552,14 @@ private:
         QLabel           *m_pLabelFDSize;
         /** Holds the FD size field instance. */
         QILabel          *m_pFieldFDSize;
-        /** Holds the location label instance. */
-        QLabel           *m_pLabelLocation;
-        /** Holds the location field instance. */
-        QILabel          *m_pFieldLocation;
-        /** Holds the usage label instance. */
-        QLabel           *m_pLabelUsage;
-        /** Holds the usage field instance. */
-        QILabel          *m_pFieldUsage;
+        /** Holds the FD location label instance. */
+        QLabel           *m_pLabelFDLocation;
+        /** Holds the FD location field instance. */
+        QILabel          *m_pFieldFDLocation;
+        /** Holds the FD usage label instance. */
+        QLabel           *m_pLabelFDUsage;
+        /** Holds the FD usage field instance. */
+        QILabel          *m_pFieldFDUsage;
     /** @} */
 };
 

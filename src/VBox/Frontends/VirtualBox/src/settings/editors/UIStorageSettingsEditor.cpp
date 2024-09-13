@@ -2971,20 +2971,28 @@ UIStorageSettingsEditor::UIStorageSettingsEditor(QWidget *pParent /* = 0 */)
     , m_pFieldHDActualSize(0)
     , m_pLabelHDDetails(0)
     , m_pFieldHDDetails(0)
+    , m_pLabelHDLocation(0)
+    , m_pFieldHDLocation(0)
+    , m_pLabelHDUsage(0)
+    , m_pFieldHDUsage(0)
     , m_pLabelHDEncryption(0)
     , m_pFieldHDEncryption(0)
     , m_pLabelCDType(0)
     , m_pFieldCDType(0)
     , m_pLabelCDSize(0)
     , m_pFieldCDSize(0)
+    , m_pLabelCDLocation(0)
+    , m_pFieldCDLocation(0)
+    , m_pLabelCDUsage(0)
+    , m_pFieldCDUsage(0)
     , m_pLabelFDType(0)
     , m_pFieldFDType(0)
     , m_pLabelFDSize(0)
     , m_pFieldFDSize(0)
-    , m_pLabelLocation(0)
-    , m_pFieldLocation(0)
-    , m_pLabelUsage(0)
-    , m_pFieldUsage(0)
+    , m_pLabelFDLocation(0)
+    , m_pFieldFDLocation(0)
+    , m_pLabelFDUsage(0)
+    , m_pFieldFDUsage(0)
 {
     prepare();
 }
@@ -3089,20 +3097,28 @@ void UIStorageSettingsEditor::setConfigurationAccessLevel(ConfigurationAccessLev
     m_pFieldHDActualSize->setEnabled(fMachineInValidMode);
     m_pLabelHDDetails->setEnabled(fMachineInValidMode);
     m_pFieldHDDetails->setEnabled(fMachineInValidMode);
+    m_pLabelHDLocation->setEnabled(fMachineInValidMode);
+    m_pFieldHDLocation->setEnabled(fMachineInValidMode);
+    m_pLabelHDUsage->setEnabled(fMachineInValidMode);
+    m_pFieldHDUsage->setEnabled(fMachineInValidMode);
     m_pLabelHDEncryption->setEnabled(fMachineInValidMode);
     m_pFieldHDEncryption->setEnabled(fMachineInValidMode);
     m_pLabelCDType->setEnabled(fMachineInValidMode);
     m_pFieldCDType->setEnabled(fMachineInValidMode);
     m_pLabelCDSize->setEnabled(fMachineInValidMode);
     m_pFieldCDSize->setEnabled(fMachineInValidMode);
+    m_pLabelCDLocation->setEnabled(fMachineInValidMode);
+    m_pFieldCDLocation->setEnabled(fMachineInValidMode);
+    m_pLabelCDUsage->setEnabled(fMachineInValidMode);
+    m_pFieldCDUsage->setEnabled(fMachineInValidMode);
     m_pLabelFDType->setEnabled(fMachineInValidMode);
     m_pFieldFDType->setEnabled(fMachineInValidMode);
     m_pLabelFDSize->setEnabled(fMachineInValidMode);
     m_pFieldFDSize->setEnabled(fMachineInValidMode);
-    m_pLabelLocation->setEnabled(fMachineInValidMode);
-    m_pFieldLocation->setEnabled(fMachineInValidMode);
-    m_pLabelUsage->setEnabled(fMachineInValidMode);
-    m_pFieldUsage->setEnabled(fMachineInValidMode);
+    m_pLabelFDLocation->setEnabled(fMachineInValidMode);
+    m_pFieldFDLocation->setEnabled(fMachineInValidMode);
+    m_pLabelFDUsage->setEnabled(fMachineInValidMode);
+    m_pFieldFDUsage->setEnabled(fMachineInValidMode);
 
     /* Update remaining stuff: */
     sltUpdateActionStates();
@@ -3279,13 +3295,17 @@ void UIStorageSettingsEditor::sltRetranslateUI()
     m_pLabelHDVirtualSize->setText(tr("Virtual size:"));
     m_pLabelHDActualSize->setText(tr("Actual size:"));
     m_pLabelHDDetails->setText(tr("Storage details:"));
+    m_pLabelHDLocation->setText(tr("Location:"));
+    m_pLabelHDUsage->setText(tr("Attached to:"));
     m_pLabelHDEncryption->setText(tr("Encryption key:"));
     m_pLabelCDType->setText(tr("Type:"));
     m_pLabelCDSize->setText(tr("Size:"));
+    m_pLabelCDLocation->setText(tr("Location:"));
+    m_pLabelCDUsage->setText(tr("Attached to:"));
     m_pLabelFDType->setText(tr("Type:"));
     m_pLabelFDSize->setText(tr("Size:"));
-    m_pLabelLocation->setText(tr("Location:"));
-    m_pLabelUsage->setText(tr("Attached to:"));
+    m_pLabelFDLocation->setText(tr("Location:"));
+    m_pLabelFDUsage->setText(tr("Attached to:"));
 
     /* Translate storage-view: */
     m_pTreeViewStorage->setWhatsThis(tr("Lists all storage controllers for this machine and "
@@ -3735,29 +3755,45 @@ void UIStorageSettingsEditor::sltGetInformation()
                 m_pFieldHDActualSize->setVisible(enmDeviceType == KDeviceType_HardDisk);
                 m_pLabelHDDetails->setVisible(enmDeviceType == KDeviceType_HardDisk);
                 m_pFieldHDDetails->setVisible(enmDeviceType == KDeviceType_HardDisk);
+                m_pLabelHDLocation->setVisible(enmDeviceType == KDeviceType_HardDisk);
+                m_pFieldHDLocation->setVisible(enmDeviceType == KDeviceType_HardDisk);
+                m_pLabelHDUsage->setVisible(enmDeviceType == KDeviceType_HardDisk);
+                m_pFieldHDUsage->setVisible(enmDeviceType == KDeviceType_HardDisk);
                 m_pLabelHDEncryption->setVisible(enmDeviceType == KDeviceType_HardDisk);
                 m_pFieldHDEncryption->setVisible(enmDeviceType == KDeviceType_HardDisk);
                 m_pLabelCDType->setVisible(enmDeviceType == KDeviceType_DVD);
                 m_pFieldCDType->setVisible(enmDeviceType == KDeviceType_DVD);
                 m_pLabelCDSize->setVisible(enmDeviceType == KDeviceType_DVD);
                 m_pFieldCDSize->setVisible(enmDeviceType == KDeviceType_DVD);
+                m_pLabelCDLocation->setVisible(enmDeviceType == KDeviceType_DVD);
+                m_pFieldCDLocation->setVisible(enmDeviceType == KDeviceType_DVD);
+                m_pLabelCDUsage->setVisible(enmDeviceType == KDeviceType_DVD);
+                m_pFieldCDUsage->setVisible(enmDeviceType == KDeviceType_DVD);
                 m_pLabelFDType->setVisible(enmDeviceType == KDeviceType_Floppy);
                 m_pFieldFDType->setVisible(enmDeviceType == KDeviceType_Floppy);
                 m_pLabelFDSize->setVisible(enmDeviceType == KDeviceType_Floppy);
                 m_pFieldFDSize->setVisible(enmDeviceType == KDeviceType_Floppy);
+                m_pLabelFDLocation->setVisible(enmDeviceType == KDeviceType_Floppy);
+                m_pFieldFDLocation->setVisible(enmDeviceType == KDeviceType_Floppy);
+                m_pLabelFDUsage->setVisible(enmDeviceType == KDeviceType_Floppy);
+                m_pFieldFDUsage->setVisible(enmDeviceType == KDeviceType_Floppy);
 
                 /* Getting other information: */
                 m_pFieldHDFormat->setText(compressText(pModel->data(index, StorageModel::R_AttFormat).toString()));
                 m_pFieldHDVirtualSize->setText(compressText(pModel->data(index, StorageModel::R_AttLogicalSize).toString()));
                 m_pFieldHDActualSize->setText(compressText(pModel->data(index, StorageModel::R_AttSize).toString()));
                 m_pFieldHDDetails->setText(compressText(pModel->data(index, StorageModel::R_AttDetails).toString()));
+                m_pFieldHDLocation->setText(compressText(pModel->data(index, StorageModel::R_AttLocation).toString()));
+                m_pFieldHDUsage->setText(compressText(pModel->data(index, StorageModel::R_AttUsage).toString()));
                 m_pFieldHDEncryption->setText(compressText(pModel->data(index, StorageModel::R_AttEncryptionPasswordID).toString()));
                 m_pFieldCDType->setText(compressText(pModel->data(index, StorageModel::R_AttFormat).toString()));
                 m_pFieldCDSize->setText(compressText(pModel->data(index, StorageModel::R_AttSize).toString()));
+                m_pFieldCDLocation->setText(compressText(pModel->data(index, StorageModel::R_AttLocation).toString()));
+                m_pFieldCDUsage->setText(compressText(pModel->data(index, StorageModel::R_AttUsage).toString()));
                 m_pFieldFDType->setText(compressText(pModel->data(index, StorageModel::R_AttFormat).toString()));
                 m_pFieldFDSize->setText(compressText(pModel->data(index, StorageModel::R_AttSize).toString()));
-                m_pFieldLocation->setText(compressText(pModel->data(index, StorageModel::R_AttLocation).toString()));
-                m_pFieldUsage->setText(compressText(pModel->data(index, StorageModel::R_AttUsage).toString()));
+                m_pFieldFDLocation->setText(compressText(pModel->data(index, StorageModel::R_AttLocation).toString()));
+                m_pFieldFDUsage->setText(compressText(pModel->data(index, StorageModel::R_AttUsage).toString()));
 
                 /* Showing attachment page: */
                 m_pStackRightPane->setCurrentIndex(2);
@@ -4836,7 +4872,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
         {
             m_pLayoutAttachment->setContentsMargins(10, 0, 0, 0);
             m_pLayoutAttachment->setColumnStretch(2, 1);
-            m_pLayoutAttachment->setRowStretch(16, 1);
+            m_pLayoutAttachment->setRowStretch(20, 1);
 
             /* Prepare separator for attachment case: */
             m_pLabelSeparatorAttributes = new QILabelSeparator(pWidgetAttachment);
@@ -4990,12 +5026,44 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
                 m_pLayoutAttachment->addWidget(m_pFieldHDDetails, 8, 2);
             }
 
+            /* Prepare HD location label: */
+            m_pLabelHDLocation = new QLabel(pWidgetAttachment);
+            if (m_pLabelHDLocation)
+            {
+                m_pLabelHDLocation->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                m_pLayoutAttachment->addWidget(m_pLabelHDLocation, 9, 1);
+            }
+            /* Prepare HD location field: */
+            m_pFieldHDLocation = new QILabel(pWidgetAttachment);
+            if (m_pFieldHDLocation)
+            {
+                m_pFieldHDLocation->setFullSizeSelection(true);
+                m_pFieldHDLocation->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
+                m_pLayoutAttachment->addWidget(m_pFieldHDLocation, 9, 2);
+            }
+
+            /* Prepare HD usage label: */
+            m_pLabelHDUsage = new QLabel(pWidgetAttachment);
+            if (m_pLabelHDUsage)
+            {
+                m_pLabelHDUsage->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                m_pLayoutAttachment->addWidget(m_pLabelHDUsage, 10, 1);
+            }
+            /* Prepare HD usage field: */
+            m_pFieldHDUsage = new QILabel(pWidgetAttachment);
+            if (m_pFieldHDUsage)
+            {
+                m_pFieldHDUsage->setFullSizeSelection(true);
+                m_pFieldHDUsage->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
+                m_pLayoutAttachment->addWidget(m_pFieldHDUsage, 10, 2);
+            }
+
             /* Prepare encryption label: */
             m_pLabelHDEncryption = new QLabel(pWidgetAttachment);
             if (m_pLabelHDEncryption)
             {
                 m_pLabelHDEncryption->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelHDEncryption, 9, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelHDEncryption, 11, 1);
             }
             /* Prepare encryption field: */
             m_pFieldHDEncryption = new QILabel(pWidgetAttachment);
@@ -5003,7 +5071,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldHDEncryption->setFullSizeSelection(true);
                 m_pFieldHDEncryption->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldHDEncryption, 9, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldHDEncryption, 11, 2);
             }
 
             /* Prepare CD type label: */
@@ -5011,7 +5079,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelCDType)
             {
                 m_pLabelCDType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelCDType, 10, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelCDType, 12, 1);
             }
             /* Prepare CD type field: */
             m_pFieldCDType = new QILabel(pWidgetAttachment);
@@ -5019,7 +5087,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldCDType->setFullSizeSelection(true);
                 m_pFieldCDType->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldCDType, 10, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldCDType, 12, 2);
             }
 
             /* Prepare CD size label: */
@@ -5027,7 +5095,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelCDSize)
             {
                 m_pLabelCDSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelCDSize, 11, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelCDSize, 13, 1);
             }
             /* Prepare CD size field: */
             m_pFieldCDSize = new QILabel(pWidgetAttachment);
@@ -5035,7 +5103,39 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldCDSize->setFullSizeSelection(true);
                 m_pFieldCDSize->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldCDSize, 11, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldCDSize, 13, 2);
+            }
+
+            /* Prepare CD location label: */
+            m_pLabelCDLocation = new QLabel(pWidgetAttachment);
+            if (m_pLabelCDLocation)
+            {
+                m_pLabelCDLocation->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                m_pLayoutAttachment->addWidget(m_pLabelCDLocation, 14, 1);
+            }
+            /* Prepare CD location field: */
+            m_pFieldCDLocation = new QILabel(pWidgetAttachment);
+            if (m_pFieldCDLocation)
+            {
+                m_pFieldCDLocation->setFullSizeSelection(true);
+                m_pFieldCDLocation->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
+                m_pLayoutAttachment->addWidget(m_pFieldCDLocation, 14, 2);
+            }
+
+            /* Prepare CD usage label: */
+            m_pLabelCDUsage = new QLabel(pWidgetAttachment);
+            if (m_pLabelCDUsage)
+            {
+                m_pLabelCDUsage->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                m_pLayoutAttachment->addWidget(m_pLabelCDUsage, 15, 1);
+            }
+            /* Prepare CD usage field: */
+            m_pFieldCDUsage = new QILabel(pWidgetAttachment);
+            if (m_pFieldCDUsage)
+            {
+                m_pFieldCDUsage->setFullSizeSelection(true);
+                m_pFieldCDUsage->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
+                m_pLayoutAttachment->addWidget(m_pFieldCDUsage, 15, 2);
             }
 
             /* Prepare FD type label: */
@@ -5043,7 +5143,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelFDType)
             {
                 m_pLabelFDType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelFDType, 12, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelFDType, 16, 1);
             }
             /* Prepare FD type field: */
             m_pFieldFDType = new QILabel(pWidgetAttachment);
@@ -5051,7 +5151,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldFDType->setFullSizeSelection(true);
                 m_pFieldFDType->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldFDType, 12, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldFDType, 16, 2);
             }
 
             /* Prepare FD size label: */
@@ -5059,7 +5159,7 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             if (m_pLabelFDSize)
             {
                 m_pLabelFDSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelFDSize, 13, 1);
+                m_pLayoutAttachment->addWidget(m_pLabelFDSize, 17, 1);
             }
             /* Prepare FD size field: */
             m_pFieldFDSize = new QILabel(pWidgetAttachment);
@@ -5067,39 +5167,39 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
             {
                 m_pFieldFDSize->setFullSizeSelection(true);
                 m_pFieldFDSize->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldFDSize, 13, 2);
+                m_pLayoutAttachment->addWidget(m_pFieldFDSize, 17, 2);
             }
 
-            /* Prepare location label: */
-            m_pLabelLocation = new QLabel(pWidgetAttachment);
-            if (m_pLabelLocation)
+            /* Prepare FD location label: */
+            m_pLabelFDLocation = new QLabel(pWidgetAttachment);
+            if (m_pLabelFDLocation)
             {
-                m_pLabelLocation->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelLocation, 14, 1);
+                m_pLabelFDLocation->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                m_pLayoutAttachment->addWidget(m_pLabelFDLocation, 18, 1);
             }
-            /* Prepare location field: */
-            m_pFieldLocation = new QILabel(pWidgetAttachment);
-            if (m_pFieldLocation)
+            /* Prepare FD location field: */
+            m_pFieldFDLocation = new QILabel(pWidgetAttachment);
+            if (m_pFieldFDLocation)
             {
-                m_pFieldLocation->setFullSizeSelection(true);
-                m_pFieldLocation->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldLocation, 14, 2);
+                m_pFieldFDLocation->setFullSizeSelection(true);
+                m_pFieldFDLocation->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
+                m_pLayoutAttachment->addWidget(m_pFieldFDLocation, 18, 2);
             }
 
-            /* Prepare usage label: */
-            m_pLabelUsage = new QLabel(pWidgetAttachment);
-            if (m_pLabelUsage)
+            /* Prepare FD usage label: */
+            m_pLabelFDUsage = new QLabel(pWidgetAttachment);
+            if (m_pLabelFDUsage)
             {
-                m_pLabelUsage->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutAttachment->addWidget(m_pLabelUsage, 15, 1);
+                m_pLabelFDUsage->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                m_pLayoutAttachment->addWidget(m_pLabelFDUsage, 19, 1);
             }
-            /* Prepare usage field: */
-            m_pFieldUsage = new QILabel(pWidgetAttachment);
-            if (m_pFieldUsage)
+            /* Prepare FD usage field: */
+            m_pFieldFDUsage = new QILabel(pWidgetAttachment);
+            if (m_pFieldFDUsage)
             {
-                m_pFieldUsage->setFullSizeSelection(true);
-                m_pFieldUsage->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
-                m_pLayoutAttachment->addWidget(m_pFieldUsage, 15, 2);
+                m_pFieldFDUsage->setFullSizeSelection(true);
+                m_pFieldFDUsage->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
+                m_pLayoutAttachment->addWidget(m_pFieldFDUsage, 19, 2);
             }
 
             m_pLayoutAttachment->setColumnMinimumWidth(0, 10);
