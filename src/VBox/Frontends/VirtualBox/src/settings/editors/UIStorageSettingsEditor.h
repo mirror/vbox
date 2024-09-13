@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.
@@ -500,10 +500,14 @@ private:
         QLabel           *m_pLabelHDFormat;
         /** Holds the HD format field instance. */
         QILabel          *m_pFieldHDFormat;
-        /** Holds the CD/FD type label instance. */
-        QLabel           *m_pLabelCDFDType;
-        /** Holds the CD/FD type field instance. */
-        QILabel          *m_pFieldCDFDType;
+        /** Holds the CD type label instance. */
+        QLabel           *m_pLabelCDType;
+        /** Holds the CD type field instance. */
+        QILabel          *m_pFieldCDType;
+        /** Holds the FD type label instance. */
+        QLabel           *m_pLabelFDType;
+        /** Holds the FD type field instance. */
+        QILabel          *m_pFieldFDType;
         /** Holds the HD virtual size label instance. */
         QLabel           *m_pLabelHDVirtualSize;
         /** Holds the HD virtual size field instance. */
@@ -512,10 +516,14 @@ private:
         QLabel           *m_pLabelHDActualSize;
         /** Holds the HD actual size field instance. */
         QILabel          *m_pFieldHDActualSize;
-        /** Holds the CD/FD size label instance. */
-        QLabel           *m_pLabelCDFDSize;
-        /** Holds the CD/FD size field instance. */
-        QILabel          *m_pFieldCDFDSize;
+        /** Holds the CD size label instance. */
+        QLabel           *m_pLabelCDSize;
+        /** Holds the CD size field instance. */
+        QILabel          *m_pFieldCDSize;
+        /** Holds the FD size label instance. */
+        QLabel           *m_pLabelFDSize;
+        /** Holds the FD size field instance. */
+        QILabel          *m_pFieldFDSize;
         /** Holds the HD details label instance. */
         QLabel           *m_pLabelHDDetails;
         /** Holds the HD details field instance. */
