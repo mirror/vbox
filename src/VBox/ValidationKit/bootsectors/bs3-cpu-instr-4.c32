@@ -7729,7 +7729,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_divsd(uint8_t bMode)
              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE | X86_MXCSR_PE | X86_MXCSR_UE,
              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DE | X86_MXCSR_PE | X86_MXCSR_UE,
              /*xcpt?    */ false, false },
-#ifdef TODO_X86_MXCSR_PE /** @todo: THIS FAILS ON IEM: X86_MXCSR_PE not set in 128:out */
+#ifdef TODO_X86_MXCSR_PE /** @todo THIS FAILS ON IEM: X86_MXCSR_PE not set in 128:out */
           { { /* ~UMASKED:  DENORM_MAX /        42.0 = 5e-310   &_DE &_PE &&_UE */
               /*src2     */ { FP64_V(0, 0x5000000000000, 0x404)/*-42.0*/, FP64_0(0),           FP64_RAND_V2(0), FP64_RAND_V1(1) } },
             { /*src1     */ { FP64_DENORM_MAX(0), FP64_DENORM_MIN(0),  FP64_RAND_V1(1), FP64_RAND_V3(0) } },
@@ -7755,7 +7755,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_divsd(uint8_t bMode)
              /*128:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ,
              /*256:out  */ X86_MXCSR_XCPT_MASK | X86_MXCSR_DAZ | X86_MXCSR_FZ,
              /*xcpt?    */ false, false },
-          /** @todo: how to usefully test FZ, RC_{NEAREST,UP,DOWN,ZERO} ? */
+          /** @todo how to usefully test FZ, RC_{NEAREST,UP,DOWN,ZERO} ? */
 
     /*
      * Invalids.
