@@ -898,48 +898,49 @@ void UIAdvancedSettingsDialog::sltHandleSerializationFinished()
 
 bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-    /* Ignore other than wheel events in this handler: */
-    if (pEvent->type() != QEvent::Wheel)
-        return QMainWindow::eventFilter(pObject, pEvent);
-    /* Ignore events to anything but widgets in this handler: */
-    QWidget *pWidget = qobject_cast<QWidget*>(pObject);
-    if (!pWidget)
-        return QMainWindow::eventFilter(pObject, pEvent);
-
-    /* Do not touch wheel events for m_pScrollArea or it's children: */
-    if (   pWidget == m_pScrollArea
-        || pWidget->parent() == m_pScrollArea)
-        return QMainWindow::eventFilter(pWidget, pEvent);
-
-    /* Unconditionally and for good
-     * redirect wheel event for widgets of following types to m_pScrollViewport: */
-    if (   qobject_cast<QAbstractButton*>(pWidget)
-        || qobject_cast<QAbstractSpinBox*>(pWidget)
-        || qobject_cast<QAbstractSpinBox*>(pWidget->parent())
-        || qobject_cast<QComboBox*>(pWidget)
-        || qobject_cast<QSlider*>(pWidget)
-        || qobject_cast<QTabWidget*>(pWidget)
-        || qobject_cast<QTabWidget*>(pWidget->parent()))
+    /* Handle wheel events: */
+    if (pEvent->type() == QEvent::Wheel)
     {
-        /* Check if redirected event was really handled, otherwise give it back: */
-        if (QCoreApplication::sendEvent(m_pScrollViewport, pEvent))
-            return true;
-    }
+        /* Ignore events to anything but widgets in this handler: */
+        QWidget *pWidget = qobject_cast<QWidget*>(pObject);
+        if (!pWidget)
+            return QMainWindow::eventFilter(pObject, pEvent);
 
-    /* Unless widget of QAbstractScrollArea subclass is focused
-     * redirect it's wheel event to m_pScrollViewport: */
-    if (   (   qobject_cast<QAbstractScrollArea*>(pWidget)
-            || qobject_cast<QAbstractScrollArea*>(pWidget->parent()))
-        && !pWidget->hasFocus()
-        && !pWidget->parentWidget()->hasFocus())
-    {
-        /* Check if redirected event was really handled, otherwise give it back: */
-        if (QCoreApplication::sendEvent(m_pScrollViewport, pEvent))
-            return true;
+        /* Do not touch wheel events for m_pScrollArea or it's children: */
+        if (   pWidget == m_pScrollArea
+            || pWidget->parent() == m_pScrollArea)
+            return QMainWindow::eventFilter(pWidget, pEvent);
+
+        /* Unconditionally and for good
+         * redirect wheel event for widgets of following types to m_pScrollViewport: */
+        if (   qobject_cast<QAbstractButton*>(pWidget)
+            || qobject_cast<QAbstractSpinBox*>(pWidget)
+            || qobject_cast<QAbstractSpinBox*>(pWidget->parent())
+            || qobject_cast<QComboBox*>(pWidget)
+            || qobject_cast<QSlider*>(pWidget)
+            || qobject_cast<QTabWidget*>(pWidget)
+            || qobject_cast<QTabWidget*>(pWidget->parent()))
+        {
+            /* Check if redirected event was really handled, otherwise give it back: */
+            if (QCoreApplication::sendEvent(m_pScrollViewport, pEvent))
+                return true;
+        }
+
+        /* Unless widget of QAbstractScrollArea subclass is focused
+         * redirect it's wheel event to m_pScrollViewport: */
+        if (   (   qobject_cast<QAbstractScrollArea*>(pWidget)
+                || qobject_cast<QAbstractScrollArea*>(pWidget->parent()))
+            && !pWidget->hasFocus()
+            && !pWidget->parentWidget()->hasFocus())
+        {
+            /* Check if redirected event was really handled, otherwise give it back: */
+            if (QCoreApplication::sendEvent(m_pScrollViewport, pEvent))
+                return true;
+        }
     }
 
     /* Call to base-class: */
-    return QMainWindow::eventFilter(pWidget, pEvent);
+    return QMainWindow::eventFilter(pObject, pEvent);
 }
 
 void UIAdvancedSettingsDialog::sltRetranslateUI()
