@@ -939,6 +939,49 @@ bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
         }
     }
 
+    /* Handle key-press events: */
+    if (pEvent->type() == QEvent::KeyPress)
+    {
+        /* Convert to key-press event and acquire the key: */
+        QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
+        const int iKey = pKeyEvent->key();
+        /* Handle Alt+<NUMERIC> menemonics: */
+        if (   pKeyEvent->modifiers() & Qt::AltModifier
+            && iKey >= Qt::Key_1
+            && iKey <= Qt::Key_9)
+        {
+            /* Stop further event handling anyway: */
+            pEvent->accept();
+
+            /* Acquire current page: */
+            const int iCurrentId = m_pSelector->currentId();
+            QWidget *pPage = m_pSelector->idToPage(iCurrentId);
+            if (pPage)
+            {
+                /* Look the page for a suitable tab-widget: */
+                const QList<QTabWidget*> tabWidgets = pPage->findChildren<QTabWidget*>();
+                if (!tabWidgets.isEmpty())
+                {
+                    /* Look for a proper tab offset: */
+                    const int iShift = iKey - Qt::Key_1;
+                    QTabWidget *pTabWidget = tabWidgets.first();
+                    int iVisibleTabNumber = 0;
+                    for (int i = 0; i < pTabWidget->count(); ++i)
+                        if (pTabWidget->isTabVisible(i))
+                        {
+                            if (iVisibleTabNumber == iShift)
+                            {
+                                /* Activate proper tab and leave: */
+                                pTabWidget->setCurrentIndex(iVisibleTabNumber);
+                                break;
+                            }
+                            ++iVisibleTabNumber;
+                        }
+                }
+            }
+        }
+    }
+
     /* Call to base-class: */
     return QMainWindow::eventFilter(pObject, pEvent);
 }
