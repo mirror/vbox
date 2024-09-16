@@ -40,7 +40,6 @@
 
 /VBoxGrext/*.c:   --external-copyright
 /VBoxGrext/*.h:   --external-copyright --no-fix-header-guards
-/VBoxGrext/*.def: --external-copyright
 
 /VBoxMouse/*.c:   --external-copyright --no-convert-tabs
 /VBoxMouse/*.asm: --external-copyright --no-convert-tabs
