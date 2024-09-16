@@ -257,7 +257,7 @@ const Utf8Str &WIMImage::formatName(Utf8Str &r_strName) const
 Unattended::Unattended()
     : mhThreadReconfigureVM(NIL_RTNATIVETHREAD), mfRtcUseUtc(false), mfGuestOs64Bit(false)
     , mpInstaller(NULL), mpTimeZoneInfo(NULL), mfIsDefaultAuxiliaryBasePath(true), mfDoneDetectIsoOS(false)
-    , mfAvoidUpdatesOverNetwork(false)
+    , mfAvoidUpdatesOverNetwork(false), mfDoneSupportedGuestOSList(false)
 { }
 
 Unattended::~Unattended()
@@ -341,22 +341,9 @@ HRESULT Unattended::detectIsoOS()
 {
     HRESULT       hrc;
 
-    /* Get a list of guest OS Type Ids supported by the host. */
-    ComPtr<ISystemProperties> pSystemProperties;
-    com::SafeIfaceArray<IGuestOSType> supportedGuestOSTypes;
-
-    hrc = mParent->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
-    if (SUCCEEDED(hrc))
-    {
-        ComPtr<IPlatformProperties> pPlatformProperties;
-        hrc = pSystemProperties->COMGETTER(Platform)(pPlatformProperties.asOutParam());
-        if (SUCCEEDED(hrc))
-        {
-            hrc = pPlatformProperties->COMGETTER(SupportedGuestOSTypes)(ComSafeArrayAsOutParam(supportedGuestOSTypes));
-            if (!SUCCEEDED(hrc))
-                supportedGuestOSTypes.resize(0);
-        }
-    }
+    /* Populate list of supported guest OSs in case it has not been done yet. Do this before locking. */
+    if (!mfDoneSupportedGuestOSList)
+        i_getListOfSupportedGuestOS();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -509,9 +496,9 @@ HRESULT Unattended::detectIsoOS()
 
     /* Check if detected OS type is supported (covers platform architecture). */
     bool fSupported = false;
-    for (size_t i = 0; i < supportedGuestOSTypes.size() && !fSupported; ++i)
+    for (size_t i = 0; i < mSupportedGuestOSTypes.size() && !fSupported; ++i)
     {
-        ComPtr<IGuestOSType> guestOSType = supportedGuestOSTypes[i];
+        ComPtr<IGuestOSType> guestOSType = mSupportedGuestOSTypes[i];
 
         Bstr guestId;
         guestOSType->COMGETTER(Id)(guestId.asOutParam());
@@ -2619,6 +2606,10 @@ HRESULT Unattended::prepare()
     if (FAILED(hrc))
         return hrc;
 
+    /* Populate list of supported guest OSs in case it has not been done yet. Do this before locking. */
+    if (!mfDoneSupportedGuestOSList)
+        i_getListOfSupportedGuestOS();
+
     /*
      * Write lock this object and set attributes we got from IMachine.
      */
@@ -4495,4 +4486,29 @@ bool Unattended::i_updateDetectedAttributeForImage(WIMImage const &rImage)
     mEnmOsType = rImage.mOSType;
 
     return fRet;
+}
+
+HRESULT Unattended::i_getListOfSupportedGuestOS()
+{
+    HRESULT       hrc;
+    if (mfDoneSupportedGuestOSList)
+        return S_OK;
+    mfDoneSupportedGuestOSList = true;
+
+    /* Get a list of guest OS Type Ids supported by the host. */
+    ComPtr<ISystemProperties> pSystemProperties;
+
+    hrc = mParent->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+    if (SUCCEEDED(hrc))
+    {
+        ComPtr<IPlatformProperties> pPlatformProperties;
+        hrc = pSystemProperties->COMGETTER(Platform)(pPlatformProperties.asOutParam());
+        if (SUCCEEDED(hrc))
+        {
+            hrc = pPlatformProperties->COMGETTER(SupportedGuestOSTypes)(ComSafeArrayAsOutParam(mSupportedGuestOSTypes));
+            if (!SUCCEEDED(hrc))
+                mSupportedGuestOSTypes.resize(0);
+        }
+    }
+    return hrc;
 }

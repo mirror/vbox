@@ -165,6 +165,8 @@ private:
     Utf8Str         mStrDetectedOSHints;
     RTCList<WIMImage> mDetectedImages;
     bool            mfAvoidUpdatesOverNetwork;
+    com::SafeIfaceArray<IGuestOSType> mSupportedGuestOSTypes;
+    bool           mfDoneSupportedGuestOSList;
     /** @} */
 
     // wrapped IUnattended functions:
@@ -329,6 +331,11 @@ private:
      * @returns true if we've got all necessary stuff for a successful detection.
      */
     bool i_updateDetectedAttributeForImage(WIMImage const &rImage);
+
+    /**
+     * Gets the list of guest OS type IDs supported by the current host.
+     */
+    HRESULT i_getListOfSupportedGuestOS();
 
 };
 
