@@ -2,7 +2,7 @@
 
   Driver Binding code and its private helpers for the virtio-net driver.
 
-  Copyright (c) 2021, Oracle and/or its affiliates.
+  Copyright (c) 2021 - 2024, Oracle and/or its affiliates.
   Copyright (C) 2013, Red Hat, Inc.
   Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 

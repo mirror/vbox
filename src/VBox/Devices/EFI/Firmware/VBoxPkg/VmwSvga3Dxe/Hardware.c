@@ -2,7 +2,7 @@
   This driver is a sample implementation of the Graphics Output Protocol for
   the VMware SVGA 3 video controller.
 
-  Copyright (c) 2023, Oracle and/or its affiliates.<BR>
+  Copyright (c) 2023 - 2024, Oracle and/or its affiliates.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 

@@ -2,7 +2,7 @@
 
   Helper functions used by at least two Simple Network Protocol methods.
 
-  Copyright (c) 2021, Oracle and/or its affiliates.
+  Copyright (c) 2021 - 2024, Oracle and/or its affiliates.
   Copyright (C) 2013, Red Hat, Inc.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent

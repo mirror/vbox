@@ -2,7 +2,7 @@
 
   This file implements the hardware register access functions of the e1000 driver.
 
-  Copyright (c) 2021, Oracle and/or its affiliates.<BR>
+  Copyright (c) 2021-2024, Oracle and/or its affiliates.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 

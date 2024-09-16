@@ -4,7 +4,7 @@
   absolutely need and the UEFI-2.3.1+errC specification allows us not to
   support.
 
-  Copyright (c) 2021, Oracle and/or its affiliates.
+  Copyright (c) 2021 - 2024, Oracle and/or its affiliates.
   Copyright (C) 2013, Red Hat, Inc.
   Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
 

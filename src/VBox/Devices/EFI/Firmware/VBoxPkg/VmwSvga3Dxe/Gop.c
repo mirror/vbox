@@ -1,7 +1,7 @@
 /** @file
   Graphics Output Protocol functions for the VMware SVGA 3 video controller.
 
-  Copyright (c) 2023, Oracle and/or its affiliates.<BR>
+  Copyright (c) 2023 - 2024, Oracle and/or its affiliates.<BR>
   Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent

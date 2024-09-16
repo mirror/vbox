@@ -3,7 +3,7 @@
   Implementation of the SNP.Initialize() function and its private helpers if
   any.
 
-  Copyright (c) 2021, Oracle and/or its affiliates.
+  Copyright (c) 2021 - 2024, Oracle and/or its affiliates.
   Copyright (c) 2017, AMD Inc, All rights reserved.
   Copyright (C) 2013, Red Hat, Inc.
   Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>

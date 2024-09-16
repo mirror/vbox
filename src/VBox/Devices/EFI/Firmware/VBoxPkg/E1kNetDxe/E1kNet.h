@@ -3,7 +3,7 @@
   Internal definitions for the virtio-net driver, which produces Simple Network
   Protocol instances for virtio-net devices.
 
-  Copyright (c) 2021, Oracle and/or its affiliates.
+  Copyright (c) 2021-2024, Oracle and/or its affiliates.
   Copyright (c) 2017, AMD Inc, All rights reserved.
   Copyright (C) 2013, Red Hat, Inc.<BR>
 

@@ -2,7 +2,7 @@
 
   This file implements the entry point of the e1000 driver.
 
-  Copyright (c) 2021, Oracle and/or its affiliates.
+  Copyright (c) 2021 - 2024, Oracle and/or its affiliates.
   Copyright (C) 2013, Red Hat, Inc.
   Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 

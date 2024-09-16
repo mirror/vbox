@@ -4,7 +4,7 @@
 # This driver produces Simple Network Protocol instances for e1000 based
 # devices.
 #
-# Copyright (C) 2021, Oracle and/or its affiliates.
+# Copyright (C) 2021-2024, Oracle and/or its affiliates.
 # Copyright (C) 2013, Red Hat, Inc.
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
