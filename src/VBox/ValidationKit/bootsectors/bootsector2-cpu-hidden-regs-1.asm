@@ -6,7 +6,7 @@
 ;   VBoxManage setextradata bs-cpu-hidden-regs-1 VBoxInternal/Devices/VMMDev/0/Config/TestingEnabled  1
 
 ;
-; Copyright (C) 2007-2023 Oracle and/or its affiliates.
+; Copyright (C) 2007-2024 Oracle and/or its affiliates.
 ;
 ; This file is part of VirtualBox base platform packages, as
 ; available from https://www.virtualbox.org.

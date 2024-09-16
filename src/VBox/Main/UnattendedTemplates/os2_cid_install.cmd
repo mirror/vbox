@@ -5,7 +5,7 @@ REM VirtualBox CID Installation - main driver script for boot CD/floppy.
 REM
 
 REM
-REM Copyright (C) 2004-2023 Oracle and/or its affiliates.
+REM Copyright (C) 2004-2024 Oracle and/or its affiliates.
 REM
 REM This file is part of VirtualBox base platform packages, as
 REM available from https://www.virtualbox.org.

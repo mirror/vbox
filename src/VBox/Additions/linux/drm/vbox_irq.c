@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2016-2024 Oracle and/or its affiliates.
  * This file is based on qxl_irq.c
  * Copyright 2013 Red Hat Inc.
  *

@@ -5,7 +5,7 @@ rem Windows NT batch script for unpacking drivers after being signed.
 rem
 
 rem
-rem Copyright (C) 2018-2023 Oracle and/or its affiliates.
+rem Copyright (C) 2018-2024 Oracle and/or its affiliates.
 rem
 rem This file is part of VirtualBox base platform packages, as
 rem available from https://www.virtualbox.org.

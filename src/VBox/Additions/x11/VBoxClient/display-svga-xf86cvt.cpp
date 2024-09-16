@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2006-2024 Oracle and/or its affiliates.
  * This file is based on x.org server 1.18.0 file xf86cvt.c:
  *
  * Copyright 2005-2006 Luc Verhaegen.

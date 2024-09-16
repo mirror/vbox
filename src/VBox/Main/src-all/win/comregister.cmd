@@ -6,7 +6,7 @@ REM (both inproc and out-of-process)
 REM
 
 REM
-REM Copyright (C) 2006-2023 Oracle and/or its affiliates.
+REM Copyright (C) 2006-2024 Oracle and/or its affiliates.
 REM
 REM This file is part of VirtualBox base platform packages, as
 REM available from https://www.virtualbox.org.

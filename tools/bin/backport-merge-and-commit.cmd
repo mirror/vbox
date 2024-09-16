@@ -5,7 +5,7 @@ rem Windows NT batch script for launching backport-merge-and-commit.sh
 rem
 
 rem
-rem Copyright (C) 2009-2023 Oracle and/or its affiliates.
+rem Copyright (C) 2009-2024 Oracle and/or its affiliates.
 rem
 rem This file is part of VirtualBox base platform packages, as
 rem available from https://www.virtualbox.org.

@@ -8,7 +8,7 @@ rem part of the first logon.
 rem
 
 rem
-rem Copyright (C) 2017-2023 Oracle and/or its affiliates.
+rem Copyright (C) 2017-2024 Oracle and/or its affiliates.
 rem
 rem This file is part of VirtualBox base platform packages, as
 rem available from https://www.virtualbox.org.
