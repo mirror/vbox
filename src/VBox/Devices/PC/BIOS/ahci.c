@@ -353,6 +353,7 @@ static uint16_t ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
     fis_d2h __far   *d2h;
     int             i;
 
+    DBG_AHCI("AHCI: Data block at %04X:%04X\n", FP_SEG(ahci), FP_OFF(ahci));
     _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
 
     /* Prepare the FIS. */
@@ -494,7 +495,7 @@ static void ahci_port_init(ahci_t __far *ahci, uint8_t u8Port)
     _fmemset(&ahci->abFisRecv[0], 0, sizeof(ahci->abFisRecv));
 
     DBG_AHCI("AHCI: FIS receive area %lx from %x:%x\n",
-             ahci_addr_to_phys(&ahci->abFisRecv), FP_SEG(ahci->abFisRecv), FP_OFF(ahci->abFisRecv));
+             ahci_addr_to_phys(&ahci->abFisRecv), FP_SEG(&ahci->abFisRecv), FP_OFF(&ahci->abFisRecv));
     VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_FB, ahci_addr_to_phys(&ahci->abFisRecv));
     VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_FBU, 0);
 
@@ -855,11 +856,11 @@ static int ahci_hba_init(uint16_t io_base)
              ahci_ctrl_extract_bits(val, 0xffff0000, 16),
              ahci_ctrl_extract_bits(val, 0x0000ffff,  0));
 
-    DBG_AHCI("AHCI: ahci_seg=%04x, size=%04x, pointer at EBDA:%04x (EBDA size=%04x)\n",
-             ahci_seg, sizeof(ahci_t), (uint16_t)&EbdaData->bdisk.ahci_seg, sizeof(ebda_data_t));
-
     bios_dsk->ahci_seg    = ahci_seg;
     bios_dsk->ahci_devcnt = 0;
+
+    DBG_AHCI("AHCI: ahci_seg=%04x, size=%04x, pointer at EBDA:%04x (EBDA size=%04x)\n",
+             bios_dsk->ahci_seg, sizeof(ahci_t), (uint16_t)&EbdaData->bdisk.ahci_seg, sizeof(ebda_data_t));
 
     ahci = ahci_seg :> 0;
     ahci->cur_port = 0xff;
