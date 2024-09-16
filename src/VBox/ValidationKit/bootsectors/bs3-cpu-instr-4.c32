@@ -1327,8 +1327,8 @@ static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig3[] =
             { /*src1     */ { FP64_SNAN(0),                       FP64_1(1),                          FP64_SNAN_V(0, FP64_FRAC_NORM_MAX), FP64_NORM_V2(1)              } },       \
             { /* =>      */ { FP64_QNAN_V(0, 1),                  FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(1, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V1) } },       \
               /*mxcsr:in */ X86_MXCSR_RC_UP,                                                                                                                                      \
-              /*128:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE,                                                                                                                         \
-              /*256:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE,                                                                                                                         \
+              /*128:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE,                                                                                                                       \
+              /*256:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE,                                                                                                                       \
               /*xcpt?    */ true, true },                                                                                                                                         \
 
 /**
@@ -1778,7 +1778,7 @@ DECLINLINE(uint8_t BS3_FAR *) bs3CpuInstrXBufForOperand(uint8_t BS3_FAR *pbBuf, 
                                                         PCBS3CPUINSTR4_CONFIG_T pConfig, unsigned fPageFault)
 {
     /* All allocations are at the tail end of the buffer, so that we've got a
-       guard page following the operand.   When asked to consistenly trigger
+       guard page following the operand. When asked to consistently trigger
        a #PF, we slide the buffer into that guard page. */
     if (fPageFault)
         cbBuf += X86_PAGE_SIZE;
