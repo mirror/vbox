@@ -922,14 +922,20 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  $(VBOX_AUTOGEN_EVENT_H).ts +| $(VBOX_AUTOGEN_EVENT_H): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEventHeader -o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl" "$(VBOX_XIDL_FILE)"
+	$(QUIET)$(VBOX_XSLTPROC) \
+		--stringparam G_kind VBoxEventHeader \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
+		-o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl" "$(VBOX_XIDL_FILE)"
 	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBOX_AUTOGEN_EVENT_H)"
 
  $(call KB_FN_AUTO_CMD_DEPS,$(VBOX_AUTOGEN_EVENT_CPP).ts)
  $(VBOX_AUTOGEN_EVENT_CPP).ts +| $(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEvent -o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl" "$(VBOX_XIDL_FILE)"
+	$(QUIET)$(VBOX_XSLTPROC) \
+		--stringparam G_kind VBoxEvent \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
+		-o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl" "$(VBOX_XIDL_FILE)"
 	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBOX_AUTOGEN_EVENT_CPP)"
 
  OTHER_CLEAN += $(VBOX_AUTOGEN_EVENT_H).ts $(VBOX_AUTOGEN_EVENT_H) $(VBOX_AUTOGEN_EVENT_CPP).ts $(VBOX_AUTOGEN_EVENT_CPP)
@@ -939,14 +945,20 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  $(VBOX_AUTOGEN_STRINGIFY_ENUMS_H).ts +| $(VBOX_AUTOGEN_STRINGIFY_ENUMS_H): $(VBOX_PATH_MAIN_SRC)/idl/stringify-enums.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_TOOL,xsltproc,autogen enum stringifiers,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind header -o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/stringify-enums.xsl" "$(VBOX_XIDL_FILE)"
+	$(QUIET)$(VBOX_XSLTPROC) \
+		--stringparam G_kind header \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
+		-o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/stringify-enums.xsl" "$(VBOX_XIDL_FILE)"
 	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBOX_AUTOGEN_STRINGIFY_ENUMS_H)"
 
  $(call KB_FN_AUTO_CMD_DEPS,$(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP).ts)
  $(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP).ts +| $(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP): $(VBOX_PATH_MAIN_SRC)/idl/stringify-enums.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_TOOL,xsltproc,autogen enum stringifiers,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind source -o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/stringify-enums.xsl" "$(VBOX_XIDL_FILE)"
+	$(QUIET)$(VBOX_XSLTPROC) \
+		--stringparam G_kind source \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
+		-o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/stringify-enums.xsl" "$(VBOX_XIDL_FILE)"
 	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP)"
 
  OTHER_CLEAN += $(VBOX_AUTOGEN_STRINGIFY_ENUMS_H).ts $(VBOX_AUTOGEN_STRINGIFY_ENUMS_H) $(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP).ts $(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP)
@@ -1826,6 +1838,7 @@ ifdef VBOX_WITH_JMSCOM
 		--stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
 		--stringparam G_vboxGlueStyle mscom \
 		--stringparam G_vboxDirPrefix "" \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
 		-o $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $(VBOX_XIDL_FILE)
 	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_JMSCOM_GEN)/java
 	$(QUIET)echo $(VBOX_JMSCOM_GEN)/java/*.java > $@
@@ -1890,6 +1903,7 @@ $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
 	$(QUIET)$(RM) -f -- $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_HDRS), $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "headers" \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
 		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_XIDL_FILE)
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
@@ -1907,6 +1921,7 @@ $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 	$(QUIET)$(RM) -f -- "$@" "$@.tmp"
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "dtrace-probes" \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
 		-o "$@" $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_XIDL_FILE)
 	$(QUIET)$(SED) -e '' -o "$@.tmp" \
 		"$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-start$(if-expr "$(VBOX_HOST_DTRACE_VERSION)" == "dtrace: Sun D 1.6.2",-alternative,).d" \
@@ -1930,6 +1945,7 @@ $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-even \
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "sources" \
 		--param reminder 0 \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
 		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_XIDL_FILE)
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
@@ -1947,6 +1963,7 @@ $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-odd \
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "sources" \
 		--param reminder 1 \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
 		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_XIDL_FILE)
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 

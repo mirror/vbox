@@ -109,7 +109,7 @@
     </para>
 <screen>$ VBoxManage getextradata Fedora5 installdate
 VirtualBox Command Line Management Interface Version <replaceable>version-number</replaceable>
-Copyright (C) 2005-2023 Oracle and/or its affiliates
+Copyright (C) 2005-2024 Oracle and/or its affiliates
 
 Value: 2006.01.01</screen>
     <para>

@@ -79,7 +79,7 @@ $$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h: \
 		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,CAPIHeaders,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" -o $@ $^
 
 ifndef VBOX_ONLY_SDK
 

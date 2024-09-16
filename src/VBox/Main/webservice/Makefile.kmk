@@ -487,11 +487,12 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) \
-              --stringparam filelistonly VBoxJWS_VBOX_JWSGLUEFILES \
-              --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
-              --stringparam G_vboxGlueStyle jaxws              \
-              --stringparam G_vboxDirPrefix org/virtualbox$(VBOX_API_SUFFIX)/ \
-              -o $@ $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
+		--stringparam filelistonly VBoxJWS_VBOX_JWSGLUEFILES \
+		--stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
+		--stringparam G_vboxGlueStyle jaxws              \
+		--stringparam G_vboxDirPrefix org/virtualbox$(VBOX_API_SUFFIX)/ \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
+		-o $@ $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
 	$(QUIET)$(CP) --changed -fv $@ $(VBoxJWSGlue_KMK)
 
   $(VBOX_JWS_GEN_RAWSRC) \
@@ -504,11 +505,12 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(QUIET)$(RM) -f $(filter-out $(VBoxJWs-inst-jar_GENERATEDSOURCES),$(wildcard $(VBOX_JWS_GEN)/java/*/*/*.java))
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) \
-              --stringparam filelistonly "" \
-              --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
-              --stringparam G_vboxGlueStyle jaxws              \
-              --stringparam G_vboxDirPrefix org/virtualbox$(VBOX_API_SUFFIX)/ \
-              -o $(VBOX_JWS_GEN_RAWSRC) $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
+		--stringparam filelistonly "" \
+		--stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
+		--stringparam G_vboxGlueStyle jaxws              \
+		--stringparam G_vboxDirPrefix org/virtualbox$(VBOX_API_SUFFIX)/ \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
+		-o $(VBOX_JWS_GEN_RAWSRC) $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
 	$(QUIET)$(MKDIR) -p $(VBOX_JWS_GEN)/java/org/virtualbox$(VBOX_API_SUFFIX)
 	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JWS_GEN_RAWSRC) $(VBOX_JWS_GEN)/java
 
@@ -736,7 +738,9 @@ ifdef VBOX_ONLY_SDK
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-python.xsl)
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-python.xsl $<
+	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
+		-o $@ $(VBOX_PATH_WEBSERVICE)/websrv-python.xsl $<
 
  $(VBOXWEB_WS_PYTHON) \
  + $(VBOXWEB_WS_PYTHON_TYPES): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
@@ -772,7 +776,9 @@ ifdef VBOX_ONLY_SDK
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-php.xsl)
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-php.xsl $<
+	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) \
+		--stringparam g_uVBoxCopyrightYear "$(VBOX_C_YEAR)" \
+		-o $@ $(VBOX_PATH_WEBSERVICE)/websrv-php.xsl $<
 
 endif # VBOX_ONLY_SDK
 

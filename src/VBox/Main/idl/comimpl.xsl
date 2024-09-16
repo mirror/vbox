@@ -42,6 +42,9 @@
 
 <xsl:include href="typemap-shared.inc.xsl" />
 
+<!-- Global parameters. -->
+<xsl:param name="g_uVBoxCopyrightYear">2024</xsl:param>
+
 <!-- $G_kind contains what kind of COM class implementation we generate -->
 <xsl:variable name="G_xsltFilename" select="'autogen.xsl'" />
 <xsl:variable name="G_generateBstrVariants" select="'no'" />
@@ -68,7 +71,7 @@
  */
 
 /*
- * Copyright (C) 2010-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2010-</xsl:text><xsl:value-of select="$g_uVBoxCopyrightYear"/><xsl:text> Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.

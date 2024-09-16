@@ -40,6 +40,7 @@
   Parameters
  - - - - - - - - - - - - - - - - - - - - - - -->
 
+<xsl:param name="g_uVBoxCopyrightYear">2024</xsl:param>
 <xsl:param name="G_kind">source</xsl:param>
 
 
@@ -66,7 +67,7 @@ templates for file headers
  */
 
 /*
- * Copyright (C) 2022-2023 Oracle and/or its affiliates.
+ * Copyright (C) 2022-</xsl:text><xsl:value-of select="$g_uVBoxCopyrightYear"/><xsl:text> Oracle and/or its affiliates.
  *
  * This file is part of VirtualBox base platform packages, as
  * available from https://www.virtualbox.org.

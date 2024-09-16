@@ -39,6 +39,9 @@
 
 <xsl:include href="../idl/typemap-shared.inc.xsl" />
 
+<!-- Global parameters. -->
+<xsl:param name="g_uVBoxCopyrightYear">2024</xsl:param>
+
 <xsl:variable name="G_setSuppressedInterfaces"
               select="//interface[@wsmap='suppress']" />
 
@@ -489,7 +492,7 @@ class <xsl:value-of select="@name"/>:
 </xsl:template>
 
 <xsl:template match="/">
-<xsl:text># Copyright (C) 2008-2023 Oracle and/or its affiliates.
+<xsl:text># Copyright (C) 2008-</xsl:text><xsl:value-of select="$g_uVBoxCopyrightYear"/><xsl:text> Oracle and/or its affiliates.
 #
 # This file is part of a free software library; you can redistribute
 # it and/or modify it under the terms of the GNU Lesser General
