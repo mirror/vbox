@@ -541,8 +541,11 @@ static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig3[] =
     { 0, 0,  0,  1,      1,       1,         1,   1,       0,        1,      1,      X86_XCPT_AC, X86_XCPT_GP }, /* #14 */
 };
 
-/** Packed single-precision invalid values. */
-#define BS3CPUINSTR4_PS_INVALIDS \
+/**
+ * Table D-1: Packed single-precision floating-point invalid values.
+ * For instructions: addps, subps, mulps, divps, addsubps, haddps, hsubps.
+ **/
+#define FP32_TABLE_D1_PS_INVALIDS \
     /*0 */{ { /*src2     */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V0),       FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V5) } },      \
             { /*src1     */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MIN), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V4) } },      \
             { /* =>      */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MIN), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V4) } },      \
@@ -628,8 +631,11 @@ static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig3[] =
               /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,                                                                                                                                                                                                      \
               /*xcpt?    */ true, true },                                                                                                                                                                                                                                          \
 
-/** Packed double-precision floating-point invalid values. */
-#define BS3CPUINSTR4_PD_INVALIDS \
+/**
+ * Table D-1: Packed double-precision floating-point invalid values.
+ * For instructions: addpd, subpd, mulpd, divpd, addsubpd, haddpd, hsubpd.
+ **/
+#define FP64_TABLE_D1_PD_INVALIDS \
     /*0 */{ { /*src2     */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V0),       FP64_QNAN_V(0, FP64_FRAC_V1) } },      \
             { /*src1     */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MIN), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V2) } },      \
             { /* =>      */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MIN), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V2) } },      \
@@ -715,8 +721,11 @@ static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig3[] =
               /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,                                                                              \
               /*xcpt?    */ true, true },                                                                                                                  \
 
-/** Scalar single-precision floating-point invalid values. */
-#define BS3CPUINSTR4_SS_INVALIDS \
+/**
+ * Table D-1: Scalar single-precision floating-point invalid values.
+ * For instructions: addss, subss, mulss, divss.
+ **/
+#define FP32_TABLE_D1_SS_INVALIDS \
     /* QNan, QNan (Masked). */                                                                                                                                                                                                                                                                      \
     /*0 */{ { /*src2     */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V0),       FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V4), FP32_QNAN_V(0, FP32_FRAC_V5) } },                       \
             { /*src1     */ { FP32_QNAN(0), FP32_QNAN_V(0, FP32_FRAC_NORM_MIN), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V4) } },                       \
@@ -927,8 +936,11 @@ static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig3[] =
               /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,                                                                                                                                                                                                        \
               /*xcpt?    */ true, true },                                                                                                                                                                                                                                                           \
 
-/** Scalar double-precision floating-point invalid values. */
-#define BS3CPUINSTR4_SD_INVALIDS \
+/**
+ * Table D-1: Scalar double-precision floating-point invalid values.
+ * For instructions: addsd, subsd, mulsd, divsd.
+ **/
+#define FP64_TABLE_D1_SD_INVALIDS \
     /* QNan, QNan (Masked). */                                                                                                                                              \
     /*0 */{ { /*src2     */ { FP64_QNAN(0), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V0),       FP64_QNAN_V(0, FP64_FRAC_V1) } },                       \
             { /*src1     */ { FP64_QNAN(0), FP64_QNAN_V(1, FP64_FRAC_NORM_MIN), FP64_QNAN_V(1, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_V2) } },                       \
@@ -1139,8 +1151,11 @@ static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig3[] =
               /*256:out  */ X86_MXCSR_DAZ | X86_MXCSR_FZ | X86_MXCSR_RC_ZERO | X86_MXCSR_IE,                                                                                \
               /*xcpt?    */ true, true },                                                                                                                                   \
 
-/** Horizontally packed single-precision floating-point invalid values. */
-#define BS3CPUINSTR4_H_PS_INVALIDS \
+/**
+ * Table D-1: Horizontally packed single-precision floating-point invalid values.
+ * For instructions: haddps, hsubps.
+ **/
+#define FP32_TABLE_D1_H_PS_INVALIDS \
     /*0 */{ { /*src2     */ { FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_NORM_MIN), FP32_QNAN_V(0, FP32_FRAC_V0),       FP32_QNAN_V(0, FP32_FRAC_V1),       FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V3), FP32_QNAN_V(0, FP32_FRAC_V5) } }, \
             { /*src1     */ { FP32_QNAN(0),                       FP32_QNAN(0),                       FP32_QNAN_V(0, FP32_FRAC_NORM_MIN), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V4) } }, \
             { /* =>      */ { FP32_QNAN(0),                       FP32_QNAN_V(0, FP32_FRAC_NORM_MIN), FP32_QNAN_V(0, FP32_FRAC_NORM_MAX), FP32_QNAN_V(0, FP32_FRAC_V0),       FP32_QNAN_V(0, FP32_FRAC_V6), FP32_QNAN_V(0, FP32_FRAC_V1), FP32_QNAN_V(0, FP32_FRAC_V2), FP32_QNAN_V(0, FP32_FRAC_V3) } }, \
@@ -1226,8 +1241,11 @@ static const BS3CPUINSTR4_CONFIG_T g_aXcptConfig3[] =
               /*256:out  */ X86_MXCSR_RC_UP | X86_MXCSR_IE,                                                                                                                                                                                                                                               \
               /*xcpt?    */ true, true },                                                                                                                                                                                                                                                                 \
 
-/** Horizontally packed double-precision floating-point invalid values. */
-#define BS3CPUINSTR4_H_PD_INVALIDS \
+/**
+ * Table D-1: Horizontally packed double-precision floating-point invalid values.
+ * For instructions: haddpd, hsubpd.
+ **/
+#define FP64_TABLE_D1_H_PD_INVALIDS \
     /*0 */{ { /*src2     */ { FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_NORM_MIN), FP64_QNAN_V(0, FP64_FRAC_V0),       FP64_QNAN_V(0, FP64_FRAC_V1)       } }, \
             { /*src1     */ { FP64_QNAN(0),                       FP64_QNAN(0),                       FP64_QNAN_V(0, FP64_FRAC_NORM_MIN), FP64_QNAN_V(0, FP64_FRAC_NORM_MAX) } }, \
             { /* =>      */ { FP64_QNAN(0),                       FP64_QNAN_V(0, FP64_FRAC_NORM_MAX), FP64_QNAN_V(0, FP64_FRAC_NORM_MIN), FP64_QNAN_V(0, FP64_FRAC_V0)       } }, \
@@ -2630,7 +2648,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addps(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*34*/ BS3CPUINSTR4_PS_INVALIDS
+    /*34*/ FP32_TABLE_D1_PS_INVALIDS
     /** @todo Underflow, Precision; Rounding; FZ etc. */
     };
 
@@ -2900,7 +2918,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addpd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*27*/ BS3CPUINSTR4_PD_INVALIDS
+    /*27*/ FP64_TABLE_D1_PD_INVALIDS
     /** @todo Underflow, Precision; Rounding; FZ etc. */
     };
 
@@ -3191,7 +3209,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addss(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*30*/ BS3CPUINSTR4_SS_INVALIDS
+    /*30*/ FP32_TABLE_D1_SS_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
@@ -3485,7 +3503,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addsd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*32*/ BS3CPUINSTR4_SD_INVALIDS
+    /*32*/ FP64_TABLE_D1_SD_INVALIDS
     /** @todo Underflow, Precision; Rounding; FZ etc. */
     };
 
@@ -3779,7 +3797,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_haddps(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*32*/ BS3CPUINSTR4_H_PS_INVALIDS
+    /*32*/ FP32_TABLE_D1_H_PS_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
@@ -4076,7 +4094,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_haddpd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*31*/ BS3CPUINSTR4_H_PD_INVALIDS
+    /*31*/ FP64_TABLE_D1_H_PD_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
@@ -4395,7 +4413,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_subps(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*34*/ BS3CPUINSTR4_PS_INVALIDS
+    /*34*/ FP32_TABLE_D1_PS_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
@@ -4693,7 +4711,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_subpd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*31*/ BS3CPUINSTR4_PD_INVALIDS
+    /*31*/ FP64_TABLE_D1_PD_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
@@ -5005,7 +5023,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_subss(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*30*/ BS3CPUINSTR4_SS_INVALIDS
+    /*30*/ FP32_TABLE_D1_SS_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
@@ -5334,7 +5352,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_subsd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*32*/ BS3CPUINSTR4_SD_INVALIDS
+    /*32*/ FP64_TABLE_D1_SD_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
@@ -5642,7 +5660,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_hsubps(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*32*/ BS3CPUINSTR4_H_PS_INVALIDS
+    /*32*/ FP32_TABLE_D1_H_PS_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
@@ -5908,7 +5926,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_hsubpd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*27*/ BS3CPUINSTR4_H_PD_INVALIDS
+    /*27*/ FP64_TABLE_D1_H_PD_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
@@ -6271,7 +6289,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulps(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*40*/ BS3CPUINSTR4_PS_INVALIDS
+    /*40*/ FP32_TABLE_D1_PS_INVALIDS
     /** @todo Underflow, Precision; Rounding; FZ etc. */
     };
 
@@ -6583,7 +6601,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulpd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*33*/ BS3CPUINSTR4_PD_INVALIDS
+    /*33*/ FP64_TABLE_D1_PD_INVALIDS
     /** @todo Underflow, Precision; Rounding; FZ etc. */
     };
 
@@ -6858,7 +6876,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulss(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*28*/ BS3CPUINSTR4_SS_INVALIDS
+    /*28*/ FP32_TABLE_D1_SS_INVALIDS
     /** @todo Underflow, Precision; Rounding; FZ etc. */
     };
 
@@ -7155,7 +7173,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_mulsd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*33*/ BS3CPUINSTR4_SD_INVALIDS
+    /*33*/ FP64_TABLE_D1_SD_INVALIDS
     /** @todo Underflow, Precision; Rounding; FZ etc. */
     };
 
@@ -7433,7 +7451,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_divss(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*30*/ BS3CPUINSTR4_SS_INVALIDS
+    /*30*/ FP32_TABLE_D1_SS_INVALIDS
     /** @todo Underflow; Precision; Rounding, FZ etc. */
     };
 
@@ -7808,7 +7826,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_divsd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*40*/ BS3CPUINSTR4_SD_INVALIDS
+    /*40*/ FP64_TABLE_D1_SD_INVALIDS
     /** @todo Underflow, Precision; Rounding; FZ etc. */
     };
 
@@ -8155,7 +8173,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addsubps(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*38*/ BS3CPUINSTR4_PS_INVALIDS
+    /*38*/ FP32_TABLE_D1_PS_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
@@ -8629,7 +8647,7 @@ BS3_DECL_FAR(uint8_t) bs3CpuInstr4_v_addsubpd(uint8_t bMode)
     /*
      * Invalids.
      */
-    /*56*/ BS3CPUINSTR4_PD_INVALIDS
+    /*56*/ FP64_TABLE_D1_PD_INVALIDS
     /** @todo Underflow; Precision; Rounding; FZ etc. */
     };
 
