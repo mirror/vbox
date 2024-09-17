@@ -179,9 +179,9 @@ typedef const ACPITBLHDR *PCACPITBLHDR;
  * Create a table signature from the supplied 4 characters.
  */
 #ifdef RT_BIG_ENDIAN
-# define ACPI_SIGNATURE_MAKE_FROM_U8(b0, b1, b2, b3) RT_MAKE_U64_FROM_U8(b0, b1, b2, b3)
+# define ACPI_SIGNATURE_MAKE_FROM_U8(b0, b1, b2, b3) RT_MAKE_U32_FROM_MSB_U8(b0, b1, b2, b3)
 #elif defined(RT_LITTLE_ENDIAN)
-# define ACPI_SIGNATURE_MAKE_FROM_U8(b0, b1, b2, b3) RT_MAKE_U64_FROM_MSB_U8(b0, b1, b2, b3)
+# define ACPI_SIGNATURE_MAKE_FROM_U8(b0, b1, b2, b3) RT_MAKE_U32_FROM_U8(b0, b1, b2, b3)
 #else
 # error "Whut?"
 #endif
@@ -504,17 +504,17 @@ typedef const ACPIFADT *PCACPIFADT;
 /** @name ACPI_FADT_IAPC_BOOT_ARCH_F_XXX - ACPIFADT::fIaPcBootArch
  * @{ */
 /** Bit 0 - Indicates that the motherboard supports user-visible devices on the LPC or ISA bus if set. */
-#define ACPI_FADT_IAPC_BOOT_ARCH_F_LEGACY_DEVS  RT_BIT_16(0)
+#define ACPI_FADT_IAPC_BOOT_ARCH_F_LEGACY_DEVS  RT_BIT(0)
 /** Bit 1 - Indicates that the motherboard contains support for a port 60 and 64 based keyboard controller. */
-#define ACPI_FADT_IAPC_BOOT_ARCH_F_8042         RT_BIT_16(1)
+#define ACPI_FADT_IAPC_BOOT_ARCH_F_8042         RT_BIT(1)
 /** Bit 2 - Indicates that the OSPM must not blindly probe the VGA hardware. */
-#define ACPI_FADT_IAPC_BOOT_ARCH_F_NO_VGA       RT_BIT_16(2)
+#define ACPI_FADT_IAPC_BOOT_ARCH_F_NO_VGA       RT_BIT(2)
 /** Bit 3 - Indicates that the OSPM must not enable Message Signaled Interrupts on this platform. */
-#define ACPI_FADT_IAPC_BOOT_ARCH_F_NO_MSI       RT_BIT_16(3)
+#define ACPI_FADT_IAPC_BOOT_ARCH_F_NO_MSI       RT_BIT(3)
 /** Bit 3 - Indicates that the OSPM must not enable OSPM ASPM on this platform. */
-#define ACPI_FADT_IAPC_BOOT_ARCH_F_NO_PCIE_ASPM RT_BIT_16(4)
+#define ACPI_FADT_IAPC_BOOT_ARCH_F_NO_PCIE_ASPM RT_BIT(4)
 /** Bit 3 - Indicates that the CMOS RTC is either not implemented, or does not exist at legacy addresses. */
-#define ACPI_FADT_IAPC_BOOT_ARCH_F_NO_RTC_CMOS  RT_BIT_16(5)
+#define ACPI_FADT_IAPC_BOOT_ARCH_F_NO_RTC_CMOS  RT_BIT(5)
 /** @} */
 
 
@@ -581,11 +581,302 @@ typedef const ACPIFADT *PCACPIFADT;
 /** @name ACPI_FADT_ARM_BOOT_ARCH_F_XXX - ACPIFADT::fArmBootArch
  * @{ */
 /** Bit 0 - Indicates that PSCI is implemented if set. */
-#define ACPI_FADT_ARM_BOOT_ARCH_F_PSCI_COMP    RT_BIT_16(0)
+#define ACPI_FADT_ARM_BOOT_ARCH_F_PSCI_COMP    RT_BIT(0)
 /** Bit 1 - Indicates that the HVC must be used as the PSCI conduit instead of SMC. */
-#define ACPI_FADT_ARM_BOOT_ARCH_F_PSCI_USE_HVC RT_BIT_16(1)
+#define ACPI_FADT_ARM_BOOT_ARCH_F_PSCI_USE_HVC RT_BIT(1)
 /** @} */
 
+
+/**
+ * Generic Timer Description Table (ACPIGTDT)
+ *
+ * @see  @acpi65{05_ACPI_Software_Programming_Model,generic-timer-description-table-gtdt}
+ */
+#pragma pack(1)
+typedef struct ACPIGTDT
+{
+    ACPITBLHDR          Hdr;                            /**< 0x000: The table header. */
+    uint64_t            u64PhysAddrCntControlBase;      /**< 0x024: The 64-bit physical address at which the Counter Control block is located, 0xffffffffffffffff if not provied. */
+    uint32_t            u32Rsvd;                        /**< 0x02c: Reserved. */
+    uint32_t            u32El1SecTimerGsiv;             /**< 0x030: GSIV of the secure EL1 timer, optional. */
+    uint32_t            fEl1SecTimer;                   /**< 0x034: Secure EL1 timer flags, optional. Combination of ACPI_GTDT_TIMER_F_XXX. */
+    uint32_t            u32El1NonSecTimerGsiv;          /**< 0x038: GSIV of the non-secure EL1 timer, optional. */
+    uint32_t            fEl1NonSecTimer;                /**< 0x03c: Non-Secure EL1 timer flags, optional. Combination of ACPI_GTDT_TIMER_F_XXX. */
+    uint32_t            u32El1VirtTimerGsiv;            /**< 0x040: GSIV of the virtual EL1 timer, optional. */
+    uint32_t            fEl1VirtTimer;                  /**< 0x044: Virtual EL1 timer flags, optional. Combination of ACPI_GTDT_TIMER_F_XXX. */
+    uint32_t            u32El2TimerGsiv;                /**< 0x048: GSIV of the EL2 timer, optional. */
+    uint32_t            fEl2Timer;                      /**< 0x04c: EL2 timer flags, optional. Combination of ACPI_GTDT_TIMER_F_XXX. */
+    uint64_t            u64PhysAddrCndReadBase;         /**< 0x050: The 64-bit physical address at which the Counter Read block is located, 0xffffffffffffffff if not provied. */
+    uint32_t            cPlatformTimers;                /**< 0x058: Number of entries in the plaform timer structure array. */
+    uint32_t            offPlatformTimers;              /**< 0x05c: Offset to the platform timer structure array from the start of this table. */
+    uint32_t            u32El2VirtTimerGsiv;            /**< 0x060: GSIV of the virtual EL2 timer, optional. */
+    uint32_t            fEl2VirtTimer;                  /**< 0x064: Virtual EL2 timer flags, optional. Combination of ACPI_GTDT_TIMER_F_XXX. */
+} ACPIGTDT;
+#pragma pack()
+AssertCompileSize(ACPIGTDT, 104);
+/** Pointer to an ACPI Fixed ACPI Description Table. */
+typedef ACPIGTDT *PACPIGTDT;
+/** Pointer to a const ACPI Fixed ACPI Description Table. */
+typedef const ACPIGTDT *PCACPIGTDT;
+
+
+/** @name ACPI_GTDT_TIMER_F_XXX - ACPIGTDT::fEl1SecTimer, ACPIGTDT::fEl1NonSecTimer, ACPIGTDT::fEl1VirtTimer,
+ * ACPIGTDT::fEl2Timer, ACPIGTDT::fEl2VirtTimer
+ * @{ */
+/** Bit 0 - Interrupt mode, level triggered. */
+#define ACPI_GTDT_TIMER_F_INTR_MODE_LEVEL                   0
+/** Bit 0 - Interrupt mode, edge triggered. */
+#define ACPI_GTDT_TIMER_F_INTR_MODE_EDGE                    RT_BIT_32(0)
+/** Bit 1 - Interrupt polarity, active high. */
+#define ACPI_GTDT_TIMER_F_INTR_POLARITY_ACTIVE_HIGH         0
+/** Bit 1 - Interrupt polarity, active low. */
+#define ACPI_GTDT_TIMER_F_INTR_POLARITY_ACTIVE_LOW          RT_BIT_32(1)
+/** Bit 2 - Timer is always active independent of the processor's power state,
+ * if clear the timer may lose context or not assert interrupts if the processor is in a low power state. */
+#define ACPI_GTDT_TIMER_F_ALWAYS_ON_CAP                     RT_BIT_32(0)
+/** @} */
+
+/** @todo GT Block structure and Watchdog timer structure. */
+
+
+/**
+ * Multiple APIC Description Table (ACPIMADT)
+ *
+ * @see  @acpi65{05_ACPI_Software_Programming_Model,multiple-apic-description-table-madt}
+ */
+#pragma pack(1)
+typedef struct ACPIMADT
+{
+    ACPITBLHDR          Hdr;                            /**< 0x000: The table header. */
+    uint32_t            u32PhysAddrLocalIntrCtrl;       /**< 0x024: The 32-bit physical address at which each processor can access its local interrupt controller. */
+    uint32_t            fApic;                          /**< 0x028: Multiple APIC flags. Combination of ACPI_MADT_APIC_F_XXX. */
+    /* Variable number of interrupt controller structures follows. */
+} ACPIMADT;
+#pragma pack()
+AssertCompileSize(ACPIMADT, 44);
+/** Pointer to an ACPI Multiple APIC Description Table. */
+typedef ACPIMADT *PACPIMADT;
+/** Pointer to a const ACPI Multiple APIC Description Table. */
+typedef const ACPIMADT *PCACPIMADT;
+
+
+/** @name ACPI_MADT_APIC_F_XXX - ACPIMADT::fApic
+ * @{ */
+/** Bit 0 - Indicates that the system has a PC-AT compatible dual 8259 setup. */
+#define ACPI_MADT_APIC_F_PCAT_COMPAT                        RT_BIT_32(0)
+/** @} */
+
+
+/** @name ACPI_MADT_INTR_CTRL_TYPE_XXX - Interrupt Controller Structure Types.
+ * @{ */
+/** Processor Local APIC. */
+#define ACPI_MADT_INTR_CTRL_TYPE_PROCESSOR_LOCAL_APIC       0
+/** I/O APIC. */
+#define ACPI_MADT_INTR_CTRL_TYPE_IO_APIC                    1
+/** Interrupt source override. */
+#define ACPI_MADT_INTR_CTRL_TYPE_INTR_SRC_OVERRIDE          2
+/** Non-maskable Interrupt (NMI) Source. */
+#define ACPI_MADT_INTR_CTRL_TYPE_NMI                        3
+/** Local APIC NMI. */
+#define ACPI_MADT_INTR_CTRL_TYPE_LOCAL_APIC_NMI             4
+/** Local APIC address override. */
+#define ACPI_MADT_INTR_CTRL_TYPE_LOCAL_APIC_ADDR_OVERRIDE   5
+/** I/O SAPIC. */
+#define ACPI_MADT_INTR_CTRL_TYPE_IO_SAPIC                   6
+/** Local SAPIC. */
+#define ACPI_MADT_INTR_CTRL_TYPE_LOCAL_SAPIC                7
+/** Platform interrupt sources. */
+#define ACPI_MADT_INTR_CTRL_TYPE_PLATFORM_INTR_SRCS         8
+/** Processor Local x2APIC. */
+#define ACPI_MADT_INTR_CTRL_TYPE_PROCESSOR_LOCAL_X2APIC     9
+/** Local x2APIC NMI. */
+#define ACPI_MADT_INTR_CTRL_TYPE_LOCAL_X2APIC_NMI          10
+/** GIC CPU Interface (GICC). */
+#define ACPI_MADT_INTR_CTRL_TYPE_GICC                      11
+/** GIC Distributor (GICD). */
+#define ACPI_MADT_INTR_CTRL_TYPE_GICD                      12
+/** GIC MSI Frame. */
+#define ACPI_MADT_INTR_CTRL_TYPE_GIC_MSI_FRAME             13
+/** GIC Redistributor (GICR). */
+#define ACPI_MADT_INTR_CTRL_TYPE_GICR                      14
+/** GIC Interrupt Translation Service (ITS). */
+#define ACPI_MADT_INTR_CTRL_TYPE_GIC_ITS                   15
+/** @} */
+
+
+/**
+ * GIC CPU Interface (GICC) Structure.
+ *
+ * @see  @acpi65{05_ACPI_Software_Programming_Model,gic-cpu-interface-gicc-structure}
+ */
+#pragma pack(1)
+typedef struct ACPIMADTGICC
+{
+    uint8_t             bType;                          /**< 0x000: The GICC structure type, ACPI_MADT_INTR_CTRL_TYPE_GICC. */
+    uint8_t             cbThis;                         /**< 0x001: Length of this structure, 82. */
+    uint16_t            u16Rsvd0;                       /**< 0x002: Reserved, MBZ. */
+    uint32_t            u32CpuId;                       /**< 0x004: GIC's CPU Interface Number. */
+    uint32_t            u32AcpiCpuUid;                  /**< 0x008: The matching processor object's _UID return value for this structure. */
+    uint32_t            fGicc;                          /**< 0x00c: GICC CPU interface flags, see ACPI_MADT_GICC_F_XXX. */
+    uint32_t            u32ParkingProtocolVersion;      /**< 0x010: Version of the ARM-Processor Parking Protocol implemented. */
+    uint32_t            u32PerformanceGsiv;             /**< 0x014: The GSIV used for performance monitoring interrupts. */
+    uint64_t            u64PhysAddrParked;              /**< 0x018: The 64-bit physical address of the processor's parking protocol mailbox. */
+    uint64_t            u64PhysAddrBase;                /**< 0x020: Physical address at which the CPU can access the GIC CPU interface. */
+    uint64_t            u64PhysAddrGicv;                /**< 0x028: Address of the GIC virtual CPU interface registers. 0 if not present. */
+    uint64_t            u64PhysAddrGich;                /**< 0x030: Address of the GIC virtual interface control block registers. 0 if not present. */
+    uint32_t            u32VGicMaintenanceGsiv;         /**< 0x038: GSIV for the Virtual GIC maintenance interrupt. */
+    uint64_t            u64PhysAddrGicrBase;            /**< 0x03c: On GICv3+ holds the 64-bit physical address of the associated redistributor. */
+    uint64_t            u64Mpidr;                       /**< 0x044: Matches the MPIDR register of the CPU associated with this structure. */
+    uint8_t             bCpuEfficiencyClass;            /**< 0x04c: Describes the relative power efficiency of the associated processor. */
+    uint8_t             bRsvd1;                         /**< 0x04d: Reserved, MBZ. */
+    uint16_t            u16SpeOverflowGsiv;             /**< 0x04e: Statistical Profiling Extension buffer overflow GSIV, level triggered PPI. */
+    uint16_t            u16TrbeGsiv;                    /**< 0x050: Trace Buffer Extension interrupt GSIV, level triggered PPI. */
+} ACPIMADTGICC;
+#pragma pack()
+AssertCompileSize(ACPIMADTGICC, 82);
+/** Pointer to an GIC CPU Interface (GICC) Structure. */
+typedef ACPIMADTGICC *PACPIMADTGICC;
+/** Pointer to a const GIC CPU Interface (GICC) Structure. */
+typedef const ACPIMADTGICC *PCACPIMADTGICC;
+
+
+/** @name ACPI_MADT_GICC_F_XXX - ACPIMADTGICC::fGicc
+ * @{ */
+/** Bit 0 - If set the processor is ready for use. */
+#define ACPI_MADT_GICC_F_ENABLED                            RT_BIT_32(0)
+/** Bit 1 - The performance interrupt is edge triggered, if 0 level triggered. */
+#define ACPI_MADT_GICC_F_PERF_INTR_MODE_EDGE                RT_BIT_32(1)
+/** Bit 2 - The VGIC maintenance interrupt is edge triggered, if 0 level triggered. */
+#define ACPI_MADT_GICC_F_VGIC_MAINTENANCE_INTR_MODE_EDGE    RT_BIT_32(2)
+/** Bit 3 - System supports enabling this processor later during OS runtime. */
+#define ACPI_MADT_GICC_F_ONLINE_CAPABLE                     RT_BIT_32(3)
+/** @} */
+
+
+/**
+ * GIC Distributor Interface (GICD) Structure.
+ *
+ * @see  @acpi65{05_ACPI_Software_Programming_Model,gic-distributor-gicd-structure}
+ */
+#pragma pack(1)
+typedef struct ACPIMADTGICD
+{
+    uint8_t             bType;                          /**< 0x000: The GICD structure type, ACPI_MADT_INTR_CTRL_TYPE_GICD. */
+    uint8_t             cbThis;                         /**< 0x001: Length of this structure, 24. */
+    uint16_t            u16Rsvd0;                       /**< 0x002: Reserved, MBZ. */
+    uint32_t            u32GicdId;                      /**< 0x004: This GIC distributor's hardware ID. */
+    uint64_t            u64PhysAddrBase;                /**< 0x008: The 64-bit physical address for this distributor. */
+    uint32_t            u32SystemVectorBase;            /**< 0x010: Reserved, MBZ. */
+    uint8_t             bGicVersion;                    /**< 0x014: GIC version, ACPI_MADT_GICD_VERSION_XXX. */
+    uint8_t             abRsvd0[3];                     /**< 0x015: Reserved, MBZ. */
+} ACPIMADTGICD;
+#pragma pack()
+AssertCompileSize(ACPIMADTGICD, 24);
+/** Pointer to an GIC Distributor Interface (GICD) Structure. */
+typedef ACPIMADTGICD *PACPIMADTGICD;
+/** Pointer to a const GIC Distributor Interface (GICD) Structure. */
+typedef const ACPIMADTGICD *PCACPIMADTGICD;
+
+
+/** @name ACPI_MADT_GICD_VERSION_XXX - ACPIMADTGICD::bGicVersion
+ * @{ */
+/** No GIC version is specified, fall back to hardware discovery for GIC version. */
+#define ACPI_MADT_GICD_VERSION_UNSPECIFIED                  0
+/** GICv1. */
+#define ACPI_MADT_GICD_VERSION_GICv1                        1
+/** GICv2. */
+#define ACPI_MADT_GICD_VERSION_GICv2                        2
+/** GICv3. */
+#define ACPI_MADT_GICD_VERSION_GICv3                        3
+/** GICv4. */
+#define ACPI_MADT_GICD_VERSION_GICv4                        4
+/** @} */
+
+
+/** @todo GIC MSI Frame Structure. */
+
+
+/**
+ * GIC Redistributor (GICR) Structure.
+ *
+ * @see  @acpi65{05_ACPI_Software_Programming_Model,gic-redistributor-gicr-structure}
+ */
+#pragma pack(1)
+typedef struct ACPIMADTGICR
+{
+    uint8_t             bType;                          /**< 0x000: The GICR structure type, ACPI_MADT_INTR_CTRL_TYPE_GICR. */
+    uint8_t             cbThis;                         /**< 0x001: Length of this structure, 16. */
+    uint16_t            u16Rsvd0;                       /**< 0x002: Reserved, MBZ. */
+    uint64_t            u64PhysAddrGicrRangeBase;       /**< 0x004: The 64-bit physical address of a page range containing all GIC Redistributors. */
+    uint32_t            cbGicrRange;                    /**< 0x00c: The length of the GIC Redistributor discovery page range. */
+} ACPIMADTGICR;
+#pragma pack()
+AssertCompileSize(ACPIMADTGICR, 16);
+/** Pointer to an GIC Redistributor (GICR) Structure. */
+typedef ACPIMADTGICR *PACPIMADTGICR;
+/** Pointer to a const GIC Redistributor (GICR) Structure. */
+typedef const ACPIMADTGICR *PCACPIMADTGICR;
+
+
+/**
+ * GIC Interrupt Translation Service (ITS) Structure.
+ *
+ * @see  @acpi65{05_ACPI_Software_Programming_Model,gic-interrupt-translation-service-its-structure}
+ */
+#pragma pack(1)
+typedef struct ACPIMADTGICITS
+{
+    uint8_t             bType;                          /**< 0x000: The GICR structure type, ACPI_MADT_INTR_CTRL_TYPE_GICR. */
+    uint8_t             cbThis;                         /**< 0x001: Length of this structure, 16. */
+    uint16_t            u16Rsvd0;                       /**< 0x002: Reserved, MBZ. */
+    uint32_t            u32GicItsId;                    /**< 0x004: This GIC ITS ID. */
+    uint64_t            u64PhysAddrBase;                /**< 0x008: The 64-bit physical address for the Interrupt Translation Service. */
+    uint32_t            u32Rsvd1;                       /**< 0x010: Rserved, MBZ. */
+} ACPIMADTGICITS;
+#pragma pack()
+AssertCompileSize(ACPIMADTGICITS, 20);
+/** Pointer to an GIC Interrupt Translation Service (ITS) Structure. */
+typedef ACPIMADTGICITS *PACPIMADTGICITS;
+/** Pointer to a const GIC Interrupt Translation Service (ITS) Structure. */
+typedef const ACPIMADTGICITS *PCACPIMADTGICITS;
+
+
+/**
+ * Memory Mapped Configuration Space base address description table (MCFG). (part of the PCI Express spec).
+ */
+#pragma pack(1)
+typedef struct ACPIMCFG
+{
+    ACPITBLHDR          Hdr;                            /**< 0x000: The table header. */
+    uint64_t            u64Rsvd0;                       /**< 0x024: Reserved, MBZ. */
+    /* Variable number of base address allocation structures follows. */
+} ACPIMCFG;
+#pragma pack()
+AssertCompileSize(ACPIMCFG, 44);
+/** Pointer to an ACPI MCFG Table. */
+typedef ACPIMCFG *PACPIMCFG;
+/** Pointer to a const ACPI MCFG Table. */
+typedef const ACPIMCFG *PCACPIMCFG;
+
+
+/**
+ * MCFG allocation structure.
+ */
+#pragma pack(1)
+typedef struct ACPIMCFGALLOC
+{
+    uint64_t            u64PhysAddrBase;                /**< 0x000: Base address of the enhanced configuration mechanism. */
+    uint16_t            u16PciSegGrpNr;                 /**< 0x008: PCI segment group number. */
+    uint8_t             bPciBusFirst;                   /**< 0x00a: First PCI bus number decoded by this PCI host bridge. */
+    uint8_t             bPciBusLast;                    /**< 0x00b: Last PCI bus number decoded by this PCI host bridge. */
+    uint32_t            u32Rsvd0;                       /**< 0x00c: Reserved, MBZ. */
+} ACPIMCFGALLOC;
+#pragma pack()
+AssertCompileSize(ACPIMCFGALLOC, 16);
+/** Pointer to an ACPI MCFG Table. */
+typedef ACPIMCFGALLOC *PACPIMCFGALLOC;
+/** Pointer to a const ACPI MCFG Table. */
+typedef const ACPIMCFGALLOC *PCACPIMCFGALLOC;
 
 /** @} */
 
