@@ -108,6 +108,64 @@ typedef struct
 #define DUMPIMAGE_SELECT_EVERYTHING  UINT64_MAX
 #define DUMPIMAGE_SELECT_DEFAULT     DUMPIMAGE_SELECT_EVERYTHING
 
+static struct
+{
+    const char *psz;
+    size_t      cch;
+    uint64_t    fSel;
+    const char *pszSummary;
+    const char *pszDesc;
+} const g_aMnemonics[] =
+{
+    { RT_STR_TUPLE("h"),            DUMPIMAGE_SELECT_HEADERS,     "h[d[r]],header[s]",      "File headers" },
+    { RT_STR_TUPLE("hd"),           DUMPIMAGE_SELECT_HEADERS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("hdr"),          DUMPIMAGE_SELECT_HEADERS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("header"),       DUMPIMAGE_SELECT_HEADERS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("headers"),      DUMPIMAGE_SELECT_HEADERS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("s"),            DUMPIMAGE_SELECT_SECTIONS,    "s[e[ction[s]]]",         "Section headers"},
+    { RT_STR_TUPLE("se"),           DUMPIMAGE_SELECT_SECTIONS,    NULL,                     NULL  },
+    { RT_STR_TUPLE("sec"),          DUMPIMAGE_SELECT_SECTIONS,    NULL,                     NULL  },
+    { RT_STR_TUPLE("section"),      DUMPIMAGE_SELECT_SECTIONS,    NULL,                     NULL  },
+    { RT_STR_TUPLE("sections"),     DUMPIMAGE_SELECT_SECTIONS,    NULL,                     NULL  },
+    { RT_STR_TUPLE("d"),            DUMPIMAGE_SELECT_DEBUG,       "d[b[g[info]]],db,debug", "Debug info headers" },
+    { RT_STR_TUPLE("db"),           DUMPIMAGE_SELECT_DEBUG,       NULL,                     NULL  },
+    { RT_STR_TUPLE("dg"),           DUMPIMAGE_SELECT_DEBUG,       NULL,                     NULL  },
+    { RT_STR_TUPLE("dbg"),          DUMPIMAGE_SELECT_DEBUG,       NULL,                     NULL  },
+    { RT_STR_TUPLE("dbginfo"),      DUMPIMAGE_SELECT_DEBUG,       NULL,                     NULL  },
+    { RT_STR_TUPLE("debug"),        DUMPIMAGE_SELECT_DEBUG,       NULL,                     NULL  },
+    { RT_STR_TUPLE("f"),            DUMPIMAGE_SELECT_FIXUP,       "f[x],fix[up[s]]",        "Fixups" },
+    { RT_STR_TUPLE("fx"),           DUMPIMAGE_SELECT_FIXUP,       NULL,                     NULL  },
+    { RT_STR_TUPLE("fix"),          DUMPIMAGE_SELECT_FIXUP,       NULL,                     NULL  },
+    { RT_STR_TUPLE("fixup"),        DUMPIMAGE_SELECT_FIXUP,       NULL,                     NULL  },
+    { RT_STR_TUPLE("fixups"),       DUMPIMAGE_SELECT_FIXUP,       NULL,                     NULL  },
+    { RT_STR_TUPLE("e"),            DUMPIMAGE_SELECT_EXPORTS,     "e[x[p[ort[s]]]]",        "Exports" },
+    { RT_STR_TUPLE("ex"),           DUMPIMAGE_SELECT_EXPORTS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("exp"),          DUMPIMAGE_SELECT_EXPORTS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("export"),       DUMPIMAGE_SELECT_EXPORTS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("exports"),      DUMPIMAGE_SELECT_EXPORTS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("i"),            DUMPIMAGE_SELECT_IMPORTS,     "i[m[p[ort[s]]]]",        "Imports" },
+    { RT_STR_TUPLE("im"),           DUMPIMAGE_SELECT_IMPORTS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("imp"),          DUMPIMAGE_SELECT_IMPORTS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("import"),       DUMPIMAGE_SELECT_IMPORTS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("imports"),      DUMPIMAGE_SELECT_IMPORTS,     NULL,                     NULL  },
+    { RT_STR_TUPLE("l"),            DUMPIMAGE_SELECT_LOAD_CONFIG, "l[c[fg],loadcfg",        "Load configuration" },
+    { RT_STR_TUPLE("lc"),           DUMPIMAGE_SELECT_LOAD_CONFIG, NULL,                     NULL  },
+    { RT_STR_TUPLE("lcfg"),         DUMPIMAGE_SELECT_LOAD_CONFIG, NULL,                     NULL  },
+    { RT_STR_TUPLE("loadcfg"),      DUMPIMAGE_SELECT_LOAD_CONFIG, NULL,                     NULL  },
+    { RT_STR_TUPLE("rc"),           DUMPIMAGE_SELECT_RESOURCES,   "rc[s[rc]],resource[s]",  "Resources" },
+    { RT_STR_TUPLE("rcs"),          DUMPIMAGE_SELECT_RESOURCES,   NULL,                     NULL  },
+    { RT_STR_TUPLE("rcsrc"),        DUMPIMAGE_SELECT_RESOURCES,   NULL,                     NULL  },
+    { RT_STR_TUPLE("resource"),     DUMPIMAGE_SELECT_RESOURCES,   NULL,                     NULL  },
+    { RT_STR_TUPLE("resources"),    DUMPIMAGE_SELECT_RESOURCES,   NULL,                     NULL  },
+    { RT_STR_TUPLE("t"),            DUMPIMAGE_SELECT_TLS,         "t[ls]",                  "Thread local storage" },
+    { RT_STR_TUPLE("tls"),          DUMPIMAGE_SELECT_TLS,         NULL,                     NULL  },
+    /* masks: */
+    { RT_STR_TUPLE("all"),          DUMPIMAGE_SELECT_EVERYTHING,  "all,everything",         "Everything" },
+    { RT_STR_TUPLE("everything"),   DUMPIMAGE_SELECT_EVERYTHING,  NULL,                     NULL  },
+    { RT_STR_TUPLE("def"),          DUMPIMAGE_SELECT_DEFAULT,     "def[ault]",              "Default selection" },
+    { RT_STR_TUPLE("default"),      DUMPIMAGE_SELECT_DEFAULT,     NULL,                     NULL },
+};
+
 class DumpImageCmd
 {
 public:
@@ -301,57 +359,6 @@ public:
 private:
     int parseSelection(const char *pszSelection, uint64_t *pfSel)
     {
-        static const struct { const char *psz; size_t cch; uint64_t fSel; } s_aMnemonics[] =
-        {
-            { RT_STR_TUPLE("h"),            DUMPIMAGE_SELECT_HEADERS     },
-            { RT_STR_TUPLE("hd"),           DUMPIMAGE_SELECT_HEADERS     },
-            { RT_STR_TUPLE("hdr"),          DUMPIMAGE_SELECT_HEADERS     },
-            { RT_STR_TUPLE("header"),       DUMPIMAGE_SELECT_HEADERS     },
-            { RT_STR_TUPLE("headers"),      DUMPIMAGE_SELECT_HEADERS     },
-            { RT_STR_TUPLE("s"),            DUMPIMAGE_SELECT_SECTIONS    },
-            { RT_STR_TUPLE("se"),           DUMPIMAGE_SELECT_SECTIONS    },
-            { RT_STR_TUPLE("sec"),          DUMPIMAGE_SELECT_SECTIONS    },
-            { RT_STR_TUPLE("section"),      DUMPIMAGE_SELECT_SECTIONS    },
-            { RT_STR_TUPLE("sections"),     DUMPIMAGE_SELECT_SECTIONS    },
-            { RT_STR_TUPLE("d"),            DUMPIMAGE_SELECT_DEBUG       },
-            { RT_STR_TUPLE("db"),           DUMPIMAGE_SELECT_DEBUG       },
-            { RT_STR_TUPLE("dg"),           DUMPIMAGE_SELECT_DEBUG       },
-            { RT_STR_TUPLE("dbg"),          DUMPIMAGE_SELECT_DEBUG       },
-            { RT_STR_TUPLE("dbginfo"),      DUMPIMAGE_SELECT_DEBUG       },
-            { RT_STR_TUPLE("debug"),        DUMPIMAGE_SELECT_DEBUG       },
-            { RT_STR_TUPLE("f"),            DUMPIMAGE_SELECT_FIXUP       },
-            { RT_STR_TUPLE("fx"),           DUMPIMAGE_SELECT_FIXUP       },
-            { RT_STR_TUPLE("fix"),          DUMPIMAGE_SELECT_FIXUP       },
-            { RT_STR_TUPLE("fixup"),        DUMPIMAGE_SELECT_FIXUP       },
-            { RT_STR_TUPLE("fixups"),       DUMPIMAGE_SELECT_FIXUP       },
-            { RT_STR_TUPLE("e"),            DUMPIMAGE_SELECT_EXPORTS     },
-            { RT_STR_TUPLE("ex"),           DUMPIMAGE_SELECT_EXPORTS     },
-            { RT_STR_TUPLE("exp"),          DUMPIMAGE_SELECT_EXPORTS     },
-            { RT_STR_TUPLE("export"),       DUMPIMAGE_SELECT_EXPORTS     },
-            { RT_STR_TUPLE("exports"),      DUMPIMAGE_SELECT_EXPORTS     },
-            { RT_STR_TUPLE("i"),            DUMPIMAGE_SELECT_IMPORTS     },
-            { RT_STR_TUPLE("im"),           DUMPIMAGE_SELECT_IMPORTS     },
-            { RT_STR_TUPLE("imp"),          DUMPIMAGE_SELECT_IMPORTS     },
-            { RT_STR_TUPLE("import"),       DUMPIMAGE_SELECT_IMPORTS     },
-            { RT_STR_TUPLE("imports"),      DUMPIMAGE_SELECT_IMPORTS     },
-            { RT_STR_TUPLE("l"),            DUMPIMAGE_SELECT_LOAD_CONFIG },
-            { RT_STR_TUPLE("lc"),           DUMPIMAGE_SELECT_LOAD_CONFIG },
-            { RT_STR_TUPLE("lcfg"),         DUMPIMAGE_SELECT_LOAD_CONFIG },
-            { RT_STR_TUPLE("loadcfg"),      DUMPIMAGE_SELECT_LOAD_CONFIG },
-            { RT_STR_TUPLE("rc"),           DUMPIMAGE_SELECT_RESOURCES   },
-            { RT_STR_TUPLE("rcs"),          DUMPIMAGE_SELECT_RESOURCES   },
-            { RT_STR_TUPLE("rcsrc"),        DUMPIMAGE_SELECT_RESOURCES   },
-            { RT_STR_TUPLE("resource"),     DUMPIMAGE_SELECT_RESOURCES   },
-            { RT_STR_TUPLE("resources"),    DUMPIMAGE_SELECT_RESOURCES   },
-            { RT_STR_TUPLE("t"),            DUMPIMAGE_SELECT_TLS         },
-            { RT_STR_TUPLE("tls"),          DUMPIMAGE_SELECT_TLS         },
-            /* masks: */
-            { RT_STR_TUPLE("all"),          DUMPIMAGE_SELECT_EVERYTHING  },
-            { RT_STR_TUPLE("everything"),   DUMPIMAGE_SELECT_EVERYTHING  },
-            { RT_STR_TUPLE("def"),          DUMPIMAGE_SELECT_DEFAULT     },
-            { RT_STR_TUPLE("default"),      DUMPIMAGE_SELECT_DEFAULT     },
-        };
-
         *pfSel = 0;
         char ch;
         do
@@ -374,13 +381,13 @@ private:
 
             /* Look it up. */
             uint32_t i;
-            for (i = 0; i < RT_ELEMENTS(s_aMnemonics); i++)
-                if (cch == s_aMnemonics[i].cch && memcmp(s_aMnemonics[i].psz, pszSelection, cch) == 0)
+            for (i = 0; i < RT_ELEMENTS(g_aMnemonics); i++)
+                if (cch == g_aMnemonics[i].cch && memcmp(g_aMnemonics[i].psz, pszSelection, cch) == 0)
                 {
-                    *pfSel = s_aMnemonics[i].fSel;
+                    *pfSel = g_aMnemonics[i].fSel;
                     break;
                 }
-            if (i >= RT_ELEMENTS(s_aMnemonics))
+            if (i >= RT_ELEMENTS(g_aMnemonics))
             {
                 mySyntax("Unknown selection '%.*s'", cch, pszSelection);
                 return VERR_INVALID_PARAMETER;
@@ -2098,8 +2105,28 @@ int main(int argc, char **argv)
                 return RTEXITCODE_SUCCESS;
 
             case 'h':
-                RTPrintf("usage: %s [options] <file> [file2..]\n", RTProcShortName());
+            {
+                RTPrintf("usage: %s [options] <file> [file2..]\n"
+                         "\n"
+                         "Options:\n"
+                         "  -b<address>, --image-base=<address>\n"
+                         "    Pretend load address for the image.\n"
+                         "  -i/--include <sel>, -o/-O/--only <sel>, -s/-S/--skip <sel>\n"
+                         "    Select what to display.  The selection is a comma or space separated\n"
+                         "    list of any of the following:\n"
+                         , RTProcShortName());
+                size_t cchWidth = 1;
+                for (unsigned i = 0; i < RT_ELEMENTS(g_aMnemonics); i++)
+                    if (g_aMnemonics[i].pszSummary)
+                    {
+                        size_t cchSummary = strlen(g_aMnemonics[i].pszSummary);
+                        cchWidth = RT_MAX(cchWidth, cchSummary);
+                    }
+                for (unsigned i = 0; i < RT_ELEMENTS(g_aMnemonics); i++)
+                    if (g_aMnemonics[i].pszSummary)
+                        RTPrintf("      %-*s - %s\n", cchWidth, g_aMnemonics[i].pszSummary, g_aMnemonics[i].pszDesc);
                 return RTEXITCODE_SUCCESS;
+            }
 
             case VINF_GETOPT_NOT_OPTION:
             {
