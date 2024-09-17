@@ -304,7 +304,7 @@ static DECLCALLBACK(int) gcmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     /*
      * Check if we can reconfigure to the loaded fixer set.
      */
-    bool     fSuccess     = false;
+    bool     fSuccess     = true;
     uint32_t fNewFixerSet = fFixerSet;
     uint32_t fDiffSet     = fFixerSet ^ pVM->gcm.s.fFixerSet;
     while (fDiffSet)
