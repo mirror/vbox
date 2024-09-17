@@ -305,13 +305,6 @@ extern uint16_t     conv_mem_alloc(int n_kb, int in_ebda);
 
 uint16_t pci16_find_device(uint32_t search_item, uint16_t index, int search_class, int ignore_if);
 
-/* Because we don't tell the recompiler when guest physical memory
- * is written, it can incorrectly cache guest code overwritten by
- * DMA (bus master or not). We just re-write the memory block to flush
- * any of its caches. This is not exactly efficient, but works!
- */
-#define DMA_WORKAROUND      1
-
 /* Random hardware-related definitions. */
 
 #define PIC_MASTER          0x20

@@ -704,9 +704,6 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
                 return;
             }
 
-#ifdef DMA_WORKAROUND
-            rep_movsw(ES :> BX, ES :> BX, num_sectors * 512 / 2);
-#endif
             BX_DEBUG_INT13_FL("success!\n");
             // ??? should track be new val from return_status[3] ?
             set_diskette_current_cyl(drive, track);
